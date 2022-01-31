@@ -7,13 +7,11 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.TypesPointsToTypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
 
@@ -28,11 +26,10 @@ import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisSched
 object TypeBasedPointsToCallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
-            super.requirements(project)
+        Seq(DefinitionSitesKey, VirtualFormalParametersKey) ++: super.requirements(project)
     }
 
-    override protected[cg] def callGraphSchedulers(
+    override protected def callGraphSchedulers(
         project: SomeProject
     ): Traversable[FPCFAnalysisScheduler] = {
         List(
@@ -40,8 +37,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
             TypeBasedConfiguredMethodsPointsToAnalysisScheduler,
             TypeBasedTamiFlexPointsToAnalysisScheduler,
             TypeBasedArraycopyPointsToAnalysisScheduler,
-            TypeBasedUnsafePointsToAnalysisScheduler,
-            TypeBasedNewInstanceAnalysisScheduler
+            TypeBasedUnsafePointsToAnalysisScheduler
         )
     }
 

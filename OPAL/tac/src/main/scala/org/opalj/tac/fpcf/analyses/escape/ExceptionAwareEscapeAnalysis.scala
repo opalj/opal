@@ -8,7 +8,6 @@ package escape
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
 
 /**
@@ -36,14 +35,14 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
             for (pc ← successors) {
                 if (pc.isCatchNode) {
                     val exceptionType = context.entity match {
-                        case (_: Context, defSite: DefinitionSiteLike) ⇒
+                        case defSite: DefinitionSiteLike ⇒
                             val Assignment(_, left, _) = tacai.stmts.find(_.pc == defSite.pc).get
                             classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                                 left.value.asReferenceValue.upperTypeBound
                             )
-                        case (_: Context, VirtualFormalParameter(dm: DefinedMethod, -1)) ⇒
+                        case VirtualFormalParameter(dm: DefinedMethod, -1) ⇒
                             dm.definedMethod.classFile.thisType
-                        case (_: Context, VirtualFormalParameter(callee, origin)) ⇒
+                        case VirtualFormalParameter(callee, origin) ⇒
                             // we would not end in this case if the parameter is not an object
                             callee.descriptor.parameterTypes(-2 - origin).asObjectType
                     }

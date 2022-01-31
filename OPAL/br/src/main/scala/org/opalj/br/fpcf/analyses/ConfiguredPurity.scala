@@ -7,6 +7,7 @@ package analyses
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
@@ -20,6 +21,7 @@ import org.opalj.br.fpcf.properties.Purity
  */
 class ConfiguredPurity(
         project:         SomeProject,
+        propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
 ) {
 
@@ -37,7 +39,7 @@ class ConfiguredPurity(
         "org.opalj.fpcf.analyses.ConfiguredPurity.purities"
     )
 
-    private val methods: Map[DeclaredMethod, Purity] = (
+    private val methods: Set[DeclaredMethod] =
         for {
             PurityValue(className, methodName, descriptor, property, conditions) ← toSet.toSet
 
@@ -73,13 +75,11 @@ class ConfiguredPurity(
 
             dm ← ms
         } yield {
-            dm → po.get
+            propertyStore.set(dm, po.get)
+            dm
         }
-    ).toMap
 
     def wasSet(dm: DeclaredMethod): Boolean = methods.contains(dm)
-
-    def purity(dm: DeclaredMethod): Purity = methods(dm)
 
 }
 
@@ -88,7 +88,8 @@ object ConfiguredPurityKey extends ProjectInformationKey[ConfiguredPurity, Nothi
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
 
     override def compute(project: SomeProject): ConfiguredPurity = {
+        val ps = project.get(PropertyStoreKey)
         val declaredMethods = project.get(DeclaredMethodsKey)
-        new ConfiguredPurity(project, declaredMethods)
+        new ConfiguredPurity(project, ps, declaredMethods)
     }
 }

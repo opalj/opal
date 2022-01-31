@@ -16,14 +16,12 @@ import org.opalj.br.FieldType
 object MethodHandlesUtil {
     // TODO what about the case of an constructor?
     private[reflection] def retrieveMatchersForMethodHandleConst(
-        receiver:            ReferenceType,
-        name:                String,
-        desc:                MethodDescriptor,
-        actualReceiverTypes: Option[Set[ObjectType]],
-        isVirtual:           Boolean,
-        isStatic:            Boolean,
-        isConstructor:       Boolean
-    )(implicit project: SomeProject): Set[MethodMatcher] = {
+        receiver:      ReferenceType,
+        name:          String,
+        desc:          MethodDescriptor,
+        isStatic:      Boolean,
+        isConstructor: Boolean
+    ): Set[MethodMatcher] = {
         assert(!isStatic || !isConstructor)
         Set(
             new DescriptorBasedMethodMatcher(
@@ -37,25 +35,12 @@ object MethodHandlesUtil {
                 )
             ),
             new NameBasedMethodMatcher(Set(name)),
-            if (receiver.isArrayType)
-                new ClassBasedMethodMatcher(
+            if (receiver.isArrayType) new ClassBasedMethodMatcher(
                 Set(ObjectType.Object), onlyMethodsExactlyInClass = false
             )
-            else if (isVirtual)
-                if (actualReceiverTypes.isDefined)
-                new ClassBasedMethodMatcher(
-                actualReceiverTypes.get,
-                onlyMethodsExactlyInClass = false
+            else new ClassBasedMethodMatcher(
+                Set(receiver.asObjectType), onlyMethodsExactlyInClass = false
             )
-            else
-                new ClassBasedMethodMatcher(
-                    project.classHierarchy.allSubtypes(receiver.asObjectType, true),
-                    onlyMethodsExactlyInClass = false
-                )
-            else
-                new ClassBasedMethodMatcher(
-                    Set(receiver.asObjectType), onlyMethodsExactlyInClass = false
-                )
         )
     }
 
@@ -68,19 +53,18 @@ object MethodHandlesUtil {
         project:       SomeProject
     ): MethodMatcher = {
         val descriptorsOpt =
-            if (descriptorOpt.isDefined) {
-                descriptorOpt.map { md ⇒
-                    // for instance methods, we need to peel off the receiver type
-                    if (!isStatic && !isConstructor)
-                        Set(MethodDescriptor(md.parameterTypes.tail, md.returnType))
-                    else
-                        Set(md)
-                }
-            } else
+            if (descriptorOpt.isDefined)
+                descriptorOpt.map(Set(_))
+            else
                 getPossibleDescriptorsForMethodTypes(expr, stmts, project).map(_.toSet)
 
         val actualDescriptorOpt =
-            if (isConstructor)
+            // for instance methods, we need to peel off the receiver type
+            if (!isStatic && !isConstructor)
+                descriptorsOpt.map(_.map { md ⇒
+                    MethodDescriptor(md.parameterTypes.tail, md.returnType)
+                })
+            else if (isConstructor)
                 // for constructor
                 descriptorsOpt.map(_.map { md ⇒
                     MethodDescriptor(md.parameterTypes, VoidType)
@@ -93,6 +77,7 @@ object MethodHandlesUtil {
         MatcherUtil.retrieveSuitableNonEssentialMatcher[Set[MethodDescriptor]](
             actualDescriptorOpt,
             v ⇒ new DescriptorBasedMethodMatcher(v)
+
         )
     }
 
@@ -155,7 +140,7 @@ object MethodHandlesUtil {
         stmts:      Array[Stmt[V]],
         project:    SomeProject
     ): Option[Iterator[MethodDescriptor]] = {
-        val returnTypesOpt = TypesUtil.getPossibleClasses(params.head, stmts, project)
+        val returnTypesOpt = TypesUtil.getPossibleTypes(params.head, stmts, project)
 
         if (returnTypesOpt.isEmpty) {
             // IMPROVE: we could add all return types for method descriptors
@@ -168,7 +153,7 @@ object MethodHandlesUtil {
             Some(returnTypes.map(MethodDescriptor.withNoArgs))
         } else if (params.size == 3) { // methodType(T1, T2, T3, ...) => (T2, T3, ...)T1
             val firstParamTypesOpt =
-                TypesUtil.getPossibleClasses(params(1), stmts, project)
+                TypesUtil.getPossibleTypes(params(1), stmts, project)
             if (firstParamTypesOpt.isEmpty) {
                 return None;
             }
@@ -203,7 +188,7 @@ object MethodHandlesUtil {
                 Some(possibleMethodDescriptorsIterator)
             } else if (secondParamType == ObjectType.Class) { // methodType(T1, T2) => (T2)T2
                 val paramTypesOpt =
-                    TypesUtil.getPossibleClasses(params(1), stmts, project)
+                    TypesUtil.getPossibleTypes(params(1), stmts, project)
                 if (paramTypesOpt.isEmpty) {
                     return None;
                 }

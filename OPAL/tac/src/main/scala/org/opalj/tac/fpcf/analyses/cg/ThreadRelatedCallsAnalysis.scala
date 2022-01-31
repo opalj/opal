@@ -27,11 +27,10 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
@@ -43,13 +42,13 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  */
 class ThreadStartAnalysis private[cg] (
-        override val project:   SomeProject,
-        override val apiMethod: DeclaredMethod
+        override val project:      SomeProject,
+        override val apiMethod:    DeclaredMethod,
+        override val typeProvider: TypeProvider
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -60,23 +59,23 @@ class ThreadStartAnalysis private[cg] (
         val indirectCalls = new IndirectCalls()
 
         implicit val state: CGState[ContextType] = new CGState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
         )
 
         if (receiverOption.isDefined) {
             val receiver = receiverOption.get.asVar
-            handleStart(callerContext, callPC, receiver, indirectCalls)
+            handleStart(callContext, callPC, receiver, indirectCalls)
             returnResult(receiver, indirectCalls)
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
-            Results(indirectCalls.partialResults(callerContext))
+            Results(indirectCalls.partialResults(callContext.method))
         }
     }
 
     def returnResult(
         receiver: V, indirectCalls: IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = indirectCalls.partialResults(state.callContext)
+        val results = indirectCalls.partialResults(state.callContext.method)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(receiver, state)),
@@ -326,7 +325,7 @@ class ThreadStartAnalysis private[cg] (
     private[this] def handleThreadInit(
         callContext:       ContextType,
         callPC:            Int,
-        allocationContext: Context,
+        allocationContext: ContextType,
         threadDefSite:     Int,
         stmts:             Array[Stmt[V]],
         indirectCalls:     IndirectCalls
@@ -429,11 +428,7 @@ class ThreadStartAnalysis private[cg] (
         val persistentReceiver = receiver.flatMap(persistentUVar(_)(stmts))
         if (target.hasValue) {
             indirectCalls.addCall(
-                callContext,
-                callPC,
-                typeProvider.expandContext(callContext, declaredMethods(target.value), callPC),
-                Seq.empty,
-                persistentReceiver
+                callContext, callPC, declaredMethods(target.value), Seq.empty, persistentReceiver
             )
         } else {
             val declTgt = declaredMethods(
@@ -443,26 +438,20 @@ class ThreadStartAnalysis private[cg] (
             // also add calls to virtual declared methods (unpresent library methods)
             if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
                 indirectCalls.addIncompleteCallSite(callPC)
-                indirectCalls.addCall(
-                    callContext,
-                    callPC,
-                    typeProvider.expandContext(callContext, declTgt, callPC),
-                    Seq.empty,
-                    persistentReceiver
-                )
+                indirectCalls.addCall(callContext, callPC, declTgt, Seq.empty, persistentReceiver)
             }
         }
     }
 }
 
 class UncaughtExceptionHandlerAnalysis private[analyses] (
-        override val project:   SomeProject,
-        override val apiMethod: DeclaredMethod
+        override val project:      SomeProject,
+        override val apiMethod:    DeclaredMethod,
+        override val typeProvider: TypeProvider
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -473,16 +462,16 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         val vmReachableMethods = new VMReachableMethods()
 
         implicit val state: CGState[ContextType] = new CGState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
         )
 
         if (params.nonEmpty && params.head.isDefined) {
             val receiver = params.head.get.asVar
-            handleUncaughtExceptionHandler(callerContext, receiver, callPC, vmReachableMethods)
+            handleUncaughtExceptionHandler(callContext, receiver, callPC, vmReachableMethods)
             returnResult(receiver, vmReachableMethods)(state)
         } else {
             vmReachableMethods.addIncompleteCallSite(callPC)
-            Results(vmReachableMethods.partialResults(callerContext))
+            Results(vmReachableMethods.partialResults(callContext.method))
         }
     }
 
@@ -513,7 +502,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         receiver:           V,
         vmReachableMethods: VMReachableMethods
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = vmReachableMethods.partialResults(state.callContext)
+        val results = vmReachableMethods.partialResults(state.callContext.method)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(receiver, state)),
@@ -594,7 +583,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
  * @author Michael Reif
  */
 class ThreadRelatedCallsAnalysis private[cg] (
-        val project: SomeProject
+        val project: SomeProject, typeProvider: TypeProvider
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
@@ -634,11 +623,11 @@ class ThreadRelatedCallsAnalysis private[cg] (
         }
 
         val uncaughtExceptionHandlerResults = setUncaughtExceptionHandlerMethods.iterator.map { m ⇒
-            new UncaughtExceptionHandlerAnalysis(p, m).registerAPIMethod()
+            new UncaughtExceptionHandlerAnalysis(p, m, typeProvider).registerAPIMethod()
         }
 
         val threadStartResults = threadStartMethods.iterator.map { m ⇒
-            new ThreadStartAnalysis(p, m).registerAPIMethod()
+            new ThreadStartAnalysis(p, m, typeProvider).registerAPIMethod()
         }
 
         Results(uncaughtExceptionHandlerResults ++ threadStartResults)
@@ -647,15 +636,10 @@ class ThreadRelatedCallsAnalysis private[cg] (
 
 object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, Callers, TACAI)
-
-    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeProviderKey).usedPropertyKinds
-    }
+        PropertyBounds.ubs(Callees, Callers, TACAI) ++ CallGraphKey.typeProvider.usedPropertyKinds
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callees, Callers)
 
@@ -664,7 +648,7 @@ object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSchedul
     override def start(
         p: SomeProject, ps: PropertyStore, unused: Null
     ): ThreadRelatedCallsAnalysis = {
-        val analysis = new ThreadRelatedCallsAnalysis(p)
+        val analysis = new ThreadRelatedCallsAnalysis(p, CallGraphKey.typeProvider)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }

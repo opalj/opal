@@ -24,9 +24,8 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -86,16 +85,13 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 }
 
 class TamiFlexMethodInvokeAnalysis private[analyses] (
-        final val project:      SomeProject,
-        override val apiMethod: DeclaredMethod,
-        val key:                String
-) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
+        final val project: SomeProject, override val apiMethod: DeclaredMethod, val key: String
+) extends TACAIBasedAPIBasedAnalysis {
 
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -106,11 +102,11 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
         if (receiverOption.isDefined)
-            handleMethodInvoke(callerContext, pc, receiverOption.get, params, tac)
+            handleMethodInvoke(callContext, pc, receiverOption.get, params, tac)
         else
             indirectCalls.addIncompleteCallSite(pc)
 
-        Results(indirectCalls.partialResults(callerContext))
+        Results(indirectCalls.partialResults(callContext.method))
     }
 
     private[this] def handleMethodInvoke(
@@ -149,7 +145,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
             indirectCalls.addCall(
                 context,
                 pc,
-                typeProvider.expandContext(context, target, pc),
+                target,
                 persistentMethodInvokeActualParams,
                 persistentMethodInvokeReceiver
             )
@@ -160,7 +156,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
 object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TamiFlexKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, TamiFlexKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

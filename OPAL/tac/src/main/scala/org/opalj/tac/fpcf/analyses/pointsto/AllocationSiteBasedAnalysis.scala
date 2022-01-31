@@ -53,7 +53,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
         isEmptyArray:  Boolean       = false
     ): AllocationSitePointsToSet = {
         @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
-            val as = allocationSiteToLong(callContext, pc, allocatedType, isEmptyArray)
+            val as = allocationSiteToLong(callContext.method, pc, allocatedType, isEmptyArray)
             AllocationSitePointsToSet1(as, allocatedType)
         }
 
@@ -118,7 +118,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
 object AllocationSiteBasedAnalysis {
 
     def mergedPointsToSetForType(r: ReferenceType): AllocationSitePointsToSet =
-        AllocationSitePointsToSet1(r.id.toLong << 44 | 0x7FFFFFFFFFFL, r)
+        AllocationSitePointsToSet1(r.id.toLong << 39 | 0x3FFFFFFFFFL, r)
 
     private val configPrefix = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis."
     val mergeStringBuilderBufferConfigKey: String = configPrefix+"mergeStringBuilderBuffer"

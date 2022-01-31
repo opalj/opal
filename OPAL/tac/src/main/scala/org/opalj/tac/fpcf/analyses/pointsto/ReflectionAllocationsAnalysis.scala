@@ -19,10 +19,9 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.APIBasedAnalysis
 
@@ -106,46 +105,6 @@ class ReflectionAllocationsAnalysis private[analyses] (
                     "getDeclaredMethod",
                     MethodDescriptor(RefArray(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
                 )
-            ),
-            new ReflectionMethodAllocationsAnalysis(
-                project,
-                declaredMethods(
-                    ObjectType.MethodHandles, "", ObjectType.MethodHandles,
-                    "lookup",
-                    MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
-                )
-            ),
-            new ReflectionMethodAllocationsAnalysis(
-                project,
-                declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
-                    "findStatic",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
-                )
-            ),
-            new ReflectionMethodAllocationsAnalysis(
-                project,
-                declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
-                    "findVirtual",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
-                )
-            ),
-            new ReflectionMethodAllocationsAnalysis(
-                project,
-                declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
-                    "findConstructor",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.MethodType), ObjectType.MethodHandle)
-                )
-            ),
-            new ReflectionMethodAllocationsAnalysis(
-                project,
-                declaredMethods(
-                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
-                    "findSpecial",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.String, ObjectType.MethodType, ObjectType.Class), ObjectType.MethodHandle)
-                )
             )
         )
 
@@ -159,21 +118,20 @@ class ReflectionMethodAllocationsAnalysis(
 ) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis with APIBasedAnalysis {
 
     override def handleNewCaller(
-        calleeContext: ContextType,
-        callerContext: ContextType,
-        pc:            Int,
-        isDirect:      Boolean
+        callContext: ContextType,
+        pc:          Int,
+        isDirect:    Boolean
     ): ProperPropertyComputationResult = {
 
-        implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+        val state: State =
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
 
-        val defSite = getDefSite(pc)
+        val defSite = definitionSites(callContext.method.definedMethod, pc)
         state.includeSharedPointsToSet(
             defSite,
             createPointsToSet(
                 pc,
-                callerContext,
+                callContext,
                 apiMethod.descriptor.returnType.asReferenceType,
                 isConstant = false
             ),
@@ -186,7 +144,7 @@ class ReflectionMethodAllocationsAnalysis(
 
 object ReflectionAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, AllocationSitePointsToSet)
 

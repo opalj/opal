@@ -9,7 +9,6 @@ package reflection
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.properties.Context
 
 object StringUtil {
 
@@ -41,7 +40,7 @@ object StringUtil {
      * provides allocation sites of Strings.
      */
     def getPossibleStrings[ContextType <: Context](
-        value:    V,
+        value:    Expr[V],
         context:  ContextType,
         depender: Entity,
         stmts:    Array[Stmt[V]],

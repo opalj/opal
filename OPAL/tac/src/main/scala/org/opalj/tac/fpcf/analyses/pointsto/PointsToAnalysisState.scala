@@ -20,15 +20,16 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.tac.fpcf.properties.cg.NoCallees
-import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.ArrayType
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.Context
+import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
+import org.opalj.tac.fpcf.analyses.cg.Context
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -42,15 +43,15 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] val getFields: ArrayBuffer[(Entity, Option[Field], ReferenceType ⇒ Boolean)] =
+    private[this] val getFields: ArrayBuffer[(DefinitionSite, Option[Field], ReferenceType ⇒ Boolean)] =
         ArrayBuffer.empty
     private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[Field])] = ArrayBuffer.empty
 
-    def addGetFieldEntity(fakeEntity: (Entity, Option[Field], ReferenceType ⇒ Boolean)): Unit = {
+    def addGetFieldEntity(fakeEntity: (DefinitionSite, Option[Field], ReferenceType ⇒ Boolean)): Unit = {
         getFields += fakeEntity
     }
 
-    def getFieldsIterator: Iterator[(Entity, Option[Field], ReferenceType ⇒ Boolean)] =
+    def getFieldsIterator: Iterator[(DefinitionSite, Option[Field], ReferenceType ⇒ Boolean)] =
         getFields.iterator
 
     def addPutFieldEntity(fakeEntity: (IntTrieSet, Option[Field])): Unit = {
@@ -59,17 +60,17 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def putFieldsIterator: Iterator[(IntTrieSet, Option[Field])] = putFields.iterator
 
-    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType ⇒ Boolean)] =
+    private[this] val arrayLoads: ArrayBuffer[(DefinitionSite, ArrayType, ReferenceType ⇒ Boolean)] =
         ArrayBuffer.empty
     private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
 
     def addArrayLoadEntity(
-        fakeEntity: (Entity, ArrayType, ReferenceType ⇒ Boolean)
+        fakeEntity: (DefinitionSite, ArrayType, ReferenceType ⇒ Boolean)
     ): Unit = {
         arrayLoads += fakeEntity
     }
 
-    def arrayLoadsIterator: Iterator[(Entity, ArrayType, ReferenceType ⇒ Boolean)] =
+    def arrayLoadsIterator: Iterator[(DefinitionSite, ArrayType, ReferenceType ⇒ Boolean)] =
         arrayLoads.iterator
 
     def addArrayStoreEntity(fakeEntity: (IntTrieSet, ArrayType)): Unit = {
@@ -79,19 +80,19 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     def arrayStoresIterator: Iterator[(IntTrieSet, ArrayType)] =
         arrayStores.iterator
 
-    private[this] val _allocationSitePointsToSets: mutable.Map[Entity, PointsToSet] = {
+    private[this] val _allocationSitePointsToSets: mutable.Map[DefinitionSite, PointsToSet] = {
         mutable.Map.empty
     }
 
-    def hasAllocationSitePointsToSet(e: Entity): Boolean = _allocationSitePointsToSets.contains(e)
+    def hasAllocationSitePointsToSet(e: DefinitionSite): Boolean = _allocationSitePointsToSets.contains(e)
 
-    def allocationSitePointsToSet(e: Entity): PointsToSet = _allocationSitePointsToSets(e)
+    def allocationSitePointsToSet(e: DefinitionSite): PointsToSet = _allocationSitePointsToSets(e)
 
-    def allocationSitePointsToSetsIterator: Iterator[(Entity, PointsToSet)] = {
+    def allocationSitePointsToSetsIterator: Iterator[(DefinitionSite, PointsToSet)] = {
         _allocationSitePointsToSets.iterator
     }
 
-    def setAllocationSitePointsToSet(ds: Entity, pointsToSet: PointsToSet): Unit = {
+    def setAllocationSitePointsToSet(ds: DefinitionSite, pointsToSet: PointsToSet): Unit = {
         assert(!_allocationSitePointsToSets.contains(ds))
         _allocationSitePointsToSets(ds) = pointsToSet
     }
@@ -184,6 +185,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def callees(ps: PropertyStore): Callees = {
         val calleesProperty = if (_calleesDependee.isDefined) {
+
             _calleesDependee.get
         } else {
             val calleesProperty = ps(callContext.method, Callees.key)

@@ -43,11 +43,11 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.BooleanType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.LoadedClasses
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
 import org.opalj.br.analyses.ProjectIndexKey
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
 import org.opalj.tac.fpcf.properties.TACAI
@@ -85,7 +85,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
             indirectCalls.addCall(
                 callContext,
                 callPC,
-                typeProvider.expandContext(callContext, declaredMethods(m), callPC),
+                declaredMethods(m),
                 actualParams,
                 actualReceiver
             )
@@ -94,9 +94,10 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 }
 
 class ClassForNameAnalysis private[analyses] (
-        final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod,
-        final val classNameIndex:     Int            = 0
+        final val project:                        SomeProject,
+        final override implicit val typeProvider: TypeProvider,
+        final override val apiMethod:             DeclaredMethod,
+        final val classNameIndex:                 Int            = 0
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     private class State(
@@ -132,7 +133,7 @@ class ClassForNameAnalysis private[analyses] (
                         None
 
                 case EPK(p, _) ⇒
-                    Some(InterimEUBP(p, LoadedClasses(newLoadedClasses)))
+                    Some(InterimEUBP(p, org.opalj.br.fpcf.properties.cg.LoadedClasses(newLoadedClasses)))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
@@ -140,8 +141,7 @@ class ClassForNameAnalysis private[analyses] (
     }
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -150,24 +150,24 @@ class ClassForNameAnalysis private[analyses] (
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         implicit val incompleteCallSites: IncompleteCallSites = new IncompleteCallSites {}
-        implicit val state: State = new State(tac.stmts, loadedClassesUB(), callerContext)
+        implicit val state: State = new State(tac.stmts, loadedClassesUB(), callContext)
 
         val className = if (params.nonEmpty) params(classNameIndex) else None
 
         if (className.isDefined) {
-            handleForName(className.get.asVar, callerContext, callPC, tac.stmts)
+            handleForName(className.get, callContext, callPC, tac.stmts)
         } else {
             failure(callPC)
         }
 
-        returnResult(className.map(_.asVar).orNull, incompleteCallSites)
+        returnResult(className, incompleteCallSites)
     }
 
     private def returnResult(
-        className: V, incompleteCallSites: IncompleteCallSites
+        className: Option[Expr[V]], incompleteCallSites: IncompleteCallSites
     )(implicit state: State): ProperPropertyComputationResult = {
         val iresults: TraversableOnce[ProperPropertyComputationResult] =
-            incompleteCallSites.partialResults(state.callContext)
+            incompleteCallSites.partialResults(state.callContext.method)
         val results = if (state.hasNewLoadedClasses) {
             val r = Iterator(state.loadedClassesPartialResult) ++ iresults
             state.reset()
@@ -203,7 +203,7 @@ class ClassForNameAnalysis private[analyses] (
      * classes.
      */
     private[this] def handleForName(
-        className: V, callContext: ContextType, pc: Int, stmts: Array[Stmt[V]]
+        className: Expr[V], callContext: ContextType, pc: Int, stmts: Array[Stmt[V]]
     )(implicit state: State, incompleteCallSites: IncompleteCallSites): Unit = {
         val loadedClasses = TypesUtil.getPossibleForNameClasses(
             className, callContext, pc.asInstanceOf[Entity], stmts, project, () ⇒ failure(pc)
@@ -212,7 +212,7 @@ class ClassForNameAnalysis private[analyses] (
     }
 
     private[this] def c(
-        className: V, state: State
+        className: Option[Expr[V]], state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
 
         // ensures, that we only add new vm reachable methods
@@ -220,7 +220,7 @@ class ClassForNameAnalysis private[analyses] (
         implicit val _state: State = state
 
         AllocationsUtil.continuationForAllocation[Int, ContextType](
-            eps, state.callContext, _ ⇒ (className, state.stmts),
+            eps, state.callContext, _ ⇒ (className.get, state.stmts),
             _.isInstanceOf[Int], callPC ⇒ failure(callPC)
         ) { (callPC, _, allocationIndex, stmts) ⇒
                 val classOpt = TypesUtil.getPossibleForNameClass(
@@ -230,11 +230,8 @@ class ClassForNameAnalysis private[analyses] (
                 else failure(callPC)
             }
 
-        if (eps.isFinal) {
-            state.removeDependee(eps.toEPK)
-        } else {
-            state.updateDependency(eps)
-        }
+        assert(eps.isFinal && !state.hasDependee(eps.toEPK) ||
+            eps.isRefinable && state.getProperty(eps.toEPK) == eps)
 
         returnResult(className, incompleteCallSites)
     }
@@ -251,7 +248,8 @@ class ClassForNameAnalysis private[analyses] (
 }
 
 class ClassNewInstanceAnalysis private[analyses] (
-        final val project: SomeProject
+        final val project:                        SomeProject,
+        final override implicit val typeProvider: TypeProvider
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod =
@@ -264,8 +262,7 @@ class ClassNewInstanceAnalysis private[analyses] (
         )
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -275,25 +272,25 @@ class ClassNewInstanceAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         implicit val state: CGState[ContextType] = new CGState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
         )
 
         if (receiverOption.isDefined) {
-            handleNewInstance(callerContext, callPC, receiverOption.get.asVar, tac.stmts)
+            handleNewInstance(callContext, callPC, receiverOption.get, tac.stmts)
         } else {
             failure(callPC)
         }
 
-        returnResult(receiverOption.map(_.asVar).orNull, indirectCalls)
+        returnResult(receiverOption, indirectCalls)
     }
 
     def returnResult(
-        classRef: V, indirectCalls: IndirectCalls
+        className: Option[Expr[V]], indirectCalls: IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = indirectCalls.partialResults(state.callContext)
+        val results = indirectCalls.partialResults(state.callContext.method)
         if (state.hasOpenDependencies)
             Results(
-                InterimPartialResult(state.dependees, c(classRef, state)),
+                InterimPartialResult(state.dependees, c(className, state)),
                 results
             )
         else
@@ -301,17 +298,17 @@ class ClassNewInstanceAnalysis private[analyses] (
     }
 
     private[this] def c(
-        classRef: V, state: CGState[ContextType]
+        className: Option[Expr[V]], state: CGState[ContextType]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         implicit val _state: CGState[ContextType] = state
 
         AllocationsUtil.continuationForAllocation[Int, ContextType](
-            eps, state.callContext, _ ⇒ (classRef, state.tac.stmts),
+            eps, state.callContext, _ ⇒ (className.get, state.tac.stmts),
             _.isInstanceOf[Int], callPC ⇒ failure(callPC)
         ) { (callPC, allocationContext, allocationIndex, stmts) ⇒
-                val classes = TypesUtil.getPossibleClasses(
-                    allocationContext, allocationIndex, callPC.asInstanceOf[Entity],
+                val classes = TypesUtil.getPossibleTypes(
+                    allocationContext, allocationIndex, (callPC, "getPossibleTypes"),
                     stmts, project, () ⇒ failure(callPC)
                 )
 
@@ -328,8 +325,8 @@ class ClassNewInstanceAnalysis private[analyses] (
                 addCalls(state.callContext, callPC, None, Seq.empty, matchers)
             }
 
-        AllocationsUtil.continuationForAllocation[(Int, V), ContextType](
-            eps, state.callContext, data ⇒ (data._2, state.tac.stmts),
+        AllocationsUtil.continuationForAllocation[(Int, _), ContextType](
+            eps, state.callContext, _ ⇒ (className.get, state.tac.stmts),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1)
         ) { (data, _, allocationIndex, stmts) ⇒
                 val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
@@ -347,22 +344,18 @@ class ClassNewInstanceAnalysis private[analyses] (
                 addCalls(state.callContext, data._1, None, Seq.empty, matchers)
             }
 
-        if (eps.isFinal) {
-            state.removeDependee(eps.toEPK)
-        } else {
-            state.updateDependency(eps)
-        }
+        assert(eps.isFinal && !state.hasDependee(eps.toEPK) ||
+            eps.isRefinable && state.getProperty(eps.toEPK) == eps)
 
-        returnResult(classRef, indirectCalls)
+        returnResult(className, indirectCalls)
     }
 
     private[this] def handleNewInstance(
         callContext: ContextType,
         callPC:      Int,
-        classExpr:   V,
+        classExpr:   Expr[V],
         stmts:       Array[Stmt[V]]
     )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
-
         val matchers = Set(
             MatcherUtil.constructorMatcher,
             new ParameterTypesBasedMethodMatcher(RefArray.empty),
@@ -397,7 +390,7 @@ class ClassNewInstanceAnalysis private[analyses] (
 }
 
 class ConstructorNewInstanceAnalysis private[analyses] (
-        final val project: SomeProject
+        final val project: SomeProject, final override implicit val typeProvider: TypeProvider
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
@@ -411,8 +404,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     )
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -423,24 +415,22 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
         implicit val state: CGState[ContextType] = new CGState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
         )
 
         if (receiverOption.isDefined) {
-            handleConstructorNewInstance(
-                callerContext, callPC, receiverOption.get.asVar, params, tac.stmts
-            )
+            handleConstructorNewInstance(callContext, callPC, receiverOption.get, params, tac.stmts)
+            returnResult(receiverOption.get, indirectCalls)
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
+            Results(indirectCalls.partialResults(callContext.method))
         }
-
-        returnResult(receiverOption.map(_.asVar).orNull, indirectCalls)
     }
 
     def returnResult(
-        constructor: V, indirectCalls: IndirectCalls
+        constructor: Expr[V], indirectCalls: IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = indirectCalls.partialResults(state.callContext)
+        val results = indirectCalls.partialResults(state.callContext.method)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(constructor, state)),
@@ -451,9 +441,9 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     }
 
     private type constructorDependerType = (Int, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher])
-    private type classDependerType = (Int, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], V, Array[Stmt[V]])
+    private type classDependerType = (Int, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], Expr[V], Array[Stmt[V]])
 
-    def c(constructor: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(constructor: Expr[V], state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         implicit val _state: CGState[ContextType] = state
 
@@ -471,8 +461,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._4, data._5),
             _.isInstanceOf[(_, _, _, _, _)], data ⇒ failure(data._1, data._3)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
-                val classes = TypesUtil.getPossibleClasses(
-                    allocationContext, allocationIndex, data,
+                val classes = TypesUtil.getPossibleTypes(
+                    allocationContext, allocationIndex, (data, "getPossibleTypes"),
                     stmts, project, () ⇒ failure(data._1, data._3)
                 )
 
@@ -486,8 +476,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 addCalls(state.callContext, data._1, None, data._2, matchers)
             }
 
-        AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
-            eps, state.callContext, data ⇒ (data._2, data._1._5),
+        AllocationsUtil.continuationForAllocation[(classDependerType, _), ContextType](
+            eps, state.callContext, data ⇒ (data._1._4, data._1._5),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._3)
         ) { (data, _, allocationIndex, stmts) ⇒
                 val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
@@ -502,11 +492,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 addCalls(state.callContext, data._1._1, None, data._1._2, matchers)
             }
 
-        if (eps.isFinal) {
-            state.removeDependee(eps.toEPK)
-        } else {
-            state.updateDependency(eps)
-        }
+        assert(eps.isFinal && !state.hasDependee(eps.toEPK) ||
+            eps.isRefinable && state.getProperty(eps.toEPK) == eps)
 
         returnResult(constructor, indirectCalls)
     }
@@ -514,7 +501,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     private[this] def handleConstructorNewInstance(
         callContext:       ContextType,
         callPC:            Int,
-        constructor:       V,
+        constructor:       Expr[V],
         newInstanceParams: Seq[Option[Expr[V]]],
         stmts:             Array[Stmt[V]]
     )(implicit state: CGState[ContextType], indirectCalls: IndirectCalls): Unit = {
@@ -535,7 +522,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         val persistentActualParams =
             actualParamsNewInstanceOpt.map(_.map(persistentUVar(_)(stmts))).getOrElse(Seq.empty)
 
-        val depender: constructorDependerType = (callPC, persistentActualParams, baseMatchers)
+        val depender = (callPC, persistentActualParams, baseMatchers)
 
         AllocationsUtil.handleAllocations(
             constructor, callContext, depender, state.tac.stmts, _ eq ObjectType.Constructor, () ⇒ {
@@ -576,8 +563,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 if (!matchers.contains(NoMethodsMatcher))
                     matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
                         context,
-                        receiver.asVar,
-                        (callPC, actualParams, matchers, receiver.asVar, stmts),
+                        receiver,
+                        (callPC, actualParams, matchers, receiver, stmts),
                         callPC,
                         stmts,
                         project,
@@ -613,7 +600,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
 }
 
 class MethodInvokeAnalysis private[analyses] (
-        final val project: SomeProject
+        final val project: SomeProject, final override implicit val typeProvider: TypeProvider
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -627,8 +614,7 @@ class MethodInvokeAnalysis private[analyses] (
     )
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -639,22 +625,22 @@ class MethodInvokeAnalysis private[analyses] (
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
         implicit val state: CGState[ContextType] = new CGState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
         )
 
         if (receiverOption.isDefined) {
-            handleMethodInvoke(callerContext, callPC, receiverOption.get.asVar, params, tac.stmts)
+            handleMethodInvoke(callContext, callPC, receiverOption.get, params, tac.stmts)
+            returnResult(receiverOption.get, indirectCalls)
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
+            Results(indirectCalls.partialResults(callContext.method))
         }
-
-        returnResult(receiverOption.map(_.asVar).orNull, indirectCalls)
     }
 
     def returnResult(
-        methodVar: V, indirectCalls: IndirectCalls
+        methodVar: Expr[V], indirectCalls: IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = indirectCalls.partialResults(state.callContext)
+        val results = indirectCalls.partialResults(state.callContext.method)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(methodVar, state)),
@@ -665,10 +651,10 @@ class MethodInvokeAnalysis private[analyses] (
     }
 
     private type methodDependerType = (Int, Option[(ValueInformation, IntTrieSet)], Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher])
-    private type nameDependerType = (Int, Option[(ValueInformation, IntTrieSet)], Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], V, Array[Stmt[V]], V, ContextType)
-    private type classDependerType = (Int, Option[(ValueInformation, IntTrieSet)], Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], V, Array[Stmt[V]])
+    private type nameDependerType = (Int, Option[(ValueInformation, IntTrieSet)], Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], Expr[V], Array[Stmt[V]], Expr[V], ContextType)
+    private type classDependerType = (Int, Option[(ValueInformation, IntTrieSet)], Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], Expr[V], Array[Stmt[V]])
 
-    def c(methodVar: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(methodVar: Expr[V], state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         implicit val _state: CGState[ContextType] = state
 
@@ -717,8 +703,8 @@ class MethodInvokeAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._5, data._6),
             _.isInstanceOf[(_, _, _, _, _, _)], data ⇒ failure(data._1, data._2, data._3, data._4)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
-                val classes = TypesUtil.getPossibleClasses(
-                    allocationContext, allocationIndex, data,
+                val classes = TypesUtil.getPossibleTypes(
+                    allocationContext, allocationIndex, (data, "getPossibleTypes"),
                     stmts, project, () ⇒ failure(data._1, data._2, data._3, data._4)
                 )
 
@@ -732,8 +718,8 @@ class MethodInvokeAnalysis private[analyses] (
                 addCalls(state.callContext, data._1, data._2, data._3, matchers)
             }
 
-        AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
-            eps, state.callContext, data ⇒ (data._2, data._1._6),
+        AllocationsUtil.continuationForAllocation[(classDependerType, _), ContextType](
+            eps, state.callContext, data ⇒ (data._1._5, data._1._6),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._2, data._1._3, data._1._4)
         ) { (data, _, allocationIndex, stmts) ⇒
                 val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
@@ -748,11 +734,8 @@ class MethodInvokeAnalysis private[analyses] (
                 addCalls(state.callContext, data._1._1, data._1._2, data._1._3, matchers)
             }
 
-        if (eps.isFinal) {
-            state.removeDependee(eps.toEPK)
-        } else {
-            state.updateDependency(eps)
-        }
+        assert(eps.isFinal && !state.hasDependee(eps.toEPK) ||
+            eps.isRefinable && state.getProperty(eps.toEPK) == eps)
 
         returnResult(methodVar, indirectCalls)
     }
@@ -760,7 +743,7 @@ class MethodInvokeAnalysis private[analyses] (
     private[this] def handleMethodInvoke(
         callContext:  ContextType,
         callPC:       Int,
-        method:       V,
+        method:       Expr[V],
         methodParams: Seq[Option[Expr[V]]],
         stmts:        Array[Stmt[V]]
     )(implicit state: CGState[ContextType], indirectCalls: IndirectCalls): Unit = {
@@ -790,8 +773,7 @@ class MethodInvokeAnalysis private[analyses] (
         val persistentActualParams =
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(stmts))).getOrElse(Seq.empty)
 
-        val depender: methodDependerType =
-            (callPC, persistentReceiver, persistentActualParams, baseMatchers)
+        val depender = (callPC, persistentReceiver, persistentActualParams, baseMatchers)
 
         AllocationsUtil.handleAllocations(
             method, callContext, depender, state.tac.stmts, _ eq ObjectType.Method,
@@ -831,15 +813,15 @@ class MethodInvokeAnalysis private[analyses] (
                 if (!matchers.contains(NoMethodsMatcher))
                     matchers += MatcherUtil.retrieveNameBasedMethodMatcher(
                         context,
-                        params.head.asVar,
+                        params.head,
                         (
                             callPC,
                             actualReceiver,
                             actualParams,
                             matchers,
-                            params.head.asVar,
+                            params.head,
                             stmts,
-                            receiver.asVar,
+                            receiver,
                             context
                         ),
                         callPC,
@@ -850,8 +832,8 @@ class MethodInvokeAnalysis private[analyses] (
                 if (!matchers.contains(NoMethodsMatcher))
                     matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
                         context,
-                        receiver.asVar,
-                        (callPC, actualReceiver, actualParams, matchers, receiver.asVar, stmts),
+                        receiver,
+                        (callPC, actualReceiver, actualParams, matchers, receiver, stmts),
                         callPC,
                         stmts,
                         project,
@@ -889,14 +871,14 @@ class MethodInvokeAnalysis private[analyses] (
 }
 
 class MethodHandleInvokeAnalysis private[analyses] (
-        final val project:                SomeProject,
-        final override val apiMethod:     DeclaredMethod,
-        final val isSignaturePolymorphic: Boolean
+        final val project:                        SomeProject,
+        final override implicit val typeProvider: TypeProvider,
+        final override val apiMethod:             DeclaredMethod,
+        final val isSignaturePolymorphic:         Boolean
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -907,7 +889,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
         implicit val state: CGState[ContextType] = new CGState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
         )
 
         if (receiverOption.isDefined) {
@@ -920,25 +902,25 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 None
             }
             handleMethodHandleInvoke(
-                callerContext,
+                callContext,
                 callPC,
-                receiverOption.get.asVar,
+                receiverOption.get,
                 params,
                 descriptorOpt,
                 isSignaturePolymorphic,
                 tac.stmts
             )
+            returnResult(receiverOption.get, indirectCalls)
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
+            Results(indirectCalls.partialResults(callContext.method))
         }
-
-        returnResult(receiverOption.map(_.asVar).orNull, indirectCalls)
     }
 
     def returnResult(
-        methodHandle: V, indirectCalls: IndirectCalls
+        methodHandle: Expr[V], indirectCalls: IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = indirectCalls.partialResults(state.callContext)
+        val results = indirectCalls.partialResults(state.callContext.method)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(methodHandle, state)),
@@ -948,27 +930,27 @@ class MethodHandleInvokeAnalysis private[analyses] (
             Results(results)
     }
 
-    private type methodHandleDependerType = (Int, Option[MethodDescriptor], Option[Seq[Option[V]]], Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher])
-    private type nameDependerType = (Int, Boolean, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], V, Array[Stmt[V]], V, ContextType)
-    private type classDependerType = (Int, Boolean, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], V, Array[Stmt[V]])
+    private type methodHandleDependerType = (Int, Option[MethodDescriptor], Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher])
+    private type nameDependerType = (Int, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], Expr[V], Array[Stmt[V]], Expr[V], ContextType)
+    private type classDependerType = (Int, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], Expr[V], Array[Stmt[V]])
 
-    def c(methodHandle: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(methodHandle: Expr[V], state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         implicit val _state: CGState[ContextType] = state
 
         AllocationsUtil.continuationForAllocation[methodHandleDependerType, ContextType](
             eps, state.callContext, _ ⇒ (methodHandle, state.tac.stmts),
-            _.isInstanceOf[(_, _, _, _)], data ⇒ failure(data._1, data._4, data._5)
+            _.isInstanceOf[(_, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val allMatchers = handleGetMethodHandle(
-                    allocationContext, data._1, allocationIndex, data._2, data._3, data._4, data._5, stmts
+                    allocationContext, data._1, allocationIndex, data._2, data._3, data._4, stmts
                 )
-                addCalls(state.callContext, data._1, allMatchers, data._4)
+                addCalls(state.callContext, data._1, allMatchers, data._3)
             }
 
         AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
-            eps, state.callContext, data ⇒ (data._5, data._6),
-            _.isInstanceOf[(_, _, _, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
+            eps, state.callContext, data ⇒ (data._4, data._5),
+            _.isInstanceOf[(_, _, _, _, _, _, _)], data ⇒ failure(data._1, data._2, data._3)
         ) { (data, _, allocationIndex, stmts) ⇒
                 val name = StringUtil.getString(allocationIndex, stmts)
 
@@ -979,70 +961,60 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 )
 
                 if (nameMatcher ne NoMethodsMatcher) {
-                    val matchers = data._4 + nameMatcher
+                    val matchers = data._3 + nameMatcher
                     val allMatchers = matchers +
                         MatcherUtil.retrieveClassBasedMethodMatcher(
-                            data._8,
                             data._7,
-                            (data._1, data._3, matchers, data._7, data._6),
+                            data._6,
+                            (data._1, data._2, matchers, data._6, data._5),
                             data._1,
                             stmts,
                             project,
-                            () ⇒ failure(data._1, data._3, matchers),
-                            onlyMethodsExactlyInClass = false,
-                            considerSubclasses = data._2
+                            () ⇒ failure(data._1, data._2, matchers),
+                            onlyMethodsExactlyInClass = false
                         )
 
-                    addCalls(state.callContext, data._1, allMatchers, data._3)
+                    addCalls(state.callContext, data._1, allMatchers, data._2)
                 }
             }
 
         AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
-            eps, state.callContext, data ⇒ (data._5, data._6),
-            _.isInstanceOf[(_, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
+            eps, state.callContext, data ⇒ (data._4, data._5),
+            _.isInstanceOf[(_, _, _, _, _)], data ⇒ failure(data._1, data._2, data._3)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
-                val classes = TypesUtil.getPossibleClasses(
-                    allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._3, data._4)
-                ).flatMap { tpe ⇒
-                    if (data._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-                    else Set(tpe.asObjectType)
-                }
+                val classes = TypesUtil.getPossibleTypes(
+                    allocationContext, allocationIndex, (data, "getPossibleTypes"),
+                    stmts, project, () ⇒ failure(data._1, data._2, data._3)
+                )
 
-                val matchers = data._4 +
+                val matchers = data._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes),
+                        Some(classes.map(_.asObjectType)),
                         data._1,
                         v ⇒ new ClassBasedMethodMatcher(v, false)
                     )
 
-                addCalls(state.callContext, data._1, matchers, data._3)
+                addCalls(state.callContext, data._1, matchers, data._2)
             }
 
-        AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
-            eps, state.callContext, data ⇒ (data._2, data._1._6),
-            _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._3, data._1._4)
+        AllocationsUtil.continuationForAllocation[(classDependerType, _), ContextType](
+            eps, state.callContext, data ⇒ (data._1._4, data._1._5),
+            _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._2, data._1._3)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project).map { tpe ⇒
-                    if (data._1._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-                    else Set(tpe.asObjectType)
-                }
+                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
 
-                val matchers = data._1._4 +
+                val matchers = data._1._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        classOpt,
+                        classOpt.map(Set(_)),
                         data._1._1,
                         v ⇒ new ClassBasedMethodMatcher(v, false)
                     )
 
-                addCalls(state.callContext, data._1._1, matchers, data._1._3)
+                addCalls(state.callContext, data._1._1, matchers, data._1._2)
             }
 
-        if (eps.isFinal) {
-            state.removeDependee(eps.toEPK)
-        } else {
-            state.updateDependency(eps)
-        }
+        assert(eps.isFinal && !state.hasDependee(eps.toEPK) ||
+            eps.isRefinable && state.getProperty(eps.toEPK) == eps)
 
         returnResult(methodHandle, indirectCalls)
     }
@@ -1062,7 +1034,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
     private[this] def handleMethodHandleInvoke(
         callContext:            ContextType,
         callPC:                 Int,
-        methodHandle:           V,
+        methodHandle:           Expr[V],
         invokeParams:           Seq[Option[Expr[V]]],
         descriptorOpt:          Option[MethodDescriptor],
         isSignaturePolymorphic: Boolean,
@@ -1088,12 +1060,10 @@ class MethodHandleInvokeAnalysis private[analyses] (
             _.flatMap(persistentUVar(_)(stmts))
         )).getOrElse(Seq.empty)
 
-        val depender: methodHandleDependerType =
-            (callPC, descriptorOpt, actualInvokeParamsOpt, persistentActualParams, baseMatchers)
+        val depender = (callPC, descriptorOpt, persistentActualParams, baseMatchers)
 
         AllocationsUtil.handleAllocations(
-            methodHandle, callContext, depender, state.tac.stmts,
-            project.classHierarchy.isASubtypeOf(_, ObjectType.MethodHandle).isYesOrUnknown,
+            methodHandle, callContext, depender, state.tac.stmts, _ eq ObjectType.Constructor,
             () ⇒ failure(callPC, persistentActualParams, baseMatchers)
         ) {
                 (allocationContext, allocationIndex, stmts) ⇒
@@ -1102,7 +1072,6 @@ class MethodHandleInvokeAnalysis private[analyses] (
                         callPC,
                         allocationIndex,
                         descriptorOpt,
-                        actualInvokeParamsOpt,
                         persistentActualParams,
                         baseMatchers,
                         stmts
@@ -1112,14 +1081,13 @@ class MethodHandleInvokeAnalysis private[analyses] (
     }
 
     private[this] def handleGetMethodHandle(
-        context:                ContextType,
-        callPC:                 Int,
-        methodHandleDefSite:    Int,
-        descriptorOpt:          Option[MethodDescriptor],
-        actualParams:           Option[Seq[Option[V]]],
-        persistentActualParams: Seq[Option[(ValueInformation, IntTrieSet)]],
-        baseMatchers:           Set[MethodMatcher],
-        stmts:                  Array[Stmt[V]]
+        context:             ContextType,
+        callPC:              Int,
+        methodHandleDefSite: Int,
+        descriptorOpt:       Option[MethodDescriptor],
+        actualParams:        Seq[Option[(ValueInformation, IntTrieSet)]],
+        baseMatchers:        Set[MethodMatcher],
+        stmts:               Array[Stmt[V]]
     )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Set[MethodMatcher] = {
         var matchers = baseMatchers
 
@@ -1129,31 +1097,20 @@ class MethodHandleInvokeAnalysis private[analyses] (
             // TODO do we need to distinguish the cases below?
             definition.asMethodHandleConst.value match {
                 case InvokeStaticMethodHandle(receiver, _, name, desc) ⇒
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, None, isVirtual = false, isStatic = true, isConstructor = false)
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = true, isConstructor = false)
 
                 case InvokeVirtualMethodHandle(receiver, name, desc) ⇒
-                    val actualReceiverTypes: Option[Set[ObjectType]] =
-                        if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
-                            val rcvr = actualParams.get.head.get.value.asReferenceValue
-                            Some(
-                                if (rcvr.isNull.isYes) Set.empty[ObjectType]
-                                else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
-                                else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
-                                else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, true)
-                            )
-                        } else
-                            None
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, actualReceiverTypes, isVirtual = true, isStatic = false, isConstructor = false)
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
                 case InvokeInterfaceMethodHandle(receiver, name, desc) ⇒
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, None, isVirtual = false, isStatic = false, isConstructor = false)
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
                 case InvokeSpecialMethodHandle(receiver, _, name, desc) ⇒
                     // TODO does this work for super?
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, None, isVirtual = false, isStatic = false, isConstructor = false)
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
                 case NewInvokeSpecialMethodHandle(receiver, desc) ⇒
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, "<init>", desc, None, isVirtual = false, isStatic = false, isConstructor = true)
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, "<init>", desc, isStatic = false, isConstructor = true)
 
                 case _ ⇒ // getters and setters are not relevant for the call graph
                     matchers += NoMethodsMatcher
@@ -1162,26 +1119,26 @@ class MethodHandleInvokeAnalysis private[analyses] (
             val methodHandleData = definition.asVirtualFunctionCall match {
                 case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStatic", _, _, params) ⇒
                     val Seq(refc, name, methodType) = params
-                    Some((refc.asVar, name.asVar, methodType, false, true, false))
+                    Some((refc, name, methodType, true, false))
 
                 case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findVirtual", _, _, params) ⇒
                     val Seq(refc, name, methodType) = params
-                    Some((refc.asVar, name.asVar, methodType, true, false, false))
+                    Some((refc, name, methodType, false, false))
 
                 case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) ⇒
                     // TODO we can ignore the 4ths param? Does it work for super calls?
                     val Seq(refc, name, methodType, _) = params
-                    Some((refc.asVar, name.asVar, methodType, false, false, false))
+                    Some((refc, name, methodType, false, false))
 
                 case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findConstructor", _, _, params) ⇒
                     val Seq(refc, methodType) = params
-                    Some((refc.asVar, null, methodType, false, false, true))
+                    Some((refc, null, methodType, false, true))
 
                 case _ ⇒
                     None // getters and setters are not relevant for the call graph
             }
             if (methodHandleData.isDefined) {
-                val (refc, name, methodType, isVirtual, isStatic, isConstructor) = methodHandleData.get
+                val (refc, name, methodType, isStatic, isConstructor) = methodHandleData.get
                 matchers += (if (isStatic) StaticMethodMatcher else NonStaticMethodMatcher)
                 matchers += retrieveDescriptorBasedMethodMatcher(
                     descriptorOpt, methodType, isStatic, isConstructor, stmts, project
@@ -1192,41 +1149,22 @@ class MethodHandleInvokeAnalysis private[analyses] (
                         else MatcherUtil.retrieveNameBasedMethodMatcher(
                             context,
                             name,
-                            (callPC, isVirtual, persistentActualParams, matchers, name, stmts, refc, context),
+                            (callPC, actualParams, matchers, name, stmts, refc, context),
                             callPC,
                             stmts,
-                            () ⇒ failure(callPC, persistentActualParams, matchers)
+                            () ⇒ failure(callPC, actualParams, matchers)
                         ))
                 if (!matchers.contains(NoMethodsMatcher))
-                    if (isVirtual) {
-                        val receiverTypes =
-                            if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
-                                val rcvr = actualParams.get.head.get.value.asReferenceValue
-                                Some(
-                                    if (rcvr.isNull.isYes) Set.empty[ObjectType]
-                                    else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
-                                    else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
-                                    else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, true)
-                                )
-                            } else None
-                        if (receiverTypes.isDefined)
-                            matchers += new ClassBasedMethodMatcher(
-                                receiverTypes.get,
-                                onlyMethodsExactlyInClass = false
-                            )
-                        else
-                            matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
-                                context,
-                                refc,
-                                (callPC, isVirtual, persistentActualParams, matchers, refc, stmts),
-                                callPC,
-                                stmts,
-                                project,
-                                () ⇒ failure(callPC, persistentActualParams, matchers),
-                                onlyMethodsExactlyInClass = false,
-                                considerSubclasses = isVirtual
-                            )
-                    }
+                    matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
+                        context,
+                        refc,
+                        (callPC, actualParams, matchers, refc, stmts),
+                        callPC,
+                        stmts,
+                        project,
+                        () ⇒ failure(callPC, actualParams, matchers),
+                        onlyMethodsExactlyInClass = false
+                    )
             } else
                 matchers += NoMethodsMatcher
         } else if (HighSoundnessMode) {
@@ -1272,7 +1210,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
             indirectCalls.addCall(
                 callContext,
                 callPC,
-                typeProvider.expandContext(callContext, declaredMethods(m), callPC),
+                declaredMethods(m),
                 // TODO: is this sufficient?
                 params,
                 receiver
@@ -1298,7 +1236,7 @@ object ReflectionRelatedCallsAnalysis {
  * @author Dominik Helm
  */
 class ReflectionRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
+        final val project: SomeProject, typeProvider: TypeProvider
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
@@ -1310,6 +1248,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
              */
             new ClassForNameAnalysis(
                 project,
+                typeProvider,
                 declaredMethods(
                     ObjectType.Class,
                     "",
@@ -1320,6 +1259,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             ),
             new ClassForNameAnalysis(
                 project,
+                typeProvider,
                 declaredMethods(
                     ObjectType.Class,
                     "",
@@ -1333,6 +1273,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             ),
             new ClassForNameAnalysis(
                 project,
+                typeProvider,
                 declaredMethods(
                     ObjectType.Class,
                     "",
@@ -1349,23 +1290,24 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             /*
              * Class.newInstance
              */
-            new ClassNewInstanceAnalysis(project),
+            new ClassNewInstanceAnalysis(project, typeProvider),
 
             /*
              * Constructor.newInstance
              */
-            new ConstructorNewInstanceAnalysis(project),
+            new ConstructorNewInstanceAnalysis(project, typeProvider),
 
             /*
              * Method.invoke
              */
-            new MethodInvokeAnalysis(project),
+            new MethodInvokeAnalysis(project, typeProvider),
 
             /*
              * MethodHandle.invoke//invokeExact//invokeWithArguments
              */
             new MethodHandleInvokeAnalysis(
                 project,
+                typeProvider,
                 declaredMethods(
                     ObjectType.MethodHandle,
                     "",
@@ -1377,6 +1319,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             ),
             new MethodHandleInvokeAnalysis(
                 project,
+                typeProvider,
                 declaredMethods(
                     ObjectType.MethodHandle,
                     "",
@@ -1388,6 +1331,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             ),
             new MethodHandleInvokeAnalysis(
                 project,
+                typeProvider,
                 declaredMethods(
                     ObjectType.MethodHandle,
                     "",
@@ -1399,6 +1343,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             ),
             new MethodHandleInvokeAnalysis(
                 project,
+                typeProvider,
                 declaredMethods(
                     ObjectType.MethodHandle,
                     "",
@@ -1417,18 +1362,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 object ReflectionRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, ProjectIndexKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, ProjectIndexKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
         Callees,
         LoadedClasses,
         TACAI
-    )
-
-    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeProviderKey).usedPropertyKinds
-    }
+    ) ++ CallGraphKey.typeProvider.usedPropertyKinds
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
@@ -1437,7 +1378,7 @@ object ReflectionRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSch
     )
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new ReflectionRelatedCallsAnalysis(p)
+        val analysis = new ReflectionRelatedCallsAnalysis(p, CallGraphKey.typeProvider)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }

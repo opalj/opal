@@ -22,13 +22,10 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.ai.ValueOrigin
-import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSiteLike
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -412,25 +409,21 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
      * For some entities a result might be returned immediately.
      */
-    def determineEscape(e: Entity): ProperPropertyComputationResult =
-        e.asInstanceOf[(Context, Entity)]._2 match {
-            case _: DefinitionSiteLike ⇒
-                determineEscapeOfDS(e.asInstanceOf[(Context, DefinitionSiteLike)])
-            case _: VirtualFormalParameter ⇒
-                determineEscapeOfFP(e.asInstanceOf[(Context, VirtualFormalParameter)])
-            case _ ⇒
-                throw new IllegalArgumentException(s"$e is unsupported")
-        }
+    def determineEscape(e: Entity): ProperPropertyComputationResult = e match {
+        case dsl: DefinitionSiteLike     ⇒ determineEscapeOfDS(dsl)
+        case vfp: VirtualFormalParameter ⇒ determineEscapeOfFP(vfp)
+        case _                           ⇒ throw new IllegalArgumentException(s"$e is unsupported")
+    }
 
     protected[this] def determineEscapeOfDS(
-        dsl: (Context, DefinitionSiteLike)
+        dsl: DefinitionSiteLike
     ): ProperPropertyComputationResult = {
-        val ctx = createContext(dsl, dsl._2.pc, dsl._2.method)
+        val ctx = createContext(dsl, dsl.pc, dsl.method)
         doDetermineEscape(ctx, createState)
     }
 
     protected[this] def determineEscapeOfFP(
-        fp: (Context, VirtualFormalParameter)
+        fp: VirtualFormalParameter
     ): ProperPropertyComputationResult
 
     protected[this] def createState: AnalysisState
@@ -440,10 +433,9 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    protected[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
     protected[this] def createContext(
-        entity:       (Context, Entity),
+        entity:       Entity,
         defSitePC:    ValueOrigin,
         targetMethod: Method
     ): AnalysisContext

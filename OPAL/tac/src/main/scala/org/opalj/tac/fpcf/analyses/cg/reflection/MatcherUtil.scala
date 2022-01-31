@@ -11,7 +11,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.FieldTypes
-import org.opalj.br.fpcf.properties.Context
 
 object MatcherUtil {
 
@@ -83,7 +82,7 @@ object MatcherUtil {
      */
     private[reflection] def retrieveNameBasedMethodMatcher(
         context:  Context,
-        expr:     V,
+        expr:     Expr[V],
         depender: Entity,
         pc:       Int,
         stmts:    Array[Stmt[V]],
@@ -100,7 +99,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[Set[String]](
             Some(names),
             pc,
-            v ⇒ new NameBasedMethodMatcher(v)
+            v ⇒ if (v.isEmpty) NoMethodsMatcher else new NameBasedMethodMatcher(v)
         )
     }
 
@@ -117,14 +116,13 @@ object MatcherUtil {
      */
     private[reflection] def retrieveClassBasedMethodMatcher(
         context:                   Context,
-        ref:                       V,
+        ref:                       Expr[V],
         depender:                  Entity,
         pc:                        Int,
         stmts:                     Array[Stmt[V]],
         project:                   SomeProject,
         failure:                   () ⇒ Unit,
-        onlyMethodsExactlyInClass: Boolean,
-        considerSubclasses:        Boolean        = false
+        onlyMethodsExactlyInClass: Boolean
     )(
         implicit
         typeProvider:        TypeProvider,
@@ -133,17 +131,16 @@ object MatcherUtil {
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean
     ): MethodMatcher = {
-        val typesOpt = Some(TypesUtil.getPossibleClasses(
+        val typesOpt = Some(TypesUtil.getPossibleTypes(
             context, ref, depender, stmts, project, failure
-        ).flatMap { tpe ⇒
-            if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-            else Set(tpe.asObjectType)
-        })
+        ).map(_.asObjectType))
 
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,
             pc,
-            v ⇒ new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
+            v ⇒
+                if (v.isEmpty) NoMethodsMatcher
+                else new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
         )
     }
 

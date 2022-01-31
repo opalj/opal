@@ -7,7 +7,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
@@ -34,7 +33,7 @@ import org.opalj.tac.fpcf.analyses.cg.RTATypeProvider
 object RTACallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        Seq(InitialInstantiatedTypesKey, SimpleContextsKey) ++: super.requirements(project)
+        Seq(InitialInstantiatedTypesKey) ++: super.requirements(project)
     }
 
     override def callGraphSchedulers(

@@ -14,7 +14,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
@@ -31,19 +31,19 @@ import org.opalj.tac.fpcf.analyses.cg.V
  */
 trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
     final override def handleNewCaller(
-        calleeContext: ContextType, callerContext: ContextType, pc: Int, isDirect: Boolean
+        callContext: ContextType, pc: Int, isDirect: Boolean
     ): ProperPropertyComputationResult = {
-        val tacEOptP = ps(callerContext.method.definedMethod, TACAI.key)
+        val tacEOptP = ps(callContext.method.definedMethod, TACAI.key)
         if (isDirect)
-            continueDirectCallWithTAC(calleeContext, callerContext, pc)(tacEOptP)
+            continueDirectCallWithTAC(callContext, pc)(tacEOptP)
         else {
-            val calleesEOptP = ps(callerContext.method, Callees.key)
-            continueIndirectCallWithTACOrCallees(calleeContext, callerContext, pc, tacEOptP, calleesEOptP)(tacEOptP)
+            val calleesEOptP = ps(callContext.method, Callees.key) // TODO Needs to be changed to use full context later on
+            continueIndirectCallWithTACOrCallees(callContext, pc, tacEOptP, calleesEOptP)(tacEOptP)
         }
     }
 
     private[this] def continueDirectCallWithTAC(
-        calleeContext: ContextType, callerContext: ContextType, pc: Int
+        callContext: ContextType, pc: Int
     )(tacEOptP: SomeEOptionP): ProperPropertyComputationResult = tacEOptP match {
         case UBPS(tac: TheTACAI, isFinal) ⇒
             val theTAC = tac.theTAC
@@ -55,8 +55,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
                 else
                     None
             val result = processNewCaller(
-                calleeContext,
-                callerContext,
+                callContext,
                 pc,
                 theTAC,
                 call.receiverOption,
@@ -67,35 +66,26 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
             if (isFinal)
                 result
             else {
-                val continuationResult = InterimPartialResult(
-                    Set(tacEOptP),
-                    continueDirectCallWithTAC(calleeContext, callerContext, pc)
-                )
+                val continuationResult =
+                    InterimPartialResult(Set(tacEOptP), continueDirectCallWithTAC(callContext, pc))
                 Results(result, continuationResult)
             }
 
-        case _ ⇒
-            InterimPartialResult(
-                Set(tacEOptP),
-                continueDirectCallWithTAC(calleeContext, callerContext, pc)
-            )
+        case _ ⇒ InterimPartialResult(Set(tacEOptP), continueDirectCallWithTAC(callContext, pc))
     }
 
     private[this] def processNewCaller(
-        calleeContext: ContextType,
-        callerContext: ContextType,
-        pc:            Int,
-        calleesEPS:    EPS[DeclaredMethod, Callees],
-        tacEPS:        EPS[Method, TACAI]
+        callContext: ContextType,
+        pc:          Int,
+        calleesEPS:  EPS[DeclaredMethod, Callees],
+        tacEPS:      EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         val tac = tacEPS.ub.tac.get
         val callees = calleesEPS.ub
-        val receiverOption = callees.indirectCallReceiver(
-            callerContext, pc, calleeContext
-        ).map(uVarForDefSites(_, tac.pcToIndex))
-        val params = callees.indirectCallParameters(
-            callerContext, pc, calleeContext
-        ).map(_.map(uVarForDefSites(_, tac.pcToIndex)))
+        val receiverOption =
+            callees.indirectCallReceiver(pc, apiMethod).map(uVarForDefSites(_, tac.pcToIndex))
+        val params =
+            callees.indirectCallParameters(pc, apiMethod).map(_.map(uVarForDefSites(_, tac.pcToIndex)))
 
         val callStmt = tac.stmts(tac.properStmtIndexForPC(pc))
         val tgtVarOpt =
@@ -105,7 +95,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
                 None
 
         val result = processNewCaller(
-            calleeContext, callerContext, pc, tac, receiverOption, params, tgtVarOpt, isDirect = false
+            callContext, pc, tac, receiverOption, params, tgtVarOpt, isDirect = false
         )
         if (tacEPS.isFinal)
             result
@@ -114,7 +104,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
                 InterimPartialResult(
                     Set(tacEPS),
                     continueIndirectCallWithTACOrCallees(
-                        calleeContext, callerContext, pc, tacEPS, calleesEPS
+                        callContext, pc, tacEPS, calleesEPS
                     )
                 )
             Results(result, continuationResult)
@@ -122,36 +112,25 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
     }
 
     private[this] def continueIndirectCallWithTACOrCallees(
-        calleeContext: ContextType,
-        callerContext: ContextType,
-        pc:            Int,
-        tacEOptP:      EOptionP[Method, TACAI],
-        calleesEOptP:  EOptionP[DeclaredMethod, Callees]
+        callContext:  ContextType,
+        pc:           Int,
+        tacEOptP:     EOptionP[Method, TACAI],
+        calleesEOptP: EOptionP[DeclaredMethod, Callees]
     )(someEOptionP: SomeEOptionP): ProperPropertyComputationResult = someEOptionP match {
-        case UBP(_: TheTACAI) if calleesEOptP.isEPS && calleesEOptP.ub.containsIndirectCall(callerContext, pc, calleeContext) ⇒
+        case UBP(_: TheTACAI) if calleesEOptP.isEPS && calleesEOptP.ub.indirectCallees(pc).contains(apiMethod) ⇒
             processNewCaller(
-                calleeContext,
-                callerContext,
-                pc,
-                calleesEOptP.asEPS,
-                someEOptionP.asInstanceOf[EPS[Method, TACAI]]
+                callContext, pc, calleesEOptP.asEPS, someEOptionP.asInstanceOf[EPS[Method, TACAI]]
             )
 
-        case UBP(callees: Callees) if tacEOptP.isEPS && tacEOptP.ub.tac.isDefined && callees.containsIndirectCall(callerContext, pc, calleeContext) ⇒
+        case UBP(callees: Callees) if tacEOptP.isEPS && tacEOptP.ub.tac.isDefined && callees.indirectCallees(pc).contains(apiMethod) ⇒
             processNewCaller(
-                calleeContext,
-                callerContext,
-                pc,
-                someEOptionP.asInstanceOf[EPS[DeclaredMethod, Callees]],
-                tacEOptP.asEPS
+                callContext, pc, someEOptionP.asInstanceOf[EPS[DeclaredMethod, Callees]], tacEOptP.asEPS
             )
 
         case _ ⇒
             InterimPartialResult(
                 Set(tacEOptP, calleesEOptP),
-                continueIndirectCallWithTACOrCallees(
-                    calleeContext, callerContext, pc, tacEOptP, calleesEOptP
-                )
+                continueIndirectCallWithTACOrCallees(callContext, pc, tacEOptP, calleesEOptP)
             )
     }
 
@@ -163,8 +142,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
     }
 
     def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
+        callContext:     ContextType,
         pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],

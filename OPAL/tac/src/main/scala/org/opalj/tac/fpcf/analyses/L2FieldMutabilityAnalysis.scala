@@ -67,17 +67,13 @@ import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
-import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -93,30 +89,24 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     case class State(
             field:                        Field,
-            var fieldMutability:          FieldMutability                                          = DeclaredFinalField,
-            var prematurelyReadDependee:  Option[EOptionP[Field, FieldPrematurelyRead]]            = None,
-            var purityDependees:          Set[EOptionP[Context, Purity]]                           = Set.empty,
-            var lazyInitInvocation:       Option[(DeclaredMethod, PC)]                             = None,
-            var calleesDependee:          Option[EOptionP[DeclaredMethod, Callees]]                = None,
-            var fieldMutabilityDependees: Set[EOptionP[Field, FieldMutability]]                    = Set.empty,
-            var escapeDependees:          Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty,
-            var tacDependees:             Map[Method, EOptionP[Method, TACAI]]                     = Map.empty,
-            var callerDependees:          Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]]   = Map.empty,
-            var tacPCs:                   Map[Method, PCs]                                         = Map.empty
+            var fieldMutability:          FieldMutability                               = DeclaredFinalField,
+            var prematurelyReadDependee:  Option[EOptionP[Field, FieldPrematurelyRead]] = None,
+            var purityDependees:          Set[EOptionP[DeclaredMethod, Purity]]         = Set.empty,
+            var lazyInitInvocation:       Option[(DeclaredMethod, PC)]                  = None,
+            var calleesDependee:          Option[EOptionP[DeclaredMethod, Callees]]     = None,
+            var fieldMutabilityDependees: Set[EOptionP[Field, FieldMutability]]         = Set.empty,
+            var escapeDependees:          Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty,
+            var tacDependees:             Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty
     ) {
         def hasDependees: Boolean = {
             prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
                 calleesDependee.isDefined || fieldMutabilityDependees.nonEmpty ||
-                escapeDependees.nonEmpty || tacDependees.valuesIterator.exists(_.isRefinable) ||
-                callerDependees.valuesIterator.exists(_.isRefinable)
+                escapeDependees.nonEmpty || tacDependees.nonEmpty
         }
 
         def dependees: Set[SomeEOptionP] = {
-            (
-                tacDependees.valuesIterator.filter(_.isRefinable) ++
-                callerDependees.valuesIterator.filter(_.isRefinable) ++ prematurelyReadDependee ++
-                purityDependees ++ calleesDependee ++ fieldMutabilityDependees ++ escapeDependees
-            ).toSet
+            (tacDependees.valuesIterator.map(_._1) ++ prematurelyReadDependee ++ purityDependees ++ calleesDependee ++
+                fieldMutabilityDependees ++ escapeDependees).toSet
         }
     }
 
@@ -127,7 +117,6 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit final val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
     def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = entity match {
         case field: Field ⇒ determineFieldMutability(field)
@@ -216,9 +205,9 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            (taCode, callers) ← getTACAIAndCallers(method, pcs)
+            taCode ← getTACAI(method, pcs)
         } {
-            if (methodUpdatesField(method, taCode, callers, pcs))
+            if (methodUpdatesField(method, taCode, pcs))
                 return Result(field, NonFinalFieldByAnalysis);
         }
 
@@ -240,7 +229,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             case FinalP(callees) ⇒
                 state.calleesDependee = None
                 handleCallees(callees)
-            case InterimUBP(callees: Callees) ⇒
+            case InterimUBP(callees) ⇒
                 state.calleesDependee = Some(calleesEOP)
                 handleCallees(callees)
             case _ ⇒
@@ -251,18 +240,15 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     def handleCallees(callees: Callees)(implicit state: State): Boolean = {
         val pc = state.lazyInitInvocation.get._2
-
-        callees.callerContexts.exists { callerContext ⇒
-            if (callees.isIncompleteCallSite(callerContext, pc)) {
+        if (callees.isIncompleteCallSite(pc)) {
+            state.fieldMutability = NonFinalFieldByAnalysis
+            true
+        } else {
+            val targets = callees.callees(pc).toTraversable
+            if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
                 state.fieldMutability = NonFinalFieldByAnalysis
                 true
-            } else {
-                val targets = callees.callees(callerContext, pc).toTraversable
-                if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
-                    state.fieldMutability = NonFinalFieldByAnalysis
-                    true
-                } else false
-            }
+            } else false
         }
     }
 
@@ -360,33 +346,23 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
         val isNotFinal = eps.pk match {
             case EscapeProperty.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
+                val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
                 state.escapeDependees = state.escapeDependees.filter(_.e ne newEP.e)
                 handleEscapeProperty(newEP)
             case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = newEP.e
-                val pcs = state.tacPCs(method)
-                state.tacDependees += method → newEP
-                val callersProperty = state.callerDependees(declaredMethods(method))
-                if (callersProperty.hasUBP)
-                    methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, pcs)
-                else false
-            case Callers.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]]
-                val method = newEP.e.definedMethod
-                val pcs = state.tacPCs(method)
-                state.callerDependees += newEP.e → newEP
-                val tacProperty = state.tacDependees(method)
-                if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined)
-                    methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, pcs)
-                else false
+                val pcs = state.tacDependees(method)._2
+                state.tacDependees -= method
+                if (eps.isRefinable)
+                    state.tacDependees += method → ((newEP, pcs))
+                methodUpdatesField(method, newEP.ub.tac.get, pcs)
             case Callees.key ⇒
                 handleCalls(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
             case FieldPrematurelyRead.key ⇒
                 isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
             case Purity.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[Context, Purity]]
+                val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
                 state.purityDependees = state.purityDependees.filter(_.e ne newEP.e)
                 isNonDeterministic(newEP)
             case FieldMutability.key ⇒
@@ -416,9 +392,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def isLazyInitialization(
         writeIndex:   Int,
         defaultValue: Any,
-        method:       DeclaredMethod,
-        tac:          TACode[TACMethodParameter, V],
-        callers:      Callers
+        method:       Method,
+        tac:          TACode[TACMethodParameter, V]
     )(implicit state: State): Boolean = {
         val code = tac.stmts
         val cfg = tac.cfg
@@ -433,8 +408,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         }
 
         val reads = fieldAccessInformation.readAccesses(state.field)
-        if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method.definedMethod) &&
-            !mAndPCs._1.isInitializer)) {
+        if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return false; // Reads outside the (single) lazy initialization method
         }
 
@@ -453,7 +427,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             return false;
 
         // The value written must be computed deterministically and the writes guarded correctly
-        if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, callers, code, cfg))
+        if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg))
             return false;
 
         // Field reads (except for the guard) may only be executed if the field's value is not the
@@ -469,8 +443,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         writeIndex:   Int,
         guardIndex:   Int,
         guardedIndex: Int,
-        method:       DeclaredMethod,
-        callers:      Callers,
+        method:       Method,
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]
     )(implicit state: State): Boolean = {
@@ -479,21 +452,18 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         val isDeterministic =
             if (definitions.size == 1) {
                 // The value written must be computed deterministically
-                checkWriteIsDeterministic(code(definitions.head).asAssignment, method, callers, code)
-            } else if (method.descriptor.parametersCount == 0) {
+                checkWriteIsDeterministic(code(definitions.head).asAssignment, method, code)
+            } else {
                 // More than one definition site for the value might lead to differences between
                 // invocations, but not if this method has no parameters and is deterministic
                 // (in this case, the definition reaching the write will always be the same)
-                var nonDeterministic = false
-                callers.forNewCalleeContexts(null, method) { context ⇒
-                    nonDeterministic ||= isNonDeterministic(propertyStore(context, Purity.key))
-                }
-                !nonDeterministic
-            } else false
+                method.descriptor.parametersCount == 0 &&
+                    !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
+            }
 
         // The field write must be guarded correctly
         isDeterministic &&
-            checkWriteIsGuarded(writeIndex, guardIndex, guardedIndex, method, callers, code, cfg)
+            checkWriteIsGuarded(writeIndex, guardIndex, guardedIndex, method, code, cfg)
     }
 
     /**
@@ -536,9 +506,12 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         false
     }
 
-    def lazyInitializerIsDeterministic(context: Context)(implicit state: State): Boolean = {
-        context.method.descriptor.parametersCount == 0 &&
-            !isNonDeterministic(propertyStore(context, Purity.key))
+    def lazyInitializerIsDeterministic(
+        method: Method,
+        code:   Array[Stmt[V]]
+    )(implicit state: State): Boolean = {
+        method.descriptor.parametersCount == 0 &&
+            !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
     }
 
     /**
@@ -546,10 +519,9 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * effectively final and true otherwise.
      */
     def methodUpdatesField(
-        method:  Method,
-        taCode:  TACode[TACMethodParameter, V],
-        callers: Callers,
-        pcs:     PCs
+        method: Method,
+        taCode: TACode[TACMethodParameter, V],
+        pcs:    PCs
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
@@ -592,16 +564,13 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                                     if (!isLazyInitialization(
                                         index,
                                         defaultValue.get,
-                                        declaredMethods(method),
-                                        taCode,
-                                        callers
+                                        method,
+                                        taCode
                                     ))
                                         return true;
 
                                     state.fieldMutability = LazyInitializedField
-                                } else if (referenceHasEscaped(
-                                    stmt.asPutField.objRef.asVar, stmts, method, callers
-                                )) {
+                                } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
                                     // note that here we assume real three address code (flat hierarchy)
 
                                     // for instance fields it is okay if they are written in the
@@ -626,37 +595,32 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 
     /**
-     * Returns TACode and Callers for a method if available, registering dependencies as necessary.
+     * Returns the TACode for a method if available, registering dependencies as necessary.
      */
-    def getTACAIAndCallers(
+    def getTACAI(
         method: Method,
         pcs:    PCs
-    )(implicit state: State): Option[(TACode[TACMethodParameter, V], Callers)] = {
-        val tacEOptP = propertyStore(method, TACAI.key)
-        val tac = if (tacEOptP.hasUBP) tacEOptP.ub.tac else None
-        state.tacDependees += method → tacEOptP
-        state.tacPCs += method → pcs
-
-        val declaredMethod: DeclaredMethod = declaredMethods(method)
-        val callersEOptP = propertyStore(declaredMethod, Callers.key)
-        val callers = if (callersEOptP.hasUBP) Some(callersEOptP.ub) else None
-        state.callerDependees += declaredMethod -> callersEOptP
-
-        if (tac.isDefined && callers.isDefined) {
-            Some((tac.get, callers.get))
-        } else None
+    )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
+        propertyStore(method, TACAI.key) match {
+            case finalEP: FinalEP[Method, TACAI] ⇒
+                finalEP.ub.tac
+            case eps: InterimEP[Method, TACAI] ⇒
+                state.tacDependees += method → ((eps, pcs))
+                eps.ub.tac
+            case epk ⇒
+                state.tacDependees += method → ((epk, pcs))
+                None
+        }
     }
 
     /**
      * Checks whether the object reference of a PutField does escape (except for being returned).
      */
     def referenceHasEscaped(
-        ref:     V,
-        stmts:   Array[Stmt[V]],
-        method:  Method,
-        callers: Callers
+        ref:    V,
+        stmts:  Array[Stmt[V]],
+        method: Method
     )(implicit state: State): Boolean = {
-        val dm = declaredMethods(method)
         ref.definedBy.forall { defSite ⇒
             if (defSite < 0) true // Must be locally created
             else {
@@ -665,13 +629,9 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
                 else {
-                    var hasEscaped = false
-                    callers.forNewCalleeContexts(null, dm) { context ⇒
-                        val entity = (context, definitionSites(method, definition.pc))
-                        val escapeProperty = propertyStore(entity, EscapeProperty.key)
-                        hasEscaped ||= handleEscapeProperty(escapeProperty)
-                    }
-                    hasEscaped
+                    val escape =
+                        propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
+                    handleEscapeProperty(escape)
                 }
             }
         }
@@ -683,7 +643,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * @note (Re-)Adds dependees as necessary.
      */
     def handleEscapeProperty(
-        ep: EOptionP[(Context, DefinitionSite), EscapeProperty]
+        ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = ep match {
         case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             false
@@ -691,7 +651,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         case FinalP(AtMost(_)) ⇒
             true
 
-        case _: FinalEP[(Context, DefinitionSite), EscapeProperty] ⇒
+        case _: FinalEP[DefinitionSite, EscapeProperty] ⇒
             true // Escape state is worse than via return
 
         case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
@@ -701,7 +661,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         case InterimUBP(AtMost(_)) ⇒
             true
 
-        case _: InterimEP[(Context, DefinitionSite), EscapeProperty] ⇒
+        case _: InterimEP[DefinitionSite, EscapeProperty] ⇒
             true // Escape state is worse than via return
 
         case _ ⇒
@@ -718,8 +678,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         writeIndex:   Int,
         guardIndex:   Int,
         guardedIndex: Int,
-        method:       DeclaredMethod,
-        callers:      Callers,
+        method:       Method,
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]
     )(implicit state: State): Boolean = {
@@ -752,18 +711,15 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
             // Exception thrown between guard and write, which is ok for deterministic methods,
             // but may be a problem otherwise as the initialization is not guaranteed to happen
-            // (or never happen) OR
-            // Exception thrown between guard and write (caught somewhere, but we don't care)
-            if ((curBB ne startBB) && (
-                abnormalReturnNode.predecessors.contains(curBB) || caughtExceptions.contains(endPC)
-            )) {
-                var isDeterministic = true
-                callers.forNewCalleeContexts(null, method) {
-                    isDeterministic &&= lazyInitializerIsDeterministic(_)
-                }
-                if (!isDeterministic)
+            // (or never happen).
+            if ((curBB ne startBB) && abnormalReturnNode.predecessors.contains(curBB))
+                if (!lazyInitializerIsDeterministic(method, code))
                     return false;
-            }
+
+            // Exception thrown between guard and write (caught somewhere, but we don't care)
+            if ((curBB ne startBB) & caughtExceptions.contains(endPC))
+                if (!lazyInitializerIsDeterministic(method, code))
+                    return false;
 
             // Check all predecessors except for the one that contains the guarding if-Statement
             val predecessors = getPredecessors(curBB, enqueuedBBs).filterNot(_.endPC == guardIndex)
@@ -781,10 +737,9 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * deterministic and has no parameters, the value is also always the same.
      */
     def checkWriteIsDeterministic(
-        origin:  Assignment[V],
-        method:  DeclaredMethod,
-        callers: Callers,
-        code:    Array[Stmt[V]]
+        origin: Assignment[V],
+        method: Method,
+        code:   Array[Stmt[V]]
     )(implicit state: State): Boolean = {
         def isConstant(uvar: Expr[V]): Boolean = {
             val defSites = uvar.asVar.definedBy
@@ -826,18 +781,14 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 if (value.asFunctionCall.allParams.exists(!isConstant(_))) {
                     false
                 } else {
-                    state.lazyInitInvocation = Some((method, origin.pc))
+                    state.lazyInitInvocation = Some((declaredMethods(method), origin.pc))
                     true
                 }
             case _ ⇒
                 // The value neither is a constant nor originates from a call, but if the
                 // current method does not take parameters and is deterministic, the value is
                 // guaranteed to be the same on every invocation.
-                var isDeterministic = true
-                callers.forNewCalleeContexts(null, method) {
-                    isDeterministic &&= lazyInitializerIsDeterministic(_)
-                }
-                isDeterministic
+                lazyInitializerIsDeterministic(method, code)
         }
 
         value.isConst || isNonConstDeterministic
@@ -1078,7 +1029,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * executions.
      */
     def isNonDeterministic(
-        eop: EOptionP[Context, Purity]
+        eop: EOptionP[DeclaredMethod, Purity]
     )(implicit state: State): Boolean = eop match {
         case LBP(p: Purity) if p.isDeterministic ⇒
             false
@@ -1111,8 +1062,7 @@ trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         ClosedPackagesKey,
         FieldAccessInformationKey,
         DefinitionSitesKey,
-        DeclaredMethodsKey,
-        TypeProviderKey
+        DeclaredMethodsKey
     )
 
     final override def uses: Set[PropertyBounds] = Set(

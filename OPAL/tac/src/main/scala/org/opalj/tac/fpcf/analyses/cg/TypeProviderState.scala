@@ -14,12 +14,6 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 
-/**
- * A trait to implement state classes that have to manage the state of a [[TypeProvider]], i.e.,
- * the dependencies introduced by querying type information.
- *
- * @author Dominik Helm
- */
 trait TypeProviderState extends AnalysisState {
     private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
@@ -104,7 +98,7 @@ trait TypeProviderState extends AnalysisState {
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
     }
 
-    private final def hasDependees: Boolean = {
+    final def hasDependees: Boolean = {
         assert(
             (_dependees.isEmpty == _dependeeToDependers.isEmpty) &&
                 (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)

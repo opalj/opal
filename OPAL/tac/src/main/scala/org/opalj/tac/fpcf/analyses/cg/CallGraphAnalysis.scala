@@ -36,11 +36,11 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.cg.CallBySignatureKey
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -54,7 +54,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Dominik Helm
  */
 class CallGraphAnalysis private[cg] (
-        override val project: SomeProject
+        override val project:      SomeProject,
+        override val typeProvider: TypeProvider
 ) extends ReachableMethodAnalysis with TypeConsumerAnalysis {
     type LocalTypeInformation
 
@@ -296,7 +297,7 @@ class CallGraphAnalysis private[cg] (
     protected[this] def returnResult(
         calleesAndCallers: DirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = calleesAndCallers.partialResults(state.callContext)
+        val results = calleesAndCallers.partialResults(state.callContext.method)
 
         // FIXME: This won't work for refinable TACs as state.hasNonFinalCallSite may return false
         //  even if an update for the tac might add a non-final call site
@@ -322,9 +323,7 @@ class CallGraphAnalysis private[cg] (
     ): Unit = {
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
-            calleesAndCallers.addCall(
-                callContext, pc, typeProvider.expandContext(callContext, tgtDM, pc)
-            )
+            calleesAndCallers.addCall(callContext, pc, tgtDM)
         } else {
             val packageName = callContext.method.definedMethod.classFile.thisType.packageName
             unknownLibraryCall(
@@ -365,20 +364,14 @@ class CallGraphAnalysis private[cg] (
 
         if (declTgt.hasSingleDefinedMethod) {
             if (declTgt.definedMethod.isStatic == isStatic)
-                calleesAndCallers.addCall(
-                    callContext, pc, typeProvider.expandContext(callContext, declTgt, pc)
-                )
+                calleesAndCallers.addCall(callContext, pc, declTgt)
         } else if (declTgt.isVirtualOrHasSingleDefinedMethod) {
-            calleesAndCallers.addCall(
-                callContext, pc, typeProvider.expandContext(callContext, declTgt, pc)
-            )
+            calleesAndCallers.addCall(callContext, pc, declTgt)
         } else {
             declTgt.definedMethods foreach { m ⇒
                 if (m.isStatic == isStatic) {
                     val dm = declaredMethods(m)
-                    calleesAndCallers.addCall(
-                        callContext, pc, typeProvider.expandContext(callContext, dm, pc)
-                    )
+                    calleesAndCallers.addCall(callContext, pc, dm)
                 }
             }
         }
@@ -455,14 +448,10 @@ class CallGraphAnalysis private[cg] (
 object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, InitialEntryPointsKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, InitialEntryPointsKey)
 
     override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callers, Callees, TACAI)
-
-    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeProviderKey).usedPropertyKinds
-    }
+        PropertyBounds.ubs(Callers, Callees, TACAI) ++ CallGraphKey.typeProvider.usedPropertyKinds
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
@@ -497,7 +486,7 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     }
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
-        val analysis = new CallGraphAnalysis(p)
+        val analysis = new CallGraphAnalysis(p, CallGraphKey.typeProvider)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }

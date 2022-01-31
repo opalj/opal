@@ -26,6 +26,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePropertyKey
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
@@ -33,7 +34,6 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysesRegistry
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.CHACallGraphKey
@@ -161,7 +161,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
         ep.ub != PropertyKey.fallbackProperty(ps, PropertyIsNotComputedByAnyAnalysis, ep.e, pk) &&
             // Not analyzing the JDK, there are VirtualDeclaredMethods with Purity data
             // preconfigured that we don't want to record as they contain no additional information
-            (ep.pk != Purity.key || ep.e.asInstanceOf[Context].method.hasSingleDefinedMethod)
+            (ep.pk != Purity.key || ep.e.asInstanceOf[DeclaredMethod].hasSingleDefinedMethod)
     }
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }

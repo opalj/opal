@@ -26,15 +26,12 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.ValueOrigin
-import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
-        val entity:                  (Context, Entity),
+        val entity:                  Entity,
         val defSitePC:               ValueOrigin,
         val targetMethod:            Method,
         val declaredMethods:         DeclaredMethods,
@@ -65,9 +62,9 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override type AnalysisState = AbstractEscapeAnalysisState
 
     override def determineEscapeOfFP(
-        fp: (Context, VirtualFormalParameter)
+        fp: VirtualFormalParameter
     ): ProperPropertyComputationResult = {
-        fp._2 match {
+        fp match {
             case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
                 Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer ⇒
@@ -79,7 +76,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     }
 
     override def createContext(
-        entity:       (Context, Entity),
+        entity:       Entity,
         defSite:      ValueOrigin,
         targetMethod: Method
     ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
@@ -98,7 +95,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey)
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),
@@ -117,19 +114,11 @@ object EagerSimpleEscapeAnalysis
     with BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        super.requiredProjectInformation ++ Seq(DefinitionSitesKey, SimpleContextsKey)
+        super.requiredProjectInformation :+ DefinitionSitesKey
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val declaredMethods = p.get(DeclaredMethodsKey)
-        val simpleContexts = p.get(SimpleContextsKey)
-
-        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.map { fp ⇒
-            (simpleContexts(fp.method), fp)
-        }
-        val ass = p.get(DefinitionSitesKey).getAllocationSites.map { as ⇒
-            (simpleContexts(declaredMethods(as.method)), as)
-        }
-
+        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters
+        val ass = p.get(DefinitionSitesKey).getAllocationSites
         val analysis = new SimpleEscapeAnalysis(p)
         ps.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
         analysis

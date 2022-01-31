@@ -5,23 +5,21 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -30,7 +28,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
+trait ReachableMethodAnalysis extends FPCFAnalysis with ContextualAnalysis {
 
     protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -66,28 +64,14 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
         val tacEP = propertyStore(method, TACAI.key)
 
+        // FIXME The asInstanceOf obviously won't work once different context types are possible
+        val callContext = new SimpleContext(declaredMethod).asInstanceOf[ContextType]
+
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(callersEOptP, null, tacEP.asEPS)
+            processMethod(callContext, tacEP.asEPS)
         } else {
-            InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod))
+            InterimPartialResult(Set(tacEP), continuationForTAC(callContext))
         }
-    }
-
-    private[this] def processMethod(
-        eOptP: EOptionP[DeclaredMethod, Callers], seen: Callers, tacEP: EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        var results: List[ProperPropertyComputationResult] = Nil
-        eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext ⇒
-            val theCalleeContext =
-                if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
-                else typeProvider.newContext(eOptP.e)
-            results ::= processMethod(theCalleeContext, tacEP)
-        }
-
-        Results(
-            InterimPartialResult(Set(eOptP), continuationForCallers(eOptP.ub, tacEP)),
-            results
-        )
     }
 
     def processMethod(
@@ -95,27 +79,14 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     ): ProperPropertyComputationResult
 
     protected def continuationForTAC(
-        declaredMethod: DeclaredMethod
+        callContext: ContextType
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         someEPS match {
             case UBP(tac: TACAI) if tac.tac.isDefined ⇒
-                processMethod(
-                    propertyStore(declaredMethod, Callers.key),
-                    null,
-                    someEPS.asInstanceOf[EPS[Method, TACAI]]
-                )
+                processMethod(callContext, someEPS.asInstanceOf[EPS[Method, TACAI]])
             case _ ⇒
                 throw new IllegalArgumentException(s"unexpected eps $someEPS")
         }
-    }
-
-    private[this] def continuationForCallers(
-        oldCallers: Callers, tacEP: EPS[Method, TACAI]
-    )(
-        update: SomeEPS
-    ): ProperPropertyComputationResult = {
-        val newCallers = update.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processMethod(newCallers, oldCallers, tacEP)
     }
 
 }

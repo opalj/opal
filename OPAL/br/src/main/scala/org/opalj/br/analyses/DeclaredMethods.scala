@@ -35,11 +35,6 @@ class DeclaredMethods(
 
     private var extensionSize = 1000
 
-    /**
-     * A (possibly stale, i.e., too low) view of the number of declared methods
-     */
-    def _UNSAFE_size: Int = idCounter
-
     def apply(
         declaredType: ObjectType,
         packageName:  String,

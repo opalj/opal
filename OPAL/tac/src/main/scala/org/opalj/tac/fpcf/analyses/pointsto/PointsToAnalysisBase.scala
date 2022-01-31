@@ -7,7 +7,6 @@ package pointsto
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -27,11 +26,8 @@ import org.opalj.br.ArrayType
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
-import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
+import org.opalj.br.DeclaredMethod
+import org.opalj.tac.common.DefinitionSite
 
 /**
  * Base class for handling instructions in points-to analysis scenarios.
@@ -39,69 +35,19 @@ import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsumerAnalysis {
+trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
     override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     override protected[this] type DependerType = Entity
-    @inline protected[this] def currentPointsToOfDefSites(
-        depender:   DependerType,
-        defSites:   IntTrieSet,
-        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
-    )(implicit state: State): Iterator[PointsToSet] = {
-        defSites.iterator.map[PointsToSet](currentPointsToOfDefSite(depender, _, typeFilter))
-    }
-
-    @inline protected[this] def currentPointsToOfDefSite(
-        depender:        DependerType,
-        dependeeDefSite: Int,
-        typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
-    )(implicit state: State): PointsToSet = {
-        if (ai.isImmediateVMException(dependeeDefSite)) {
-            // FIXME -  we need to get the actual exception type here
-            createPointsToSet(
-                state.tac.stmts(ai.pcOfImmediateVMException(dependeeDefSite)).pc,
-                state.callContext,
-                ObjectType.Throwable,
-                isConstant = false
-            )
-        } else {
-            // IMPROVE can we get points to sets of local allocation sites here directly?
-            // If they are not yet set, could we still do better than registering a dependency?
-            currentPointsTo(depender, toEntity(dependeeDefSite), typeFilter)
-        }
-    }
-
-    @inline protected[this] def toEntity(defSite: Int)(implicit state: State): Entity = {
-        pointsto.toEntity(defSite, state.callContext, state.tac.stmts)
-    }
-
-    @inline protected[this] def getDefSite(pc: Int)(implicit state: State): Entity = {
-        val defSite = definitionSites(state.callContext.method.definedMethod, pc)
-        typeProvider match {
-            case _: SimpleContextProvider ⇒ defSite
-            case _                        ⇒ (state.callContext, defSite)
-        }
-    }
-
-    @inline protected[this] def getFormalParameter(
-        index: Int, formalParameters: ConstArray[VirtualFormalParameter], context: Context
-    ): Entity = {
-        val fp = formalParameters(index)
-        typeProvider match {
-            case _: SimpleContextProvider ⇒ fp
-            case _                        ⇒ (context, fp)
-        }
-    }
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
-        target:           Context,
+        target:           DeclaredMethod,
         isNonVirtualCall: Boolean
     )(implicit state: State): Unit = {
-        val targetMethod = target.method
-        val fps = formalParameters(targetMethod)
-        val declClassType = targetMethod.declaringClassType
-        val tgtMethod = targetMethod.definedMethod
+        val fps = formalParameters(target)
+        val declClassType = target.declaringClassType
+        val tgtMethod = target.definedMethod
         val filter = if (isNonVirtualCall) {
             t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, declClassType)
         } else {
@@ -116,7 +62,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 classHierarchy.isSubtypeOf(t, declClassType) &&
                     !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
         }
-        val fp = getFormalParameter(0, fps, target)
+        val fp = fps(0)
         val ptss = currentPointsToOfDefSites(fp, receiverDefSites, filter)
         state.includeSharedPointsToSets(
             fp,
@@ -128,12 +74,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     protected[this] def handleCallParameter(
         paramDefSites: IntTrieSet,
         paramIndex:    Int,
-        target:        Context
+        target:        DeclaredMethod
     )(implicit state: State): Unit = {
-        val fps = formalParameters(target.method)
-        val paramType = target.method.descriptor.parameterType(paramIndex)
+        val fps = formalParameters(target)
+        val paramType = target.descriptor.parameterType(paramIndex)
         if (paramType.isReferenceType) {
-            val fp = getFormalParameter(paramIndex + 1, fps, target)
+            val fp = fps(paramIndex + 1)
             val filter = { t: ReferenceType ⇒
                 classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
             }
@@ -167,25 +113,20 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         fieldOpt: Option[Field], pc: Int, objRefDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = getDefSite(pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, fieldOpt, filter)
         state.addGetFieldEntity(fakeEntity)
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                val tpe = getTypeOf(as)
-                if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
-                    val fieldEntities =
-                        if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                    for (fieldEntity ← fieldEntities)
-                        state.includeSharedPointsToSet(
-                            defSiteObject,
-                            // IMPROVE: Use LongRefPair to avoid boxing
-                            currentPointsTo(defSiteObject, fieldEntity, filter),
-                            filter
-                        )
+                if (fieldOpt.isEmpty ||
+                    classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
+                    state.includeSharedPointsToSet(
+                        defSiteObject,
+                        // IMPROVE: Use LongRefPair to avoid boxing
+                        currentPointsTo(defSiteObject, (as, fieldOpt.getOrElse(UnsafeFakeField)), filter),
+                        filter
+                    )
                 }
             }
         }
@@ -195,7 +136,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         field: Field, pc: Int, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = getDefSite(pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         state.includeSharedPointsToSet(
             defSiteObject,
             currentPointsTo(defSiteObject, field, filter),
@@ -207,7 +148,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         arrayType: ArrayType, pc: Int, arrayDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = getDefSite(pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, arrayType, filter)
         state.addArrayLoadEntity(fakeEntity)
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
@@ -239,18 +180,14 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                val tpe = getTypeOf(as)
-                if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
-                    val fieldEntities =
-                        if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                    for (fieldEntity ← fieldEntities)
-                        state.includeSharedPointsToSets(
-                            fieldEntity,
-                            currentPointsToOfDefSites(fieldEntity, rhsDefSites, filter),
-                            filter
-                        )
+                if (fieldOpt.isEmpty ||
+                    classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
+                    val fieldEntity = (as, fieldOpt.getOrElse(UnsafeFakeField))
+                    state.includeSharedPointsToSets(
+                        fieldEntity,
+                        currentPointsToOfDefSites(fieldEntity, rhsDefSites, filter),
+                        filter
+                    )
                 }
             }
         }
@@ -349,8 +286,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         knownPointsTo:  PointsToSet,
         rhsDefSitesEPS: Map[SomeEPK, SomeEOptionP],
         fieldOpt:       Option[Field],
-        dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
-        state:          State
+        dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -358,32 +294,27 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 var results: List[ProperPropertyComputationResult] = List.empty
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    val tpe = getTypeOf(as)
-                    if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                    if (fieldOpt.isEmpty ||
+                        classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
 
                         val typeFilter = if (fieldOpt.isDefined) { t: ReferenceType ⇒
                             classHierarchy.isSubtypeOf(t, fieldOpt.get.fieldType.asReferenceType)
                         } else
                             PointsToSetLike.noFilter
 
-                        val fieldEntities =
-                            if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                        for (fieldEntity ← fieldEntities)
-                            results ++= createPartialResults(
-                                fieldEntity,
-                                knownPointsTo,
-                                rhsDefSitesEPS.mapValues((_, typeFilter)),
-                                { _.included(knownPointsTo, typeFilter) }
-                            )(state)
+                        results ++= createPartialResults(
+                            (as, fieldOpt.getOrElse(UnsafeFakeField)),
+                            knownPointsTo,
+                            rhsDefSitesEPS.mapValues((_, typeFilter)),
+                            { _.included(knownPointsTo, typeFilter) }
+                        )
                     }
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
                         newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtPutField(
-                            knownPointsTo, rhsDefSitesEPS, fieldOpt, newDependees, state
+                            knownPointsTo, rhsDefSitesEPS, fieldOpt, newDependees
                         )
                     )
                 }
@@ -397,8 +328,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         knownPointsTo:  PointsToSet,
         rhsDefSitesEPS: Map[SomeEPK, SomeEOptionP],
         arrayType:      ArrayType,
-        dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
-        state:          State
+        dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -418,14 +348,14 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                             knownPointsTo,
                             rhsDefSitesEPS.mapValues((_, typeFilter)),
                             { _.included(knownPointsTo, typeFilter) }
-                        )(state)
+                        )
                     }
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
                         newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtArrayStore(
-                            knownPointsTo, rhsDefSitesEPS, arrayType, newDependees, state
+                            knownPointsTo, rhsDefSitesEPS, arrayType, newDependees
                         )
                     )
                 }
@@ -437,11 +367,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
     // todo name
     protected[this] def continuationForNewAllocationSitesAtGetField(
-        defSiteObject: Entity,
+        defSiteObject: DefinitionSite,
         fieldOpt:      Option[Field],
         filter:        ReferenceType ⇒ Boolean,
-        dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
-        state:         State
+        dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -449,18 +378,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 var nextDependees: List[SomeEOptionP] = Nil
                 var newPointsTo = emptyPointsToSet
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    val tpe = getTypeOf(as)
-                    if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
-                        val fieldEntities =
-                            if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                        for (fieldEntity ← fieldEntities) {
-                            val fieldEntries = ps(fieldEntity, pointsToPropertyKey)
-                            newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
-                            if (fieldEntries.isRefinable)
-                                nextDependees ::= fieldEntries
-                        }
+                    if (fieldOpt.isEmpty ||
+                        classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
+                        val fieldEntries = ps((as, fieldOpt.getOrElse(UnsafeFakeField)), pointsToPropertyKey)
+                        newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
+                        if (fieldEntries.isRefinable)
+                            nextDependees ::= fieldEntries
                     }
                 }
 
@@ -469,13 +392,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     newPointsTo,
                     nextDependees.iterator.map(d ⇒ d.toEPK → ((d, filter))).toMap,
                     { _.included(newPointsTo, filter) }
-                )(state)
+                )
 
                 if (newDependees.nonEmpty) {
                     results +:= InterimPartialResult(
                         newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtGetField(
-                            defSiteObject, fieldOpt, filter, newDependees, state
+                            defSiteObject, fieldOpt, filter, newDependees
                         )
                     )
                 }
@@ -487,11 +410,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
     // todo name
     protected[this] def continuationForNewAllocationSitesAtArrayLoad(
-        defSiteObject: Entity,
+        defSiteObject: DefinitionSite,
         arrayType:     ArrayType,
         filter:        ReferenceType ⇒ Boolean,
-        dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
-        state:         State
+        dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -514,13 +436,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         newPointsTo,
                         nextDependees.iterator.map(d ⇒ d.toEPK → ((d, filter))).toMap,
                         { _.included(newPointsTo, filter) }
-                    )(state)
+                    )
 
                 if (newDependees.nonEmpty) {
                     results +:= InterimPartialResult(
                         newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtArrayLoad(
-                            defSiteObject, arrayType, filter, newDependees, state
+                            defSiteObject, arrayType, filter, newDependees
                         )
                     )
                 }
@@ -531,7 +453,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def continuationForShared(
-        e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)], state: State
+        e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -550,7 +472,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         )
                     },
                     true
-                )(state)
+                )
 
                 Results(results)
 
@@ -564,13 +486,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         newDependees:   Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
         updatePointsTo: PointsToSet ⇒ PointsToSet,
         isUpdate:       Boolean                                               = false
-    )(implicit state: State): Seq[ProperPropertyComputationResult] = {
+    ): Seq[ProperPropertyComputationResult] = {
         var results: Seq[ProperPropertyComputationResult] = Seq.empty
 
         if (newDependees.nonEmpty) {
             results +:= InterimPartialResult(
                 newDependees.valuesIterator.map(_._1).toSet,
-                continuationForShared(e, newDependees, state)
+                continuationForShared(e, newDependees)
             )
         }
 
@@ -604,7 +526,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def createResults(
-        implicit
         state: State
     ): ArrayBuffer[ProperPropertyComputationResult] = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
@@ -629,7 +550,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 results += InterimPartialResult(
                     dependees.valuesIterator.map(_._1).toSet,
                     continuationForNewAllocationSitesAtGetField(
-                        defSite, fieldOpt, filter, dependees, state
+                        defSite, fieldOpt, filter, dependees
                     )
                 )
             }
@@ -654,7 +575,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     results += InterimPartialResult(
                         dependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtPutField(
-                            knownPointsTo, defSitesEPSs, fieldOpt, dependees, state
+                            knownPointsTo, defSitesEPSs, fieldOpt, dependees
                         )
                     )
             }
@@ -667,7 +588,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 results += InterimPartialResult(
                     dependees.valuesIterator.map(_._1).toSet,
                     continuationForNewAllocationSitesAtArrayLoad(
-                        defSite, arrayType, filter, dependees, state
+                        defSite, arrayType, filter, dependees
                     )
                 )
             }
@@ -692,7 +613,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     results += InterimPartialResult(
                         dependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtArrayStore(
-                            knownPointsTo, defSitesEPSs, arrayType, dependees, state
+                            knownPointsTo, defSitesEPSs, arrayType, dependees
                         )
                     )
             }

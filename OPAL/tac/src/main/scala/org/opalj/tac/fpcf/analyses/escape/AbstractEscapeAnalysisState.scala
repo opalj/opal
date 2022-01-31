@@ -11,7 +11,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.tac.common.DefinitionSiteLike
@@ -112,11 +111,11 @@ trait AbstractEscapeAnalysisState {
         _tacai = Some(tacai)
 
         context.entity match {
-            case (_: Context, ds: DefinitionSiteLike) ⇒
+            case ds: DefinitionSiteLike ⇒
                 _defSite = tacai.properStmtIndexForPC(ds.pc)
                 _uses = ds.usedBy(tacai)
 
-            case (_: Context, fp: VirtualFormalParameter) ⇒
+            case fp: VirtualFormalParameter ⇒
                 val param = tacai.params.parameter(fp.origin)
                 _uses = param.useSites
                 _defSite = param.origin
@@ -154,6 +153,5 @@ trait AbstractEscapeAnalysisState {
  * any further.
  */
 trait ReturnValueUseSites {
-    private[escape] val hasReturnValueUseSites =
-        scala.collection.mutable.Set[(Context, VirtualFormalParameter)]()
+    private[escape] val hasReturnValueUseSites = scala.collection.mutable.Set[VirtualFormalParameter]()
 }

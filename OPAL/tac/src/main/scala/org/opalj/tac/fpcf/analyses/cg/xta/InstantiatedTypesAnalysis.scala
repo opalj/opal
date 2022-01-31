@@ -7,6 +7,7 @@ package cg
 package xta
 
 import org.opalj.br._
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -15,14 +16,13 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.tac.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.mutable.RefArrayBuffer
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -38,8 +38,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -60,10 +58,10 @@ class InstantiatedTypesAnalysis private[analyses] (
         final val project:     SomeProject,
         val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
-
-    private[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
+
         // only constructors may initialize a class
         if (declaredMethod.name != "<init>")
             return NoResult;
@@ -96,7 +94,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 return NoResult;
         }
 
-        processCallers(declaredMethod, declaredType, callersEOptP, callersUB, null)
+        processCallers(declaredMethod, declaredType, callersEOptP, callersUB, Set.empty)
     }
 
     private[this] def processCallers(
@@ -104,58 +102,51 @@ class InstantiatedTypesAnalysis private[analyses] (
         declaredType:   ObjectType,
         callersEOptP:   EOptionP[DeclaredMethod, Callers],
         callersUB:      Callers,
-        seenCallers:    Callers
+        seenCallers:    Set[DeclaredMethod]
     ): PropertyComputationResult = {
+        var newSeenCallers = seenCallers
         val partialResults = RefArrayBuffer.empty[PartialResult[TypeSetEntity, InstantiatedTypes]]
-        callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
-            (_, callerContext, _, isDirect) ⇒
-                processCaller(declaredMethod, declaredType, callerContext, isDirect, partialResults)
+        for {
+            (caller, _, _) ← callersUB.callers
+            // if we already analyzed the caller, we do not need to do it twice
+            // note, that this is only needed for the continuation
+            if !seenCallers.contains(caller)
+        } {
+            processSingleCaller(declaredMethod, declaredType, caller, partialResults)
+
+            // remember the caller so we don't process it again later
+            newSeenCallers += caller
         }
 
         if (callersEOptP.isFinal) {
-            Results(partialResults.iterator())
+            NoResult
         } else {
             val reRegistration =
                 InterimPartialResult(
                     Set(callersEOptP),
-                    continuation(declaredMethod, declaredType, callersUB)
+                    continuation(declaredMethod, declaredType, newSeenCallers)
                 )
 
             Results(reRegistration, partialResults.iterator())
         }
     }
 
-    private[this] def processCaller(
+    private[this] def processSingleCaller(
         declaredMethod: DeclaredMethod,
         declaredType:   ObjectType,
-        callContext:    Context,
-        isDirect:       Boolean,
+        caller:         DeclaredMethod,
         partialResults: RefArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]
     ): Unit = {
-        // a constructor is called from an unknown context, there could be an initialization.
-        if (!callContext.hasContext) {
-            partialResults += partialResult(declaredType, ExternalWorld)
-            return ;
-        }
-
-        val caller = callContext.method
-
-        // indirect calls, e.g. via reflection, are to be treated as instantiations as well
-        if (!isDirect) {
-            partialResults += partialResult(declaredType, caller)
-            return ;
-        }
-
         // a constructor is called by a non-constructor method, there will be an initialization.
         if (caller.name != "<init>") {
-            partialResults += partialResult(declaredType, caller)
+            partialResults += partialResult(declaredType, caller);
             return ;
         }
 
         // the constructor is called from another constructor. it is only an new instantiated
         // type if it was no super call. Thus the caller must be a subtype
         if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType)) {
-            partialResults += partialResult(declaredType, caller)
+            partialResults += partialResult(declaredType, caller);
             return ;
         }
 
@@ -163,7 +154,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
             cf.superclassType.foreach { supertype ⇒
                 if (supertype != declaredType) {
-                    partialResults += partialResult(declaredType, caller)
+                    partialResults += partialResult(declaredType, caller);
                     return ;
                 }
             }
@@ -171,7 +162,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         // if the caller is not available, we have to assume that it was no super call
         if (!caller.hasSingleDefinedMethod) {
-            partialResults += partialResult(declaredType, caller)
+            partialResults += partialResult(declaredType, caller);
             return ;
         }
 
@@ -179,7 +170,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         // if the caller has no body, we have to assume that it was no super call
         if (callerMethod.body.isEmpty) {
-            partialResults += partialResult(declaredType, caller)
+            partialResults += partialResult(declaredType, caller);
             return ;
         }
 
@@ -198,7 +189,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         // there can be only one super call, so there must be an explicit call
         if (pcsOfSuperCalls.size > 1) {
-            partialResults += partialResult(declaredType, caller)
+            partialResults += partialResult(declaredType, caller);
             return ;
         }
 
@@ -210,14 +201,14 @@ class InstantiatedTypesAnalysis private[analyses] (
             case (_, i) ⇒ i == newInstr
         }
         if (hasNew) {
-            partialResults += partialResult(declaredType, caller)
+            partialResults += partialResult(declaredType, caller);
         }
     }
 
     private[this] def continuation(
         declaredMethod: DeclaredMethod,
         declaredType:   ObjectType,
-        seenCallers:    Callers
+        seenCallers:    Set[DeclaredMethod]
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
         processCallers(declaredMethod, declaredType, eps, eps.ub, seenCallers)
@@ -225,7 +216,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     private def partialResult(
         declaredType: ObjectType,
-        entity:       Entity
+        caller:       DeclaredMethod
     ): PartialResult[TypeSetEntity, InstantiatedTypes] = {
 
         // Subtypes of Throwable are tracked globally.
@@ -233,7 +224,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             if (classHierarchy.isSubtypeOf(declaredType, ObjectType.Throwable))
                 project
             else
-                setEntitySelector(entity)
+                setEntitySelector(caller)
 
         PartialResult[TypeSetEntity, InstantiatedTypes](
             setEntity,
@@ -256,7 +247,7 @@ class InstantiatedTypesAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override type InitializationData = Null
 
@@ -403,7 +394,7 @@ class InstantiatedTypesAnalysisScheduler(
                             seenArrayTypes += at
                             val dim = at.dimensions
                             val et = at.elementType.asObjectType
-                            val allSubtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
+                            val allSubtypes = p.classHierarchy.allSubtypes(et, true)
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
                                 (assignments, iit) ⇒
                                     if (allSubtypes.contains(iit.asObjectType)) {
@@ -436,7 +427,7 @@ class InstantiatedTypesAnalysisScheduler(
             initializedArrayTypes.add(at)
 
             val et = at.elementType.asObjectType
-            val allSubtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
+            val allSubtypes = p.classHierarchy.allSubtypes(et, true)
             val subtypes =
                 initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, iit) ⇒
                     if (allSubtypes.contains(iit.asObjectType)) {
