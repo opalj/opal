@@ -8,7 +8,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -39,12 +38,19 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.DeclaredMethod
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -60,8 +66,10 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     class State(
             val field:           Field,
-            var tacDependees:    Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty,
-            var escapeDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
+            var tacDependees:    Map[Method, EOptionP[Method, TACAI]]                     = Map.empty,
+            var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]]   = Map.empty,
+            var tacPCs:          Map[Method, PCs]                                         = Map.empty,
+            var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
     )
 
     type V = DUVar[ValueInformation]
@@ -70,6 +78,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     final val closedPackages = project.get(ClosedPackagesKey)
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
+    implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    implicit final val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
     def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = {
         entity match {
@@ -153,9 +163,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            taCode ← getTACAIOption(method, pcs)
+            (taCode, callers) ← getTACAIAndCallers(method, pcs)
         } {
-            if (methodUpdatesField(method, taCode, pcs))
+            if (methodUpdatesField(method, taCode, callers, pcs))
                 return Result(field, NonFinalFieldByAnalysis);
         }
 
@@ -167,9 +177,10 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * effectively final and true otherwise.
      */
     def methodUpdatesField(
-        method: Method,
-        taCode: TACode[TACMethodParameter, V],
-        pcs:    PCs
+        method:  Method,
+        taCode:  TACode[TACMethodParameter, V],
+        callers: Callers,
+        pcs:     PCs
     )(
         implicit
         state: State
@@ -189,7 +200,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                             val objRef = stmt.objRef.asVar
                             if ((!method.isConstructor ||
                                 objRef.definedBy != SelfReferenceParameter) &&
-                                !referenceHasNotEscaped(objRef, stmts, method)) {
+                                !referenceHasNotEscaped(objRef, stmts, method, callers)) {
                                 // note that here we assume real three address code (flat hierarchy)
 
                                 // for instance fields it is okay if they are written in the
@@ -213,53 +224,65 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 
     /**
-     * Returns the TACode for a method if available, registering dependencies as necessary.
+     * Returns TACode and Callers for a method if available, registering dependencies as necessary.
      */
-    def getTACAIOption(
+    def getTACAIAndCallers(
         method: Method,
         pcs:    PCs
-    )(
-        implicit
-        state: State
-    ): Option[TACode[TACMethodParameter, V]] = {
-        propertyStore(method, TACAI.key) match {
-            case FinalP(tacai) ⇒ tacai.tac
-            case eps: InterimEP[Method, TACAI] ⇒
-                state.tacDependees += method → ((eps, pcs))
-                eps.ub.tac
-            case epk ⇒
-                state.tacDependees += method → ((epk, pcs))
-                None
-        }
+    )(implicit state: State): Option[(TACode[TACMethodParameter, V], Callers)] = {
+        val tacEOptP = propertyStore(method, TACAI.key)
+        val tac = if (tacEOptP.hasUBP) tacEOptP.ub.tac else None
+        state.tacDependees += method → tacEOptP
+        state.tacPCs += method → pcs
+
+        val declaredMethod: DeclaredMethod = declaredMethods(method)
+        val callersEOptP = propertyStore(declaredMethod, Callers.key)
+        val callers = if (callersEOptP.hasUBP) Some(callersEOptP.ub) else None
+        state.callerDependees += declaredMethod -> callersEOptP
+
+        if (tac.isDefined && callers.isDefined) {
+            Some((tac.get, callers.get))
+        } else None
     }
 
     def returnResult()(implicit state: State): ProperPropertyComputationResult = {
-        if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
+        if (state.tacDependees.valuesIterator.forall(_.isFinal) &&
+            state.callerDependees.valuesIterator.forall(_.isFinal) && state.escapeDependees.isEmpty)
             Result(state.field, EffectivelyFinalField)
         else
             InterimResult(
                 state.field,
                 NonFinalFieldByAnalysis,
                 EffectivelyFinalField,
-                state.escapeDependees ++ state.tacDependees.valuesIterator.map(_._1),
+                state.escapeDependees ++ state.tacDependees.valuesIterator.filter(_.isRefinable) ++
+                    state.callerDependees.valuesIterator.filter(_.isRefinable),
                 c
             )
     }
 
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
-        val isNonFinal = eps.e match {
-            case ds: DefinitionSite ⇒
-                val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
-                state.escapeDependees = state.escapeDependees.filter(_.e ne ds)
+        val isNonFinal = eps.pk match {
+            case EscapeProperty.key ⇒
+                val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
+                state.escapeDependees = state.escapeDependees.filter(_.e != eps.e)
                 handleEscapeProperty(newEP)
-            case method: Method ⇒
+            case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
-                val pcs = state.tacDependees(method)._2
-                state.tacDependees -= method
-                if (eps.isRefinable)
-                    state.tacDependees += method → ((newEP, pcs))
-                if (newEP.ub.tac.isDefined)
-                    methodUpdatesField(method, newEP.ub.tac.get, pcs)
+                val method = newEP.e
+                val pcs = state.tacPCs(method)
+                state.tacDependees += method → newEP
+                val callersProperty = state.callerDependees(declaredMethods(method))
+                if (callersProperty.hasUBP)
+                    methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, pcs)
+                else false
+            case Callers.key ⇒
+                val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]]
+                val method = newEP.e.definedMethod
+                val pcs = state.tacPCs(method)
+                state.callerDependees += newEP.e → newEP
+                val tacProperty = state.tacDependees(method)
+                if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined)
+                    methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, pcs)
                 else false
         }
 
@@ -274,10 +297,12 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * returned).
      */
     def referenceHasNotEscaped(
-        ref:    V,
-        stmts:  Array[Stmt[V]],
-        method: Method
+        ref:     V,
+        stmts:   Array[Stmt[V]],
+        method:  Method,
+        callers: Callers
     )(implicit state: State): Boolean = {
+        val dm = declaredMethods(method)
         ref.definedBy.forall { defSite ⇒
             if (defSite < 0) false // Must be locally created
             else {
@@ -286,9 +311,13 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 if (definition.expr.isNullExpr) true
                 else if (!definition.expr.isNew) false
                 else {
-                    val escape =
-                        propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
-                    !handleEscapeProperty(escape)
+                    var hasEscaped = false
+                    callers.forNewCalleeContexts(null, dm) { context ⇒
+                        val entity = (context, definitionSites(method, definition.pc))
+                        val escapeProperty = propertyStore(entity, EscapeProperty.key)
+                        hasEscaped ||= handleEscapeProperty(escapeProperty)
+                    }
+                    !hasEscaped
                 }
             }
         }
@@ -300,7 +329,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * @note (Re-)Adds dependees as necessary.
      */
     def handleEscapeProperty(
-        ep: EOptionP[DefinitionSite, EscapeProperty]
+        ep: EOptionP[(Context, DefinitionSite), EscapeProperty]
     )(implicit state: State): Boolean = ep match {
         case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             false
@@ -329,8 +358,13 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
 sealed trait L1FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(TypeExtensibilityKey, ClosedPackagesKey, FieldAccessInformationKey, DefinitionSitesKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        TypeExtensibilityKey,
+        ClosedPackagesKey,
+        FieldAccessInformationKey,
+        DefinitionSitesKey,
+        TypeProviderKey
+    )
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(TACAI, EscapeProperty)
 

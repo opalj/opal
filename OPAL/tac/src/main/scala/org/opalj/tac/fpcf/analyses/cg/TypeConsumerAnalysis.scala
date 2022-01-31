@@ -5,8 +5,11 @@ package fpcf
 package analyses
 package cg
 
-trait TypeConsumerAnalysis {
-    implicit val typeProvider: TypeProvider
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.tac.cg.TypeProviderKey
+
+trait TypeConsumerAnalysis extends ProjectBasedAnalysis {
+    implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
     type ContextType = typeProvider.ContextType
     type PropertyType = typeProvider.PropertyType

@@ -7,10 +7,12 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAnalysisScheduler
@@ -27,10 +29,11 @@ import org.opalj.tac.fpcf.analyses.pointsto.ReflectionAllocationsAnalysisSchedul
 object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        Seq(DefinitionSitesKey, VirtualFormalParametersKey) ++: super.requirements(project)
+        Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
+            super.requirements(project)
     }
 
-    override protected def callGraphSchedulers(
+    override protected[cg] def callGraphSchedulers(
         project: SomeProject
     ): Traversable[FPCFAnalysisScheduler] = {
         List(
@@ -39,7 +42,8 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
             AllocationSiteBasedTamiFlexPointsToAnalysisScheduler,
             AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
             AllocationSiteBasedUnsafePointsToAnalysisScheduler,
-            ReflectionAllocationsAnalysisScheduler
+            ReflectionAllocationsAnalysisScheduler,
+            AllocationSiteBasedNewInstanceAnalysisScheduler
         )
     }
     override def getTypeProvider(project: SomeProject) =

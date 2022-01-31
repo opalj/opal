@@ -38,7 +38,6 @@ import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -47,11 +46,16 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.ConfiguredPurity
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.SimpleContexts
+import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -71,6 +75,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * lbPurity - The current minimum possible purity level for the method
      * ubPurity - The current maximum purity level for the method
      * method - The currently analyzed method
+     * context - The corresponding Context to report results for
      * declClass - The declaring class of the currently analyzed method
      * code - The code of the currently analyzed method
      */
@@ -78,7 +83,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         var lbPurity: Purity
         var ubPurity: Purity
         val method: Method
-        val definedMethod: DeclaredMethod
+        val context: Context
         val declClass: ObjectType
         var tac: TACode[TACMethodParameter, V]
     }
@@ -90,6 +95,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     val rater: DomainSpecificRater
 
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
+    protected[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 
@@ -302,10 +309,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def checkPurityOfMethod(
-        callee: DeclaredMethod,
+        callee: Context,
         params: Seq[Expr[V]]
     )(implicit state: StateType): Boolean = {
-        if (callee.hasSingleDefinedMethod && (callee.definedMethod eq state.method)) {
+        if (callee eq state.context) {
             true
         } else {
             val calleePurity = propertyStore(callee, Purity.key)
@@ -329,8 +336,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * @note Adds dependendies when necessary.
      */
     def checkMethodPurity(
-        ep:     EOptionP[DeclaredMethod, Purity],
-        params: Seq[Expr[V]]                     = Seq.empty
+        ep:     EOptionP[Context, Purity],
+        params: Seq[Expr[V]]              = Seq.empty
     )(implicit state: StateType): Boolean
 
     /**
@@ -489,7 +496,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
 
                 val hasIncompleteCallSites =
-                    p.incompleteCallSites.exists { pc ⇒
+                    p.incompleteCallSites(state.context).exists { pc ⇒
                         val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
                             false // call will not be executed
@@ -504,7 +511,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     return false;
                 }
 
-                val noDirectCalleeIsImpure = p.directCallSites().forall {
+                val noDirectCalleeIsImpure = p.directCallSites(state.context).forall {
                     case (pc, callees) ⇒
                         val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
@@ -524,7 +531,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 if (!noDirectCalleeIsImpure)
                     return false;
 
-                val noIndirectCalleeIsImpure = p.indirectCallSites().forall {
+                val noIndirectCalleeIsImpure = p.indirectCallSites(state.context).forall {
                     case (pc, callees) ⇒
                         val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
@@ -535,12 +542,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 callees.forall { callee ⇒
                                     checkPurityOfMethod(
                                         callee,
-                                        p.indirectCallReceiver(pc, callee).map(receiver ⇒
-                                            uVarForDefSites(receiver, state.tac.pcToIndex)).orNull
-                                            +: p.indirectCallParameters(pc, callee).map { paramO ⇒
-                                                paramO.map(
-                                                    uVarForDefSites(_, state.tac.pcToIndex)
-                                                ).orNull
+                                        p.indirectCallReceiver(state.context, pc, callee).map(
+                                            receiver ⇒
+                                                uVarForDefSites(receiver, state.tac.pcToIndex)
+                                        ).orNull +:
+                                            p.indirectCallParameters(state.context, pc, callee).map {
+                                                paramO ⇒
+                                                    paramO.map(
+                                                        uVarForDefSites(_, state.tac.pcToIndex)
+                                                    ).orNull
                                             }
                                     )
                                 }
@@ -572,32 +582,35 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Retrieves and commits the methods purity as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodPurity(dm: DefinedMethod): ProperPropertyComputationResult = {
+    def baseMethodPurity(context: Context): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) ⇒ Result(dm, p)
+            case FinalP(p) ⇒ Result(context, p)
             case ep @ InterimLUBP(lb, ub) ⇒
-                InterimResult.create(dm, lb, ub, Set(ep), c)
+                InterimResult.create(context, lb, ub, Set(ep), c)
             case epk ⇒
-                InterimResult(dm, ImpureByAnalysis, CompileTimePure, Set(epk), c)
+                InterimResult(context, ImpureByAnalysis, CompileTimePure, Set(epk), c)
         }
 
-        c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))
+        c(propertyStore(
+            simpleContexts.get(declaredMethods(context.method.definedMethod)),
+            Purity.key
+        ))
     }
 
     /**
      * Determines the purity of the given method.
      *
-     * @param definedMethod A defined method with a body.
+     * @param context A method call context
      */
-    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult
+    def determinePurity(context: Context): ProperPropertyComputationResult
 
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case dm: DefinedMethod if dm.definedMethod.body.isDefined ⇒
-                determinePurity(dm)
-            case dm: DeclaredMethod ⇒ Result(dm, ImpureByLackOfInformation)
+            case context: Context if context.method.definedMethod.body.isDefined ⇒
+                determinePurity(context)
+            case context: Context ⇒ Result(context, ImpureByLackOfInformation)
             case _ ⇒
                 throw new IllegalArgumentException(s"$e is not a declared method")
         }

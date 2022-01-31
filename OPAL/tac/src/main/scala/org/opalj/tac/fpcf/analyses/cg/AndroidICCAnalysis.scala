@@ -5,8 +5,9 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.{ClassFile, DeclaredMethod, Method, ObjectType, ObjectVariableInfo}
+import org.opalj.br.{ClassFile, Method, ObjectType, ObjectVariableInfo}
 import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.instructions.{INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, Instruction}
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.{OrderedProperty, PartialResult, ProperPropertyComputationResult, Property, PropertyBounds, PropertyKey, PropertyMetaInformation, PropertyStore, Results}
@@ -14,8 +15,8 @@ import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import org.opalj.br.fpcf.properties.cg.{Callees, Callers}
 import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis}
+import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
 
 import scala.io.Source
 import scala.xml.{Elem, XML}
@@ -153,12 +154,13 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         intentMatching()
 
         val decMeths = project.get(DeclaredMethodsKey)
-        val resList = ListBuffer.empty[PartialResult[DeclaredMethod, _ >: Null <: Property]]
+        val contexts = project.get(SimpleContextsKey)
+        val resList = ListBuffer.empty[PartialResult[_, _ >: Null <: Property]]
 
         edges.foreach { e ⇒
             val calls = new IndirectCalls()
-            calls.addCall(new SimpleContext(decMeths(e._1._1)), e._1._2, decMeths(e._2))
-            resList ++= calls.partialResults(decMeths(e._1._1)).seq
+            calls.addCall(contexts(decMeths(e._1._1)), e._1._2, contexts(decMeths(e._2)))
+            resList ++= calls.partialResults(contexts(decMeths(e._1._1))).seq
         }
 
         Results(resList)
