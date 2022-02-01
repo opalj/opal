@@ -5,21 +5,38 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.{ClassFile, Method, ObjectType, ObjectVariableInfo}
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.ObjectVariableInfo
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.instructions.{INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, Instruction}
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.{OrderedProperty, PartialResult, ProperPropertyComputationResult, Property, PropertyBounds, PropertyKey, PropertyMetaInformation, PropertyStore, Results}
+import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
 import org.opalj.value.ValueInformation
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis}
-import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
-
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import scala.io.Source
-import scala.xml.{Elem, XML}
+import scala.xml.Elem
+import scala.xml.XML
 
 sealed trait AndroidICCPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = AndroidICC

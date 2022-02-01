@@ -3,10 +3,15 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.br.analyses.{ProjectInformationKey, SomeProject}
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.{CHATypeProvider, RTATypeProvider, TypeProvider, eagerAndroidICCAnalysisScheduler}
-import org.opalj.tac.fpcf.analyses.cg.rta.{ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler, InstantiatedTypesAnalysisScheduler}
+import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider
+import org.opalj.tac.fpcf.analyses.cg.RTATypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.eagerAndroidICCAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] for Android based on the
