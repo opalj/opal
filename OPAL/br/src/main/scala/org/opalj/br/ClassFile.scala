@@ -17,7 +17,6 @@ import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_MODULE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
-import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
