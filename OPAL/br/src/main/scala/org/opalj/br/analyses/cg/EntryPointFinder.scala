@@ -357,36 +357,71 @@ object AllEntryPointsFinder extends EntryPointFinder {
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
 
-    val activityEPS: List[String] = List("onCreate", "onRestart", "onStart", "onResume",
-        "onStop", "onDestroy", "onActivityResult")
-    val serviceEPS: List[String] = List("onCreate", "onStartCommand", "onBind", "onStart")
-    val contentProviderEPS: List[String] = List("onCreate", "query", "insert", "update")
-    val locationListenerEPS: List[String] = List("onLocationChanged", "onProviderDisabled", "onProviderEnabled",
-        "onStatusChanged")
-    val onNmeaMessageListenerEPS: List[String] = List("onNmeaMessage")
-    val broadcastReceiverEPS: List[String] = List("onReceive")
-    val defaultEPS = Map("android/app/Activity" -> activityEPS, "android/app/Service" -> serviceEPS,
-        "android/content/ContentProvider" -> contentProviderEPS,
-        "android/location/LocationListener" -> locationListenerEPS,
-        "android/location/onNmeaMessageListener" -> onNmeaMessageListenerEPS,
-        "android/content/BroadcastReceiver" -> broadcastReceiverEPS)
+    val activityEntryPoints: List[(String, MethodDescriptor)] = List(
+        ("onCreate", MethodDescriptor.apply(FieldType("Landroid/os/Bundle;"), VoidType)),
+        ("onRestart", MethodDescriptor.NoArgsAndReturnVoid),
+        ("onStart", MethodDescriptor.NoArgsAndReturnVoid),
+        ("onResume", MethodDescriptor.NoArgsAndReturnVoid),
+        ("onStop", MethodDescriptor.NoArgsAndReturnVoid),
+        ("onDestroy", MethodDescriptor.NoArgsAndReturnVoid),
+        ("onActivityResult", MethodDescriptor.NoArgsAndReturnVoid)
+    )
+    val serviceEntryPoints: List[(String, MethodDescriptor)] = List(
+        ("onCreate", MethodDescriptor.NoArgsAndReturnVoid),
+        ("onStartCommand", MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType, IntegerType), VoidType)),
+        ("onBind", MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType)),
+        ("onRebind", MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType)),
+        ("onStart", MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType), VoidType)),
+        ("onDestroy", MethodDescriptor.NoArgsAndReturnVoid)
+    )
+    val contentProviderEntryPoints: List[(String, MethodDescriptor)] = List(
+        ("onCreate", MethodDescriptor.NoArgsAndReturnVoid),
+        ("query", null),
+        ("insert", null),
+        ("update", null)
+    )
+    val locationListenerEntryPoints: List[(String, MethodDescriptor)] = List(
+        ("onLocationChanged", null),
+        ("onProviderDisabled", MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;"))),
+        ("onProviderEnabled", MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;"))),
+        ("onStatusChanged", MethodDescriptor.apply(FieldTypes(FieldType("Ljava/lang/String;"), IntegerType, FieldType("Landroid/os/Bundle;")), VoidType))
+    )
+    val broadcastReceiverEntryPoints: List[(String, MethodDescriptor)] = List(
+        ("onReceive", MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Context;"), FieldType("Landroid/content/Intent;")), VoidType))
+    )
+    val defaultEntryPoints = Map(
+        "android/app/Activity" -> activityEntryPoints,
+        "android/app/Service" -> serviceEntryPoints,
+        "android/content/ContentProvider" -> contentProviderEntryPoints,
+        "android/location/LocationListener" -> locationListenerEntryPoints,
+        "android/content/BroadcastReceiver" -> broadcastReceiverEntryPoints
+    )
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        val eps = ArrayBuffer.empty[Method]
-        for ((superClass, methodList) ← defaultEPS) {
-            eps ++= findEPS(ObjectType(superClass), methodList, project)
+        val entryPoints = ArrayBuffer.empty[Method]
+        for ((superClass, methodList) ← defaultEntryPoints) {
+            entryPoints ++= findEntryPoints(ObjectType(superClass), methodList, project)
         }
-        eps
+        entryPoints
     }
 
-    def findEPS(ot: ObjectType, possibleEPS: List[String], project: SomeProject): ArrayBuffer[Method] = {
-        val eps = ArrayBuffer.empty[Method]
+    def findEntryPoints(ot: ObjectType, possibleEntryPoints: List[(String, MethodDescriptor)], project: SomeProject): Set[Method] = {
+
+        var entryPoints = Set.empty[Method]
         val classHierarchy = project.classHierarchy
-        classHierarchy.foreachSubclass(ot, project) { sc ⇒
-            for (pep ← possibleEPS; m ← sc.findMethod(pep) if m.body.isDefined && !eps.contains(m)) {
-                eps += m
+        classHierarchy.allSubclassTypes(ot, reflexive = true).flatMap(project.classFile).foreach { sc ⇒
+            for (pep ← possibleEntryPoints) {
+                if (pep._2 == null) {
+                    for (m ← sc.findMethod(pep._1) if m.body.isDefined) {
+                        entryPoints += m
+                    }
+                } else {
+                    for (m ← sc.findMethod(pep._1, pep._2) if m.body.isDefined) {
+                        entryPoints += m
+                    }
+                }
             }
         }
-        eps
+        entryPoints
     }
 }
