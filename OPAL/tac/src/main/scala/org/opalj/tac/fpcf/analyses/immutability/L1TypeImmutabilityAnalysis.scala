@@ -43,7 +43,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
- * Determines the immutability of a specific type by checking if all subtypes of a specific
+ * Determines the immutability of a specific type by checking whether all subtypes of a specific
  * type are immutable and checking that the set of types is closed.
  *
  * @author Michael Eichberg
@@ -75,8 +75,7 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
         {
             if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
                 return Result(t, TransitivelyImmutableType)
-            val te = typeExtensibility(t)
-            te match {
+            typeExtensibility(t) match {
                 case Yes | Unknown ⇒
                     Result(t, MutableType)
                 case No ⇒ step2(t)
@@ -173,17 +172,14 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
             if (dependencies.isEmpty) {
                 Result(t, maxImmutability)
             } else if (joinedImmutability == maxImmutability) {
-                // E.g., as soon as one subtype is shallow immutable, we are at most
-                // shallow immutable, even if all other subtype may even be deep immutable!
+                // E.g., as soon as one subtype is non transitively immutable, we are at most
+                // non-transitively immutable, even if all other subtype may even be transitively immutable!
                 Result(t, joinedImmutability)
             } else {
                 // when we reach this point, we have dependencies to types for which
                 // we have non-final information; joinedImmutability is either MutableType
                 // or ImmutableContainer
                 def c(eps: EPS[Entity, Property]): ProperPropertyComputationResult = {
-
-                    ///*debug*/ val previousDependencies = dependencies
-                    ///*debug*/ val previousJoinedImmutability = joinedImmutability
 
                     def nextResult(): ProperPropertyComputationResult = {
                         if (dependencies.isEmpty) {
@@ -227,8 +223,7 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                             dependencies = dependencies - e
                             nextResult()
 
-                        case UBP(x) if x == MutableType || x == MutableClass ⇒
-                            Result(t, MutableType) //MutableType)
+                        case UBP(x) if x == MutableType || x == MutableClass ⇒ Result(t, MutableType)
 
                         case FinalEP(e, x) if x == NonTransitivelyImmutableType || x == NonTransitivelyImmutableClass ⇒
                             maxImmutability = NonTransitivelyImmutableType

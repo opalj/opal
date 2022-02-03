@@ -62,7 +62,8 @@ import org.opalj.tac.fpcf.properties.cg.Callers
  * @author Florian Kübler
  * @author Michael Eichberg
  */
-class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
+  extends AbstractFieldAssignabilityAnalysis with FPCFAnalysis {
 
     class State(
             val field:           Field,
@@ -228,7 +229,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
     /**
      * Returns TACode and Callers for a method if available, registering dependencies as necessary.
      */
-    def getTACAIAndCallers(
+    /*def getTACAIAndCallers(
         method: Method,
         pcs:    PCs
     )(implicit state: State): Option[(TACode[TACMethodParameter, V], Callers)] = {
@@ -245,7 +246,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         if (tac.isDefined && callers.isDefined) {
             Some((tac.get, callers.get))
         } else None
-    }
+    } */
 
     def returnResult()(implicit state: State): ProperPropertyComputationResult = {
         if (state.tacDependees.valuesIterator.forall(_.isFinal) &&

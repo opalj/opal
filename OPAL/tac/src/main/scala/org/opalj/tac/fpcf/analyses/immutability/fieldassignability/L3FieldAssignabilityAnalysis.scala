@@ -130,8 +130,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             (taCode, callers) ← getTACAIAndCallers(method, pcs) //TODO field accesses via this
         } {
-            val result = methodUpdatesField(method, taCode, callers, pcs)
-            if (result)
+            if (methodUpdatesField(method, taCode, callers, pcs))
                 return Result(field, Assignable);
         }
         createResult()
@@ -211,7 +210,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         pcs.iterator.exists { pc ⇒
             val index = taCode.pcToIndex(pc)
-            if (index > -1) { //TODO actually, unnecessary but required because there are '-1'; dead
+            if (index > -1) { //TODO actually, unnecessary but required because there are '-1';
                 val stmt = stmts(index)
                 if (stmt.pc == pc) {
                     (stmt.astID: @switch) match {

@@ -73,7 +73,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     /**
      *  Describes the different kinds of dependently immutable fields.
      *
-     *  [[NotDependentlyImmutable]] non-transitively immutable or mutable types could still exist.
+     *  [[NotDependentlyImmutable]] non-transitively immutable or mutable types could still exist in an immutable .
      *  Example: Generic<T, MutableClass> f
      *
      *  [[NotNonTransitivelyImmutableOrMutable]] There are no non-transitively immutable and no mutable types.
@@ -424,7 +424,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         else //The analysis is optimistic so the default value must be adapted in this case
             state.dependentImmutability = NotDependentlyImmutable
 
-        if (field.fieldType.isReferenceType && (!state.classImmutability.isInstanceOf[DependentImmutableClass] || state.dependentImmutability == NotDependentlyImmutable)) { //TODO
+        if (field.fieldType.isReferenceType &&
+            (!state.classImmutability.isInstanceOf[DependentImmutableClass] ||
+                state.dependentImmutability == NotDependentlyImmutable)) { //TODO
             queryTypeProvider
         } //else state.classImmutability = TransitivelyImmutable is default
 
@@ -437,6 +439,7 @@ trait L0FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(FieldAssignability),
         PropertyBounds.lub(TypeImmutability),
+        PropertyBounds.lub(ClassImmutability),
         PropertyBounds.lub(FieldImmutability)
     )
 

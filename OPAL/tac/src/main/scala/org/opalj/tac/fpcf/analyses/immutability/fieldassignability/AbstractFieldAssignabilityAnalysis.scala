@@ -44,12 +44,9 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
  *
- * Encompasses the base functions for determining field reference immutability.
+ * Encompasses the base functions for determining field assignability.
  *
  * @author Tobias Roth
- * @author Dominik Helm
- * @author Florian Kübler
- * @author Michael Eichberg
  */
 trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
