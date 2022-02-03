@@ -67,6 +67,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.fpcf.properties.NonAssignable
+import org.opalj.tac.cg.XTACallGraphKey
 
 /**
  * Determines the assignability of fields and the immutability  of fields, classes and types and provides several
@@ -75,6 +76,8 @@ import org.opalj.br.fpcf.properties.NonAssignable
  * @author Tobias Roth
  */
 object Immutability {
+
+    import org.opalj.tac.cg.CallGraphKey
 
     sealed trait Analyses
     case object Assignability extends Analyses
@@ -96,7 +99,8 @@ object Immutability {
         withoutConsiderGenericity:         Boolean,
         withoutConsiderLazyInitialization: Boolean,
         configurationName:                 Option[String],
-        times:                             Int
+        times:                             Int,
+        callgraphKey:                      CallGraphKey
     ): BasicReport = {
         import org.opalj.tac.cg.RTACallGraphKey
 
@@ -688,6 +692,10 @@ object Immutability {
     }
 
     def main(args: Array[String]): Unit = {
+        import org.opalj.support.info.Purity.usage
+        import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
+        import org.opalj.tac.cg.CHACallGraphKey
+        import org.opalj.tac.cg.RTACallGraphKey
 
         def usage: String = {
             s"""
@@ -702,7 +710,7 @@ object Immutability {
             | [-resultFolder <folder for the result files>]
             | [-closedWorld] (uses closed world assumption, i.e. no class can be extended)
             | [-noJDK] (running without the JDK)
-            | [-callGraph <CHA|RTA|PointsTo> (Default: RTA)
+            | [-callGraph <CHA|RTA|XTA|PointsTo> (Default: RTA)
             | [-level] <0|1|2> (domain level  Default: 2)
             | [-withoutConsiderGenericity]
             | [-withoutConsiderLazyInitialization]
@@ -789,6 +797,18 @@ object Immutability {
         if (!(0 <= level && level <= 2))
             throw new Exception(s"not a domain level: $level")
 
+        val callGraphKey = callGraphName match {
+            case Some("CHA")        ⇒ CHACallGraphKey
+            case Some("PointsTo")   ⇒ AllocationSiteBasedPointsToCallGraphKey
+            case Some("RTA") | None ⇒ RTACallGraphKey
+            case Some("XTA") =>
+                XTACallGraphKey
+            case Some(a) ⇒
+                Console.println(s"unknown call graph analysis: $a")
+                Console.println(usage)
+                return ;
+        }
+
         var nIndex = 1
         while (nIndex <= times) {
             if (multiProjects) {
@@ -806,7 +826,8 @@ object Immutability {
                         withoutConsiderGenericity,
                         withoutConsiderLazyInitialization,
                         configurationName,
-                        nIndex
+                        nIndex,
+                        callGraphKey
                     )
                 }
             } else {
@@ -823,7 +844,8 @@ object Immutability {
                     withoutConsiderGenericity,
                     withoutConsiderLazyInitialization,
                     configurationName,
-                    nIndex
+                    nIndex,
+                    callGraphKey
                 )
             }
             nIndex = nIndex + 1
