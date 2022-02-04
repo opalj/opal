@@ -6,6 +6,7 @@ package analyses
 package immutability
 package fieldassignability
 
+//import scala.annotation.tailrec
 import scala.collection.mutable
 
 import org.opalj.RelationalOperators.EQ
@@ -82,7 +83,7 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
                     }
             }
 
-        val findGuardResult = findGuards(writeIndex, defaultValues, taCode)
+        val findGuardResult = findGuards(method, writeIndex, defaultValues, taCode)
 
         val (readIndex, guardIndex, defaultCaseIndex, elseCaseIndex) = //guardIndex: for debugging purpose
             if (findGuardResult.nonEmpty)
@@ -109,7 +110,7 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
             // TODO comment it out and look at appearing cases
             taCode.stmts.exists(
                 stmt ⇒ stmt.isReturnValue && !isTransitivePredecessor(writeBB, cfg.bb(taCode.pcToIndex(stmt.pc))) &&
-                    findGuardResult.forall { //TODO check...
+                    findGuardResult.forall { //TODO chech...
                         case (indexOfFieldRead, _, _, _) ⇒
                             !isTransitivePredecessor(cfg.bb(indexOfFieldRead), cfg.bb(taCode.pcToIndex(stmt.pc)))
                     }
@@ -130,7 +131,24 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
         // prevents reads outside the method
         if (reads.exists(_._1 ne method))
             return Assignable;
+        /*
+        for {
+            read ← reads
+            pc ← read._2
+            stmt = code(taCode.pcToIndex(pc))
+        } {
+            if (!stmt.isAssignment) {
+                println("stmt: "+stmt)
+            }
 
+
+
+
+            if (stmt != null && !stmt.isExprStmt && stmt.asAssignment.targetVar.usedBy.exists(index ⇒
+                !code(index).isIf && !code(index).isReturnValue && !code(index).isNonVirtualMethodCall &&
+              !code(index).isVirtualMethodCall))
+                return Assignable;
+        } */
         if (reads.iterator.filter(_._1 eq method).exists(a ⇒ {
             val pcs = a._2
             var seen: Set[Stmt[V]] = Set.empty
@@ -176,6 +194,18 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
             doUsesEscape(pcs)
         }))
             return Assignable;
+
+        /*
+        if (code.exists(stmt ⇒
+            stmt.isPutStatic ||
+                (stmt.isPutField && stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter &&
+                    !stmt.asPutField.resolveField.contains(state.field) &&
+                    ((state.field.fieldType.isObjectType && stmt.asPutField.resolveField.get.fieldType.isObjectType &&
+                        state.field.fieldType.asObjectType.isSubtypeOf(stmt.asPutField.resolveField.get.fieldType.asObjectType))
+                        || state.field.fieldType == stmt.asPutField.resolveField.get.fieldType)
+                        && !dominates(guardIndex, taCode.pcToIndex(stmt.pc), taCode))))
+            return Assignable
+      }; */
 
         if (write.value.asVar.definedBy.forall { _ >= 0 } &&
             dominates(defaultCaseIndex, writeIndex, taCode) && noInterferingExceptions()) {
@@ -332,6 +362,7 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
      * field read used for the guard and the index of the field-read.
      */
     def findGuards(
+        method:        Method,
         fieldWrite:    Int,
         defaultValues: Set[Any],
         taCode:        TACode[TACMethodParameter, V]
@@ -544,6 +575,7 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
         /**
          * Checks if an expression
          */
+        //@tailrec
         def isDefaultConst(expr: Expr[V]): Boolean = {
 
             if (expr.isVar) {

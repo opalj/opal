@@ -84,7 +84,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
  * @author Florian Kübler
  * @author Michael Eichberg
  */
-class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends AbstractFieldAssignabilityAnalysis with FPCFAnalysis {
+class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
     import org.opalj.br.fpcf.properties.LazilyInitialized
     import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
@@ -639,7 +639,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
     /**
      * Returns TACode and Callers for a method if available, registering dependencies as necessary.
      */
-      /*
     def getTACAIAndCallers(
         method: Method,
         pcs:    PCs
@@ -657,7 +656,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         if (tac.isDefined && callers.isDefined) {
             Some((tac.get, callers.get))
         } else None
-    }*/
+    }
 
     /**
      * Checks whether the object reference of a PutField does escape (except for being returned).
