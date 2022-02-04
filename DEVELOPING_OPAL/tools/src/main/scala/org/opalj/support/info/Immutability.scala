@@ -692,7 +692,6 @@ object Immutability {
     }
 
     def main(args: Array[String]): Unit = {
-        import org.opalj.support.info.Purity.usage
         import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
         import org.opalj.tac.cg.CHACallGraphKey
         import org.opalj.tac.cg.RTACallGraphKey
