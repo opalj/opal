@@ -102,7 +102,6 @@ object Immutability {
         times:                             Int,
         callgraphKey:                      CallGraphKey
     ): BasicReport = {
-        import org.opalj.tac.cg.RTACallGraphKey
 
         val classFiles = projectDir match {
             case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -166,7 +165,7 @@ object Immutability {
                 LazySimpleEscapeAnalysis //LazyInterproceduraEscapeAnalysis PointsToCallgraph //CHA
             )
 
-        project.get(RTACallGraphKey)
+        project.get(callgraphKey)
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
@@ -672,6 +671,8 @@ object Immutability {
                     |
                     | jdk folder: $JRELibraryFolder
                     |
+                    | callGraph $CallGraphKey
+                    |
                     |""".stripMargin
                 )
 
@@ -800,8 +801,7 @@ object Immutability {
             case Some("CHA")        ⇒ CHACallGraphKey
             case Some("PointsTo")   ⇒ AllocationSiteBasedPointsToCallGraphKey
             case Some("RTA") | None ⇒ RTACallGraphKey
-            case Some("XTA") =>
-                XTACallGraphKey
+            case Some("XTA")        ⇒ XTACallGraphKey
             case Some(a) ⇒
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
