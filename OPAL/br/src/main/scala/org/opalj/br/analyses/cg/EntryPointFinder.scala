@@ -357,37 +357,37 @@ object AllEntryPointsFinder extends EntryPointFinder {
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
 
-    val activityEntryPoints: List[(String, MethodDescriptor)] = List(
-        ("onCreate", MethodDescriptor.apply(FieldType("Landroid/os/Bundle;"), VoidType)),
-        ("onRestart", MethodDescriptor.NoArgsAndReturnVoid),
-        ("onStart", MethodDescriptor.NoArgsAndReturnVoid),
-        ("onResume", MethodDescriptor.NoArgsAndReturnVoid),
-        ("onStop", MethodDescriptor.NoArgsAndReturnVoid),
-        ("onDestroy", MethodDescriptor.NoArgsAndReturnVoid),
-        ("onActivityResult", MethodDescriptor.NoArgsAndReturnVoid)
+    val activityEntryPoints: List[(String, Option[MethodDescriptor])] = List(
+        ("onCreate", Some(MethodDescriptor.apply(FieldType("Landroid/os/Bundle;"), VoidType))),
+        ("onRestart", Some(MethodDescriptor.NoArgsAndReturnVoid)),
+        ("onStart", Some(MethodDescriptor.NoArgsAndReturnVoid)),
+        ("onResume", Some(MethodDescriptor.NoArgsAndReturnVoid)),
+        ("onStop", Some(MethodDescriptor.NoArgsAndReturnVoid)),
+        ("onDestroy", Some(MethodDescriptor.NoArgsAndReturnVoid)),
+        ("onActivityResult", Some(MethodDescriptor.NoArgsAndReturnVoid))
     )
-    val serviceEntryPoints: List[(String, MethodDescriptor)] = List(
-        ("onCreate", MethodDescriptor.NoArgsAndReturnVoid),
-        ("onStartCommand", MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType, IntegerType), VoidType)),
-        ("onBind", MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType)),
-        ("onRebind", MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType)),
-        ("onStart", MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType), VoidType)),
-        ("onDestroy", MethodDescriptor.NoArgsAndReturnVoid)
+    val serviceEntryPoints: List[(String, Option[MethodDescriptor])] = List(
+        ("onCreate", Some(MethodDescriptor.NoArgsAndReturnVoid)),
+        ("onStartCommand", Some(MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType, IntegerType), VoidType))),
+        ("onBind", Some(MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType))),
+        ("onRebind", Some(MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType))),
+        ("onStart", Some(MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType), VoidType))),
+        ("onDestroy", Some(MethodDescriptor.NoArgsAndReturnVoid))
     )
-    val contentProviderEntryPoints: List[(String, MethodDescriptor)] = List(
-        ("onCreate", MethodDescriptor.NoArgsAndReturnVoid),
-        ("query", null),
-        ("insert", null),
-        ("update", null)
+    val contentProviderEntryPoints: List[(String, Option[MethodDescriptor])] = List(
+        ("onCreate", Some(MethodDescriptor.NoArgsAndReturnVoid)),
+        ("query", None),
+        ("insert", None),
+        ("update", None)
     )
-    val locationListenerEntryPoints: List[(String, MethodDescriptor)] = List(
-        ("onLocationChanged", null),
-        ("onProviderDisabled", MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;"))),
-        ("onProviderEnabled", MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;"))),
-        ("onStatusChanged", MethodDescriptor.apply(FieldTypes(FieldType("Ljava/lang/String;"), IntegerType, FieldType("Landroid/os/Bundle;")), VoidType))
+    val locationListenerEntryPoints: List[(String, Option[MethodDescriptor])] = List(
+        ("onLocationChanged", None),
+        ("onProviderDisabled", Some(MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;")))),
+        ("onProviderEnabled", Some(MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;")))),
+        ("onStatusChanged", Some(MethodDescriptor.apply(FieldTypes(FieldType("Ljava/lang/String;"), IntegerType, FieldType("Landroid/os/Bundle;")), VoidType)))
     )
-    val broadcastReceiverEntryPoints: List[(String, MethodDescriptor)] = List(
-        ("onReceive", MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Context;"), FieldType("Landroid/content/Intent;")), VoidType))
+    val broadcastReceiverEntryPoints: List[(String, Option[MethodDescriptor])] = List(
+        ("onReceive", Some(MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Context;"), FieldType("Landroid/content/Intent;")), VoidType)))
     )
     val defaultEntryPoints = Map(
         "android/app/Activity" -> activityEntryPoints,
@@ -405,18 +405,18 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
         entryPoints
     }
 
-    def findEntryPoints(ot: ObjectType, possibleEntryPoints: List[(String, MethodDescriptor)], project: SomeProject): Set[Method] = {
+    def findEntryPoints(ot: ObjectType, possibleEntryPoints: List[(String, Option[MethodDescriptor])], project: SomeProject): Set[Method] = {
 
         var entryPoints = Set.empty[Method]
         val classHierarchy = project.classHierarchy
         classHierarchy.allSubclassTypes(ot, reflexive = true).flatMap(project.classFile).foreach { sc ⇒
             for (pep ← possibleEntryPoints) {
-                if (pep._2 == null) {
+                if (pep._2.isEmpty) {
                     for (m ← sc.findMethod(pep._1) if m.body.isDefined) {
                         entryPoints += m
                     }
                 } else {
-                    for (m ← sc.findMethod(pep._1, pep._2) if m.body.isDefined) {
+                    for (m ← sc.findMethod(pep._1, pep._2.get) if m.body.isDefined) {
                         entryPoints += m
                     }
                 }
