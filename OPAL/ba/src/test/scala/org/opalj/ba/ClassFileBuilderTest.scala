@@ -45,12 +45,15 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             thisType = "org/opalj/bc/AbstractClass"
         ).toDA()
 
+    val nestedClassOuterType = br.ObjectType("NestedClassOuter")
+    val nestedClassHostAttribute = br.NestHost(nestedClassOuterType)
     val (nestedClassInner, _) =
         CLASS[Nothing](
             version = UShortPair(0, 45),
             accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
             thisType = "NestedClassInner",
-            superclassType = Some("java/lang/Object")
+            superclassType = Some("java/lang/Object"),
+            attributes = RefArray(nestedClassHostAttribute)
         ).toDA()
 
     val nestedClassInnerType = br.ObjectType("NestedClassInner")
@@ -159,6 +162,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     "the generated classes" should "have their attributes preserved" in {
         assert(nestedClassOuterBRClassFile.attributes.contains(nestedClassesAttribute))
         assert(nestedClassOuterBRClassFile.attributes.contains(br.Synthetic))
+        assert(nestedClassInnerBRClassFile.attributes.contains(nestedClassHostAttribute))
         assert(concreteBRClassFile.attributes.length == 2)
         assert(concreteBRClassFile.attributes.contains(br.SourceFile("ClassFileBuilderTest.scala")))
         assert(concreteBRClassFile.attributes.contains(br.Synthetic))
@@ -168,7 +172,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
         assert(sealedClassBRClassFile.attributes.length == 2)
         assert(sealedClassBRClassFile.attributes.contains(permittedSubclassesAttribute))
         assert(sealedClassBRClassFile.attributes.contains(br.Synthetic))
-        assert(nestedClassOuterBRClassFile.attributes.length == 2)
+
 
     }
 
