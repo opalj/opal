@@ -22,15 +22,12 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
-import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
@@ -162,7 +159,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def performAnalysis(
         project: SomeProject
     ): ProperPropertyComputationResult = {
-        //project.updateProjectInformationKeyInitializationData(ManifestParsingKey)((theManifest: Option[Elem]) => manifest)
         val manifestParsingResult = project.get(ManifestParsingKey)
         if (manifestParsingResult != null) {
             intentFilters ++= manifestParsingResult._2
@@ -174,7 +170,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val decMeths = project.get(DeclaredMethodsKey)
         val contexts = project.get(SimpleContextsKey)
         val resList = ListBuffer.empty[PartialResult[_, _ >: Null <: Property]]
-
         edges.foreach { e ⇒
             val calls = new IndirectCalls()
             calls.addCall(contexts(decMeths(e._1._1)), e._1._2, contexts(decMeths(e._2)))
@@ -319,12 +314,22 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val callbackList = source.getLines.toList
         source.close
         val dec = project.get(DeclaredMethodsKey)
+        val leftOverMethods = mutable.Queue[Method]()
         project.allMethodsWithBody.filter(dec(_) != null).foreach(m ⇒ {
             val tacaiEP = propertyStore(m, TACAI.key)
             if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
                 processMethod(m, callbackList)
-            }
+            } else leftOverMethods += m
         })
+        while (leftOverMethods.size > 1) {
+            val m = leftOverMethods.dequeue()
+            val tacaiEP = propertyStore(m, TACAI.key)
+            if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
+                processMethod(m, callbackList)
+            } else {
+                leftOverMethods += m
+            }
+        }
     }
 
     private def processMethod(m: Method, callbackList: List[String]) = {
@@ -435,7 +440,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                         if (par.isObjectVariableInfo) {
                                             val cf = project.classFile(par.asObjectVariableInfo.clazz.asObjectType)
                                             if (cf.isDefined) {
-                                                val methods = cf.get.methods.filter(f ⇒ f.name != init && f.name != "<clinit>")
+                                                val methods = cf.get.methods.filter(f ⇒ !f.isConstructor && f.name != "<clinit>")
                                                 methods.foreach { method ⇒
                                                     if (!callbackMethods.contains(method)) callbackMethods += method
                                                 }
@@ -494,7 +499,13 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
     }
 
-    //Checks if the intent is reachable within the processed method
+    /**
+     * Checks if the intent is reachable within the processed method
+     * @param params Parameters of the analysed statement.
+     * @param tacCode TAC representation of the statement.
+     * @param originalUseSites UseSites of the statement.
+     * @return
+     */
     def findOrigin(
         params:           Seq[Expr[DUVar[ValueInformation]]],
         tacCode:          TACode[TACMethodParameter, DUVar[ValueInformation]],
@@ -613,7 +624,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 //Intent(String action)
                 if (p.head.asVar.value.verificationTypeInfo == ObjectVariableInfo(ObjectType.String)) {
                     val intent = new ImplicitIntent(m)
-                    intent.action = (p.head.asVar.value.toString.replaceAll(paramRegex, ""))
+                    intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
                     evaluateUseSites(tacCode, useSites, intent)
                 }
             case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Landroid/content/Intent;")) ⇒
@@ -641,7 +652,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                     val intent = new ImplicitIntent(m)
                     intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
-                    intent.iData = (checkData(1, tacCode, p))
+                    intent.iData = checkData(1, tacCode, p)
                     evaluateUseSites(tacCode, useSites, intent)
 
                 }
@@ -649,7 +660,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 //Intent(Context context, Class cls)
                 val clsFile = project.classFile(ObjectType(p.last.asVar.value.toString.
                     replaceAll(valueRegex, "").replaceAll("\\.", "/")))
-
                 if (clsFile.isDefined) {
                     val intent = new ExplicitIntent(m, clsFile.get)
                     intent.findStartedMethod(tacCode, useSites)
@@ -850,7 +860,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
             } else {
                 name match {
-                    case `setClass` ⇒ {
+                    case `setClass` ⇒
                         val clsFile = project.classFile(
                             ObjectType(parameter(1).toString.replaceAll(valueRegex, "").replaceAll("\\.", "/"))
                         )
@@ -859,8 +869,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             i.pc = pc
                             return Some(i);
                         }
-                    }
-                    case `setClassName` ⇒ {
+                    case `setClassName` ⇒
                         val clsFile = project.classFile(
                             ObjectType(parameter(1).toString.replaceAll(paramRegex, "").replaceAll("\\.", "/"))
                         )
@@ -869,7 +878,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             i.pc = pc
                             return Some(i);
                         }
-                    }
                 }
             }
         } else if (intentMethods.contains(name)) {
@@ -995,10 +1003,10 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     /**
-     * Test whether the data field of an intent matches the data field of any of the [[filters]].
+     * Test whether the data field of an intent matches the data field of any of the filters.
      * If there is a match, an edge is created.
      * @param intent Intent that provides the data that is tested.
-     * @param filters ListBuffer of IntentFilters that are matched against the [[intent]].
+     * @param filters ListBuffer of IntentFilters that are matched against the intent.
      */
     def testIntentDataAgainstFilters(
         intent:  ImplicitIntent,
@@ -1208,6 +1216,8 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 /**
  * This class is used to reconstruct intent filters from the analysed project. It holds all relevant information to
  * simulate intent matching.
+ *
+ * @author Tom Nikisch
  */
 class IntentFilter() {
     final val addDataAuthority = "addDataAuthority"
@@ -1299,6 +1309,13 @@ class IntentFilter() {
     }
 }
 
+/**
+ * A ProjectInformationKey that is used to parse an AndroidManifest.xml. It returns a map of Android components and
+ * a ListBuffer of all IntentFilters defined in the manifest.
+ * The AndroidManifest.xml can be set as initialisation data.
+ *
+ * @author Tom Nikisch
+ */
 object ManifestParsingKey extends ProjectInformationKey[(Map[String, ListBuffer[ClassFile]], ListBuffer[IntentFilter]), Elem] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Nil
@@ -1387,10 +1404,12 @@ object ManifestParsingKey extends ProjectInformationKey[(Map[String, ListBuffer[
 /**
  * Schedules the execution of an AndroidICCAnalysis.
  * In order for the analysis to work the path to the projects AndroidManifest must be set via setManifest.
+ *
+ * @author Tom Nikisch
  */
 object eagerAndroidICCAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeProviderKey, ComputeTACAIKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees, TACAI)
 
