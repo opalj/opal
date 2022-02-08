@@ -55,12 +55,10 @@ import scala.xml.Elem
  */
 class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
-    final val intentFilterString = "android/content/IntentFilter"
     final val intentOT = ObjectType("android/content/Intent")
     final val pendingIntentOT = ObjectType("android/app/PendingIntent")
     final val androidActivityOT = ObjectType("android/app/Activity")
     final val androidServiceOT = ObjectType("android/app/Service")
-    final val androidComponentName = "android/content/ComponentName"
     final val intentStart = List("{_ <: android.content.Intent", "_ <: android.content.Intent")
     final val activity = "activity"
     final val service = "service"
@@ -81,35 +79,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     final val setType = "setType"
     final val setTypeAndNormalize = "setTypeAndNormalize"
     final val setPackage = "setPackage"
-
-    final val senderClasses = List(
-        ObjectType("android/content/Context"), pendingIntentOT, ObjectType("android/content/IntentSender"), androidActivityOT
-    )
-    final val virtualSendingMethods = List(
-        "startIntentSender", "startIntentSenderForResult", "startIntentSenderFromChild", "startActivityFromChild",
-        "startActivity", "startActivities", "startActivityForResult", "startNextMatchingActivity", "sendIntent", "send",
-        "bindIsolatedService", "bindService", "bindServiceAsUser", "sendBroadcast", "sendBroadcastAsUser",
-        "sendBroadcastWithMultiplePermissions", "sendOrderedBroadcast", "sendOrderedBroadcastAsUser",
-        "sendStickyBroadcast", "sendStickyBroadcastAsUser", "sendStickyOrderedBroadcast", "sendStickyOrderedBroadcastAsUser",
-        "startForegroundService", "startService"
-    )
-
-    final val staticSendingMethods = List(
-        "getActivities", "getActivity", "getBroadcast", "getForegroundService", "getService"
-    )
-
-    val activityStartMethods: List[String] = List(
-        "startActivity", "startActivityForResult", "startActivityFromChild", "startActivityIfNeeded", "startActivities",
-        "getActivity", "getActivities", "startNextMatchingActivity"
-    )
-    val serviceMethods: List[String] = List(
-        "startService", "bindService", "stopService", "unbindService", "getService", "bindIsolatedService",
-        "bindServiceAsUser", "startForegroundService"
-    )
-    val broadcastReceiverStartMethods: List[String] = List(
-        "sendBroadcast", "sendOrderedBroadcast", "sendStickyBroadcast", "sendStickyOrderedBroadcast", "getBroadcast",
-        "sendBroadcastAsUser", "sendStickyBroadcastAsUser", "sendStickyOrderedBroadcastAsUser"
-    )
 
     final val onStart = "onStart"
     final val onPause = "onPause"
@@ -135,6 +104,35 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     final val setClass = "setClass"
     final val setClassName = "setClassName"
     final val setComponent = "setComponent"
+
+    final val senderClasses = List(
+        ObjectType("android/content/Context"), pendingIntentOT, ObjectType("android/content/IntentSender"), androidActivityOT
+    )
+    final val virtualSendingMethods = List(
+        "startIntentSender", "startIntentSenderForResult", "startIntentSenderFromChild", "startActivityFromChild",
+        "startActivity", "startActivities", "startActivityForResult", "startNextMatchingActivity", "sendIntent", "send",
+        "bindIsolatedService", bindService, "bindServiceAsUser", "sendBroadcast", "sendBroadcastAsUser",
+        "sendBroadcastWithMultiplePermissions", "sendOrderedBroadcast", "sendOrderedBroadcastAsUser",
+        "sendStickyBroadcast", "sendStickyBroadcastAsUser", "sendStickyOrderedBroadcast", "sendStickyOrderedBroadcastAsUser",
+        "startForegroundService", startService
+    )
+
+    final val staticSendingMethods = List(
+        "getActivities", "getActivity", "getBroadcast", "getForegroundService", "getService"
+    )
+
+    val activityStartMethods: List[String] = List(
+        "startActivity", "startActivityForResult", "startActivityFromChild", "startActivityIfNeeded", "startActivities",
+        "getActivity", "getActivities", "startNextMatchingActivity"
+    )
+    val serviceMethods: List[String] = List(
+        startService, bindService, stopService, unbindService, "getService", "bindIsolatedService",
+        "bindServiceAsUser", "startForegroundService"
+    )
+    val broadcastReceiverStartMethods: List[String] = List(
+        "sendBroadcast", "sendOrderedBroadcast", "sendStickyBroadcast", "sendStickyOrderedBroadcast", "getBroadcast",
+        "sendBroadcastAsUser", "sendStickyBroadcastAsUser", "sendStickyOrderedBroadcastAsUser"
+    )
 
     final val intentMethods = List(
         setAction, addCategory, setData, setDataAndNormalize, setDataAndType, setDataAndTypeAndNormalize, setType, setTypeAndNormalize, setPackage
@@ -342,7 +340,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                     val superInterfaceClasses = project.classHierarchy.allSupertypes(in.declaringClass.asObjectType, reflexive = true)
                     //find IntentFilters
-                    if (superInterfaceClasses.contains(ObjectType(intentFilterString))) {
+                    if (superInterfaceClasses.contains(ObjectType("android/content/IntentFilter"))) {
                         val stmts = tacCode.stmts
                         val index = tacCode.pcToIndex(pc)
                         val c = stmts(index)
@@ -845,7 +843,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 tacCode.stmts(parameter.head.asVar.definedBy.head).asAssignment.targetVar.usedBy.foreach { u ⇒
                     val stmt = tacCode.stmts(u)
                     if (stmt.isNonVirtualMethodCall && stmt.asNonVirtualMethodCall.declaringClass ==
-                        ObjectType(androidComponentName)) {
+                        ObjectType("android/content/ComponentName")) {
                         val param = stmt.asNonVirtualMethodCall.params
                         if (param.last.asVar.value.toString.startsWith("Class")) {
                             val clsFile = project.classFile(ObjectType(param.last.asVar.value.toString.
