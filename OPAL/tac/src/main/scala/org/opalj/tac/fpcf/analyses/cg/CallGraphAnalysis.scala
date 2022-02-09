@@ -290,13 +290,13 @@ class CallGraphAnalysis private[cg] (
             case _ ⇒ //nothing to do
         }
 
-        returnResult(calls)(state)
+        returnResult(calls, true)(state)
     }
 
     protected[this] def returnResult(
-        calleesAndCallers: DirectCalls
+        calleesAndCallers: DirectCalls, enforceCalleesResult: Boolean = false
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = calleesAndCallers.partialResults(state.callContext)
+        val results = calleesAndCallers.partialResults(state.callContext, enforceCalleesResult)
 
         // FIXME: This won't work for refinable TACs as state.hasNonFinalCallSite may return false
         //  even if an update for the tac might add a non-final call site
