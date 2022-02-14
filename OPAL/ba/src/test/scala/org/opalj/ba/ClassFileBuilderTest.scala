@@ -9,10 +9,15 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.junit.runner.RunWith
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.bi.{ACC_FINAL, ACC_PUBLIC, ACC_SUPER, ACC_SYNTHETIC, isCurrentJREAtLeastJava11, isCurrentJREAtLeastJava16, isCurrentJREAtLeastJava17}
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.isCurrentJREAtLeastJava16
+import org.opalj.bi.isCurrentJREAtLeastJava17
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java17Framework.{ClassFile => ClassFileReader}
+import org.opalj.br.reader.Java17Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bc.Assembler
 import org.opalj.collection.immutable.RefArray
 
