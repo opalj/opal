@@ -121,8 +121,13 @@ class CallGraphAnalysis private[cg] (
         callContext: ContextType, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         val state = new CGState[ContextType](callContext, tacEP)
-        processMethod(state, new DirectCalls())
+        if(tacEP ne null)
+            processMethod(state, new DirectCalls())
+        else
+            returnResult(new DirectCalls(), enforceCalleesResult = true)(state)
     }
+
+    override final val processesMethodsWithoutBody = true
 
     protected[this] def doHandleVirtualCall(
         callContext:                   ContextType,
