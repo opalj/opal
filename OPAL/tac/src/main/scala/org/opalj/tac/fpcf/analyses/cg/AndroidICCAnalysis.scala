@@ -6,15 +6,12 @@ package analyses
 package cg
 
 import org.opalj.br.ClassFile
-import org.opalj.br.FieldType
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ObjectVariableInfo
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.SimpleContextsKey
@@ -34,13 +31,19 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.android.AndroidManifestKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 
+import scala.io.BufferedSource
 import scala.io.Source
-import scala.xml.Elem
 
 /**
  * An Analysis that can be used to construct call graphs for Android apps.
@@ -56,9 +59,11 @@ import scala.xml.Elem
 class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     final val intentOT = ObjectType("android/content/Intent")
+    final val intentFilterOT = ObjectType("android/content/IntentFilter")
     final val pendingIntentOT = ObjectType("android/app/PendingIntent")
     final val androidActivityOT = ObjectType("android/app/Activity")
     final val androidServiceOT = ObjectType("android/app/Service")
+    final val contextOT = ObjectType("android/content/Context")
     final val intentStart = List("{_ <: android.content.Intent", "_ <: android.content.Intent")
     final val activity = "activity"
     final val service = "service"
@@ -106,7 +111,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     final val setComponent = "setComponent"
 
     final val senderClasses = List(
-        ObjectType("android/content/Context"), pendingIntentOT, ObjectType("android/content/IntentSender"), androidActivityOT
+        contextOT, pendingIntentOT, ObjectType("android/content/IntentSender"), androidActivityOT
     )
     final val virtualSendingMethods = List(
         "startIntentSender", "startIntentSenderForResult", "startIntentSenderFromChild", "startActivityFromChild",
@@ -118,7 +123,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     )
 
     final val staticSendingMethods = List(
-        "getActivities", "getActivity", "getBroadcast", "getForegroundService", "getService"
+        "getActivities", "getActivity", "getBroadcast", "getForegroundService"
     )
 
     val activityStartMethods: List[String] = List(
@@ -126,7 +131,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         "getActivity", "getActivities", "startNextMatchingActivity"
     )
     val serviceMethods: List[String] = List(
-        startService, bindService, stopService, unbindService, "getService", "bindIsolatedService",
+        startService, bindService, stopService, unbindService, "bindIsolatedService",
         "bindServiceAsUser", "startForegroundService"
     )
     val broadcastReceiverStartMethods: List[String] = List(
@@ -149,6 +154,13 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     val returningIntentsMap: mutable.Map[(ObjectType, String), ListBuffer[ImplicitIntent]] =
         mutable.Map.empty[(ObjectType, String), ListBuffer[ImplicitIntent]] //class and method that returns an intent -> intent
 
+    var leftOverMethods: Set[Method] = Set.empty[Method]
+    var notStarted = true
+
+    val source: BufferedSource = Source.fromInputStream(this.getClass.getResourceAsStream("AndroidCallbackList.txt"))
+    val callbackList: Set[ObjectType] = source.getLines.map(ObjectType(_)).toSet
+    source.close
+
     /**
      * Calls all necessary methods to generate the call graph edges that are Android specific.
      *
@@ -157,12 +169,16 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def performAnalysis(
         project: SomeProject
     ): ProperPropertyComputationResult = {
-        val manifestParsingResult = project.get(ManifestParsingKey)
-        if (manifestParsingResult != null) {
+        val manifestParsingResultOption = project.get(AndroidManifestKey)
+        if (manifestParsingResultOption.isDefined) {
+            val manifestParsingResult = manifestParsingResultOption.get
             intentFilters ++= manifestParsingResult._2
             generateLifecycleCallbacks(manifestParsingResult._1)
         }
         searchIntentsAndCallbacks()
+    }
+
+    def startSecondPhase(project: SomeProject): ProperPropertyComputationResult = {
         intentMatching()
 
         val decMeths = project.get(DeclaredMethodsKey)
@@ -307,155 +323,165 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /**
      * Searches all Intents and callbacks in the project.
      */
-    def searchIntentsAndCallbacks(): Unit = {
-        val source = Source.fromInputStream(this.getClass.getResourceAsStream("/org/opalj/tac/fpcf/analyses/cg/AndroidCallbackList.txt"))
-        val callbackList = source.getLines.toList
-        source.close
+    def searchIntentsAndCallbacks(): ProperPropertyComputationResult = {
         val dec = project.get(DeclaredMethodsKey)
-        val leftOverMethods = mutable.Queue[Method]()
+        val partialResults = ListBuffer.empty[ProperPropertyComputationResult]
         project.allMethodsWithBody.filter(dec(_) != null).foreach(m ⇒ {
             val tacaiEP = propertyStore(m, TACAI.key)
             if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
-                processMethod(m, callbackList)
-            } else leftOverMethods += m
-        })
-        while (leftOverMethods.size > 1) {
-            val m = leftOverMethods.dequeue()
-            val tacaiEP = propertyStore(m, TACAI.key)
-            if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
-                processMethod(m, callbackList)
+                processMethod(m)
             } else {
                 leftOverMethods += m
+                partialResults += InterimPartialResult(Nil, Set(tacaiEP), continuationForTAC(m))
             }
+        })
+        if (leftOverMethods.isEmpty) {
+            startSecondPhase(project)
+        } else Results(partialResults)
+    }
+
+    private[this] def continuationForTAC(m: Method)(eps: SomeEPS): PropertyComputationResult = {
+        eps match {
+            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
+                processMethod(m)
+                leftOverMethods -= m
+                if (leftOverMethods.isEmpty && notStarted) {
+                    notStarted = false
+                    startSecondPhase(project)
+                } else NoResult
+            case _ ⇒
+                InterimPartialResult(
+                    Nil,
+                    Set(eps),
+                    continuationForTAC(m)
+                )
         }
     }
 
-    private def processMethod(m: Method, callbackList: List[String]) = {
+    private def processMethod(m: Method): PropertyComputationResult = {
         val body = m.body.get
         val intentUseSites: mutable.Map[UByte, List[UByte]] = mutable.Map.empty[UByte, List[UByte]]
-        try {
-            val tacCode = propertyStore.get(m, TACAI.key).get.ub.tac.get
-            body.collectWithIndex {
-                case PCAndInstruction(pc, in: INVOKESPECIAL) ⇒
+        val tacCode = propertyStore.get(m, TACAI.key).get.ub.tac.get
+        body.collectWithIndex {
+            case PCAndInstruction(pc, in: INVOKESPECIAL) ⇒
 
-                    val superInterfaceClasses = project.classHierarchy.allSupertypes(in.declaringClass.asObjectType, reflexive = true)
-                    //find IntentFilters
-                    if (superInterfaceClasses.contains(ObjectType("android/content/IntentFilter"))) {
-                        val stmts = tacCode.stmts
-                        val index = tacCode.pcToIndex(pc)
-                        val c = stmts(index)
-                        val useSites = tacCode.stmts(c.asNonVirtualMethodCall.receiver.asVar.definedBy.head).
-                            asAssignment.targetVar.usedBy.toChain.toList
-                        reconstructIntentfilter(c.asNonVirtualMethodCall, tacCode, useSites, m)
-                    }
+                val superInterfaceClasses = project.classHierarchy.allSupertypes(in.declaringClass.asObjectType, reflexive = true)
+                //find IntentFilters
+                if (superInterfaceClasses.contains(ObjectType("android/content/IntentFilter"))) {
+                    val stmts = tacCode.stmts
+                    val index = tacCode.pcToIndex(pc)
+                    val c = stmts(index)
+                    val useSites = tacCode.stmts(c.asNonVirtualMethodCall.receiver.asVar.definedBy.head).
+                        asAssignment.targetVar.usedBy.toChain.toList
+                    reconstructIntentfilter(c.asNonVirtualMethodCall, tacCode, useSites, m)
+                }
 
-                    //find Intents
-                    if (superInterfaceClasses.contains(intentOT)) {
-                        val stmts = tacCode.stmts
-                        val index = tacCode.pcToIndex(pc)
-                        val c = stmts(index).asNonVirtualMethodCall
+                //find Intents
+                if (superInterfaceClasses.contains(intentOT)) {
+                    val stmts = tacCode.stmts
+                    val index = tacCode.pcToIndex(pc)
+                    val c = stmts(index).asNonVirtualMethodCall
+                    if (c.receiver.asVar.definedBy.head > -1) {
                         val useSites = tacCode.stmts(c.receiver.asVar.definedBy.head).
                             asAssignment.targetVar.usedBy.toChain.toList
                         intentUseSites += index -> useSites
                         reconstructIntent(c, tacCode, useSites, m)
                     }
-            }
+                }
+        }
 
-            //find sending methods (virtual)
-            body.collect {
-                case in: Instruction if in.isInstanceOf[INVOKEVIRTUAL] &&
-                    senderClasses.contains(in.asInstanceOf[INVOKEVIRTUAL].declaringClass) ⇒ in
-            }.foreach { in ⇒
-                if (virtualSendingMethods.contains(in.value.asInstanceOf[INVOKEVIRTUAL].name)) {
+        //find sending methods (virtual)
+        body.collect {
+            case in: Instruction if in.isInstanceOf[INVOKEVIRTUAL] &&
+                senderClasses.contains(in.asInstanceOf[INVOKEVIRTUAL].declaringClass) ⇒ in
+        }.foreach { in ⇒
+            if (virtualSendingMethods.contains(in.value.asInstanceOf[INVOKEVIRTUAL].name)) {
 
-                    val index = tacCode.pcToIndex(in.pc)
-                    val methodCall = tacCode.stmts(index)
+                val index = tacCode.pcToIndex(in.pc)
+                val methodCall = tacCode.stmts(index)
 
-                    if (methodCall.isVirtualMethodCall) {
+                if (methodCall.isVirtualMethodCall) {
+                    val virtualCall = methodCall.asVirtualMethodCall
+                    if (intentUseSites.isEmpty || (!intentUseSites.exists(k ⇒
+                        k._2.contains(tacCode.pcToIndex(in.pc))) &&
+                        !findOrigin(virtualCall.params, tacCode, intentUseSites))) {
+                        //backwards search to find intent
                         val virtualCall = methodCall.asVirtualMethodCall
-                        if (intentUseSites.isEmpty || (!intentUseSites.exists(k ⇒
-                            k._2.contains(tacCode.pcToIndex(in.pc))) &&
-                            !findOrigin(virtualCall.params, tacCode, intentUseSites))) {
-                            //backwards search to find intent
-                            val virtualCall = methodCall.asVirtualMethodCall
-                            val classMethodTupel = searchParamsVirtual(virtualCall, tacCode)
-                            if (classMethodTupel.isDefined) {
-                                val cmt = classMethodTupel.get
-                                //origin of intent found wait for results
-                                if (senderMap.contains(cmt)) {
-                                    senderMap(cmt) += ((m, getComponentType(virtualCall.name), virtualCall.pc))
-                                } else senderMap += (cmt -> ListBuffer((m, getComponentType(virtualCall.name), virtualCall.pc)))
-                            }
+                        val classMethodTupel = searchParamsVirtual(virtualCall, tacCode)
+                        if (classMethodTupel.isDefined) {
+                            val cmt = classMethodTupel.get
+                            //origin of intent found wait for results
+                            if (senderMap.contains(cmt)) {
+                                senderMap(cmt) += ((m, getComponentType(virtualCall.name), virtualCall.pc))
+                            } else senderMap += (cmt -> ListBuffer((m, getComponentType(virtualCall.name), virtualCall.pc)))
                         }
                     }
+                }
 
+            }
+        }
+
+        //find sending methods (static)
+        body.collect {
+            case in: Instruction if in.isInstanceOf[INVOKESTATIC] &&
+                in.asInstanceOf[INVOKESTATIC].declaringClass == pendingIntentOT ⇒ in
+        }.foreach { in ⇒
+            if (staticSendingMethods.contains(in.value.asInstanceOf[INVOKESTATIC].name)) {
+                val index = tacCode.pcToIndex(in.pc)
+                val methodCall = tacCode.stmts(index)
+                if (methodCall.isAssignment) {
+                    val staticCall = methodCall.asAssignment.expr.asStaticFunctionCall
+                    if (intentUseSites.isEmpty ||
+                        (!intentUseSites.exists(k ⇒ k._2.contains(tacCode.pcToIndex(in.pc))) &&
+                            !findOrigin(staticCall.params, tacCode, intentUseSites))) {
+                        //backwards search to find intent
+                        val classMethodTupel = searchParamsStatic(staticCall, tacCode)
+                        if (classMethodTupel.isDefined) {
+                            val cmt = classMethodTupel.get
+                            //origin of intent found wait for results
+                            if (senderMap.contains(cmt)) {
+                                senderMap(cmt) += ((m, getComponentType(staticCall.name), staticCall.pc))
+                            } else senderMap += (cmt -> ListBuffer((m, getComponentType(staticCall.name), staticCall.pc)))
+                        }
+                    }
                 }
             }
+        }
 
-            //find sending methods (static)
-            body.collect {
-                case in: Instruction if in.isInstanceOf[INVOKESTATIC] &&
-                    in.asInstanceOf[INVOKESTATIC].declaringClass == pendingIntentOT ⇒ in
-            }.foreach { in ⇒
-                if (staticSendingMethods.contains(in.value.asInstanceOf[INVOKESTATIC].name)) {
-                    val index = tacCode.pcToIndex(in.pc)
+        //find callbacks
+        val callbackMethods = ListBuffer.empty[Method]
+        body.collectWithIndex {
+            case PCAndInstruction(pc, _: INVOKEVIRTUAL) ⇒
+                val index = tacCode.pcToIndex(pc)
+                if (index > -1) {
                     val methodCall = tacCode.stmts(index)
-                    if (methodCall.isAssignment) {
-                        val staticCall = methodCall.asAssignment.expr.asStaticFunctionCall
-                        if (intentUseSites.isEmpty ||
-                            (!intentUseSites.exists(k ⇒ k._2.contains(tacCode.pcToIndex(in.pc))) &&
-                                !findOrigin(staticCall.params, tacCode, intentUseSites))) {
-                            //backwards search to find intent
-                            val classMethodTupel = searchParamsStatic(staticCall, tacCode)
-                            if (classMethodTupel.isDefined) {
-                                val cmt = classMethodTupel.get
-                                //origin of intent found wait for results
-                                if (senderMap.contains(cmt)) {
-                                    senderMap(cmt) += ((m, getComponentType(staticCall.name), staticCall.pc))
-                                } else senderMap += (cmt -> ListBuffer((m, getComponentType(staticCall.name), staticCall.pc)))
-                            }
-                        }
-                    }
-                }
-            }
-
-            //find callbacks
-            val callbackMethods = ListBuffer.empty[Method]
-            body.collectWithIndex {
-                case PCAndInstruction(pc, in: INVOKEVIRTUAL) ⇒
-                    val index = tacCode.pcToIndex(pc)
-                    if (index > -1) {
-                        val methodCall = tacCode.stmts(index)
-                        if (methodCall.isVirtualMethodCall) {
-                            var i = 0
-                            methodCall.asVirtualMethodCall.descriptor.parameterTypes.foreach { p ⇒
-                                if (p.isObjectType) {
-                                    val ot = p.toString.replaceAll(otRegex, "")
-                                    //only interfaces defined in 'callbacklist' are handled as callback interfaces and dynamically searching for callback interfaces
-                                    if (callbackList.contains(ot) ||
-                                        (ot.startsWith("android") && ot.endsWith("Listener") && ot.substring(ot.lastIndexOf("$") + 1).startsWith("On"))) {
-                                        val par = methodCall.asVirtualMethodCall.params(i).asVar.value.verificationTypeInfo
-                                        if (par.isObjectVariableInfo) {
-                                            val cf = project.classFile(par.asObjectVariableInfo.clazz.asObjectType)
-                                            if (cf.isDefined) {
-                                                val methods = cf.get.methods.filter(f ⇒ !f.isConstructor && f.name != "<clinit>")
-                                                methods.foreach { method ⇒
-                                                    if (!callbackMethods.contains(method)) callbackMethods += method
-                                                }
+                    if (methodCall.isVirtualMethodCall) {
+                        methodCall.asVirtualMethodCall.descriptor.parameterTypes.foreachWithIndex { (p, i) ⇒
+                            if (p.isObjectType) {
+                                val ot = p.toString
+                                //only interfaces defined in 'callbacklist' are handled as callback interfaces and dynamically searching for callback interfaces
+                                if (callbackList.contains(p.asObjectType) ||
+                                    (ot.startsWith("ObjectType(android") && ot.endsWith("Listener)") && ot.substring(ot.lastIndexOf("$") + 1).startsWith("On"))) {
+                                    val par = methodCall.asVirtualMethodCall.params(i).asVar.value.verificationTypeInfo
+                                    if (par.isObjectVariableInfo) {
+                                        val cf = project.classFile(par.asObjectVariableInfo.clazz.asObjectType)
+                                        if (cf.isDefined) {
+                                            val methods = cf.get.methods.filter(f ⇒ !f.isInitializer)
+                                            methods.foreach { method ⇒
+                                                if (!callbackMethods.contains(method)) callbackMethods += method
                                             }
                                         }
-                                    } else i += 1
-                                } else i += 1
+                                    }
+                                }
                             }
                         }
                     }
-            }
-            if (callbackMethods.nonEmpty) {
-                generateCallBackEdges(m, callbackMethods)
-            }
-        } catch {
-            case _: Throwable ⇒
+                }
         }
+        if (callbackMethods.nonEmpty) {
+            generateCallBackEdges(m, callbackMethods)
+        }
+        NoResult
     }
 
     def generateCallBackEdges(
@@ -498,11 +524,11 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     /**
-     * Checks if the intent is reachable within the processed method
+     * Checks if the intent is reachable within the processed method.
      * @param params Parameters of the analysed statement.
      * @param tacCode TAC representation of the statement.
      * @param originalUseSites UseSites of the statement.
-     * @return
+     * @return True if the intent is reachable within the processed method, otherwise false.
      */
     def findOrigin(
         params:           Seq[Expr[DUVar[ValueInformation]]],
@@ -512,7 +538,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         params.foreach { p ⇒
             val pString = p.asVar.value.toString
             if (pString.startsWith(intentStart.head) || pString.startsWith(intentStart(1))) {
-                //the intent to its source
                 val defIndex = p.asVar.definedBy.head
                 if (defIndex < 0) {
                     return false; //intent is not reachable
@@ -612,20 +637,19 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         m:        Method
     ): Unit = {
         val p = c.params
-
-        c.descriptor match {
-            case MethodDescriptor(types, _) if types.isEmpty ⇒ //Intent()
+        c.descriptor.parameterTypes match {
+            case types if types.isEmpty ⇒ //Intent()
                 val intent = new ImplicitIntent(m)
                 evaluateUseSites(tacCode, useSites, intent)
 
-            case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Ljava/lang/String;")) ⇒
+            case FieldTypes(ObjectType.String) ⇒
                 //Intent(String action)
                 if (p.head.asVar.value.verificationTypeInfo == ObjectVariableInfo(ObjectType.String)) {
                     val intent = new ImplicitIntent(m)
                     intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
                     evaluateUseSites(tacCode, useSites, intent)
                 }
-            case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Landroid/content/Intent;")) ⇒
+            case FieldTypes(`intentOT`) ⇒
                 //Intent(Intent 0)
                 if (p.head.asVar.definedBy.head > -1) {
                     val stmts = tacCode.stmts
@@ -645,34 +669,28 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     intent.categories += undef
                     evaluateUseSites(tacCode, useSites, intent)
                 }
-            case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Ljava/lang/String;"), FieldType("Landroid/content/Intent;")) ⇒ //Intent(String action, Uri uri)
+            case FieldTypes(ObjectType.String, `intentOT`) ⇒ //Intent(String action, Uri uri)
                 if (p.head.asVar.value.verificationTypeInfo == ObjectVariableInfo(ObjectType.String)) {
-
                     val intent = new ImplicitIntent(m)
                     intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
                     intent.iData = checkData(1, tacCode, p)
                     evaluateUseSites(tacCode, useSites, intent)
 
                 }
-            case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Landroid/content/Context;"), FieldType("Ljava/lang/Class;")) ⇒
+            case FieldTypes(`contextOT`, ObjectType.Class) ⇒
                 //Intent(Context context, Class cls)
-                val clsFile = project.classFile(ObjectType(p.last.asVar.value.toString.
-                    replaceAll(valueRegex, "").replaceAll("\\.", "/")))
-                if (clsFile.isDefined) {
-                    val intent = new ExplicitIntent(m, clsFile.get)
-                    intent.findStartedMethod(tacCode, useSites)
+                val classFile = project.classFile(p.last.asVar.value.verificationTypeInfo.asObjectVariableInfo.clazz.asObjectType)
+                if (classFile.isDefined) {
+                    val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
                     if (intent.calledMethod.nonEmpty) {
                         explicitIntents += intent
                     }
                 }
 
             case _ ⇒ //Intent(String action, Uri uri, Context packageContext, Class cls)
-                val clsFile = project.classFile(ObjectType(p.last.asVar.value.toString.
-                    replaceAll(valueRegex, "").replaceAll("\\.", "/")))
-
-                if (clsFile.isDefined) {
-                    val intent = new ExplicitIntent(m, clsFile.get)
-                    intent.findStartedMethod(tacCode, useSites)
+                val classFile = project.classFile(p.last.asVar.value.verificationTypeInfo.asObjectVariableInfo.clazz.asObjectType)
+                if (classFile.isDefined) {
+                    val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
                     if (intent.calledMethod.nonEmpty) {
                         explicitIntents += intent
                     }
@@ -732,17 +750,17 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         m:        Method
     ): Unit = {
         val p = c.params
-        val intentFilter = new IntentFilter()
+        val intentFilter = new IntentFilter(null, receiver)
         val stmts = tacCode.stmts
 
-        c.descriptor match {
-            case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Ljava/lang/String;")) ⇒
+        c.descriptor.parameterTypes match {
+            case FieldTypes(ObjectType.String) ⇒
                 if (p.head.asVar.value.verificationTypeInfo == ObjectVariableInfo(ObjectType.String)) {
                     intentFilter.actions += p.head.asVar.value.toString.replaceAll(paramRegex, "")
                     intentFilter.evaluateUseSites(tacCode, useSites)
                     if (intentFilter.registeredReceivers.nonEmpty) handleReceivers(intentFilter)
                 }
-            case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Landroid/content/IntentFilter;")) ⇒
+            case FieldTypes(`intentFilterOT`) ⇒
                 //copy constructor
                 val addUseSites = stmts(p.head.asVar.definedBy.head).asAssignment.targetVar.usedBy.toChain.toList
                 addUseSites.foreach { i ⇒
@@ -752,7 +770,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     }
                 }
 
-            case MethodDescriptor(types, _) if types == FieldTypes(FieldType("Ljava/lang/String;"), FieldType("Ljava/lang/String;")) ⇒
+            case FieldTypes(ObjectType.String, ObjectType.String) ⇒
                 intentFilter.actions += p.head.asVar.value.toString.replaceAll(paramRegex, "")
                 intentFilter.dataTypes += p(1).asVar.value.toString.replaceAll(paramRegex, "")
                 intentFilter.evaluateUseSites(tacCode, useSites)
@@ -771,7 +789,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             intentFilter.registeredReceivers.map(r ⇒ project.classFile(r)).
                 filter(cf ⇒ cf.isDefined).map(_.get).foreach { addRec ⇒
                     val addFilter = intentFilter.cloneFilter()
-                    addFilter.componentType = receiver
                     addFilter.receiver = addRec
                     intentFilters += addFilter
                 }
@@ -790,10 +807,9 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             val stmt = statements(use)
             if (stmt.isExprStmt && stmt.asExprStmt.expr.isVirtualFunctionCall) {
                 val virtualCall = stmt.asExprStmt.expr.asVirtualFunctionCall
-                val someIntent = internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc)
+                val someIntent = internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc, useSites)
                 if (someIntent.isDefined) {
                     val expIntent = someIntent.head
-                    expIntent.findStartedMethod(tacCode, useSites)
                     if (expIntent.calledMethod.nonEmpty) {
                         explicitIntents += expIntent
                         return ;
@@ -801,14 +817,13 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
             } else if (stmt.isVirtualMethodCall) {
                 val virtualCall = stmt.asVirtualMethodCall
-                internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc)
+                internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc, useSites)
             } else if (stmt.isAssignment && stmt.asAssignment.expr.isVirtualFunctionCall) {
                 val virtualCall = stmt.asAssignment.expr.asVirtualFunctionCall
                 if (virtualCall.declaringClass == intentOT) { addUseSites ++= stmt.asAssignment.targetVar.usedBy.toChain }
-                val someIntent = internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc)
+                val someIntent = internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc, useSites)
                 if (someIntent.isDefined) {
                     val expIntent = someIntent.head
-                    expIntent.findStartedMethod(tacCode, useSites)
                     if (expIntent.calledMethod.nonEmpty) {
                         explicitIntents += expIntent
                         return ;
@@ -816,7 +831,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 } else if (stmt.asAssignment.expr.isStaticFunctionCall) {
                     val staticCall = stmt.asAssignment.expr.asStaticFunctionCall
                     if (staticCall.declaringClass == intentOT) addUseSites ++= stmt.asAssignment.targetVar.usedBy.toChain
-                    internalFinder(staticCall.name, staticCall.params, intent, tacCode, staticCall.pc)
+                    internalFinder(staticCall.name, staticCall.params, intent, tacCode, staticCall.pc, useSites)
                 }
             } else if (stmt.isInstanceOf[ReturnValue[DUVar[ValueInformation]]]) {
                 val intentTupel = intent.caller.classFile.thisType -> intent.caller.name
@@ -830,57 +845,65 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         } else implicitIntents += intent
     }
 
+    def getClassFileFromParameter(p: Expr[DUVar[ValueInformation]], tacCode: TACode[TACMethodParameter, DUVar[ValueInformation]]): Option[ClassFile] = {
+        val defSite = p.asVar.definedBy.head
+        if (defSite > -1) {
+            try {
+                project.classFile(tacCode.stmts(defSite).asAssignment.expr.asClassConst.value.asObjectType)
+            } catch {
+                case _: Throwable ⇒ None
+            }
+        } else None
+    }
+
     def internalFinder(
         name:      String,
         parameter: Seq[Expr[DUVar[ValueInformation]]],
         intent:    ImplicitIntent,
         tacCode:   TACode[TACMethodParameter, DUVar[ValueInformation]],
-        pc:        Int
+        pc:        Int,
+        useSites:  List[Int]
     ): Option[ExplicitIntent] = {
 
         if (explicitMethods.contains(name)) {
-            if (name.equals(setComponent)) {
-                tacCode.stmts(parameter.head.asVar.definedBy.head).asAssignment.targetVar.usedBy.foreach { u ⇒
-                    val stmt = tacCode.stmts(u)
-                    if (stmt.isNonVirtualMethodCall && stmt.asNonVirtualMethodCall.declaringClass ==
-                        ObjectType("android/content/ComponentName")) {
-                        val param = stmt.asNonVirtualMethodCall.params
-                        if (param.last.asVar.value.toString.startsWith("Class")) {
-                            val clsFile = project.classFile(ObjectType(param.last.asVar.value.toString.
-                                replaceAll(valueRegex, "").replaceAll("\\.", "/")))
-                            if (clsFile.isDefined) {
-                                val i = new ExplicitIntent(intent.caller, clsFile.get)
-                                i.pc = pc
-                                return Some(i);
+            name match {
+                case `setClass` ⇒
+                    val classFile = getClassFileFromParameter(parameter(1), tacCode)
+                    if (classFile.isDefined) {
+                        val i = new ExplicitIntent(intent.caller, classFile.get, tacCode, useSites)
+                        i.pc = pc
+                        return Some(i);
+                    }
+                case `setClassName` ⇒
+                    val classFile = getClassFileFromParameter(parameter(1), tacCode)
+                    if (classFile.isDefined) {
+                        val i = new ExplicitIntent(intent.caller, classFile.get, tacCode, useSites)
+                        i.pc = pc
+                        return Some(i);
+                    }
+                case `setComponent` ⇒
+                    if (parameter.head.asVar.definedBy.head > -1) {
+                        tacCode.stmts(parameter.head.asVar.definedBy.head).asAssignment.targetVar.usedBy.foreach { u ⇒
+                            if (u > -1) {
+                                val stmt = tacCode.stmts(u)
+                                if (stmt.isNonVirtualMethodCall && stmt.asNonVirtualMethodCall.declaringClass ==
+                                    ObjectType("android/content/ComponentName")) {
+                                    val param = stmt.asNonVirtualMethodCall.params
+                                    if (param.last.asVar.value.toString.startsWith("Class")) {
+                                        val classFile = getClassFileFromParameter(param.last, tacCode)
+                                        if (classFile.isDefined) {
+                                            val i = new ExplicitIntent(intent.caller, classFile.get, tacCode, useSites)
+                                            i.pc = pc
+                                            return Some(i);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            } else {
-                name match {
-                    case `setClass` ⇒
-                        val clsFile = project.classFile(
-                            ObjectType(parameter(1).toString.replaceAll(valueRegex, "").replaceAll("\\.", "/"))
-                        )
-                        if (clsFile.isDefined) {
-                            val i = new ExplicitIntent(intent.caller, clsFile.get)
-                            i.pc = pc
-                            return Some(i);
-                        }
-                    case `setClassName` ⇒
-                        val clsFile = project.classFile(
-                            ObjectType(parameter(1).toString.replaceAll(paramRegex, "").replaceAll("\\.", "/"))
-                        )
-                        if (clsFile.isDefined) {
-                            val i = new ExplicitIntent(intent.caller, clsFile.get)
-                            i.pc = pc
-                            return Some(i);
-                        }
-                }
             }
         } else if (intentMethods.contains(name)) {
             val firstParam: String = parameter.head.asVar.value.toString.replaceAll(paramRegex, "")
-
             name match {
                 case `setAction`   ⇒ intent.action = firstParam
                 case `addCategory` ⇒ intent.categories += firstParam
@@ -1105,13 +1128,13 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * @param caller The method that sends the explicit intent.
      * @param callee The method the explicit intent is send to.
      */
-    class ExplicitIntent(val caller: Method, val callee: ClassFile) {
+    class ExplicitIntent(val caller: Method, val callee: ClassFile, tacCode: TACode[TACMethodParameter, DUVar[ValueInformation]], useSites: List[Int]) {
 
         val activityStartMethods: List[String] = List(
             "startActivity", "startActivityForResult", "startActivityFromChild", "startActivityIfNeeded", "getActivity", "getActivities"
         )
         val serviceMethods: List[String] = List(
-            "startService", "bindService", "stopService", "unbindService", "getService"
+            "startService", "bindService", "stopService", "unbindService"
         )
         val broadcastReceiverStartMethods: List[String] = List(
             "sendBroadcast", "sendOrderedBroadcast", "sendStickyBroadcast", "sendStickyOrderedBroadcast", "getBroadcast"
@@ -1132,44 +1155,45 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         var pc: Int = 0
         var calledMethod: List[Method] = List.empty[Method]
 
-        def findStartedMethod(
-            tacCode: TACode[TACMethodParameter, DUVar[ValueInformation]],
-            useSite: List[Int]
+        findCalledMethod(tacCode, useSites)
+
+        private def findCalledMethod(
+            tacCode:  TACode[TACMethodParameter, DUVar[ValueInformation]],
+            useSites: List[Int]
         ): Unit = {
             val calledMethods = new ListBuffer[Method]
 
-            useSite.foreach { i ⇒
+            useSites.foreach { i ⇒
                 val stmt = tacCode.stmts(i)
                 if (stmt.isVirtualMethodCall) {
-                    calledMethods ++= internalSearchMethod(stmt.asVirtualMethodCall.name, stmt.asVirtualMethodCall.pc)
-
+                    calledMethods ++= searchComponentForCalledMethods(stmt.asVirtualMethodCall.name, stmt.asVirtualMethodCall.pc)
                 } else if (stmt.isExprStmt) {
                     if (stmt.asExprStmt.expr.isVirtualFunctionCall) {
-                        calledMethods ++= internalSearchMethod(stmt.asExprStmt.expr.asVirtualFunctionCall.name, stmt.asExprStmt.pc)
+                        calledMethods ++= searchComponentForCalledMethods(stmt.asExprStmt.expr.asVirtualFunctionCall.name, stmt.asExprStmt.pc)
                     }
                 } else if (stmt.isAssignment) {
                     if (stmt.asAssignment.expr.isStaticFunctionCall) {
-                        calledMethods ++= internalSearchMethod(stmt.asAssignment.expr.asStaticFunctionCall.name, stmt.asAssignment.pc)
+                        calledMethods ++= searchComponentForCalledMethods(stmt.asAssignment.expr.asStaticFunctionCall.name, stmt.asAssignment.pc)
                     }
                 }
             }
             calledMethod = calledMethods.toList
         }
 
-        def internalSearchMethod(
-            nme: String,
-            pc:  Int
+        def searchComponentForCalledMethods(
+            name: String,
+            pc:   Int
         ): List[Method] = {
             var calledMethods = List.empty[Method]
-            if (activityStartMethods.contains(nme)) {
+            if (activityStartMethods.contains(name)) {
                 this.pc = pc
                 calledMethods ++= callee.findMethod(onCreate)
-            } else if (broadcastReceiverStartMethods.contains(nme)) {
+            } else if (broadcastReceiverStartMethods.contains(name)) {
                 this.pc = pc
                 calledMethods ++= callee.findMethod(onReceive)
-            } else if (serviceMethods.contains(nme)) {
+            } else if (serviceMethods.contains(name)) {
                 this.pc = pc
-                nme match {
+                name match {
                     case `startService` ⇒ calledMethods ++= callee.findMethod(onCreate) ++ callee.findMethod(onStartCommand)
                     case `bindService` ⇒ calledMethods ++= callee.findMethod(onCreate) ++ callee.findMethod(onBind) ++
                         callee.findMethod(onRebind)
@@ -1217,7 +1241,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
  *
  * @author Tom Nikisch
  */
-class IntentFilter() {
+class IntentFilter(var receiver: ClassFile, var componentType: String) {
     final val addDataAuthority = "addDataAuthority"
     final val addDataPath = "addDataPath"
     final val addDataScheme = "addDataScheme"
@@ -1233,9 +1257,7 @@ class IntentFilter() {
         addDataAuthority, addDataPath, addDataScheme, addDataSSP, addDataType
     )
 
-    var receiver: ClassFile = _
-    var componentType: String = _
-    var registeredReceivers: ListBuffer[ObjectType] = ListBuffer.empty[ObjectType]
+    val registeredReceivers: ListBuffer[ObjectType] = ListBuffer.empty[ObjectType]
 
     var actions: ListBuffer[String] = ListBuffer.empty[String]
     var categories: ListBuffer[String] = ListBuffer.empty[String]
@@ -1247,15 +1269,13 @@ class IntentFilter() {
     var dataSSPs: ListBuffer[String] = ListBuffer.empty[String]
 
     def cloneFilter(): IntentFilter = {
-        val clone = new IntentFilter()
+        val clone = new IntentFilter(receiver, componentType)
         clone.actions = actions
         clone.categories = categories
         clone.dataAuthorities = dataAuthorities
         clone.dataTypes = dataTypes
         clone.dataPaths = dataPaths
         clone.dataSchemes = dataSchemes
-        clone.componentType = componentType
-        clone.receiver = receiver
         clone
     }
 
@@ -1297,117 +1317,24 @@ class IntentFilter() {
             if (stmt.isAssignment) {
                 if (stmt.asAssignment.expr.isVirtualFunctionCall && stmt.asAssignment.expr.asVirtualFunctionCall.name == registerReceiver) {
                     val virtualCall = stmt.asAssignment.expr.asVirtualFunctionCall
-                    if (virtualCall.receiver.asVar.definedBy.head > -1)
-                        registeredReceivers += ObjectType(statements(virtualCall.
-                            receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.toString.
-                            replaceAll(receiverRegex, "").replaceAll("\\.", "/"))
-                }
-            }
-        }
-    }
-}
-
-/**
- * A ProjectInformationKey that is used to parse an AndroidManifest.xml. It returns a map of Android components and
- * a ListBuffer of all IntentFilters defined in the manifest.
- * The AndroidManifest.xml can be set as initialisation data.
- *
- * @author Tom Nikisch
- */
-object ManifestParsingKey extends ProjectInformationKey[(Map[String, ListBuffer[ClassFile]], ListBuffer[IntentFilter]), Elem] {
-
-    override def requirements(project: SomeProject): ProjectInformationKeys = Nil
-
-    override def compute(project: SomeProject): (Map[String, ListBuffer[ClassFile]], ListBuffer[IntentFilter]) = {
-        val manifest = project.getProjectInformationKeyInitializationData(ManifestParsingKey)
-        if (manifest.isDefined) {
-            parseManifest(project, manifest.get)
-        } else null
-    }
-
-    /**
-     * Analyses the AndroidManifest.xml of the project to find intent filters and relevant components to generate
-     * lifecycle callbacks.
-     */
-    def parseManifest(project: SomeProject, manifest: Elem): (Map[String, ListBuffer[ClassFile]], ListBuffer[IntentFilter]) = {
-        val componentMap: mutable.Map[String, ListBuffer[ClassFile]] = mutable.Map(
-            "activity" -> ListBuffer.empty[ClassFile],
-            "service" -> ListBuffer.empty[ClassFile]
-        )
-        val intentFilters = ListBuffer.empty[IntentFilter]
-        val androidURI = "http://schemas.android.com/apk/res/android"
-        val pack = manifest.attribute("package").get.toString().replaceAll("\\.", "/")
-        List("activity", "receiver", "service").foreach { comp ⇒
-            val components = manifest \\ comp
-            components.foreach { c ⇒
-                var ot = c.attribute(androidURI, "name").head.toString().replaceAll("\\.", "/")
-                if (ot.startsWith("/")) { ot = pack + ot }
-                val rec = project.classFile(ObjectType(ot))
-                if (rec.isDefined) {
-                    if (comp == "activity" || comp == "service") componentMap(comp) += rec.get
-                    val filters = c \ "intent-filter"
-                    if (filters.nonEmpty) {
-                        filters.foreach { filter ⇒
-                            val intentFilter = new IntentFilter()
-                            intentFilter.componentType = comp
-                            intentFilter.receiver = rec.get
-                            intentFilter.actions = (filter \ "action").map(_.attribute(androidURI, "name").
-                                get.head.toString()).to[ListBuffer]
-                            intentFilter.categories = (filter \ "category").map(_.attribute(androidURI, "name").
-                                get.head.toString()).to[ListBuffer]
-                            val data = filter \ "data"
-                            if (data.nonEmpty) {
-                                data.foreach { d ⇒
-                                    val t = d.attribute(androidURI, "mimeType")
-                                    if (t.isDefined) {
-                                        intentFilter.dataTypes += t.get.head.toString()
-                                    }
-                                    val s = d.attribute(androidURI, "scheme")
-                                    if (s.isDefined) {
-                                        intentFilter.dataSchemes += s.get.head.toString()
-                                    }
-                                    val h = d.attribute(androidURI, "host")
-                                    if (h.isDefined) {
-                                        var authority = h.get.head.toString()
-                                        val port = d.attribute(androidURI, "port")
-                                        if (port.isDefined) {
-                                            authority = authority + port.get.head.toString()
-                                        }
-                                        intentFilter.dataAuthorities += authority
-                                    }
-                                    val p = d.attribute(androidURI, "path")
-                                    if (p.isDefined) {
-                                        intentFilter.dataPaths += p.get.head.toString()
-                                    }
-                                    val pp = d.attribute(androidURI, "pathPrefix")
-                                    if (pp.isDefined) {
-                                        intentFilter.dataPaths += pp.get.head.toString()
-                                    }
-                                    val pathPattern = d.attribute(androidURI, "pathPattern")
-                                    if (pathPattern.isDefined) {
-                                        intentFilter.dataPaths += pathPattern.get.head.toString()
-                                    }
-                                }
-                            }
-                            intentFilters += intentFilter
-                        }
+                    if (virtualCall.receiver.asVar.definedBy.head > -1 && statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.isGetField) {
+                        registeredReceivers += statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.verificationTypeInfo.asObjectVariableInfo.clazz.asObjectType
+                        //statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.toString.replaceAll(receiverRegex, "").replaceAll("\\.", "/"))
                     }
                 }
             }
         }
-        (componentMap.toMap, intentFilters)
     }
 }
 
 /**
  * Schedules the execution of an AndroidICCAnalysis.
- * In order for the analysis to work the path to the projects AndroidManifest must be set via setManifest.
  *
  * @author Tom Nikisch
  */
-object eagerAndroidICCAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+object AndroidICCAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeProviderKey, ComputeTACAIKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeProviderKey, ComputeTACAIKey, AndroidManifestKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees, TACAI)
 
