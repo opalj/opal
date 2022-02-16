@@ -462,14 +462,14 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                 //only interfaces defined in 'callbacklist' are handled as callback interfaces and dynamically searching for callback interfaces
                                 if (callbackList.contains(p.asObjectType) ||
                                     (ot.startsWith("ObjectType(android") && ot.endsWith("Listener)") && ot.substring(ot.lastIndexOf("$") + 1).startsWith("On"))) {
-                                    methodCall.asVirtualMethodCall.params(i).asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{rt =>
-                                          val cf = project.classFile(rt.asObjectType)
-                                          if (cf.isDefined) {
-                                              val methods = cf.get.methods.filter(f ⇒ !f.isInitializer)
-                                                methods.foreach { method ⇒
-                                                    callbackMethods += method
-                                              }
-                                          }
+                                    methodCall.asVirtualMethodCall.params(i).asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach { rt ⇒
+                                        val cf = project.classFile(rt.asObjectType)
+                                        if (cf.isDefined) {
+                                            val methods = cf.get.methods.filter(f ⇒ !f.isInitializer)
+                                            methods.foreach { method ⇒
+                                                callbackMethods += method
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -678,7 +678,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
             case FieldTypes(`contextOT`, ObjectType.Class) ⇒
                 //Intent(Context context, Class cls)
-                p.last.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{ rt =>
+                p.last.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach { rt ⇒
                     val classFile = project.classFile(rt.asObjectType)
                     if (classFile.isDefined) {
                         val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
@@ -689,7 +689,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
 
             case _ ⇒ //Intent(String action, Uri uri, Context packageContext, Class cls)
-                p.last.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{ rt =>
+                p.last.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach { rt ⇒
                     val classFile = project.classFile(rt.asObjectType)
                     if (classFile.isDefined) {
                         val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
@@ -1321,7 +1321,7 @@ class IntentFilter(var receiver: ClassFile, var componentType: String) {
                 if (stmt.asAssignment.expr.isVirtualFunctionCall && stmt.asAssignment.expr.asVirtualFunctionCall.name == registerReceiver) {
                     val virtualCall = stmt.asAssignment.expr.asVirtualFunctionCall
                     if (virtualCall.receiver.asVar.definedBy.head > -1 && statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.isGetField) {
-                        statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{rt =>
+                        statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach { rt ⇒
                             registeredReceivers += rt.asObjectType
                         }
                     }
