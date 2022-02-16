@@ -449,7 +449,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         //find callbacks
-        val callbackMethods = ListBuffer.empty[Method]
+        var callbackMethods = Set.empty[Method]
         body.collectWithIndex {
             case PCAndInstruction(pc, _: INVOKEVIRTUAL) ⇒
                 val index = tacCode.pcToIndex(pc)
@@ -462,15 +462,14 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                 //only interfaces defined in 'callbacklist' are handled as callback interfaces and dynamically searching for callback interfaces
                                 if (callbackList.contains(p.asObjectType) ||
                                     (ot.startsWith("ObjectType(android") && ot.endsWith("Listener)") && ot.substring(ot.lastIndexOf("$") + 1).startsWith("On"))) {
-                                    val par = methodCall.asVirtualMethodCall.params(i).asVar.value.verificationTypeInfo
-                                    if (par.isObjectVariableInfo) {
-                                        val cf = project.classFile(par.asObjectVariableInfo.clazz.asObjectType)
-                                        if (cf.isDefined) {
-                                            val methods = cf.get.methods.filter(f ⇒ !f.isInitializer)
-                                            methods.foreach { method ⇒
-                                                if (!callbackMethods.contains(method)) callbackMethods += method
-                                            }
-                                        }
+                                    methodCall.asVirtualMethodCall.params(i).asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{rt =>
+                                          val cf = project.classFile(rt.asObjectType)
+                                          if (cf.isDefined) {
+                                              val methods = cf.get.methods.filter(f ⇒ !f.isInitializer)
+                                                methods.foreach { method ⇒
+                                                    callbackMethods += method
+                                              }
+                                          }
                                     }
                                 }
                             }
@@ -486,7 +485,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     def generateCallBackEdges(
         m:               Method,
-        callbackMethods: ListBuffer[Method]
+        callbackMethods: Set[Method]
     ): Unit = {
 
         val cf = m.classFile
@@ -679,27 +678,31 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
             case FieldTypes(`contextOT`, ObjectType.Class) ⇒
                 //Intent(Context context, Class cls)
-                val classFile = project.classFile(p.last.asVar.value.verificationTypeInfo.asObjectVariableInfo.clazz.asObjectType)
-                if (classFile.isDefined) {
-                    val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
-                    if (intent.calledMethod.nonEmpty) {
-                        explicitIntents += intent
+                p.last.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{ rt =>
+                    val classFile = project.classFile(rt.asObjectType)
+                    if (classFile.isDefined) {
+                        val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
+                        if (intent.calledMethod.nonEmpty) {
+                            explicitIntents += intent
+                        }
                     }
                 }
 
             case _ ⇒ //Intent(String action, Uri uri, Context packageContext, Class cls)
-                val classFile = project.classFile(p.last.asVar.value.verificationTypeInfo.asObjectVariableInfo.clazz.asObjectType)
-                if (classFile.isDefined) {
-                    val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
-                    if (intent.calledMethod.nonEmpty) {
-                        explicitIntents += intent
+                p.last.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{ rt =>
+                    val classFile = project.classFile(rt.asObjectType)
+                    if (classFile.isDefined) {
+                        val intent = new ExplicitIntent(m, classFile.get, tacCode, useSites)
+                        if (intent.calledMethod.nonEmpty) {
+                            explicitIntents += intent
+                        }
+                    } else {
+                        val intent = new ImplicitIntent(m)
+                        intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
+                        checkData(1, tacCode, p)
+                        intent.iData = checkData(1, tacCode, p)
+                        evaluateUseSites(tacCode, useSites, intent)
                     }
-                } else {
-                    val intent = new ImplicitIntent(m)
-                    intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
-                    checkData(1, tacCode, p)
-                    intent.iData = checkData(1, tacCode, p)
-                    evaluateUseSites(tacCode, useSites, intent)
                 }
         }
     }
@@ -1318,8 +1321,9 @@ class IntentFilter(var receiver: ClassFile, var componentType: String) {
                 if (stmt.asAssignment.expr.isVirtualFunctionCall && stmt.asAssignment.expr.asVirtualFunctionCall.name == registerReceiver) {
                     val virtualCall = stmt.asAssignment.expr.asVirtualFunctionCall
                     if (virtualCall.receiver.asVar.definedBy.head > -1 && statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.isGetField) {
-                        registeredReceivers += statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.verificationTypeInfo.asObjectVariableInfo.clazz.asObjectType
-                        //statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.toString.replaceAll(receiverRegex, "").replaceAll("\\.", "/"))
+                        statements(virtualCall.receiver.asVar.definedBy.head).asAssignment.expr.asGetField.objRef.asVar.value.asReferenceValue.upperTypeBound.filter(_.isObjectType).foreach{rt =>
+                            registeredReceivers += rt.asObjectType
+                        }
                     }
                 }
             }
