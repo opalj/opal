@@ -17,6 +17,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
@@ -69,8 +70,15 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
                 // check if the this local escapes in the callee
 
                 val fp = context.virtualFormalParameters(context.declaredMethods(callee))(0)
-                if (fp != context.entity) {
-                    val escapeState = context.propertyStore(fp, EscapeProperty.key)
+                val fpEntity =
+                    (
+                        typeProvider.expandContext(
+                            context.entity._1, declaredMethods(callee), call.pc
+                        ),
+                            fp
+                    )
+                if (fpEntity != context.entity) {
+                    val escapeState = context.propertyStore(fpEntity, EscapeProperty.key)
                     if (!state.containsDependency(escapeState))
                         handleEscapeState(escapeState)
                 }
@@ -156,7 +164,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     ): ProperPropertyComputationResult = {
 
         someEPS.e match {
-            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isConstructor ⇒
+            case (_: Context, VirtualFormalParameter(dm: DefinedMethod, -1)) if dm.definedMethod.isConstructor ⇒
                 state.removeDependency(someEPS)
                 handleEscapeState(someEPS)
                 returnResult

@@ -32,11 +32,11 @@ import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
 import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
-import org.opalj.tac.cg.CallGraphKey
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
@@ -48,8 +48,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  */
 class OOSWriteObjectAnalysis private[analyses] (
-        override val project:      SomeProject,
-        override val typeProvider: TypeProvider
+        override val project: SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -65,7 +64,8 @@ class OOSWriteObjectAnalysis private[analyses] (
     final val WriteObjectDescriptor = MethodDescriptor.JustTakes(ObjectOutputStreamType)
 
     override def processNewCaller(
-        callContext:    ContextType,
+        calleeContext:  ContextType,
+        callerContext:  ContextType,
         pc:             Int,
         tac:            TACode[TACMethodParameter, V],
         receiverOption: Option[Expr[V]],
@@ -83,15 +83,15 @@ class OOSWriteObjectAnalysis private[analyses] (
             val parameters = Seq(receiverOption.flatMap(os ⇒ persistentUVar(os.asVar)))
 
             implicit val state: CGState[ContextType] = new CGState[ContextType](
-                callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac)),
+                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)),
             )
 
-            handleOOSWriteObject(callContext, param, pc, receiver, parameters, indirectCalls)
+            handleOOSWriteObject(callerContext, param, pc, receiver, parameters, indirectCalls)
 
             returnResult(param, receiver, parameters, indirectCalls)(state)
         } else {
             indirectCalls.addIncompleteCallSite(pc)
-            Results(indirectCalls.partialResults(callContext.method))
+            Results(indirectCalls.partialResults(callerContext))
         }
     }
 
@@ -126,7 +126,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
         indirectCalls: IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val results = indirectCalls.partialResults(state.callContext.method)
+        val results = indirectCalls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(receiverVar, receiver, parameters, state)),
@@ -187,7 +187,8 @@ class OOSWriteObjectAnalysis private[analyses] (
                 "writeExternal",
                 WriteExternalDescriptor,
                 parameters,
-                receiver
+                receiver,
+                tgt ⇒ typeProvider.expandContext(callContext, tgt, callPC)
             )
         } else {
             val writeObjectMethod = project.specialCall(
@@ -206,7 +207,8 @@ class OOSWriteObjectAnalysis private[analyses] (
                 "writeObject",
                 WriteObjectDescriptor,
                 parameters,
-                receiver
+                receiver,
+                tgt ⇒ typeProvider.expandContext(callContext, tgt, callPC)
             )
         }
 
@@ -227,7 +229,8 @@ class OOSWriteObjectAnalysis private[analyses] (
             "writeReplace",
             WriteObjectDescriptor,
             parameters,
-            receiver
+            receiver,
+            tgt ⇒ typeProvider.expandContext(callContext, tgt, callPC)
         )
     }
 
@@ -242,7 +245,7 @@ class OOSWriteObjectAnalysis private[analyses] (
  */
 class OISReadObjectAnalysis private[analyses] (
         final val project: SomeProject
-) extends TACAIBasedAPIBasedAnalysis {
+) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     final val ObjectInputValidationType = ObjectType("java/io/ObjectInputValidation")
     final val ObjectInputType = ObjectType("java/io/ObjectInput")
@@ -261,7 +264,8 @@ class OISReadObjectAnalysis private[analyses] (
     )
 
     override def processNewCaller(
-        callContext:    ContextType,
+        calleeContext:  ContextType,
+        callerContext:  ContextType,
         pc:             Int,
         tac:            TACode[TACMethodParameter, V],
         receiverOption: Option[Expr[V]],
@@ -275,14 +279,14 @@ class OISReadObjectAnalysis private[analyses] (
 
         if (tgtVarOption.isDefined) {
             handleOISReadObject(
-                callContext, tgtVarOption.get, receiverOption, pc, calleesAndCallers
+                callerContext, tgtVarOption.get, receiverOption, pc, calleesAndCallers
             )
 
         } else {
             calleesAndCallers.addIncompleteCallSite(pc)
         }
 
-        Results(calleesAndCallers.partialResults(callContext.method))
+        Results(calleesAndCallers.partialResults(callerContext))
     }
 
     private[this] def handleOISReadObject(
@@ -321,13 +325,18 @@ class OISReadObjectAnalysis private[analyses] (
                         "readExternal",
                         ReadExternalDescriptor,
                         parameterList,
-                        None
+                        None,
+                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
                     )
 
                     // call to no-arg constructor
                     cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
                         calleesAndCallers.addCall(
-                            context, pc, declaredMethods(c), UnknownParam, None
+                            context,
+                            pc,
+                            typeProvider.expandContext(context, declaredMethods(c), pc),
+                            Seq.empty,
+                            None
                         )
                     }
                 } else {
@@ -342,7 +351,8 @@ class OISReadObjectAnalysis private[analyses] (
                         "readObject",
                         ReadObjectDescriptor,
                         parameterList,
-                        None
+                        None,
+                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
                     )
 
                     // call to first super no-arg constructor
@@ -356,8 +366,10 @@ class OISReadObjectAnalysis private[analyses] (
                             calleesAndCallers.addCall(
                                 context,
                                 pc,
-                                declaredMethods(constructor.get),
-                                UnknownParam,
+                                typeProvider.expandContext(
+                                    context, declaredMethods(constructor.get), pc
+                                ),
+                                Seq.empty,
                                 None
                             )
                         }
@@ -369,13 +381,21 @@ class OISReadObjectAnalysis private[analyses] (
                     // Note, that we assume that there is a constructor
                     // Note that we have to do a String comparison since methods with ObjectType
                     // descriptors are not sorted consistently across runs
-                    val constructor = cf.constructors.map[(String, Method)] { cf ⇒
-                        (cf.descriptor.toJava, cf)
-                    }.minBy(t ⇒ t._1)._2
+                    val constructors = cf.constructors.map[(String, Method)] { ctor ⇒
+                        (ctor.descriptor.toJava, ctor)
+                    }
 
-                    calleesAndCallers.addCall(
-                        context, pc, declaredMethods(constructor), UnknownParam, None
-                    )
+                    if (constructors.nonEmpty) {
+                        val constructor = constructors.minBy(t ⇒ t._1)._2
+
+                        calleesAndCallers.addCall(
+                            context,
+                            pc,
+                            typeProvider.expandContext(context, declaredMethods(constructor), pc),
+                            UnknownParam,
+                            None
+                        )
+                    }
                 }
 
                 // call to `readResolve`
@@ -387,8 +407,9 @@ class OISReadObjectAnalysis private[analyses] (
                     ObjectType.Object,
                     "readResolve",
                     JustReturnsObject,
-                    UnknownParam,
-                    None
+                    Seq.empty,
+                    None,
+                    tgt ⇒ typeProvider.expandContext(context, tgt, pc)
                 )
 
                 // call to `validateObject`
@@ -401,8 +422,9 @@ class OISReadObjectAnalysis private[analyses] (
                         ObjectType.Object,
                         "validateObject",
                         JustReturnsObject,
-                        UnknownParam,
-                        None
+                        Seq.empty,
+                        None,
+                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
                     )
                 }
             }
@@ -435,13 +457,13 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Dominik Helm
  */
 class SerializationRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject, typeProvider: TypeProvider
+        final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
         val readObjectAnalysis = new OISReadObjectAnalysis(project)
         val readObjectResult = readObjectAnalysis.registerAPIMethod()
-        val writeObjectAnalysis = new OOSWriteObjectAnalysis(project, typeProvider)
+        val writeObjectAnalysis = new OOSWriteObjectAnalysis(project)
         val writeObjectResult = writeObjectAnalysis.registerAPIMethod()
         Results(readObjectResult, writeObjectResult)
     }
@@ -449,17 +471,22 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
 object SerializationRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, TypeProviderKey)
 
     override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callers, Callees, TACAI) ++ CallGraphKey.typeProvider.usedPropertyKinds
+        PropertyBounds.ubs(Callers, Callees, TACAI)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
+        p.get(TypeProviderKey).usedPropertyKinds
+    }
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = new SerializationRelatedCallsAnalysis(p, CallGraphKey.typeProvider)
+        val analysis = new SerializationRelatedCallsAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }
