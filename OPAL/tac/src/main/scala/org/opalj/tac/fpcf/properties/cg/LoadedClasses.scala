@@ -1,6 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
+package tac
 package fpcf
 package properties
 package cg
@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.br.ObjectType
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
     final type Self = LoadedClasses

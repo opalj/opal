@@ -7,9 +7,11 @@ import java.net.URL
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.reader.ClassFileReader
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
 import org.opalj.log.LogContext
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.properties.PropertyMatcher
@@ -38,6 +40,8 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 
@@ -270,6 +274,15 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                 annotations
             )
         }
+    }
+
+    def contextsWithAnnotations(
+        recreatedFixtureProject: SomeProject
+    ): Traversable[(Context, String ⇒ String, Annotations)] = {
+        val simpleContexts = recreatedFixtureProject.get(SimpleContextsKey)
+        declaredMethodsWithAnnotations(recreatedFixtureProject).map(
+            test ⇒ (simpleContexts(test._1), test._2, test._3)
+        )
     }
 
     def classFilesWithAnnotations(

@@ -30,9 +30,9 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.LoadedClasses
-import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.LoadedClasses
+import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * Extends the call graph analysis to include calls to static initializers from within the JVM for

@@ -26,9 +26,10 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -38,8 +39,9 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  *
  * @author Dominik Helm
  */
-abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: SomeProject)
-    extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
+abstract class ArraycopyPointsToAnalysis private[pointsto] (
+        final val project: SomeProject
+) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectType.System, "", ObjectType.System,
@@ -55,7 +57,8 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: 
     }
 
     def processNewCaller(
-        callContext:     ContextType,
+        calleeContext:   ContextType,
+        callerContext:   ContextType,
         pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -65,7 +68,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: 
     ): ProperPropertyComputationResult = {
         implicit val state: State =
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
-                callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
+                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
 
         val sourceArr = params.head
@@ -94,7 +97,7 @@ trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 

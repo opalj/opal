@@ -89,8 +89,8 @@ object VarargsUtil {
             None
         else {
             val index = stmts(indices.head).asAssignment.expr
-            if (!index.isIntConst) {
-                None // we don't know the index in the array
+            if (!index.isIntConst || index.asIntConst.value >= params.size) {
+                None // we don't know the index in the array or it is larger than expected
             } else {
                 Some(params.updated(
                     index.asIntConst.value,
@@ -113,8 +113,8 @@ object VarargsUtil {
             val index = stmts(indices.head).asAssignment.expr
             if (!typeDef.isClassConst && !TypesUtil.isBaseTypeLoad(typeDef))
                 None
-            else if (!index.isIntConst) {
-                None // we don't know the index in the array
+            else if (!index.isIntConst || index.asIntConst.value >= params.size) {
+                None // we don't know the index in the array or it is larger than expected
             } else {
                 val tpe =
                     if (typeDef.isClassConst) typeDef.asClassConst.value

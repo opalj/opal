@@ -4,9 +4,10 @@ package br
 package reader
 
 /**
- * This configuration can be used to read in Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented. Instructions will be cached.
+ * This configuration can be used to read in Java 9 (version 53) class files with full
+ * support for rewriting `invokedynamic` instructions created by the JDK compiler for
+ * lambda and method reference expressions. All standard information (as defined in the
+ * Java Virtual Machine Specification) is represented. Instructions will be cached.
  *
  * @author Michael Eichberg
  */

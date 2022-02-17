@@ -5,7 +5,7 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.common.DefinitionSite
 
 /**
@@ -15,7 +15,5 @@ import org.opalj.tac.common.DefinitionSite
  * @author Florian Kuebler
  */
 case class ArrayEntity[ElementType](element: ElementType)
-case class MethodExceptions(dm: DeclaredMethod)
+case class MethodExceptions(context: Context)
 case class CallExceptions(defSite: DefinitionSite)
-
-object UnsafeFakeField
