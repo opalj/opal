@@ -348,3 +348,43 @@ object AllEntryPointsFinder extends EntryPointFinder {
         else project.allMethodsWithBody
     }
 }
+
+/**
+ * The AndroidEntryPointFinder considers specific methods of app components as entry points.
+ * It does not work for androidx
+ *
+ * @author Tom Nikisch
+ */
+object AndroidEntryPointsFinder extends EntryPointFinder {
+
+    val activityEPS: List[String] = List("onCreate", "onRestart", "onStart", "onResume",
+        "onStop", "onDestroy", "onActivityResult")
+    val serviceEPS: List[String] = List("onCreate", "onStartCommand", "onBind", "onStart")
+    val contentProviderEPS: List[String] = List("onCreate", "query", "insert", "update")
+    val locationListenerEPS: List[String] = List("onLocationChanged", "onProviderDisabled", "onProviderEnabled",
+        "onStatusChanged")
+    val onNmeaMessageListenerEPS: List[String] = List("onNmeaMessage")
+    val defaultEPS = Map("android/app/Activity" -> activityEPS, "android/app/Service" -> serviceEPS,
+        "android/content/ContentProvider" -> contentProviderEPS,
+        "android/location/LocationListener" -> locationListenerEPS,
+        "android/location/onNmeaMessageListener" -> onNmeaMessageListenerEPS)
+
+    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+        val eps = ArrayBuffer.empty[Method]
+        for ((superClass, methodList) ← defaultEPS) {
+            eps ++= findEPS(ObjectType(superClass), methodList, project)
+        }
+        eps
+    }
+
+    def findEPS(ot: ObjectType, possibleEPS: List[String], project: SomeProject): ArrayBuffer[Method] = {
+        val eps = ArrayBuffer.empty[Method]
+        val classHierarchy = project.classHierarchy
+        classHierarchy.foreachSubclass(ot, project) { sc ⇒
+            for (pep ← possibleEPS; m ← sc.findMethod(pep) if m.body.isDefined && !eps.contains(m)) {
+                eps += m
+            }
+        }
+        eps
+    }
+}

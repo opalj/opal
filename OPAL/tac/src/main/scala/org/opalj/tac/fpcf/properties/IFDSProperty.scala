@@ -7,7 +7,7 @@ package properties
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.value.KnownTypedValue
-import org.opalj.tac.fpcf.analyses.Statement
+import org.opalj.tac.fpcf.analyses.ifds.Statement
 
 trait IFDSPropertyMetaInformation[DataFlowFact] extends PropertyMetaInformation
 
