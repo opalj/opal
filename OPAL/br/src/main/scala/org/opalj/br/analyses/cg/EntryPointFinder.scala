@@ -9,6 +9,8 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus._
 
+import scala.collection.mutable.ListBuffer
+
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
  * points. The concrete entry point finder that is used to determines a programs entry points directly
@@ -357,55 +359,37 @@ object AllEntryPointsFinder extends EntryPointFinder {
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
 
-    val activityEntryPoints: List[(String, Option[MethodDescriptor])] = List(
-        ("onCreate", Some(MethodDescriptor.apply(FieldType("Landroid/os/Bundle;"), VoidType))),
-        ("onRestart", Some(MethodDescriptor.NoArgsAndReturnVoid)),
-        ("onStart", Some(MethodDescriptor.NoArgsAndReturnVoid)),
-        ("onResume", Some(MethodDescriptor.NoArgsAndReturnVoid)),
-        ("onStop", Some(MethodDescriptor.NoArgsAndReturnVoid)),
-        ("onDestroy", Some(MethodDescriptor.NoArgsAndReturnVoid)),
-        ("onActivityResult", Some(MethodDescriptor.NoArgsAndReturnVoid))
-    )
-    val serviceEntryPoints: List[(String, Option[MethodDescriptor])] = List(
-        ("onCreate", Some(MethodDescriptor.NoArgsAndReturnVoid)),
-        ("onStartCommand", Some(MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType, IntegerType), VoidType))),
-        ("onBind", Some(MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType))),
-        ("onRebind", Some(MethodDescriptor.apply(FieldType("Landroid/content/Intent;"), VoidType))),
-        ("onStart", Some(MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Intent;"), IntegerType), VoidType))),
-        ("onDestroy", Some(MethodDescriptor.NoArgsAndReturnVoid))
-    )
-    val contentProviderEntryPoints: List[(String, Option[MethodDescriptor])] = List(
-        ("onCreate", Some(MethodDescriptor.NoArgsAndReturnVoid)),
-        ("query", None),
-        ("insert", None),
-        ("update", None)
-    )
-    val locationListenerEntryPoints: List[(String, Option[MethodDescriptor])] = List(
-        ("onLocationChanged", None),
-        ("onProviderDisabled", Some(MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;")))),
-        ("onProviderEnabled", Some(MethodDescriptor.JustTakes(FieldType("Ljava/lang/String;")))),
-        ("onStatusChanged", Some(MethodDescriptor.apply(FieldTypes(FieldType("Ljava/lang/String;"), IntegerType, FieldType("Landroid/os/Bundle;")), VoidType)))
-    )
-    val broadcastReceiverEntryPoints: List[(String, Option[MethodDescriptor])] = List(
-        ("onReceive", Some(MethodDescriptor.apply(FieldTypes(FieldType("Landroid/content/Context;"), FieldType("Landroid/content/Intent;")), VoidType)))
-    )
-    val defaultEntryPoints = Map(
-        "android/app/Activity" -> activityEntryPoints,
-        "android/app/Service" -> serviceEntryPoints,
-        "android/content/ContentProvider" -> contentProviderEntryPoints,
-        "android/location/LocationListener" -> locationListenerEntryPoints,
-        "android/content/BroadcastReceiver" -> broadcastReceiverEntryPoints
-    )
-
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         val entryPoints = ArrayBuffer.empty[Method]
+
+        val defaultEntryPoints = Map(
+            "android/app/Activity" -> ListBuffer.empty[(String, Option[MethodDescriptor])],
+            "android/app/Service" -> ListBuffer.empty[(String, Option[MethodDescriptor])],
+            "android/content/ContentProvider" -> ListBuffer.empty[(String, Option[MethodDescriptor])],
+            "android/location/LocationListener" -> ListBuffer.empty[(String, Option[MethodDescriptor])],
+            "android/content/BroadcastReceiver" -> ListBuffer.empty[(String, Option[MethodDescriptor])]
+        )
+
+        val defEntry = project.config.getConfig("org.opalj.br.analyses.cg.DefaultEntryPoints")
+        defaultEntryPoints.keys.foreach { d ⇒
+            defEntry.getConfigList(d).forEach { entry ⇒
+                defaultEntryPoints(d) += ((entry.getString("name"), parseMethodDescriptor(entry.getString("descriptor"))))
+            }
+        }
+
         for ((superClass, methodList) ← defaultEntryPoints) {
             entryPoints ++= findEntryPoints(ObjectType(superClass), methodList, project)
         }
         entryPoints
     }
 
-    def findEntryPoints(ot: ObjectType, possibleEntryPoints: List[(String, Option[MethodDescriptor])], project: SomeProject): Set[Method] = {
+    def parseMethodDescriptor(descriptor: String): Option[MethodDescriptor] = {
+        if (descriptor != "None") {
+            Some(MethodDescriptor(descriptor))
+        } else None
+    }
+
+    def findEntryPoints(ot: ObjectType, possibleEntryPoints: ListBuffer[(String, Option[MethodDescriptor])], project: SomeProject): Set[Method] = {
 
         var entryPoints = Set.empty[Method]
         val classHierarchy = project.classHierarchy
