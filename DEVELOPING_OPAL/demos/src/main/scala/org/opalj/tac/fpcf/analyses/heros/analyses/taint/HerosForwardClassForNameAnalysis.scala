@@ -22,7 +22,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.DeclaredMethod
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
 import org.opalj.tac.Assignment
@@ -60,12 +60,16 @@ import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
  *
  * @author Mario Trageser
  */
-class HerosForwardClassForNameAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMethods: Map[Method, util.Set[Fact]]) extends HerosTaintAnalysis(p, icfg) {
+class HerosForwardClassForNameAnalysis(
+        p:              SomeProject,
+        icfg:           OpalForwardICFG,
+        initialMethods: Map[Method, util.Set[Fact]]
+) extends HerosTaintAnalysis(p, icfg) {
 
     override val initialSeeds: util.Map[Statement, util.Set[Fact]] = {
         var result: Map[Statement, util.Set[Fact]] = Map.empty
         for ((m, facts) ← initialMethods) {
-            result += icfg.getStartPointsOf(m).iterator().next() → facts
+            result += icfg.getStartPointsOf(m).iterator().next() -> facts
         }
         result.asJava
     }
@@ -116,7 +120,9 @@ class HerosForwardClassForNameAnalysis(p: SomeProject, icfg: OpalForwardICFG, in
                         val definedBy = put.objRef.asVar.definedBy
                         (source: Fact) ⇒ {
                             if (isTainted(put.value, source)) {
-                                (definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name)).toSet[Fact] + source).asJava
+                                (definedBy.iterator
+                                    .map(InstanceField(_, put.declaringClass, put.name))
+                                    .toSet[Fact] + source).asJava
                             } else {
                                 Collections.singleton(source)
                             }
@@ -180,11 +186,13 @@ class HerosForwardClassForNameAnalysis(p: SomeProject, icfg: OpalForwardICFG, in
                         (source: Fact) ⇒ {
                             val result = new util.HashSet[Fact]
                             (0 until expr.subExprCount)
-                                .foreach(subExpression ⇒
-                                    result.addAll(
-                                        handleAssignment(stmt, expr.subExpr(subExpression))
-                                            .computeTargets(source)
-                                    ))
+                                .foreach(
+                                    subExpression ⇒
+                                        result.addAll(
+                                            handleAssignment(stmt, expr.subExpr(subExpression))
+                                                .computeTargets(source)
+                                        )
+                                )
                             result
                         }
                     case _ ⇒ Identity.v()
@@ -198,43 +206,68 @@ class HerosForwardClassForNameAnalysis(p: SomeProject, icfg: OpalForwardICFG, in
                     source: Fact ⇒
                         (source match {
                             case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
-                                allParamsWithIndices.collect {
-                                    case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
-                                        Variable(AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic))
-                                }.toSet[Fact]
+                                allParamsWithIndices
+                                    .collect {
+                                        case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
+                                            Variable(
+                                                AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic)
+                                            )
+                                    }
+                                    .toSet[Fact]
 
                             case ArrayElement(index, taintedIndex) ⇒
                                 // Taint element of formal parameter if element of actual parameter is tainted
-                                allParamsWithIndices.collect {
-                                    case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
-                                        ArrayElement(AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic), taintedIndex)
-                                }.toSet[Fact]
+                                allParamsWithIndices
+                                    .collect {
+                                        case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
+                                            ArrayElement(
+                                                AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic),
+                                                taintedIndex
+                                            )
+                                    }
+                                    .toSet[Fact]
 
                             case InstanceField(index, declClass, taintedField) ⇒
                                 // Taint field of formal parameter if field of actual parameter is tainted
                                 // Only if the formal parameter is of a type that may have that field!
-                                allParamsWithIndices.collect {
-                                    case (param, paramIdx) if param.asVar.definedBy.contains(index) &&
-                                        (AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic) != -1 ||
-                                            classHierarchy.isSubtypeOf(declClass, callee.classFile.thisType)) ⇒
-                                        InstanceField(AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic), declClass, taintedField)
-                                }.toSet[Fact]
+                                allParamsWithIndices
+                                    .collect {
+                                        case (param, paramIdx) if param.asVar.definedBy.contains(index) &&
+                                            (AbstractIFDSAnalysis.switchParamAndVariableIndex(
+                                                paramIdx,
+                                                callee.isStatic
+                                            ) != -1 ||
+                                                classHierarchy.isSubtypeOf(declClass, callee.classFile.thisType)) ⇒
+                                            InstanceField(
+                                                AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic),
+                                                declClass,
+                                                taintedField
+                                            )
+                                    }
+                                    .toSet[Fact]
                             case sf: StaticField ⇒ Set(sf).asInstanceOf[Set[Fact]]
                             case _               ⇒ Set.empty[Fact]
                         }).asJava
                 } else KillAll.v()
             }
 
-            override def getReturnFlowFunction(stmt: Statement, callee: Method, exit: Statement, succ: Statement): FlowFunction[Fact] = {
+            override def getReturnFlowFunction(
+                stmt:   Statement,
+                callee: Method,
+                exit:   Statement,
+                succ:   Statement
+            ): FlowFunction[Fact] = {
 
                 def isRefTypeParam(index: Int): Boolean =
                     if (index == -1) true
                     else {
                         val parameterOffset = if (callee.isStatic) 0 else 1
-                        callee.descriptor.parameterType(
-                            AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic)
-                                - parameterOffset
-                        ).isReferenceType
+                        callee.descriptor
+                            .parameterType(
+                                AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic)
+                                    - parameterOffset
+                            )
+                            .isReferenceType
                     }
 
                 val callStatement = asCall(stmt.stmt)
@@ -252,14 +285,22 @@ class HerosForwardClassForNameAnalysis(p: SomeProject, icfg: OpalForwardICFG, in
                         case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
                             // Taint element of actual parameter if element of formal parameter is tainted
                             val params =
-                                asCall(stmt.stmt).allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic))
-                            params.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex)).asInstanceOf[Iterator[Fact]].toSet
+                                asCall(stmt.stmt).allParams(
+                                    AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic)
+                                )
+                            params.asVar.definedBy.iterator
+                                .map(ArrayElement(_, taintedIndex))
+                                .asInstanceOf[Iterator[Fact]]
+                                .toSet
 
                         case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
                             // Taint field of actual parameter if field of formal parameter is tainted
                             val params =
                                 allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic))
-                            params.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField)).asInstanceOf[Iterator[Fact]].toSet
+                            params.asVar.definedBy.iterator
+                                .map(InstanceField(_, declClass, taintedField))
+                                .asInstanceOf[Iterator[Fact]]
+                                .toSet
 
                         case sf: StaticField ⇒ Set(sf)
                         case FlowFact(flow) if !flow.contains(stmt.method) ⇒
@@ -306,7 +347,10 @@ class HerosForwardClassForNameAnalysis(p: SomeProject, icfg: OpalForwardICFG, in
                 }
             }
 
-            override def getCallToReturnFlowFunction(stmt: Statement, succ: Statement): FlowFunction[Fact] =
+            override def getCallToReturnFlowFunction(
+                stmt: Statement,
+                succ: Statement
+            ): FlowFunction[Fact] =
                 Identity.v()
         }
     }
@@ -334,14 +378,16 @@ class HerosForwardClassForNameAnalysis(p: SomeProject, icfg: OpalForwardICFG, in
         declaredMethods(method).declaringClassType == ObjectType.Class && method.name == "forName"
 }
 
-class HerosForwardClassForNameAnalysisRunner extends HerosAnalysisRunner[Fact, HerosForwardClassForNameAnalysis] {
+class HerosForwardClassForNameAnalysisRunner
+    extends HerosAnalysisRunner[Fact, HerosForwardClassForNameAnalysis] {
 
     override protected def createAnalysis(p: SomeProject): HerosForwardClassForNameAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val propertyStore = p.get(PropertyStoreKey)
         val initialMethods = scala.collection.mutable.Map.empty[Method, util.Set[Fact]]
         for {
-            method ← declaredMethods.declaredMethods.filter(canBeCalledFromOutside(_, propertyStore))
+            method ← declaredMethods.declaredMethods
+                .filter(canBeCalledFromOutside(_, propertyStore))
                 .map(_.definedMethod)
             index ← method.descriptor.parameterTypes.zipWithIndex.collect {
                 case (pType, index) if pType == ObjectType.String ⇒
@@ -350,12 +396,15 @@ class HerosForwardClassForNameAnalysisRunner extends HerosAnalysisRunner[Fact, H
         } {
             val fact = Variable(-2 - index)
             if (initialMethods.contains(method)) initialMethods(method).add(fact)
-            else initialMethods += (method → new util.HashSet[Fact](Collections.singleton(fact)))
+            else initialMethods += (method -> new util.HashSet[Fact](Collections.singleton(fact)))
         }
         new HerosForwardClassForNameAnalysis(p, new OpalForwardICFG(p), initialMethods.toMap)
     }
 
-    override protected def printResultsToConsole(analysis: HerosForwardClassForNameAnalysis, analysisTime: Milliseconds): Unit = {
+    override protected def printResultsToConsole(
+        analysis:     HerosForwardClassForNameAnalysis,
+        analysisTime: Milliseconds
+    ): Unit = {
         for {
             method ← analysis.flowFacts.keys
             fact ← analysis.flowFacts(method)
@@ -363,7 +412,10 @@ class HerosForwardClassForNameAnalysisRunner extends HerosAnalysisRunner[Fact, H
         println(s"Time: $analysisTime")
     }
 
-    private def canBeCalledFromOutside(method: DeclaredMethod, propertyStore: PropertyStore): Boolean = {
+    private def canBeCalledFromOutside(
+        method:        DeclaredMethod,
+        propertyStore: PropertyStore
+    ): Boolean = {
         val FinalEP(_, callers) = propertyStore(method, Callers.key)
         callers.hasCallersWithUnknownContext
     }

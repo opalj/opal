@@ -3,12 +3,11 @@ package org.opalj.tac.fpcf.analyses.heros.analyses
 
 import java.io.File
 import java.io.PrintWriter
-
 import heros.template.DefaultIFDSTabulationProblem
 import heros.solver.IFDSSolver
+
 import javax.swing.JOptionPane
 import org.opalj.bytecode
-
 import org.opalj.util.Milliseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.FinalEP
@@ -19,7 +18,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalICFG
@@ -28,7 +27,8 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 
 /**
@@ -45,12 +45,14 @@ abstract class HerosAnalysis[F](p: SomeProject, icfg: OpalICFG)
     /**
      * The project's property store.
      */
-    protected implicit val propertyStore: PropertyStore = p.get(PropertyStoreKey)
+    implicit protected val propertyStore: PropertyStore = p.get(PropertyStoreKey)
 
     /**
      * The project's declared methods.
      */
-    protected implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+    implicit protected val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+
+    implicit protected val typeProvider: TypeProvider = p.get(TypeProviderKey)
 
     /**
      * The number of threads can be configured with NUM_THREADS.
@@ -87,7 +89,9 @@ object HerosAnalysis {
      * @param method The method.
      * @return True, if the method can be called from outside.
      */
-    def canBeCalledFromOutside(method: Method)(implicit declaredMethods: DeclaredMethods, propertyStore: PropertyStore): Boolean = {
+    def canBeCalledFromOutside(
+        method: Method
+    )(implicit declaredMethods: DeclaredMethods, propertyStore: PropertyStore): Boolean = {
         val FinalEP(_, callers) = propertyStore(declaredMethods(method), Callers.key)
         callers.hasCallersWithUnknownContext
     }
@@ -147,8 +151,9 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
      */
     private def evalProject(p: SomeProject): Milliseconds = {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-            case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+            case None ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+            case Some(requirements) ⇒
+                requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         }
         p.get(RTACallGraphKey)
         val analysis = createAnalysis(p)
@@ -158,7 +163,9 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
             JOptionPane.showMessageDialog(null, "Call Graph finished")
         time {
             solver.solve()
-        } { t ⇒ analysisTime = t.toMilliseconds }
+        } { t ⇒
+            analysisTime = t.toMilliseconds
+        }
         if (HerosAnalysis.MEASURE_MEMORY)
             JOptionPane.showMessageDialog(null, "Analysis finished")
         printResultsToConsole(analysis, analysisTime)

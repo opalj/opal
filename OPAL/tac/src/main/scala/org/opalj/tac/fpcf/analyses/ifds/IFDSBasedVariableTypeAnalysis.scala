@@ -18,7 +18,7 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldType
 import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.tac.ArrayLoad
@@ -98,15 +98,19 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      * The analysis starts with all public methods in java.lang or org.opalj.
      */
     override def entryPoints: Seq[(DeclaredMethod, VTAFact)] = {
-        p.allProjectClassFiles.filter(classInsideAnalysisContext)
+        p.allProjectClassFiles
+            .filter(classInsideAnalysisContext)
             .flatMap(classFile ⇒ classFile.methods)
-            .filter(isEntryPoint).map(method ⇒ declaredMethods(method))
+            .filter(isEntryPoint)
+            .map(method ⇒ declaredMethods(method))
             .flatMap(entryPointsForMethod)
     }
 
     override protected def nullFact: VTAFact = VTANullFact
 
-    override protected def createPropertyValue(result: Map[Statement, Set[VTAFact]]): IFDSProperty[VTAFact] =
+    override protected def createPropertyValue(
+        result: Map[Statement, Set[VTAFact]]
+    ): IFDSProperty[VTAFact] =
         new VTAResult(result)
 
     /**
@@ -116,26 +120,27 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      * created for the assignment's target with the source's type.
      * If there is a field read, a new VariableType will be created with the field's declared type.
      */
-    override protected def normalFlow(statement: Statement, successor: Statement,
-                                      in: Set[VTAFact]): Set[VTAFact] = {
+    override protected def normalFlow(
+        statement: Statement,
+        successor: Statement,
+        in:        Set[VTAFact]
+    ): Set[VTAFact] = {
         val stmt = statement.stmt
         stmt.astID match {
             case Assignment.ASTID ⇒
                 // Add facts for the assigned variable.
-                in ++ newFacts(statement.method, statement.stmt.asAssignment.expr,
-                    statement.index, in)
+                in ++ newFacts(statement.method, statement.stmt.asAssignment.expr, statement.index, in)
             case ArrayStore.ASTID ⇒
                 /*
-                 * Add facts for the array store, like it was a variable assignment.
-                 * By doing so, we only want to get the variable's type.
-                 * Then, we change the definedBy-index to the one of the array and wrap the variable's
-                 * type with an array type.
-                 * Note, that an array type may have at most 255 dimensions.
-                 */
+         * Add facts for the array store, like it was a variable assignment.
+         * By doing so, we only want to get the variable's type.
+         * Then, we change the definedBy-index to the one of the array and wrap the variable's
+         * type with an array type.
+         * Note, that an array type may have at most 255 dimensions.
+         */
                 val flow = scala.collection.mutable.Set.empty[VTAFact]
                 flow ++= in
-                newFacts(statement.method, stmt.asArrayStore.value, statement.index,
-                    in).foreach {
+                newFacts(statement.method, stmt.asArrayStore.value, statement.index, in).foreach {
                     case VariableType(_, t, upperBound) if !(t.isArrayType && t.asArrayType.dimensions <= 254) ⇒
                         stmt.asArrayStore.arrayRef.asVar.definedBy
                             .foreach(flow += VariableType(_, ArrayType(t), upperBound))
@@ -151,8 +156,12 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      * For each variable, which can be passed as an argument to the call, a new VariableType is
      * created for the callee context.
      */
-    override protected def callFlow(call: Statement, callee: DeclaredMethod, in: Set[VTAFact],
-                                    source: (DeclaredMethod, VTAFact)): Set[VTAFact] = {
+    override protected def callFlow(
+        call:   Statement,
+        callee: DeclaredMethod,
+        in:     Set[VTAFact],
+        source: (DeclaredMethod, VTAFact)
+    ): Set[VTAFact] = {
         val callObject = asCall(call.stmt)
         val allParams = callObject.allParams
         // Iterate over all input facts and over all parameters of the call.
@@ -161,14 +170,16 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
             case VariableType(definedBy, t, upperBound) ⇒
                 allParams.iterator.zipWithIndex.foreach {
                     /*
-                     * We are only interested in a pair of a variable type and a parameter, if the
-                     * variable and the parameter can refer to the same object.
-                     */
+           * We are only interested in a pair of a variable type and a parameter, if the
+           * variable and the parameter can refer to the same object.
+           */
                     case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) ⇒
                         // If this is the case, create a new fact for the method's formal parameter.
                         flow += VariableType(
-                            AbstractIFDSAnalysis.switchParamAndVariableIndex(parameterIndex, callee.definedMethod.isStatic),
-                            t, upperBound
+                            AbstractIFDSAnalysis
+                                .switchParamAndVariableIndex(parameterIndex, callee.definedMethod.isStatic),
+                            t,
+                            upperBound
                         )
                     case _ ⇒ // Nothing to do
                 }
@@ -181,12 +192,16 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      * If the call is an instance call, new CalleeTypes will be created for the call, one for each
      * VariableType, which could be the call's target.
      */
-    override protected def callToReturnFlow(call: Statement, successor: Statement,
-                                            in:     Set[VTAFact],
-                                            source: (DeclaredMethod, VTAFact)): Set[VTAFact] = {
+    override protected def callToReturnFlow(
+        call:      Statement,
+        successor: Statement,
+        in:        Set[VTAFact],
+        source:    (DeclaredMethod, VTAFact)
+    ): Set[VTAFact] = {
         // Check, to which variables the callee may refer
         val calleeDefinitionSites = asCall(call.stmt).receiverOption
-            .map(callee ⇒ callee.asVar.definedBy).getOrElse(EmptyIntTrieSet)
+            .map(callee ⇒ callee.asVar.definedBy)
+            .getOrElse(EmptyIntTrieSet)
         val calleeTypeFacts = in.collect {
             // If we know the variable's type, we also know on which type the call is performed.
             case VariableType(index, t, upperBound) if calleeDefinitionSites.contains(index) ⇒
@@ -200,8 +215,13 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      * If the call returns a value which is assigned to a variable, a new VariableType will be
      * created in the caller context with the returned variable's type.
      */
-    override protected def returnFlow(call: Statement, callee: DeclaredMethod, exit: Statement,
-                                      successor: Statement, in: Set[VTAFact]): Set[VTAFact] =
+    override protected def returnFlow(
+        call:      Statement,
+        callee:    DeclaredMethod,
+        exit:      Statement,
+        successor: Statement,
+        in:        Set[VTAFact]
+    ): Set[VTAFact] =
         // We only create a new fact, if the call returns a value, which is assigned to a variable.
         if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
             val returnValue = exit.stmt.asReturnValue.expr.asVar
@@ -216,9 +236,12 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      * If a method outside of the analysis context is called, we assume that it returns every
      * possible runtime type matching the compile time type.
      */
-    override protected def callOutsideOfAnalysisContext(statement: Statement, callee: DeclaredMethod,
-                                                        successor: Statement,
-                                                        in:        Set[VTAFact]): Set[VTAFact] = {
+    override protected def callOutsideOfAnalysisContext(
+        statement: Statement,
+        callee:    DeclaredMethod,
+        successor: Statement,
+        in:        Set[VTAFact]
+    ): Set[VTAFact] = {
         val returnType = callee.descriptor.returnType
         if (statement.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
             Set(VariableType(statement.index, returnType.asReferenceType, upperBound = true))
@@ -273,18 +296,19 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType ⇒
                 /*
-                 * Create a fact for the parameter, which says, that the parameter may have any
-                 * subtype of its compile time type.
-                 */
+         * Create a fact for the parameter, which says, that the parameter may have any
+         * subtype of its compile time type.
+         */
                 VariableType(
                     AbstractIFDSAnalysis.switchParamAndVariableIndex(index, method.definedMethod.isStatic),
-                    t.asReferenceType, upperBound = true
+                    t.asReferenceType,
+                    upperBound = true
                 )
             /*
-         * In IFDS problems, we must always also analyze the null fact, because it creates the facts,
-         * which hold independently of other source facts.
-         * Map the input facts, in which we are interested, to a pair of the method and the fact.
-         */
+     * In IFDS problems, we must always also analyze the null fact, because it creates the facts,
+     * which hold independently of other source facts.
+     * Map the input facts, in which we are interested, to a pair of the method and the fact.
+     */
         } :+ VTANullFact).map(fact ⇒ (method, fact))
     }
 
@@ -297,31 +321,37 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      * @param in The facts, which hold before the statement.
      * @return The new facts created by the statement.
      */
-    private def newFacts(method: Method, expression: Expr[DUVar[ValueInformation]],
-                         statementIndex: Int,
-                         in:             Set[VTAFact]): Iterator[VariableType] = expression.astID match {
-        case New.ASTID ⇒ in.iterator.collect {
-            // When a constructor is called, we always know the exact type.
-            case VTANullFact ⇒
-                VariableType(statementIndex, expression.asNew.tpe, upperBound = false)
-        }
-        case Var.ASTID ⇒ in.iterator.collect {
-            // When we know the source type, we also know the type of the assigned variable.
-            case VariableType(index, t, upperBound) if expression.asVar.definedBy.contains(index) ⇒
-                VariableType(statementIndex, t, upperBound)
-        }
-        case ArrayLoad.ASTID ⇒ in.iterator.collect {
-            // When we know the array's type, we also know the type of the loaded element.
-            case VariableType(index, t, upperBound) if isArrayOfObjectType(t) &&
-                expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) ⇒
-                VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound)
-        }
+    private def newFacts(
+        method:         Method,
+        expression:     Expr[DUVar[ValueInformation]],
+        statementIndex: Int,
+        in:             Set[VTAFact]
+    ): Iterator[VariableType] = expression.astID match {
+        case New.ASTID ⇒
+            in.iterator.collect {
+                // When a constructor is called, we always know the exact type.
+                case VTANullFact ⇒
+                    VariableType(statementIndex, expression.asNew.tpe, upperBound = false)
+            }
+        case Var.ASTID ⇒
+            in.iterator.collect {
+                // When we know the source type, we also know the type of the assigned variable.
+                case VariableType(index, t, upperBound) if expression.asVar.definedBy.contains(index) ⇒
+                    VariableType(statementIndex, t, upperBound)
+            }
+        case ArrayLoad.ASTID ⇒
+            in.iterator.collect {
+                // When we know the array's type, we also know the type of the loaded element.
+                case VariableType(index, t, upperBound) if isArrayOfObjectType(t) &&
+                    expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) ⇒
+                    VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound)
+            }
         case GetField.ASTID | GetStatic.ASTID ⇒
             val t = expression.asFieldRead.declaredFieldType
             /*
-             * We do not track field types. So we must assume, that it contains any subtype of its
-             * compile time type.
-             */
+       * We do not track field types. So we must assume, that it contains any subtype of its
+       * compile time type.
+       */
             if (t.isReferenceType)
                 Iterator(VariableType(statementIndex, t.asReferenceType, upperBound = true))
             else Iterator.empty
@@ -337,7 +367,10 @@ class IFDSBasedVariableTypeAnalysis private (implicit val project: SomeProject)
      *
      * @return True, if `t` is an array type of an object type.
      */
-    @tailrec private def isArrayOfObjectType(t: FieldType, includeObjectType: Boolean = false): Boolean = {
+    @tailrec private def isArrayOfObjectType(
+        t:                 FieldType,
+        includeObjectType: Boolean   = false
+    ): Boolean = {
         if (t.isArrayType) isArrayOfObjectType(t.asArrayType.elementType, includeObjectType = true)
         else if (t.isObjectType && includeObjectType) true
         else false
@@ -382,7 +415,9 @@ class IFDSBasedVariableTypeAnalysisRunner extends AbsractIFDSAnalysisRunner {
 
     override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit = {}
 
-    override protected def additionalEvaluationResult(analysis: AbstractIFDSAnalysis[_]): Option[Object] =
+    override protected def additionalEvaluationResult(
+        analysis: AbstractIFDSAnalysis[_]
+    ): Option[Object] =
         analysis match {
             case subsuming: Subsuming[_] ⇒ Some(subsuming.numberOfSubsumptions)
             case _                       ⇒ None

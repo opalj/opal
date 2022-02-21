@@ -21,7 +21,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey

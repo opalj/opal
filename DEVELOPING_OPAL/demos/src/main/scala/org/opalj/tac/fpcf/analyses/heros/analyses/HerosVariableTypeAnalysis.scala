@@ -29,7 +29,7 @@ import org.opalj.br.FieldType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.analyses.ifds.Statement
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -53,13 +53,16 @@ import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
  *
  * @author Mario Trageser
  */
-class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMethods: Map[Method, util.Set[VTAFact]])
-    extends HerosAnalysis[VTAFact](p, icfg) {
+class HerosVariableTypeAnalysis(
+        p:              SomeProject,
+        icfg:           OpalForwardICFG,
+        initialMethods: Map[Method, util.Set[VTAFact]]
+) extends HerosAnalysis[VTAFact](p, icfg) {
 
     override val initialSeeds: util.Map[Statement, util.Set[VTAFact]] = {
         var result: Map[Statement, util.Set[VTAFact]] = Map.empty
         for ((m, facts) ← initialMethods) {
-            result += icfg.getStartPointsOf(m).iterator().next() → facts
+            result += icfg.getStartPointsOf(m).iterator().next() -> facts
         }
         result.asJava
     }
@@ -70,14 +73,17 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
 
         new FlowFunctions[Statement, VTAFact, Method]() {
 
-            override def getNormalFlowFunction(statement: Statement, succ: Statement): FlowFunction[VTAFact] = {
+            override def getNormalFlowFunction(
+                statement: Statement,
+                succ:      Statement
+            ): FlowFunction[VTAFact] = {
                 if (!insideAnalysisContext(statement.method)) return KillAll.v()
                 val stmt = statement.stmt
                 stmt.astID match {
                     case Assignment.ASTID ⇒
                         (source: VTAFact) ⇒ {
-                            val fact = newFact(statement.method, statement.stmt.asAssignment.expr,
-                                statement.index, source)
+                            val fact =
+                                newFact(statement.method, statement.stmt.asAssignment.expr, statement.index, source)
                             if (fact.isDefined) TwoElementSet.twoElementSet(source, fact.get)
                             else Collections.singleton(source)
                         }
@@ -85,8 +91,7 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
                         (source: VTAFact) ⇒ {
                             val flow = scala.collection.mutable.Set.empty[VTAFact]
                             flow += source
-                            newFact(statement.method, stmt.asArrayStore.value, statement.index,
-                                source).foreach {
+                            newFact(statement.method, stmt.asArrayStore.value, statement.index, source).foreach {
                                 case VariableType(_, t, upperBound) if !(t.isArrayType && t.asArrayType.dimensions <= 254) ⇒
                                     stmt.asArrayStore.arrayRef.asVar.definedBy
                                         .foreach(flow += VariableType(_, ArrayType(t), upperBound))
@@ -110,8 +115,10 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
                                 allParams.iterator.zipWithIndex.foreach {
                                     case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) ⇒
                                         flow += VariableType(
-                                            AbstractIFDSAnalysis.switchParamAndVariableIndex(parameterIndex, callee.isStatic),
-                                            t, upperBound
+                                            AbstractIFDSAnalysis
+                                                .switchParamAndVariableIndex(parameterIndex, callee.isStatic),
+                                            t,
+                                            upperBound
                                         )
                                     case _ ⇒
                                 }
@@ -121,7 +128,12 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
                     }
                 }
 
-            override def getReturnFlowFunction(stmt: Statement, callee: Method, exit: Statement, succ: Statement): FlowFunction[VTAFact] =
+            override def getReturnFlowFunction(
+                stmt:   Statement,
+                callee: Method,
+                exit:   Statement,
+                succ:   Statement
+            ): FlowFunction[VTAFact] =
                 if (exit.stmt.astID == ReturnValue.ASTID && stmt.stmt.astID == Assignment.ASTID) {
                     val returnValue = exit.stmt.asReturnValue.expr.asVar
                     source: VTAFact ⇒ {
@@ -134,14 +146,22 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
                     }
                 } else KillAll.v()
 
-            override def getCallToReturnFlowFunction(statement: Statement, succ: Statement): FlowFunction[VTAFact] = {
+            override def getCallToReturnFlowFunction(
+                statement: Statement,
+                succ:      Statement
+            ): FlowFunction[VTAFact] = {
                 if (!insideAnalysisContext(statement.method)) return KillAll.v()
                 val stmt = statement.stmt
                 val calleeDefinitionSites = asCall(stmt).receiverOption
-                    .map(callee ⇒ callee.asVar.definedBy).getOrElse(EmptyIntTrieSet)
+                    .map(callee ⇒ callee.asVar.definedBy)
+                    .getOrElse(EmptyIntTrieSet)
                 val callOutsideOfAnalysisContext =
-                    getCallees(statement).exists(method ⇒
-                        !((method.hasSingleDefinedMethod || method.hasMultipleDefinedMethods) && insideAnalysisContext(method.definedMethod)))
+                    getCallees(statement).exists(
+                        method ⇒
+                            !((method.hasSingleDefinedMethod || method.hasMultipleDefinedMethods) && insideAnalysisContext(
+                                method.definedMethod
+                            ))
+                    )
                 source: VTAFact ⇒ {
                     val result = scala.collection.mutable.Set[VTAFact](source)
                     source match {
@@ -161,25 +181,31 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
         }
     }
 
-    private def newFact(method: Method, expression: Expr[DUVar[ValueInformation]],
-                        statementIndex: Int,
-                        source:         VTAFact): Option[VariableType] = expression.astID match {
-        case New.ASTID ⇒ source match {
-            case VTANullFact ⇒
-                Some(VariableType(statementIndex, expression.asNew.tpe, upperBound = false))
-            case _ ⇒ None
-        }
-        case Var.ASTID ⇒ source match {
-            case VariableType(index, t, upperBound) if expression.asVar.definedBy.contains(index) ⇒
-                Some(VariableType(statementIndex, t, upperBound))
-            case _ ⇒ None
-        }
-        case ArrayLoad.ASTID ⇒ source match {
-            case VariableType(index, t, upperBound) if isArrayOfObjectType(t) &&
-                expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) ⇒
-                Some(VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound))
-            case _ ⇒ None
-        }
+    private def newFact(
+        method:         Method,
+        expression:     Expr[DUVar[ValueInformation]],
+        statementIndex: Int,
+        source:         VTAFact
+    ): Option[VariableType] = expression.astID match {
+        case New.ASTID ⇒
+            source match {
+                case VTANullFact ⇒
+                    Some(VariableType(statementIndex, expression.asNew.tpe, upperBound = false))
+                case _ ⇒ None
+            }
+        case Var.ASTID ⇒
+            source match {
+                case VariableType(index, t, upperBound) if expression.asVar.definedBy.contains(index) ⇒
+                    Some(VariableType(statementIndex, t, upperBound))
+                case _ ⇒ None
+            }
+        case ArrayLoad.ASTID ⇒
+            source match {
+                case VariableType(index, t, upperBound) if isArrayOfObjectType(t) &&
+                    expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) ⇒
+                    Some(VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound))
+                case _ ⇒ None
+            }
         case GetField.ASTID | GetStatic.ASTID ⇒
             val t = expression.asFieldRead.declaredFieldType
             if (t.isReferenceType)
@@ -188,7 +214,10 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
         case _ ⇒ None
     }
 
-    @tailrec private def isArrayOfObjectType(t: FieldType, includeObjectType: Boolean = false): Boolean = {
+    @tailrec private def isArrayOfObjectType(
+        t:                 FieldType,
+        includeObjectType: Boolean   = false
+    ): Boolean = {
         if (t.isArrayType) isArrayOfObjectType(t.asArrayType.elementType, includeObjectType = true)
         else if (t.isObjectType && includeObjectType) true
         else false
@@ -199,28 +228,37 @@ class HerosVariableTypeAnalysis(p: SomeProject, icfg: OpalForwardICFG, initialMe
             callee.classFile.fqn.startsWith("org/opalj/fpcf/fixtures/vta"))
 
     private def getCallees(statement: Statement): Iterator[DeclaredMethod] = {
+        val context = typeProvider.newContext(declaredMethods(statement.method))
         val FinalEP(_, callees) = propertyStore(declaredMethods(statement.method), Callees.key)
-        callees.directCallees(statement.stmt.pc)
+        callees.directCallees(context, statement.stmt.pc).map(_.method)
     }
 
 }
 
-class HerosVariableTypeAnalysisRunner extends HerosAnalysisRunner[VTAFact, HerosVariableTypeAnalysis] {
+class HerosVariableTypeAnalysisRunner
+    extends HerosAnalysisRunner[VTAFact, HerosVariableTypeAnalysis] {
 
     override protected def createAnalysis(p: SomeProject): HerosVariableTypeAnalysis = {
         implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
         implicit val propertyStore: PropertyStore = p.get(PropertyStoreKey)
         val initialMethods =
-            p.allProjectClassFiles.filter(_.fqn.startsWith("java/lang"))
+            p.allProjectClassFiles
+                .filter(_.fqn.startsWith("java/lang"))
                 .flatMap(classFile ⇒ classFile.methods)
                 .filter(isEntryPoint)
-                .map(method ⇒ method → entryPointsForMethod(method).asJava).toMap
+                .map(method ⇒ method -> entryPointsForMethod(method).asJava)
+                .toMap
         new HerosVariableTypeAnalysis(p, new OpalForwardICFG(p), initialMethods)
     }
 
-    override protected def printResultsToConsole(analysis: HerosVariableTypeAnalysis, analysisTime: Milliseconds): Unit = {}
+    override protected def printResultsToConsole(
+        analysis:     HerosVariableTypeAnalysis,
+        analysisTime: Milliseconds
+    ): Unit = {}
 
-    private def isEntryPoint(method: Method)(implicit declaredMethods: DeclaredMethods, propertyStore: PropertyStore): Boolean = {
+    private def isEntryPoint(
+        method: Method
+    )(implicit declaredMethods: DeclaredMethods, propertyStore: PropertyStore): Boolean = {
         method.body.isDefined && HerosAnalysis.canBeCalledFromOutside(method)
     }
 
@@ -229,7 +267,8 @@ class HerosVariableTypeAnalysisRunner extends HerosAnalysisRunner[VTAFact, Heros
             case (t, index) if t.isReferenceType ⇒
                 VariableType(
                     AbstractIFDSAnalysis.switchParamAndVariableIndex(index, method.isStatic),
-                    t.asReferenceType, upperBound = true
+                    t.asReferenceType,
+                    upperBound = true
                 )
         } :+ VTANullFact).toSet
     }
