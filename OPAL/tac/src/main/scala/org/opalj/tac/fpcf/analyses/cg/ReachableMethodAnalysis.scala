@@ -76,9 +76,9 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     protected val processesMethodsWithoutBody = false
 
     protected def processMethodWithoutBody(
-                                              eOptP: EOptionP[DeclaredMethod, Callers]
-                                          ): PropertyComputationResult = {
-        if (processesMethodsWithoutBody){
+        eOptP: EOptionP[DeclaredMethod, Callers]
+    ): PropertyComputationResult = {
+        if (processesMethodsWithoutBody) {
             processMethod(eOptP, null, null)
         } else
             NoResult

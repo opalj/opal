@@ -121,7 +121,7 @@ class CallGraphAnalysis private[cg] (
         callContext: ContextType, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         val state = new CGState[ContextType](callContext, tacEP)
-        if(tacEP ne null)
+        if (tacEP ne null)
             processMethod(state, new DirectCalls())
         else
             returnResult(new DirectCalls(), enforceCalleesResult = true)(state)
