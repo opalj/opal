@@ -29,7 +29,6 @@ ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licens
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-
 scalaVersion in ThisBuild := "2.12.15"
 
 ScalacConfiguration.globalScalacOptions
@@ -45,9 +44,9 @@ ThisBuild / logBuffered := false
 
 ThisBuild / javacOptions ++= Seq("-encoding", "utf8", "-source", "1.8")
 
-ThisBuild /testOptions := {
+ThisBuild / testOptions := {
   baseDirectory
-    .map(bd ⇒ Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
+    .map(bd => Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
     .value
 }
 
@@ -57,12 +56,12 @@ ThisBuild / testOptions += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
 ScalaUnidoc / unidoc / scalacOptions := {
-  baseDirectory.map(bd ⇒ Seq("-sourcepath", bd.getAbsolutePath)).value
+  baseDirectory.map(bd => Seq("-sourcepath", bd.getAbsolutePath)).value
 }
 
 ScalaUnidoc / unidoc / scalacOptions ++=
   Opts.doc.sourceUrl(
-  	"https://raw.githubusercontent.com/stg-tud/opal/" +
+    "https://raw.githubusercontent.com/stg-tud/opal/" +
       (if (isSnapshot.value) "develop" else "master") +
       "/€{FILE_PATH}.scala"
   )
@@ -104,7 +103,10 @@ lazy val buildSettings =
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
     Seq(Defaults.itSettings: _*) ++
-    Seq(unmanagedSourceDirectories.withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil) ++
+    Seq(
+      unmanagedSourceDirectories
+        .withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil
+    ) ++
     Seq(
       Test / unmanagedSourceDirectories := (Test / javaSource).value :: (Test / scalaSource).value :: Nil
     ) ++
@@ -326,18 +328,17 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
-
 lazy val ll = `LLVM`
 lazy val `LLVM` = (project in file("OPAL/ll"))
   .settings(buildSettings: _*)
   .settings(
     name := "LLVM",
-    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - LLVM"),
+    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
     libraryDependencies ++= Dependencies.ll
   )
-.dependsOn(br % "it->it;it->test;test->test;compile->compile")
-.configs(IntegrationTest)
+  .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
 
 lazy val framework = `Framework`
 lazy val `Framework` = (project in file("OPAL/framework"))
