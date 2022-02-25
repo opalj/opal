@@ -431,12 +431,21 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val receiverOpt = callees.indirectCallReceiver(state.callContext, pc, target)
                 if (receiverOpt.isDefined && !targetMethod.definedMethod.isStatic) {
                     val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
-                    handleCallReceiver(receiverDefSites, target, isNonVirtualCall = false)
-                } else if (targetMethod.name == "<init>") {
+                    handleCallReceiver(
+                        receiverDefSites,
+                        target,
+                        isNonVirtualCall = targetMethod.definedMethod.isConstructor,
+                        indirectConstructorPCAndType =
+                            if (targetMethod.definedMethod.isConstructor)
+                                Some((pc, receiverOpt.get._1.asReferenceValue.asReferenceType))
+                            else None
+                    )
+                } else if (targetMethod.definedMethod.isConstructor) {
                     handleCallReceiver(
                         IntTrieSet(tac.properStmtIndexForPC(pc)),
                         target,
-                        isNonVirtualCall = false
+                        isNonVirtualCall = true,
+                        indirectConstructorPCAndType = Some((pc, targetMethod.declaringClassType))
                     )
                 } else {
                     // TODO distinguish between static methods and unavailable info

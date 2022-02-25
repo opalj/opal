@@ -27,6 +27,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ASObjectValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
@@ -47,6 +48,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.br.Method
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
@@ -75,10 +77,17 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
         activated
     }
 
+    def constructorReceiver(pc: Int)(constructor: Method): Some[(ValueInformation, IntTrieSet)] = {
+        Some((
+            ASObjectValue(isNull = No, isPrecise = false, constructor.classFile.thisType),
+            IntTrieSet(pc)
+        ))
+    }
+
     def addCalls(
         callContext:    ContextType,
         callPC:         Int,
-        actualReceiver: Option[(ValueInformation, IntTrieSet)],
+        actualReceiver: Method ⇒ Option[(ValueInformation, IntTrieSet)],
         actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Traversable[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls): Unit = {
         MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
@@ -87,7 +96,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
                 callPC,
                 typeProvider.expandContext(callContext, declaredMethods(m), callPC),
                 actualParams,
-                actualReceiver
+                actualReceiver(m)
             )
         }
     }
@@ -325,7 +334,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                     )
                 )
 
-                addCalls(state.callContext, callPC, None, Seq.empty, matchers)
+                addCalls(state.callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
             }
 
         AllocationsUtil.continuationForAllocation[(Int, V), ContextType](
@@ -344,7 +353,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                     )
                 )
 
-                addCalls(state.callContext, data._1, None, Seq.empty, matchers)
+                addCalls(state.callContext, data._1, constructorReceiver(data._1), Seq.empty, matchers)
             }
 
         if (eps.isFinal) {
@@ -378,7 +387,7 @@ class ClassNewInstanceAnalysis private[analyses] (
             )
         )
 
-        addCalls(callContext, callPC, None, Seq.empty, matchers)
+        addCalls(callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
     }
 
     private[this] def failure(
@@ -389,7 +398,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                 MatcherUtil.constructorMatcher,
                 new ParameterTypesBasedMethodMatcher(RefArray.empty)
             )
-            addCalls(state.callContext, callPC, None, Seq.empty, matchers)
+            addCalls(state.callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
         }
@@ -464,7 +473,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 val allMatchers = handleGetConstructor(
                     allocationContext, data._1, allocationIndex, data._2, data._3, stmts
                 )
-                addCalls(state.callContext, data._1, None, data._2, allMatchers)
+                addCalls(
+                    state.callContext, data._1,
+                    constructorReceiver(data._1), data._2,
+                    allMatchers
+                )
             }
 
         AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
@@ -483,7 +496,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
 
-                addCalls(state.callContext, data._1, None, data._2, matchers)
+                addCalls(
+                    state.callContext, data._1,
+                    constructorReceiver(data._1), data._2,
+                    matchers
+                )
             }
 
         AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
@@ -499,7 +516,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
 
-                addCalls(state.callContext, data._1._1, None, data._1._2, matchers)
+                addCalls(
+                    state.callContext, data._1._1,
+                    constructorReceiver(data._1._1), data._1._2,
+                    matchers
+                )
             }
 
         if (eps.isFinal) {
@@ -540,7 +561,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         AllocationsUtil.handleAllocations(
             constructor, callContext, depender, state.tac.stmts, _ eq ObjectType.Constructor, () ⇒ {
             if (HighSoundnessMode) {
-                addCalls(callContext, callPC, None, persistentActualParams, baseMatchers + AllMethodsMatcher)
+                addCalls(
+                    callContext, callPC,
+                    constructorReceiver(callPC), persistentActualParams,
+                    baseMatchers + AllMethodsMatcher
+                )
             } else {
                 indirectCalls.addIncompleteCallSite(callPC)
             }
@@ -549,7 +574,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
             val allMatchers = handleGetConstructor(
                 allocationContext, callPC, allocationIndex, persistentActualParams, baseMatchers, stmts
             )
-            addCalls(callContext, callPC, None, persistentActualParams, allMatchers)
+            addCalls(
+                callContext, callPC,
+                constructorReceiver(callPC), persistentActualParams,
+                allMatchers
+            )
         }
     }
 
@@ -605,7 +634,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         callPC: Int, baseMatchers: Set[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
         if (HighSoundnessMode) {
-            addCalls(state.callContext, callPC, None, Seq.empty, baseMatchers + AllMethodsMatcher)
+            addCalls(
+                state.callContext, callPC,
+                constructorReceiver(callPC), Seq.empty,
+                baseMatchers + AllMethodsMatcher
+            )
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
         }
@@ -679,7 +712,7 @@ class MethodInvokeAnalysis private[analyses] (
                 val allMatchers = handleGetMethod(
                     allocationContext, data._1, allocationIndex, data._2, data._3, data._4, stmts
                 )
-                addCalls(state.callContext, data._1, data._2, data._3, allMatchers)
+                addCalls(state.callContext, data._1, _ ⇒ data._2, data._3, allMatchers)
             }
 
         AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
@@ -709,7 +742,7 @@ class MethodInvokeAnalysis private[analyses] (
                             onlyMethodsExactlyInClass = !data._4.contains(PublicMethodMatcher)
                         )
 
-                    addCalls(state.callContext, data._1, data._2, data._3, allMatchers)
+                    addCalls(state.callContext, data._1, _ ⇒ data._2, data._3, allMatchers)
                 }
             }
 
@@ -729,7 +762,7 @@ class MethodInvokeAnalysis private[analyses] (
                         v ⇒ new ClassBasedMethodMatcher(v, !data._4.contains(PublicMethodMatcher))
                     )
 
-                addCalls(state.callContext, data._1, data._2, data._3, matchers)
+                addCalls(state.callContext, data._1, _ ⇒ data._2, data._3, matchers)
             }
 
         AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
@@ -745,7 +778,7 @@ class MethodInvokeAnalysis private[analyses] (
                         v ⇒ new ClassBasedMethodMatcher(v, !data._1._4.contains(PublicMethodMatcher))
                     )
 
-                addCalls(state.callContext, data._1._1, data._1._2, data._1._3, matchers)
+                addCalls(state.callContext, data._1._1, _ ⇒ data._1._2, data._1._3, matchers)
             }
 
         if (eps.isFinal) {
@@ -802,7 +835,11 @@ class MethodInvokeAnalysis private[analyses] (
                     persistentReceiver, persistentActualParams,
                     baseMatchers, stmts
                 )
-                addCalls(callContext, callPC, persistentReceiver, persistentActualParams, allMatchers)
+                addCalls(
+                    callContext, callPC,
+                    _ ⇒ persistentReceiver, persistentActualParams,
+                    allMatchers
+                )
             }
     }
 
@@ -881,7 +918,11 @@ class MethodInvokeAnalysis private[analyses] (
         baseMatchers: Set[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
         if (HighSoundnessMode) {
-            addCalls(state.callContext, callPC, receiver, params, baseMatchers + AllMethodsMatcher)
+            addCalls(
+                state.callContext, callPC,
+                _ ⇒ receiver, params,
+                baseMatchers + AllMethodsMatcher
+            )
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
         }
