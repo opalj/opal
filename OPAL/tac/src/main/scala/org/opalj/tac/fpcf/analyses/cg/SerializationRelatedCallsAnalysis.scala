@@ -440,6 +440,7 @@ class OISReadObjectAnalysis private[analyses] (
                         )
                     }
                 }
+            case _ ⇒
         }
 
         if (!foundCast) {

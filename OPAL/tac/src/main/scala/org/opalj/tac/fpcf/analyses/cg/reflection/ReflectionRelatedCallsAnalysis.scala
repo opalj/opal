@@ -999,7 +999,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         AllocationsUtil.continuationForAllocation[methodHandleDependerType, ContextType](
             eps, state.callContext, _ ⇒ (methodHandle, state.tac.stmts),
-            _.isInstanceOf[(_, _, _, _)], data ⇒ failure(data._1, data._4, data._5)
+            _.isInstanceOf[(_, _, _, _, _)], data ⇒ failure(data._1, data._4, data._5)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val allMatchers = handleGetMethodHandle(
                     allocationContext, data._1, allocationIndex, data._2, data._3, data._4, data._5, stmts
@@ -1009,7 +1009,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
             eps, state.callContext, data ⇒ (data._5, data._6),
-            _.isInstanceOf[(_, _, _, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
+            _.isInstanceOf[(_, _, _, _, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
         ) { (data, _, allocationIndex, stmts) ⇒
                 val name = StringUtil.getString(allocationIndex, stmts)
 
@@ -1040,7 +1040,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
             eps, state.callContext, data ⇒ (data._5, data._6),
-            _.isInstanceOf[(_, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
+            _.isInstanceOf[(_, _, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
