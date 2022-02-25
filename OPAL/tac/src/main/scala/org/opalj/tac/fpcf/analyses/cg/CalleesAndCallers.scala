@@ -38,11 +38,14 @@ import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
  */
 sealed trait CalleesAndCallers {
     final def partialResults(
-        callerContext: Context
+        callerContext: Context, enforceCalleesResult: Boolean = false
     ): TraversableOnce[PartialResult[_, _ >: Null <: Property]] =
-        if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty)
-            partialResultsForCallers
-        else
+        if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty) {
+            if (enforceCalleesResult)
+                Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
+            else
+                partialResultsForCallers
+        } else
             Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
 
     protected def directCallees: IntMap[IntTrieSet] = IntMap.empty

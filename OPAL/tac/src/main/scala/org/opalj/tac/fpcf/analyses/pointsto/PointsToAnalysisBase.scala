@@ -94,9 +94,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def handleCallReceiver(
-        receiverDefSites: IntTrieSet,
-        target:           Context,
-        isNonVirtualCall: Boolean
+        receiverDefSites:             IntTrieSet,
+        target:                       Context,
+        isNonVirtualCall:             Boolean,
+        indirectConstructorPCAndType: Option[(Int, ReferenceType)] = None
     )(implicit state: State): Unit = {
         val targetMethod = target.method
         val fps = formalParameters(targetMethod)
@@ -117,7 +118,17 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
         }
         val fp = getFormalParameter(0, fps, target)
-        val ptss = currentPointsToOfDefSites(fp, receiverDefSites, filter)
+        val ptss =
+            if (indirectConstructorPCAndType.isDefined)
+                Iterator(
+                    createPointsToSet(
+                        indirectConstructorPCAndType.get._1,
+                        state.callContext,
+                        indirectConstructorPCAndType.get._2,
+                        isConstant = false
+                    )
+                )
+            else currentPointsToOfDefSites(fp, receiverDefSites, filter)
         state.includeSharedPointsToSets(
             fp,
             ptss,
