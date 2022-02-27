@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package tac
-package fpcf
-package analyses
-package cg
+package org.opalj.tac.cg.android
 
+import org.opalj.UByte
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
@@ -14,34 +11,43 @@ import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.tac.ComputeTACAIKey
+import org.opalj.tac.DUVar
+import org.opalj.tac.Expr
+import org.opalj.tac.FunctionCall
+import org.opalj.tac.MethodCall
+import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.ReturnValue
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.fpcf.analyses.cg.IndirectCalls
+import org.opalj.tac.fpcf.analyses.cg.V
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.NoResult
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.cg.android.AndroidManifestKey
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-
 import scala.io.BufferedSource
 import scala.io.Source
 
@@ -178,6 +184,13 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         searchIntentsAndCallbacks()
     }
 
+    /**
+     * Starts the second phase of the analysis, after all methods are processed once to collect information on intents
+     * and intent filters.
+     *
+     * @param project The analysed project.
+     * @return Returns the calls originating from inter-component-communication.
+     */
     def startSecondPhase(project: SomeProject): ProperPropertyComputationResult = {
         intentMatching()
 
@@ -195,7 +208,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Generates the lifecycle callbacks for all android components of the project.
-     * Uses the results from parseManifest.
+     * Uses the results from AndroidManifestKey.
      */
     def generateLifecycleCallbacks(componentMap: Map[String, ListBuffer[ClassFile]]): Unit = {
         var fullLifecycle = true //cg is only sound if this is true
@@ -358,7 +371,11 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
     }
 
-    private def processMethod(m: Method): PropertyComputationResult = {
+    /**
+     * Collects information of intents, intent filters and callbacks from the given method m.
+     * @param m The processed method.
+     */
+    private def processMethod(m: Method): Unit = {
         val body = m.body.get
         val intentUseSites: mutable.Map[UByte, List[UByte]] = mutable.Map.empty[UByte, List[UByte]]
         val tacCode = propertyStore.get(m, TACAI.key).get.ub.tac.get
@@ -480,7 +497,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         if (callbackMethods.nonEmpty) {
             generateCallBackEdges(m, callbackMethods)
         }
-        NoResult
     }
 
     def generateCallBackEdges(
@@ -629,6 +645,14 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         undef
     }
 
+    /**
+     * Adds an Intent object to the intents of the project. Collects all available information, that is necessary
+     * for intent matching. Also decides if the intent is implicit or explicit.
+     * @param c The constructor call of the intent.
+     * @param tacCode The TAC code of the Method, where the intent is created.
+     * @param useSites the use sites of the intent.
+     * @param m The method corresponding to the TAC code.
+     */
     def reconstructIntent(
         c:        NonVirtualMethodCall[V],
         tacCode:  TACode[TACMethodParameter, DUVar[ValueInformation]],
@@ -708,7 +732,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     /**
-     * Searches the value of a data parameter.
+     * Searches the value of a data parameter. If nothing is found returns 'undef'.
      */
     def checkData(
         dataPosition: Int,
@@ -746,6 +770,14 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         } else parameter(dataPosition).toString
     }
 
+    /**
+     * Adds an IntentFilter object to the intent filters of the project. Collects all available information, that is necessary
+     * for intent matching.
+     * @param c The constructor call of the intent filter.
+     * @param tacCode The TAC code of the Method, where the intent filter is created.
+     * @param useSites the use sites of the intent filter.
+     * @param m The method corresponding to the TAC code.
+     */
     def reconstructIntentfilter(
         c:        NonVirtualMethodCall[V],
         tacCode:  TACode[TACMethodParameter, DUVar[ValueInformation]],
@@ -798,6 +830,12 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
     }
 
+    /**
+     * Evaluates the use sites of an intent, to find all relevant information for the intent matching.
+     * @param tacCode The TAC code of the analysed method.
+     * @param useSites The use sites of the intent.
+     * @param intent The intent.
+     */
     def evaluateUseSites(
         tacCode:  TACode[TACMethodParameter, DUVar[ValueInformation]],
         useSites: List[Int],
@@ -812,6 +850,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 val virtualCall = stmt.asExprStmt.expr.asVirtualFunctionCall
                 val someIntent = internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc, useSites)
                 if (someIntent.isDefined) {
+                    //The intent is explicit. The analysis can stop because the destination of the intent is found.
                     val expIntent = someIntent.head
                     if (expIntent.calledMethod.nonEmpty) {
                         explicitIntents += expIntent
@@ -826,6 +865,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 if (virtualCall.declaringClass == intentOT) { addUseSites ++= stmt.asAssignment.targetVar.usedBy.toChain }
                 val someIntent = internalFinder(virtualCall.name, virtualCall.params, intent, tacCode, virtualCall.pc, useSites)
                 if (someIntent.isDefined) {
+                    //The intent is explicit. The analysis can stop because the destination of the intent is found.
                     val expIntent = someIntent.head
                     if (expIntent.calledMethod.nonEmpty) {
                         explicitIntents += expIntent
@@ -837,6 +877,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     internalFinder(staticCall.name, staticCall.params, intent, tacCode, staticCall.pc, useSites)
                 }
             } else if (stmt.isInstanceOf[ReturnValue[DUVar[ValueInformation]]]) {
+                //The analysed method returns the intent. It is necessary to wait for results of other methods. Therefore the intent is registered in the returningIntentsMap.
                 val intentTupel = intent.caller.classFile.thisType -> intent.caller.name
                 if (returningIntentsMap.contains(intentTupel)) {
                     returningIntentsMap(intentTupel) += intent
@@ -851,14 +892,25 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def getClassFileFromParameter(p: Expr[DUVar[ValueInformation]], tacCode: TACode[TACMethodParameter, DUVar[ValueInformation]]): Option[ClassFile] = {
         val defSite = p.asVar.definedBy.head
         if (defSite > -1) {
-            try {
-                project.classFile(tacCode.stmts(defSite).asAssignment.expr.asClassConst.value.asObjectType)
-            } catch {
-                case _: Throwable ⇒ None
+            val statement = tacCode.stmts(defSite)
+            if(statement.isAssignment && statement.asAssignment.expr.isClassConst){
+                project.classFile(statement.asAssignment.expr.asClassConst.value.asObjectType)
             }
+            else None
         } else None
     }
 
+    /**
+     * Based on the passed name, the parameters are stored in different fields of the intent. If the name belongs to a method,
+     * that makes the intent explicit, an explicit intent is returned.
+     * @param name Name of the method that is analased.
+     * @param parameter Parameters of the analysed method.
+     * @param intent The intent the the method is called on.
+     * @param tacCode The TAC code of the method, where the method (name) is called.
+     * @param pc The pc of the call.
+     * @param useSites The use sites of the intent.
+     * @return Returns an explicit intent if an explicit method is called.
+     */
     def internalFinder(
         name:      String,
         parameter: Seq[Expr[DUVar[ValueInformation]]],
@@ -1036,8 +1088,8 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         intent:  ImplicitIntent,
         filters: ListBuffer[IntentFilter]
     ): Unit = {
-
         for (filter ← filters) {
+            //The data of the intent is split up in its parts to be tested against the filters.
             val types = filter.dataTypes
             val schemes = filter.dataSchemes
             val data = intent.iData
@@ -1160,6 +1212,11 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         findCalledMethod(tacCode, useSites)
 
+        /**
+         * Finds the method that is started once the intent is send.
+         * @param tacCode The TAC code of the method, that defines the intent.
+         * @param useSites The use sites of the intent.
+         */
         private def findCalledMethod(
             tacCode:  TACode[TACMethodParameter, DUVar[ValueInformation]],
             useSites: List[Int]
@@ -1282,6 +1339,11 @@ class IntentFilter(var receiver: ClassFile, var componentType: String) {
         clone
     }
 
+    /**
+     * Searches the use sites of an intent filter to find all necessary data for the intent matching.
+     * @param tacCode The TAC code of the method, that defines the intent filter.
+     * @param useSites The use sites of the intent filter.
+     */
     def evaluateUseSites(
         tacCode:  TACode[TACMethodParameter, DUVar[ValueInformation]],
         useSites: List[Int]

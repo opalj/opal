@@ -6,7 +6,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.fpcf.analyses.cg.IntentFilter
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
