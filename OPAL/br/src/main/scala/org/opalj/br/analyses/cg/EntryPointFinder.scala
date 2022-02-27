@@ -366,7 +366,7 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
         val defaultEntryPoints = mutable.Map.empty[String, List[(String, Option[MethodDescriptor])]]
 
         val defEntry = project.config.getConfig("org.opalj.br.analyses.cg.AndroidEntryPointsFinder")
-        defEntry.entrySet().forEach{ e =>
+        defEntry.entrySet().forEach { e ⇒
             val d = e.getKey.replaceAll("\"", "")
             val entryMethods = ListBuffer.empty[(String, Option[MethodDescriptor])]
             defEntry.getConfigList(d).forEach { entry ⇒

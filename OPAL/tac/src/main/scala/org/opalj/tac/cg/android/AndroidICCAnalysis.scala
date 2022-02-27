@@ -893,10 +893,9 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val defSite = p.asVar.definedBy.head
         if (defSite > -1) {
             val statement = tacCode.stmts(defSite)
-            if(statement.isAssignment && statement.asAssignment.expr.isClassConst){
+            if (statement.isAssignment && statement.asAssignment.expr.isClassConst) {
                 project.classFile(statement.asAssignment.expr.asClassConst.value.asObjectType)
-            }
-            else None
+            } else None
         } else None
     }
 
