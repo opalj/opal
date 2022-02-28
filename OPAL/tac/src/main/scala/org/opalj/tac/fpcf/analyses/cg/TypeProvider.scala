@@ -99,8 +99,6 @@ trait TypeProvider {
 
     val project: SomeProject
 
-    val providesAllocations: Boolean = false
-
     def newContext(method: DeclaredMethod): ContextType
 
     def expandContext(oldContext: Context, method: DeclaredMethod, pc: Int): ContextType
@@ -145,11 +143,41 @@ trait TypeProvider {
     )(handleType: ReferenceType ⇒ Unit): Unit
 
     def foreachAllocation(
-        use: V, typesProperty: InformationType, additionalTypes: Set[ReferenceType] = Set.empty
+        use:             V,
+        context:         Context,
+        stmts:           Array[Stmt[V]],
+        typesProperty:   InformationType,
+        additionalTypes: Set[ReferenceType] = Set.empty
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
-        throw new UnsupportedOperationException
+        var hasUnknownAllocation = false
+        use.definedBy.foreach { index ⇒
+            if (index >= 0) {
+                val allocO = stmts(index) match {
+                    case Assignment(pc, _, New(_, tpe))         ⇒ Some((tpe, pc))
+                    case Assignment(pc, _, NewArray(_, _, tpe)) ⇒ Some((tpe, pc))
+                    case Assignment(pc, _, c: Const)            ⇒ Some((c.tpe.asObjectType, pc))
+                    case _ ⇒
+                        hasUnknownAllocation = true
+                        None
+                }
+                if (allocO.isDefined)
+                    handleAllocation(
+                        allocO.get._1,
+                        context,
+                        allocO.get._2
+                    )
+            } else {
+                hasUnknownAllocation = true
+            }
+        }
+        if (hasUnknownAllocation)
+            handleAllocation(
+                use.value.asReferenceValue.leastUpperType.getOrElse(ObjectType.Object),
+                NoContext,
+                -1
+            )
     }
 
     def foreachAllocation(
@@ -157,7 +185,7 @@ trait TypeProvider {
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
-        throw new UnsupportedOperationException
+        handleAllocation(field.fieldType.asReferenceType, NoContext, -1)
     }
 
     def continuation(
@@ -232,7 +260,7 @@ trait TypeProvider {
         additionalTypes:     Set[ReferenceType],
         handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
-        throw new UnsupportedOperationException
+        // Do nothing
     }
 
     @inline protected[this] def continuationForAllocations(
@@ -244,7 +272,7 @@ trait TypeProvider {
         implicit
         @nowarn state: TypeProviderState
     ): Unit = {
-        throw new UnsupportedOperationException
+        // Do nothing
     }
 
     private[cg] def isPossibleType(use: V, tpe: ReferenceType): Boolean = {
@@ -817,8 +845,6 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
 
     private[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
 
-    override val providesAllocations: Boolean = true
-
     override def typesProperty(
         field: Field, depender: Entity
     )(
@@ -856,7 +882,11 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
     }
 
     @inline override def foreachAllocation(
-        use: V, typesProperty: AllocationSitePointsToSet, additionalTypes: Set[ReferenceType]
+        use:             V,
+        context:         Context,
+        stmts:           Array[Stmt[V]],
+        typesProperty:   AllocationSitePointsToSet,
+        additionalTypes: Set[ReferenceType]
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
@@ -1156,8 +1186,6 @@ class CFA_k_l_TypeProvider(val project: SomeProject, val k: Int, val l: Int)
 
     private[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
 
-    override val providesAllocations: Boolean = true
-
     override def typesProperty(
         field: Field, depender: Entity
     )(
@@ -1195,7 +1223,11 @@ class CFA_k_l_TypeProvider(val project: SomeProject, val k: Int, val l: Int)
     }
 
     @inline override def foreachAllocation(
-        use: V, typesProperty: AllocationSitePointsToSet, additionalTypes: Set[ReferenceType]
+        use:             V,
+        context:         Context,
+        stmts:           Array[Stmt[V]],
+        typesProperty:   AllocationSitePointsToSet,
+        additionalTypes: Set[ReferenceType]
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
