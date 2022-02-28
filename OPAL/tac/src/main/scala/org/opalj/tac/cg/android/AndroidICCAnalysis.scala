@@ -29,6 +29,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.tac.Assignment
 import org.opalj.tac.ComputeTACAIKey
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
@@ -75,10 +76,6 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     final val service = "service"
     final val receiver = "receiver"
     final val undef = "undefined"
-
-    final val paramRegex = ".*\\(\"|\"\\).*"
-    final val valueRegex = ".*<|>.*"
-    final val otRegex = ".*\\(|\\).*"
 
     final val init = "<init>"
     final val setAction = "setAction"
@@ -359,6 +356,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 processMethod(m)
                 leftOverMethods -= m
                 if (leftOverMethods.isEmpty && notStarted) {
+                    //if all methods are processed and the second phase has not started yet, the second phase is started.
                     notStarted = false
                     startSecondPhase(project)
                 } else NoResult
@@ -669,7 +667,10 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 //Intent(String action)
                 if (p.head.asVar.value.verificationTypeInfo == ObjectVariableInfo(ObjectType.String)) {
                     val intent = new ImplicitIntent(m)
-                    intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
+                    val defSite = p.head.asVar.definedBy.head
+                    if (defSite > -1) {
+                        intent.action = findString(tacCode.stmts(defSite).asAssignment).getOrElse(undef)
+                    }
                     evaluateUseSites(tacCode, useSites, intent)
                 }
             case FieldTypes(`intentOT`) ⇒
@@ -695,7 +696,10 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             case FieldTypes(ObjectType.String, `intentOT`) ⇒ //Intent(String action, Uri uri)
                 if (p.head.asVar.value.verificationTypeInfo == ObjectVariableInfo(ObjectType.String)) {
                     val intent = new ImplicitIntent(m)
-                    intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
+                    val defSite = p.head.asVar.definedBy.head
+                    if (defSite > -1) {
+                        intent.action = findString(tacCode.stmts(defSite).asAssignment).getOrElse(undef)
+                    }
                     intent.iData = checkData(1, tacCode, p)
                     evaluateUseSites(tacCode, useSites, intent)
 
@@ -722,13 +726,25 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         }
                     } else {
                         val intent = new ImplicitIntent(m)
-                        intent.action = p.head.asVar.value.toString.replaceAll(paramRegex, "")
+                        val defSite = p.head.asVar.definedBy.head
+                        if (defSite > -1) {
+                            intent.action = findString(tacCode.stmts(defSite).asAssignment).getOrElse(undef)
+                        }
                         checkData(1, tacCode, p)
                         intent.iData = checkData(1, tacCode, p)
                         evaluateUseSites(tacCode, useSites, intent)
                     }
                 }
         }
+    }
+
+    def findString(assignment: Assignment[V]): Option[String] = {
+        val expr = assignment.expr
+        if (expr.isStringConst) {
+            Some(expr.asStringConst.value)
+        } else if (expr.isGetStatic) {
+            Some(expr.asGetStatic.name)
+        } else None
     }
 
     /**
@@ -754,7 +770,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                 str.asAssignment.expr != null) {
                                 val strExpr = str.asAssignment.expr
                                 if (strExpr.isStringConst) {
-                                    return str.asAssignment.targetVar.value.toString.replaceAll(paramRegex, "");
+                                    return strExpr.asStringConst.value;
                                 }
                             }
                         }
@@ -762,12 +778,8 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
             }
         }
-        if (parameter(dataPosition).asVar.value.toString.startsWith("{_ <:") ||
-            parameter(dataPosition).asVar.value.toString.startsWith("null") ||
-            defSite < 0) {
-            //toDo: Find Data, check defSites until Data string is found
-            undef
-        } else parameter(dataPosition).toString
+        //toDo: Find Data, check defSites until Data string is found
+        undef
     }
 
     /**
@@ -791,7 +803,10 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         c.descriptor.parameterTypes match {
             case FieldTypes(ObjectType.String) ⇒
                 if (p.head.asVar.value.verificationTypeInfo == ObjectVariableInfo(ObjectType.String)) {
-                    intentFilter.actions += p.head.asVar.value.toString.replaceAll(paramRegex, "")
+                    val defSite = p.head.asVar.definedBy.head
+                    if (defSite > -1) {
+                        intentFilter.actions += findString(tacCode.stmts(defSite).asAssignment).getOrElse(undef)
+                    }
                     intentFilter.evaluateUseSites(tacCode, useSites)
                     if (intentFilter.registeredReceivers.nonEmpty) handleReceivers(intentFilter)
                 }
@@ -806,8 +821,14 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
 
             case FieldTypes(ObjectType.String, ObjectType.String) ⇒
-                intentFilter.actions += p.head.asVar.value.toString.replaceAll(paramRegex, "")
-                intentFilter.dataTypes += p(1).asVar.value.toString.replaceAll(paramRegex, "")
+                val defSiteFirstParameter = p.head.asVar.definedBy.head
+                if (defSiteFirstParameter > -1) {
+                    intentFilter.actions += findString(tacCode.stmts(defSiteFirstParameter).asAssignment).getOrElse(undef)
+                }
+                val defSiteSecondParameter = p(1).asVar.definedBy.head
+                if (defSiteSecondParameter > -1) {
+                    intentFilter.dataTypes += findString(tacCode.stmts(defSiteSecondParameter).asAssignment).getOrElse(undef)
+                }
                 intentFilter.evaluateUseSites(tacCode, useSites)
                 if (intentFilter.registeredReceivers.nonEmpty) handleReceivers(intentFilter)
             case _ ⇒ //IntentFilter()
@@ -902,7 +923,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /**
      * Based on the passed name, the parameters are stored in different fields of the intent. If the name belongs to a method,
      * that makes the intent explicit, an explicit intent is returned.
-     * @param name Name of the method that is analased.
+     * @param name Name of the analysed method.
      * @param parameter Parameters of the analysed method.
      * @param intent The intent the the method is called on.
      * @param tacCode The TAC code of the method, where the method (name) is called.
@@ -957,21 +978,37 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     }
             }
         } else if (intentMethods.contains(name)) {
-            val firstParam: String = parameter.head.asVar.value.toString.replaceAll(paramRegex, "")
+            val defSiteFirstParam = parameter.head.asVar.definedBy.head
             name match {
-                case `setAction`   ⇒ intent.action = firstParam
-                case `addCategory` ⇒ intent.categories += firstParam
-                case `setData`     ⇒ intent.iData = checkData(0, tacCode, parameter)
+                case `setAction` ⇒ if (defSiteFirstParam > -1) {
+                    intent.action = findString(tacCode.stmts(defSiteFirstParam).asAssignment).getOrElse(undef)
+                }
+                case `addCategory` ⇒ if (defSiteFirstParam > -1) {
+                    intent.categories += findString(tacCode.stmts(defSiteFirstParam).asAssignment).getOrElse(undef)
+                }
+                case `setData` ⇒ intent.iData = checkData(0, tacCode, parameter)
                 case `setDataAndType` ⇒
                     intent.iData = checkData(0, tacCode, parameter)
-                    intent.iType = parameter.last.asVar.value.toString.replaceAll(paramRegex, "")
+                    val defSite = parameter.last.asVar.definedBy.head
+                    if (defSite > -1) {
+                        intent.iType = findString(tacCode.stmts(defSite).asAssignment).getOrElse(undef)
+                    }
                 case `setDataAndNormalize` ⇒ intent.iData = checkData(0, tacCode, parameter)
                 case `setDataAndTypeAndNormalize` ⇒
                     intent.iData = checkData(0, tacCode, parameter)
-                    intent.iType = parameter.last.asVar.value.toString.replaceAll(paramRegex, "")
-                case `setType`             ⇒ intent.iType = firstParam
-                case `setTypeAndNormalize` ⇒ intent.iType = firstParam
-                case `setPackage`          ⇒ intent.iPackage = firstParam
+                    val defSite = parameter.last.asVar.definedBy.head
+                    if (defSite > -1) {
+                        intent.iType = findString(tacCode.stmts(defSite).asAssignment).getOrElse(undef)
+                    }
+                case `setType` ⇒ if (defSiteFirstParam > -1) {
+                    intent.iType = findString(tacCode.stmts(defSiteFirstParam).asAssignment).getOrElse(undef)
+                }
+                case `setTypeAndNormalize` ⇒ if (defSiteFirstParam > -1) {
+                    intent.iType = findString(tacCode.stmts(defSiteFirstParam).asAssignment).getOrElse(undef)
+                }
+                case `setPackage` ⇒ if (defSiteFirstParam > -1) {
+                    intent.iPackage = findString(tacCode.stmts(defSiteFirstParam).asAssignment).getOrElse(undef)
+                }
             }
         } else if (activityStartMethods.contains(name)) {
             intent.pc = pc
@@ -1306,11 +1343,9 @@ class IntentFilter(var receiver: ClassFile, var componentType: String) {
     final val addDataScheme = "addDataScheme"
     final val addDataSSP = "addDataSchemeSpecificPart"
     final val addDataType = "addDataType"
-    final val paramRegex = ".*\\(\"|\"\\).*"
     final val addAction = "addAction"
     final val addCategory = "addCategory"
     final val registerReceiver = "registerReceiver"
-    final val receiverRegex = ".*\\: |\\[.*"
 
     final val filterDataMethods: List[String] = List(
         addDataAuthority, addDataPath, addDataScheme, addDataSSP, addDataType
@@ -1338,6 +1373,18 @@ class IntentFilter(var receiver: ClassFile, var componentType: String) {
         clone
     }
 
+    def findString(tacCode: TACode[TACMethodParameter, DUVar[ValueInformation]], defSite: Int): Option[String] = {
+
+        if (defSite > -1) {
+            val expr = tacCode.stmts(defSite).asAssignment.expr
+            if (expr.isStringConst) {
+                Some(expr.asStringConst.value)
+            } else if (expr.isGetStatic) {
+                Some(expr.asGetStatic.name)
+            } else None
+        } else None
+    }
+
     /**
      * Searches the use sites of an intent filter to find all necessary data for the intent matching.
      * @param tacCode The TAC code of the method, that defines the intent filter.
@@ -1352,31 +1399,35 @@ class IntentFilter(var receiver: ClassFile, var componentType: String) {
             val stmt = statements(use)
             if (stmt.isVirtualMethodCall) {
                 val name = stmt.asVirtualMethodCall.name
-
                 val parameter = stmt.asVirtualMethodCall.params
-                if (name == addAction) {
-                    actions += parameter.head.asVar.value.toString.replaceAll(paramRegex, "")
-                }
-                if (name == addCategory) {
-                    categories += parameter.head.asVar.value.toString.replaceAll(paramRegex, "")
+                val firstParameter = findString(tacCode, parameter.head.asVar.definedBy.head)
+                if (firstParameter.isDefined) {
+                    if (name == addAction) {
+                        actions += firstParameter.get
+                    }
+                    if (name == addCategory) {
+                        categories += firstParameter.get
+                    }
+                    if (filterDataMethods.contains(name)) {
+                        name match {
+                            case `addDataAuthority` ⇒
+                                val secondParameter = findString(tacCode, parameter.last.asVar.definedBy.head)
+                                if (secondParameter.isDefined) {
+                                    dataAuthorities += firstParameter.get + secondParameter.get
+                                }
+                            case `addDataPath` ⇒
+                                val secondParameter = findString(tacCode, parameter.last.asVar.definedBy.head)
+                                if (secondParameter.isDefined) {
+                                    dataPaths += firstParameter.get + secondParameter.get
+                                }
+                            case `addDataScheme` ⇒ dataSchemes += firstParameter.get
+                            case `addDataSSP`    ⇒ dataSSPs += firstParameter.get
+                            case `addDataType`   ⇒ dataTypes += firstParameter.get
+                        }
 
-                }
-                if (filterDataMethods.contains(name)) {
-                    name match {
-                        case `addDataAuthority` ⇒ dataAuthorities += (parameter.head.asVar.value.toString.
-                            replaceAll(paramRegex, "") + parameter.last.asVar.value.toString.
-                            replaceAll(paramRegex, ""))
-                        case `addDataPath` ⇒ dataPaths += (parameter.head.asVar.value.toString.
-                            replaceAll(paramRegex, "") + parameter.last.asVar.value.toString.
-                            replaceAll(paramRegex, ""))
-                        case `addDataScheme` ⇒ dataSchemes += parameter.head.asVar.value.toString.
-                            replaceAll(paramRegex, "")
-                        case `addDataSSP` ⇒ dataSSPs += parameter.head.asVar.value.toString.
-                            replaceAll(paramRegex, "")
-                        case `addDataType` ⇒ dataTypes += parameter.head.asVar.value.toString.
-                            replaceAll(paramRegex, "")
                     }
                 }
+
             }
             if (stmt.isAssignment) {
                 if (stmt.asAssignment.expr.isVirtualFunctionCall && stmt.asAssignment.expr.asVirtualFunctionCall.name == registerReceiver) {
