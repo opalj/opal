@@ -27,9 +27,14 @@ object TypesUtil {
         stmts:     Array[Stmt[V]],
         project:   SomeProject
     ): Option[Set[ObjectType]] = {
-        val classNamesOpt = StringUtil.getPossibleStrings(className, stmts)
-        classNamesOpt.map(_.map(cls ⇒
-            ObjectType(cls.replace('.', '/'))).filter(project.classFile(_).isDefined))
+        StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls ⇒
+            try {
+                val tpe = ReferenceType(cls.replace('.', '/'))
+                Some(if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType)
+            } catch {
+                case _: Exception ⇒ None
+            }
+        }.filter(project.classFile(_).isDefined))
     }
 
     /**
@@ -71,9 +76,13 @@ object TypesUtil {
         stmts:            Array[Stmt[V]],
         project:          SomeProject
     ): Option[ObjectType] = {
-        StringUtil.getString(classNameDefSite, stmts).map { cls ⇒
-            val tpe = ReferenceType(cls.replace('.', '/'))
-            if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType
+        StringUtil.getString(classNameDefSite, stmts).flatMap { cls ⇒
+            try {
+                val tpe = ReferenceType(cls.replace('.', '/'))
+                Some(if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType)
+            } catch {
+                case _: Exception ⇒ None
+            }
         }.filter(project.classFile(_).isDefined)
     }
 
