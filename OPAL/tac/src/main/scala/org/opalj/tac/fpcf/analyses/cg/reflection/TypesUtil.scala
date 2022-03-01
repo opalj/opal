@@ -26,12 +26,12 @@ object TypesUtil {
         className:       Expr[V],
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        onlyObjectTypes: Boolean = false
+        onlyObjectTypes: Boolean
     ): Option[Set[ObjectType]] = {
         StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls ⇒
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
-                if(tpe.isArrayType)
+                if (tpe.isArrayType)
                     if (onlyObjectTypes) None
                     else Some(ObjectType.Object)
                 else Some(tpe.asObjectType)
@@ -56,7 +56,7 @@ object TypesUtil {
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
         failure:         () ⇒ Unit,
-        onlyObjectTypes: Boolean = false
+        onlyObjectTypes: Boolean
     )(
         implicit
         typeProvider: TypeProvider,
@@ -66,7 +66,7 @@ object TypesUtil {
         StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls ⇒
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
-                if(tpe.isArrayType)
+                if (tpe.isArrayType)
                     if (onlyObjectTypes) None
                     else Some(ObjectType.Object)
                 else Some(tpe.asObjectType)
@@ -83,12 +83,12 @@ object TypesUtil {
         classNameDefSite: Int,
         stmts:            Array[Stmt[V]],
         project:          SomeProject,
-        onlyObjectTypes:     Boolean = false
+        onlyObjectTypes:  Boolean
     ): Option[ObjectType] = {
         StringUtil.getString(classNameDefSite, stmts).flatMap { cls ⇒
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
-                if(tpe.isArrayType)
+                if (tpe.isArrayType)
                     if (onlyObjectTypes) None
                     else Some(ObjectType.Object)
                 else Some(tpe.asObjectType)
@@ -107,7 +107,7 @@ object TypesUtil {
         value:           Expr[V],
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        onlyObjectTypes: Boolean = false
+        onlyObjectTypes: Boolean        = false
     ): Option[Iterator[Type]] = {
 
         def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
@@ -119,7 +119,7 @@ object TypesUtil {
         def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
             expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
                 expr.asVirtualFunctionCall.descriptor ==
-                    MethodDescriptor.withNoArgs(ObjectType.Class)
+                MethodDescriptor.withNoArgs(ObjectType.Class)
         }
 
         var possibleTypes: Set[Type] = Set.empty
@@ -162,7 +162,7 @@ object TypesUtil {
                     return None;
                 }
 
-                possibleTypes ++= typesOfVarOpt.get.filter{ tpe ⇒
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe ⇒
                     tpe.isObjectType || !onlyObjectTypes
                 }
             } else if (!onlyObjectTypes) {
@@ -191,7 +191,7 @@ object TypesUtil {
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
         failure:         () ⇒ Unit,
-        onlyObjectTypes: Boolean = false
+        onlyObjectTypes: Boolean
     )(
         implicit
         typeProvider: TypeProvider,
@@ -228,7 +228,7 @@ object TypesUtil {
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
         failure:         () ⇒ Unit,
-        onlyObjectTypes: Boolean = false
+        onlyObjectTypes: Boolean
     )(
         implicit
         typeProvider: TypeProvider,
