@@ -215,7 +215,8 @@ class ClassForNameAnalysis private[analyses] (
         className: V, callContext: ContextType, pc: Int, stmts: Array[Stmt[V]]
     )(implicit state: State, incompleteCallSites: IncompleteCallSites): Unit = {
         val loadedClasses = TypesUtil.getPossibleForNameClasses(
-            className, callContext, pc.asInstanceOf[Entity], stmts, project, () ⇒ failure(pc)
+            className, callContext, pc.asInstanceOf[Entity],
+            stmts, project, () ⇒ failure(pc), onlyObjectTypes = false
         )
         state.addNewLoadedClasses(loadedClasses)
     }
@@ -233,7 +234,7 @@ class ClassForNameAnalysis private[analyses] (
             _.isInstanceOf[Int], callPC ⇒ failure(callPC)
         ) { (callPC, _, allocationIndex, stmts) ⇒
                 val classOpt = TypesUtil.getPossibleForNameClass(
-                    allocationIndex, stmts, project
+                    allocationIndex, stmts, project, onlyObjectTypes = false
                 )
                 if (classOpt.isDefined) state.addNewLoadedClasses(classOpt)
                 else failure(callPC)
@@ -321,7 +322,7 @@ class ClassNewInstanceAnalysis private[analyses] (
         ) { (callPC, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, callPC.asInstanceOf[Entity],
-                    stmts, project, () ⇒ failure(callPC)
+                    stmts, project, () ⇒ failure(callPC), onlyObjectTypes = true
                 )
 
                 val matchers = Set(
@@ -341,7 +342,9 @@ class ClassNewInstanceAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._2, state.tac.stmts),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = true
+                )
 
                 val matchers = Set(
                     MatcherUtil.constructorMatcher,
@@ -383,7 +386,8 @@ class ClassNewInstanceAnalysis private[analyses] (
                 stmts,
                 project,
                 () ⇒ failure(callPC),
-                onlyMethodsExactlyInClass = true
+                onlyMethodsExactlyInClass = true,
+                onlyObjectTypes = true
             )
         )
 
@@ -486,12 +490,12 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._3)
+                    stmts, project, () ⇒ failure(data._1, data._3), onlyObjectTypes = true
                 )
 
                 val matchers = data._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map(_.asObjectType)),
+                        Some(classes.asInstanceOf[Set[ObjectType]]),
                         data._1,
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
@@ -507,7 +511,9 @@ class ConstructorNewInstanceAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._2, data._1._5),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._3)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = true
+                )
 
                 val matchers = data._1._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
@@ -611,7 +617,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                         stmts,
                         project,
                         () ⇒ failure(callPC, matchers),
-                        onlyMethodsExactlyInClass = true
+                        onlyMethodsExactlyInClass = true,
+                        onlyObjectTypes = true
                     )
 
             /*
@@ -752,7 +759,8 @@ class MethodInvokeAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._2, data._3, data._4)
+                    stmts, project, () ⇒ failure(data._1, data._2, data._3, data._4),
+                    onlyObjectTypes = false
                 )
 
                 val matchers = data._4 +
@@ -769,7 +777,9 @@ class MethodInvokeAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._2, data._1._6),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._2, data._1._3, data._1._4)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = false
+                )
 
                 val matchers = data._1._4 +
                     retrieveSuitableMatcher[Set[ObjectType]](
@@ -1044,7 +1054,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._3, data._4)
+                    stmts, project, () ⇒ failure(data._1, data._3, data._4),
+                    onlyObjectTypes = false
                 ).flatMap { tpe ⇒
                     if (data._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
                     else Set(tpe.asObjectType)
@@ -1064,7 +1075,9 @@ class MethodHandleInvokeAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._2, data._1._6),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._3, data._1._4)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project).map { tpe ⇒
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = false
+                ).map { tpe ⇒
                     if (data._1._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
                     else Set(tpe.asObjectType)
                 }

@@ -23,14 +23,18 @@ object TypesUtil {
      * Returns classes that may be loaded by an invocation of Class.forName.
      */
     def getPossibleForNameClasses(
-        className: Expr[V],
-        stmts:     Array[Stmt[V]],
-        project:   SomeProject
+        className:       Expr[V],
+        stmts:           Array[Stmt[V]],
+        project:         SomeProject,
+        onlyObjectTypes: Boolean
     ): Option[Set[ObjectType]] = {
         StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls ⇒
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
-                Some(if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType)
+                if (tpe.isArrayType)
+                    if (onlyObjectTypes) None
+                    else Some(ObjectType.Object)
+                else Some(tpe.asObjectType)
             } catch {
                 case _: Exception ⇒ None
             }
@@ -46,12 +50,13 @@ object TypesUtil {
      * and the dependee provides allocation sites of Strings that give class names of such classes
      */
     def getPossibleForNameClasses(
-        className: V,
-        context:   Context,
-        depender:  Entity,
-        stmts:     Array[Stmt[V]],
-        project:   SomeProject,
-        failure:   () ⇒ Unit
+        className:       V,
+        context:         Context,
+        depender:        Entity,
+        stmts:           Array[Stmt[V]],
+        project:         SomeProject,
+        failure:         () ⇒ Unit,
+        onlyObjectTypes: Boolean
     )(
         implicit
         typeProvider: TypeProvider,
@@ -61,7 +66,10 @@ object TypesUtil {
         StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls ⇒
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
-                Some(if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType)
+                if (tpe.isArrayType)
+                    if (onlyObjectTypes) None
+                    else Some(ObjectType.Object)
+                else Some(tpe.asObjectType)
             } catch {
                 case _: Exception ⇒ None
             }
@@ -74,12 +82,16 @@ object TypesUtil {
     def getPossibleForNameClass(
         classNameDefSite: Int,
         stmts:            Array[Stmt[V]],
-        project:          SomeProject
+        project:          SomeProject,
+        onlyObjectTypes:  Boolean
     ): Option[ObjectType] = {
         StringUtil.getString(classNameDefSite, stmts).flatMap { cls ⇒
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
-                Some(if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType)
+                if (tpe.isArrayType)
+                    if (onlyObjectTypes) None
+                    else Some(ObjectType.Object)
+                else Some(tpe.asObjectType)
             } catch {
                 case _: Exception ⇒ None
             }
@@ -92,9 +104,10 @@ object TypesUtil {
      * by accesses to a primitive type's class as well as from Object.getClass.
      */
     def getPossibleClasses(
-        value:   Expr[V],
-        stmts:   Array[Stmt[V]],
-        project: SomeProject
+        value:           Expr[V],
+        stmts:           Array[Stmt[V]],
+        project:         SomeProject,
+        onlyObjectTypes: Boolean        = false
     ): Option[Iterator[Type]] = {
 
         def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
@@ -105,7 +118,8 @@ object TypesUtil {
 
         def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
             expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
-                expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
+                expr.asVirtualFunctionCall.descriptor ==
+                MethodDescriptor.withNoArgs(ObjectType.Class)
         }
 
         var possibleTypes: Set[Type] = Set.empty
@@ -118,12 +132,15 @@ object TypesUtil {
             }
             val expr = stmts(defSite).asAssignment.expr
 
-            if (!expr.isClassConst && !isForName(expr) && !isBaseTypeLoad(expr) & !isGetClass(expr)) {
+            if (!expr.isClassConst && !isForName(expr) && !isBaseTypeLoad(expr) &
+                !isGetClass(expr)) {
                 return None;
             }
 
             if (expr.isClassConst) {
-                possibleTypes += stmts(defSite).asAssignment.expr.asClassConst.value
+                val tpe = stmts(defSite).asAssignment.expr.asClassConst.value
+                if (tpe.isObjectType || !onlyObjectTypes)
+                    possibleTypes += tpe
             } else if (expr.isStaticFunctionCall) {
                 val className =
                     if (expr.asFunctionCall.descriptor.parameterTypes.head eq ObjectType.String)
@@ -132,7 +149,7 @@ object TypesUtil {
                         expr.asStaticFunctionCall.params(1)
 
                 val possibleClassesOpt = getPossibleForNameClasses(
-                    className, stmts, project
+                    className, stmts, project, onlyObjectTypes
                 )
                 if (possibleClassesOpt.isEmpty) {
                     return None;
@@ -145,8 +162,10 @@ object TypesUtil {
                     return None;
                 }
 
-                possibleTypes ++= typesOfVarOpt.get
-            } else {
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe ⇒
+                    tpe.isObjectType || !onlyObjectTypes
+                }
+            } else if (!onlyObjectTypes) {
                 possibleTypes += getBaseType(expr)
             }
 
@@ -166,12 +185,13 @@ object TypesUtil {
      * and the dependee provides allocation sites of Strings that give class names of such classes
      */
     private[reflection] def getPossibleClasses(
-        context:  Context,
-        value:    V,
-        depender: Entity,
-        stmts:    Array[Stmt[V]],
-        project:  SomeProject,
-        failure:  () ⇒ Unit
+        context:         Context,
+        value:           V,
+        depender:        Entity,
+        stmts:           Array[Stmt[V]],
+        project:         SomeProject,
+        failure:         () ⇒ Unit,
+        onlyObjectTypes: Boolean
     )(
         implicit
         typeProvider: TypeProvider,
@@ -184,7 +204,7 @@ object TypesUtil {
             value, context, depender, stmts, _ eq ObjectType.Class, failure
         ) { (allocationContext, defSite, _stmts) ⇒
             possibleTypes ++= getPossibleClasses(
-                allocationContext, defSite, depender, _stmts, project, failure
+                allocationContext, defSite, depender, _stmts, project, failure, onlyObjectTypes
             )
         }
 
@@ -202,12 +222,13 @@ object TypesUtil {
      * and the dependee provides allocation sites of Strings that give class names of such classes
      */
     private[reflection] def getPossibleClasses(
-        context:  Context,
-        defSite:  Int,
-        depender: Entity,
-        stmts:    Array[Stmt[V]],
-        project:  SomeProject,
-        failure:  () ⇒ Unit
+        context:         Context,
+        defSite:         Int,
+        depender:        Entity,
+        stmts:           Array[Stmt[V]],
+        project:         SomeProject,
+        failure:         () ⇒ Unit,
+        onlyObjectTypes: Boolean
     )(
         implicit
         typeProvider: TypeProvider,
@@ -228,15 +249,17 @@ object TypesUtil {
                     expr.asStaticFunctionCall.params(1).asVar
 
             possibleTypes ++= getPossibleForNameClasses(
-                className, context, (depender, className), stmts, project, failure
+                className, context, (depender, className), stmts, project, failure, onlyObjectTypes
             )
         } else if (isGetClass(expr)) {
             val typesOfVarOpt = getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar)
             if (typesOfVarOpt.isEmpty)
                 failure()
             else
-                possibleTypes ++= typesOfVarOpt.get
-        } else if (isBaseTypeLoad(expr)) {
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe ⇒
+                    tpe.isObjectType || !onlyObjectTypes
+                }
+        } else if (isBaseTypeLoad(expr) && !onlyObjectTypes) {
             possibleTypes += getBaseType(expr)
         }
 
