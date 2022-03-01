@@ -321,7 +321,7 @@ class ClassNewInstanceAnalysis private[analyses] (
         ) { (callPC, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, callPC.asInstanceOf[Entity],
-                    stmts, project, () ⇒ failure(callPC)
+                    stmts, project, () ⇒ failure(callPC), noArrayTypes = true
                 )
 
                 val matchers = Set(
@@ -341,7 +341,9 @@ class ClassNewInstanceAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._2, state.tac.stmts),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, noArrayTypes = true
+                )
 
                 val matchers = Set(
                     MatcherUtil.constructorMatcher,
@@ -486,12 +488,12 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._3)
+                    stmts, project, () ⇒ failure(data._1, data._3), noArrayTypes = true
                 )
 
                 val matchers = data._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map(_.asObjectType)),
+                        Some(classes.asInstanceOf[Set[ObjectType]]),
                         data._1,
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
@@ -507,7 +509,9 @@ class ConstructorNewInstanceAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._2, data._1._5),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._3)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, noArrayTypes = true
+                )
 
                 val matchers = data._1._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
