@@ -12,37 +12,37 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers {
-  describe("MultilingualForwardTaintAnalysis") {
-    it("executes") {
-      val project =
-        Project(
-          new java.io.File("./DEVELOPING_OPAL/validate/src/test/resources/llvm/multilingual/taint")
-        )
-      //project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-      //  current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/purity.ll")
-      //)
-      project.get(RTACallGraphKey)
-      val declaredMethods = project.get(DeclaredMethodsKey)
-      val manager = project.get(FPCFAnalysesManagerKey)
-      val (ps, analyses) = manager.runAll(MultilingualForwardTaintAnalysis)
-      for (method <- project.allMethodsWithBody) {
-        val flows =
-          ps((declaredMethods(method), NullFact), MultilingualForwardTaintAnalysis.property.key)
-        println("---METHOD: " + method.toJava + "  ---")
-        for {
-          fact <- flows.ub
-            .asInstanceOf[IFDSProperty[Fact]]
-            .flows
-            .values
-            .flatten
-            .toSet[Fact]
-        } {
-          fact match {
-            case FlowFact(flow) => println(s"flow: " + flow.map(_.toJava).mkString(", "))
-            case _ =>
-          }
+    describe("MultilingualForwardTaintAnalysis") {
+        it("executes") {
+            val project =
+                Project(
+                    new java.io.File("./DEVELOPING_OPAL/validate/src/test/resources/llvm/multilingual/taint")
+                )
+            //project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
+            //  current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/purity.ll")
+            //)
+            project.get(RTACallGraphKey)
+            val declaredMethods = project.get(DeclaredMethodsKey)
+            val manager = project.get(FPCFAnalysesManagerKey)
+            val (ps, analyses) = manager.runAll(MultilingualForwardTaintAnalysis)
+            for (method ← project.allMethodsWithBody) {
+                val flows =
+                    ps((declaredMethods(method), NullFact), MultilingualForwardTaintAnalysis.property.key)
+                println("---METHOD: "+method.toJava+"  ---")
+                for {
+                    fact ← flows.ub
+                        .asInstanceOf[IFDSProperty[Fact]]
+                        .flows
+                        .values
+                        .flatten
+                        .toSet[Fact]
+                } {
+                    fact match {
+                        case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                        case _              ⇒
+                    }
+                }
+            }
         }
-      }
     }
-  }
 }

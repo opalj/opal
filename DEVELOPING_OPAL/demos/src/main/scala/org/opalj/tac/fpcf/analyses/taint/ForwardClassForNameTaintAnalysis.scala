@@ -2,20 +2,14 @@
 package org.opalj.tac.fpcf.analyses.taint
 
 import java.io.File
-
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
-import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.taint.Taint
-import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.fpcf.analyses.ifds.Statement
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintAnalysis, ForwardTaintProblem, Taint, TaintProblem, Variable}
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.AbsractIFDSAnalysisRunner
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
 import org.opalj.tac.fpcf.properties.IFDSProperty
@@ -30,7 +24,10 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  * @author Michael Eichberg
  */
 class ForwardClassForNameTaintAnalysis private (implicit project: SomeProject)
-    extends ForwardTaintAnalysis with TaintAnalysis {
+    extends ForwardTaintAnalysis(new ForwardClassForNameTaintProblem(project))
+
+class ForwardClassForNameTaintProblem(project: SomeProject)
+    extends ForwardTaintProblem(project) with TaintProblem {
 
     /**
      * The string parameters of all public methods are entry points.
@@ -51,19 +48,19 @@ class ForwardClassForNameTaintAnalysis private (implicit project: SomeProject)
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParamters(call: Statement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * This analysis does not create new taints on the fly.
      * Instead, the string parameters of all public methods are tainted in the entry points.
      */
-    override protected def createTaints(callee: DeclaredMethod, call: Statement): Set[Fact] =
+    override protected def createTaints(callee: DeclaredMethod, call: JavaStatement): Set[Fact] =
         Set.empty
 
     /**
      * Create a FlowFact, if Class.forName is called with a tainted variable for the first parameter.
      */
-    override protected def createFlowFact(callee: DeclaredMethod, call: Statement,
+    override protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
                                           in: Set[Fact]): Option[FlowFact] =
         if (isClassForName(callee) && in.contains(Variable(-2)))
             Some(FlowFact(Seq(call.method)))
@@ -106,7 +103,7 @@ class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
 
     override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit =
         for {
-            e ← analysis.entryPoints
+            e ← analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysis.property.key)
             fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
         } {

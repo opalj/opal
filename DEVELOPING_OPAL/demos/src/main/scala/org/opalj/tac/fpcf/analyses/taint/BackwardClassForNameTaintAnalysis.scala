@@ -10,15 +10,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
-import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.Taint
-import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, BackwardTaintAnalysis, BackwardTaintProblem, Fact, FlowFact, InstanceField, Taint, Variable}
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.UnbalancedReturnFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
-import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
 import org.opalj.tac.fpcf.analyses.ifds.AbsractIFDSAnalysisRunner
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
@@ -30,7 +24,9 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  * @author Mario Trageser
  */
 class BackwardClassForNameTaintAnalysis private (implicit project: SomeProject)
-    extends BackwardTaintAnalysis {
+    extends BackwardTaintAnalysis(new BackwardClassForNameTaintProblem(project))
+
+class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProblem(p) {
 
     /**
      * The string parameters of all public methods are entry points.
@@ -50,12 +46,12 @@ class BackwardClassForNameTaintAnalysis private (implicit project: SomeProject)
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParamters(call: Statement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.
      */
-    override protected def shouldPerformUnbalancedReturn(source: (DeclaredMethod, Fact)): Boolean = {
+    override def shouldPerformUnbalancedReturn(source: (DeclaredMethod, Fact)): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
             (!canBeCalledFromOutside(source._1) ||
                 // The source is callable from outside, but should create unbalanced return facts.
@@ -66,7 +62,7 @@ class BackwardClassForNameTaintAnalysis private (implicit project: SomeProject)
      * This analysis does not create FlowFacts at calls.
      * Instead, FlowFacts are created at the start node of methods.
      */
-    override protected def createFlowFactAtCall(call: Statement, in: Set[Fact],
+    override protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
                                                 source: (DeclaredMethod, Fact)): Option[FlowFact] = None
 
     /**

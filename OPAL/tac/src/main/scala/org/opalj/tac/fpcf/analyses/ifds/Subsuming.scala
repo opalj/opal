@@ -43,9 +43,9 @@ trait Subsuming[IFDSFact <: SubsumableFact] extends Subsumable[IFDSFact] {
      * Considers subsuming.
      */
     override protected def filterNewInformation[T <: IFDSFact](
-        newExitFacts: Map[Statement, Set[T]],
-        oldExitFacts: Map[Statement, Set[T]], project: SomeProject
-    ): Map[Statement, Set[T]] =
+        newExitFacts: Map[JavaStatement, Set[T]],
+        oldExitFacts: Map[JavaStatement, Set[T]], project: SomeProject
+    ): Map[JavaStatement, Set[T]] =
         newExitFacts.keys.map {
             statement ⇒
                 val old = oldExitFacts.get(statement)

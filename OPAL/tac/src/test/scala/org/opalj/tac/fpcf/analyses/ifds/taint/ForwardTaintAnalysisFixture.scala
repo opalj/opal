@@ -5,7 +5,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 /**
@@ -15,7 +15,9 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  * @author Mario Trageser
  */
 class ForwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
-    extends ForwardTaintAnalysis {
+    extends ForwardTaintAnalysis(new ForwardTaintProblemFixture(pProject))
+
+class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) {
 
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
@@ -34,12 +36,12 @@ class ForwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizeParamters(call: Statement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
      */
-    override protected def createTaints(callee: DeclaredMethod, call: Statement): Set[Fact] =
+    override protected def createTaints(callee: DeclaredMethod, call: JavaStatement): Set[Fact] =
         if (callee.name == "source") Set(Variable(call.index))
         else Set.empty
 
@@ -47,7 +49,7 @@ class ForwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
      * Create a FlowFact, if sink is called with a tainted variable.
      * Note, that sink does not accept array parameters. No need to handle them.
      */
-    override protected def createFlowFact(callee: DeclaredMethod, call: Statement,
+    override protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
                                           in: Set[Fact]): Option[FlowFact] =
         if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact(Seq(call.method)))
         else None

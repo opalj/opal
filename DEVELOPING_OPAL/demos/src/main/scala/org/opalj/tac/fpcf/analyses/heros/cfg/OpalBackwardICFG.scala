@@ -12,7 +12,7 @@ import scala.collection.JavaConverters._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.TACode
 
 /**
@@ -22,22 +22,22 @@ import org.opalj.tac.TACode
  */
 class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
 
-    override def getPredsOf(stmt: Statement): JList[Statement] = super.getSuccsOf(stmt)
+    override def getPredsOf(stmt: JavaStatement): JList[JavaStatement] = super.getSuccsOf(stmt)
 
-    override def getSuccsOf(stmt: Statement): JList[Statement] = super.getPredsOf(stmt)
+    override def getSuccsOf(stmt: JavaStatement): JList[JavaStatement] = super.getPredsOf(stmt)
 
-    override def getStartPointsOf(m: Method): JCollection[Statement] = {
+    override def getStartPointsOf(m: Method): JCollection[JavaStatement] = {
         val TACode(_, code, _, cfg, _) = tacai(m)
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).map {
             case bb: BasicBlock ⇒
                 val index = bb.endPC
-                Statement(m, bb, code(index), index, code, cfg)
+                JavaStatement(m, bb, code(index), index, code, cfg)
         }.asJava
     }
 
-    override def isExitStmt(stmt: Statement): Boolean = stmt.index == 0
+    override def isExitStmt(stmt: JavaStatement): Boolean = stmt.index == 0
 
-    override def isStartPoint(stmt: Statement): Boolean = {
+    override def isStartPoint(stmt: JavaStatement): Boolean = {
         val cfg = stmt.cfg
         val index = stmt.index
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).exists {
@@ -45,8 +45,8 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
         }
     }
 
-    override def allNonCallStartNodes(): JSet[Statement] = {
-        val res = new ConcurrentLinkedQueue[Statement]
+    override def allNonCallStartNodes(): JSet[JavaStatement] = {
+        val res = new ConcurrentLinkedQueue[JavaStatement]
         project.parForeachMethodWithBody() { mi ⇒
             val m = mi.method
             val TACode(_, code, _, cfg, _) = tacai(m)
@@ -58,7 +58,7 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
             var index = 0
             while (index < endIndex) {
                 val stmt = code(index)
-                val statement = Statement(m, cfg.bb(index), stmt, index, code, cfg)
+                val statement = JavaStatement(m, cfg.bb(index), stmt, index, code, cfg)
                 if (!(isCallStmt(statement) || startIndices.contains(index)))
                     res.add(statement)
                 index += 1
@@ -68,10 +68,10 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
         Collections.emptySet()
     }
 
-    def getExitStmt(method: Method): Statement = {
+    def getExitStmt(method: Method): JavaStatement = {
         val tac = tacai(method)
         val cfg = tac.cfg
         val code = tac.stmts
-        Statement(method, cfg.startBlock, code(0), 0, code, cfg)
+        JavaStatement(method, cfg.startBlock, code(0), 0, code, cfg)
     }
 }

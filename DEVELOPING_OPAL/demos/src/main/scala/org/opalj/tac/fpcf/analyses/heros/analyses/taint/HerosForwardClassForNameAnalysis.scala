@@ -33,7 +33,7 @@ import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
@@ -50,7 +50,7 @@ import org.opalj.tac.PrefixExpr
 import org.opalj.tac.PrimitiveTypecastExpr
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 
@@ -66,8 +66,8 @@ class HerosForwardClassForNameAnalysis(
         initialMethods: Map[Method, util.Set[Fact]]
 ) extends HerosTaintAnalysis(p, icfg) {
 
-    override val initialSeeds: util.Map[Statement, util.Set[Fact]] = {
-        var result: Map[Statement, util.Set[Fact]] = Map.empty
+    override val initialSeeds: util.Map[JavaStatement, util.Set[Fact]] = {
+        var result: Map[JavaStatement, util.Set[Fact]] = Map.empty
         for ((m, facts) ← initialMethods) {
             result += icfg.getStartPointsOf(m).iterator().next() -> facts
         }
@@ -78,18 +78,18 @@ class HerosForwardClassForNameAnalysis(
 
     var flowFacts = Map.empty[Method, Set[FlowFact]]
 
-    override def createFlowFunctionsFactory(): FlowFunctions[Statement, Fact, Method] = {
+    override def createFlowFunctionsFactory(): FlowFunctions[JavaStatement, Fact, Method] = {
 
-        new FlowFunctions[Statement, Fact, Method]() {
+        new FlowFunctions[JavaStatement, Fact, Method]() {
 
-            override def getNormalFlowFunction(stmt: Statement, succ: Statement): FlowFunction[Fact] = {
+            override def getNormalFlowFunction(stmt: JavaStatement, succ: JavaStatement): FlowFunction[Fact] = {
                 stmt.stmt.astID match {
                     case Assignment.ASTID ⇒
                         handleAssignment(stmt, stmt.stmt.asAssignment.expr)
                     case ArrayStore.ASTID ⇒
                         val store = stmt.stmt.asArrayStore
                         val definedBy = store.arrayRef.asVar.definedBy
-                        val index = TaintAnalysis.getIntConstant(store.index, stmt.code)
+                        val index = TaintProblem.getIntConstant(store.index, stmt.code)
                         (source: Fact) ⇒ {
                             if (isTainted(store.value, source)) {
                                 if (index.isDefined) {
@@ -131,7 +131,7 @@ class HerosForwardClassForNameAnalysis(
                 }
             }
 
-            def handleAssignment(stmt: Statement, expr: Expr[V]): FlowFunction[Fact] =
+            def handleAssignment(stmt: JavaStatement, expr: Expr[V]): FlowFunction[Fact] =
                 expr.astID match {
                     case Var.ASTID ⇒
                         (source: Fact) ⇒ {
@@ -148,7 +148,7 @@ class HerosForwardClassForNameAnalysis(
                             source match {
                                 // The specific array element may be tainted
                                 case ArrayElement(index, taintedIndex) ⇒
-                                    val arrIndex = TaintAnalysis.getIntConstant(load.index, stmt.code)
+                                    val arrIndex = TaintProblem.getIntConstant(load.index, stmt.code)
                                     if (arrayDefinedBy.contains(index) &&
                                         (arrIndex.isEmpty || taintedIndex == arrIndex.get))
                                         TwoElementSet.twoElementSet(source, Variable(stmt.index))
@@ -198,7 +198,7 @@ class HerosForwardClassForNameAnalysis(
                     case _ ⇒ Identity.v()
                 }
 
-            override def getCallFlowFunction(stmt: Statement, callee: Method): FlowFunction[Fact] = {
+            override def getCallFlowFunction(stmt: JavaStatement, callee: Method): FlowFunction[Fact] = {
                 val callObject = asCall(stmt.stmt)
                 val allParams = callObject.allParams
                 if (relevantCallee(callee)) {
@@ -252,10 +252,10 @@ class HerosForwardClassForNameAnalysis(
             }
 
             override def getReturnFlowFunction(
-                stmt:   Statement,
+                stmt:   JavaStatement,
                 callee: Method,
-                exit:   Statement,
-                succ:   Statement
+                exit:   JavaStatement,
+                succ:   JavaStatement
             ): FlowFunction[Fact] = {
 
                 def isRefTypeParam(index: Int): Boolean =
@@ -348,8 +348,8 @@ class HerosForwardClassForNameAnalysis(
             }
 
             override def getCallToReturnFlowFunction(
-                stmt: Statement,
-                succ: Statement
+                stmt: JavaStatement,
+                succ: JavaStatement
             ): FlowFunction[Fact] =
                 Identity.v()
         }

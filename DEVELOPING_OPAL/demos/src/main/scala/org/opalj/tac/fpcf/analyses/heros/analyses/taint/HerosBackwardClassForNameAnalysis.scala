@@ -16,7 +16,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalBackwardICFG
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.Assignment
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
@@ -40,7 +40,7 @@ import org.opalj.tac.ReturnValue
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
 
 /**
@@ -51,7 +51,7 @@ import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
  */
 class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) extends HerosTaintAnalysis(p, icfg) {
 
-    override val initialSeeds: util.Map[Statement, util.Set[Fact]] =
+    override val initialSeeds: util.Map[JavaStatement, util.Set[Fact]] =
         p.allProjectClassFiles.filter(classFile ⇒
             classFile.thisType.fqn == "java/lang/Class")
             .flatMap(classFile ⇒ classFile.methods)
@@ -62,11 +62,11 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
 
     override def followReturnsPastSeeds(): Boolean = true
 
-    override def createFlowFunctionsFactory(): FlowFunctions[Statement, Fact, Method] = {
+    override def createFlowFunctionsFactory(): FlowFunctions[JavaStatement, Fact, Method] = {
 
-        new FlowFunctions[Statement, Fact, Method]() {
+        new FlowFunctions[JavaStatement, Fact, Method]() {
 
-            override def getNormalFlowFunction(statement: Statement, succ: Statement): FlowFunction[Fact] = {
+            override def getNormalFlowFunction(statement: JavaStatement, succ: JavaStatement): FlowFunction[Fact] = {
                 val method = statement.method
                 val stmt = statement.stmt
                 source: Fact ⇒ {
@@ -77,7 +77,7 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
                             else Set(source)
                         case ArrayStore.ASTID ⇒
                             val arrayStore = stmt.asArrayStore
-                            val arrayIndex = TaintAnalysis.getIntConstant(arrayStore.index, statement.code)
+                            val arrayIndex = TaintProblem.getIntConstant(arrayStore.index, statement.code)
                             val arrayDefinedBy = arrayStore.arrayRef.asVar.definedBy
                             var facts = (source match {
                                 // In this case, we taint the whole array.
@@ -127,7 +127,7 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
 
             }
 
-            override def getCallFlowFunction(stmt: Statement, callee: Method): FlowFunction[Fact] = {
+            override def getCallFlowFunction(stmt: JavaStatement, callee: Method): FlowFunction[Fact] = {
                 val callObject = asCall(stmt.stmt)
                 val staticCall = callee.isStatic
                 source: Fact ⇒ {
@@ -169,7 +169,7 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
                 }
             }
 
-            override def getReturnFlowFunction(statement: Statement, callee: Method, exit: Statement, succ: Statement): FlowFunction[Fact] = {
+            override def getReturnFlowFunction(statement: JavaStatement, callee: Method, exit: JavaStatement, succ: JavaStatement): FlowFunction[Fact] = {
                 // If a method has no caller, returnFlow will be called with a null statement.
                 if (statement == null) return Identity.v()
                 val stmt = statement.stmt
@@ -199,7 +199,7 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
                     }).asJava
             }
 
-            override def getCallToReturnFlowFunction(stmt: Statement, succ: Statement): FlowFunction[Fact] =
+            override def getCallToReturnFlowFunction(stmt: JavaStatement, succ: JavaStatement): FlowFunction[Fact] =
                 Identity.v()
         }
     }
@@ -221,12 +221,12 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
         }.toSet
     }
 
-    private def createNewTaints(expression: Expr[V], statement: Statement): Set[Fact] =
+    private def createNewTaints(expression: Expr[V], statement: JavaStatement): Set[Fact] =
         expression.astID match {
             case Var.ASTID ⇒ expression.asVar.definedBy.map(Variable)
             case ArrayLoad.ASTID ⇒
                 val arrayLoad = expression.asArrayLoad
-                val arrayIndex = TaintAnalysis.getIntConstant(expression.asArrayLoad.index, statement.code)
+                val arrayIndex = TaintProblem.getIntConstant(expression.asArrayLoad.index, statement.code)
                 val arrayDefinedBy = arrayLoad.arrayRef.asVar.definedBy
                 if (arrayIndex.isDefined) arrayDefinedBy.map(ArrayElement(_, arrayIndex.get))
                 else arrayDefinedBy.map(Variable)

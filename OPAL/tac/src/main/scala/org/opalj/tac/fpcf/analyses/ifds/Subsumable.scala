@@ -77,10 +77,10 @@ trait Subsumable[IFDSFact <: AbstractIFDSFact] {
      *         `oldExitFacts` are not present.
      */
     protected def filterNewInformation[T <: IFDSFact](
-        newExitFacts: Map[Statement, Set[T]],
-        oldExitFacts: Map[Statement, Set[T]],
+        newExitFacts: Map[JavaStatement, Set[T]],
+        oldExitFacts: Map[JavaStatement, Set[T]],
         project:      SomeProject
-    ): Map[Statement, Set[T]] = {
+    ): Map[JavaStatement, Set[T]] = {
         var result = newExitFacts
         for ((key, values) ← oldExitFacts) {
             result = result.updated(key, result(key) -- values)

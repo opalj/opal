@@ -7,7 +7,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
 import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.UnbalancedReturnFact
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
@@ -21,7 +21,9 @@ case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Met
  * @author Mario Trageser
  */
 class BackwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
-    extends BackwardTaintAnalysis {
+    extends BackwardTaintAnalysis(new BackwardTaintProblemFixture(pProject))
+
+class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p) {
 
     override val entryPoints: Seq[(DeclaredMethod, Fact)] = p.allProjectClassFiles.filter(classFile ⇒
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
@@ -37,7 +39,7 @@ class BackwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizeParamters(call: Statement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * Create a flow fact, if a source method is called and the returned value is tainted.
@@ -45,13 +47,12 @@ class BackwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
      * terminates.
      * In this case, callFlow would never be called and no FlowFact would be created.
      */
-    override protected def createFlowFactAtCall(call: Statement, in: Set[Fact],
+    override protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
                                                 source: (DeclaredMethod, Fact)): Option[FlowFact] = {
-        val callPc = call.code(call.index).pc
         if (in.exists {
             case Variable(index) ⇒ index == call.index
             case _               ⇒ false
-        } && getCallees(call.node.asBasicBlock, callPc, source._1).exists(_.name == "source")) {
+        } && getCallees(call, source._1).exists(_.name == "source")) {
             val callChain = currentCallChain(source)
             // Avoid infinite loops.
             if (!containsHeadTwice(callChain))

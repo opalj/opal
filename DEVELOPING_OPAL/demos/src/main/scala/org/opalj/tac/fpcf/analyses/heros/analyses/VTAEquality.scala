@@ -31,7 +31,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
 import org.opalj.tac.fpcf.analyses.ifds.CalleeType
 import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.VariableType
 import org.opalj.tac.fpcf.analyses.ifds.VTAFact
 import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
@@ -115,7 +115,7 @@ object VTAEquality {
             piKeyUnidueId != PropertyStoreKey.uniqueId
         }
         val propertyStore = project.get(PropertyStoreKey)
-        var result = Map.empty[Statement, Set[VTAFact]]
+        var result = Map.empty[JavaStatement, Set[VTAFact]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
             case Some(requirements) ⇒

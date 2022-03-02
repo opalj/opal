@@ -6,7 +6,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSFact
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSNullFact
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
@@ -62,7 +62,7 @@ case class FlowFact(flow: Seq[Method]) extends Fact {
     }
 }
 
-trait TaintAnalysis {
+trait TaintProblem {
 
     /**
      * Checks, if some `callee` is a sanitizer, which sanitizes its return value.
@@ -81,10 +81,10 @@ trait TaintAnalysis {
      * @param in The facts, which hold before the call.
      * @return Facts, which will be removed from `in` after the call.
      */
-    protected def sanitizeParamters(call: Statement, in: Set[Fact]): Set[Fact]
+    protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact]
 }
 
-object TaintAnalysis {
+object TaintProblem {
 
     /**
      * Checks, if some expression always evaluates to the same int constant.

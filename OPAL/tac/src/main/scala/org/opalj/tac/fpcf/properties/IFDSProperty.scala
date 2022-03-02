@@ -7,7 +7,7 @@ package properties
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.value.KnownTypedValue
-import org.opalj.tac.fpcf.analyses.ifds.Statement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 trait IFDSPropertyMetaInformation[DataFlowFact] extends PropertyMetaInformation
 
@@ -21,7 +21,7 @@ abstract class IFDSProperty[DataFlowFact]
     /**
      * Maps exit statements to the data flow facts, which hold after them.
      */
-    def flows: Map[Statement, Set[DataFlowFact]]
+    def flows: Map[JavaStatement, Set[DataFlowFact]]
 
     override def equals(other: Any): Boolean = other match {
         case that: IFDSProperty[DataFlowFact] ⇒
