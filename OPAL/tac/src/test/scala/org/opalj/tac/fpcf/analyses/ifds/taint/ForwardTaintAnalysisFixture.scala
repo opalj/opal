@@ -4,9 +4,8 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
-import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysis, JavaStatement}
+import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 /**
  * An analysis that checks, if the return value of the method `source` can flow to the parameter of
@@ -14,8 +13,8 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  *
  * @author Mario Trageser
  */
-class ForwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
-    extends ForwardTaintAnalysis(new ForwardTaintProblemFixture(pProject))
+class ForwardTaintAnalysisFixture private (implicit val project: SomeProject)
+    extends ForwardIFDSAnalysis(new ForwardTaintProblemFixture(project), Taint)
 
 class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) {
 

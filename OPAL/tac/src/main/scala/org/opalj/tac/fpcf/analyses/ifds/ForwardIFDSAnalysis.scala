@@ -10,13 +10,14 @@ import org.opalj.tac.Return
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 /**
  * An IFDS analysis, which analyzes the code in the control flow direction.
  *
  * @author Mario Trageser
  */
-abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem) {
+abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
 
     /**
      * The analysis starts at the entry block.

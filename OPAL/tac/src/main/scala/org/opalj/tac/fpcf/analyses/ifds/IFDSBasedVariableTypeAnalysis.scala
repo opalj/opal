@@ -25,16 +25,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Mario Trageser
  */
 class IFDSBasedVariableTypeAnalysis private (ifdsProblem: VariableTypeProblem)(implicit val project: SomeProject)
-    extends ForwardIFDSAnalysis[VTAFact](ifdsProblem) {
-
-    override val propertyKey: IFDSPropertyMetaInformation[VTAFact] = VTAResult
-
-    override protected def createPropertyValue(
-        result: Map[JavaStatement, Set[VTAFact]]
-    ): IFDSProperty[VTAFact] =
-        new VTAResult(result)
-
-}
+    extends ForwardIFDSAnalysis[VTAFact](ifdsProblem, VTAResult)
 
 object IFDSBasedVariableTypeAnalysis extends IFDSAnalysis[VTAFact] {
 
@@ -44,8 +35,9 @@ object IFDSBasedVariableTypeAnalysis extends IFDSAnalysis[VTAFact] {
         Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
 
     override def init(p: SomeProject, ps: PropertyStore): IFDSBasedVariableTypeAnalysis = {
-        if (SUBSUMING) new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p))(p) with Subsuming[VTAFact]
-        else new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p))(p)
+        implicit val project = p
+        if (SUBSUMING) new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p)) with Subsuming[VTAFact]
+        else new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p))
     }
 
     override def property: IFDSPropertyMetaInformation[VTAFact] = VTAResult
@@ -57,6 +49,7 @@ object IFDSBasedVariableTypeAnalysis extends IFDSAnalysis[VTAFact] {
 case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]]) extends IFDSProperty[VTAFact] {
 
     override type Self = VTAResult
+    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[VTAFact] = new VTAResult(result)
 
     override def key: PropertyKey[VTAResult] = VTAResult.key
 }
@@ -64,6 +57,7 @@ case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]]) extends IFDSProper
 object VTAResult extends IFDSPropertyMetaInformation[VTAFact] {
 
     override type Self = VTAResult
+    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[VTAFact] = new VTAResult(result)
 
     val key: PropertyKey[VTAResult] = PropertyKey.create("VTA", new VTAResult(Map.empty))
 }

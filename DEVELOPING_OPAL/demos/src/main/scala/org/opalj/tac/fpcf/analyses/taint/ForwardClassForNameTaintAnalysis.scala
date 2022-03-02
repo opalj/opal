@@ -7,13 +7,9 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintAnalysis, ForwardTaintProblem, Taint, TaintProblem, Variable}
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.AbsractIFDSAnalysisRunner
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
-import org.opalj.tac.fpcf.properties.IFDSProperty
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, ForwardIFDSAnalysis, IFDSAnalysis, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintProblem, TaintProblem, Variable}
+import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation, Taint}
 
 /**
  * A forward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,
@@ -23,8 +19,8 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  * @author Mario Trageser
  * @author Michael Eichberg
  */
-class ForwardClassForNameTaintAnalysis private (implicit project: SomeProject)
-    extends ForwardTaintAnalysis(new ForwardClassForNameTaintProblem(project))
+class ForwardClassForNameTaintAnalysis private (implicit val project: SomeProject)
+    extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
     extends ForwardTaintProblem(project) with TaintProblem {

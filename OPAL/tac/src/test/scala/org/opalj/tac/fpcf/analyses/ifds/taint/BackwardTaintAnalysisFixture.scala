@@ -5,11 +5,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.UnbalancedReturnFact
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysis, JavaStatement, UnbalancedReturnFact}
+import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Method])
     extends UnbalancedReturnFact[Fact] with Fact
@@ -20,8 +17,8 @@ case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Met
  *
  * @author Mario Trageser
  */
-class BackwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
-    extends BackwardTaintAnalysis(new BackwardTaintProblemFixture(pProject))
+class BackwardTaintAnalysisFixture private (implicit val project: SomeProject)
+    extends BackwardIFDSAnalysis(new BackwardTaintProblemFixture(project), Taint)
 
 class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p) {
 

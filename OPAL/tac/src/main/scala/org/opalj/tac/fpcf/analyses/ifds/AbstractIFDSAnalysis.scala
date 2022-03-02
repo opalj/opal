@@ -60,15 +60,16 @@ import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 
-abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement])
+/**
+ *
+ * @param ifdsProblem
+ * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
+ * @tparam IFDSFact
+ */
+
+abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement], val propertyKey: IFDSPropertyMetaInformation[IFDSFact])
     extends FPCFAnalysis
     with Subsumable[IFDSFact] {
-
-    /**
-     * Provides the concrete property key that must be unique for every distinct concrete analysis
-     * and the lower bound for the IFDSProperty.
-     */
-    val propertyKey: IFDSPropertyMetaInformation[IFDSFact]
 
     /**
      * All declared methods in the project.
@@ -147,7 +148,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
      * @param result Maps each exit statement to the facts, which hold after the exit statement.
      * @return An IFDSProperty containing the `result`.
      */
-    protected def createPropertyValue(result: Map[JavaStatement, Set[IFDSFact]]): IFDSProperty[IFDSFact]
+    protected def createPropertyValue(result: Map[JavaStatement, Set[IFDSFact]]): IFDSProperty[IFDSFact] = propertyKey.create(result)
 
     /**
      * Determines the nodes, that will be analyzed after some `basicBlock`.

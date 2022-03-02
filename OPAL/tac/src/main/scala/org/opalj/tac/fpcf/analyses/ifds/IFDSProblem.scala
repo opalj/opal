@@ -20,7 +20,7 @@ trait AbstractIFDSNullFact extends AbstractIFDSFact
  * @author Dominik Helm
  * @author Mario Trageser
  */
-abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Method, Statement](project: SomeProject) {
+abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Method, Statement](val project: SomeProject) {
     /**
      * The null fact of this analysis.
      */

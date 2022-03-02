@@ -9,7 +9,15 @@ import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.value.KnownTypedValue
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
-trait IFDSPropertyMetaInformation[DataFlowFact] extends PropertyMetaInformation
+trait IFDSPropertyMetaInformation[DataFlowFact] extends PropertyMetaInformation {
+    /**
+     * Creates an IFDSProperty containing the result of this analysis.
+     *
+     * @param result Maps each exit statement to the facts, which hold after the exit statement.
+     * @return An IFDSProperty containing the `result`.
+     */
+    def create(result: Map[JavaStatement, Set[DataFlowFact]]): IFDSProperty[DataFlowFact]
+}
 
 abstract class IFDSProperty[DataFlowFact]
     extends Property

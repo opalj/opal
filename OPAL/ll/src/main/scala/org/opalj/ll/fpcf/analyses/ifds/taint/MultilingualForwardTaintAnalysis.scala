@@ -4,9 +4,9 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.ifds.{IFDSAnalysis, JavaStatement}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintAnalysis, ForwardTaintProblem, NullFact, Taint, Variable}
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysis, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintProblem, NullFact, Variable}
+import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 /**
  * An analysis that checks, if the return value of the method `source` can flow to the parameter of
@@ -15,8 +15,8 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  * @author Mario Trageser
  * @author Marc Clement
  */
-class MultilingualForwardTaintAnalysis private (implicit val pProject: SomeProject)
-    extends ForwardTaintAnalysis(new MultilingualForwardTaintProblem(pProject))
+class MultilingualForwardTaintAnalysis private (implicit val project: SomeProject)
+    extends ForwardIFDSAnalysis(new MultilingualForwardTaintProblem(project), Taint)
 
 class MultilingualForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
 

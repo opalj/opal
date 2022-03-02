@@ -2,7 +2,6 @@
 package org.opalj.tac.fpcf.analyses.ifds
 
 import scala.annotation.tailrec
-
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalE
 import org.opalj.fpcf.FinalEP
@@ -18,11 +17,9 @@ import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.properties.IFDSProperty
+import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation, TACAI, TheTACAI}
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.DUVar
 import org.opalj.tac.Return
 import org.opalj.tac.ReturnValue
@@ -36,7 +33,7 @@ import org.opalj.tac.TACode
  *                            concrete analysis.
  * @author Mario Trageser
  */
-abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem) {
+abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
     /**
      * If this method is analyzed for an unbalanced return fact, the single star block is the block,
      * which contains the call.

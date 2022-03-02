@@ -10,7 +10,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ElementValue
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.Taint
+import org.opalj.tac.fpcf.properties.Taint
 
 /**
  * @author Mario Trageser

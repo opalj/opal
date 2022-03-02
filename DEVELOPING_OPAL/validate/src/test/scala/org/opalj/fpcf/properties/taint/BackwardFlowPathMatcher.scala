@@ -16,7 +16,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixture
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.Taint
+import org.opalj.tac.fpcf.properties.Taint
 
 /**
  * @author Mario Trageser

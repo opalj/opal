@@ -9,13 +9,9 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, BackwardTaintAnalysis, BackwardTaintProblem, Fact, FlowFact, InstanceField, Taint, Variable}
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.UnbalancedReturnFact
-import org.opalj.tac.fpcf.analyses.ifds.AbsractIFDSAnalysisRunner
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysis, JavaStatement, UnbalancedReturnFact}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, BackwardTaintProblem, Fact, FlowFact, InstanceField, Variable}
+import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 /**
  * A backward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,
@@ -23,8 +19,8 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  *
  * @author Mario Trageser
  */
-class BackwardClassForNameTaintAnalysis private (implicit project: SomeProject)
-    extends BackwardTaintAnalysis(new BackwardClassForNameTaintProblem(project))
+class BackwardClassForNameTaintAnalysis private (implicit val project: SomeProject)
+    extends BackwardIFDSAnalysis(new BackwardClassForNameTaintProblem(project), Taint)
 
 class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProblem(p) {
 

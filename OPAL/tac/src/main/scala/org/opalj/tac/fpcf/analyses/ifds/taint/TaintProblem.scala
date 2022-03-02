@@ -4,9 +4,7 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSFact
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSNullFact
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, JavaStatement, UnbalancedReturnFact}
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
@@ -61,6 +59,16 @@ case class FlowFact(flow: Seq[Method]) extends Fact {
         r
     }
 }
+
+/**
+ * The unbalanced return fact of this analysis.
+ *
+ * @param index The index, at which the analyzed method is called by some caller.
+ * @param innerFact The fact, which will hold in the caller context after the call.
+ * @param callChain The current call chain from the sink.
+ */
+case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Seq[Method])
+    extends UnbalancedReturnFact[Fact] with Fact
 
 trait TaintProblem {
 
