@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.cg.android
+package org.opalj
+package tac
+package cg
+package android
 
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType

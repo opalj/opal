@@ -9,10 +9,6 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus._
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import scala.util.control.Exception.allCatch
-
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
  * points. The concrete entry point finder that is used to determines a programs entry points directly
@@ -22,7 +18,7 @@ import scala.util.control.Exception.allCatch
  *
  * @author Michael Reif
  */
-sealed trait EntryPointFinder {
+trait EntryPointFinder {
 
     /*
     * Returns the entry points with respect to a concrete scenario.
@@ -350,54 +346,5 @@ object AllEntryPointsFinder extends EntryPointFinder {
         if (project.config.as[Boolean](ConfigKey))
             project.allProjectClassFiles.flatMap(_.methodsWithBody)
         else project.allMethodsWithBody
-    }
-}
-
-/**
- * The AndroidEntryPointFinder considers specific methods of app components as entry points.
- * It does not work for androidx
- *
- * @author Tom Nikisch
- */
-object AndroidEntryPointsFinder extends EntryPointFinder {
-
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        val entryPoints = ArrayBuffer.empty[Method]
-        val defaultEntryPoints = mutable.Map.empty[String, List[(String, Option[MethodDescriptor])]]
-
-        val defEntry = project.config.getConfig("org.opalj.br.analyses.cg.AndroidEntryPointsFinder")
-        defEntry.entrySet().forEach { e ⇒
-            val d = e.getKey.replaceAll("\"", "")
-            val entryMethods = ListBuffer.empty[(String, Option[MethodDescriptor])]
-            defEntry.getConfigList(d).forEach { entry ⇒
-                entryMethods += ((entry.getString("name"), allCatch.opt(entry.getString("descriptor")).map(MethodDescriptor(_))))
-            }
-            defaultEntryPoints += (d -> entryMethods.toList)
-        }
-
-        for ((superClass, methodList) ← defaultEntryPoints) {
-            entryPoints ++= findEntryPoints(ObjectType(superClass), methodList, project)
-        }
-        entryPoints
-    }
-
-    def findEntryPoints(ot: ObjectType, possibleEntryPoints: List[(String, Option[MethodDescriptor])], project: SomeProject): Set[Method] = {
-
-        var entryPoints = Set.empty[Method]
-        val classHierarchy = project.classHierarchy
-        classHierarchy.allSubclassTypes(ot, reflexive = true).flatMap(project.classFile).foreach { sc ⇒
-            for (pep ← possibleEntryPoints) {
-                if (pep._2.isEmpty) {
-                    for (m ← sc.findMethod(pep._1) if m.body.isDefined) {
-                        entryPoints += m
-                    }
-                } else {
-                    for (m ← sc.findMethod(pep._1, pep._2.get) if m.body.isDefined) {
-                        entryPoints += m
-                    }
-                }
-            }
-        }
-        entryPoints
     }
 }
