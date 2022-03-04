@@ -6,7 +6,9 @@ package cg
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.CFA_k_0_TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.CallStringContextProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeProvider
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
@@ -28,6 +30,9 @@ object CFA_1_0_CallGraphKey extends CallGraphKey {
         TypeBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
 
-    override def getTypeProvider(project: SomeProject) = new CFA_k_0_TypeProvider(project, 1)
-
+    override def getTypeProvider(theProject: SomeProject): TypeProvider =
+        new TypesBasedPointsToTypeProvider with CallStringContextProvider {
+            val project = theProject
+            val k = 1
+        }
 }

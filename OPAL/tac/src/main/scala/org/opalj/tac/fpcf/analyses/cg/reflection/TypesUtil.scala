@@ -240,7 +240,9 @@ object TypesUtil {
         val expr = stmts(defSite).asAssignment.expr
 
         if (expr.isClassConst) {
-            possibleTypes += expr.asClassConst.value
+            val tpe = expr.asClassConst.value
+            if (tpe.isObjectType || !onlyObjectTypes)
+                possibleTypes += tpe
         } else if (isForName(expr)) {
             val className =
                 if (expr.asFunctionCall.descriptor.parameterTypes.head eq ObjectType.String)

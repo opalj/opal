@@ -138,7 +138,7 @@ object MatcherUtil {
             context, ref, depender, stmts, project, failure, onlyObjectTypes
         ).flatMap { tpe ⇒
             if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-            else Set(tpe.asObjectType)
+            else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
         })
 
         retrieveSuitableMatcher[Set[ObjectType]](

@@ -329,7 +329,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                     MatcherUtil.constructorMatcher,
                     new ParameterTypesBasedMethodMatcher(RefArray.empty),
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map(_.asObjectType)),
+                        Some(classes.asInstanceOf[Set[ObjectType]]),
                         callPC,
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
@@ -765,7 +765,9 @@ class MethodInvokeAnalysis private[analyses] (
 
                 val matchers = data._4 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map(_.asObjectType)),
+                        Some(classes.map {
+                            tpe ⇒ if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
+                        }),
                         data._1,
                         v ⇒ new ClassBasedMethodMatcher(v, !data._4.contains(PublicMethodMatcher))
                     )
@@ -1058,7 +1060,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     onlyObjectTypes = false
                 ).flatMap { tpe ⇒
                     if (data._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-                    else Set(tpe.asObjectType)
+                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
                 }
 
                 val matchers = data._4 +
@@ -1079,7 +1081,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     allocationIndex, stmts, project, onlyObjectTypes = false
                 ).map { tpe ⇒
                     if (data._1._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-                    else Set(tpe.asObjectType)
+                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
                 }
 
                 val matchers = data._1._4 +
