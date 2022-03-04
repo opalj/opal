@@ -765,7 +765,7 @@ class MethodInvokeAnalysis private[analyses] (
 
                 val matchers = data._4 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map{
+                        Some(classes.map {
                             tpe ⇒ if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
                         }),
                         data._1,
