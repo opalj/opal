@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  *
  * @author Mario Trageser
  */
-abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
+abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
 
     /**
      * The analysis starts at the entry block.

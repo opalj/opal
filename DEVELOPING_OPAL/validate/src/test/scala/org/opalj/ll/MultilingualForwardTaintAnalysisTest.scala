@@ -3,11 +3,11 @@ package org.opalj.ll
 
 import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-
 import org.opalj.ll.fpcf.analyses.ifds.taint.MultilingualForwardTaintAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, NullFact}
-import org.opalj.tac.fpcf.properties.{IFDSProperty}
+import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -18,9 +18,10 @@ class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers
                 Project(
                     new java.io.File("./DEVELOPING_OPAL/validate/src/test/resources/llvm/multilingual/taint")
                 )
-            //project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-            //  current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/purity.ll")
-            //)
+            project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
+              current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/multilingual/taint/NativeTest.ll")
+            )
+            project.get(LLVMProjectKey)
             project.get(RTACallGraphKey)
             val declaredMethods = project.get(DeclaredMethodsKey)
             val manager = project.get(FPCFAnalysesManagerKey)
@@ -31,7 +32,7 @@ class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers
                 println("---METHOD: "+method.toJava+"  ---")
                 for {
                     fact ← flows.ub
-                        .asInstanceOf[IFDSProperty[Fact]]
+                        .asInstanceOf[IFDSProperty[JavaStatement, Fact]]
                         .flows
                         .values
                         .flatten

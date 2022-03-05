@@ -40,24 +40,24 @@ object IFDSBasedVariableTypeAnalysis extends IFDSAnalysis[VTAFact] {
         else new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p))
     }
 
-    override def property: IFDSPropertyMetaInformation[VTAFact] = VTAResult
+    override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
 }
 
 /**
  * The IFDSProperty for this analysis.
  */
-case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]]) extends IFDSProperty[VTAFact] {
+case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]]) extends IFDSProperty[JavaStatement, VTAFact] {
 
     override type Self = VTAResult
-    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[VTAFact] = new VTAResult(result)
+    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result)
 
     override def key: PropertyKey[VTAResult] = VTAResult.key
 }
 
-object VTAResult extends IFDSPropertyMetaInformation[VTAFact] {
+object VTAResult extends IFDSPropertyMetaInformation[JavaStatement, VTAFact] {
 
     override type Self = VTAResult
-    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[VTAFact] = new VTAResult(result)
+    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result)
 
     val key: PropertyKey[VTAResult] = PropertyKey.create("VTA", new VTAResult(Map.empty))
 }

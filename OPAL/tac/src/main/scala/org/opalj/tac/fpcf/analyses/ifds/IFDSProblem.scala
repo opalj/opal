@@ -2,6 +2,8 @@
 package org.opalj.tac.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.{Entity, ProperPropertyComputationResult}
+import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 /**
  * The supertype of all IFDS facts.
@@ -141,6 +143,9 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Method, Statement](val 
         statement: Statement,
         caller:    Method
     ): Iterator[Method]
+
+    def delegateAnalysis(source: (Method, IFDSFact)): Option[((Entity, IFDSFact), Set[IFDSFact] => Set[IFDSFact])] = None
+    def specialCase(source: (Method, IFDSFact), propertyKey: IFDSPropertyMetaInformation[Statement, IFDSFact]): Option[ProperPropertyComputationResult] = None
 }
 
 /**

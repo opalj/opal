@@ -1,17 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll
+package org.opalj.ll.fpcf.analyses
+
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis, FPCFAnalysisScheduler}
-import org.opalj.fpcf.{
-    Entity,
-    OrderedProperty,
-    ProperPropertyComputationResult,
-    PropertyBounds,
-    PropertyKey,
-    PropertyMetaInformation,
-    PropertyStore,
-    Result
-}
+import org.opalj.fpcf._
+import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.{Function, GlobalVariable, Store}
 
 sealed trait SimplePurityPropertyMetaInformation extends PropertyMetaInformation {

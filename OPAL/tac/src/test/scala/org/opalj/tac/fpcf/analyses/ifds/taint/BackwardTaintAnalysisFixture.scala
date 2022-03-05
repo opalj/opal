@@ -82,5 +82,5 @@ object BackwardTaintAnalysisFixture extends IFDSAnalysis[Fact] {
 
     override def init(p: SomeProject, ps: PropertyStore) = new BackwardTaintAnalysisFixture()(p)
 
-    override def property: IFDSPropertyMetaInformation[Fact] = Taint
+    override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
 }

@@ -3,6 +3,7 @@ package org.opalj.ll
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.ll.fpcf.analyses.{EagerSimplePurityAnalysis, Impure, Pure}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 

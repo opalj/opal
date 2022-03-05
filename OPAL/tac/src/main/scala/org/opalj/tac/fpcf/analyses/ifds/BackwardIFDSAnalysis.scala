@@ -33,7 +33,7 @@ import org.opalj.tac.TACode
  *                            concrete analysis.
  * @author Mario Trageser
  */
-abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
+abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
     /**
      * If this method is analyzed for an unbalanced return fact, the single star block is the block,
      * which contains the call.
@@ -88,12 +88,12 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
        */
             case interimEUBP @ InterimEUBP(
                 e: (DeclaredMethod, IFDSFact) @unchecked,
-                _: IFDSProperty[IFDSFact]
+                _: IFDSProperty[JavaStatement, IFDSFact] @unchecked
                 ) ⇒
                 if (e._2.isInstanceOf[UnbalancedReturnFact[IFDSFact]]) {
                     state.pendingIfdsDependees +=
                         e -> interimEUBP
-                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
+                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
                     createResult()
                 } else super.propertyUpdate(eps)
 
@@ -424,7 +424,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                     val pendingIfdsCallSites = state.pendingIfdsCallSites
                     state.pendingIfdsDependees += callerEntity ->
                         callerAnalysisResult
-                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
+                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
                     state.pendingIfdsCallSites += callerEntity ->
                         (pendingIfdsCallSites.getOrElse(callerEntity, Set.empty) +
                             ((state.cfg.startBlock, 0)))
