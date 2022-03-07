@@ -74,6 +74,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  * (for callees use -callees=m).
  *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 object CallGraph extends ProjectAnalysisApplication {
 

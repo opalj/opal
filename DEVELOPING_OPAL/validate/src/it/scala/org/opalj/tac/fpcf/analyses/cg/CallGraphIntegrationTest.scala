@@ -28,10 +28,10 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.analyses.Project
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 import org.opalj.tac.cg.TypeProviderKey
 
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
@@ -64,7 +64,6 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
         var rtaPS: PropertyStore = null
         var pointsToProject: Project[URL] = null
         var pointsTo: CallGraph = null
-        var lessPreciseTypeProvider: TypeProvider = null
 
         it should s"have matching callers and callees for CHA" in {
             project = projectFactory()
@@ -73,8 +72,6 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
             checkBidirectionCallerCallee(chaPS)(project.get(TypeProviderKey))
         }
-
-        lessPreciseTypeProvider = project.get(TypeProviderKey)
 
         it should s"have matching callers and callees for RTA" in {
             rtaProject = project.recreate {
@@ -90,26 +87,32 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
         }
 
         it should s"have RTA more precise than CHA" in {
-            checkMorePrecise(cha, rta, chaPS, rtaProject.get(TypeProviderKey), lessPreciseTypeProvider)
+            val lessPreciseTypeProvider = project.get(TypeProviderKey)
+            val morePreciseTypeProvider = rtaProject.get(TypeProviderKey)
+            checkMorePrecise(cha, rta, chaPS, morePreciseTypeProvider, lessPreciseTypeProvider)
         }
 
-        lessPreciseTypeProvider = rtaProject.get(TypeProviderKey)
+        project = null
+        cha = null
+        chaPS = null
 
         it should s"have matching callers and callees for PointsTo" in {
-            pointsToProject = project.recreate {
+            pointsToProject = rtaProject.recreate {
                 case DeclaredMethodsKey.uniqueId | IsOverridableMethodKey.uniqueId |
                     TypeExtensibilityKey.uniqueId | ClosedPackagesKey.uniqueId |
                     ClassExtensibilityKey.uniqueId ⇒ true
                 case _ ⇒ false
             }
             val pointsToPS = pointsToProject.get(PropertyStoreKey)
-            pointsTo = pointsToProject.get(AllocationSiteBasedPointsToCallGraphKey)
+            pointsTo = pointsToProject.get(TypeBasedPointsToCallGraphKey)
 
             checkBidirectionCallerCallee(pointsToPS)(pointsToProject.get(TypeProviderKey))
         }
 
         it should s"have PointsTo more precise than RTA" in {
-            checkMorePrecise(rta, pointsTo, rtaPS, pointsToProject.get(TypeProviderKey), lessPreciseTypeProvider)
+            val lessPreciseTypeProvider = rtaProject.get(TypeProviderKey)
+            val morePreciseTypeProvider = pointsToProject.get(TypeProviderKey)
+            checkMorePrecise(rta, pointsTo, rtaPS, morePreciseTypeProvider, lessPreciseTypeProvider)
         }
     }
 
@@ -171,10 +174,11 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
         for {
             FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(Callers.key).map(_.asFinal)
-            (_, caller, pc, _) ← callers.callContexts(dm)
+            (callee, caller, pc, _) ← callers.callContexts(dm)
+            if caller.hasContext
         } {
             val FinalP(calleesProperty) = propertyStore(caller.method, Callees.key).asFinal
-            assert(calleesProperty.callees(caller, pc).contains(dm))
+            assert(calleesProperty.callees(caller, pc).contains(callee))
         }
     }
 

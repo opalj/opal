@@ -52,7 +52,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
         // we only allow defined methods
         if (!declaredMethod.hasSingleDefinedMethod)
-            return NoResult;
+            return processMethodWithoutBody(callersEOptP);
 
         val method = declaredMethod.definedMethod
 
@@ -62,7 +62,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
         if (method.body.isEmpty)
             // happens in particular for native methods
-            return NoResult;
+            return processMethodWithoutBody(callersEOptP);
 
         val tacEP = propertyStore(method, TACAI.key)
 
@@ -71,6 +71,17 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
         } else {
             InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod))
         }
+    }
+
+    protected val processesMethodsWithoutBody = false
+
+    protected def processMethodWithoutBody(
+        eOptP: EOptionP[DeclaredMethod, Callers]
+    ): PropertyComputationResult = {
+        if (processesMethodsWithoutBody) {
+            processMethod(eOptP, null, null)
+        } else
+            NoResult
     }
 
     private[this] def processMethod(

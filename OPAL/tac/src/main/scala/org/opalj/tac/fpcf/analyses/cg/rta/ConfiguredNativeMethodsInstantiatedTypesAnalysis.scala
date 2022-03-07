@@ -79,8 +79,9 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             return NoResult;
 
         val instantiatedTypes = dataO.get.collect {
-            case PointsToRelation(_, as: AllocationSiteDescription) ⇒ ReferenceType(as.instantiatedType)
-        }
+            case PointsToRelation(_, as: AllocationSiteDescription) ⇒
+                as.arrayComponentTypes.map(ReferenceType(_)) :+ ReferenceType(as.instantiatedType)
+        }.flatten
 
         val instantiatedTypesUB =
             getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
