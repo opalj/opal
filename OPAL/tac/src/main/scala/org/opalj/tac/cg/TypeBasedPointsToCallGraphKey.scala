@@ -47,7 +47,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
         )
     }
 
-    override def getTypeProvider(theProject: SomeProject): TypeProvider =
-        new TypesBasedPointsToTypeProvider with SimpleContextProvider { val project = theProject }
+    override def getTypeProvider(project: SomeProject): TypeProvider =
+        new TypeProvider(project) with TypesBasedPointsToTypeProvider with SimpleContextProvider
 
 }
