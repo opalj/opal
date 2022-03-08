@@ -89,15 +89,13 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  *
  * @author Dominik Helm
  */
-trait TypeProvider {
+abstract class TypeProvider(val project: SomeProject) {
 
     protected[cg] type ContextType <: Context
     protected[cg] type InformationType
     protected[cg] type PropertyType <: Property
 
     val usedPropertyKinds: Set[PropertyBounds]
-
-    val project: SomeProject
 
     def newContext(method: DeclaredMethod): ContextType
 
@@ -338,7 +336,6 @@ trait CallStringContextProvider extends TypeProvider {
 
     override type ContextType = CallStringContext
 
-    val project: SomeProject
     val k: Int
 
     private[this] val callStringContexts: CallStringContexts = project.get(CallStringContextsKey)
@@ -371,7 +368,8 @@ trait CallStringContextProvider extends TypeProvider {
  * Provides types based only on local, static type information. Never registers any dependencies,
  * the continuation function throws an error if called anyway.
  */
-class CHATypeProvider(val project: SomeProject) extends TypeProvider with SimpleContextProvider {
+class CHATypeProvider(project: SomeProject)
+    extends TypeProvider(project) with SimpleContextProvider {
 
     override type InformationType = Null
     override type PropertyType = Nothing
@@ -477,7 +475,8 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider with Simple
 /**
  * Fast type provider based on a global set of instantiated types.
  */
-class RTATypeProvider(val project: SomeProject) extends TypeProvider with SimpleContextProvider {
+class RTATypeProvider(project: SomeProject)
+    extends TypeProvider(project) with SimpleContextProvider {
 
     override type InformationType = InstantiatedTypes
     override type PropertyType = InstantiatedTypes
@@ -577,9 +576,9 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider with Simple
  * entity plus a global set of types.
  */
 class PropagationBasedTypeProvider(
-        val project:           SomeProject,
+        project:               SomeProject,
         typeSetEntitySelector: TypeSetEntitySelector
-) extends TypeProvider with SimpleContextProvider {
+) extends TypeProvider(project) with SimpleContextProvider {
 
     override type InformationType = (InstantiatedTypes, InstantiatedTypes)
     override type PropertyType = InstantiatedTypes
@@ -864,8 +863,9 @@ trait TypesBasedPointsToTypeProvider
 /**
  * Type provider with 1-call sensitivity for objects, for the 0-1-CFA algorithm.
  */
-class AllocationSitesPointsToTypeProvider(val project: SomeProject)
-    extends PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
+class AllocationSitesPointsToTypeProvider(project: SomeProject)
+    extends TypeProvider(project)
+    with PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
     with SimpleContextProvider {
 
     val mergeStringBuilderBuffer: Boolean =
@@ -1133,8 +1133,9 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
 /**
  * Context-sensitive points-to type provider for the k-l-CFA algorithm.
  */
-class CFA_k_l_TypeProvider(val project: SomeProject, val k: Int, val l: Int)
-    extends PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
+class CFA_k_l_TypeProvider(project: SomeProject, val k: Int, val l: Int)
+    extends TypeProvider(project)
+    with PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
     with CallStringContextProvider {
 
     assert(k > 0 && l > 0 && k >= l - 1)

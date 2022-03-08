@@ -30,9 +30,6 @@ object CFA_1_0_CallGraphKey extends CallGraphKey {
         TypeBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
 
-    override def getTypeProvider(theProject: SomeProject): TypeProvider =
-        new TypesBasedPointsToTypeProvider with CallStringContextProvider {
-            val project = theProject
-            val k = 1
-        }
+    override def getTypeProvider(project: SomeProject): TypeProvider =
+        new TypeProvider(project) with TypesBasedPointsToTypeProvider with CallStringContextProvider { val k = 1 }
 }
