@@ -27,6 +27,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ASObjectValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
@@ -47,6 +48,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.br.Method
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
@@ -75,10 +77,17 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
         activated
     }
 
+    def constructorReceiver(pc: Int)(constructor: Method): Some[(ValueInformation, IntTrieSet)] = {
+        Some((
+            ASObjectValue(isNull = No, isPrecise = false, constructor.classFile.thisType),
+            IntTrieSet(pc)
+        ))
+    }
+
     def addCalls(
         callContext:    ContextType,
         callPC:         Int,
-        actualReceiver: Option[(ValueInformation, IntTrieSet)],
+        actualReceiver: Method ⇒ Option[(ValueInformation, IntTrieSet)],
         actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Traversable[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls): Unit = {
         MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
@@ -87,7 +96,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
                 callPC,
                 typeProvider.expandContext(callContext, declaredMethods(m), callPC),
                 actualParams,
-                actualReceiver
+                actualReceiver(m)
             )
         }
     }
@@ -206,7 +215,8 @@ class ClassForNameAnalysis private[analyses] (
         className: V, callContext: ContextType, pc: Int, stmts: Array[Stmt[V]]
     )(implicit state: State, incompleteCallSites: IncompleteCallSites): Unit = {
         val loadedClasses = TypesUtil.getPossibleForNameClasses(
-            className, callContext, pc.asInstanceOf[Entity], stmts, project, () ⇒ failure(pc)
+            className, callContext, pc.asInstanceOf[Entity],
+            stmts, project, () ⇒ failure(pc), onlyObjectTypes = false
         )
         state.addNewLoadedClasses(loadedClasses)
     }
@@ -224,7 +234,7 @@ class ClassForNameAnalysis private[analyses] (
             _.isInstanceOf[Int], callPC ⇒ failure(callPC)
         ) { (callPC, _, allocationIndex, stmts) ⇒
                 val classOpt = TypesUtil.getPossibleForNameClass(
-                    allocationIndex, stmts, project
+                    allocationIndex, stmts, project, onlyObjectTypes = false
                 )
                 if (classOpt.isDefined) state.addNewLoadedClasses(classOpt)
                 else failure(callPC)
@@ -312,27 +322,29 @@ class ClassNewInstanceAnalysis private[analyses] (
         ) { (callPC, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, callPC.asInstanceOf[Entity],
-                    stmts, project, () ⇒ failure(callPC)
+                    stmts, project, () ⇒ failure(callPC), onlyObjectTypes = true
                 )
 
                 val matchers = Set(
                     MatcherUtil.constructorMatcher,
                     new ParameterTypesBasedMethodMatcher(RefArray.empty),
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map(_.asObjectType)),
+                        Some(classes.asInstanceOf[Set[ObjectType]]),
                         callPC,
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
                 )
 
-                addCalls(state.callContext, callPC, None, Seq.empty, matchers)
+                addCalls(state.callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
             }
 
         AllocationsUtil.continuationForAllocation[(Int, V), ContextType](
             eps, state.callContext, data ⇒ (data._2, state.tac.stmts),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = true
+                )
 
                 val matchers = Set(
                     MatcherUtil.constructorMatcher,
@@ -344,7 +356,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                     )
                 )
 
-                addCalls(state.callContext, data._1, None, Seq.empty, matchers)
+                addCalls(state.callContext, data._1, constructorReceiver(data._1), Seq.empty, matchers)
             }
 
         if (eps.isFinal) {
@@ -374,11 +386,12 @@ class ClassNewInstanceAnalysis private[analyses] (
                 stmts,
                 project,
                 () ⇒ failure(callPC),
-                onlyMethodsExactlyInClass = true
+                onlyMethodsExactlyInClass = true,
+                onlyObjectTypes = true
             )
         )
 
-        addCalls(callContext, callPC, None, Seq.empty, matchers)
+        addCalls(callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
     }
 
     private[this] def failure(
@@ -389,7 +402,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                 MatcherUtil.constructorMatcher,
                 new ParameterTypesBasedMethodMatcher(RefArray.empty)
             )
-            addCalls(state.callContext, callPC, None, Seq.empty, matchers)
+            addCalls(state.callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
         }
@@ -464,7 +477,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 val allMatchers = handleGetConstructor(
                     allocationContext, data._1, allocationIndex, data._2, data._3, stmts
                 )
-                addCalls(state.callContext, data._1, None, data._2, allMatchers)
+                addCalls(
+                    state.callContext, data._1,
+                    constructorReceiver(data._1), data._2,
+                    allMatchers
+                )
             }
 
         AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
@@ -473,24 +490,30 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._3)
+                    stmts, project, () ⇒ failure(data._1, data._3), onlyObjectTypes = true
                 )
 
                 val matchers = data._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map(_.asObjectType)),
+                        Some(classes.asInstanceOf[Set[ObjectType]]),
                         data._1,
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
 
-                addCalls(state.callContext, data._1, None, data._2, matchers)
+                addCalls(
+                    state.callContext, data._1,
+                    constructorReceiver(data._1), data._2,
+                    matchers
+                )
             }
 
         AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
             eps, state.callContext, data ⇒ (data._2, data._1._5),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._3)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = true
+                )
 
                 val matchers = data._1._3 +
                     retrieveSuitableMatcher[Set[ObjectType]](
@@ -499,7 +522,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                         v ⇒ new ClassBasedMethodMatcher(v, true)
                     )
 
-                addCalls(state.callContext, data._1._1, None, data._1._2, matchers)
+                addCalls(
+                    state.callContext, data._1._1,
+                    constructorReceiver(data._1._1), data._1._2,
+                    matchers
+                )
             }
 
         if (eps.isFinal) {
@@ -540,7 +567,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         AllocationsUtil.handleAllocations(
             constructor, callContext, depender, state.tac.stmts, _ eq ObjectType.Constructor, () ⇒ {
             if (HighSoundnessMode) {
-                addCalls(callContext, callPC, None, persistentActualParams, baseMatchers + AllMethodsMatcher)
+                addCalls(
+                    callContext, callPC,
+                    constructorReceiver(callPC), persistentActualParams,
+                    baseMatchers + AllMethodsMatcher
+                )
             } else {
                 indirectCalls.addIncompleteCallSite(callPC)
             }
@@ -549,7 +580,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
             val allMatchers = handleGetConstructor(
                 allocationContext, callPC, allocationIndex, persistentActualParams, baseMatchers, stmts
             )
-            addCalls(callContext, callPC, None, persistentActualParams, allMatchers)
+            addCalls(
+                callContext, callPC,
+                constructorReceiver(callPC), persistentActualParams,
+                allMatchers
+            )
         }
     }
 
@@ -582,7 +617,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                         stmts,
                         project,
                         () ⇒ failure(callPC, matchers),
-                        onlyMethodsExactlyInClass = true
+                        onlyMethodsExactlyInClass = true,
+                        onlyObjectTypes = true
                     )
 
             /*
@@ -605,7 +641,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         callPC: Int, baseMatchers: Set[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
         if (HighSoundnessMode) {
-            addCalls(state.callContext, callPC, None, Seq.empty, baseMatchers + AllMethodsMatcher)
+            addCalls(
+                state.callContext, callPC,
+                constructorReceiver(callPC), Seq.empty,
+                baseMatchers + AllMethodsMatcher
+            )
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
         }
@@ -679,7 +719,7 @@ class MethodInvokeAnalysis private[analyses] (
                 val allMatchers = handleGetMethod(
                     allocationContext, data._1, allocationIndex, data._2, data._3, data._4, stmts
                 )
-                addCalls(state.callContext, data._1, data._2, data._3, allMatchers)
+                addCalls(state.callContext, data._1, _ ⇒ data._2, data._3, allMatchers)
             }
 
         AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
@@ -709,7 +749,7 @@ class MethodInvokeAnalysis private[analyses] (
                             onlyMethodsExactlyInClass = !data._4.contains(PublicMethodMatcher)
                         )
 
-                    addCalls(state.callContext, data._1, data._2, data._3, allMatchers)
+                    addCalls(state.callContext, data._1, _ ⇒ data._2, data._3, allMatchers)
                 }
             }
 
@@ -719,24 +759,29 @@ class MethodInvokeAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._2, data._3, data._4)
+                    stmts, project, () ⇒ failure(data._1, data._2, data._3, data._4),
+                    onlyObjectTypes = false
                 )
 
                 val matchers = data._4 +
                     retrieveSuitableMatcher[Set[ObjectType]](
-                        Some(classes.map(_.asObjectType)),
+                        Some(classes.map {
+                            tpe ⇒ if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
+                        }),
                         data._1,
                         v ⇒ new ClassBasedMethodMatcher(v, !data._4.contains(PublicMethodMatcher))
                     )
 
-                addCalls(state.callContext, data._1, data._2, data._3, matchers)
+                addCalls(state.callContext, data._1, _ ⇒ data._2, data._3, matchers)
             }
 
         AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
             eps, state.callContext, data ⇒ (data._2, data._1._6),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._2, data._1._3, data._1._4)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project)
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = false
+                )
 
                 val matchers = data._1._4 +
                     retrieveSuitableMatcher[Set[ObjectType]](
@@ -745,7 +790,7 @@ class MethodInvokeAnalysis private[analyses] (
                         v ⇒ new ClassBasedMethodMatcher(v, !data._1._4.contains(PublicMethodMatcher))
                     )
 
-                addCalls(state.callContext, data._1._1, data._1._2, data._1._3, matchers)
+                addCalls(state.callContext, data._1._1, _ ⇒ data._1._2, data._1._3, matchers)
             }
 
         if (eps.isFinal) {
@@ -802,7 +847,11 @@ class MethodInvokeAnalysis private[analyses] (
                     persistentReceiver, persistentActualParams,
                     baseMatchers, stmts
                 )
-                addCalls(callContext, callPC, persistentReceiver, persistentActualParams, allMatchers)
+                addCalls(
+                    callContext, callPC,
+                    _ ⇒ persistentReceiver, persistentActualParams,
+                    allMatchers
+                )
             }
     }
 
@@ -881,7 +930,11 @@ class MethodInvokeAnalysis private[analyses] (
         baseMatchers: Set[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
         if (HighSoundnessMode) {
-            addCalls(state.callContext, callPC, receiver, params, baseMatchers + AllMethodsMatcher)
+            addCalls(
+                state.callContext, callPC,
+                _ ⇒ receiver, params,
+                baseMatchers + AllMethodsMatcher
+            )
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
         }
@@ -958,7 +1011,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         AllocationsUtil.continuationForAllocation[methodHandleDependerType, ContextType](
             eps, state.callContext, _ ⇒ (methodHandle, state.tac.stmts),
-            _.isInstanceOf[(_, _, _, _)], data ⇒ failure(data._1, data._4, data._5)
+            _.isInstanceOf[(_, _, _, _, _)], data ⇒ failure(data._1, data._4, data._5)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val allMatchers = handleGetMethodHandle(
                     allocationContext, data._1, allocationIndex, data._2, data._3, data._4, data._5, stmts
@@ -968,7 +1021,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
             eps, state.callContext, data ⇒ (data._5, data._6),
-            _.isInstanceOf[(_, _, _, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
+            _.isInstanceOf[(_, _, _, _, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
         ) { (data, _, allocationIndex, stmts) ⇒
                 val name = StringUtil.getString(allocationIndex, stmts)
 
@@ -999,14 +1052,15 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
             eps, state.callContext, data ⇒ (data._5, data._6),
-            _.isInstanceOf[(_, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
+            _.isInstanceOf[(_, _, _, _, _, _)], data ⇒ failure(data._1, data._3, data._4)
         ) { (data, allocationContext, allocationIndex, stmts) ⇒
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () ⇒ failure(data._1, data._3, data._4)
+                    stmts, project, () ⇒ failure(data._1, data._3, data._4),
+                    onlyObjectTypes = false
                 ).flatMap { tpe ⇒
                     if (data._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-                    else Set(tpe.asObjectType)
+                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
                 }
 
                 val matchers = data._4 +
@@ -1023,9 +1077,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
             eps, state.callContext, data ⇒ (data._2, data._1._6),
             _.isInstanceOf[(_, _)], data ⇒ failure(data._1._1, data._1._3, data._1._4)
         ) { (data, _, allocationIndex, stmts) ⇒
-                val classOpt = TypesUtil.getPossibleForNameClass(allocationIndex, stmts, project).map { tpe ⇒
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = false
+                ).map { tpe ⇒
                     if (data._1._2) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-                    else Set(tpe.asObjectType)
+                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
                 }
 
                 val matchers = data._1._4 +

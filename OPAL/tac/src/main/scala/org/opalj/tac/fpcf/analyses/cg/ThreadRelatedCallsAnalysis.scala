@@ -120,49 +120,26 @@ class ThreadStartAnalysis private[cg] (
                     state.tac.properStmtIndexForPC(callPC)
                 ).asInstanceMethodCall.receiver.asVar
 
-                if (typeProvider.providesAllocations) {
-                    typeProvider.continuationForAllocations(
-                        receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]
-                    ) { (tpe, allocationContext, allocationPC) ⇒
-                        val hasRunnable = handleTypeAndHasRunnable(
-                            tpe, state.callContext, callPC, state.tac.stmts, receiver, indirectCalls
-                        )
-                        if (hasRunnable)
-                            AllocationsUtil.handleAllocation(
-                                allocationContext, allocationPC, (callPC, allocationContext),
-                                () ⇒ indirectCalls.addIncompleteCallSite(callPC)
-                            ) { (allocationContext, allocationIndex, stmts) ⇒
-                                    handleThreadInit(
-                                        state.callContext,
-                                        callPC,
-                                        allocationContext,
-                                        allocationIndex,
-                                        stmts,
-                                        indirectCalls
-                                    )
-                                }
-                    }
-                } else {
-                    var hasRunnable = false
-
-                    typeProvider.continuation(
-                        receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]
-                    ) {
-                        newType ⇒
-                            hasRunnable |= handleTypeAndHasRunnable(
-                                newType,
-                                state.callContext,
-                                callPC,
-                                state.tac.stmts,
-                                receiver,
-                                indirectCalls
-                            )
-                    }
-
+                typeProvider.continuationForAllocations(
+                    receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]
+                ) { (tpe, allocationContext, allocationPC) ⇒
+                    val hasRunnable = handleTypeAndHasRunnable(
+                        tpe, state.callContext, callPC, state.tac.stmts, receiver, indirectCalls
+                    )
                     if (hasRunnable)
-                        handleThreadWithRunnableLocal(
-                            state.callContext, callPC, state.tac.stmts, receiver, indirectCalls
-                        )
+                        AllocationsUtil.handleAllocation(
+                            allocationContext, allocationPC, (callPC, allocationContext),
+                            () ⇒ indirectCalls.addIncompleteCallSite(callPC)
+                        ) { (allocationContext, allocationIndex, stmts) ⇒
+                                handleThreadInit(
+                                    state.callContext,
+                                    callPC,
+                                    allocationContext,
+                                    allocationIndex,
+                                    stmts,
+                                    indirectCalls
+                                )
+                            }
                 }
         }
 
@@ -215,8 +192,8 @@ class ThreadStartAnalysis private[cg] (
             receiver, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
         )
 
-        if (typeProvider.providesAllocations) {
-            typeProvider.foreachAllocation(receiver, types) { (tpe, method, pc) ⇒
+        typeProvider.foreachAllocation(receiver, callContext, state.tac.stmts, types) {
+            (tpe, method, pc) ⇒
                 val hasRunnable = handleTypeAndHasRunnable(
                     tpe, callContext, callPC, state.tac.stmts, receiver, indirectCalls
                 )
@@ -234,20 +211,6 @@ class ThreadStartAnalysis private[cg] (
                                 indirectCalls
                             )
                         }
-            }
-        } else {
-            var hasRunnable = false
-
-            typeProvider.foreachType(receiver, types) { tpe ⇒
-                hasRunnable |= handleTypeAndHasRunnable(
-                    tpe, callContext, callPC, state.tac.stmts, receiver, indirectCalls
-                )
-            }
-
-            if (hasRunnable)
-                handleThreadWithRunnableLocal(
-                    callContext, callPC, state.tac.stmts, receiver, indirectCalls
-                )
         }
     }
 
@@ -296,27 +259,6 @@ class ThreadStartAnalysis private[cg] (
             }
         }
         r.iterator
-    }
-
-    private[this] def handleThreadWithRunnableLocal(
-        callContext:   ContextType,
-        callPC:        Int,
-        stmts:         Array[Stmt[V]],
-        receiver:      V,
-        indirectCalls: IndirectCalls
-    ): Unit = {
-        for {
-            threadDefSite ← receiver.definedBy
-        } {
-            if (threadDefSite >= 0) {
-                handleThreadInit(
-                    callContext, callPC, callContext, threadDefSite, stmts, indirectCalls
-                )
-            } else {
-                // the thread is given as a parameter
-                indirectCalls.addIncompleteCallSite(callPC)
-            }
-        }
     }
 
     /**

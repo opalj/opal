@@ -304,8 +304,9 @@ class InstantiatedTypesAnalysisScheduler(
         }
 
         // Some cooperative analyses originally meant for RTA may require the global type set
-        // to be pre-initialized. For that purpose, an empty type set is sufficient.
-        initialize(p, UIDSet.empty)
+        // to be pre-initialized. Strings and classes can be introduced via constants anywhere.
+        // TODO Only introduce these types to the per-entity type sets where constants are used
+        initialize(p, UIDSet(ObjectType.String, ObjectType.Class))
 
         def isRelevantArrayType(rt: Type): Boolean =
             rt.isArrayType && rt.asArrayType.elementType.isObjectType
