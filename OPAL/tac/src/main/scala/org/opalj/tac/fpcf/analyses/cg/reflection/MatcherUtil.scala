@@ -124,6 +124,7 @@ object MatcherUtil {
         project:                   SomeProject,
         failure:                   () ⇒ Unit,
         onlyMethodsExactlyInClass: Boolean,
+        onlyObjectTypes:           Boolean        = false,
         considerSubclasses:        Boolean        = false
     )(
         implicit
@@ -134,10 +135,10 @@ object MatcherUtil {
         highSoundness:       Boolean
     ): MethodMatcher = {
         val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, project, failure
+            context, ref, depender, stmts, project, failure, onlyObjectTypes
         ).flatMap { tpe ⇒
             if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-            else Set(tpe.asObjectType)
+            else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
         })
 
         retrieveSuitableMatcher[Set[ObjectType]](

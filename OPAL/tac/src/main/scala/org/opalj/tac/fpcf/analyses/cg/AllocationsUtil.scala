@@ -92,11 +92,11 @@ object AllocationsUtil {
         state:        TypeProviderState,
         ps:           PropertyStore
     ): Unit = {
-        if (typeProvider.providesAllocations) {
-            val allocations = typeProvider.typesProperty(
-                value, context.asInstanceOf[typeProvider.ContextType], depender, stmts
-            )
-            typeProvider.foreachAllocation(value, allocations) { (tpe, allocationContext, pc) ⇒
+        val allocations = typeProvider.typesProperty(
+            value, context.asInstanceOf[typeProvider.ContextType], depender, stmts
+        )
+        typeProvider.foreachAllocation(value, context, stmts, allocations) {
+            (tpe, allocationContext, pc) ⇒
                 if (typeFilter(tpe)) {
                     handleAllocation(
                         context,
@@ -108,15 +108,6 @@ object AllocationsUtil {
                         failure
                     )(process)
                 }
-            }
-        } else {
-            value.definedBy.foreach { index ⇒
-                if (index >= 0) {
-                    process(context, index, stmts)
-                } else {
-                    failure()
-                }
-            }
         }
     }
 
