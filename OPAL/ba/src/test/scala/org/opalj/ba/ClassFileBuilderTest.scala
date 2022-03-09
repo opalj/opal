@@ -45,6 +45,17 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             thisType = "org/opalj/bc/AbstractClass"
         ).toDA()
 
+    val (simpleConcreteClass, _) =
+        CLASS[Nothing](
+            // Note: Java 11 checks if the minor version is a known one!
+            version = UShortPair(0, 49),
+            accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
+            thisType = "ConcreteClass",
+            superclassType = Some("org/opalj/bc/AbstractClass"),
+            interfaceTypes = RefArray("MarkerInterface1", "MarkerInterface2"),
+            attributes = RefArray(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
+        ).toDA()
+
     val nestedClassOuterType = br.ObjectType("NestedClassOuter")
     val nestedClassHostAttribute = br.NestHost(nestedClassOuterType)
     val (nestedClassInner, _) =
@@ -67,17 +78,6 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             thisType = "NestedClassOuter",
             superclassType = Some("java/lang/Object"),
             attributes = RefArray(nestedClassesAttribute, br.Synthetic)
-        ).toDA()
-
-    val (simpleConcreteClass, _) =
-        CLASS[Nothing](
-            // Note: Java 11 checks if the minor version is a known one!
-            version = UShortPair(0, 49),
-            accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
-            thisType = "ConcreteClass",
-            superclassType = Some("org/opalj/bc/AbstractClass"),
-            interfaceTypes = RefArray("MarkerInterface1", "MarkerInterface2"),
-            attributes = RefArray(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
         ).toDA()
 
     val recordAttribute = br.Record(RefArray(
@@ -113,18 +113,18 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             attributes = RefArray(permittedSubclassesAttribute, br.Synthetic)
         ).toDA()
 
-    val nestedClassInnerAsm = Assembler(nestedClassInner)
-    val nestedClassOuterAsm = Assembler(nestedClassOuter)
     val abstractAsm = Assembler(abstractClass)
     val concreteAsm = Assembler(simpleConcreteClass)
     val recordAsm = Assembler(recordClass)
+    val nestedClassInnerAsm = Assembler(nestedClassInner)
+    val nestedClassOuterAsm = Assembler(nestedClassOuter)
     val sealedClassAsm = Assembler(sealedClass)
     val sealedClassSubclassAsm = Assembler(sealedClassSubclass)
 
-    val nestedClassInnerBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassInnerAsm)).head
-    val nestedClassOuterBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassOuterAsm)).head
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
     val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
+    val nestedClassInnerBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassInnerAsm)).head
+    val nestedClassOuterBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassOuterAsm)).head
     val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
     val sealedClassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassAsm)).head
     val sealedClassSubclassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassSubclassAsm)).head
@@ -133,10 +133,10 @@ class ClassFileBuilderTest extends AnyFlatSpec {
         Map(
             "MarkerInterface1" → Assembler(markerInterface1),
             "MarkerInterface2" → Assembler(markerInterface2),
-            "NestedClassOuter" → nestedClassOuterAsm,
-            "NestedClassInner" → nestedClassInnerAsm,
             "org.opalj.bc.AbstractClass" → abstractAsm,
             "ConcreteClass" → concreteAsm,
+            "NestedClassOuter" → nestedClassOuterAsm,
+            "NestedClassInner" → nestedClassInnerAsm,
             "RecordClass" → recordAsm,
             "SealedClass" → sealedClassAsm,
             "SealedClassSubclass" → sealedClassSubclassAsm
@@ -147,11 +147,12 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     import loader.loadClass
 
     "the generated classes" should "load correctly" in {
-        assert("NestedClassOuter" == loadClass("NestedClassOuter").getSimpleName)
         assert("MarkerInterface1" == loadClass("MarkerInterface1").getSimpleName)
         assert("MarkerInterface2" == loadClass("MarkerInterface2").getSimpleName)
         assert("org.opalj.bc.AbstractClass" == loadClass("org.opalj.bc.AbstractClass").getName)
         assert("ConcreteClass" == loadClass("ConcreteClass").getSimpleName)
+        if (isCurrentJREAtLeastJava11)
+            assert("NestedClassOuter" == loadClass("NestedClassOuter").getSimpleName)
         if (isCurrentJREAtLeastJava16)
             assert("RecordClass" == loadClass("RecordClass").getSimpleName)
         if (isCurrentJREAtLeastJava17)
