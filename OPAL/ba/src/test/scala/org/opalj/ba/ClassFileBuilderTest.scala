@@ -13,6 +13,7 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.isCurrentJREAtLeastJava11
 import org.opalj.bi.isCurrentJREAtLeastJava16
 import org.opalj.bi.isCurrentJREAtLeastJava17
 import org.opalj.br.IntegerType
