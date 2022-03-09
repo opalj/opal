@@ -89,17 +89,13 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  *
  * @author Dominik Helm
  */
-trait TypeProvider {
+abstract class TypeProvider(val project: SomeProject) {
 
     protected[cg] type ContextType <: Context
     protected[cg] type InformationType
     protected[cg] type PropertyType <: Property
 
     val usedPropertyKinds: Set[PropertyBounds]
-
-    val project: SomeProject
-
-    val providesAllocations: Boolean = false
 
     def newContext(method: DeclaredMethod): ContextType
 
@@ -145,11 +141,41 @@ trait TypeProvider {
     )(handleType: ReferenceType ⇒ Unit): Unit
 
     def foreachAllocation(
-        use: V, typesProperty: InformationType, additionalTypes: Set[ReferenceType] = Set.empty
+        use:             V,
+        context:         Context,
+        stmts:           Array[Stmt[V]],
+        typesProperty:   InformationType,
+        additionalTypes: Set[ReferenceType] = Set.empty
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
-        throw new UnsupportedOperationException
+        var hasUnknownAllocation = false
+        use.definedBy.foreach { index ⇒
+            if (index >= 0) {
+                val allocO = stmts(index) match {
+                    case Assignment(pc, _, New(_, tpe))         ⇒ Some((tpe, pc))
+                    case Assignment(pc, _, NewArray(_, _, tpe)) ⇒ Some((tpe, pc))
+                    case Assignment(pc, _, c: Const)            ⇒ Some((c.tpe.asObjectType, pc))
+                    case _ ⇒
+                        hasUnknownAllocation = true
+                        None
+                }
+                if (allocO.isDefined)
+                    handleAllocation(
+                        allocO.get._1,
+                        context,
+                        allocO.get._2
+                    )
+            } else {
+                hasUnknownAllocation = true
+            }
+        }
+        if (hasUnknownAllocation)
+            handleAllocation(
+                use.value.asReferenceValue.leastUpperType.getOrElse(ObjectType.Object),
+                NoContext,
+                -1
+            )
     }
 
     def foreachAllocation(
@@ -157,7 +183,7 @@ trait TypeProvider {
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
-        throw new UnsupportedOperationException
+        handleAllocation(field.fieldType.asReferenceType, NoContext, -1)
     }
 
     def continuation(
@@ -232,7 +258,7 @@ trait TypeProvider {
         additionalTypes:     Set[ReferenceType],
         handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
-        throw new UnsupportedOperationException
+        // Do nothing
     }
 
     @inline protected[this] def continuationForAllocations(
@@ -244,7 +270,7 @@ trait TypeProvider {
         implicit
         @nowarn state: TypeProviderState
     ): Unit = {
-        throw new UnsupportedOperationException
+        // Do nothing
     }
 
     private[cg] def isPossibleType(use: V, tpe: ReferenceType): Boolean = {
@@ -306,11 +332,44 @@ trait SimpleContextProvider extends TypeProvider {
     }
 }
 
+trait CallStringContextProvider extends TypeProvider {
+
+    override type ContextType = CallStringContext
+
+    val k: Int
+
+    private[this] val callStringContexts: CallStringContexts = project.get(CallStringContextsKey)
+
+    @inline def newContext(method: DeclaredMethod): CallStringContext =
+        callStringContexts(method, Nil)
+
+    @inline override def expandContext(
+        oldContext: Context,
+        method:     DeclaredMethod,
+        pc:         Int
+    ): CallStringContext = {
+        oldContext match {
+            case csc: CallStringContext ⇒
+                callStringContexts(method, (oldContext.method, pc) :: csc.callString.take(k - 1))
+            case _ if oldContext.hasContext ⇒
+                callStringContexts(method, List((oldContext.method, pc)))
+            case _ ⇒
+                callStringContexts(method, Nil)
+        }
+    }
+
+    @inline override def contextFromId(contextId: Int): Context = {
+        if (contextId == -1) NoContext
+        else callStringContexts(contextId)
+    }
+}
+
 /**
  * Provides types based only on local, static type information. Never registers any dependencies,
  * the continuation function throws an error if called anyway.
  */
-class CHATypeProvider(val project: SomeProject) extends TypeProvider with SimpleContextProvider {
+class CHATypeProvider(project: SomeProject)
+    extends TypeProvider(project) with SimpleContextProvider {
 
     override type InformationType = Null
     override type PropertyType = Nothing
@@ -416,7 +475,8 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider with Simple
 /**
  * Fast type provider based on a global set of instantiated types.
  */
-class RTATypeProvider(val project: SomeProject) extends TypeProvider with SimpleContextProvider {
+class RTATypeProvider(project: SomeProject)
+    extends TypeProvider(project) with SimpleContextProvider {
 
     override type InformationType = InstantiatedTypes
     override type PropertyType = InstantiatedTypes
@@ -516,9 +576,9 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider with Simple
  * entity plus a global set of types.
  */
 class PropagationBasedTypeProvider(
-        val project:           SomeProject,
+        project:               SomeProject,
         typeSetEntitySelector: TypeSetEntitySelector
-) extends TypeProvider with SimpleContextProvider {
+) extends TypeProvider(project) with SimpleContextProvider {
 
     override type InformationType = (InstantiatedTypes, InstantiatedTypes)
     override type PropertyType = InstantiatedTypes
@@ -770,8 +830,8 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
 /**
  * Context-insensitive points-to type provider for the 0-CFA algorithm.
  */
-class TypesPointsToTypeProvider(val project: SomeProject)
-    extends PointsToTypeProvider[ReferenceType, TypeBasedPointsToSet] with SimpleContextProvider {
+trait TypesBasedPointsToTypeProvider
+    extends PointsToTypeProvider[ReferenceType, TypeBasedPointsToSet] {
 
     protected[this] val pointsToProperty: PropertyKey[TypeBasedPointsToSet] =
         TypeBasedPointsToSet.key
@@ -793,7 +853,7 @@ class TypesPointsToTypeProvider(val project: SomeProject)
 
     @inline override protected[this] def createPointsToSet(
         pc:            Int,
-        context:       SimpleContext,
+        context:       ContextType,
         allocatedType: ReferenceType,
         isConstant:    Boolean,
         isEmptyArray:  Boolean       = false
@@ -803,8 +863,9 @@ class TypesPointsToTypeProvider(val project: SomeProject)
 /**
  * Type provider with 1-call sensitivity for objects, for the 0-1-CFA algorithm.
  */
-class AllocationSitesPointsToTypeProvider(val project: SomeProject)
-    extends PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
+class AllocationSitesPointsToTypeProvider(project: SomeProject)
+    extends TypeProvider(project)
+    with PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
     with SimpleContextProvider {
 
     val mergeStringBuilderBuffer: Boolean =
@@ -816,8 +877,6 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
     private var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
     private[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
-
-    override val providesAllocations: Boolean = true
 
     override def typesProperty(
         field: Field, depender: Entity
@@ -856,7 +915,11 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
     }
 
     @inline override def foreachAllocation(
-        use: V, typesProperty: AllocationSitePointsToSet, additionalTypes: Set[ReferenceType]
+        use:             V,
+        context:         Context,
+        stmts:           Array[Stmt[V]],
+        typesProperty:   AllocationSitePointsToSet,
+        additionalTypes: Set[ReferenceType]
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
@@ -1067,81 +1130,12 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
     }
 }
 
-trait CallStringContextProvider extends TypeProvider {
-
-    override type ContextType = CallStringContext
-
-    val project: SomeProject
-    val k: Int
-
-    private[this] val callStringContexts: CallStringContexts = project.get(CallStringContextsKey)
-
-    @inline def newContext(method: DeclaredMethod): CallStringContext =
-        callStringContexts(method, Nil)
-
-    @inline override def expandContext(
-        oldContext: Context,
-        method:     DeclaredMethod,
-        pc:         Int
-    ): CallStringContext = {
-        oldContext match {
-            case csc: CallStringContext ⇒
-                callStringContexts(method, (oldContext.method, pc) :: csc.callString.take(k - 1))
-            case _ if oldContext.hasContext ⇒
-                callStringContexts(method, List((oldContext.method, pc)))
-            case _ ⇒
-                callStringContexts(method, Nil)
-        }
-    }
-
-    @inline override def contextFromId(contextId: Int): Context = {
-        if (contextId == -1) NoContext
-        else callStringContexts(contextId)
-    }
-}
-
-/**
- * Context-sensitive points-to type provider for the k-0-CFA algorithm.
- */
-class CFA_k_0_TypeProvider(val project: SomeProject, val k: Int)
-    extends PointsToTypeProvider[ReferenceType, TypeBasedPointsToSet]
-    with CallStringContextProvider {
-
-    assert(k > 0)
-
-    protected[this] val pointsToProperty: PropertyKey[TypeBasedPointsToSet] =
-        TypeBasedPointsToSet.key
-
-    protected[this] val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
-
-    override def typesProperty(
-        field: Field, depender: Entity
-    )(
-        implicit
-        propertyStore: PropertyStore,
-        state:         TypeProviderState
-    ): TypeBasedPointsToSet = {
-        val types = project.classHierarchy.allSubtypes(field.classFile.thisType, reflexive = true)
-        types.foldLeft(emptyPointsToSet) { (result, tpe) ⇒
-            combine(result, currentPointsTo(depender, (tpe, field)))
-        }
-    }
-
-    @inline override protected[this] def createPointsToSet(
-        pc:            Int,
-        context:       CallStringContext,
-        allocatedType: ReferenceType,
-        isConstant:    Boolean,
-        isEmptyArray:  Boolean           = false
-    ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
-
-}
-
 /**
  * Context-sensitive points-to type provider for the k-l-CFA algorithm.
  */
-class CFA_k_l_TypeProvider(val project: SomeProject, val k: Int, val l: Int)
-    extends PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
+class CFA_k_l_TypeProvider(project: SomeProject, val k: Int, val l: Int)
+    extends TypeProvider(project)
+    with PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
     with CallStringContextProvider {
 
     assert(k > 0 && l > 0 && k >= l - 1)
@@ -1155,8 +1149,6 @@ class CFA_k_l_TypeProvider(val project: SomeProject, val k: Int, val l: Int)
     private var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
     private[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
-
-    override val providesAllocations: Boolean = true
 
     override def typesProperty(
         field: Field, depender: Entity
@@ -1195,7 +1187,11 @@ class CFA_k_l_TypeProvider(val project: SomeProject, val k: Int, val l: Int)
     }
 
     @inline override def foreachAllocation(
-        use: V, typesProperty: AllocationSitePointsToSet, additionalTypes: Set[ReferenceType]
+        use:             V,
+        context:         Context,
+        stmts:           Array[Stmt[V]],
+        typesProperty:   AllocationSitePointsToSet,
+        additionalTypes: Set[ReferenceType]
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {

@@ -18,6 +18,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ASObjectValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
@@ -253,8 +254,6 @@ class OISReadObjectAnalysis private[analyses] (
     final val ReadObjectDescriptor = MethodDescriptor.JustTakes(ObjectInputStreamType)
     final val ReadExternalDescriptor = MethodDescriptor.JustTakes(ObjectInputType)
 
-    final val UnknownParam = Seq(None)
-
     override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectInputStreamType,
         "",
@@ -301,133 +300,147 @@ class OISReadObjectAnalysis private[analyses] (
     ): Unit = {
         var foundCast = false
         val parameterList = Seq(inputStream.flatMap(is ⇒ persistentUVar(is.asVar)))
-        for { Checkcast(_, _, ElementReferenceType(castType)) ← stmts } {
-            foundCast = true
+        for {
+            use ← targetVar.usedBy
+        } stmts(use) match {
+            case Checkcast(_, value, ElementReferenceType(castType)) ⇒
+                foundCast = true
 
-            // for each subtype of the type declared at cast we add calls to the relevant methods
-            for {
-                t ← ch.allSubtypes(castType.asObjectType, reflexive = true)
-                cf ← project.classFile(t) // we ignore cases were no class file exists
-                if !cf.isInterfaceDeclaration
-                if ch.isSubtypeOf(castType, ObjectType.Serializable)
-            } {
+                // for each subtype of the cast type we add calls to the relevant methods
+                for {
+                    t ← ch.allSubtypes(castType, reflexive = true)
+                    cf ← project.classFile(t) // we ignore cases were no class file exists
+                    if !cf.isInterfaceDeclaration
+                    if ch.isSubtypeOf(castType, ObjectType.Serializable)
+                } {
 
-                if (ch.isSubtypeOf(castType, ObjectType.Externalizable)) {
-                    // call to `readExternal`
-                    val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
-
-                    calleesAndCallers.addCallOrFallback(
-                        context,
-                        pc,
-                        readExternal,
-                        ObjectType.Externalizable.packageName,
-                        ObjectType.Externalizable,
-                        "readExternal",
-                        ReadExternalDescriptor,
-                        parameterList,
-                        None,
-                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
+                    val receiver = Some(
+                        (ASObjectValue(isNull = No, isPrecise = false, castType), IntTrieSet(pc))
                     )
 
-                    // call to no-arg constructor
-                    cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
-                        calleesAndCallers.addCall(
+                    if (ch.isSubtypeOf(castType, ObjectType.Externalizable)) {
+                        // call to `readExternal`
+                        val readExternal =
+                            p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
+
+                        calleesAndCallers.addCallOrFallback(
                             context,
                             pc,
-                            typeProvider.expandContext(context, declaredMethods(c), pc),
-                            Seq.empty,
-                            None
+                            readExternal,
+                            ObjectType.Externalizable.packageName,
+                            ObjectType.Externalizable,
+                            "readExternal",
+                            ReadExternalDescriptor,
+                            parameterList,
+                            receiver,
+                            tgt ⇒ typeProvider.expandContext(context, tgt, pc)
                         )
-                    }
-                } else {
 
-                    // call to `readObject`
-                    val readObjectMethod =
-                        p.specialCall(t, t, isInterface = false, "readObject", ReadObjectDescriptor)
-                    calleesAndCallers.addCallOrFallback(
-                        context, pc, readObjectMethod,
-                        ObjectType.Object.packageName,
-                        ObjectType.Object,
-                        "readObject",
-                        ReadObjectDescriptor,
-                        parameterList,
-                        None,
-                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
-                    )
-
-                    // call to first super no-arg constructor
-                    val nonSerializableSuperclass = firstNotSerializableSupertype(t)
-                    if (nonSerializableSuperclass.isDefined) {
-                        val constructor = p.classFile(nonSerializableSuperclass.get).flatMap { cf ⇒
-                            cf.findMethod("<init>", NoArgsAndReturnVoid)
+                        // call to no-arg constructor
+                        cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
+                            calleesAndCallers.addCall(
+                                context,
+                                pc,
+                                typeProvider.expandContext(context, declaredMethods(c), pc),
+                                Seq.empty,
+                                receiver
+                            )
                         }
-                        // otherwise an exception will thrown at runtime
-                        if (constructor.isDefined) {
+                    } else {
+
+                        // call to `readObject`
+                        val readObjectMethod = p.specialCall(
+                            t, t, isInterface = false, "readObject", ReadObjectDescriptor
+                        )
+                        calleesAndCallers.addCallOrFallback(
+                            context, pc, readObjectMethod,
+                            ObjectType.Object.packageName,
+                            ObjectType.Object,
+                            "readObject",
+                            ReadObjectDescriptor,
+                            parameterList,
+                            receiver,
+                            tgt ⇒ typeProvider.expandContext(context, tgt, pc)
+                        )
+
+                        // call to first super no-arg constructor
+                        val nonSerializableSuperclass = firstNotSerializableSupertype(t)
+                        if (nonSerializableSuperclass.isDefined) {
+                            val constructor =
+                                p.classFile(nonSerializableSuperclass.get).flatMap { cf ⇒
+                                    cf.findMethod("<init>", NoArgsAndReturnVoid)
+                                }
+                            // otherwise an exception will thrown at runtime
+                            if (constructor.isDefined) {
+                                calleesAndCallers.addCall(
+                                    context,
+                                    pc,
+                                    typeProvider.expandContext(
+                                        context, declaredMethods(constructor.get), pc
+                                    ),
+                                    Seq.empty,
+                                    receiver
+                                )
+                            }
+                        }
+
+                        // for the type to be instantiated, we need to call a constructor of the
+                        // type t in order to let the instantiated types be correct. Note, that the
+                        // JVM would not call the constructor
+                        // Note, that we assume that there is a constructor
+                        // Note that we have to do a String comparison since methods with ObjectType
+                        // descriptors are not sorted consistently across runs
+                        val constructors = cf.constructors.map[(String, Method)] { ctor ⇒
+                            (ctor.descriptor.toJava, ctor)
+                        }
+
+                        if (constructors.nonEmpty) {
+                            val constructor = constructors.minBy(t ⇒ t._1)._2
+
                             calleesAndCallers.addCall(
                                 context,
                                 pc,
                                 typeProvider.expandContext(
-                                    context, declaredMethods(constructor.get), pc
+                                    context, declaredMethods(constructor), pc
                                 ),
                                 Seq.empty,
-                                None
+                                receiver
                             )
                         }
                     }
 
-                    // for the type to be instantiated, we need to call a constructor of the type t
-                    // in order to let the instantiated types be correct. Note, that the JVM would
-                    // not call the constructor
-                    // Note, that we assume that there is a constructor
-                    // Note that we have to do a String comparison since methods with ObjectType
-                    // descriptors are not sorted consistently across runs
-                    val constructors = cf.constructors.map[(String, Method)] { ctor ⇒
-                        (ctor.descriptor.toJava, ctor)
-                    }
+                    // call to `readResolve`
+                    val readResolve = p.specialCall(
+                        t, t, isInterface = false, "readResolve", JustReturnsObject
+                    )
+                    calleesAndCallers.addCallOrFallback(
+                        context, pc, readResolve,
+                        ObjectType.Object.packageName,
+                        ObjectType.Object,
+                        "readResolve",
+                        JustReturnsObject,
+                        Seq.empty,
+                        receiver,
+                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
+                    )
 
-                    if (constructors.nonEmpty) {
-                        val constructor = constructors.minBy(t ⇒ t._1)._2
-
-                        calleesAndCallers.addCall(
-                            context,
-                            pc,
-                            typeProvider.expandContext(context, declaredMethods(constructor), pc),
-                            UnknownParam,
-                            None
+                    // call to `validateObject`
+                    if (ch.isSubtypeOf(t, ObjectInputValidationType)) {
+                        val validateObject =
+                            p.instanceCall(t, t, "validateObject", JustReturnsObject)
+                        calleesAndCallers.addCallOrFallback(
+                            context, pc, validateObject,
+                            ObjectType.Object.packageName,
+                            ObjectType.Object,
+                            "validateObject",
+                            JustReturnsObject,
+                            Seq.empty,
+                            receiver,
+                            tgt ⇒ typeProvider.expandContext(context, tgt, pc)
                         )
                     }
                 }
-
-                // call to `readResolve`
-                val readResolve =
-                    p.specialCall(t, t, isInterface = false, "readResolve", JustReturnsObject)
-                calleesAndCallers.addCallOrFallback(
-                    context, pc, readResolve,
-                    ObjectType.Object.packageName,
-                    ObjectType.Object,
-                    "readResolve",
-                    JustReturnsObject,
-                    Seq.empty,
-                    None,
-                    tgt ⇒ typeProvider.expandContext(context, tgt, pc)
-                )
-
-                // call to `validateObject`
-                if (ch.isSubtypeOf(t, ObjectInputValidationType)) {
-                    val validateObject =
-                        p.instanceCall(t, t, "validateObject", JustReturnsObject)
-                    calleesAndCallers.addCallOrFallback(
-                        context, pc, validateObject,
-                        ObjectType.Object.packageName,
-                        ObjectType.Object,
-                        "validateObject",
-                        JustReturnsObject,
-                        Seq.empty,
-                        None,
-                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
-                    )
-                }
-            }
+            case _ ⇒
         }
 
         if (!foundCast) {
