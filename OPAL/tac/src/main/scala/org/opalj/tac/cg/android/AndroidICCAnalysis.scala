@@ -64,7 +64,10 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     final val componentNameOT = ObjectType("android/content/ComponentName")
     final val onCreateDescriptor = MethodDescriptor("(Landroid/os/Bundle;)V")
     final val onStartCommandDescriptor = MethodDescriptor("(Landroid/content/Intent;II)V")
-    final val justTakesIntentDescriptor = MethodDescriptor("(Landroid/content/Intent;)V")
+    final val onStartDescriptor = MethodDescriptor("(Landroid/content/Intent;I)V")
+    final val onUnbindDescriptor = MethodDescriptor("(Landroid/content/Intent;)Z")
+    final val onActivityResultDescriptor = MethodDescriptor("(IILandroid/content/Intent;)V")
+    final val onBindDescriptor = MethodDescriptor("(Landroid/content/Intent;)Landroid/os/IBinder;")
     final val intentStart = List("{_ <: android.content.Intent", "_ <: android.content.Intent")
     final val activity = "activity"
     final val service = "service"
@@ -214,7 +217,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 val aOnPause = activityCF.findMethod(onPause, MethodDescriptor.NoArgsAndReturnVoid).head
                 val aOnStop = activityCF.findMethod(onStop, MethodDescriptor.NoArgsAndReturnVoid).head
                 val aOnDestroy = activityCF.findMethod(onDestroy, MethodDescriptor.NoArgsAndReturnVoid).head
-                val aOnActivityResult = activityCF.findMethod(onActivityResult, MethodDescriptor.NoArgsAndReturnVoid).head
+                val aOnActivityResult = activityCF.findMethod(onActivityResult, onActivityResultDescriptor).head
                 aLifecycleList = List(aOnCreate, aOnStart, aOnResume, aOnPause, aOnStop, aOnDestroy, aOnActivityResult, aOnRestart)
             } else fullLifecycle = false
 
@@ -222,9 +225,12 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             if (serviceCFOption.isDefined) {
                 val serviceCF = serviceCFOption.get
                 val sOnCreate = serviceCF.findMethod(onCreate, MethodDescriptor.NoArgsAndReturnVoid).head
-                val sOnStart = serviceCF.findMethod(onStartCommand, onStartCommandDescriptor).head
-                val sOnBind = serviceCF.findMethod(onBind, justTakesIntentDescriptor).head
-                val sOnUnbind = serviceCF.findMethod(onUnbind, justTakesIntentDescriptor).head
+                val sOnStart = List(
+                    //onStart was deprecated in API level 15, it is recommended to use onStartCommand. To support API levels below 15 onStart is used if onStartCommand can not be found.
+                    serviceCF.findMethod(onStartCommand, onStartCommandDescriptor), serviceCF.findMethod(onStart, onStartDescriptor)
+                ).flatten.head
+                val sOnBind = serviceCF.findMethod(onBind, onBindDescriptor).head
+                val sOnUnbind = serviceCF.findMethod(onUnbind, onUnbindDescriptor).head
                 val sOnDestroy = serviceCF.findMethod(onDestroy, MethodDescriptor.NoArgsAndReturnVoid).head
                 sLifecycleList = List(sOnCreate, sOnStart, sOnBind, sOnUnbind, sOnDestroy)
             } else fullLifecycle = false
@@ -238,7 +244,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             val pause = a.findMethod(onPause, MethodDescriptor.NoArgsAndReturnVoid)
             val stop = a.findMethod(onStop, MethodDescriptor.NoArgsAndReturnVoid)
             val destroy = a.findMethod(onDestroy, MethodDescriptor.NoArgsAndReturnVoid)
-            val activityResult = a.findMethod(onActivityResult, MethodDescriptor.NoArgsAndReturnVoid)
+            val activityResult = a.findMethod(onActivityResult, onActivityResultDescriptor)
 
             val lifecycleListOption = List(create, start, resume, pause, stop, destroy, activityResult)
 
@@ -280,8 +286,8 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             //Find service lifecycle methods.
             val create = s.findMethod(onCreate, MethodDescriptor.NoArgsAndReturnVoid)
             val startComm = s.findMethod(onStartCommand, onStartCommandDescriptor)
-            val bind = s.findMethod(onBind, justTakesIntentDescriptor)
-            val unbind = s.findMethod(onUnbind, justTakesIntentDescriptor)
+            val bind = s.findMethod(onBind, onBindDescriptor)
+            val unbind = s.findMethod(onUnbind, onUnbindDescriptor)
             val destroy = s.findMethod(onDestroy, MethodDescriptor.NoArgsAndReturnVoid)
 
             if (fullLifecycle) {

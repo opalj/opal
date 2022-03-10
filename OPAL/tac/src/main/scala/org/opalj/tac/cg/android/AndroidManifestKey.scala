@@ -21,11 +21,11 @@ import scala.xml.Elem
  *
  * @author Tom Nikisch
  */
-object AndroidManifestKey extends ProjectInformationKey[Option[(Map[String, ListBuffer[ClassFile]], ListBuffer[IntentFilter])], Elem] {
+object AndroidManifestKey extends ProjectInformationKey[Option[(Map[String, ListBuffer[ClassFile]], List[IntentFilter])], Elem] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Nil
 
-    override def compute(project: SomeProject): Option[(Map[String, ListBuffer[ClassFile]], ListBuffer[IntentFilter])] = {
+    override def compute(project: SomeProject): Option[(Map[String, ListBuffer[ClassFile]], List[IntentFilter])] = {
         val manifest = project.getProjectInformationKeyInitializationData(AndroidManifestKey)
         manifest.map(parseManifest(project, _))
     }
@@ -34,17 +34,16 @@ object AndroidManifestKey extends ProjectInformationKey[Option[(Map[String, List
      * Analyses the AndroidManifest.xml of the project to find intent filters and relevant components to generate
      * lifecycle callbacks.
      */
-    def parseManifest(project: SomeProject, manifest: Elem): (Map[String, ListBuffer[ClassFile]], ListBuffer[IntentFilter]) = {
+    def parseManifest(project: SomeProject, manifest: Elem): (Map[String, ListBuffer[ClassFile]], List[IntentFilter]) = {
         val componentMap: mutable.Map[String, ListBuffer[ClassFile]] = mutable.Map(
             "activity" -> ListBuffer.empty[ClassFile],
             "service" -> ListBuffer.empty[ClassFile]
         )
-        val intentFilters = ListBuffer.empty[IntentFilter]
         val androidURI = "http://schemas.android.com/apk/res/android"
         val packageName = manifest.attribute("package").get.toString().replaceAll("\\.", "/")
-        List("activity", "receiver", "service").foreach { comp ⇒
+        val intentFilters = List("activity", "receiver", "service").flatMap { comp ⇒
             val components = manifest \\ comp
-            components.foreach { c ⇒
+            components.map { c ⇒
                 var ot = c.attribute(androidURI, "name").head.toString().replaceAll("\\.", "/")
                 if (ot.startsWith("/")) { ot = packageName + ot }
                 val rec = project.classFile(ObjectType(ot))
@@ -52,7 +51,7 @@ object AndroidManifestKey extends ProjectInformationKey[Option[(Map[String, List
                     if (comp == "activity" || comp == "service") componentMap(comp) += rec.get
                     val filters = c \ "intent-filter"
                     if (filters.nonEmpty) {
-                        filters.foreach { filter ⇒
+                        filters.map { filter ⇒
                             val intentFilter = new IntentFilter(rec.get, comp)
                             intentFilter.actions = (filter \ "action").map(_.attribute(androidURI, "name").
                                 get.head.toString()).to[ListBuffer]
@@ -92,12 +91,12 @@ object AndroidManifestKey extends ProjectInformationKey[Option[(Map[String, List
                                     }
                                 }
                             }
-                            intentFilters += intentFilter
-                        }
-                    }
-                }
-            }
-        }
+                            Some(intentFilter)
+                        }.toList
+                    } else List(None)
+                } else List(None)
+            }.toList.flatten
+        }.flatten
         (componentMap.toMap, intentFilters)
     }
 }
