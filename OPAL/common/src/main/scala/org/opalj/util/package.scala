@@ -10,8 +10,6 @@ import scala.util.Properties.versionNumberString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 
 /**
  * Utility methods.
@@ -57,32 +55,10 @@ package object util {
     final def gc(
         memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean,
         maxGCTime:    Milliseconds = new Milliseconds(333)
-    )(
-        implicit
-        logContext: Option[LogContext] = None
     ): Unit = {
-        val startTime = System.nanoTime()
-        var run = 0
-        do {
-            if (logContext.isDefined) {
-                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
-                OPALLogger.info(
-                    "performance",
-                    s"garbage collection run $run (pending finalization: $pendingCount)"
-                )(logContext.get)
-            }
-            // In general it is **not possible to guarantee** that the garbage collector is really
-            // run, but we still do our best.
-            memoryMXBean.gc()
-            if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
-                // It may be the case that some finalizers (of just gc'ed object) are still running
-                // and -- therefore -- some further objects are freed after the gc run.
-                Thread.sleep(50)
-                memoryMXBean.gc()
-            }
-            run += 1
-        } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
-            ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
+        // In general it is **not possible to guarantee** that the garbage collector is really
+        // run, but we still do our best.
+        memoryMXBean.gc()
     }
 
     def renderConfig(config: Config, withComments: Boolean = true): String = {

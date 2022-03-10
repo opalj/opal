@@ -9,7 +9,6 @@ import scala.collection.mutable.Map
 import org.opalj.concurrent.Locking
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
 
 /**
  * Measures the execution time of some code.
@@ -144,9 +143,6 @@ object PerformanceEvaluation {
         f: ⇒ T
     )(
         mu: Long ⇒ Unit
-    )(
-        implicit
-        logContext: Option[LogContext] = None
     ): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean
         gc(memoryMXBean)
