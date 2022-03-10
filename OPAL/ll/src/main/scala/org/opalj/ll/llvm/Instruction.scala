@@ -5,10 +5,10 @@ import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM._
 
 object OptionalInstruction {
-  def apply(ref: LLVMValueRef): Option[Instruction] = {
-    if (ref.isNull) return None
-    Some(Instruction(ref))
-  }
+    def apply(ref: LLVMValueRef): Option[Instruction] = {
+        if (ref.isNull) return None
+        Some(Instruction(ref))
+    }
 }
 
 object Instruction {
@@ -95,6 +95,9 @@ trait Terminator {
     def foreachSuccessor(f: BasicBlock ⇒ Unit): Unit = {
         (0 to numSuccessors() - 1).foreach(i ⇒ f(getSuccessor(i)))
     }
+    def successors(): Seq[Instruction] = {
+        (0 to numSuccessors() - 1).map(i ⇒ getSuccessor(i).firstInstruction())
+    }
 }
 
 sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
@@ -102,6 +105,10 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
     def parent(): BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
     def function(): Function = parent.parent
     def next(): Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
+    def successors(): Seq[Instruction] = next match {
+        case Some(successor) ⇒ Seq(successor)
+        case None            ⇒ Seq()
+    }
 }
 
 case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator

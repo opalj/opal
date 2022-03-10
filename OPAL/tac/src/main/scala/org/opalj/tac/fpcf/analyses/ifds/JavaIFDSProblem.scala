@@ -90,38 +90,39 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
         * not re-analyze the code.
         */
         if (declaringClass ne declaredMethod.declaringClassType) Some(delegate(
-          source, ((declaredMethods(source._1.definedMethod), source._2), propertyKey), identity, propertyKey))
+            source, ((declaredMethods(source._1.definedMethod), source._2), propertyKey), identity, propertyKey
+        ))
         None
-  }
-
-  /**
-   * This method will be called if the analysis of a method shall be delegated to another analysis.
-   *
-   * @param source A pair consisting of the declared method of the subtype and an input fact.
-   * @param delegation A pair consisting of the delegated entity and an input fact as well as the delegated property.
-   * @param resultMapping A function that maps the results of the delegation.
-   * @param propertyKey the propertyKey used for the instantiation of new results
-   * @return The result of the other analysis.
-   */
-  protected def delegate(
-                        source: (DeclaredMethod, Fact),
-                        delegation: ((Entity, Fact), IFDSPropertyMetaInformation[_, Fact]),
-                        resultMapping: Set[Fact] => Set[Fact],
-                        propertyKey: IFDSPropertyMetaInformation[JavaStatement, Fact]
-                      ): ProperPropertyComputationResult = {
-
-    def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-      case FinalP(p) ⇒ Result(source, propertyKey.create(Map.empty))
-
-      case ep @ InterimUBP(ub: Property) ⇒
-        // TODO: resultMapping(ub.asInstanceOf[Set[Fact]]).asInstanceOf[Property]
-        InterimResult.forUB(source, propertyKey.create(Map.empty), Set(ep), c)
-
-      case epk ⇒
-        InterimResult.forUB(source, propertyKey.create(Map.empty), Set(epk), c)
     }
-    c(propertyStore(delegation._1, delegation._2.key))
-  }
+
+    /**
+     * This method will be called if the analysis of a method shall be delegated to another analysis.
+     *
+     * @param source A pair consisting of the declared method of the subtype and an input fact.
+     * @param delegation A pair consisting of the delegated entity and an input fact as well as the delegated property.
+     * @param resultMapping A function that maps the results of the delegation.
+     * @param propertyKey the propertyKey used for the instantiation of new results
+     * @return The result of the other analysis.
+     */
+    protected def delegate(
+        source:        (DeclaredMethod, Fact),
+        delegation:    ((Entity, Fact), IFDSPropertyMetaInformation[_, Fact]),
+        resultMapping: Set[Fact] ⇒ Set[Fact],
+        propertyKey:   IFDSPropertyMetaInformation[JavaStatement, Fact]
+    ): ProperPropertyComputationResult = {
+
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
+            case FinalP(p) ⇒ Result(source, propertyKey.create(Map.empty))
+
+            case ep @ InterimUBP(ub: Property) ⇒
+                // TODO: resultMapping(ub.asInstanceOf[Set[Fact]]).asInstanceOf[Property]
+                InterimResult.forUB(source, propertyKey.create(Map.empty), Set(ep), c)
+
+            case epk ⇒
+                InterimResult.forUB(source, propertyKey.create(Map.empty), Set(epk), c)
+        }
+        c(propertyStore(delegation._1, delegation._2.key))
+    }
 }
 
 abstract class JavaBackwardIFDSProblem[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](project: SomeProject) extends JavaIFDSProblem[IFDSFact](project) with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement] {

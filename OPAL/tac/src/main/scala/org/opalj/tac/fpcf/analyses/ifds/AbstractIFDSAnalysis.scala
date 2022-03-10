@@ -7,14 +7,14 @@ package ifds
 
 import java.io.File
 import java.io.PrintWriter
-import scala.collection.{Set => SomeSet}
+import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.mutable
 import com.typesafe.config.ConfigValueFactory
 
 import javax.swing.JOptionPane
 import org.opalj.util.Milliseconds
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.{EOptionP, EPK, FinalE, FinalEP, FinalP, InterimEUBP, InterimResult,  ProperPropertyComputationResult, PropertyBounds, PropertyStore, Result, SomeEPS}
+import org.opalj.fpcf.{EOptionP, EPK, FinalE, FinalEP, FinalP, InterimEUBP, InterimResult, ProperPropertyComputationResult, PropertyBounds, PropertyStore, Result, SomeEPS}
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
@@ -103,12 +103,12 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
             val code:                 Array[Stmt[V]],
             val cfg:                  CFG[Stmt[V], TACStmts[V]],
             var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
-            var pendingTacCallSites:  Map[DeclaredMethod, Set[BasicBlock]]                                                          = Map.empty,
+            var pendingTacCallSites:  Map[DeclaredMethod, Set[BasicBlock]]                                                                         = Map.empty,
             var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]] = Map.empty,
-            var pendingTacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                          = Map.empty,
-            var pendingCgCallSites:   Set[BasicBlock]                                                                               = Set.empty,
-            var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                = Map.empty,
-            var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                  = Map.empty
+            var pendingTacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                                         = Map.empty,
+            var pendingCgCallSites:   Set[BasicBlock]                                                                                              = Set.empty,
+            var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                               = Map.empty,
+            var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                                 = Map.empty
     )
 
     /**
@@ -232,7 +232,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
         exitFacts:    Map[JavaStatement, Set[IFDSFact]]
     )(implicit state: State): Map[JavaStatement, Set[IFDSFact]]
 
-  /**
+    /**
      * Performs an IFDS analysis for a method-fact-pair.
      *
      * @param entity The method-fact-pair, that will be analyzed.
@@ -252,8 +252,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
             return Result(entity, createPropertyValue(Map.empty));
 
         ifdsProblem.specialCase(entity, propertyKey) match {
-          case Some(result) => return result;
-          case _ =>
+            case Some(result) ⇒ return result;
+            case _            ⇒
         }
 
         val method = declaredMethod.definedMethod
@@ -445,7 +445,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
                         val oldValue = state.pendingIfdsDependees.get(e)
                         val oldExitFacts: Map[JavaStatement, Set[IFDSFact]] = oldValue match {
                             case Some(ep: InterimEUBP[_, IFDSProperty[JavaStatement, IFDSFact]]) ⇒ ep.ub.flows
-                            case _                                                ⇒ Map.empty
+                            case _ ⇒ Map.empty
                         }
                         val exitFacts: Map[JavaStatement, Set[IFDSFact]] = callFlows match {
                             case ep: FinalEP[_, IFDSProperty[JavaStatement, IFDSFact]] ⇒

@@ -15,11 +15,11 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
 
     def terminator(): Option[Instruction with Terminator] = {
         OptionalInstruction(LLVMGetBasicBlockTerminator(block_ref)) match {
-          case Some(terminator) => {
-            assert(terminator.isTerminator())
-            Some(terminator.asInstanceOf[Instruction with Terminator])
-          }
-          case None => None
+            case Some(terminator) ⇒ {
+                assert(terminator.isTerminator())
+                Some(terminator.asInstanceOf[Instruction with Terminator])
+            }
+            case None ⇒ None
         }
     }
 
@@ -45,17 +45,17 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
      * Returns `true` if this node has successor nodes.
      */
     override def hasSuccessors: Boolean = terminator match {
-          case Some(t) => t.hasSuccessors
-          case None => false
-        }
+        case Some(t) ⇒ t.hasSuccessors
+        case None    ⇒ false
+    }
 
     /**
      * Applies the given function for each successor node.
      */
     override def foreachSuccessor(f: Node ⇒ Unit): Unit = terminator match {
-          case Some(t) => t.foreachSuccessor(f)
-          case None =>
-        }
+        case Some(t) ⇒ t.foreachSuccessor(f)
+        case None    ⇒
+    }
 }
 
 class InstructionIterator(var ref: LLVMValueRef) extends Iterator[Instruction] {

@@ -19,7 +19,7 @@ class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers
                     new java.io.File("./DEVELOPING_OPAL/validate/src/test/resources/llvm/multilingual/taint")
                 )
             project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-              current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/multilingual/taint/NativeTest.ll")
+                current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/multilingual/taint/NativeTest.ll")
             )
             project.get(LLVMProjectKey)
             project.get(RTACallGraphKey)

@@ -349,7 +349,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
                 )
             case staticField: StaticField ⇒ facts += staticField
             // If the source was reached in a callee, create a flow fact from this method to the sink.
-            case calleeFact: FlowFact[Method] if isCallFlow ⇒
+            case calleeFact: FlowFact[Method] @unchecked if isCallFlow ⇒
                 val callerFact = applyFlowFactFromCallee(calleeFact, source)
                 if (callerFact.isDefined) facts += callerFact.get
             case _ ⇒ // Nothing to do

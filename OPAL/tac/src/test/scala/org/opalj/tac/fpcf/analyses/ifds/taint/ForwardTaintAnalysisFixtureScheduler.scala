@@ -13,7 +13,7 @@ import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
  *
  * @author Mario Trageser
  */
-class ForwardTaintAnalysisFixtureScheduler private(implicit val project: SomeProject)
+class ForwardTaintAnalysisFixture(implicit val project: SomeProject)
     extends ForwardIFDSAnalysis(new ForwardTaintProblemFixture(project), Taint)
 
 class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) {
@@ -56,7 +56,7 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
 
 object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Fact] {
 
-    override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixtureScheduler()(p)
+    override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture()(p)
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
 }

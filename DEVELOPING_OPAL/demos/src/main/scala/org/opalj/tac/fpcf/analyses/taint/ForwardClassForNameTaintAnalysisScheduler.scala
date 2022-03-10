@@ -19,7 +19,7 @@ import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation,
  * @author Mario Trageser
  * @author Michael Eichberg
  */
-class ForwardClassForNameTaintAnalysis$Scheduler private(implicit val project: SomeProject)
+class ForwardClassForNameTaintAnalysis$Scheduler private (implicit val project: SomeProject)
     extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)

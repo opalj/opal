@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
  *
  * @author Mario Trageser
  */
-class BackwardClassForNameTaintAnalysisScheduler private(implicit val project: SomeProject)
+class BackwardClassForNameTaintAnalysisScheduler private (implicit val project: SomeProject)
     extends BackwardIFDSAnalysis(new BackwardClassForNameTaintProblem(project), Taint)
 
 class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProblem(p) {

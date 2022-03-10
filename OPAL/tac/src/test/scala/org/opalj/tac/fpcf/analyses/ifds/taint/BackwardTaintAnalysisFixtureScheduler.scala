@@ -17,7 +17,7 @@ case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Met
  *
  * @author Mario Trageser
  */
-class BackwardTaintAnalysisFixtureScheduler private(implicit val project: SomeProject)
+class BackwardTaintAnalysisFixture(implicit val project: SomeProject)
     extends BackwardIFDSAnalysis(new BackwardTaintProblemFixture(project), Taint)
 
 class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p) {
@@ -80,7 +80,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
 
 object BackwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Fact] {
 
-    override def init(p: SomeProject, ps: PropertyStore) = new BackwardTaintAnalysisFixtureScheduler()(p)
+    override def init(p: SomeProject, ps: PropertyStore) = new BackwardTaintAnalysisFixture()(p)
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
 }

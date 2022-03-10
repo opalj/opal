@@ -61,10 +61,10 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
     def callFlow(
-                  call:   Statement,
-                  callee: Callable,
-                  in:     Set[IFDSFact],
-                  source: (Callable, IFDSFact)
+        call:   Statement,
+        callee: Callable,
+        in:     Set[IFDSFact],
+        source: (Callable, IFDSFact)
     ): Set[IFDSFact]
 
     /**
@@ -81,11 +81,11 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      *         `successor` will be executed next.
      */
     def returnFlow(
-                    call:      Statement,
-                    callee:    Callable,
-                    exit:      Statement,
-                    successor: Statement,
-                    in:        Set[IFDSFact]
+        call:      Statement,
+        callee:    Callable,
+        exit:      Statement,
+        successor: Statement,
+        in:        Set[IFDSFact]
     ): Set[IFDSFact]
 
     /**
@@ -126,10 +126,10 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      * @return The facts, which hold after the call, excluding the call to return flow.
      */
     def callOutsideOfAnalysisContext(
-                                      call:      Statement,
-                                      callee:    Callable,
-                                      successor: Statement,
-                                      in:        Set[IFDSFact]
+        call:      Statement,
+        callee:    Callable,
+        successor: Statement,
+        in:        Set[IFDSFact]
     ): Set[IFDSFact]
 
     /**
@@ -144,7 +144,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
         caller:    Callable
     ): Iterator[Callable]
 
-    def delegateAnalysis(source: (Callable, IFDSFact)): Option[((Entity, IFDSFact), Set[IFDSFact] => Set[IFDSFact])] = None
+    def delegateAnalysis(source: (Callable, IFDSFact)): Option[((Entity, IFDSFact), Set[IFDSFact] ⇒ Set[IFDSFact])] = None
     def specialCase(source: (Callable, IFDSFact), propertyKey: IFDSPropertyMetaInformation[Statement, IFDSFact]): Option[ProperPropertyComputationResult] = None
 }
 

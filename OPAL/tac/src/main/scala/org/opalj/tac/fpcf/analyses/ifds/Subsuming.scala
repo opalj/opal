@@ -8,7 +8,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Mario Trageser
  */
-trait Subsuming[IFDSFact <: SubsumableFact] extends Subsumable[IFDSFact] {
+trait Subsuming[Statement, IFDSFact <: SubsumableFact] extends Subsumable[Statement, IFDSFact] {
 
     val numberOfSubsumptions = new NumberOfSubsumptions
 
@@ -43,9 +43,9 @@ trait Subsuming[IFDSFact <: SubsumableFact] extends Subsumable[IFDSFact] {
      * Considers subsuming.
      */
     override protected def filterNewInformation[T <: IFDSFact](
-        newExitFacts: Map[JavaStatement, Set[T]],
-        oldExitFacts: Map[JavaStatement, Set[T]], project: SomeProject
-    ): Map[JavaStatement, Set[T]] =
+        newExitFacts: Map[Statement, Set[T]],
+        oldExitFacts: Map[Statement, Set[T]], project: SomeProject
+    ): Map[Statement, Set[T]] =
         newExitFacts.keys.map {
             statement ⇒
                 val old = oldExitFacts.get(statement)
