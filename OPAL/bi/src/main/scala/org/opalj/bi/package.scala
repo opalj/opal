@@ -71,6 +71,7 @@ package object bi {
 
     // previous versions are not really relevant in the context of Java bytecode
     final val Java1MajorVersion = 45
+    final val Java1_2MajorVersion = 46
     final val Java5MajorVersion = 49
     final val Java5Version = UShortPair(0, Java5MajorVersion)
     final val Java6MajorVersion = 50
