@@ -3,7 +3,7 @@ package org.opalj.ll
 
 import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.ll.fpcf.analyses.ifds.taint.MultilingualForwardTaintAnalysis
+import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler}
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, NullFact}
@@ -25,10 +25,10 @@ class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers
             project.get(RTACallGraphKey)
             val declaredMethods = project.get(DeclaredMethodsKey)
             val manager = project.get(FPCFAnalysesManagerKey)
-            val (ps, analyses) = manager.runAll(MultilingualForwardTaintAnalysis)
+            val (ps, analyses) = manager.runAll(JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler)
             for (method ← project.allMethodsWithBody) {
                 val flows =
-                    ps((declaredMethods(method), NullFact), MultilingualForwardTaintAnalysis.property.key)
+                    ps((declaredMethods(method), NullFact), JavaForwardTaintAnalysisScheduler.property.key)
                 println("---METHOD: "+method.toJava+"  ---")
                 for {
                     fact ← flows.ub

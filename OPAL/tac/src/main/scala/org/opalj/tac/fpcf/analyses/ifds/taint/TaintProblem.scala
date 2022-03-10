@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, JavaStatement, UnbalancedReturnFact}
@@ -52,7 +51,7 @@ case class InstanceField(index: Int, classType: ObjectType, fieldName: String) e
  *
  * @param flow A sequence of method calls, originating from but not including this method.
  */
-case class FlowFact(flow: Seq[Method]) extends Fact {
+case class FlowFact[Callable](flow: Seq[Callable]) extends Fact {
     override val hashCode: Int = {
         var r = 1
         flow.foreach(f ⇒ r = (r + f.hashCode()) * 31)
@@ -70,7 +69,7 @@ case class FlowFact(flow: Seq[Method]) extends Fact {
 case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Seq[Method])
     extends UnbalancedReturnFact[Fact] with Fact
 
-trait TaintProblem {
+trait TaintProblem[Callable, Statement] {
 
     /**
      * Checks, if some `callee` is a sanitizer, which sanitizes its return value.
@@ -79,7 +78,7 @@ trait TaintProblem {
      * @param callee The method, which was called.
      * @return True, if the method is a sanitizer.
      */
-    protected def sanitizesReturnValue(callee: DeclaredMethod): Boolean
+    protected def sanitizesReturnValue(callee: Callable): Boolean
 
     /**
      * Called in callToReturnFlow. This method can return facts, which will be removed after
@@ -89,7 +88,7 @@ trait TaintProblem {
      * @param in The facts, which hold before the call.
      * @return Facts, which will be removed from `in` after the call.
      */
-    protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact]
+    protected def sanitizeParameters(call: Statement, in: Set[Fact]): Set[Fact]
 }
 
 object TaintProblem {

@@ -30,7 +30,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
 import org.opalj.tac.fpcf.analyses.ifds.CalleeType
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.VariableType
 import org.opalj.tac.fpcf.analyses.ifds.VTAFact
@@ -122,15 +122,15 @@ object VTAEquality {
                 requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         }
         project.get(RTACallGraphKey)
-        project.get(FPCFAnalysesManagerKey).runAll(IFDSBasedVariableTypeAnalysis)
+        project.get(FPCFAnalysesManagerKey).runAll(IFDSBasedVariableTypeAnalysisScheduler)
         propertyStore
-            .entities(IFDSBasedVariableTypeAnalysis.property.key)
+            .entities(IFDSBasedVariableTypeAnalysisScheduler.property.key)
             .collect {
                 case EPS((m: DefinedMethod, inputFact)) ⇒
                     (m, inputFact)
             }
             .foreach { entity ⇒
-                val entityResult = propertyStore(entity, IFDSBasedVariableTypeAnalysis.property.key) match {
+                val entityResult = propertyStore(entity, IFDSBasedVariableTypeAnalysisScheduler.property.key) match {
                     case FinalEP(_, VTAResult(map)) ⇒ map
                     case _                          ⇒ throw new RuntimeException
                 }

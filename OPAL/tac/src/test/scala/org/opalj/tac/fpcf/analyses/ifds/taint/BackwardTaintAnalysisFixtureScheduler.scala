@@ -5,7 +5,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysis, JavaStatement, UnbalancedReturnFact}
+import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement, UnbalancedReturnFact}
 import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Method])
@@ -17,7 +17,7 @@ case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Met
  *
  * @author Mario Trageser
  */
-class BackwardTaintAnalysisFixture private (implicit val project: SomeProject)
+class BackwardTaintAnalysisFixtureScheduler private(implicit val project: SomeProject)
     extends BackwardIFDSAnalysis(new BackwardTaintProblemFixture(project), Taint)
 
 class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p) {
@@ -36,7 +36,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * Create a flow fact, if a source method is called and the returned value is tainted.
@@ -45,7 +45,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
      * In this case, callFlow would never be called and no FlowFact would be created.
      */
     override protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
-                                                source: (DeclaredMethod, Fact)): Option[FlowFact] = {
+                                                source: (DeclaredMethod, Fact)): Option[FlowFact[Method]] = {
         if (in.exists {
             case Variable(index) ⇒ index == call.index
             case _               ⇒ false
@@ -62,9 +62,9 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
      * When a callee calls the source, we create a FlowFact with the caller's call chain.
      */
     override protected def applyFlowFactFromCallee(
-        calleeFact: FlowFact,
+        calleeFact: FlowFact[Method],
         source:     (DeclaredMethod, Fact)
-    ): Option[FlowFact] =
+    ): Option[FlowFact[Method]] =
         Some(FlowFact(currentCallChain(source)))
 
     /**
@@ -74,13 +74,13 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
     override protected def createFlowFactAtBeginningOfMethod(
         in:     Set[Fact],
         source: (DeclaredMethod, Fact)
-    ): Option[FlowFact] =
+    ): Option[FlowFact[Method]] =
         None
 }
 
-object BackwardTaintAnalysisFixture extends IFDSAnalysis[Fact] {
+object BackwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Fact] {
 
-    override def init(p: SomeProject, ps: PropertyStore) = new BackwardTaintAnalysisFixture()(p)
+    override def init(p: SomeProject, ps: PropertyStore) = new BackwardTaintAnalysisFixtureScheduler()(p)
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
 }

@@ -2,26 +2,25 @@
 package org.opalj.ll.llvm
 
 import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM.{
-    LLVMBasicBlockAsValue,
-    LLVMGetBasicBlockName,
-    LLVMGetBasicBlockTerminator,
-    LLVMGetFirstInstruction,
-    LLVMGetNextInstruction
-}
+import org.bytedeco.llvm.global.LLVM.{LLVMBasicBlockAsValue, LLVMGetBasicBlockName, LLVMGetBasicBlockParent, LLVMGetBasicBlockTerminator, LLVMGetFirstInstruction, LLVMGetLastInstruction, LLVMGetNextInstruction}
 import org.opalj.graphs.Node
 
 case class BasicBlock(block_ref: LLVMBasicBlockRef)
     extends Value(LLVMBasicBlockAsValue(block_ref))
     with Node {
-    def instructions(): InstructionIterator = {
-        new InstructionIterator(LLVMGetFirstInstruction(block_ref))
-    }
+    def parent() = Function(LLVMGetBasicBlockParent(block_ref))
+    def instructions(): InstructionIterator = new InstructionIterator(LLVMGetFirstInstruction(block_ref))
+    def firstInstruction(): Instruction = Instruction(LLVMGetFirstInstruction(block_ref))
+    def lastInstruction(): Instruction = Instruction(LLVMGetLastInstruction(block_ref))
 
-    def terminator(): Terminator = {
-        val instruction = Instruction(LLVMGetBasicBlockTerminator(block_ref))
-        assert(instruction.is_terminator())
-        instruction.asInstanceOf[Terminator]
+    def terminator(): Option[Instruction with Terminator] = {
+        OptionalInstruction(LLVMGetBasicBlockTerminator(block_ref)) match {
+          case Some(terminator) => {
+            assert(terminator.isTerminator())
+            Some(terminator.asInstanceOf[Instruction with Terminator])
+          }
+          case None => None
+        }
     }
 
     def blockName(): String = LLVMGetBasicBlockName(block_ref).getString
@@ -45,16 +44,18 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
     /**
      * Returns `true` if this node has successor nodes.
      */
-    override def hasSuccessors: Boolean = {
-        terminator.hasSuccessors()
-    }
+    override def hasSuccessors: Boolean = terminator match {
+          case Some(t) => t.hasSuccessors
+          case None => false
+        }
 
     /**
      * Applies the given function for each successor node.
      */
-    override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
-        terminator.foreachSuccessor(f)
-    }
+    override def foreachSuccessor(f: Node ⇒ Unit): Unit = terminator match {
+          case Some(t) => t.foreachSuccessor(f)
+          case None =>
+        }
 }
 
 class InstructionIterator(var ref: LLVMValueRef) extends Iterator[Instruction] {

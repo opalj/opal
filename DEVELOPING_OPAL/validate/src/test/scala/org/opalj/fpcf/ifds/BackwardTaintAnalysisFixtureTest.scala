@@ -10,7 +10,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixture
+import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixtureScheduler
 import org.opalj.tac.fpcf.analyses.ifds.taint.NullFact
 
 /**
@@ -31,7 +31,7 @@ class BackwardTaintAnalysisFixtureTest extends PropertiesTest {
     }
 
     describe("Test the BackwardFlowPath annotations") {
-        val testContext = executeAnalyses(BackwardTaintAnalysisFixture)
+        val testContext = executeAnalyses(BackwardTaintAnalysisFixtureScheduler)
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {

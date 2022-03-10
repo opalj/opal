@@ -55,7 +55,7 @@ import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 
 abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement], val propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact])
     extends FPCFAnalysis
-    with Subsumable[IFDSFact] {
+    with Subsumable[JavaStatement, IFDSFact] {
 
     /**
      * All declared methods in the project.
@@ -885,7 +885,7 @@ class NumberOfCalls {
     var callToReturnFlow = 0
 }
 
-abstract class IFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalysisScheduler {
+abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalysisScheduler {
 
     final override type InitializationData = AbstractIFDSAnalysis[IFDSFact]
 
@@ -927,7 +927,7 @@ abstract class IFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalys
 
 abstract class AbsractIFDSAnalysisRunner {
 
-    protected def analysisClass: IFDSAnalysis[_]
+    protected def analysisClass: IFDSAnalysisScheduler[_]
 
     protected def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit
 

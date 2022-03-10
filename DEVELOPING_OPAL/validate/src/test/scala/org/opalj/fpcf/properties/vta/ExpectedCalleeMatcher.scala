@@ -15,7 +15,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.ifds.CalleeType
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ifds.VTAResult
 
 class ExpectedCalleeMatcher extends VTAMatcher {
@@ -31,7 +31,7 @@ class ExpectedCalleeMatcher extends VTAMatcher {
             elementValuePairs(2).value.asBooleanValue.value
         )
         val propertyStore = project.get(PropertyStoreKey)
-        val propertyKey = IFDSBasedVariableTypeAnalysis.property.key
+        val propertyKey = IFDSBasedVariableTypeAnalysisScheduler.property.key
         // Get ALL the exit facts for the method for ALL input facts
         val allReachableExitFacts =
             propertyStore.entities(propertyKey).collect {

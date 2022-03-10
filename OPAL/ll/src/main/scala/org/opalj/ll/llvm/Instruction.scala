@@ -4,6 +4,13 @@ package org.opalj.ll.llvm
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM._
 
+object OptionalInstruction {
+  def apply(ref: LLVMValueRef): Option[Instruction] = {
+    if (ref.isNull) return None
+    Some(Instruction(ref))
+  }
+}
+
 object Instruction {
     def apply(ref: LLVMValueRef): Instruction = {
         assert(LLVMGetValueKind(ref) == LLVMInstructionValueKind, "ref has to be an instruction")
@@ -91,7 +98,10 @@ trait Terminator {
 }
 
 sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
-    def is_terminator(): Boolean = !LLVMIsATerminatorInst(ref).isNull
+    def isTerminator(): Boolean = !LLVMIsATerminatorInst(ref).isNull
+    def parent(): BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
+    def function(): Function = parent.parent
+    def next(): Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
 }
 
 case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator

@@ -7,7 +7,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, ForwardIFDSAnalysis, IFDSAnalysis, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintProblem, TaintProblem, Variable}
 import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation, Taint}
 
@@ -19,7 +19,7 @@ import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation,
  * @author Mario Trageser
  * @author Michael Eichberg
  */
-class ForwardClassForNameTaintAnalysis private (implicit val project: SomeProject)
+class ForwardClassForNameTaintAnalysis$Scheduler private(implicit val project: SomeProject)
     extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
@@ -44,7 +44,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * This analysis does not create new taints on the fly.
@@ -83,11 +83,11 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         method.declaringClassType == ObjectType.Class && method.name == "forName"
 }
 
-object ForwardClassForNameTaintAnalysis extends IFDSAnalysis[Fact] {
+object ForwardClassForNameTaintAnalysis$Scheduler extends IFDSAnalysisScheduler[Fact] {
 
-    override def init(p: SomeProject, ps: PropertyStore): ForwardClassForNameTaintAnalysis = {
+    override def init(p: SomeProject, ps: PropertyStore): ForwardClassForNameTaintAnalysis$Scheduler = {
         p.get(RTACallGraphKey)
-        new ForwardClassForNameTaintAnalysis()(p)
+        new ForwardClassForNameTaintAnalysis$Scheduler()(p)
     }
 
     override def property: IFDSPropertyMetaInformation[Fact] = Taint
@@ -95,12 +95,12 @@ object ForwardClassForNameTaintAnalysis extends IFDSAnalysis[Fact] {
 
 class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
 
-    override def analysisClass: ForwardClassForNameTaintAnalysis.type = ForwardClassForNameTaintAnalysis
+    override def analysisClass: ForwardClassForNameTaintAnalysis$Scheduler.type = ForwardClassForNameTaintAnalysis$Scheduler
 
     override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit =
         for {
             e ← analysis.ifdsProblem.entryPoints
-            flows = ps(e, ForwardClassForNameTaintAnalysis.property.key)
+            flows = ps(e, ForwardClassForNameTaintAnalysis$Scheduler.property.key)
             fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {

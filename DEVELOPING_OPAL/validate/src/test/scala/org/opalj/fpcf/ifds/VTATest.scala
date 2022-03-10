@@ -11,7 +11,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
 
 class VTATest extends PropertiesTest {
@@ -29,7 +29,7 @@ class VTATest extends PropertiesTest {
     }
 
     describe("Test the ExpectedType annotations") {
-        val testContext = executeAnalyses(IFDSBasedVariableTypeAnalysis)
+        val testContext = executeAnalyses(IFDSBasedVariableTypeAnalysisScheduler)
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {

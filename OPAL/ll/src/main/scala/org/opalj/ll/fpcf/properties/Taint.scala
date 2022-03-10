@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.properties
 
+import org.opalj.br.Method
 import org.opalj.fpcf.PropertyKey
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
@@ -17,6 +18,7 @@ case class NativeTaint(flows: Map[LLVMStatement, Set[Fact]]) extends IFDSPropert
 object NativeTaint extends IFDSPropertyMetaInformation[LLVMStatement, Fact] {
 
   override type Self = NativeTaint
+  type Callable = Either[Function, Method]
   override def create(result: Map[LLVMStatement, Set[Fact]]): IFDSProperty[LLVMStatement, Fact] = new NativeTaint(result)
 
   val key: PropertyKey[NativeTaint] = PropertyKey.create("NativeTaint", new NativeTaint(Map.empty))

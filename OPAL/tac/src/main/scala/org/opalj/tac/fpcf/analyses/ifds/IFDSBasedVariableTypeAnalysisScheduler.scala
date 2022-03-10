@@ -24,20 +24,20 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @param project The analyzed project.
  * @author Mario Trageser
  */
-class IFDSBasedVariableTypeAnalysis private (ifdsProblem: VariableTypeProblem)(implicit val project: SomeProject)
+class IFDSBasedVariableTypeAnalysisScheduler private(ifdsProblem: VariableTypeProblem)(implicit val project: SomeProject)
     extends ForwardIFDSAnalysis[VTAFact](ifdsProblem, VTAResult)
 
-object IFDSBasedVariableTypeAnalysis extends IFDSAnalysis[VTAFact] {
+object IFDSBasedVariableTypeAnalysisScheduler extends IFDSAnalysisScheduler[VTAFact] {
 
     var SUBSUMING: Boolean = true
 
     override val uses: Set[PropertyBounds] =
         Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
 
-    override def init(p: SomeProject, ps: PropertyStore): IFDSBasedVariableTypeAnalysis = {
+    override def init(p: SomeProject, ps: PropertyStore): IFDSBasedVariableTypeAnalysisScheduler = {
         implicit val project = p
-        if (SUBSUMING) new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p)) with Subsuming[VTAFact]
-        else new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p))
+        if (SUBSUMING) new IFDSBasedVariableTypeAnalysisScheduler(new VariableTypeProblem(p)) with Subsuming[VTAFact]
+        else new IFDSBasedVariableTypeAnalysisScheduler(new VariableTypeProblem(p))
     }
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
@@ -64,7 +64,7 @@ object VTAResult extends IFDSPropertyMetaInformation[JavaStatement, VTAFact] {
 
 class IFDSBasedVariableTypeAnalysisRunner extends AbsractIFDSAnalysisRunner {
 
-    override def analysisClass: IFDSBasedVariableTypeAnalysis.type = IFDSBasedVariableTypeAnalysis
+    override def analysisClass: IFDSBasedVariableTypeAnalysisScheduler.type = IFDSBasedVariableTypeAnalysisScheduler
 
     override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit = {}
 

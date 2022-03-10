@@ -3,8 +3,8 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.DeclaredMethod
-import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysis, JavaStatement}
+import org.opalj.br.{DeclaredMethod, Method}
+import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement}
 import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 /**
@@ -13,7 +13,7 @@ import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
  *
  * @author Mario Trageser
  */
-class ForwardTaintAnalysisFixture private (implicit val project: SomeProject)
+class ForwardTaintAnalysisFixtureScheduler private(implicit val project: SomeProject)
     extends ForwardIFDSAnalysis(new ForwardTaintProblemFixture(project), Taint)
 
 class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) {
@@ -35,7 +35,7 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizeParamters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
@@ -49,14 +49,14 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
      * Note, that sink does not accept array parameters. No need to handle them.
      */
     override protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
-                                          in: Set[Fact]): Option[FlowFact] =
+                                          in: Set[Fact]): Option[FlowFact[Method]] =
         if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact(Seq(call.method)))
         else None
 }
 
-object ForwardTaintAnalysisFixture extends IFDSAnalysis[Fact] {
+object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Fact] {
 
-    override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture()(p)
+    override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixtureScheduler()(p)
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
 }

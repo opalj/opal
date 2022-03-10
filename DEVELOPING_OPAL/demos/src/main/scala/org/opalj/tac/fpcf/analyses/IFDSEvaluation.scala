@@ -8,7 +8,7 @@ import org.opalj.tac.fpcf.analyses.heros.analyses.taint.HerosForwardClassForName
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosVariableTypeAnalysisRunner
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisRunner
 import org.opalj.tac.fpcf.analyses.taint.BackwardClassForNameTaintAnalysisRunner
 import org.opalj.tac.fpcf.analyses.taint.ForwardClassForNameAnalysisRunner
@@ -41,9 +41,9 @@ object IFDSEvaluation {
         AbstractIFDSAnalysis.OPTIMIZE_CROSS_PRODUCT_IN_RETURN_FLOW = true
 
         // Evaluation of subsuming
-        IFDSBasedVariableTypeAnalysis.SUBSUMING = false
+        IFDSBasedVariableTypeAnalysisScheduler.SUBSUMING = false
         IFDSBasedVariableTypeAnalysisRunner.main(Array("-seq", "-l2", "-f", dir+"NoSubsuming.txt"))
-        IFDSBasedVariableTypeAnalysis.SUBSUMING = true
+        IFDSBasedVariableTypeAnalysisScheduler.SUBSUMING = true
 
         // Evaluation of Heros analyses
         HerosForwardClassForNameAnalysisRunner.main(Array("-f", dir+"HerosForwardClassForNameAnalysis.txt"))
@@ -58,11 +58,11 @@ object IFDSEvaluation {
         HerosAnalysis.NUM_THREADS = 1
 
         // Evaluation of the scheduling strategies
-        IFDSBasedVariableTypeAnalysis.SUBSUMING = false
+        IFDSBasedVariableTypeAnalysisScheduler.SUBSUMING = false
         ForwardClassForNameAnalysisRunner.main(Array("-evalSchedulingStrategies", "-seq", "-l2", "-f", dir+"SchedulingForwardClassForNameAnalysis.txt"))
         BackwardClassForNameTaintAnalysisRunner.main(Array("-evalSchedulingStrategies", "-seq", "-l2", "-f", dir+"SchedulingBackwardClassForNameAnalysis.txt"))
         IFDSBasedVariableTypeAnalysisRunner.main(Array("-evalSchedulingStrategies", "-seq", "-l2", "-f", dir+"SchedulingIFDSBasedVariableTypeAnalysis.txt"))
-        IFDSBasedVariableTypeAnalysis.SUBSUMING = true
+        IFDSBasedVariableTypeAnalysisScheduler.SUBSUMING = true
     }
 
 }

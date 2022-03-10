@@ -10,7 +10,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintAnalysisFixture
+import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintAnalysisFixtureScheduler
 import org.opalj.tac.fpcf.analyses.ifds.taint.NullFact
 
 /**
@@ -31,7 +31,7 @@ class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
     }
 
     describe("Test the ForwardFlowPath annotations") {
-        val testContext = executeAnalyses(ForwardTaintAnalysisFixture)
+        val testContext = executeAnalyses(ForwardTaintAnalysisFixtureScheduler)
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {

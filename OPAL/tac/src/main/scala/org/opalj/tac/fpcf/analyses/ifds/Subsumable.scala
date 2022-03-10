@@ -34,7 +34,7 @@ trait SubsumableNullFact extends SubsumableFact with AbstractIFDSNullFact {
  *
  * @author Mario Trageser
  */
-trait Subsumable[IFDSFact <: AbstractIFDSFact] {
+trait Subsumable[Statement, IFDSFact <: AbstractIFDSFact] {
 
     /**
      * A subclass can override this method to filter the `facts` in some set, which are not subsumed
@@ -77,10 +77,10 @@ trait Subsumable[IFDSFact <: AbstractIFDSFact] {
      *         `oldExitFacts` are not present.
      */
     protected def filterNewInformation[T <: IFDSFact](
-        newExitFacts: Map[JavaStatement, Set[T]],
-        oldExitFacts: Map[JavaStatement, Set[T]],
+        newExitFacts: Map[Statement, Set[T]],
+        oldExitFacts: Map[Statement, Set[T]],
         project:      SomeProject
-    ): Map[JavaStatement, Set[T]] = {
+    ): Map[Statement, Set[T]] = {
         var result = newExitFacts
         for ((key, values) ← oldExitFacts) {
             result = result.updated(key, result(key) -- values)

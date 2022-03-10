@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
-import org.opalj.br.DeclaredMethod
+import org.opalj.br.{DeclaredMethod, Method}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Compare, Expr, GetField, GetStatic, NewArray, PrefixExpr, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, Var}
 import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaIFDSProblem, JavaStatement}
 
-abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[Fact](project) with TaintProblem {
+abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[Fact](project) with TaintProblem[DeclaredMethod, JavaStatement] {
     override def nullFact: Fact = NullFact
 
     /**
@@ -202,7 +202,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
     override def callToReturnFlow(call: JavaStatement, successor: JavaStatement,
                                   in:     Set[Fact],
                                   source: (DeclaredMethod, Fact)): Set[Fact] =
-        in -- sanitizeParamters(call, in)
+        in -- sanitizeParameters(call, in)
 
     /**
      * Called, when the exit to return facts are computed for some `callee` with the null fact and
@@ -224,7 +224,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
-                                 in: Set[Fact]): Option[FlowFact]
+                                 in: Set[Fact]): Option[FlowFact[Method]]
 
     /**
      * If a parameter is tainted, the result will also be tainted.

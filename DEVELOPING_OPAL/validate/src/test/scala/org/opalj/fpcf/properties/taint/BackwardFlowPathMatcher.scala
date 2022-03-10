@@ -13,7 +13,7 @@ import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DefinedMethod
-import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixture
+import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixtureScheduler
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.properties.Taint
@@ -35,7 +35,7 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
             evp.value.asArrayValue.values.map((value: ElementValue) ⇒
                 value.asStringValue.value)).head.toIndexedSeq
         val propertyStore = p.get(PropertyStoreKey)
-        val propertyKey = BackwardTaintAnalysisFixture.property.key
+        val propertyKey = BackwardTaintAnalysisFixtureScheduler.property.key
         val allReachableFlowFacts =
             propertyStore.entities(propertyKey).collect {
                 case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method ⇒
