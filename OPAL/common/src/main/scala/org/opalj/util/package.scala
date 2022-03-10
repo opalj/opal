@@ -10,7 +10,6 @@ import scala.util.Properties.versionNumberString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
-
 /**
  * Utility methods.
  *

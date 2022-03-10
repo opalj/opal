@@ -13,7 +13,7 @@ trait Java18LibraryFramework
 
 object Java18LibraryFramework extends Java18LibraryFramework {
 
-  final override def loadsInterfacesOnly: Boolean = true
+    final override def loadsInterfacesOnly: Boolean = true
 
 }
 
