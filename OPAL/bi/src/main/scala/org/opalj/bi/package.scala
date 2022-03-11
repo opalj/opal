@@ -98,17 +98,19 @@ package object bi {
     final val Java16Version = UShortPair(0, Java16MajorVersion)
     final val Java17MajorVersion = 61
     final val Java17Version = UShortPair(0, Java17MajorVersion)
+    final val Java18MajorVersion = 62
+    final val Java18Version = UShortPair(0, Java18MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java17MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java18MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java17Version
+    final val LatestSupportedJavaVersion = Java18Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
