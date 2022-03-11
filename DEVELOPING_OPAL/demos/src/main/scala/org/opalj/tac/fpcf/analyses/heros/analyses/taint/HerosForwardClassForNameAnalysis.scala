@@ -76,7 +76,7 @@ class HerosForwardClassForNameAnalysis(
 
     val classHierarchy: ClassHierarchy = p.classHierarchy
 
-    var flowFacts = Map.empty[Method, Set[FlowFact]]
+    var flowFacts = Map.empty[Method, Set[FlowFact[Method]]]
 
     override def createFlowFunctionsFactory(): FlowFunctions[JavaStatement, Fact, Method] = {
 
@@ -308,7 +308,7 @@ class HerosForwardClassForNameAnalysis(
                             if (initialMethods.contains(stmt.method))
                                 flowFacts = flowFacts.updated(
                                     stmt.method,
-                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact]) + flowFact
+                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact[Method]]) + flowFact
                                 )
                             Set(flowFact)
                         case _ ⇒
@@ -335,7 +335,7 @@ class HerosForwardClassForNameAnalysis(
                             if (initialMethods.contains(stmt.method))
                                 flowFacts = flowFacts.updated(
                                     stmt.method,
-                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact]) + flowFact
+                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact[Method]]) + flowFact
                                 )
                             Some(flowFact)
                         } else None
