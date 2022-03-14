@@ -38,8 +38,8 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.DeclaredMethod
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
@@ -59,7 +59,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit final val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit final val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     case class State(
             field:                       Field,

@@ -5,6 +5,19 @@ package fpcf
 package analyses
 package immutability
 
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.LBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.br.ClassTypeSignature
 import org.opalj.br.Field
 import org.opalj.br.ObjectType
@@ -13,55 +26,42 @@ import org.opalj.br.RuntimeInvisibleAnnotationTable
 import org.opalj.br.SimpleClassTypeSignature
 import org.opalj.br.SourceFile
 import org.opalj.br.TypeVariableSignature
-import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.TransitivelyImmutableType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.Assignable
+import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.Assignable
 import org.opalj.br.fpcf.properties.MutableType
-import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.LBP
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.DependentImmutableClass
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.LazilyInitialized
+import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.NonAssignable
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.br.fpcf.properties.DependentlyImmutableField
-import org.opalj.br.ClassFile
-import org.opalj.br.FormalTypeParameter
 import org.opalj.br.Attribute
+import org.opalj.br.ClassFile
 import org.opalj.br.ClassSignature
-import org.opalj.tac.fpcf.analyses.cg.TypeProviderState
+import org.opalj.br.FormalTypeParameter
 import org.opalj.br.fpcf.properties.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.br.ReferenceType
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
@@ -96,7 +96,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             var dependentImmutability:      DependentImmutabilityTypes      = OnlyTransitivelyImmutable,
             var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
             var genericTypeParameters:      Set[String]                     = Set.empty
-    ) extends BaseAnalysisState with TypeProviderState {
+    ) extends BaseAnalysisState with TypeIteratorState {
         def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty
         def getFieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees
     }
@@ -117,7 +117,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     ): ProperPropertyComputationResult = {
 
         implicit val state: State = State(field)
-        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
         /**
          * Returns the formal type parameters from the class' and outer classes' signature
@@ -164,13 +164,13 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             classFormalTypeParameters.contains(string)
 
         /**
-         * Query the type provider for concrete class types.
+         * Query the type iterator for concrete class types.
          * Note: Does only work in a closed world assumption!!
          */
-        def queryTypeProvider(implicit state: State, typeProvider: TypeProvider): Unit = {
-            val actualTypes = typeProvider.typesProperty(state.field, typeProvider)
+        def queryTypeIterator(implicit state: State, typeIterator: TypeIterator): Unit = {
+            val actualTypes = typeIterator.typesProperty(state.field, typeIterator)
 
-            typeProvider.foreachType(state.field, actualTypes) { actualType ⇒
+            typeIterator.foreachType(state.field, actualTypes) { actualType ⇒
                 handleKnownClassType(actualType)
             }
         }
@@ -363,7 +363,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     state.removeDependee(eps.toEPK)
                 else
                     state.updateDependency(eps)
-                typeProvider.continuation(state.field, eps) {
+                typeIterator.continuation(state.field, eps) {
                     actualType ⇒ handleKnownClassType(actualType.asObjectType)
                 }
             } else {
@@ -425,7 +425,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             state.dependentImmutability = NotDependentlyImmutable
 
         if (field.fieldType.isReferenceType && (!state.classImmutability.isInstanceOf[DependentImmutableClass] || state.dependentImmutability == NotDependentlyImmutable)) { //TODO
-            queryTypeProvider
+            queryTypeIterator
         } //else state.classImmutability = TransitivelyImmutable is default
 
         createResult()
@@ -440,7 +440,7 @@ trait L0FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(FieldImmutability)
     )
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 }
