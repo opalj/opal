@@ -40,10 +40,10 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.DeclaredMethod
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.br.fpcf.properties.NonAssignable
 import org.opalj.br.fpcf.properties.Assignable
@@ -79,7 +79,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit final val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit final val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def doDetermineFieldAssignability(entity: Entity): PropertyComputationResult = {
         entity match {
@@ -365,7 +365,7 @@ sealed trait L1FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler
         ClosedPackagesKey,
         FieldAccessInformationKey,
         DefinitionSitesKey,
-        TypeProviderKey
+        TypeIteratorKey
     )
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(TACAI, EscapeProperty)

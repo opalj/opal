@@ -331,7 +331,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             candidate foreach { mdc ⇒
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTMethod = declaredMethods(mdc.method)
-                    val fISTContext = typeProvider.expandContext(state.context, fISTMethod, 0)
+                    val fISTContext = typeIterator.expandContext(state.context, fISTMethod, 0)
                     val fISTPurity = propertyStore(fISTContext, Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace

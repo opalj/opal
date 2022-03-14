@@ -46,7 +46,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
@@ -276,7 +276,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
     @inline private[this] def getCallExceptions(pc: Int)(implicit state: State): Entity = {
         val exceptions = CallExceptions(definitionSites(state.callContext.method.definedMethod, pc))
-        typeProvider match {
+        typeIterator match {
             case _: SimpleContextProvider ⇒ exceptions
             case _                        ⇒ (state.callContext, exceptions)
         }
@@ -598,7 +598,7 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

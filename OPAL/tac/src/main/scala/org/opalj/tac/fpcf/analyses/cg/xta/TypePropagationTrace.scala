@@ -67,7 +67,7 @@ private[xta] class TypePropagationTrace {
     @elidable(elidable.ASSERTION)
     def traceInit(
         method: DefinedMethod
-    )(implicit ps: PropertyStore, typeProvider: TypeProvider): Unit = {
+    )(implicit ps: PropertyStore, typeIterator: TypeIterator): Unit = {
         val initialTypes = {
             val typeEOptP = ps(method, InstantiatedTypes.key)
             if (typeEOptP.hasUBP) typeEOptP.ub.types
@@ -76,7 +76,7 @@ private[xta] class TypePropagationTrace {
         val initialCallees = {
             val calleesEOptP = ps(method, Callees.key)
             if (calleesEOptP.hasUBP)
-                calleesEOptP.ub.callSites(typeProvider.newContext(method)).flatMap(_._2)
+                calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
             else Iterator.empty
         }
         traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")

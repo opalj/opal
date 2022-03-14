@@ -8,20 +8,20 @@ import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
- *  An [[org.opalj.br.analyses.ProjectInformationKey]] to get the [[TypeProvider]] used to compute
+ *  An [[org.opalj.br.analyses.ProjectInformationKey]] to get the [[TypeIterator]] used to compute
  *  the current project's call graph.
  *  This key is intended to be set up by a corresponding [[org.opalj.tac.cg.CallGraphKey]].
  */
-object TypeProviderKey
-    extends ProjectInformationKey[TypeProvider, () ⇒ TypeProvider] {
+object TypeIteratorKey
+    extends ProjectInformationKey[TypeIterator, () ⇒ TypeIterator] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Nil
 
-    override def compute(project: SomeProject): TypeProvider = {
+    override def compute(project: SomeProject): TypeIterator = {
         project.getProjectInformationKeyInitializationData(this) match {
             case Some(init) ⇒
                 init()
@@ -29,9 +29,9 @@ object TypeProviderKey
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.warn(
                     "analysis configuration",
-                    s"no type provider configured, using CHA as a fallback"
+                    s"no type iterator configured, using CHA as a fallback"
                 )
-                new CHATypeProvider(project)
+                new CHATypeIterator(project)
         }
     }
 }

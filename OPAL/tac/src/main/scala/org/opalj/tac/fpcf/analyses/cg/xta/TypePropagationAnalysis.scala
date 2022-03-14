@@ -37,7 +37,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.DefinedMethod
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -487,7 +487,7 @@ final class TypePropagationAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override type InitializationData = Null
 

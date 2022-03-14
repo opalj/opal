@@ -10,8 +10,8 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
@@ -47,7 +47,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
         )
     }
 
-    override def getTypeProvider(project: SomeProject): TypeProvider =
-        new TypeProvider(project) with TypesBasedPointsToTypeProvider with SimpleContextProvider
+    override def getTypeIterator(project: SomeProject): TypeIterator =
+        new TypeIterator(project) with TypesBasedPointsToTypeIterator with SimpleContextProvider
 
 }

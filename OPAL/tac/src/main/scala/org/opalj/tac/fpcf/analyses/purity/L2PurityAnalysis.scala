@@ -836,7 +836,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             candidate foreach { mdc ⇒
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTMethod = declaredMethods(mdc.method)
-                    val fISTContext = typeProvider.expandContext(state.context, fISTMethod, 0)
+                    val fISTContext = typeIterator.expandContext(state.context, fISTMethod, 0)
                     val fISTPurity = propertyStore(fISTContext, Purity.key)
                     val self = UVar(
                         ASObjectValue(isNull = No, isPrecise = false, state.declClass),
