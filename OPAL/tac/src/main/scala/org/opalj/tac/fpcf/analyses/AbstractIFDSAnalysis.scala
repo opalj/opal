@@ -37,10 +37,10 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.properties.TACAI
@@ -190,7 +190,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                    = Map.empty
     )
 
-    implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     /**
      * Performs an IFDS analysis for a method-fact-pair.
@@ -909,7 +909,7 @@ abstract class IFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalys
     final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI))
 

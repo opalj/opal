@@ -81,15 +81,15 @@ import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
  * Core class of the call-graph framework: Provides type and (if available) points-to information to
- * client classes. Each type provider represents one traditional call-graph algorithm.
+ * client classes. Each type iterator represents one traditional call-graph algorithm.
  *
- * Type providers are responsible for managing the dependencies for their internal information
+ * Type iterators are responsible for managing the dependencies for their internal information
  * themselves. They provide suitable continuation functions to be invoked from an analysis'
  * continuation in order to process these opaque dependencies.
  *
  * @author Dominik Helm
  */
-abstract class TypeProvider(val project: SomeProject) {
+abstract class TypeIterator(val project: SomeProject) {
 
     protected[cg] type ContextType <: Context
     protected[cg] type InformationType
@@ -105,14 +105,14 @@ abstract class TypeProvider(val project: SomeProject) {
 
     def typesProperty(
         use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
-    )(implicit state: TypeProviderState): InformationType
+    )(implicit state: TypeIteratorState): InformationType
 
     def typesProperty(
         field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): InformationType
 
     def typesProperty(
@@ -124,7 +124,7 @@ abstract class TypeProvider(val project: SomeProject) {
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): InformationType = {
         typesProperty(field, depender)
     }
@@ -170,12 +170,15 @@ abstract class TypeProvider(val project: SomeProject) {
                 hasUnknownAllocation = true
             }
         }
-        if (hasUnknownAllocation)
+        if (hasUnknownAllocation) {
+            // IMPROVE: Could use the more precise type information here instead of just the
+            // least upper type
             handleAllocation(
                 use.value.asReferenceValue.leastUpperType.getOrElse(ObjectType.Object),
                 NoContext,
                 -1
             )
+        }
     }
 
     def foreachAllocation(
@@ -192,7 +195,7 @@ abstract class TypeProvider(val project: SomeProject) {
         additionalTypes: Set[ReferenceType]        = Set.empty
     )(
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
 
@@ -204,7 +207,7 @@ abstract class TypeProvider(val project: SomeProject) {
         updatedEPS: EPS[Entity, Property]
     )(
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
 
@@ -224,7 +227,7 @@ abstract class TypeProvider(val project: SomeProject) {
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit
+    )(implicit state: TypeIteratorState): Unit
 
     def continuationForAllocations(
         use:             V,
@@ -232,7 +235,7 @@ abstract class TypeProvider(val project: SomeProject) {
         additionalTypes: Set[ReferenceType]        = Set.empty
     )(
         handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
 
@@ -244,7 +247,7 @@ abstract class TypeProvider(val project: SomeProject) {
         updatedEPS: EPS[Entity, Property]
     )(
         handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
 
@@ -268,7 +271,7 @@ abstract class TypeProvider(val project: SomeProject) {
         handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
     )(
         implicit
-        @nowarn state: TypeProviderState
+        @nowarn state: TypeIteratorState
     ): Unit = {
         // Do nothing
     }
@@ -308,7 +311,7 @@ abstract class TypeProvider(val project: SomeProject) {
     }
 }
 
-trait SimpleContextProvider extends TypeProvider {
+trait SimpleContextProvider extends TypeIterator {
 
     override type ContextType = SimpleContext
 
@@ -332,7 +335,7 @@ trait SimpleContextProvider extends TypeProvider {
     }
 }
 
-trait CallStringContextProvider extends TypeProvider {
+trait CallStringContextProvider extends TypeIterator {
 
     override type ContextType = CallStringContext
 
@@ -368,8 +371,8 @@ trait CallStringContextProvider extends TypeProvider {
  * Provides types based only on local, static type information. Never registers any dependencies,
  * the continuation function throws an error if called anyway.
  */
-class CHATypeProvider(project: SomeProject)
-    extends TypeProvider(project) with SimpleContextProvider {
+class CHATypeIterator(project: SomeProject)
+    extends TypeIterator(project) with SimpleContextProvider {
 
     override type InformationType = Null
     override type PropertyType = Nothing
@@ -378,14 +381,14 @@ class CHATypeProvider(project: SomeProject)
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
-    )(implicit state: TypeProviderState): Null = null
+    )(implicit state: TypeIteratorState): Null = null
 
     @inline override def typesProperty(
         field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): Null = null
 
     def foreachType(
@@ -467,16 +470,16 @@ class CHATypeProvider(project: SomeProject)
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         throw new UnsupportedOperationException
     }
 }
 
 /**
- * Fast type provider based on a global set of instantiated types.
+ * Fast type iterator based on a global set of instantiated types.
  */
-class RTATypeProvider(project: SomeProject)
-    extends TypeProvider(project) with SimpleContextProvider {
+class RTATypeIterator(project: SomeProject)
+    extends TypeIterator(project) with SimpleContextProvider {
 
     override type InformationType = InstantiatedTypes
     override type PropertyType = InstantiatedTypes
@@ -487,7 +490,7 @@ class RTATypeProvider(project: SomeProject)
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
-    )(implicit state: TypeProviderState): InstantiatedTypes =
+    )(implicit state: TypeIteratorState): InstantiatedTypes =
         typesProperty(depender, requiresDependency = true)
 
     @inline override def typesProperty(
@@ -495,13 +498,13 @@ class RTATypeProvider(project: SomeProject)
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): InstantiatedTypes =
         typesProperty(depender, field.fieldType.isObjectType)
 
     @inline def typesProperty(
         depender: Entity, requiresDependency: Boolean
-    )(implicit state: TypeProviderState): InstantiatedTypes = {
+    )(implicit state: TypeIteratorState): InstantiatedTypes = {
         val epk = EPK(project, InstantiatedTypes.key)
         val instantiatedTypesProperty = if (state.hasDependee(epk)) state.getProperty(epk)
         else propertyStore(epk)
@@ -561,7 +564,7 @@ class RTATypeProvider(project: SomeProject)
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         val seenTypes =
             if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[InstantiatedTypes].numElements else 0
         updatedEPS.ub.asInstanceOf[InstantiatedTypes].dropOldest(seenTypes).filter {
@@ -571,14 +574,14 @@ class RTATypeProvider(project: SomeProject)
 }
 
 /**
- * Configurable type provider for the XTA family of call graphs. Based on the given
+ * Configurable type iterator for the XTA family of call graphs. Based on the given
  * [[TypeSetEntitySelector]], XTA, MTA, FTA or CTA behavior can be produced. Types are stored per
  * entity plus a global set of types.
  */
-class PropagationBasedTypeProvider(
+class PropagationBasedTypeIterator(
         project:               SomeProject,
         typeSetEntitySelector: TypeSetEntitySelector
-) extends TypeProvider(project) with SimpleContextProvider {
+) extends TypeIterator(project) with SimpleContextProvider {
 
     override type InformationType = (InstantiatedTypes, InstantiatedTypes)
     override type PropertyType = InstantiatedTypes
@@ -589,7 +592,7 @@ class PropagationBasedTypeProvider(
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
-    )(implicit state: TypeProviderState): (InstantiatedTypes, InstantiatedTypes) = {
+    )(implicit state: TypeIteratorState): (InstantiatedTypes, InstantiatedTypes) = {
         (
             getProperty(typeSetEntitySelector(context.method), depender, requiresDependency = true),
             getProperty(project, depender, requiresDependency = true)
@@ -601,7 +604,7 @@ class PropagationBasedTypeProvider(
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): (InstantiatedTypes, InstantiatedTypes) = {
         (
             getProperty(
@@ -613,7 +616,7 @@ class PropagationBasedTypeProvider(
 
     @inline private[this] def getProperty(
         entity: TypeSetEntity, depender: Entity, requiresDependency: Boolean
-    )(implicit state: TypeProviderState): InstantiatedTypes = {
+    )(implicit state: TypeIteratorState): InstantiatedTypes = {
         val epk = EPK(entity, InstantiatedTypes.key)
         val instantiatedTypesProperty = if (state.hasDependee(epk)) state.getProperty(epk)
         else propertyStore(epk)
@@ -668,7 +671,7 @@ class PropagationBasedTypeProvider(
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         val seenTypes =
             if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[InstantiatedTypes].numElements else 0
         updatedEPS.ub.asInstanceOf[InstantiatedTypes].dropOldest(seenTypes).filter {
@@ -681,8 +684,8 @@ class PropagationBasedTypeProvider(
  * Functionality for providing types based on individual points-to information, e.g., CFA.
  * Points-to information is stored per variable.
  */
-trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-    extends TypeProvider {
+trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
+    extends TypeIterator {
 
     override type InformationType = PointsToSet
     override type PropertyType = PointsToSet
@@ -694,7 +697,7 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     protected[this] implicit val formalParameters: VirtualFormalParameters =
         project.get(VirtualFormalParametersKey)
     protected[this] implicit val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
-    private[this] implicit val typeProvider: TypeProvider = this
+    private[this] implicit val typeIterator: TypeIterator = this
 
     protected[this] def createPointsToSet(
         pc:            Int,
@@ -708,7 +711,7 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
 
     def typesProperty(
         use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
-    )(implicit state: TypeProviderState): PointsToSet = {
+    )(implicit state: TypeIteratorState): PointsToSet = {
         use.definedBy.foldLeft(emptyPointsToSet) { (result, defSite) ⇒
             val pc = pcOfDefSite(defSite)(stmts)
             if (ai.isImmediateVMException(pc)) {
@@ -739,7 +742,7 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): PointsToSet = {
         val objects = currentPointsTo(
             depender,
@@ -795,7 +798,7 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         val ub = updatedEPS.ub.asInstanceOf[PointsToSet]
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[PointsToSet].numTypes else 0
         ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe ⇒
@@ -808,7 +811,7 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         dependee: Entity
     )(
         implicit
-        state: TypeProviderState
+        state: TypeIteratorState
     ): PointsToSet = {
         val epk = EPK(dependee, pointsToProperty)
         val p2s = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
@@ -828,10 +831,10 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
 }
 
 /**
- * Context-insensitive points-to type provider for the 0-CFA algorithm.
+ * Context-insensitive points-to type iterator for the 0-CFA algorithm.
  */
-trait TypesBasedPointsToTypeProvider
-    extends PointsToTypeProvider[ReferenceType, TypeBasedPointsToSet] {
+trait TypesBasedPointsToTypeIterator
+    extends PointsToTypeIterator[ReferenceType, TypeBasedPointsToSet] {
 
     protected[this] val pointsToProperty: PropertyKey[TypeBasedPointsToSet] =
         TypeBasedPointsToSet.key
@@ -843,7 +846,7 @@ trait TypesBasedPointsToTypeProvider
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): TypeBasedPointsToSet = {
         val types = project.classHierarchy.allSubtypes(field.classFile.thisType, reflexive = true)
         types.foldLeft(emptyPointsToSet) { (result, tpe) ⇒
@@ -861,11 +864,11 @@ trait TypesBasedPointsToTypeProvider
 }
 
 /**
- * Type provider with 1-call sensitivity for objects, for the 0-1-CFA algorithm.
+ * Type iterator with 1-call sensitivity for objects, for the 0-1-CFA algorithm.
  */
-class AllocationSitesPointsToTypeProvider(project: SomeProject)
-    extends TypeProvider(project)
-    with PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
+class AllocationSitesPointsToTypeIterator(project: SomeProject)
+    extends TypeIterator(project)
+    with PointsToTypeIterator[AllocationSite, AllocationSitePointsToSet]
     with SimpleContextProvider {
 
     val mergeStringBuilderBuffer: Boolean =
@@ -883,7 +886,7 @@ class AllocationSitesPointsToTypeProvider(project: SomeProject)
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): AllocationSitePointsToSet = {
         if (field.isStatic) {
             currentPointsTo(depender, field)
@@ -949,7 +952,7 @@ class AllocationSitesPointsToTypeProvider(project: SomeProject)
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
         handleNewType: ReferenceType ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         def handleType(as: AllocationSite): Unit = {
             val typeId = allocationSiteLongToTypeId(as)
             val tpe = ReferenceType.lookup(typeId)
@@ -1026,7 +1029,7 @@ class AllocationSitesPointsToTypeProvider(project: SomeProject)
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
         handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
-    )(implicit state: TypeProviderState): Unit = {
+    )(implicit state: TypeIteratorState): Unit = {
         def handleAllocation(as: AllocationSite): Unit = {
             val (context, pc, typeId) = longToAllocationSite(as)(this)
             val tpe = ReferenceType.lookup(typeId)
@@ -1131,11 +1134,11 @@ class AllocationSitesPointsToTypeProvider(project: SomeProject)
 }
 
 /**
- * Context-sensitive points-to type provider for the k-l-CFA algorithm.
+ * Context-sensitive points-to type iterator for the k-l-CFA algorithm.
  */
-class CFA_k_l_TypeProvider(project: SomeProject, val k: Int, val l: Int)
-    extends TypeProvider(project)
-    with PointsToTypeProvider[AllocationSite, AllocationSitePointsToSet]
+class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
+    extends TypeIterator(project)
+    with PointsToTypeIterator[AllocationSite, AllocationSitePointsToSet]
     with CallStringContextProvider {
 
     assert(k > 0 && l > 0 && k >= l - 1)
@@ -1155,7 +1158,7 @@ class CFA_k_l_TypeProvider(project: SomeProject, val k: Int, val l: Int)
     )(
         implicit
         propertyStore: PropertyStore,
-        state:         TypeProviderState
+        state:         TypeIteratorState
     ): AllocationSitePointsToSet = {
         if (field.isStatic) {
             currentPointsTo(depender, field)

@@ -90,8 +90,8 @@ object MatcherUtil {
         failure:  () ⇒ Unit
     )(
         implicit
-        typeProvider:        TypeProvider,
-        state:               TypeProviderState,
+        typeIterator:        TypeIterator,
+        state:               TypeIteratorState,
         ps:                  PropertyStore,
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean
@@ -128,8 +128,8 @@ object MatcherUtil {
         considerSubclasses:        Boolean        = false
     )(
         implicit
-        typeProvider:        TypeProvider,
-        state:               TypeProviderState,
+        typeIterator:        TypeIterator,
+        state:               TypeIteratorState,
         ps:                  PropertyStore,
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean

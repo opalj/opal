@@ -45,10 +45,10 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.DeclaredMethod
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callers
 
@@ -79,7 +79,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit final val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit final val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = {
         entity match {
@@ -363,7 +363,7 @@ sealed trait L1FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         ClosedPackagesKey,
         FieldAccessInformationKey,
         DefinitionSitesKey,
-        TypeProviderKey
+        TypeIteratorKey
     )
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(TACAI, EscapeProperty)
