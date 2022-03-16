@@ -76,5 +76,5 @@ object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[Fact] {
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleJavaForwardTaintAnalysis()(p)
     override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
     override def requiredProjectInformation: ProjectInformationKeys = super.requiredProjectInformation ++ Seq(LLVMProjectKey)
-    override val uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ub(NativeTaint)
+    override val uses: Set[PropertyBounds] = super.uses ++ Set(PropertyBounds.ub(NativeTaint))
 }

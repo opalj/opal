@@ -33,11 +33,11 @@ abstract class Statement[Node] {
  */
 protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node](
         val source:               (C, IFDSFact),
-        var pendingIfdsCallSites: Map[(C, IFDSFact), Set[S]]                                             = Map.empty,
-        var pendingIfdsDependees: Map[(C, IFDSFact), EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]] = Map.empty,
-        var pendingCgCallSites:   Set[Node]                                                              = Set.empty,
-        var incomingFacts:        Map[Node, Set[IFDSFact]]                                               = Map.empty,
-        var outgoingFacts:        Map[Node, Map[Option[Node], Set[IFDSFact]]]                            = Map.empty
+        var pendingIfdsCallSites: Map[(C, IFDSFact), Set[S]]                                             = Map.empty[(C, IFDSFact), Set[S]],
+        var pendingIfdsDependees: Map[(C, IFDSFact), EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]] = Map.empty[(C, IFDSFact), EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]],
+        var pendingCgCallSites:   Set[Node]                                                              = Set.empty[Node],
+        var incomingFacts:        Map[Node, Set[IFDSFact]]                                               = Map.empty[Node, Set[IFDSFact]],
+        var outgoingFacts:        Map[Node, Map[Option[Node], Set[IFDSFact]]]                            = Map.empty[Node, Map[Option[Node], Set[IFDSFact]]]
 )
 
 protected class Statistics {
@@ -95,7 +95,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
 
         // Start processing at the start of the cfg with the given source fact
         implicit val state: State =
-            new State(entity, Map(entity -> Set.empty), Map())
+            new State(entity, Map(entity -> Set.empty))
         val queue = mutable.Queue
             .empty[QueueEntry]
         icfg.startNodes(sourceFact, function).foreach { start ⇒
@@ -151,10 +151,10 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
                 } else
                     reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1, Some(e._2))
 
-            case FinalEP(_: C, _: Callees) ⇒
+            case FinalEP(_: C @unchecked, _: Callees) ⇒
                 reAnalyzeBasicBlocks(state.pendingCgCallSites)
 
-            case InterimEUBP(_: C, _: Callees) ⇒
+            case InterimEUBP(_: C @unchecked, _: Callees) ⇒
                 reAnalyzeBasicBlocks(state.pendingCgCallSites)
         }
 
@@ -228,9 +228,8 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
                     if ((callee eq state.source._1) && fact == state.source._2) {
                         val newDependee =
                             if (state.pendingIfdsCallSites.contains(state.source))
-                                state.pendingIfdsCallSites(state.source) +
-                                    ((basicBlock, call))
-                            else Set((basicBlock, call))
+                                state.pendingIfdsCallSites(state.source) + call
+                            else Set(call)
                         state.pendingIfdsCallSites =
                             state.pendingIfdsCallSites.updated(state.source, newDependee)
                         allNewExitFacts = IFDS.mergeMaps(allNewExitFacts, collectResult)
@@ -248,7 +247,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
                                 if (state.pendingIfdsCallSites.contains(e)
                                     && state.pendingIfdsCallSites(e).nonEmpty) {
                                     val newDependee =
-                                        state.pendingIfdsCallSites(e) - ((basicBlock, call))
+                                        state.pendingIfdsCallSites(e) - call
                                     state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
                                 }
                                 state.pendingIfdsDependees -= e
@@ -331,7 +330,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
         call:         S,
         callee:       C,
         exitFacts:    Map[S, Set[IFDSFact]]
-    )(implicit state: State): Map[S, Set[IFDSFact]] = {
+    ): Map[S, Set[IFDSFact]] = {
         // First process for normal returns, then abnormal returns.
         var result = summaryEdges
         for {
@@ -565,7 +564,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
         val callSites = state.pendingIfdsCallSites
         state.pendingIfdsCallSites = callSites.updated(
             entity,
-            callSites.getOrElse(entity, Set.empty) + ((callBB, call))
+            callSites.getOrElse(entity, Set.empty) + call
         )
         state.pendingIfdsDependees += entity -> calleeProperty
     }

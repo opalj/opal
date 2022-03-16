@@ -19,7 +19,7 @@ class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
         icfg:        ICFG[IFDSFact, Function, LLVMStatement, BasicBlock],
         propertyKey: IFDSPropertyMetaInformation[LLVMStatement, IFDSFact]
 )
-    extends IFDSAnalysis[IFDSFact, Function, LLVMStatement, BasicBlock](ifdsProblem, icfg, propertyKey)
+    extends IFDSAnalysis[IFDSFact, Function, LLVMStatement, BasicBlock]()(ifdsProblem, icfg, propertyKey)
 
 /**
  * A statement that is passed to the concrete analysis.

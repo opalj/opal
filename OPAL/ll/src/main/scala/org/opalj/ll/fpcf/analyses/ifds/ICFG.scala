@@ -1,7 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds
+import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSFact
+
 import scala.collection.{Set ⇒ SomeSet}
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSFact, IFDSProblem}
 
 abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node] {
     /**
