@@ -4,9 +4,6 @@ import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSFact, IFDSProblem}
 
 abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node] {
-    type State = IFDSState[IFDSFact, C, S, Node]
-    type Problem = IFDSProblem[IFDSFact, C, S]
-
     /**
      * Determines the basic blocks, at which the analysis starts.
      *
@@ -73,44 +70,10 @@ abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[No
     def getCalleesIfCallStatement(statement: S): Option[SomeSet[C]]
 
     /**
-     * Collects the facts valid at all exit nodes based on the current results.
+     * Determines whether the statement is an exit statement.
      *
-     * @return A map, mapping from each predecessor of all exit nodes to the facts, which hold at
-     *         the exit node under the assumption that the predecessor was executed before.
+     * @param statement The source statement.
+     * @return Whether the statement flow may exit its callable (function/method)
      */
-    def collectResult(implicit state: State): Map[S, Set[IFDSFact]]
-
-    /**
-     * Determines the facts, for which a `callee` is analyzed.
-     *
-     * @param call The call, which calls `callee`.
-     * @param callee The method, which is called by `call`.
-     * @param in The facts, which hold before the `call`.
-     * @return The facts, for which `callee` will be analyzed.
-     */
-    def callToStartFacts(call: S, callee: C, in: Set[IFDSFact])(
-        implicit
-        state:       State,
-        ifdsProblem: Problem,
-        statistics:  Statistics
-    ): Set[IFDSFact]
-
-    /**
-     * Collects the exit facts of a `callee` and adds them to the `summaryEdges`.
-     *
-     * @param summaryEdges The current summary edges. They map successor statements of the `call`
-     *                     to facts, which hold before they are executed.
-     * @param successors The successor of `call`, which is considered.
-     * @param call The statement, which calls `callee`.
-     * @param callee The method, called by `call`.
-     * @param exitFacts Maps exit statements of the `callee` to the facts, which hold after them.
-     * @return The summary edges plus the exit to return facts for `callee` and `successor`.
-     */
-    def addExitToReturnFacts(
-        summaryEdges: Map[S, Set[IFDSFact]],
-        successors:   Set[S],
-        call:         S,
-        callee:       C,
-        exitFacts:    Map[S, Set[IFDSFact]]
-    )(implicit state: State, ifdsProblem: Problem): Map[S, Set[IFDSFact]]
+    def isExitStatement(statement: S): Boolean
 }

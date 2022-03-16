@@ -80,7 +80,7 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
      */
     override def normalFlow(
         statement: JavaStatement,
-        successor: JavaStatement,
+        successor: Option[JavaStatement],
         in:        Set[VTAFact]
     ): Set[VTAFact] = {
         val stmt = statement.stmt

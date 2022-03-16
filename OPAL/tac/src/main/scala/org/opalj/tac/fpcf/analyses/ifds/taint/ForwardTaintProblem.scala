@@ -13,7 +13,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
     /**
      * If a variable gets assigned a tainted value, the variable will be tainted.
      */
-    override def normalFlow(statement: JavaStatement, successor: JavaStatement,
+    override def normalFlow(statement: JavaStatement, successor: Option[JavaStatement],
                             in: Set[Fact]): Set[Fact] =
         statement.stmt.astID match {
             case Assignment.ASTID ⇒
@@ -61,7 +61,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * edges will be created.
      */
     override def callFlow(call: JavaStatement, callee: DeclaredMethod,
-                          in: Set[Fact], source: (DeclaredMethod, Fact)): Set[Fact] = {
+                          in: Set[Fact], a: (DeclaredMethod, Fact)): Set[Fact] = {
         val callObject = asCall(call.stmt)
         val allParams = callObject.allParams
         var facts = Set.empty[Fact]

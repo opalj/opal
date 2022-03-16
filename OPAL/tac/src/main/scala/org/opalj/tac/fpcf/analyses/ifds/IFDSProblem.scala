@@ -38,7 +38,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      *
      * @param statement The analyzed statement.
      * @param successor The successor of the analyzed `statement`, for which the data flow shall be
-     *                  computed.
+     *                  computed. It is not present for exit statements.
      * @param in The facts, which hold before the execution of the `statement`.
      * @return The facts, which hold after the execution of `statement` under the assumption
      *         that the facts in `in` held before `statement` and `successor` will be
@@ -46,7 +46,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      */
     def normalFlow(
         statement: Statement,
-        successor: Statement,
+        successor: Option[Statement],
         in:        Set[IFDSFact]
     ): Set[IFDSFact]
 

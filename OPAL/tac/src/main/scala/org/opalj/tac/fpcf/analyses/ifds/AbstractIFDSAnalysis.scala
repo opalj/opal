@@ -667,7 +667,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
                     JavaStatement(state.method, basicBlock, state.code(next), next, state.code, state.cfg)
                 numberOfCalls.normalFlow += 1
                 sumOfInputfactsForCallbacks += in.size
-                ifdsProblem.normalFlow(statement, successor, flows)
+                ifdsProblem.normalFlow(statement, Some(successor), flows)
             } else
                 // Inside a basic block, we only have one successor --> Take the head
                 handleCall(basicBlock, statement, calleesO.get, flows, calleeFact).values.head
@@ -682,7 +682,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
                 for (node ← nextNodes(basicBlock)) {
                     numberOfCalls.normalFlow += 1
                     sumOfInputfactsForCallbacks += in.size
-                    result += node -> ifdsProblem.normalFlow(statement, firstStatement(node), flows)
+                    result += node -> ifdsProblem.normalFlow(statement, Some(firstStatement(node)), flows)
                 }
                 result
             } else

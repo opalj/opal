@@ -13,7 +13,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
     /**
      * If a tainted variable gets assigned a value, this value will be tainted.
      */
-    override def normalFlow(statement: JavaStatement, successor: JavaStatement,
+    override def normalFlow(statement: JavaStatement, successor: Option[JavaStatement],
                             in: Set[Fact]): Set[Fact] = {
         val stmt = statement.stmt
         stmt.astID match {
