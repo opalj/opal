@@ -53,6 +53,8 @@ protected class Statistics {
     var sumOfInputfactsForCallbacks = 0L
 }
 
+protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalysis
+
 /**
  *
  * @param ifdsProblem
@@ -64,10 +66,8 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
         val ifdsProblem: IFDSProblem[IFDSFact, C, S],
         val icfg:        ICFG[IFDSFact, C, S, Node],
         val propertyKey: IFDSPropertyMetaInformation[S, IFDSFact]
-) extends FPCFAnalysis
-    with Subsumable[S, IFDSFact] {
+) extends ProjectFPCFAnalysis(ifdsProblem.project) with Subsumable[S, IFDSFact] {
     type State = IFDSState[IFDSFact, C, S, Node]
-    override val project: SomeProject = ifdsProblem.project
 
     implicit var statistics = new Statistics
 
