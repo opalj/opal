@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
-import org.opalj.br.{DeclaredMethod, Method}
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Compare, Expr, GetField, GetStatic, NewArray, PrefixExpr, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, Var}
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaIFDSProblem, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaIFDSProblem, JavaMethod, JavaStatement}
+import org.opalj.tac._
 
-abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[Fact](project) with TaintProblem[DeclaredMethod, JavaStatement] {
+abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[Fact](project) with TaintProblem[DeclaredMethod, JavaStatement, Fact] {
     override def nullFact: Fact = NullFact
 
     /**
@@ -169,8 +169,8 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
             case sf: StaticField ⇒ flows += sf
 
             // Track the call chain to the sink back
-            case FlowFact(flow) if !flow.contains(call.method) ⇒
-                flows += FlowFact(call.method +: flow)
+            case FlowFact(flow) if !flow.contains(JavaMethod(call.method)) ⇒
+                flows += FlowFact(JavaMethod(call.method) +: flow)
             case _ ⇒
         }
 
@@ -224,7 +224,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
-                                 in: Set[Fact]): Option[FlowFact[Method]]
+                                 in: Set[Fact]): Option[FlowFact]
 
     /**
      * If a parameter is tainted, the result will also be tainted.

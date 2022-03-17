@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{DeclaredMethod, Method}
-import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement}
+import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 /**
@@ -49,8 +49,8 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
      * Note, that sink does not accept array parameters. No need to handle them.
      */
     override protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
-                                          in: Set[Fact]): Option[FlowFact[Method]] =
-        if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact(Seq(call.method)))
+                                          in: Set[Fact]): Option[FlowFact] =
+        if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
 }
 

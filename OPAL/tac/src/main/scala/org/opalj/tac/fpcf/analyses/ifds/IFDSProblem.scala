@@ -22,7 +22,7 @@ trait AbstractIFDSNullFact extends AbstractIFDSFact
  * @author Dominik Helm
  * @author Mario Trageser
  */
-abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](val project: SomeProject) {
+abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C, Statement](val project: SomeProject) {
     /**
      * The null fact of this analysis.
      */
@@ -31,7 +31,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
     /**
      * The entry points of this analysis.
      */
-    def entryPoints: Seq[(Callable, IFDSFact)]
+    def entryPoints: Seq[(C, IFDSFact)]
 
     /**
      * Computes the data flow for a normal statement.
@@ -62,9 +62,9 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      */
     def callFlow(
         call:   Statement,
-        callee: Callable,
+        callee: C,
         in:     Set[IFDSFact],
-        source: (Callable, IFDSFact)
+        source: (C, IFDSFact)
     ): Set[IFDSFact]
 
     /**
@@ -82,7 +82,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      */
     def returnFlow(
         call:      Statement,
-        callee:    Callable,
+        callee:    C,
         exit:      Statement,
         successor: Statement,
         in:        Set[IFDSFact]
@@ -102,7 +102,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
         call:      Statement,
         successor: Statement,
         in:        Set[IFDSFact],
-        source:    (Callable, IFDSFact)
+        source:    (C, IFDSFact)
     ): Set[IFDSFact]
 
     /**
@@ -113,7 +113,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      * @param callee The callee.
      * @return True, if the callee is inside the analysis context.
      */
-    def insideAnalysisContext(callee: Callable): Boolean
+    def insideAnalysisContext(callee: C): Boolean
 
     /**
      * When a callee outside of this analysis' context is called, this method computes the summary
@@ -127,7 +127,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      */
     def callOutsideOfAnalysisContext(
         call:      Statement,
-        callee:    Callable,
+        callee:    C,
         successor: Statement,
         in:        Set[IFDSFact]
     ): Set[IFDSFact]
@@ -141,11 +141,11 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, Callable, Statement](va
      */
     def getCallees(
         statement: Statement,
-        caller:    Callable
-    ): Iterator[Callable]
+        caller:    C
+    ): Iterator[C]
 
-    def delegateAnalysis(source: (Callable, IFDSFact)): Option[((Entity, IFDSFact), Set[IFDSFact] ⇒ Set[IFDSFact])] = None
-    def specialCase(source: (Callable, IFDSFact), propertyKey: IFDSPropertyMetaInformation[Statement, IFDSFact]): Option[ProperPropertyComputationResult] = None
+    def delegateAnalysis(source: (C, IFDSFact)): Option[((Entity, IFDSFact), Set[IFDSFact] ⇒ Set[IFDSFact])] = None
+    def specialCase(source: (C, IFDSFact), propertyKey: IFDSPropertyMetaInformation[Statement, IFDSFact]): Option[ProperPropertyComputationResult] = None
 }
 
 /**

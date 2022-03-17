@@ -2,18 +2,18 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ll.fpcf.analyses.ifds.{Callable, LLVMStatement, NativeIFDSProblem}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeIFDSProblem}
 import org.opalj.ll.llvm.Function
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, NullFact, TaintProblem}
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
-abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[Fact](project) with TaintProblem[Function, LLVMStatement] {
-    override def nullFact: Fact = NullFact
+abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
+    override def nullFact: NativeFact = NativeNullFact
 
     /**
      * If a variable gets assigned a tainted value, the variable will be tainted.
      */
-    override def normalFlow(statement: LLVMStatement, successor: LLVMStatement,
-                            in: Set[Fact]): Set[Fact] =
+    override def normalFlow(statement: LLVMStatement, successor: Option[LLVMStatement],
+                            in: Set[NativeFact]): Set[NativeFact] =
         statement match {
             // TODO
             case _ ⇒ in
@@ -25,9 +25,9 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * edges will be created.
      */
     override def callFlow(call: LLVMStatement, callee: Function,
-                          in: Set[Fact], source: (Function, Fact)): Set[Fact] = {
+                          in: Set[NativeFact], source: (Function, NativeFact)): Set[NativeFact] = {
         // TODO
-        Set.empty[Fact]
+        Set.empty[NativeFact]
     }
 
     /**
@@ -40,7 +40,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * If the sanitize method was called, nothing will be tainted.
      */
     override def returnFlow(call: LLVMStatement, callee: Function, exit: LLVMStatement,
-                            successor: LLVMStatement, in: Set[Fact]): Set[Fact] = {
+                            successor: LLVMStatement, in: Set[NativeFact]): Set[NativeFact] = {
         // TODO
         Set.empty
     }
@@ -49,8 +49,8 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * Removes taints according to `sanitizeParamters`.
      */
     override def callToReturnFlow(call: LLVMStatement, successor: LLVMStatement,
-                                  in:     Set[Fact],
-                                  source: (Function, Fact)): Set[Fact] =
+                                  in:     Set[NativeFact],
+                                  source: (Function, NativeFact)): Set[NativeFact] =
         in -- sanitizeParameters(call, in)
 
     /**
@@ -62,7 +62,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @param call The call.
      * @return Some variable fact, if necessary. Otherwise none.
      */
-    protected def createTaints(callee: Function, call: LLVMStatement): Set[Fact]
+    protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeFact]
 
     /**
      * Called, when the call to return facts are computed for some `callee`.
@@ -73,7 +73,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def createFlowFact(callee: Function, call: LLVMStatement,
-                                 in: Set[Fact]): Option[FlowFact[Callable]]
+                                 in: Set[NativeFact]): Option[NativeFlowFact]
 
     /**
      * If a parameter is tainted, the result will also be tainted.
@@ -81,7 +81,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      */
     override def callOutsideOfAnalysisContext(statement: LLVMStatement, callee: Function,
                                               successor: LLVMStatement,
-                                              in:        Set[Fact]): Set[Fact] = {
+                                              in:        Set[NativeFact]): Set[NativeFact] = {
         // TODO
         Set.empty
     }

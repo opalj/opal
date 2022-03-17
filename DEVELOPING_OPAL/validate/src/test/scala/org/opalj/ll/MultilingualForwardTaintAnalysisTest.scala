@@ -39,7 +39,7 @@ class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers
                         .toSet[Fact]
                 } {
                     fact match {
-                        case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                        case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.signature).mkString(", "))
                         case _              ⇒
                     }
                 }

@@ -4,15 +4,12 @@ package org.opalj.tac.fpcf.analyses.heros.analyses.taint
 import java.io.File
 import java.util
 import java.util.Collections
-
 import scala.collection.JavaConverters._
-
 import heros.FlowFunction
 import heros.FlowFunctions
 import heros.TwoElementSet
 import heros.flowfunc.Identity
 import heros.flowfunc.KillAll
-
 import org.opalj.util.Milliseconds
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
@@ -33,7 +30,7 @@ import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
@@ -51,7 +48,6 @@ import org.opalj.tac.PrimitiveTypecastExpr
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 
 /**
@@ -76,7 +72,7 @@ class HerosForwardClassForNameAnalysis(
 
     val classHierarchy: ClassHierarchy = p.classHierarchy
 
-    var flowFacts = Map.empty[Method, Set[FlowFact[Method]]]
+    var flowFacts = Map.empty[Method, Set[FlowFact]]
 
     override def createFlowFunctionsFactory(): FlowFunctions[JavaStatement, Fact, Method] = {
 
@@ -304,11 +300,11 @@ class HerosForwardClassForNameAnalysis(
 
                         case sf: StaticField ⇒ Set(sf)
                         case FlowFact(flow) if !flow.contains(stmt.method) ⇒
-                            val flowFact = FlowFact(stmt.method +: flow)
+                            val flowFact = FlowFact(JavaMethod(stmt.method) +: flow)
                             if (initialMethods.contains(stmt.method))
                                 flowFacts = flowFacts.updated(
                                     stmt.method,
-                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact[Method]]) + flowFact
+                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact]) + flowFact
                                 )
                             Set(flowFact)
                         case _ ⇒
@@ -331,11 +327,11 @@ class HerosForwardClassForNameAnalysis(
 
                     val flowFact =
                         if (isClassForName(callee) && source == Variable(-2)) {
-                            val flowFact = FlowFact(Seq(stmt.method))
+                            val flowFact = FlowFact(Seq(JavaMethod(stmt.method)))
                             if (initialMethods.contains(stmt.method))
                                 flowFacts = flowFacts.updated(
                                     stmt.method,
-                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact[Method]]) + flowFact
+                                    flowFacts.getOrElse(stmt.method, Set.empty[FlowFact]) + flowFact
                                 )
                             Some(flowFact)
                         } else None
@@ -408,7 +404,7 @@ class HerosForwardClassForNameAnalysisRunner
         for {
             method ← analysis.flowFacts.keys
             fact ← analysis.flowFacts(method)
-        } println(s"flow: "+fact.flow.map(_.toJava).mkString(", "))
+        } println(s"flow: "+fact.flow.map(_.signature).mkString(", "))
         println(s"Time: $analysisTime")
     }
 

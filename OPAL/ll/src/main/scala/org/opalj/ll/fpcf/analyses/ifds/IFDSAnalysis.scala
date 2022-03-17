@@ -95,7 +95,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
 
         // Start processing at the start of the cfg with the given source fact
         implicit val state: State =
-            new State(entity, Map(entity -> Set.empty))
+            new State(entity, Map(entity -> Set.empty), Map.empty, Set.empty[Node])
         val queue = mutable.Queue
             .empty[QueueEntry]
         icfg.startNodes(sourceFact, function).foreach { start ⇒
@@ -303,6 +303,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
             blockFacts ⇒
                 blockFacts._2.get(None) match {
                     case Some(facts) ⇒ result += icfg.lastStatement(blockFacts._1) -> facts
+                    case None        ⇒
                 }
         )
         result

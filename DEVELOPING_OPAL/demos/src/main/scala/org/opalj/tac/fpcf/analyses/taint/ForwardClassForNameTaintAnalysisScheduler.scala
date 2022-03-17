@@ -3,11 +3,10 @@ package org.opalj.tac.fpcf.analyses.taint
 
 import java.io.File
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
+import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintProblem, TaintProblem, Variable}
 import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation, Taint}
 
@@ -23,7 +22,7 @@ class ForwardClassForNameTaintAnalysis$Scheduler private (implicit val project: 
     extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
-    extends ForwardTaintProblem(project) with TaintProblem {
+    extends ForwardTaintProblem(project) with TaintProblem[DeclaredMethod, JavaStatement, Fact] {
 
     /**
      * The string parameters of all public methods are entry points.
@@ -59,7 +58,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     override protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
                                           in: Set[Fact]): Option[FlowFact] =
         if (isClassForName(callee) && in.contains(Variable(-2)))
-            Some(FlowFact(Seq(call.method)))
+            Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
 
     /**
@@ -90,7 +89,7 @@ object ForwardClassForNameTaintAnalysis$Scheduler extends IFDSAnalysisScheduler[
         new ForwardClassForNameTaintAnalysis$Scheduler()(p)
     }
 
-    override def property: IFDSPropertyMetaInformation[Fact] = Taint
+    override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
 }
 
 class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
@@ -101,10 +100,10 @@ class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
         for {
             e ← analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysis$Scheduler.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            fact ← flows.ub.asInstanceOf[IFDSProperty[JavaStatement, Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                case FlowFact(flow) ⇒ println(s"flow: "+flow.asInstanceOf[Set[Method]].map(_.toJava).mkString(", "))
                 case _              ⇒
             }
         }

@@ -7,7 +7,7 @@ import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Compare, Expr, GetField, NewArray, PrefixExpr, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, Var}
 import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaBackwardIFDSProblem, JavaStatement}
 
-abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIFDSProblem[Fact, UnbalancedTaintFact](project) with TaintProblem[DeclaredMethod, JavaStatement] {
+abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIFDSProblem[Fact, UnbalancedTaintFact](project) with TaintProblem[DeclaredMethod, JavaStatement, Fact] {
     override def nullFact: Fact = NullFact
 
     /**
@@ -166,7 +166,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
-                                       source: (DeclaredMethod, Fact)): Option[FlowFact[Method]]
+                                       source: (DeclaredMethod, Fact)): Option[FlowFact]
 
     /**
      * Called, when a FlowFact holds at the start node of a callee. Creates a FlowFact in the caller
@@ -177,9 +177,9 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def applyFlowFactFromCallee(
-        calleeFact: FlowFact[Method],
+        calleeFact: FlowFact,
         source:     (DeclaredMethod, Fact)
-    ): Option[FlowFact[Method]]
+    ): Option[FlowFact]
 
     /**
      * Called, when new FlowFacts are found at the beginning of a method.
@@ -192,7 +192,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
     protected def createFlowFactAtBeginningOfMethod(
         in:     Set[Fact],
         source: (DeclaredMethod, Fact)
-    ): Option[FlowFact[Method]]
+    ): Option[FlowFact]
 
     /**
      * Propagates the call to createFlowFactAtBeginningOfMethod.
@@ -349,7 +349,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
                 )
             case staticField: StaticField ⇒ facts += staticField
             // If the source was reached in a callee, create a flow fact from this method to the sink.
-            case calleeFact: FlowFact[Method] @unchecked if isCallFlow ⇒
+            case calleeFact: FlowFact if isCallFlow ⇒
                 val callerFact = applyFlowFactFromCallee(calleeFact, source)
                 if (callerFact.isDefined) facts += callerFact.get
             case _ ⇒ // Nothing to do

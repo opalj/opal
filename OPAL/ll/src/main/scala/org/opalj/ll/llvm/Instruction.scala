@@ -105,10 +105,10 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
     def parent(): BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
     def function(): Function = parent.parent
     def next(): Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
-    def successors(): Seq[Instruction] = next match {
+    /*def successors(): Seq[Instruction] = next match {
         case Some(successor) ⇒ Seq(successor)
         case None            ⇒ Seq()
-    }
+    }*/
 }
 
 case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator

@@ -3,17 +3,16 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyBounds, PropertyStore}
-import org.opalj.ll.fpcf.analyses.ifds.{Callable, ForwardNativeIFDSAnalysis, LLVMFunction, LLVMStatement, NativeIFDSAnalysisScheduler}
+import org.opalj.ll.fpcf.analyses.ifds.{ForwardNativeIFDSAnalysis, LLVMFunction, LLVMStatement, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.Function
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, Variable}
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaintProblem(p) {
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Function, Fact)] = Seq.empty
+    override val entryPoints: Seq[(Function, NativeFact)] = Seq.empty
 
     /**
      * The sanitize method is a sanitizer.
@@ -24,13 +23,13 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * We do not sanitize parameters.
      */
-    override protected def sanitizeParameters(call: LLVMStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: LLVMStatement, in: Set[NativeFact]): Set[NativeFact] = Set.empty
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
      */
-    override protected def createTaints(callee: Function, call: LLVMStatement): Set[Fact] =
-        if (callee.name == "source") Set(Variable(call))
+    override protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeFact] =
+        if (callee.name == "source") Set(NativeVariable(call))
         else Set.empty
 
     /**
@@ -40,17 +39,17 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     override protected def createFlowFact(
         callee: Function,
         call:   LLVMStatement,
-        in:     Set[Fact]
-    ): Option[FlowFact[Callable]] =
-        if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact[Callable](Seq(LLVMFunction(call.function))))
+        in:     Set[NativeFact]
+    ): Option[NativeFlowFact] =
+        if (callee.name == "sink" && in.contains(NativeVariable(-2))) Some(NativeFlowFact(Seq(LLVMFunction(call.function))))
         else None
 }
 
-class SimpleNativeForwardTaintAnalysis(implicit val project: SomeProject)
+class SimpleNativeForwardTaintAnalysis(implicit project: SomeProject)
     extends ForwardNativeIFDSAnalysis(new SimpleNativeForwardTaintProblem(project), NativeTaint)
 
-object NativeForwardTaintAnalysisScheduler extends NativeIFDSAnalysisScheduler[Fact] {
+object NativeForwardTaintAnalysisScheduler extends NativeIFDSAnalysisScheduler[NativeFact] {
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleNativeForwardTaintAnalysis()(p)
-    override def property: IFDSPropertyMetaInformation[LLVMStatement, Fact] = NativeTaint
-    override val uses: Set[PropertyBounds] = super.uses // ++ PropertyBounds.ub(Taint) TODO: we do not use the native taint yet
+    override def property: IFDSPropertyMetaInformation[LLVMStatement, NativeFact] = NativeTaint
+    override val uses: Set[PropertyBounds] = Set() // ++ PropertyBounds.ub(Taint) TODO: we do not use the native taint yet
 }

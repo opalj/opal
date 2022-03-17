@@ -90,7 +90,7 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
         * not re-analyze the code.
         */
         if (declaringClass ne declaredMethod.declaringClassType) Some(delegate(
-            source, ((declaredMethods(source._1.definedMethod), source._2), propertyKey), identity, propertyKey
+            source, ((declaredMethods(source._1.definedMethod), source._2), propertyKey), identity[Set[Fact]], propertyKey
         ))
         None
     }
@@ -104,9 +104,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
      * @param propertyKey the propertyKey used for the instantiation of new results
      * @return The result of the other analysis.
      */
-    protected def delegate(
+    protected def delegate[DelegatedFact](
         source:        (DeclaredMethod, Fact),
-        delegation:    ((Entity, Fact), IFDSPropertyMetaInformation[_, Fact]),
+        delegation:    ((Entity, Fact), IFDSPropertyMetaInformation[_, DelegatedFact]),
         resultMapping: Set[Fact] ⇒ Set[Fact],
         propertyKey:   IFDSPropertyMetaInformation[JavaStatement, Fact]
     ): ProperPropertyComputationResult = {

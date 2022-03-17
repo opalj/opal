@@ -5,7 +5,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement, UnbalancedReturnFact}
+import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement, UnbalancedReturnFact}
 import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
 case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Method])
@@ -45,7 +45,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
      * In this case, callFlow would never be called and no FlowFact would be created.
      */
     override protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
-                                                source: (DeclaredMethod, Fact)): Option[FlowFact[Method]] = {
+                                                source: (DeclaredMethod, Fact)): Option[FlowFact] = {
         if (in.exists {
             case Variable(index) ⇒ index == call.index
             case _               ⇒ false
@@ -53,7 +53,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
             val callChain = currentCallChain(source)
             // Avoid infinite loops.
             if (!containsHeadTwice(callChain))
-                Some(FlowFact(callChain))
+                Some(FlowFact(callChain.map(JavaMethod(_))))
             else None
         } else None
     }
@@ -62,10 +62,10 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
      * When a callee calls the source, we create a FlowFact with the caller's call chain.
      */
     override protected def applyFlowFactFromCallee(
-        calleeFact: FlowFact[Method],
+        calleeFact: FlowFact,
         source:     (DeclaredMethod, Fact)
-    ): Option[FlowFact[Method]] =
-        Some(FlowFact(currentCallChain(source)))
+    ): Option[FlowFact] =
+        Some(FlowFact(currentCallChain(source).map(JavaMethod(_))))
 
     /**
      * This analysis does not create FlowFacts at the beginning of a method.
@@ -74,7 +74,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
     override protected def createFlowFactAtBeginningOfMethod(
         in:     Set[Fact],
         source: (DeclaredMethod, Fact)
-    ): Option[FlowFact[Method]] =
+    ): Option[FlowFact] =
         None
 }
 

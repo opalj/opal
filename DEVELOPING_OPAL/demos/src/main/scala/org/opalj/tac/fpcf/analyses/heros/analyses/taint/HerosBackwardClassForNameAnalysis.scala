@@ -3,20 +3,17 @@ package org.opalj.tac.fpcf.analyses.heros.analyses.taint
 
 import java.io.File
 import java.util
-
 import scala.collection.JavaConverters._
-
 import heros.FlowFunction
 import heros.FlowFunctions
 import heros.flowfunc.Identity
-
 import org.opalj.util.Milliseconds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalBackwardICFG
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaMethod, JavaStatement}
 import org.opalj.tac.Assignment
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
@@ -41,7 +38,6 @@ import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
 
 /**
  * An implementation of the BackwardClassForNameAnalysis in the Heros framework.
@@ -118,7 +114,7 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
                         case InstanceField(index, _, _) if index < 0 ⇒ true
                         case _                                       ⇒ false
                     })) {
-                        val fact = FlowFact(Seq(method))
+                        val fact = FlowFact(Seq(JavaMethod(method)))
                         result += fact
                         flowFacts = flowFacts.updated(method, flowFacts.getOrElse(method, Set.empty[FlowFact]) + fact)
                     }
@@ -270,7 +266,7 @@ class HerosBackwardClassForNameAnalysisRunner extends HerosAnalysisRunner[Fact, 
         for {
             method ← analysis.flowFacts.keys
             fact ← analysis.flowFacts(method)
-        } println(s"flow: "+fact.flow.map(_.toJava).mkString(", "))
+        } println(s"flow: "+fact.flow.map(_.signature).mkString(", "))
         println(s"Time: $analysisTime")
     }
 }

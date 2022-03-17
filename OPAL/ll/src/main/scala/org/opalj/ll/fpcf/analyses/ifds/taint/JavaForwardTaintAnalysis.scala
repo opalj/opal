@@ -1,14 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.br.{DeclaredMethod, Method}
 import org.opalj.fpcf.{ProperPropertyComputationResult, PropertyBounds, PropertyStore}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.fpcf.properties.NativeTaint
-import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintProblem, NullFact, Variable}
-import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
+import org.opalj.tac.fpcf.analyses.ifds.taint._
+import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, TACAI, Taint}
 
 class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     val llvmProject = p.get(LLVMProjectKey)
@@ -47,8 +47,8 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         callee: DeclaredMethod,
         call:   JavaStatement,
         in:     Set[Fact]
-    ): Option[FlowFact[Method]] =
-        if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact(Seq(call.method)))
+    ): Option[FlowFact] =
+        if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
 
     // Multilingual additions here
@@ -76,5 +76,5 @@ object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[Fact] {
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleJavaForwardTaintAnalysis()(p)
     override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
     override def requiredProjectInformation: ProjectInformationKeys = super.requiredProjectInformation ++ Seq(LLVMProjectKey)
-    override val uses: Set[PropertyBounds] = super.uses ++ Set(PropertyBounds.ub(NativeTaint))
+    override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.ub(NativeTaint))
 }

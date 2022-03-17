@@ -8,7 +8,7 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.br.{DeclaredMethod, DefinedMethod, Method}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaStatement, UnbalancedReturnFact}
+import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement, UnbalancedReturnFact}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, BackwardTaintProblem, Fact, FlowFact, InstanceField, Variable}
 import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
 
@@ -58,16 +58,16 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
      * Instead, FlowFacts are created at the start node of methods.
      */
     override protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
-                                                source: (DeclaredMethod, Fact)): Option[FlowFact[Method]] = None
+                                                source: (DeclaredMethod, Fact)): Option[FlowFact] = None
 
     /**
      * This analysis does not create FlowFacts at returns.
      * Instead, FlowFacts are created at the start node of methods.
      */
     protected def applyFlowFactFromCallee(
-        calleeFact: FlowFact[Method],
+        calleeFact: FlowFact,
         source:     (DeclaredMethod, Fact)
-    ): Option[FlowFact[Method]] = None
+    ): Option[FlowFact] = None
 
     /**
      * If we analyzed a transitive caller of the sink, which is callable from outside the library,
@@ -76,7 +76,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
     override protected def createFlowFactAtBeginningOfMethod(
         in:     Set[Fact],
         source: (DeclaredMethod, Fact)
-    ): Option[FlowFact[Method]] = {
+    ): Option[FlowFact] = {
         if (source._2.isInstanceOf[UnbalancedReturnFact[Fact @unchecked]] &&
             canBeCalledFromOutside(source._1) && in.exists {
                 // index < 0 means, that it is a parameter.
@@ -85,7 +85,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
                 case InstanceField(index, _, _) if index < 0 ⇒ true
                 case _                                       ⇒ false
             }) {
-            Some(FlowFact(currentCallChain(source)))
+            Some(FlowFact(currentCallChain(source).map(JavaMethod(_))))
         } else None
     }
 }

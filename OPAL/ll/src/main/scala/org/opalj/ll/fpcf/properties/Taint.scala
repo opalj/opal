@@ -3,21 +3,21 @@ package org.opalj.ll.fpcf.properties
 
 import org.opalj.fpcf.PropertyKey
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
+import org.opalj.ll.fpcf.analyses.ifds.taint.NativeFact
 import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
 
-case class NativeTaint(flows: Map[LLVMStatement, Set[Fact]]) extends IFDSProperty[LLVMStatement, Fact] {
+case class NativeTaint(flows: Map[LLVMStatement, Set[NativeFact]]) extends IFDSProperty[LLVMStatement, NativeFact] {
 
     override type Self = NativeTaint
-    override def create(result: Map[LLVMStatement, Set[Fact]]): IFDSProperty[LLVMStatement, Fact] = new NativeTaint(result)
+    override def create(result: Map[LLVMStatement, Set[NativeFact]]): IFDSProperty[LLVMStatement, NativeFact] = new NativeTaint(result)
 
     override def key: PropertyKey[NativeTaint] = NativeTaint.key
 }
 
-object NativeTaint extends IFDSPropertyMetaInformation[LLVMStatement, Fact] {
+object NativeTaint extends IFDSPropertyMetaInformation[LLVMStatement, NativeFact] {
 
     override type Self = NativeTaint
-    override def create(result: Map[LLVMStatement, Set[Fact]]): IFDSProperty[LLVMStatement, Fact] = new NativeTaint(result)
+    override def create(result: Map[LLVMStatement, Set[NativeFact]]): IFDSProperty[LLVMStatement, NativeFact] = new NativeTaint(result)
 
     val key: PropertyKey[NativeTaint] = PropertyKey.create("NativeTaint", new NativeTaint(Map.empty))
 }

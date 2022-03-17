@@ -1,21 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.taint
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
-import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ElementValue
-import org.opalj.br.ElementValuePair
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.DefinedMethod
-import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixtureScheduler
-import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
-import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.br._
+import org.opalj.fpcf.{EPS, Entity, FinalEP, Property}
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
+import org.opalj.tac.fpcf.analyses.ifds.taint.{BackwardTaintAnalysisFixtureScheduler, Fact, FlowFact}
 import org.opalj.tac.fpcf.properties.Taint
 
 /**
