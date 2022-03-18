@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSFact
+package org.opalj.ifds
 
 import scala.collection.{Set ⇒ SomeSet}
 

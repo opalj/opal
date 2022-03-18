@@ -3,12 +3,13 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.fpcf.{ProperPropertyComputationResult, PropertyBounds, PropertyStore}
+import org.opalj.fpcf.{PropertyBounds, PropertyStore}
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, TACAI, Taint}
+import org.opalj.tac.fpcf.properties.{TACAI, Taint}
 
 class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     val llvmProject = p.get(LLVMProjectKey)
@@ -53,19 +54,22 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
 
     // Multilingual additions here
 
-    override def insideAnalysisContext(callee: DeclaredMethod): Boolean = {
-        super.insideAnalysisContext(callee) || callee.definedMethod.isNative
-    }
+    override def outsideAnalysisContext(callee: DeclaredMethod): Option[OutsideAnalysisContextHandler] = {
+        def handleNativeMethod(call: JavaStatement, successor: JavaStatement, in: Set[Fact]): Set[Fact] = {
+            //val method = callee.definedMethod
 
-    override def specialCase(source: (DeclaredMethod, Fact), propertyKey: IFDSPropertyMetaInformation[JavaStatement, Fact]): Option[ProperPropertyComputationResult] = {
-        val method = source._1.definedMethod
-        if (method.isNative) {
             // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
-            val nativeMethodName = "Java_"+method.classFile.fqn+"_"+method.name
-            val function = llvmProject.function(nativeMethodName)
-            return Some(delegate(source, ((function.get, source._2), NativeTaint), identity, propertyKey))
+            //val nativeMethodName = "Java_"+method.classFile.fqn+"_"+method.name
+            //val function = llvmProject.function(nativeMethodName)
+            //val foo = propertyStore((function.get, source._2), NativeTaint)
+            Set.empty[Fact]
         }
-        super.specialCase(source, propertyKey)
+
+        if (callee.definedMethod.isNative) {
+            Some(handleNativeMethod _)
+        } else {
+            super.outsideAnalysisContext(callee)
+        }
     }
 }
 

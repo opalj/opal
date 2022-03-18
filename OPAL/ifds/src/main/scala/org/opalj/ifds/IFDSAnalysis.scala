@@ -1,12 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj.ifds
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf._
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSFact, IFDSProblem, NumberOfCalls, Subsumable}
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
 
 import scala.collection.{mutable, Set ⇒ SomeSet}
 
@@ -40,6 +37,16 @@ protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statem
         var outgoingFacts:        Map[Node, Map[Option[Node], Set[IFDSFact]]]                            = Map.empty[Node, Map[Option[Node], Set[IFDSFact]]]
 )
 
+/**
+ * Contains int variables, which count, how many times some method was called.
+ */
+class NumberOfCalls {
+    var normalFlow = 0
+    var callFlow = 0
+    var returnFlow = 0
+    var callToReturnFlow = 0
+}
+
 protected class Statistics {
 
     /**
@@ -63,15 +70,15 @@ protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalys
  */
 class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node](
         implicit
-        val ifdsProblem: IFDSProblem[IFDSFact, C, S],
-        val icfg:        ICFG[IFDSFact, C, S, Node],
+        project:         SomeProject,
+        val ifdsProblem: IFDSProblem[IFDSFact, C, S, Node],
         val propertyKey: IFDSPropertyMetaInformation[S, IFDSFact]
-) extends ProjectFPCFAnalysis(ifdsProblem.project) with Subsumable[S, IFDSFact] {
+) extends ProjectFPCFAnalysis(project) with Subsumable[S, IFDSFact] {
     type State = IFDSState[IFDSFact, C, S, Node]
+    type QueueEntry = (Node, Set[IFDSFact], Option[S], Option[C], Option[IFDSFact])
 
     implicit var statistics = new Statistics
-
-    type QueueEntry = (Node, Set[IFDSFact], Option[S], Option[C], Option[IFDSFact])
+    val icfg = ifdsProblem.icfg
 
     /**
      * Creates an IFDSProperty containing the result of this analysis.
@@ -151,10 +158,12 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
                 } else
                     reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1, Some(e._2))
 
-            case FinalEP(_: C @unchecked, _: Callees) ⇒
+            case FinalEP(_: C @unchecked, _: Any) ⇒
+                // TODO: Any was Callees, how to verify this?
                 reAnalyzeBasicBlocks(state.pendingCgCallSites)
 
-            case InterimEUBP(_: C @unchecked, _: Callees) ⇒
+            case InterimEUBP(_: C @unchecked, _: Any) ⇒
+                // TODO: Any was Callees, how to verify this?
                 reAnalyzeBasicBlocks(state.pendingCgCallSites)
         }
 
@@ -203,89 +212,90 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
             }
 
         for (callee ← callees) {
-            if (!ifdsProblem.insideAnalysisContext(callee)) {
-                // Let the concrete analysis decide what to do.
-                for {
-                    successor ← successors
-                } summaryEdges +=
-                    successor -> (summaryEdges(successor) ++
-                        ifdsProblem.callOutsideOfAnalysisContext(call, callee, successor, in))
-            } else {
-                val callToStart =
-                    if (calleeWithUpdateFact.isDefined) Set(calleeWithUpdateFact.get)
-                    else {
-                        propagateNullFact(in, callToStartFacts(call, callee, in))
-                    }
-                var allNewExitFacts: Map[S, Set[IFDSFact]] = Map.empty
-                // Collect exit facts for each input fact separately
-                for (fact ← callToStart) {
-                    /*
+            ifdsProblem.outsideAnalysisContext(callee) match {
+                case Some(handler) ⇒
+                    // Let the concrete analysis decide what to do.
+                    for {
+                        successor ← successors
+                    } summaryEdges +=
+                        successor -> (summaryEdges(successor) ++
+                            handler(call, successor, in))
+                case None ⇒
+                    val callToStart =
+                        if (calleeWithUpdateFact.isDefined) Set(calleeWithUpdateFact.get)
+                        else {
+                            propagateNullFact(in, callToStartFacts(call, callee, in))
+                        }
+                    var allNewExitFacts: Map[S, Set[IFDSFact]] = Map.empty
+                    // Collect exit facts for each input fact separately
+                    for (fact ← callToStart) {
+                        /*
            * If this is a recursive call with the same input facts, we assume that the
            * call only produces the facts that are already known. The call site is added to
            * `pendingIfdsCallSites`, so that it will be re-evaluated if new output facts
            * become known for the input fact.
            */
-                    if ((callee eq state.source._1) && fact == state.source._2) {
-                        val newDependee =
-                            if (state.pendingIfdsCallSites.contains(state.source))
-                                state.pendingIfdsCallSites(state.source) + call
-                            else Set(call)
-                        state.pendingIfdsCallSites =
-                            state.pendingIfdsCallSites.updated(state.source, newDependee)
-                        allNewExitFacts = IFDS.mergeMaps(allNewExitFacts, collectResult)
-                    } else {
-                        val e = (callee, fact)
-                        val callFlows = propertyStore(e, propertyKey.key)
-                            .asInstanceOf[EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]]
-                        val oldValue = state.pendingIfdsDependees.get(e)
-                        val oldExitFacts: Map[S, Set[IFDSFact]] = oldValue match {
-                            case Some(ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]]) ⇒ ep.ub.flows
-                            case _                                                   ⇒ Map.empty
-                        }
-                        val exitFacts: Map[S, Set[IFDSFact]] = callFlows match {
-                            case ep: FinalEP[_, IFDSProperty[S, IFDSFact]] ⇒
-                                if (state.pendingIfdsCallSites.contains(e)
-                                    && state.pendingIfdsCallSites(e).nonEmpty) {
-                                    val newDependee =
-                                        state.pendingIfdsCallSites(e) - call
-                                    state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
-                                }
-                                state.pendingIfdsDependees -= e
-                                ep.p.flows
-                            case ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]] ⇒
-                                /*
+                        if ((callee eq state.source._1) && fact == state.source._2) {
+                            val newDependee =
+                                if (state.pendingIfdsCallSites.contains(state.source))
+                                    state.pendingIfdsCallSites(state.source) + call
+                                else Set(call)
+                            state.pendingIfdsCallSites =
+                                state.pendingIfdsCallSites.updated(state.source, newDependee)
+                            allNewExitFacts = IFDS.mergeMaps(allNewExitFacts, collectResult)
+                        } else {
+                            val e = (callee, fact)
+                            val callFlows = propertyStore(e, propertyKey.key)
+                                .asInstanceOf[EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]]
+                            val oldValue = state.pendingIfdsDependees.get(e)
+                            val oldExitFacts: Map[S, Set[IFDSFact]] = oldValue match {
+                                case Some(ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]]) ⇒ ep.ub.flows
+                                case _                                                   ⇒ Map.empty
+                            }
+                            val exitFacts: Map[S, Set[IFDSFact]] = callFlows match {
+                                case ep: FinalEP[_, IFDSProperty[S, IFDSFact]] ⇒
+                                    if (state.pendingIfdsCallSites.contains(e)
+                                        && state.pendingIfdsCallSites(e).nonEmpty) {
+                                        val newDependee =
+                                            state.pendingIfdsCallSites(e) - call
+                                        state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
+                                    }
+                                    state.pendingIfdsDependees -= e
+                                    ep.p.flows
+                                case ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]] ⇒
+                                    /*
                  * Add the call site to `pendingIfdsCallSites` and
                  * `pendingIfdsDependees` and continue with the facts in the interim
                  * result for now. When the analysis for the callee finishes, the
                  * analysis for this call site will be triggered again.
                  */
-                                addIfdsDependee(e, callFlows, basicBlock, call)
-                                ep.ub.flows
-                            case _ ⇒
-                                addIfdsDependee(e, callFlows, basicBlock, call)
-                                Map.empty
-                        }
-                        // Only process new facts that are not in `oldExitFacts`
-                        allNewExitFacts = IFDS.mergeMaps(
-                            allNewExitFacts,
-                            filterNewInformation(exitFacts, oldExitFacts, project)
-                        )
-                        /*
+                                    addIfdsDependee(e, callFlows, basicBlock, call)
+                                    ep.ub.flows
+                                case _ ⇒
+                                    addIfdsDependee(e, callFlows, basicBlock, call)
+                                    Map.empty
+                            }
+                            // Only process new facts that are not in `oldExitFacts`
+                            allNewExitFacts = IFDS.mergeMaps(
+                                allNewExitFacts,
+                                filterNewInformation(exitFacts, oldExitFacts, project)
+                            )
+                            /*
              * If new exit facts were discovered for the callee-fact-pair, all call
              * sites depending on this pair have to be re-evaluated. oldValue is
              * undefined if the callee-fact pair has not been queried before or returned
              *  a FinalEP.
              */
-                        if (oldValue.isDefined && oldExitFacts != exitFacts) {
-                            reAnalyzeCalls(
-                                state.pendingIfdsCallSites(e),
-                                e._1,
-                                Some(e._2)
-                            )
+                            if (oldValue.isDefined && oldExitFacts != exitFacts) {
+                                reAnalyzeCalls(
+                                    state.pendingIfdsCallSites(e),
+                                    e._1,
+                                    Some(e._2)
+                                )
+                            }
                         }
                     }
-                }
-                summaryEdges = addExitToReturnFacts(summaryEdges, successors, call, callee, allNewExitFacts)
+                    summaryEdges = addExitToReturnFacts(summaryEdges, successors, call, callee, allNewExitFacts)
             }
         }
         summaryEdges

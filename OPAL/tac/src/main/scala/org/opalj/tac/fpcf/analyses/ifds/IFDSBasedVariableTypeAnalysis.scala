@@ -3,16 +3,12 @@ package org.opalj.tac.fpcf.analyses.ifds
 
 import java.io.File
 import java.io.PrintWriter
-
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyBounds
-
 import org.opalj.br.analyses.SomeProject
-
+import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation, NumberOfSubsumptions, Subsuming}
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.IFDSProperty
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**

@@ -29,7 +29,7 @@ ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licens
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-scalaVersion in ThisBuild := "2.12.15"
+ThisBuild / scalaVersion := "2.12.15"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -279,6 +279,19 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+lazy val ifds = `IFDS`
+lazy val `IFDS` = (project in file("OPAL/ifds"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "IFDS",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
+    fork := true,
+    libraryDependencies ++= Dependencies.ifds
+  )
+  .dependsOn(si % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(br % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
 lazy val tac = `ThreeAddressCode`
 lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
   .settings(buildSettings: _*)
@@ -291,6 +304,7 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
     run / fork := true
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 lazy val ba = `BytecodeAssembler`
@@ -333,7 +347,7 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
   .settings(buildSettings: _*)
   .settings(
     name := "LLVM",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - LLVM"),
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
     libraryDependencies ++= Dependencies.ll
   )

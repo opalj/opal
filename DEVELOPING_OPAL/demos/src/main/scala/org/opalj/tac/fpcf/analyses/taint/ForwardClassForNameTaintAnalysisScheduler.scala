@@ -1,14 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.taint
 
-import java.io.File
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.{DeclaredMethod, Method, ObjectType}
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, ForwardTaintProblem, TaintProblem, Variable}
-import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation, Taint}
+import org.opalj.tac.fpcf.analyses.ifds.taint._
+import org.opalj.tac.fpcf.analyses.ifds._
+import org.opalj.tac.fpcf.properties.Taint
+
+import java.io.File
 
 /**
  * A forward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,

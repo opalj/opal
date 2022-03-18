@@ -1,10 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
-import org.opalj.tac.fpcf.analyses.ifds.Callable
+
 import org.opalj.br.{Method, ObjectType}
-import org.opalj.tac.{Assignment, Expr, Stmt}
+import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, UnbalancedReturnFact}
+import org.opalj.tac.fpcf.analyses.ifds.UnbalancedReturnFact
+import org.opalj.tac.{Assignment, Expr, Stmt}
 
 trait Fact extends AbstractIFDSFact
 

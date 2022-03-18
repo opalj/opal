@@ -1,12 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.{DeclaredMethod, Method}
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement, UnbalancedReturnFact}
-import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.ifds._
+import org.opalj.tac.fpcf.properties.Taint
 
 case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Method])
     extends UnbalancedReturnFact[Fact] with Fact
@@ -49,7 +49,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
         if (in.exists {
             case Variable(index) ⇒ index == call.index
             case _               ⇒ false
-        } && getCallees(call, source._1).exists(_.name == "source")) {
+        } && icfg.getCalleesIfCallStatement(call).get.exists(_.name == "source")) {
             val callChain = currentCallChain(source)
             // Avoid infinite loops.
             if (!containsHeadTwice(callChain))

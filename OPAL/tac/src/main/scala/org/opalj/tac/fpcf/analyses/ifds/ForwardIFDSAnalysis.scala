@@ -5,19 +5,19 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.DeclaredMethod
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.Return
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 /**
  * An IFDS analysis, which analyzes the code in the control flow direction.
  *
  * @author Mario Trageser
  */
-abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
+abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement, CFGNode], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
 
     /**
      * The analysis starts at the entry block.
@@ -110,7 +110,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
     override protected def callToStartFacts(call: JavaStatement, callee: DeclaredMethod,
                                             in: Set[IFDSFact])(implicit state: State): Set[IFDSFact] = {
         numberOfCalls.callFlow += 1
-        sumOfInputfactsForCallbacks += in.size
+        sumOfInputFactsForCallbacks += in.size
         ifdsProblem.callFlow(call, callee, in, state.source)
     }
 
@@ -209,7 +209,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
                                allNewExitFacts: Map[JavaStatement, Set[IFDSFact]]): Map[JavaStatement, Set[IFDSFact]] = {
         val in = allNewExitFacts.getOrElse(exitStatement, Set.empty)
         numberOfCalls.returnFlow += 1
-        sumOfInputfactsForCallbacks += in.size
+        sumOfInputFactsForCallbacks += in.size
         val returned = ifdsProblem.returnFlow(call, callee, exitStatement, successor, in)
         val newFacts =
             if (summaryEdges.contains(successor) && summaryEdges(successor).nonEmpty) {

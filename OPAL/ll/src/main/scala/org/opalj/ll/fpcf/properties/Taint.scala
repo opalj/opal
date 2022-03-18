@@ -2,9 +2,9 @@
 package org.opalj.ll.fpcf.properties
 
 import org.opalj.fpcf.PropertyKey
+import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.analyses.ifds.taint.NativeFact
-import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
 
 case class NativeTaint(flows: Map[LLVMStatement, Set[NativeFact]]) extends IFDSProperty[LLVMStatement, NativeFact] {
 

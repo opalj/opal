@@ -15,9 +15,10 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation, TACAI, TheTACAI}
+import org.opalj.tac.fpcf.properties.{TACAI, TheTACAI}
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.DUVar
@@ -33,7 +34,7 @@ import org.opalj.tac.TACode
  *                            concrete analysis.
  * @author Mario Trageser
  */
-abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
+abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement, CFGNode] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
     /**
      * If this method is analyzed for an unbalanced return fact, the single star block is the block,
      * which contains the call.
@@ -278,7 +279,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                                 (exitStatement.stmt.astID != Return.ASTID && exitStatement.stmt.astID != ReturnValue.ASTID)
                         } {
                             numberOfCalls.returnFlow += 1
-                            sumOfInputfactsForCallbacks += in.size
+                            sumOfInputFactsForCallbacks += in.size
                             flow ++= ifdsProblem.returnFlow(call, callee, exitStatement, successor._1, in)
                         }
                     }
@@ -310,7 +311,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         if (exitFacts.nonEmpty) {
             val in = exitFacts.head._2
             numberOfCalls.callFlow += 1
-            sumOfInputfactsForCallbacks += in.size
+            sumOfInputFactsForCallbacks += in.size
             val exitToReturnFacts = ifdsProblem.callFlow(call, callee, in, state.source)
             successors.foreach { successor ⇒
                 val updatedValue = result.get(successor) match {

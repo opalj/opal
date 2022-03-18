@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj.ifds
 
 import org.opalj.br.analyses.SomeProject
 
@@ -34,7 +34,7 @@ trait SubsumableNullFact extends SubsumableFact with AbstractIFDSNullFact {
  *
  * @author Mario Trageser
  */
-trait Subsumable[Statement, IFDSFact <: AbstractIFDSFact] {
+trait Subsumable[S, IFDSFact <: AbstractIFDSFact] {
 
     /**
      * A subclass can override this method to filter the `facts` in some set, which are not subsumed
@@ -77,10 +77,10 @@ trait Subsumable[Statement, IFDSFact <: AbstractIFDSFact] {
      *         `oldExitFacts` are not present.
      */
     protected def filterNewInformation[T <: IFDSFact](
-        newExitFacts: Map[Statement, Set[T]],
-        oldExitFacts: Map[Statement, Set[T]],
+        newExitFacts: Map[S, Set[T]],
+        oldExitFacts: Map[S, Set[T]],
         project:      SomeProject
-    ): Map[Statement, Set[T]] = {
+    ): Map[S, Set[T]] = {
         var result = newExitFacts
         for ((key, values) ← oldExitFacts) {
             result = result.updated(key, result(key) -- values)

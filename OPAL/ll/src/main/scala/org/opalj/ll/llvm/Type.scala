@@ -39,7 +39,7 @@ sealed abstract class Type(ref: LLVMTypeRef) {
         string
     }
 
-  override def toString: String = s"Type(${repr()})"
+    override def toString: String = s"Type(${repr()})"
 }
 
 /** type with no size */
@@ -62,7 +62,7 @@ case class LabelType(ref: LLVMTypeRef) extends Type(ref)
 case class IntegerType(ref: LLVMTypeRef) extends Type(ref)
 /** Functions */
 case class FunctionType(ref: LLVMTypeRef) extends Type(ref) {
-   def returnType(): Type = Type(LLVMGetReturnType(ref))
+    def returnType(): Type = Type(LLVMGetReturnType(ref))
 }
 /** Structures */
 case class StructType(ref: LLVMTypeRef) extends Type(ref)

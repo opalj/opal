@@ -38,8 +38,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.fpcf.properties.IFDSProperty
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSProperty, IFDSPropertyMetaInformation, NumberOfCalls, Statement, Subsumable}
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}
@@ -52,9 +51,10 @@ import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
  * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
  * @tparam IFDSFact
  */
-
-abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement], val propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact])
-    extends FPCFAnalysis
+abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
+        val ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement, CFGNode],
+        val propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]
+) extends FPCFAnalysis
     with Subsumable[JavaStatement, IFDSFact] {
 
     /**
@@ -72,7 +72,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
     /**
      * Counts, how many input facts are passed to callbacks.
      */
-    var sumOfInputfactsForCallbacks = 0L
+    var sumOfInputFactsForCallbacks = 0L
 
     /**
      * The state of the analysis. For each method and source fact, there is a separate state.
@@ -134,7 +134,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
      * @param result Maps each exit statement to the facts, which hold after the exit statement.
      * @return An IFDSProperty containing the `result`.
      */
-    protected def createPropertyValue(result: Map[JavaStatement, Set[IFDSFact]]): IFDSProperty[JavaStatement, IFDSFact] = propertyKey.create(result)
+    protected def createPropertyValue(
+        result: Map[JavaStatement, Set[IFDSFact]]
+    ): IFDSProperty[JavaStatement, IFDSFact] = propertyKey.create(result)
 
     /**
      * Determines the nodes, that will be analyzed after some `basicBlock`.
@@ -244,10 +246,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
         val (declaredMethod, sourceFact) = entity
 
         /*
-         * The analysis can only handle single defined methods.
-         * If a method is not single defined, this analysis assumes that it does not create any
-         * facts.
-         */
+     * The analysis can only handle single defined methods.
+     * If a method is not single defined, this analysis assumes that it does not create any
+     * facts.
+     */
         if (!declaredMethod.hasSingleDefinedMethod)
             return Result(entity, createPropertyValue(Map.empty));
 
@@ -260,9 +262,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
         val declaringClass: ObjectType = method.classFile.thisType
 
         /*
-         * Fetch the method's three address code. If it is not present, return an empty interim
-         * result.
-         */
+     * Fetch the method's three address code. If it is not present, return an empty interim
+     * result.
+     */
         val (code, cfg) = propertyStore(method, TACAI.key) match {
             case FinalP(TheTACAI(tac)) ⇒ (tac.stmts, tac.cfg)
 
@@ -397,7 +399,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
         if (calleeWithUpdateFact.isEmpty)
             for (successor ← successors) {
                 numberOfCalls.callToReturnFlow += 1
-                sumOfInputfactsForCallbacks += in.size
+                sumOfInputFactsForCallbacks += in.size
                 summaryEdges += successor ->
                     propagateNullFact(
                         inputFacts,
@@ -407,90 +409,92 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
 
         for (calledMethod ← callees) {
             val callee = declaredMethods(calledMethod)
-            if (!ifdsProblem.insideAnalysisContext(callee)) {
-                // Let the concrete analysis decide what to do.
-                for {
-                    successor ← successors
-                } summaryEdges +=
-                    successor -> (summaryEdges(successor) ++
-                        ifdsProblem.callOutsideOfAnalysisContext(call, callee, successor, in))
-            } else {
-                val callToStart =
-                    if (calleeWithUpdateFact.isDefined) Set(calleeWithUpdateFact.get)
-                    else {
-                        propagateNullFact(inputFacts, callToStartFacts(call, callee, inputFacts))
-                    }
-                var allNewExitFacts: Map[JavaStatement, Set[IFDSFact]] = Map.empty
-                // Collect exit facts for each input fact separately
-                for (fact ← callToStart) {
-                    /*
-           * If this is a recursive call with the same input facts, we assume that the
-           * call only produces the facts that are already known. The call site is added to
-           * `pendingIfdsCallSites`, so that it will be re-evaluated if new output facts
-           * become known for the input fact.
-           */
-                    if ((calledMethod eq state.method) && fact == state.source._2) {
-                        val newDependee =
-                            if (state.pendingIfdsCallSites.contains(state.source))
-                                state.pendingIfdsCallSites(state.source) +
-                                    ((basicBlock, call.index))
-                            else Set((basicBlock, call.index))
-                        state.pendingIfdsCallSites =
-                            state.pendingIfdsCallSites.updated(state.source, newDependee)
-                        allNewExitFacts = mergeMaps(allNewExitFacts, collectResult)
-                    } else {
-                        val e = (callee, fact)
-                        val callFlows = propertyStore(e, propertyKey.key)
-                            .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
-                        val oldValue = state.pendingIfdsDependees.get(e)
-                        val oldExitFacts: Map[JavaStatement, Set[IFDSFact]] = oldValue match {
-                            case Some(ep: InterimEUBP[_, IFDSProperty[JavaStatement, IFDSFact]]) ⇒ ep.ub.flows
-                            case _ ⇒ Map.empty
+            ifdsProblem.outsideAnalysisContext(callee) match {
+                case Some(handler) ⇒
+                    // Let the concrete analysis decide what to do.
+                    for {
+                        successor ← successors
+                    } summaryEdges +=
+                        successor -> (summaryEdges(successor) ++
+                            handler(call, successor, in))
+                case None ⇒
+                    val callToStart =
+                        if (calleeWithUpdateFact.isDefined) Set(calleeWithUpdateFact.get)
+                        else {
+                            propagateNullFact(inputFacts, callToStartFacts(call, callee, inputFacts))
                         }
-                        val exitFacts: Map[JavaStatement, Set[IFDSFact]] = callFlows match {
-                            case ep: FinalEP[_, IFDSProperty[JavaStatement, IFDSFact]] ⇒
-                                if (state.pendingIfdsCallSites.contains(e)
-                                    && state.pendingIfdsCallSites(e).nonEmpty) {
-                                    val newDependee =
-                                        state.pendingIfdsCallSites(e) - ((basicBlock, call.index))
-                                    state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
-                                }
-                                state.pendingIfdsDependees -= e
-                                ep.p.flows
-                            case ep: InterimEUBP[_, IFDSProperty[JavaStatement, IFDSFact]] ⇒
-                                /*
-                 * Add the call site to `pendingIfdsCallSites` and
-                 * `pendingIfdsDependees` and continue with the facts in the interim
-                 * result for now. When the analysis for the callee finishes, the
-                 * analysis for this call site will be triggered again.
-                 */
-                                addIfdsDependee(e, callFlows, basicBlock, call.index)
-                                ep.ub.flows
-                            case _ ⇒
-                                addIfdsDependee(e, callFlows, basicBlock, call.index)
-                                Map.empty
-                        }
-                        // Only process new facts that are not in `oldExitFacts`
-                        allNewExitFacts = mergeMaps(
-                            allNewExitFacts,
-                            filterNewInformation(exitFacts, oldExitFacts, project)
-                        )
+                    var allNewExitFacts: Map[JavaStatement, Set[IFDSFact]] = Map.empty
+                    // Collect exit facts for each input fact separately
+                    for (fact ← callToStart) {
                         /*
-             * If new exit facts were discovered for the callee-fact-pair, all call
-             * sites depending on this pair have to be re-evaluated. oldValue is
-             * undefined if the callee-fact pair has not been queried before or returned
-             *  a FinalEP.
+             * If this is a recursive call with the same input facts, we assume that the
+             * call only produces the facts that are already known. The call site is added to
+             * `pendingIfdsCallSites`, so that it will be re-evaluated if new output facts
+             * become known for the input fact.
              */
-                        if (oldValue.isDefined && oldExitFacts != exitFacts) {
-                            reAnalyzeCalls(
-                                state.pendingIfdsCallSites(e),
-                                e._1.definedMethod,
-                                Some(e._2)
+                        if ((calledMethod eq state.method) && fact == state.source._2) {
+                            val newDependee =
+                                if (state.pendingIfdsCallSites.contains(state.source))
+                                    state.pendingIfdsCallSites(state.source) +
+                                        ((basicBlock, call.index))
+                                else Set((basicBlock, call.index))
+                            state.pendingIfdsCallSites =
+                                state.pendingIfdsCallSites.updated(state.source, newDependee)
+                            allNewExitFacts = mergeMaps(allNewExitFacts, collectResult)
+                        } else {
+                            val e = (callee, fact)
+                            val callFlows = propertyStore(e, propertyKey.key)
+                                .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
+                            val oldValue = state.pendingIfdsDependees.get(e)
+                            val oldExitFacts: Map[JavaStatement, Set[IFDSFact]] = oldValue match {
+                                case Some(ep: InterimEUBP[_, IFDSProperty[JavaStatement, IFDSFact]]) ⇒ ep.ub.flows
+                                case _ ⇒ Map.empty
+                            }
+                            val exitFacts: Map[JavaStatement, Set[IFDSFact]] = callFlows match {
+                                case ep: FinalEP[_, IFDSProperty[JavaStatement, IFDSFact]] ⇒
+                                    if (state.pendingIfdsCallSites.contains(e)
+                                        && state.pendingIfdsCallSites(e).nonEmpty) {
+                                        val newDependee =
+                                            state.pendingIfdsCallSites(e) - ((basicBlock, call.index))
+                                        state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
+                                    }
+                                    state.pendingIfdsDependees -= e
+                                    ep.p.flows
+                                case ep: InterimEUBP[_, IFDSProperty[JavaStatement, IFDSFact]] ⇒
+                                    /*
+                   * Add the call site to `pendingIfdsCallSites` and
+                   * `pendingIfdsDependees` and continue with the facts in the interim
+                   * result for now. When the analysis for the callee finishes, the
+                   * analysis for this call site will be triggered again.
+                   */
+                                    addIfdsDependee(e, callFlows, basicBlock, call.index)
+                                    ep.ub.flows
+                                case _ ⇒
+                                    addIfdsDependee(e, callFlows, basicBlock, call.index)
+                                    Map.empty
+                            }
+                            // Only process new facts that are not in `oldExitFacts`
+                            allNewExitFacts = mergeMaps(
+                                allNewExitFacts,
+                                filterNewInformation(exitFacts, oldExitFacts, project)
                             )
+                            /*
+               * If new exit facts were discovered for the callee-fact-pair, all call
+               * sites depending on this pair have to be re-evaluated. oldValue is
+               * undefined if the callee-fact pair has not been queried before or returned
+               *  a FinalEP.
+               */
+                            if (oldValue.isDefined && oldExitFacts != exitFacts) {
+                                reAnalyzeCalls(
+                                    state.pendingIfdsCallSites(e),
+                                    e._1.definedMethod,
+                                    Some(e._2)
+                                )
+                            }
                         }
                     }
-                }
-                summaryEdges = addExitToReturnFacts(summaryEdges, successors, call, callee, allNewExitFacts)
+                    summaryEdges =
+                        addExitToReturnFacts(summaryEdges, successors, call, callee, allNewExitFacts)
             }
         }
         summaryEdges
@@ -505,6 +509,29 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
      * @return The changed set of input facts.
      */
     protected def beforeHandleCall(call: JavaStatement, in: Set[IFDSFact]): Set[IFDSFact] = in
+
+    /**
+     * Gets the set of all methods directly callable at some call statement.
+     *
+     * @param basicBlock The basic block containing the call.
+     * @param pc The call's program counter.
+     * @param caller The caller, performing the call.
+     * @return All methods directly callable at the statement index.
+     */
+    protected def getCallees(
+        statement: JavaStatement,
+        caller:    DeclaredMethod
+    ): Iterator[DeclaredMethod] = {
+        val pc = statement.code(statement.index).pc
+        val ep = propertyStore(caller, Callees.key)
+        ep match {
+            case FinalEP(_, p) ⇒ p.directCallees(typeProvider.newContext(caller), pc).map(_.method)
+            case _ ⇒
+                throw new IllegalStateException(
+                    "call graph mut be computed before the analysis starts"
+                )
+        }
+    }
 
     /**
      * Merges two maps that have sets as values.
@@ -642,7 +669,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
      *         calleeFact: If `index` equals `calleeWithUpdateIndex`, only
      *         `calleeWithUpdateFact` will be returned, None otherwise.
      */
-        def collectInformation(index: Int): (JavaStatement, Option[SomeSet[Method]], Option[IFDSFact]) = {
+        def collectInformation(
+            index: Int
+        ): (JavaStatement, Option[SomeSet[Method]], Option[IFDSFact]) = {
             val stmt = state.code(index)
             val statement = JavaStatement(state.method, basicBlock, stmt, index, state.code, state.cfg)
             val calleesO =
@@ -666,7 +695,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
                 val successor =
                     JavaStatement(state.method, basicBlock, state.code(next), next, state.code, state.cfg)
                 numberOfCalls.normalFlow += 1
-                sumOfInputfactsForCallbacks += in.size
+                sumOfInputFactsForCallbacks += in.size
                 ifdsProblem.normalFlow(statement, Some(successor), flows)
             } else
                 // Inside a basic block, we only have one successor --> Take the head
@@ -681,7 +710,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
                 var result: Map[CFGNode, Set[IFDSFact]] = Map.empty
                 for (node ← nextNodes(basicBlock)) {
                     numberOfCalls.normalFlow += 1
-                    sumOfInputfactsForCallbacks += in.size
+                    sumOfInputFactsForCallbacks += in.size
                     result += node -> ifdsProblem.normalFlow(statement, Some(firstStatement(node)), flows)
                 }
                 result
@@ -726,24 +755,21 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](val ifdsProble
     /**
      * Gets the set of all methods possibly called at some statement.
      *
-     * @param basicBlock The basic block containing the statement.
-     * @param index The statement's index.
-     * @return All methods possibly called at the statement index or None, if the statement does not
+     * @param statement The statement.
+     * @return All methods possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
     private def getCalleesIfCallStatement(statement: JavaStatement)(
         implicit
         state: State
     ): Option[SomeSet[Method]] = {
-        //val statement = state.code(index)
         statement.stmt.astID match {
             case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
-                Some(definedMethods(ifdsProblem.getCallees(statement, state.source._1)))
+                Some(definedMethods(getCallees(statement, state.source._1)))
             case Assignment.ASTID | ExprStmt.ASTID ⇒
                 getExpression(statement.stmt).astID match {
-                    case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID |
-                        VirtualFunctionCall.ASTID ⇒
-                        Some(definedMethods(ifdsProblem.getCallees(statement, state.source._1)))
+                    case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+                        Some(definedMethods(getCallees(statement, state.source._1)))
                     case _ ⇒ None
                 }
             case _ ⇒ None
@@ -862,7 +888,7 @@ case class JavaStatement(
         index:  Int,
         code:   Array[Stmt[V]],
         cfg:    CFG[Stmt[V], TACStmts[V]]
-) {
+) extends Statement[CFGNode] {
 
     override def hashCode(): Int = method.hashCode() * 31 + index
 
@@ -872,20 +898,10 @@ case class JavaStatement(
     }
 
     override def toString: String = s"${method.toJava}"
-
 }
 
-/**
- * Contains int variables, which count, how many times some method was called.
- */
-class NumberOfCalls {
-    var normalFlow = 0
-    var callFlow = 0
-    var returnFlow = 0
-    var callToReturnFlow = 0
-}
-
-abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalysisScheduler {
+abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact]
+    extends FPCFLazyAnalysisScheduler {
 
     final override type InitializationData = AbstractIFDSAnalysis[IFDSFact]
 
@@ -986,7 +1002,7 @@ abstract class AbsractIFDSAnalysisRunner {
                 analysisTime,
                 analysis.numberOfCalls,
                 additionalEvaluationResult(analysis),
-                analysis.sumOfInputfactsForCallbacks
+                analysis.sumOfInputFactsForCallbacks
             )
         }
 

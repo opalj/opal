@@ -1,10 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj.tac.fpcf.analyses.ifds
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.cfg.CFGNode
+import org.opalj.fpcf.{FinalEP, PropertyStore}
 import org.opalj.ifds.{AbstractIFDSFact, ICFG}
-import org.opalj.ll.llvm.{BasicBlock, Function, Instruction, Ret, Terminator}
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.properties.cg.Callees
 
-class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Function, LLVMStatement, BasicBlock] {
+class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit
+        propertyStore: PropertyStore,
+                                                typeProvider:    TypeProvider,
+                                                declaredMethods: DeclaredMethods
+) extends ICFG[IFDSFact, DeclaredMethod, JavaStatement, CFGNode] {
     /**
      * Determines the basic blocks, at which the analysis starts.
      *
@@ -12,7 +21,7 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @param callable   The analyzed callable.
      * @return The basic blocks, at which the analysis starts.
      */
-    override def startNodes(sourceFact: IFDSFact, callable: Function): Set[BasicBlock] = Set(callable.entryBlock())
+    override def startNodes(sourceFact: IFDSFact, callable: DeclaredMethod): Set[CFGNode] = ???
 
     /**
      * Determines the nodes, that will be analyzed after some `basicBlock`.
@@ -20,17 +29,14 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @param node The basic block, that was analyzed before.
      * @return The nodes, that will be analyzed after `basicBlock`.
      */
-    override def nextNodes(node: BasicBlock): Set[BasicBlock] = node.terminator match {
-        case Some(terminator) ⇒ terminator.successors().map(_.parent()).toSet
-        case None             ⇒ Set.empty
-    }
+    override def nextNodes(node: CFGNode): Set[CFGNode] = ???
 
     /**
      * Checks, if some `node` is the last node.
      *
      * @return True, if `node` is the last node, i.e. there is no next node.
      */
-    override def isLastNode(node: BasicBlock): Boolean = !node.hasSuccessors
+    override def isLastNode(node: CFGNode): Boolean = ???
 
     /**
      * Determines the first index of some `basic block`, that will be analyzed.
@@ -38,7 +44,7 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @param basicBlock The basic block.
      * @return The first index of some `basic block`, that will be analyzed.
      */
-    override def firstStatement(basicBlock: BasicBlock): LLVMStatement = LLVMStatement(basicBlock.firstInstruction())
+    override def firstStatement(basicBlock: CFGNode): JavaStatement = ???
 
     /**
      * Determines the last index of some `basic block`, that will be analzyed.
@@ -46,7 +52,7 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @param basicBlock The basic block.
      * @return The last index of some `basic block`, that will be analzyed.
      */
-    override def lastStatement(basicBlock: BasicBlock): LLVMStatement = LLVMStatement(basicBlock.lastInstruction())
+    override def lastStatement(basicBlock: CFGNode): JavaStatement = ???
 
     /**
      * Determines the statement that will be analyzed after some other statement.
@@ -54,7 +60,7 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @param statement The current statement.
      * @return The statement that will be analyzed after `statement`.
      */
-    override def nextStatement(statement: LLVMStatement): LLVMStatement = LLVMStatement(statement.instruction.next().get)
+    override def nextStatement(statement: JavaStatement): JavaStatement = ???
 
     /**
      * Determines the statement, that will be analyzed after some other `statement`.
@@ -62,10 +68,7 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @param statement The source statement.
      * @return The successor statements
      */
-    override def nextStatements(statement: LLVMStatement): Set[LLVMStatement] = {
-        if (!statement.instruction.isTerminator) return Set(nextStatement(statement))
-        statement.instruction.asInstanceOf[Instruction with Terminator].successors().map(LLVMStatement(_)).toSet
-    }
+    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = ???
 
     /**
      * Gets the set of all methods possibly called at some statement.
@@ -74,10 +77,18 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[Function]] = None //TODO
-
-    override def isExitStatement(statement: LLVMStatement): Boolean = statement.instruction match {
-        case Ret(_) ⇒ true
-        case _      ⇒ false
+    override def getCalleesIfCallStatement(statement: JavaStatement): Option[collection.Set[DeclaredMethod]] = {
+        val pc = statement.code(statement.index).pc
+        val caller = declaredMethods(statement.method)
+        val ep = propertyStore(caller, Callees.key)
+        ep match {
+            case FinalEP(_, p) ⇒ Some(p.directCallees(typeProvider.newContext(caller), pc).map(_.method).toSet)
+            case _ ⇒
+                throw new IllegalStateException(
+                    "call graph mut be computed before the analysis starts"
+                )
+        }
     }
+
+    override def isExitStatement(statement: JavaStatement): Boolean = ???
 }

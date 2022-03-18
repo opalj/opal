@@ -230,24 +230,28 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * If a parameter is tainted, the result will also be tainted.
      * We assume that the callee does not call the source method.
      */
-    override def callOutsideOfAnalysisContext(statement: JavaStatement, callee: DeclaredMethod,
-                                              successor: JavaStatement,
-                                              in:        Set[Fact]): Set[Fact] = {
-        val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
-        if (statement.stmt.astID == Assignment.ASTID && in.exists {
-            case Variable(index) ⇒
-                allParams.zipWithIndex.exists {
-                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
-                    case _                                                   ⇒ false
-                }
-            case ArrayElement(index, _) ⇒
-                allParams.zipWithIndex.exists {
-                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
-                    case _                                                   ⇒ false
-                }
-            case _ ⇒ false
-        }) Set(Variable(statement.index))
-        else Set.empty
+    override def outsideAnalysisContext(callee: DeclaredMethod): Option[OutsideAnalysisContextHandler] = {
+        super.outsideAnalysisContext(callee) match {
+            case Some(_) ⇒ Some(((call: JavaStatement, successor: JavaStatement, in: Set[Fact]) ⇒ {
+                val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
+                if (call.stmt.astID == Assignment.ASTID && in.exists {
+                    case Variable(index) ⇒
+                        allParams.zipWithIndex.exists {
+                            case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                            case _                                                   ⇒ false
+                        }
+                    case ArrayElement(index, _) ⇒
+                        allParams.zipWithIndex.exists {
+                            case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                            case _                                                   ⇒ false
+                        }
+                    case _ ⇒ false
+                }) Set(Variable(call.index))
+                else Set.empty
+            }): OutsideAnalysisContextHandler)
+            case None ⇒ None
+        }
+
     }
 
     /**

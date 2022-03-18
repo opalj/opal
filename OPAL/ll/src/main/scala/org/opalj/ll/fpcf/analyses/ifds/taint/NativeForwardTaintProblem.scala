@@ -75,15 +75,8 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
     protected def createFlowFact(callee: Function, call: LLVMStatement,
                                  in: Set[NativeFact]): Option[NativeFlowFact]
 
-    /**
-     * If a parameter is tainted, the result will also be tainted.
-     * We assume that the callee does not call the source method.
-     */
-    override def callOutsideOfAnalysisContext(statement: LLVMStatement, callee: Function,
-                                              successor: LLVMStatement,
-                                              in:        Set[NativeFact]): Set[NativeFact] = {
-        // TODO
-        Set.empty
+    override def outsideAnalysisContext(callee: Function): Option[OutsideAnalysisContextHandler] = {
+        None
     }
 
     /**

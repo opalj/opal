@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj.ifds
 
 import org.opalj.br.analyses.SomeProject
 
@@ -8,7 +8,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Mario Trageser
  */
-trait Subsuming[Statement, IFDSFact <: SubsumableFact] extends Subsumable[Statement, IFDSFact] {
+trait Subsuming[S, IFDSFact <: SubsumableFact] extends Subsumable[S, IFDSFact] {
 
     val numberOfSubsumptions = new NumberOfSubsumptions
 
@@ -43,9 +43,9 @@ trait Subsuming[Statement, IFDSFact <: SubsumableFact] extends Subsumable[Statem
      * Considers subsuming.
      */
     override protected def filterNewInformation[T <: IFDSFact](
-        newExitFacts: Map[Statement, Set[T]],
-        oldExitFacts: Map[Statement, Set[T]], project: SomeProject
-    ): Map[Statement, Set[T]] =
+        newExitFacts: Map[S, Set[T]],
+        oldExitFacts: Map[S, Set[T]], project: SomeProject
+    ): Map[S, Set[T]] =
         newExitFacts.keys.map {
             statement ⇒
                 val old = oldExitFacts.get(statement)

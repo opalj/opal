@@ -7,7 +7,7 @@ import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaForwardTaintAnalysisScheduler,
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, NullFact}
-import org.opalj.tac.fpcf.properties.IFDSProperty
+import org.opalj.ifds.IFDSProperty
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 

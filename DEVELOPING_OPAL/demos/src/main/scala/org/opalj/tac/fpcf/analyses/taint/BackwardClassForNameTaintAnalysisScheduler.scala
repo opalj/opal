@@ -7,10 +7,11 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
 import org.opalj.br.{DeclaredMethod, DefinedMethod, Method}
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement, UnbalancedReturnFact}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, BackwardTaintProblem, Fact, FlowFact, InstanceField, Variable}
-import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
+import org.opalj.tac.fpcf.properties.Taint
 
 /**
  * A backward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,

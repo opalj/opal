@@ -1,7 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj.ifds
 
 object IFDS {
+
     /**
      * Merges two maps that have sets as values.
      *

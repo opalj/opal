@@ -4,8 +4,9 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds.{ForwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.properties.{IFDSPropertyMetaInformation, Taint}
+import org.opalj.tac.fpcf.properties.Taint
 
 /**
  * An analysis that checks, if the return value of the method `source` can flow to the parameter of
@@ -24,7 +25,7 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     override val entryPoints: Seq[(DeclaredMethod, Fact)] = p.allProjectClassFiles.filter(classFile ⇒
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(classFile ⇒ classFile.methods)
-        .filter(method ⇒ method.isPublic && insideAnalysisContext(declaredMethods(method)))
+        .filter(method ⇒ method.isPublic && outsideAnalysisContext(declaredMethods(method)).isEmpty)
         .map(method ⇒ declaredMethods(method) → NullFact)
 
     /**

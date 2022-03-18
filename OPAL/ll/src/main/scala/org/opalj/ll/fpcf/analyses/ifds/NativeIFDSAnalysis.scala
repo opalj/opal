@@ -2,11 +2,10 @@
 
 package org.opalj.ll.fpcf.analyses.ifds
 
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
+import org.opalj.ifds.{AbstractIFDSFact, IFDSAnalysis, IFDSAnalysisScheduler, IFDSProblem, IFDSPropertyMetaInformation, Statement}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.{BasicBlock, Function, Instruction}
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSFact, IFDSProblem}
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 /**
  *
@@ -15,11 +14,11 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
  * @tparam IFDSFact
  */
 class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
-        ifdsProblem: IFDSProblem[IFDSFact, Function, LLVMStatement],
-        icfg:        ICFG[IFDSFact, Function, LLVMStatement, BasicBlock],
+        project:     SomeProject,
+        ifdsProblem: IFDSProblem[IFDSFact, Function, LLVMStatement, BasicBlock],
         propertyKey: IFDSPropertyMetaInformation[LLVMStatement, IFDSFact]
 )
-    extends IFDSAnalysis[IFDSFact, Function, LLVMStatement, BasicBlock]()(ifdsProblem, icfg, propertyKey)
+    extends IFDSAnalysis[IFDSFact, Function, LLVMStatement, BasicBlock]()(project, ifdsProblem, propertyKey)
 
 /**
  * A statement that is passed to the concrete analysis.

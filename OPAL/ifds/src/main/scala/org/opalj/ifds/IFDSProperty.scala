@@ -1,37 +1,29 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package tac
-package fpcf
-package properties
-
+package org.opalj.ifds
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.value.KnownTypedValue
 
-trait IFDSPropertyMetaInformation[Statement, DataFlowFact] extends PropertyMetaInformation {
+trait IFDSPropertyMetaInformation[S, IFDSFact] extends PropertyMetaInformation {
     /**
      * Creates an IFDSProperty containing the result of this analysis.
      *
      * @param result Maps each exit statement to the facts, which hold after the exit statement.
      * @return An IFDSProperty containing the `result`.
      */
-    def create(result: Map[Statement, Set[DataFlowFact]]): IFDSProperty[Statement, DataFlowFact]
+    def create(result: Map[S, Set[IFDSFact]]): IFDSProperty[S, IFDSFact]
 }
 
-abstract class IFDSProperty[Statement, DataFlowFact]
+abstract class IFDSProperty[S, IFDSFact]
     extends Property
-    with IFDSPropertyMetaInformation[Statement, DataFlowFact] {
-
-    /** The type of the TAC domain. */
-    type V = DUVar[KnownTypedValue]
+    with IFDSPropertyMetaInformation[S, IFDSFact] {
 
     /**
      * Maps exit statements to the data flow facts, which hold after them.
      */
-    def flows: Map[Statement, Set[DataFlowFact]]
+    def flows: Map[S, Set[IFDSFact]]
 
     override def equals(other: Any): Boolean = other match {
-        case that: IFDSProperty[Statement, DataFlowFact] ⇒
+        case that: IFDSProperty[S, IFDSFact] ⇒
             // We cached the "hashCode" to make the following comparison more efficient;
             // note that all properties are eventually added to some set and therefore
             // the hashCode is required anyway!

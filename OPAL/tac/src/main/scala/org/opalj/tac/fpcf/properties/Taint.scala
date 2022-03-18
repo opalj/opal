@@ -2,6 +2,7 @@
 package org.opalj.tac.fpcf.properties
 
 import org.opalj.fpcf.PropertyKey
+import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
 

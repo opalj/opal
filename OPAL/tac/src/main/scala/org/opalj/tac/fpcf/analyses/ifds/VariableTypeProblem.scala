@@ -4,6 +4,7 @@ package org.opalj.tac.fpcf.analyses.ifds
 import org.opalj.br.{ArrayType, ClassFile, DeclaredMethod, FieldType, Method, ReferenceType}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.ifds.{AbstractIFDSFact, SubsumableFact, SubsumableNullFact}
 import org.opalj.tac.{ArrayLoad, ArrayStore, Assignment, DUVar, Expr, GetField, GetStatic, New, ReturnValue, Var}
 import org.opalj.value.ValueInformation
 
@@ -191,30 +192,23 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
         } else Set.empty
 
     /**
-     * If a method outside of the analysis context is called, we assume that it returns every
-     * possible runtime type matching the compile time type.
-     */
-    override def callOutsideOfAnalysisContext(
-        statement: JavaStatement,
-        callee:    DeclaredMethod,
-        successor: JavaStatement,
-        in:        Set[VTAFact]
-    ): Set[VTAFact] = {
-        val returnType = callee.descriptor.returnType
-        if (statement.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
-            Set(VariableType(statement.index, returnType.asReferenceType, upperBound = true))
-        } else Set.empty
-    }
-
-    /**
      * Only methods in java.lang and org.opalj are inside the analysis context.
      *
      * @param callee The callee.
      * @return True, if the callee is inside the analysis context.
      */
-    override def insideAnalysisContext(callee: DeclaredMethod): Boolean =
-        classInsideAnalysisContext(callee.definedMethod.classFile) &&
-            super.insideAnalysisContext(callee)
+    override def outsideAnalysisContext(callee: DeclaredMethod): Option[OutsideAnalysisContextHandler] =
+        if (classInsideAnalysisContext(callee.definedMethod.classFile) &&
+            super.outsideAnalysisContext(callee).isEmpty)
+            None
+        else {
+            Some(((call: JavaStatement, successor: JavaStatement, in: Set[VTAFact]) ⇒ {
+                val returnType = callee.descriptor.returnType
+                if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
+                    Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))
+                } else Set.empty[VTAFact]
+            }): OutsideAnalysisContextHandler)
+        }
 
     /**
      * When `normalFlow` reaches an assignment or array store, this method computes the new facts

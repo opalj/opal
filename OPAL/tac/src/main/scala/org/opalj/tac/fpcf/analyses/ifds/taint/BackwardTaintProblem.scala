@@ -131,19 +131,21 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
     /**
      * If the returned value is tainted, all actual parameters will be tainted.
      */
-    override def callOutsideOfAnalysisContext(call: JavaStatement, callee: DeclaredMethod,
-                                              successor: JavaStatement,
-                                              in:        Set[Fact]): Set[Fact] = {
-        val callStatement = asCall(call.stmt)
-        in ++ in.collect {
-            case Variable(index) if index == call.index ⇒
-                callStatement.allParams.flatMap(createNewTaints(_, call))
-            case ArrayElement(index, _) if index == call.index ⇒
-                callStatement.allParams.flatMap(createNewTaints(_, call))
-            case InstanceField(index, _, _) if index == call.index ⇒
-                callStatement.allParams.flatMap(createNewTaints(_, call))
-        }.flatten
-    }
+    override def outsideAnalysisContext(callee: DeclaredMethod): Option[OutsideAnalysisContextHandler] =
+        super.outsideAnalysisContext(callee) match {
+            case Some(_) ⇒ Some((call: JavaStatement, successor: JavaStatement, in: Set[Fact]) ⇒ {
+                val callStatement = asCall(call.stmt)
+                in ++ in.collect {
+                    case Variable(index) if index == call.index ⇒
+                        callStatement.allParams.flatMap(createNewTaints(_, call))
+                    case ArrayElement(index, _) if index == call.index ⇒
+                        callStatement.allParams.flatMap(createNewTaints(_, call))
+                    case InstanceField(index, _, _) if index == call.index ⇒
+                        callStatement.allParams.flatMap(createNewTaints(_, call))
+                }.flatten
+            })
+            case None ⇒ None
+        }
 
     /**
      * Creates an UnbalancedTaintFact for each actual parameter on the caller side, of the formal

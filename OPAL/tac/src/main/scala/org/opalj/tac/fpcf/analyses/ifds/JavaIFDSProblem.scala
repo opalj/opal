@@ -1,18 +1,21 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds
 
-import org.opalj.br.{DeclaredMethod, ObjectType}
 import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
+import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.{Entity, FinalEP, FinalP, InterimResult, InterimUBP, ProperPropertyComputationResult, Property, PropertyStore, Result, SomeEOptionP}
+import org.opalj.br.{DeclaredMethod, ObjectType}
+import org.opalj.fpcf._
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.tac.{Assignment, Call, ExprStmt, Stmt}
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
-import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSPropertyMetaInformation}
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.{Assignment, Call, ExprStmt, Stmt}
 
-abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, DeclaredMethod, JavaStatement](project) {
+abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, DeclaredMethod, JavaStatement, CFGNode](
+    new ForwardICFG[Fact]()(project.get(PropertyStoreKey), project.get(TypeProviderKey), project.get(DeclaredMethodsKey))
+) {
     /**
      * All declared methods in the project.
      */
@@ -21,31 +24,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     implicit final protected val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
-    /**
-     * Checks, if a callee is inside this analysis' context.
-     * If not, `callOutsideOfAnalysisContext` is called instead of analyzing the callee.
-     * By default, native methods are not inside the analysis context.
-     *
-     * @param callee The callee.
-     * @return True, if the callee is inside the analysis context.
-     */
-    override def insideAnalysisContext(callee: DeclaredMethod): Boolean =
-        callee.definedMethod.body.isDefined
-
-    override def getCallees(
-        statement: JavaStatement,
-        caller:    DeclaredMethod
-    ): Iterator[DeclaredMethod] = {
-        val pc = statement.code(statement.index).pc
-        val ep = propertyStore(caller, Callees.key)
-        ep match {
-            case FinalEP(_, p) ⇒
-                p.directCallees(typeProvider.newContext(caller), pc).map(_.method)
-            case _ ⇒
-                throw new IllegalStateException(
-                    "call graph mut be computed before the analysis starts"
-                )
-        }
+    override def outsideAnalysisContext(callee: DeclaredMethod): Option[(JavaStatement, JavaStatement, Set[Fact]) ⇒ Set[Fact]] = callee.definedMethod.body.isDefined match {
+        case true  ⇒ None
+        case false ⇒ Some((_call: JavaStatement, _successor: JavaStatement, in: Set[Fact]) ⇒ in)
     }
 
     /**
@@ -89,39 +70,29 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
         * If this is not the method's declaration, but a non-overwritten method in a subtype, do
         * not re-analyze the code.
         */
-        if (declaringClass ne declaredMethod.declaringClassType) Some(delegate(
-            source, ((declaredMethods(source._1.definedMethod), source._2), propertyKey), identity[Set[Fact]], propertyKey
-        ))
+        if (declaringClass ne declaredMethod.declaringClassType) Some(baseMethodResult(source, propertyKey))
         None
     }
 
     /**
-     * This method will be called if the analysis of a method shall be delegated to another analysis.
+     * This method will be called if a non-overwritten declared method in a sub type shall be
+     * analyzed. Analyzes the defined method of the supertype instead.
      *
      * @param source A pair consisting of the declared method of the subtype and an input fact.
-     * @param delegation A pair consisting of the delegated entity and an input fact as well as the delegated property.
-     * @param resultMapping A function that maps the results of the delegation.
-     * @param propertyKey the propertyKey used for the instantiation of new results
-     * @return The result of the other analysis.
+     * @return The result of the analysis of the defined method of the supertype.
      */
-    protected def delegate[DelegatedFact](
-        source:        (DeclaredMethod, Fact),
-        delegation:    ((Entity, Fact), IFDSPropertyMetaInformation[_, DelegatedFact]),
-        resultMapping: Set[Fact] ⇒ Set[Fact],
-        propertyKey:   IFDSPropertyMetaInformation[JavaStatement, Fact]
-    ): ProperPropertyComputationResult = {
+    private def baseMethodResult(source: (DeclaredMethod, Fact), propertyKey: IFDSPropertyMetaInformation[JavaStatement, Fact]): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) ⇒ Result(source, propertyKey.create(Map.empty))
+            case FinalP(p) ⇒ Result(source, p)
 
             case ep @ InterimUBP(ub: Property) ⇒
-                // TODO: resultMapping(ub.asInstanceOf[Set[Fact]]).asInstanceOf[Property]
-                InterimResult.forUB(source, propertyKey.create(Map.empty), Set(ep), c)
+                InterimResult.forUB(source, ub, Set(ep), c)
 
             case epk ⇒
                 InterimResult.forUB(source, propertyKey.create(Map.empty), Set(epk), c)
         }
-        c(propertyStore(delegation._1, delegation._2.key))
+        c(propertyStore((declaredMethods(source._1.definedMethod), source._2), propertyKey.key))
     }
 }
 
