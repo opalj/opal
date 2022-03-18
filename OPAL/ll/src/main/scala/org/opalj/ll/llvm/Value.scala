@@ -17,6 +17,8 @@ class Value(ref: LLVMValueRef) extends OptionalValue {
     def name(): String = {
         LLVMGetValueName(ref).getString
     }
+
+    def typ(): Type = Type(LLVMTypeOf(ref))
 }
 
 case class NullValue() extends OptionalValue

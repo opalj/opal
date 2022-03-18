@@ -2,15 +2,7 @@
 package org.opalj.ll.llvm
 
 import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM.{
-    LLVMFunctionValueKind,
-    LLVMGetEntryBasicBlock,
-    LLVMGetFirstBasicBlock,
-    LLVMGetNextBasicBlock,
-    LLVMGetValueKind,
-    LLVMViewFunctionCFG,
-    LLVMViewFunctionCFGOnly
-}
+import org.bytedeco.llvm.global.LLVM.{LLVMFunctionValueKind, LLVMGetEntryBasicBlock, LLVMGetFirstBasicBlock, LLVMGetFirstParam, LLVMGetNextBasicBlock, LLVMGetNextParam, LLVMGetValueKind, LLVMViewFunctionCFG, LLVMViewFunctionCFGOnly}
 import org.opalj.io.writeAndOpen
 
 case class Function(ref: LLVMValueRef) extends Value(ref) {
@@ -18,6 +10,10 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
 
     def basicBlocks(): BasicBlockIterator = {
         new BasicBlockIterator(LLVMGetFirstBasicBlock(ref))
+    }
+
+    def arguments(): ArgumentIterator = {
+        new ArgumentIterator(LLVMGetFirstParam(ref))
     }
 
     def entryBlock(): BasicBlock = {
@@ -38,6 +34,9 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
         }
     }
 
+    override def toString: String = {
+        s"Function(${name()}(${arguments.map(_.typ().repr()).mkString(", ")}))"
+    }
 }
 
 class BasicBlockIterator(var ref: LLVMBasicBlockRef) extends Iterator[BasicBlock] {
@@ -47,5 +46,15 @@ class BasicBlockIterator(var ref: LLVMBasicBlockRef) extends Iterator[BasicBlock
         val basicBlock = BasicBlock(ref)
         this.ref = LLVMGetNextBasicBlock(ref)
         basicBlock
+    }
+}
+
+class ArgumentIterator(var ref: LLVMValueRef) extends Iterator[Argument] {
+    override def hasNext: Boolean = ref != null
+
+    override def next(): Argument = {
+        val argument = Argument(ref)
+        this.ref = LLVMGetNextParam(ref)
+        argument
     }
 }
