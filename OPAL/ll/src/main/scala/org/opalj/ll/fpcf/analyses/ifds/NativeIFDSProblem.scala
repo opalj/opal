@@ -4,12 +4,11 @@ package org.opalj.ll.fpcf.analyses.ifds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ifds.AbstractIFDSFact
-import org.opalj.ifds.old.IFDSProblem
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.llvm.{BasicBlock, Function}
+import org.opalj.ll.llvm.Function
 
-abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, Function, LLVMStatement, BasicBlock](new NativeForwardICFG[Fact]) {
+abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, Function, LLVMStatement](new NativeForwardICFG[Fact]) {
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val llvmProject = project.get(LLVMProjectKey)
 

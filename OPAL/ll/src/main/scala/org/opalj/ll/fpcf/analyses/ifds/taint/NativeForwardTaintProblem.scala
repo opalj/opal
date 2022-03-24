@@ -3,88 +3,61 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeIFDSProblem}
-import org.opalj.ll.llvm.Function
+import org.opalj.ll.llvm.{Function, PHI}
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
-abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
+ class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
     override def nullFact: NativeFact = NativeNullFact
 
-    /**
-     * If a variable gets assigned a tainted value, the variable will be tainted.
-     */
-    override def normalFlow(statement: LLVMStatement, successor: Option[LLVMStatement],
-                            in: Set[NativeFact]): Set[NativeFact] =
-        statement match {
-            // TODO
-            case _ ⇒ in
-        }
+     /**
+      * Computes the data flow for a normal statement.
+      *
+      * @param statement   The analyzed statement.
+      * @param in          The fact which holds before the execution of the `statement`.
+      * @param predecessor The predecessor of the analyzed `statement`, for which the data flow shall be
+      *                    computed. Used for phi statements to distinguish the flow.
+      * @return The facts, which hold after the execution of `statement` under the assumption
+      *         that the facts in `in` held before `statement` and `successor` will be
+      *         executed next.
+      */
+     override def normalFlow(statement: LLVMStatement, in: NativeFact, predecessor: Option[LLVMStatement]): Set[NativeFact] = ???
 
-    /**
-     * Propagates tainted parameters to the callee. If a call to the sink method with a tainted
-     * parameter is detected, no call-to-start
-     * edges will be created.
-     */
-    override def callFlow(call: LLVMStatement, callee: Function,
-                          in: Set[NativeFact], source: (Function, NativeFact)): Set[NativeFact] = {
-        // TODO
-        Set.empty[NativeFact]
-    }
+     /**
+      * Computes the data flow for a call to start edge.
+      *
+      * @param call   The analyzed call statement.
+      * @param callee The called method, for which the data flow shall be computed.
+      * @param in     The fact which holds before the execution of the `call`.
+      * @param source The entity, which is analyzed.
+      * @return The facts, which hold after the execution of `statement` under the assumption that
+      *         the facts in `in` held before `statement` and `statement` calls `callee`.
+      */
+     override def callFlow(call: LLVMStatement, callee: Function, in: NativeFact): Set[NativeFact] = ???
 
-    /**
-     * Taints an actual parameter, if the corresponding formal parameter was tainted in the callee.
-     * If the callee's return value was tainted and it is assigned to a variable in the callee, the
-     * variable will be tainted.
-     * If a FlowFact held in the callee, this method will be appended to a new FlowFact, which holds
-     * at this method.
-     * Creates new taints and FlowFacts, if necessary.
-     * If the sanitize method was called, nothing will be tainted.
-     */
-    override def returnFlow(call: LLVMStatement, callee: Function, exit: LLVMStatement,
-                            successor: LLVMStatement, in: Set[NativeFact]): Set[NativeFact] = {
-        // TODO
-        Set.empty
-    }
+     /**
+      * Computes the data flow for an exit to return edge.
+      *
+      * @param call The statement, which called the `callee`.
+      * @param exit The statement, which terminated the `callee`.
+      * @param in   The fact which holds before the execution of the `exit`.
+      * @return The facts, which hold after the execution of `exit` in the caller's context
+      *         under the assumption that `in` held before the execution of `exit` and that
+      *         `successor` will be executed next.
+      */
+     override def returnFlow(exit: LLVMStatement, in: NativeFact, call: LLVMStatement, callFact: NativeFact): Set[NativeFact] = ???
 
-    /**
-     * Removes taints according to `sanitizeParamters`.
-     */
-    override def callToReturnFlow(call: LLVMStatement, successor: LLVMStatement,
-                                  in:     Set[NativeFact],
-                                  source: (Function, NativeFact)): Set[NativeFact] =
-        in -- sanitizeParameters(call, in)
+     /**
+      * Computes the data flow for a call to return edge.
+      *
+      * @param call The statement, which invoked the call.
+      * @param in   The facts, which hold before the `call`.
+      * @return The facts, which hold after the call independently of what happens in the callee
+      *         under the assumption that `in` held before `call`.
+      */
+     override def callToReturnFlow(call: LLVMStatement, in: NativeFact): Set[NativeFact] = ???
 
-    /**
-     * Called, when the exit to return facts are computed for some `callee` with the null fact and
-     * the callee's return value is assigned to a vairbale.
-     * Creates a taint, if necessary.
-     *
-     * @param callee The called method.
-     * @param call The call.
-     * @return Some variable fact, if necessary. Otherwise none.
-     */
-    protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeFact]
-
-    /**
-     * Called, when the call to return facts are computed for some `callee`.
-     * Creates a FlowFact, if necessary.
-     *
-     * @param callee The method, which was called.
-     * @param call The call.
-     * @return Some FlowFact, if necessary. Otherwise None.
-     */
-    protected def createFlowFact(callee: Function, call: LLVMStatement,
-                                 in: Set[NativeFact]): Option[NativeFlowFact]
-
-    override def outsideAnalysisContext(callee: Function): Option[OutsideAnalysisContextHandler] = {
-        None
-    }
-
-    /**
-     * Checks, if a `callee` should be analyzed, i.e. callFlow and returnFlow should create facts.
-     * True by default. This method can be overwritten by a subclass.
-     *
-     * @param callee The callee.
-     * @return True, by default.
-     */
-    protected def relevantCallee(callee: Function): Boolean = true
-}
+     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
+       case PHI(_) => true
+       case _ => false
+     }
+ }
