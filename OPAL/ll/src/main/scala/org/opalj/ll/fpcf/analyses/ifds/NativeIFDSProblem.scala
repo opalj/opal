@@ -4,7 +4,8 @@ package org.opalj.ll.fpcf.analyses.ifds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem}
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.old.IFDSProblem
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.{BasicBlock, Function}
 

@@ -1,7 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds
 
-import org.opalj.ifds.{AbstractIFDSFact, ICFG}
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.old.ICFG
 import org.opalj.ll.llvm.{BasicBlock, Function, Instruction, Ret, Terminator}
 
 class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Function, LLVMStatement, BasicBlock] {

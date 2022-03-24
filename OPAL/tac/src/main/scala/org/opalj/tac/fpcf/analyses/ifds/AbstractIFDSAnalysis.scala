@@ -38,7 +38,8 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSProperty, IFDSPropertyMetaInformation, NumberOfCalls, Statement, Subsumable}
+import org.opalj.ifds.old.{IFDSProblem, NumberOfCalls, Statement, Subsumable}
+import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation, AbstractIFDSFact}
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}

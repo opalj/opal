@@ -15,7 +15,8 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.old.IFDSProblem
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.{TACAI, TheTACAI}

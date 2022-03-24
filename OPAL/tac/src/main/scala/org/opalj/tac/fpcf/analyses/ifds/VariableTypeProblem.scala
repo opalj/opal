@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds
 
-import org.opalj.br.{ArrayType, ClassFile, DeclaredMethod, FieldType, Method, ReferenceType}
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br._
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.ifds.{AbstractIFDSFact, SubsumableFact, SubsumableNullFact}
-import org.opalj.tac.{ArrayLoad, ArrayStore, Assignment, DUVar, Expr, GetField, GetStatic, New, ReturnValue, Var}
+import org.opalj.tac._
 import org.opalj.value.ValueInformation
 
 import scala.annotation.tailrec

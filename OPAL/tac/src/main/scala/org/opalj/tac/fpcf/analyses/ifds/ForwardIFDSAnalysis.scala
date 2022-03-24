@@ -1,16 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds
 
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFG
-import org.opalj.br.cfg.CFGNode
 import org.opalj.br.DeclaredMethod
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSPropertyMetaInformation}
+import org.opalj.br.cfg.{BasicBlock, CFG, CFGNode}
+import org.opalj.ifds.old.IFDSProblem
+import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.tac.{Return, ReturnValue, Stmt, TACStmts}
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.Return
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
 
 /**
  * An IFDS analysis, which analyzes the code in the control flow direction.

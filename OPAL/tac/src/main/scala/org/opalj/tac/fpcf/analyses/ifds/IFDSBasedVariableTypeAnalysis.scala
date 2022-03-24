@@ -7,7 +7,8 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation, NumberOfSubsumptions, Subsuming}
+import org.opalj.ifds.old.{NumberOfSubsumptions, Subsuming}
+import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.TACAI
 

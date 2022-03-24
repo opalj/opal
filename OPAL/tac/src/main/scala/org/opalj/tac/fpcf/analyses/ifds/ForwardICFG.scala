@@ -5,7 +5,8 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFGNode
 import org.opalj.fpcf.{FinalEP, PropertyStore}
-import org.opalj.ifds.{AbstractIFDSFact, ICFG}
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.old.ICFG
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.cg.Callees
 

@@ -3,7 +3,8 @@
 package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.ifds.{AbstractIFDSFact, IFDSAnalysis, IFDSAnalysisScheduler, IFDSProblem, IFDSPropertyMetaInformation, Statement}
+import org.opalj.ifds.old.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProblem, Statement}
+import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.{BasicBlock, Function, Instruction}
 

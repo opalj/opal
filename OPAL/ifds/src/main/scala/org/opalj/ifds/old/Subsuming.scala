@@ -1,7 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ifds
+package org.opalj.ifds.old
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ifds.SubsumableFact
 
 /**
  * An IFDS analysis, which implements subsuming.

@@ -6,10 +6,11 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.{DeclaredMethod, ObjectType}
 import org.opalj.fpcf._
+import org.opalj.ifds.old.IFDSProblem
+import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.{Assignment, Call, ExprStmt, Stmt}
 
