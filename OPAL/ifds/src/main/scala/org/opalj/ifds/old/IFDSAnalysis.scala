@@ -4,13 +4,9 @@ package org.opalj.ifds.old
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf._
-import org.opalj.ifds.{AbstractIFDSFact, IFDS, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{AbstractIFDSFact, IFDS, IFDSProperty, IFDSPropertyMetaInformation, Statement}
 
 import scala.collection.{mutable, Set => SomeSet}
-
-abstract class Statement[Node] {
-    def node(): Node
-}
 
 /**
  * The state of the analysis. For each method and source fact, there is a separate state.
@@ -29,7 +25,7 @@ abstract class Statement[Node] {
  * @param outgoingFacts Maps each basic block and successor node to the data flow facts valid at
  *                      the beginning of the successor. For exit statements the successor is None
  */
-protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node](
+protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, Node], Node](
         val source:               (C, IFDSFact),
         var pendingIfdsCallSites: Map[(C, IFDSFact), Set[S]]                                             = Map.empty[(C, IFDSFact), Set[S]],
         var pendingIfdsDependees: Map[(C, IFDSFact), EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]] = Map.empty[(C, IFDSFact), EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]],
@@ -69,7 +65,7 @@ protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalys
  * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
  * @tparam IFDSFact
  */
-class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node](
+class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, Node], Node](
         implicit
         project:         SomeProject,
         val ifdsProblem: IFDSProblem[IFDSFact, C, S, Node],
@@ -616,7 +612,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Nod
     }
 }
 
-abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node]
+abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, Node], Node]
     extends FPCFLazyAnalysisScheduler {
     final override type InitializationData = IFDSAnalysis[IFDSFact, C, S, Node]
     def property: IFDSPropertyMetaInformation[S, IFDSFact]

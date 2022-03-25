@@ -72,7 +72,7 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
         * not re-analyze the code.
         */
         if (declaringClass ne declaredMethod.declaringClassType) Some(baseMethodResult(source, propertyKey))
-        None
+        super.specialCase(source, propertyKey)
     }
 
     /**

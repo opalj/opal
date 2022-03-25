@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ifds.old
 
-import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.{AbstractIFDSFact, Statement}
 
 import scala.collection.{Set => SomeSet}
 
-abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node] {
+abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_, Node], Node] {
     /**
      * Determines the basic blocks, at which the analysis starts.
      *

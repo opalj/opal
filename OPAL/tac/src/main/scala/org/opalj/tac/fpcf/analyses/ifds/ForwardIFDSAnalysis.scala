@@ -79,9 +79,9 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
     override protected def firstStatement(node: CFGNode)(implicit state: State): JavaStatement = {
         if (node.isBasicBlock) {
             val index = node.asBasicBlock.startPC
-            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg)
+            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
         } else if (node.isCatchNode) firstStatement(node.successors.head)
-        else if (node.isExitNode) JavaStatement(state.method, node, null, 0, state.code, state.cfg)
+        else if (node.isExitNode) JavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
         else throw new IllegalArgumentException(s"Unknown node type: $node")
     }
 
@@ -96,7 +96,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
         else {
             val nextIndex = index + 1
             Set(JavaStatement(statement.method, basicBlock, statement.code(nextIndex), nextIndex,
-                statement.code, statement.cfg))
+                statement.code, statement.cfg, statement.declaredMethod))
         }
     }
 
@@ -155,7 +155,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
         else {
             val nextIndex = index + 1
             Map(JavaStatement(statement.method, basicBlock, statement.code(nextIndex), nextIndex,
-                statement.code, statement.cfg) → basicBlock)
+                statement.code, statement.cfg, statement.declaredMethod) → basicBlock)
         }
     }
 
@@ -178,7 +178,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
                 if (exitFacts.isDefined) {
                     val lastIndex = basicBlock.endPC
                     val stmt = JavaStatement(state.method, basicBlock, state.code(lastIndex),
-                        lastIndex, state.code, state.cfg)
+                        lastIndex, state.code, state.cfg, state.source._1)
                     result += stmt → exitFacts.get
                 }
             }

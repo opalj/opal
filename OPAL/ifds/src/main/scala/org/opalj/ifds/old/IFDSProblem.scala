@@ -2,7 +2,7 @@
 package org.opalj.ifds.old
 
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation, Statement}
 
 /**
  * A framework for IFDS analyses.
@@ -11,7 +11,7 @@ import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
  * @author Dominik Helm
  * @author Mario Trageser
  */
-abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[Node], Node](val icfg: ICFG[IFDSFact, C, S, Node]) {
+abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_, Node], Node](val icfg: ICFG[IFDSFact, C, S, Node]) {
     /**
      * The null fact of this analysis.
      */

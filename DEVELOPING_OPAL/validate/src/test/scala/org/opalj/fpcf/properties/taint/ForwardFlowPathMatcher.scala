@@ -3,10 +3,10 @@ package org.opalj.fpcf.properties.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{AnnotationLike, ElementValue, ElementValuePair, ObjectType}
-import org.opalj.fpcf.{Entity, Property}
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
+import org.opalj.fpcf.{Entity, Property}
+import org.opalj.ifds.IFDSProperty
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.properties.Taint
 
 /**
  * @author Mario Trageser
@@ -23,8 +23,8 @@ class ForwardFlowPathMatcher extends AbstractPropertyMatcher {
         val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) ⇒
             evp.value.asArrayValue.values.map((value: ElementValue) ⇒
                 value.asStringValue.value)).head.toIndexedSeq
-        val flows = properties.filter(_.isInstanceOf[Taint]).head
-            .asInstanceOf[Taint]
+        val flows = properties.filter(_.isInstanceOf[IFDSProperty[_, _]]).head
+            .asInstanceOf[IFDSProperty[_, _]]
             .flows
             .values
             .fold(Set.empty)((acc, facts) ⇒ acc ++ facts)

@@ -23,12 +23,12 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * We do not sanitize parameters.
      */
-    override protected def sanitizeParameters(call: LLVMStatement, in: Set[NativeFact]): Set[NativeFact] = Set.empty
+    override protected def sanitizesParameter(call: LLVMStatement, in: NativeFact): Boolean = false
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
      */
-    override protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeFact] =
+    protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeFact] =
         if (callee.name == "source") Set(NativeVariable(call))
         else Set.empty
 
@@ -36,7 +36,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
      * Create a FlowFact, if sink is called with a tainted variable.
      * Note, that sink does not accept array parameters. No need to handle them.
      */
-    override protected def createFlowFact(
+    protected def createFlowFact(
         callee: Function,
         call:   LLVMStatement,
         in:     Set[NativeFact]

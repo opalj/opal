@@ -5,46 +5,30 @@ package fpcf
 package analyses
 package ifds
 
-import java.io.File
-import java.io.PrintWriter
-import scala.collection.{Set ⇒ SomeSet}
-import scala.collection.mutable
 import com.typesafe.config.ConfigValueFactory
-
-import javax.swing.JOptionPane
-import org.opalj.util.Milliseconds
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.{EOptionP, EPK, FinalE, FinalEP, FinalP, InterimEUBP, InterimResult, ProperPropertyComputationResult, PropertyBounds, PropertyStore, Result, SomeEPS}
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFG
-import org.opalj.br.cfg.CFGNode
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ifds.old.{IFDSProblem, NumberOfCalls, Statement, Subsumable}
-import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation, AbstractIFDSFact}
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.br.{DeclaredMethod, DefinedMethod, Method, ObjectType}
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, Project, ProjectInformationKeys, SomeProject}
+import org.opalj.br.cfg.{BasicBlock, CFG, CFGNode}
+import org.opalj.br.fpcf.{FPCFAnalysesManagerKey, FPCFAnalysis, FPCFLazyAnalysisScheduler, PropertyStoreKey}
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.fpcf._
+import org.opalj.ifds.old.{IFDSProblem, NumberOfCalls, Subsumable}
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProperty, IFDSPropertyMetaInformation, Statement}
 import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.properties.{TACAI, TheTACAI}
+import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
+import org.opalj.util.Milliseconds
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.value.ValueInformation
+
+import java.io.{File, PrintWriter}
+import javax.swing.JOptionPane
+import scala.collection.{mutable, Set => SomeSet}
 
 /**
  *
@@ -674,7 +658,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
             index: Int
         ): (JavaStatement, Option[SomeSet[Method]], Option[IFDSFact]) = {
             val stmt = state.code(index)
-            val statement = JavaStatement(state.method, basicBlock, stmt, index, state.code, state.cfg)
+            val statement = JavaStatement(state.method, basicBlock, stmt, index, state.code, state.cfg, state.source._1)
             val calleesO =
                 if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate.map(Set(_))
                 else getCalleesIfCallStatement(statement)
@@ -694,7 +678,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
             val next = nextIndex(index)
             flows = if (calleesO.isEmpty) {
                 val successor =
-                    JavaStatement(state.method, basicBlock, state.code(next), next, state.code, state.cfg)
+                    JavaStatement(state.method, basicBlock, state.code(next), next, state.code, state.cfg, state.source._1)
                 numberOfCalls.normalFlow += 1
                 sumOfInputFactsForCallbacks += in.size
                 ifdsProblem.normalFlow(statement, Some(successor), flows)
@@ -888,8 +872,9 @@ case class JavaStatement(
         stmt:   Stmt[V],
         index:  Int,
         code:   Array[Stmt[V]],
-        cfg:    CFG[Stmt[V], TACStmts[V]]
-) extends Statement[CFGNode] {
+        cfg:    CFG[Stmt[V], TACStmts[V]],
+        declaredMethod: DeclaredMethod
+) extends Statement[DeclaredMethod, CFGNode] {
 
     override def hashCode(): Int = method.hashCode() * 31 + index
 
@@ -899,6 +884,7 @@ case class JavaStatement(
     }
 
     override def toString: String = s"${method.toJava}"
+    override def callable(): DeclaredMethod = declaredMethod
 }
 
 abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact]

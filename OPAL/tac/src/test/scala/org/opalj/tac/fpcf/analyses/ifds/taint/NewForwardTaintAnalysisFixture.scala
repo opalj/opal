@@ -1,0 +1,64 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.tac.fpcf.analyses.ifds.taint
+
+import org.opalj.br.Method
+import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.{PropertyBounds, PropertyStore}
+import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, NewJavaStatement}
+import org.opalj.tac.fpcf.properties.NewTaint
+
+/**
+ * An analysis that checks, if the return value of the method `source` can flow to the parameter of
+ * the method `sink`.
+ *
+ * @author Mario Trageser
+ */
+class NewForwardTaintAnalysisFixture(project: SomeProject)
+  extends IFDSAnalysis()(project, new NewForwardTaintProblemFixture(project), NewTaint)
+
+class NewForwardTaintProblemFixture(p: SomeProject) extends NewForwardTaintProblem(p) {
+  /**
+   * The analysis starts with all public methods in TaintAnalysisTestClass.
+   */
+  override val entryPoints: Seq[(Method, Fact)] = p.allProjectClassFiles.filter(classFile ⇒
+    classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
+    .flatMap(classFile ⇒ classFile.methods)
+    .filter(method ⇒ method.isPublic && outsideAnalysisContext(method).isEmpty)
+    .map(method ⇒ method → NullFact)
+
+  /**
+   * The sanitize method is a sanitizer.
+   */
+  override protected def sanitizesReturnValue(callee: Method): Boolean = callee.name == "sanitize"
+
+  /**
+   * We do not sanitize paramters.
+   */
+  override protected def sanitizesParameter(call: NewJavaStatement, in: Fact): Boolean = false
+
+  /**
+   * Creates a new variable fact for the callee, if the source was called.
+   */
+  override protected def createTaints(callee: Method, call: NewJavaStatement): Set[Fact] =
+    if (callee.name == "source") Set(Variable(call.index))
+    else Set.empty
+
+  /**
+   * Create a FlowFact, if sink is called with a tainted variable.
+   * Note, that sink does not accept array parameters. No need to handle them.
+   */
+  override protected def createFlowFact(callee: Method, call: NewJavaStatement,
+                                        in: Fact): Option[FlowFact] =
+    if (callee.name == "sink" && in == Variable(-2)) Some(FlowFact(Seq(JavaMethod(call.method))))
+    else None
+}
+
+object NewForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Fact, Method, NewJavaStatement] {
+  override def init(p: SomeProject, ps: PropertyStore) = new NewForwardTaintAnalysisFixture(p)
+  override def property: IFDSPropertyMetaInformation[NewJavaStatement, Fact] = NewTaint
+  override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(NewTaint))
+  override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey, DeclaredMethodsKey, PropertyStoreKey)
+}

@@ -1,0 +1,94 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.tac.fpcf.analyses.ifds
+
+import org.opalj.br.{DeclaredMethod, Method}
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.{FinalEP, PropertyStore}
+import org.opalj.ifds.{AbstractIFDSFact, ICFG}
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.value.ValueInformation
+
+class NewForwardICFG[IFDSFact <: AbstractIFDSFact](implicit project: SomeProject)
+  extends ICFG[IFDSFact, Method, NewJavaStatement] {
+  val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
+  val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+  implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+  implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+
+  /**
+   * Determines the statements at which the analysis starts.
+   *
+   * @param callable The analyzed callable.
+   * @return The statements at which the analysis starts.
+   */
+  override def startStatements(callable: Method): Set[NewJavaStatement] = {
+    val TACode(_, code, _, cfg, _) = tacai(callable)
+    Set(NewJavaStatement(callable, cfg.startBlock, code(0), 0, code, cfg))
+  }
+
+  /**
+   * Determines the statement, that will be analyzed after some other `statement`.
+   *
+   * @param statement The source statement.
+   * @return The successor statements
+   */
+  override def nextStatements(statement: NewJavaStatement): Set[NewJavaStatement] = {
+    statement.cfg
+      .successors(statement.index)
+      .toChain
+      .map { index ⇒
+        NewJavaStatement(statement.method, statement.node, statement.code(index), index, statement.code, statement.cfg)
+      }
+      .toSet
+  }
+
+  /**
+   * Gets the set of all methods possibly called at some statement.
+   *
+   * @param statement The statement.
+   * @return All callables possibly called at the statement or None, if the statement does not
+   *         contain a call.
+   */
+  override def getCalleesIfCallStatement(statement: NewJavaStatement): Option[collection.Set[Method]] = {
+    val pc = statement.code(statement.index).pc
+    val caller = declaredMethods(statement.method)
+    val ep = propertyStore(caller, Callees.key)
+    ep match {
+      case FinalEP(_, p) ⇒ Some(definedMethods(p.directCallees(typeProvider.newContext(caller), pc).map(_.method)))
+      case _ ⇒
+        throw new IllegalStateException(
+          "call graph must be computed before the analysis starts"
+        )
+    }
+  }
+
+  override def isExitStatement(statement: NewJavaStatement): Boolean = {
+    statement.cfg.bb(statement.index).successors.exists(_.isExitNode)
+  }
+
+  /**
+   * Maps some declared methods to their defined methods.
+   *
+   * @param declaredMethods Some declared methods.
+   * @return All defined methods of `declaredMethods`.
+   */
+  private def definedMethods(declaredMethods: Iterator[DeclaredMethod]): collection.Set[Method] = {
+    val result = scala.collection.mutable.Set.empty[Method]
+    declaredMethods
+      .filter(
+        declaredMethod ⇒
+          declaredMethod.hasSingleDefinedMethod ||
+            declaredMethod.hasMultipleDefinedMethods
+      )
+      .foreach(
+        declaredMethod ⇒
+          declaredMethod
+            .foreachDefinedMethod(defineMethod ⇒ result.add(defineMethod))
+      )
+    result
+  }
+}

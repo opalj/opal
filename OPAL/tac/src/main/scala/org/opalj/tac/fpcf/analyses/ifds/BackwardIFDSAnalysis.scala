@@ -60,7 +60,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         val startBlock = state.cfg.startBlock
         val startPC = startBlock.startPC
         val statement =
-            JavaStatement(state.method, startBlock, state.code(startPC), startPC, state.code, state.cfg)
+            JavaStatement(state.method, startBlock, state.code(startPC), startPC, state.code, state.cfg, state.source._1)
         val exitFacts = state.outgoingFacts.get(startBlock).flatMap(_.get(SyntheticStartNode))
         if (exitFacts.isDefined) Map(statement -> exitFacts.get)
         else Map.empty
@@ -214,10 +214,10 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
     override protected def firstStatement(node: CFGNode)(implicit state: State): JavaStatement = {
         if (node.isBasicBlock) {
             val index = node.asBasicBlock.endPC
-            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg)
+            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
         } else if (node.isCatchNode) firstStatement(node.successors.head)
         else if (node == SyntheticStartNode)
-            JavaStatement(state.method, node, null, 0, state.code, state.cfg)
+            JavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
         else throw new IllegalArgumentException(s"Unknown node type: $node")
     }
 
@@ -242,7 +242,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                     statement.code(nextIndex),
                     nextIndex,
                     statement.code,
-                    statement.cfg
+                    statement.cfg,
+                    statement.declaredMethod
                 )
             )
         }
@@ -270,7 +271,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                         val calleeStmts = tac.stmts
                         val exitStmt = calleeStmts(exitPc)
                         val exitStatement =
-                            JavaStatement(definedCallee, cfg.bb(exitPc), exitStmt, exitPc, calleeStmts, cfg)
+                            JavaStatement(definedCallee, cfg.bb(exitPc), exitStmt, exitPc, calleeStmts, cfg, state.source._1)
                         for {
                             successor ← successors
                             if !AbstractIFDSAnalysis.OPTIMIZE_CROSS_PRODUCT_IN_RETURN_FLOW ||
@@ -364,7 +365,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                     statement.code(nextIndex),
                     nextIndex,
                     statement.code,
-                    statement.cfg
+                    statement.cfg,
+                    statement.declaredMethod
                 ) -> basicBlock
             )
         }
@@ -383,9 +385,9 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
     @tailrec private def lastStatement(node: CFGNode)(implicit state: State): JavaStatement = {
         if (node.isBasicBlock) {
             val index = node.asBasicBlock.startPC
-            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg)
+            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
         } else if (node.isCatchNode) lastStatement(node.successors.head)
-        else if (node.isExitNode) JavaStatement(state.method, node, null, 0, state.code, state.cfg)
+        else if (node.isExitNode) JavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
         else throw new IllegalArgumentException(s"Unknown node type: $node")
     }
 
@@ -411,7 +413,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
             callerStmts(callIndex),
             callIndex,
             callerStmts,
-            callerCfg
+            callerCfg,
+            caller
         )
         ifdsProblem.unbalancedReturnFlow(in, call, caller, state.source).foreach { in ⇒
             val callerEntity = (caller, in)
