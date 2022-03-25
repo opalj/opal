@@ -19,7 +19,6 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.Instruction
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -403,57 +402,54 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         //find sending methods (virtual)
-        body.collect {
-            case in: Instruction if in.isInstanceOf[INVOKEVIRTUAL] &&
-                senderClasses.contains(in.asInstanceOf[INVOKEVIRTUAL].declaringClass) ⇒ in
-        }.foreach { in ⇒
-            if (virtualSendingMethods.contains(in.value.asInstanceOf[INVOKEVIRTUAL].name)) {
-
-                val index = tacCode.pcToIndex(in.pc)
-                val methodCall = tacCode.stmts(index)
-
-                if (methodCall.isVirtualMethodCall) {
-                    val virtualCall = methodCall.asVirtualMethodCall
-                    if (intentUseSites.isEmpty || !intentUseSites.exists(_._2.contains(tacCode.pcToIndex(in.pc))) && !findOrigin(virtualCall.params, tacCode, intentUseSites.toMap)) {
-                        //backwards search to find intent
+        body.foreach { fullInstruction ⇒
+            fullInstruction.instruction match {
+                case in: INVOKEVIRTUAL if senderClasses.contains(in.declaringClass) && virtualSendingMethods.contains(in.name) ⇒
+                    val index = tacCode.pcToIndex(fullInstruction.pc)
+                    val methodCall = tacCode.stmts(index)
+                    if (methodCall.isVirtualMethodCall) {
                         val virtualCall = methodCall.asVirtualMethodCall
-                        val classMethodTupel = searchParamsVirtual(virtualCall, tacCode)
-                        if (classMethodTupel.isDefined) {
-                            val cmt = classMethodTupel.get
-                            //origin of intent found wait for results
-                            if (senderMap.contains(cmt)) {
-                                senderMap(cmt) += ((m, getComponentType(virtualCall.name), virtualCall.pc))
-                            } else senderMap += (cmt -> ListBuffer((m, getComponentType(virtualCall.name), virtualCall.pc)))
+                        if (intentUseSites.isEmpty || !intentUseSites.exists(_._2.contains(tacCode.pcToIndex(fullInstruction.pc))) && !findOrigin(virtualCall.params, tacCode, intentUseSites.toMap)) {
+                            //backwards search to find intent
+                            val virtualCall = methodCall.asVirtualMethodCall
+                            val classMethodTupel = searchParamsVirtual(virtualCall, tacCode)
+                            if (classMethodTupel.isDefined) {
+                                val cmt = classMethodTupel.get
+                                //origin of intent found wait for results
+                                if (senderMap.contains(cmt)) {
+                                    senderMap(cmt) += ((m, getComponentType(virtualCall.name), virtualCall.pc))
+                                } else senderMap += (cmt -> ListBuffer((m, getComponentType(virtualCall.name), virtualCall.pc)))
+                            }
                         }
                     }
-                }
+                case _ ⇒
             }
+
         }
 
         //find sending methods (static)
-        body.collect {
-            case in: Instruction if in.isInstanceOf[INVOKESTATIC] &&
-                in.asInstanceOf[INVOKESTATIC].declaringClass == pendingIntentOT ⇒ in
-        }.foreach { in ⇒
-            if (staticSendingMethods.contains(in.value.asInstanceOf[INVOKESTATIC].name)) {
-                val index = tacCode.pcToIndex(in.pc)
-                val methodCall = tacCode.stmts(index)
-                if (methodCall.isAssignment) {
-                    val staticCall = methodCall.asAssignment.expr.asStaticFunctionCall
-                    if (intentUseSites.isEmpty ||
-                        (!intentUseSites.exists(k ⇒ k._2.contains(tacCode.pcToIndex(in.pc))) &&
-                            !findOrigin(staticCall.params, tacCode, intentUseSites))) {
-                        //backwards search to find intent
-                        val classMethodTupel = searchParamsStatic(staticCall, tacCode)
-                        if (classMethodTupel.isDefined) {
-                            val cmt = classMethodTupel.get
-                            //origin of intent found wait for results
-                            if (senderMap.contains(cmt)) {
-                                senderMap(cmt) += ((m, getComponentType(staticCall.name), staticCall.pc))
-                            } else senderMap += (cmt -> ListBuffer((m, getComponentType(staticCall.name), staticCall.pc)))
+        body.foreach { fullInstruction ⇒
+            fullInstruction.instruction match {
+                case in: INVOKESTATIC if in.declaringClass == pendingIntentOT && staticSendingMethods.contains(in.name) ⇒
+                    val index = tacCode.pcToIndex(fullInstruction.pc)
+                    val methodCall = tacCode.stmts(index)
+                    if (methodCall.isAssignment) {
+                        val staticCall = methodCall.asAssignment.expr.asStaticFunctionCall
+                        if (intentUseSites.isEmpty ||
+                            (!intentUseSites.exists(k ⇒ k._2.contains(tacCode.pcToIndex(fullInstruction.pc))) &&
+                                !findOrigin(staticCall.params, tacCode, intentUseSites))) {
+                            //backwards search to find intent
+                            val classMethodTupel = searchParamsStatic(staticCall, tacCode)
+                            if (classMethodTupel.isDefined) {
+                                val cmt = classMethodTupel.get
+                                //origin of intent found wait for results
+                                if (senderMap.contains(cmt)) {
+                                    senderMap(cmt) += ((m, getComponentType(staticCall.name), staticCall.pc))
+                                } else senderMap += (cmt -> ListBuffer((m, getComponentType(staticCall.name), staticCall.pc)))
+                            }
                         }
                     }
-                }
+                case _ ⇒
             }
         }
 
