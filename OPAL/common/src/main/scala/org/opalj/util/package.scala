@@ -56,7 +56,7 @@ package object util {
      *  Tries its best to run the garbage collector and to wait until all objects are also
      *  finalized.
      */
-        @nowarn("msg=method getObjectPendingFinalizationCount in trait MemoryMXBean is deprecated")
+    @nowarn("msg=method getObjectPendingFinalizationCount in trait MemoryMXBean is deprecated")
     final def gc(
         memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean,
         maxGCTime:    Milliseconds = new Milliseconds(333)
