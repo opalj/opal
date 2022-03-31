@@ -28,7 +28,7 @@ import org.opalj.value.ValueInformation
 
 import java.io.{File, PrintWriter}
 import javax.swing.JOptionPane
-import scala.collection.{mutable, Set => SomeSet}
+import scala.collection.{mutable, Set ⇒ SomeSet}
 
 /**
  *
@@ -867,12 +867,12 @@ object AbstractIFDSAnalysis {
  * @param cfg The method's CFG.
  */
 case class JavaStatement(
-        method: Method,
-        node:   CFGNode,
-        stmt:   Stmt[V],
-        index:  Int,
-        code:   Array[Stmt[V]],
-        cfg:    CFG[Stmt[V], TACStmts[V]],
+        method:         Method,
+        node:           CFGNode,
+        stmt:           Stmt[V],
+        index:          Int,
+        code:           Array[Stmt[V]],
+        cfg:            CFG[Stmt[V], TACStmts[V]],
         declaredMethod: DeclaredMethod
 ) extends Statement[DeclaredMethod, CFGNode] {
 
@@ -885,6 +885,8 @@ case class JavaStatement(
 
     override def toString: String = s"${method.toJava}"
     override def callable(): DeclaredMethod = declaredMethod
+
+    def asNewJavaStatement: NewJavaStatement = NewJavaStatement(method, index, code, cfg)
 }
 
 abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact]

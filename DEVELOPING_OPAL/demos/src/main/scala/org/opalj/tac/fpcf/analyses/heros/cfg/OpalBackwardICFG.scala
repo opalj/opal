@@ -1,19 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.heros.cfg
 
-import java.util.{List ⇒ JList}
-import java.util.{Collection ⇒ JCollection}
-import java.util.{Set ⇒ JSet}
-import java.util.Collections
-import java.util.concurrent.ConcurrentLinkedQueue
-
-import scala.collection.JavaConverters._
-
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.TACode
+import org.opalj.tac.fpcf.analyses.ifds.NewJavaStatement
+
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.{Collections, Collection ⇒ JCollection, List ⇒ JList, Set ⇒ JSet}
+import scala.collection.JavaConverters._
 
 /**
  * A backward ICFG for Heros analyses.
@@ -22,22 +18,22 @@ import org.opalj.tac.TACode
  */
 class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
 
-    override def getPredsOf(stmt: JavaStatement): JList[JavaStatement] = super.getSuccsOf(stmt)
+    override def getPredsOf(stmt: NewJavaStatement): JList[NewJavaStatement] = super.getSuccsOf(stmt)
 
-    override def getSuccsOf(stmt: JavaStatement): JList[JavaStatement] = super.getPredsOf(stmt)
+    override def getSuccsOf(stmt: NewJavaStatement): JList[NewJavaStatement] = super.getPredsOf(stmt)
 
-    override def getStartPointsOf(m: Method): JCollection[JavaStatement] = {
+    override def getStartPointsOf(m: Method): JCollection[NewJavaStatement] = {
         val TACode(_, code, _, cfg, _) = tacai(m)
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).map {
             case bb: BasicBlock ⇒
                 val index = bb.endPC
-                JavaStatement(m, bb, code(index), index, code, cfg)
+                NewJavaStatement(m, index, code, cfg)
         }.asJava
     }
 
-    override def isExitStmt(stmt: JavaStatement): Boolean = stmt.index == 0
+    override def isExitStmt(stmt: NewJavaStatement): Boolean = stmt.index == 0
 
-    override def isStartPoint(stmt: JavaStatement): Boolean = {
+    override def isStartPoint(stmt: NewJavaStatement): Boolean = {
         val cfg = stmt.cfg
         val index = stmt.index
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).exists {
@@ -45,8 +41,8 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
         }
     }
 
-    override def allNonCallStartNodes(): JSet[JavaStatement] = {
-        val res = new ConcurrentLinkedQueue[JavaStatement]
+    override def allNonCallStartNodes(): JSet[NewJavaStatement] = {
+        val res = new ConcurrentLinkedQueue[NewJavaStatement]
         project.parForeachMethodWithBody() { mi ⇒
             val m = mi.method
             val TACode(_, code, _, cfg, _) = tacai(m)
@@ -57,8 +53,7 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
                 }
             var index = 0
             while (index < endIndex) {
-                val stmt = code(index)
-                val statement = JavaStatement(m, cfg.bb(index), stmt, index, code, cfg)
+                val statement = NewJavaStatement(m, index, code, cfg)
                 if (!(isCallStmt(statement) || startIndices.contains(index)))
                     res.add(statement)
                 index += 1
@@ -68,10 +63,10 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
         Collections.emptySet()
     }
 
-    def getExitStmt(method: Method): JavaStatement = {
+    def getExitStmt(method: Method): NewJavaStatement = {
         val tac = tacai(method)
         val cfg = tac.cfg
         val code = tac.stmts
-        JavaStatement(method, cfg.startBlock, code(0), 0, code, cfg)
+        NewJavaStatement(method, 0, code, cfg)
     }
 }

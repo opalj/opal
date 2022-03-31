@@ -8,16 +8,16 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
 
 case class NewTaint(flows: Map[NewJavaStatement, Set[Fact]]) extends IFDSProperty[NewJavaStatement, Fact] {
 
-  override type Self = NewTaint
-  override def create(result: Map[NewJavaStatement, Set[Fact]]): IFDSProperty[NewJavaStatement, Fact] = new NewTaint(result)
+    override type Self = NewTaint
+    override def create(result: Map[NewJavaStatement, Set[Fact]]): IFDSProperty[NewJavaStatement, Fact] = new NewTaint(result)
 
-  override def key: PropertyKey[NewTaint] = NewTaint.key
+    override def key: PropertyKey[NewTaint] = NewTaint.key
 }
 
 object NewTaint extends IFDSPropertyMetaInformation[NewJavaStatement, Fact] {
 
-  override type Self = NewTaint
-  override def create(result: Map[NewJavaStatement, Set[Fact]]): IFDSProperty[NewJavaStatement, Fact] = new NewTaint(result)
+    override type Self = NewTaint
+    override def create(result: Map[NewJavaStatement, Set[Fact]]): IFDSProperty[NewJavaStatement, Fact] = new NewTaint(result)
 
-  val key: PropertyKey[NewTaint] = PropertyKey.create("NewTaint", new NewTaint(Map.empty))
+    val key: PropertyKey[NewTaint] = PropertyKey.create("NewTaint", new NewTaint(Map.empty))
 }

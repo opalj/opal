@@ -18,14 +18,14 @@ trait AbstractIFDSNullFact extends AbstractIFDSFact
  */
 trait SubsumableFact extends AbstractIFDSFact {
 
-  /**
-   * Checks, if this fact subsumes an `other` fact.
-   *
-   * @param other The other fact.
-   * @param project The analyzed project.
-   * @return True, if this fact subsumes the `other`fact
-   */
-  def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean
+    /**
+     * Checks, if this fact subsumes an `other` fact.
+     *
+     * @param other The other fact.
+     * @param project The analyzed project.
+     * @return True, if this fact subsumes the `other`fact
+     */
+    def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean
 }
 
 /**
@@ -33,8 +33,8 @@ trait SubsumableFact extends AbstractIFDSFact {
  */
 trait SubsumableNullFact extends SubsumableFact with AbstractIFDSNullFact {
 
-  /**
-   * The null fact cannot subsume another fact.
-   */
-  override def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean = false
+    /**
+     * The null fact cannot subsume another fact.
+     */
+    override def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean = false
 }

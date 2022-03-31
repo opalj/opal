@@ -31,7 +31,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
 import org.opalj.tac.fpcf.analyses.ifds.CalleeType
 import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.NewJavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.VariableType
 import org.opalj.tac.fpcf.analyses.ifds.VTAFact
 import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
@@ -115,7 +115,7 @@ object VTAEquality {
             piKeyUnidueId != PropertyStoreKey.uniqueId
         }
         val propertyStore = project.get(PropertyStoreKey)
-        var result = Map.empty[JavaStatement, Set[VTAFact]]
+        var result = Map.empty[NewJavaStatement, Set[VTAFact]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
             case Some(requirements) ⇒
@@ -134,16 +134,17 @@ object VTAEquality {
                     case FinalEP(_, VTAResult(map)) ⇒ map
                     case _                          ⇒ throw new RuntimeException
                 }
-                entityResult.keys.foreach { statement ⇒
+                entityResult.keys.foreach { oldStatement ⇒
+                    val statement = oldStatement.asNewJavaStatement
                     /*
-           * Heros returns the facts before the statements.
-           * However, CalleeType facts hold after the statement and are therefore not returned.
-           * We do not consider them in this test.
-           * Additionally, Heros does not return null facts, so we filter them.
-           */
+                     * Heros returns the facts before the statements.
+                     * However, CalleeType facts hold after the statement and are therefore not returned.
+                     * We do not consider them in this test.
+                     * Additionally, Heros does not return null facts, so we filter them.
+                     */
                     result = result.updated(
                         statement,
-                        result.getOrElse(statement, Set.empty) ++ entityResult(statement)
+                        result.getOrElse(statement, Set.empty) ++ entityResult(oldStatement)
                             .filter(fact ⇒ fact != VTANullFact && !fact.isInstanceOf[CalleeType])
                     )
                 }

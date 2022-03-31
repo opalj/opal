@@ -6,7 +6,7 @@ import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf._
 import org.opalj.ifds.{AbstractIFDSFact, IFDS, IFDSProperty, IFDSPropertyMetaInformation, Statement}
 
-import scala.collection.{mutable, Set => SomeSet}
+import scala.collection.{mutable, Set ⇒ SomeSet}
 
 /**
  * The state of the analysis. For each method and source fact, there is a separate state.
