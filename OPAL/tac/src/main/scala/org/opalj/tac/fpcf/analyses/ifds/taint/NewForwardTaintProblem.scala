@@ -210,7 +210,7 @@ abstract class NewForwardTaintProblem(project: SomeProject)
 
   /**
    * Called, when the exit to return facts are computed for some `callee` with the null fact and
-   * the callee's return value is assigned to a vairbale.
+   * the callee's return value is assigned to a variable.
    * Creates a taint, if necessary.
    *
    * @param callee The called method.

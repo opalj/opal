@@ -21,7 +21,7 @@ case class Dependees[Work]() {
       case Some(dependee) => Dependee(dependee.eOptionP, dependee.worklist + work)
       case None => Dependee(propertyStore(epk), Set(work))
     }
-    dependees += epk -> dependee
+    if(!dependee.eOptionP.isFinal) dependees += epk -> dependee
     dependee.eOptionP
   }
 
@@ -103,7 +103,8 @@ protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statem
       val source:               (C, IFDSFact),
       val dependees: Dependees[Work] = Dependees[Work](),
       val pathEdges: PathEdges[IFDSFact, S, C] = PathEdges[IFDSFact, S, C](),
-      var endSummaries: Set[(S, IFDSFact)] = Set.empty[(S, IFDSFact)]
+      var endSummaries: Set[(S, IFDSFact)] = Set.empty[(S, IFDSFact)],
+      var selfDependees: Set[Work] = Set.empty[Work]
                                                                                                 )
 
 /**
@@ -187,8 +188,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
   /**
    * Collects the facts valid at all exit nodes based on the current results.
    *
-   * @return A map, mapping from each exit statement to the facts, which hold at
-   *         after the exit statement.
+   * @return A map, mapping from each exit statement to the facts, which flow into exit statement.
    */
   private def collectResult(implicit state: State): Map[S, Set[IFDSFact]] = {
     var result = Map.empty[S, Set[IFDSFact]]
@@ -229,8 +229,11 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
       val (statement, in, predecessor) = work
       icfg.getCalleesIfCallStatement(statement) match {
         case Some(callees) => handleCall(statement, callees, in)  // ifds line 13
-        case None => if (icfg.isExitStatement(statement)) handleExit(statement, in) // ifds line 21
-        else handleOther(statement, in, predecessor)  // ifds line 33
+        case None => {
+          if (icfg.isExitStatement(statement)) handleExit(statement, in) // ifds line 21
+          // in case of exceptions exit statements may also have some normal flow so no else here
+          handleOther(statement, in, predecessor)  // ifds line 33
+        }
       }
     }
   }
@@ -261,25 +264,24 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
           // Let the concrete analysis decide what to do.
           for {
             successor ← successors
-            out <- outsideAnalysisHandler(call, successor, in)  // ifds line 17 (only summary edges)
+            out <- outsideAnalysisHandler(call, successor, in) // ifds line 17 (only summary edges)
           } {
-            propagate(successor, out, call)  // ifds line 18
+            propagate(successor, out, call) // ifds line 18
           }
         case None ⇒
           for {
             successor <- successors
-            out <- concreteCallFlow(call, callee, in)  // ifds line 17 (only summary edges)
+            out <- concreteCallFlow(call, callee, in) // ifds line 17 (only summary edges)
           } {
-            propagate(successor, out, call)  // ifds line 18
+            propagate(successor, out, call) // ifds line 18
           }
       }
-
-      for {
-        successor ← successors
-        out <- callToReturnFlow(call, in)  // ifds line 17 (without summary edge propagation)
-      } {
-        propagate(successor, out, call)  // ifds line 18
-      }
+    }
+    for {
+      successor ← successors
+      out <- callToReturnFlow(call, in)  // ifds line 17 (without summary edge propagation)
+    } {
+      propagate(successor, out, call)  // ifds line 18
     }
   }
 
@@ -287,14 +289,21 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
     var result = Set.empty[IFDSFact]
     for (entryFact ← callFlow(call, callee, in)) {  // ifds line 14
       val e = (callee, entryFact)
-      val callFlows = state.dependees.get(e, propertyKey.key).asInstanceOf[EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]]
-      val exitFacts: Map[S, Set[IFDSFact]] = callFlows match {
-        case ep: FinalEP[_, IFDSProperty[S, IFDSFact]] ⇒
-          ep.p.flows
-        case ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]] ⇒
-          ep.ub.flows
-        case _ ⇒
-          Map.empty
+      val exitFacts: Map[S, Set[IFDSFact]] = if(e == state.source) {
+        // handle self dependency on our own because property store can't handle it
+        state.selfDependees += work
+        collectResult(state)
+      } else {
+        // handle all other dependencies using property store
+        val callFlows = state.dependees.get(e, propertyKey.key).asInstanceOf[EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]]
+        callFlows match {
+          case ep: FinalEP[_, IFDSProperty[S, IFDSFact]] ⇒
+            ep.p.flows
+          case ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]] ⇒
+            ep.ub.flows
+          case _ ⇒
+            Map.empty
+        }
       }
       for {
         (exitStatement, exitStatementFacts) <- exitFacts  // ifds line 15.2
@@ -306,9 +315,15 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
     result
   }
 
-  private def handleExit(statement: S, in: IFDSFact)(implicit state: State): Unit = {
-    state.endSummaries += ((statement, in)) // ifds line 21.1
+  private def handleExit(statement: S, in: IFDSFact)(implicit state: State, worklist: Worklist): Unit = {
+    val newEdge = (statement, in)
+    if (!state.endSummaries.contains(newEdge)) {
+      state.endSummaries += ((statement, in)) // ifds line 21.1
+      state.selfDependees.foreach(selfDependee =>
+        worklist.enqueue(selfDependee))
+    }
     // ifds lines 22 - 31 are handled by the dependency propagation of the property store
+    // except for self dependencies which are handled above
   }
 
   private def handleOther(statement: S, in: IFDSFact, predecessor: Option[S])(implicit state: State, worklist: Worklist): Unit = {
@@ -337,7 +352,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
    */
   private def normalFlow(statement: S, in: IFDSFact, predecessor: Option[S]): Set[IFDSFact] = {
       statistics.normalFlow += 1
-      ifdsProblem.normalFlow(statement, in, predecessor)
+      addNullFactIfConfigured(in, ifdsProblem.normalFlow(statement, in, predecessor))
   }
 
   /**
@@ -349,7 +364,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
    */
   private def callFlow(call: S, callee: C, in: IFDSFact): Set[IFDSFact] = {
     statistics.callFlow += 1
-    ifdsProblem.callFlow(call, callee, in)
+    addNullFactIfConfigured(in, ifdsProblem.callFlow(call, callee, in))
   }
 
   /**
@@ -362,7 +377,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
    */
   private def returnFlow(exit: S, in: IFDSFact, call: S, callFact: IFDSFact): Set[IFDSFact] = {
     statistics.returnFlow += 1
-    ifdsProblem.returnFlow(exit, in, call, callFact)
+    addNullFactIfConfigured(in, ifdsProblem.returnFlow(exit, in, call, callFact))
   }
 
   /**
@@ -373,7 +388,13 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
    */
   private def callToReturnFlow(call: S, in: IFDSFact): Set[IFDSFact] = {
     statistics.callToReturnFlow += 1
-    ifdsProblem.callToReturnFlow(call, in)
+    addNullFactIfConfigured(in, ifdsProblem.callToReturnFlow(call, in))
+  }
+
+  private def addNullFactIfConfigured(in: IFDSFact, out: Set[IFDSFact]): Set[IFDSFact] = {
+    if (ifdsProblem.automaticallyPropagateNullFactInFlowFunctions && in == ifdsProblem.nullFact)
+      out + ifdsProblem.nullFact
+    else out
   }
 }
 

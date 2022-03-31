@@ -32,8 +32,8 @@ class NewForwardTaintAnalysisFixtureTest extends PropertiesTest {
     val testContext = executeAnalyses(NewForwardTaintAnalysisFixtureScheduler)
     val project = testContext.project
     val eas = methodsWithAnnotations(project).map {
-      case (methods, entityString, annotations) ⇒
-        ((methods, NullFact), entityString, annotations)
+      case (method, entityString, annotations) ⇒
+        ((method, NullFact), entityString, annotations)
     }
     testContext.propertyStore.shutdown()
     validateProperties(testContext, eas, Set(ForwardFlowPath.PROPERTY_VALIDATOR_KEY))

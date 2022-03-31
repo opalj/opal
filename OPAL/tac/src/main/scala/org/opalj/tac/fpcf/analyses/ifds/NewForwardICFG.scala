@@ -7,7 +7,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{FinalEP, PropertyStore}
 import org.opalj.ifds.{AbstractIFDSFact, ICFG}
 import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
+import org.opalj.tac.{Assignment, DUVar, Expr, ExprStmt, LazyDetachedTACAIKey, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, TACMethodParameter, TACode, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.value.ValueInformation
@@ -27,7 +27,7 @@ class NewForwardICFG[IFDSFact <: AbstractIFDSFact](implicit project: SomeProject
    */
   override def startStatements(callable: Method): Set[NewJavaStatement] = {
     val TACode(_, code, _, cfg, _) = tacai(callable)
-    Set(NewJavaStatement(callable, cfg.startBlock, code(0), 0, code, cfg))
+    Set(NewJavaStatement(callable, 0, code, cfg))
   }
 
   /**
@@ -40,9 +40,7 @@ class NewForwardICFG[IFDSFact <: AbstractIFDSFact](implicit project: SomeProject
     statement.cfg
       .successors(statement.index)
       .toChain
-      .map { index ⇒
-        NewJavaStatement(statement.method, statement.node, statement.code(index), index, statement.code, statement.cfg)
-      }
+      .map { index ⇒ NewJavaStatement(statement, index) }
       .toSet
   }
 
@@ -53,12 +51,37 @@ class NewForwardICFG[IFDSFact <: AbstractIFDSFact](implicit project: SomeProject
    * @return All callables possibly called at the statement or None, if the statement does not
    *         contain a call.
    */
-  override def getCalleesIfCallStatement(statement: NewJavaStatement): Option[collection.Set[Method]] = {
+  override def getCalleesIfCallStatement(statement: NewJavaStatement): Option[collection.Set[Method]] =
+    statement.stmt.astID match {
+      case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+        Some(getCallees(statement))
+      case Assignment.ASTID | ExprStmt.ASTID ⇒
+        getExpression(statement.stmt).astID match {
+          case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+            Some(getCallees(statement))
+          case _ ⇒ None
+        }
+      case _ ⇒ None
+    }
+
+  /**
+   * Retrieves the expression of an assignment or expression statement.
+   *
+   * @param statement The statement. Must be an Assignment or ExprStmt.
+   * @return The statement's expression.
+   */
+  private def getExpression(statement: Stmt[_]): Expr[_] = statement.astID match {
+    case Assignment.ASTID ⇒ statement.asAssignment.expr
+    case ExprStmt.ASTID   ⇒ statement.asExprStmt.expr
+    case _                ⇒ throw new UnknownError("Unexpected statement")
+  }
+
+  private def getCallees(statement: NewJavaStatement): collection.Set[Method] = {
     val pc = statement.code(statement.index).pc
-    val caller = declaredMethods(statement.method)
+    val caller = declaredMethods(statement.callable)
     val ep = propertyStore(caller, Callees.key)
     ep match {
-      case FinalEP(_, p) ⇒ Some(definedMethods(p.directCallees(typeProvider.newContext(caller), pc).map(_.method)))
+      case FinalEP(_, p) ⇒ definedMethods(p.directCallees(typeProvider.newContext(caller), pc).map(_.method))
       case _ ⇒
         throw new IllegalStateException(
           "call graph must be computed before the analysis starts"
@@ -67,7 +90,8 @@ class NewForwardICFG[IFDSFact <: AbstractIFDSFact](implicit project: SomeProject
   }
 
   override def isExitStatement(statement: NewJavaStatement): Boolean = {
-    statement.cfg.bb(statement.index).successors.exists(_.isExitNode)
+    statement.index == statement.node.asBasicBlock.endPC &&
+      statement.node.successors.exists(_.isExitNode)
   }
 
   /**

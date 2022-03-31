@@ -18,6 +18,11 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
   def nullFact: IFDSFact
 
   /**
+   * @return Whether the null Fact is automatically added to the result of every flow function where it is passed into
+   */
+  def automaticallyPropagateNullFactInFlowFunctions: Boolean = true
+
+  /**
    * The entry points of this analysis.
    */
   def entryPoints: Seq[(C, IFDSFact)]

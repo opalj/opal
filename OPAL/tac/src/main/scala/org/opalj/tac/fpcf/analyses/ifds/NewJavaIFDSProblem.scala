@@ -20,8 +20,6 @@ import org.opalj.tac.{Assignment, Call, ExprStmt, Stmt, TACStmts}
  */
 case class NewJavaStatement(
                           method: Method,
-                          node:   CFGNode,
-                          stmt:   Stmt[V],
                           index:  Int,
                           code:   Array[Stmt[V]],
                           cfg:    CFG[Stmt[V], TACStmts[V]]
@@ -30,12 +28,19 @@ case class NewJavaStatement(
   override def hashCode(): Int = method.hashCode() * 31 + index
 
   override def equals(o: Any): Boolean = o match {
-    case s: JavaStatement ⇒ s.index == index && s.method == method
+    case s: NewJavaStatement ⇒ s.index == index && s.method == method
     case _                ⇒ false
   }
 
-  override def toString: String = s"${method.toJava}"
+  override def toString: String = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
   override def callable(): Method = method
+  override def node(): CFGNode = cfg.bb(index)
+  def stmt: Stmt[V] = code(index)
+}
+
+object NewJavaStatement {
+  def apply(oldStatement: NewJavaStatement, newIndex: Int): NewJavaStatement =
+    NewJavaStatement(oldStatement.method, newIndex, oldStatement.code, oldStatement.cfg)
 }
 
 abstract class NewJavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
