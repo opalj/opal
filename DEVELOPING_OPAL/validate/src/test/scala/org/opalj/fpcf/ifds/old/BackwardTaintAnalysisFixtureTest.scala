@@ -1,17 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ifds
+package org.opalj.fpcf.ifds.old
 
-import java.net.URL
-
-import org.opalj.fpcf.properties.taint.BackwardFlowPath
-import org.opalj.fpcf.PropertiesTest
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
+import org.opalj.fpcf.PropertiesTest
+import org.opalj.fpcf.properties.taint.BackwardFlowPath
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixtureScheduler
 import org.opalj.tac.fpcf.analyses.ifds.taint.NullFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.old.BackwardTaintAnalysisFixtureScheduler
+
+import java.net.URL
 
 /**
  * @author Mario Trageser

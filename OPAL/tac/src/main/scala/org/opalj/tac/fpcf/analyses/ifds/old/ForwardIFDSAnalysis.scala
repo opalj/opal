@@ -1,19 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj.tac.fpcf.analyses.ifds.old
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.cfg.{BasicBlock, CFG, CFGNode}
 import org.opalj.ifds.old.IFDSProblem
 import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.tac.fpcf.analyses.ifds.old
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.{Return, ReturnValue, Stmt, TACStmts}
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 
 /**
  * An IFDS analysis, which analyzes the code in the control flow direction.
  *
  * @author Mario Trageser
  */
-abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement, CFGNode], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
+abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, DeclaredMethodJavaStatement, CFGNode], propertyKey: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
 
     /**
      * The analysis starts at the entry block.
@@ -27,7 +28,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
     /**
      * Collects the output facts at the predecessors of the normal and abnormal return node.
      */
-    override protected def collectResult(implicit state: State): Map[JavaStatement, Set[IFDSFact]] = {
+    override protected def collectResult(implicit state: State): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
         mergeMaps(
             resultOfExitNode(state.cfg.normalReturnNode),
             resultOfExitNode(state.cfg.abnormalReturnNode)
@@ -76,26 +77,26 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
      * If it is a catch node, the first statement of its handler will be returned.
      * If it is an exit node, an artificial statement without code will be returned.
      */
-    override protected def firstStatement(node: CFGNode)(implicit state: State): JavaStatement = {
+    override protected def firstStatement(node: CFGNode)(implicit state: State): DeclaredMethodJavaStatement = {
         if (node.isBasicBlock) {
             val index = node.asBasicBlock.startPC
-            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
+            old.DeclaredMethodJavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
         } else if (node.isCatchNode) firstStatement(node.successors.head)
-        else if (node.isExitNode) JavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
+        else if (node.isExitNode) old.DeclaredMethodJavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
         else throw new IllegalArgumentException(s"Unknown node type: $node")
     }
 
     /**
      * The successor statements in the direction of the control flow.
      */
-    override protected def nextStatements(statement: JavaStatement)(implicit state: State): Set[JavaStatement] = {
+    override protected def nextStatements(statement: DeclaredMethodJavaStatement)(implicit state: State): Set[DeclaredMethodJavaStatement] = {
         val index = statement.index
         val basicBlock = statement.node.asBasicBlock
         if (index == basicBlock.endPC)
             basicBlock.successors.map(firstStatement(_))
         else {
             val nextIndex = index + 1
-            Set(JavaStatement(statement.method, basicBlock, statement.code(nextIndex), nextIndex,
+            Set(old.DeclaredMethodJavaStatement(statement.method, basicBlock, statement.code(nextIndex), nextIndex,
                 statement.code, statement.cfg, statement.declaredMethod))
         }
     }
@@ -103,7 +104,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
     /**
      * Calls callFlow.
      */
-    override protected def callToStartFacts(call: JavaStatement, callee: DeclaredMethod,
+    override protected def callToStartFacts(call: DeclaredMethodJavaStatement, callee: DeclaredMethod,
                                             in: Set[IFDSFact])(implicit state: State): Set[IFDSFact] = {
         numberOfCalls.callFlow += 1
         sumOfInputFactsForCallbacks += in.size
@@ -115,11 +116,11 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
      * with each catch node. Calls returnFlow for those pairs and adds them to the summary edges.
      */
     override protected def addExitToReturnFacts(
-        summaryEdges: Map[JavaStatement, Set[IFDSFact]],
-        successors:   Set[JavaStatement], call: JavaStatement,
+        summaryEdges: Map[DeclaredMethodJavaStatement, Set[IFDSFact]],
+        successors:   Set[DeclaredMethodJavaStatement], call: DeclaredMethodJavaStatement,
         callee:    DeclaredMethod,
-        exitFacts: Map[JavaStatement, Set[IFDSFact]]
-    )(implicit state: State): Map[JavaStatement, Set[IFDSFact]] = {
+        exitFacts: Map[DeclaredMethodJavaStatement, Set[IFDSFact]]
+    )(implicit state: State): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
         // First process for normal returns, then abnormal returns.
         var result = summaryEdges
         if (AbstractIFDSAnalysis.OPTIMIZE_CROSS_PRODUCT_IN_RETURN_FLOW) {
@@ -146,7 +147,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
      * Like nextStatements, but maps each successor statement to the corresponding successor node.
      * When determining the successor node, catch nodes are not skipped.
      */
-    private def nextStatementsWithNode(statement: JavaStatement)(implicit state: State): Map[JavaStatement, CFGNode] = {
+    private def nextStatementsWithNode(statement: DeclaredMethodJavaStatement)(implicit state: State): Map[DeclaredMethodJavaStatement, CFGNode] = {
         val index = statement.index
         val basicBlock = statement.node.asBasicBlock
         if (index == basicBlock.endPC)
@@ -154,7 +155,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
                 .map(successorNode ⇒ firstStatement(successorNode) → successorNode).toMap
         else {
             val nextIndex = index + 1
-            Map(JavaStatement(statement.method, basicBlock, statement.code(nextIndex), nextIndex,
+            Map(old.DeclaredMethodJavaStatement(statement.method, basicBlock, statement.code(nextIndex), nextIndex,
                 statement.code, statement.cfg, statement.declaredMethod) → basicBlock)
         }
     }
@@ -169,15 +170,15 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
     private def resultOfExitNode(exit: CFGNode)(
         implicit
         state: State
-    ): Map[JavaStatement, Set[IFDSFact]] = {
-        var result = Map.empty[JavaStatement, Set[IFDSFact]]
+    ): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
+        var result = Map.empty[DeclaredMethodJavaStatement, Set[IFDSFact]]
         exit.predecessors foreach { predecessor ⇒
             if (predecessor.isBasicBlock) {
                 val basicBlock = predecessor.asBasicBlock
                 val exitFacts = state.outgoingFacts.get(basicBlock).flatMap(_.get(exit))
                 if (exitFacts.isDefined) {
                     val lastIndex = basicBlock.endPC
-                    val stmt = JavaStatement(state.method, basicBlock, state.code(lastIndex),
+                    val stmt = old.DeclaredMethodJavaStatement(state.method, basicBlock, state.code(lastIndex),
                         lastIndex, state.code, state.cfg, state.source._1)
                     result += stmt → exitFacts.get
                 }
@@ -199,10 +200,10 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
      *                        found exit facts.
      * @return `summaryEdges` with an additional or updated summary edge from `call` to `successor`.
      */
-    private def addSummaryEdge(summaryEdges: Map[JavaStatement, Set[IFDSFact]], call: JavaStatement,
-                               exitStatement: JavaStatement, successor: JavaStatement,
+    private def addSummaryEdge(summaryEdges: Map[DeclaredMethodJavaStatement, Set[IFDSFact]], call: DeclaredMethodJavaStatement,
+                               exitStatement: DeclaredMethodJavaStatement, successor: DeclaredMethodJavaStatement,
                                callee:          DeclaredMethod,
-                               allNewExitFacts: Map[JavaStatement, Set[IFDSFact]]): Map[JavaStatement, Set[IFDSFact]] = {
+                               allNewExitFacts: Map[DeclaredMethodJavaStatement, Set[IFDSFact]]): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
         val in = allNewExitFacts.getOrElse(exitStatement, Set.empty)
         numberOfCalls.returnFlow += 1
         sumOfInputFactsForCallbacks += in.size

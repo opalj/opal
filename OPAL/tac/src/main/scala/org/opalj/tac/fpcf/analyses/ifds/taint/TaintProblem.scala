@@ -1,11 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
-import org.opalj.br.{Method, ObjectType}
+import org.opalj.br.ObjectType
 import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.analyses.ifds.UnbalancedReturnFact
 import org.opalj.tac.{Assignment, Expr, Stmt}
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 
 trait Fact extends AbstractIFDSFact
 
@@ -57,16 +56,6 @@ case class FlowFact(flow: Seq[Callable]) extends Fact {
     }
 }
 
-/**
- * The unbalanced return fact of this analysis.
- *
- * @param index The index, at which the analyzed method is called by some caller.
- * @param innerFact The fact, which will hold in the caller context after the call.
- * @param callChain The current call chain from the sink.
- */
-case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Seq[Method])
-    extends UnbalancedReturnFact[Fact] with Fact
-
 trait TaintProblem[C, Statement, IFDSFact] {
 
     /**
@@ -79,14 +68,14 @@ trait TaintProblem[C, Statement, IFDSFact] {
     protected def sanitizesReturnValue(callee: C): Boolean
 
     /**
-     * Called in callToReturnFlow. This method can return facts, which will be removed after
-     * `callee` was called. I.e. the method could sanitize parameters.
+     * Called in callToReturnFlow. This method can return whether the input fact
+     * will be removed after `callee` was called. I.e. the method could sanitize parameters.
      *
      * @param call The call statement.
-     * @param in The facts, which hold before the call.
-     * @return Facts, which will be removed from `in` after the call.
+     * @param in The fact which holds before the call.
+     * @return Whether in will be removed after the call.
      */
-    protected def sanitizeParameters(call: Statement, in: Set[IFDSFact]): Set[IFDSFact]
+    protected def sanitizesParameter(call: Statement, in: IFDSFact): Boolean
 }
 
 object TaintProblem {

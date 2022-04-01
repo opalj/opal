@@ -1,56 +1,51 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds
 
-import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
-import org.opalj.br.cfg.CFGNode
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.{DeclaredMethod, ObjectType}
-import org.opalj.fpcf._
-import org.opalj.ifds.old.IFDSProblem
-import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.{Assignment, Call, ExprStmt, Stmt}
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.{CFG, CFGNode}
+import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
+import org.opalj.tac.{Assignment, Call, DUVar, ExprStmt, Stmt, TACStmts}
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.value.ValueInformation
 
-abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, DeclaredMethod, JavaStatement, CFGNode](
-    new ForwardICFG[Fact]()(project.get(PropertyStoreKey), project.get(TypeProviderKey), project.get(DeclaredMethodsKey))
-) {
-    /**
-     * All declared methods in the project.
-     */
-    implicit final protected val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+/**
+ * A statement that is passed to the concrete analysis.
+ *
+ * @param method The method containing the statement.
+ * @param node The basic block containing the statement.
+ * @param stmt The TAC statement.
+ * @param index The index of the Statement in the code.
+ * @param code The method's TAC code.
+ * @param cfg The method's CFG.
+ */
+case class JavaStatement(
+        method: Method,
+        index:  Int,
+        code:   Array[Stmt[V]],
+        cfg:    CFG[Stmt[V], TACStmts[V]]
+) extends Statement[Method, CFGNode] {
 
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    implicit final protected val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    override def hashCode(): Int = method.hashCode() * 31 + index
 
-    override def outsideAnalysisContext(callee: DeclaredMethod): Option[(JavaStatement, JavaStatement, Set[Fact]) ⇒ Set[Fact]] = callee.definedMethod.body.isDefined match {
-        case true  ⇒ None
-        case false ⇒ Some((_call: JavaStatement, _successor: JavaStatement, in: Set[Fact]) ⇒ in)
+    override def equals(o: Any): Boolean = o match {
+        case s: JavaStatement ⇒ s.index == index && s.method == method
+        case _                ⇒ false
     }
 
-    /**
-     * Returns all methods, that can be called from outside the library.
-     * The call graph must be computed, before this method may be invoked.
-     *
-     * @return All methods, that can be called from outside the library.
-     */
-    protected def methodsCallableFromOutside: Set[DeclaredMethod] =
-        declaredMethods.declaredMethods.filter(canBeCalledFromOutside).toSet
+    override def toString: String = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
+    override def callable(): Method = method
+    override def node(): CFGNode = cfg.bb(index)
+    def stmt: Stmt[V] = code(index)
+}
 
-    /**
-     * Checks, if some `method` can be called from outside the library.
-     * The call graph must be computed, before this method may be invoked.
-     *
-     * @param method The method, which may be callable from outside.
-     * @return True, if `method` can be called from outside the library.
-     */
-    protected def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
-        val FinalEP(_, callers) = propertyStore(method, Callers.key)
-        callers.hasCallersWithUnknownContext
-    }
+object JavaStatement {
+    def apply(referenceStatement: JavaStatement, newIndex: Int): JavaStatement =
+        JavaStatement(referenceStatement.method, newIndex, referenceStatement.code, referenceStatement.cfg)
+}
 
+abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
+    extends IFDSProblem[Fact, Method, JavaStatement](new ForwardICFG[Fact]()(project)) {
     /**
      * Gets the call object for a statement that contains a call.
      *
@@ -63,47 +58,15 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
         case _                ⇒ call.asMethodCall
     }
 
-    override def specialCase(source: (DeclaredMethod, Fact), propertyKey: IFDSPropertyMetaInformation[JavaStatement, Fact]): Option[ProperPropertyComputationResult] = {
-        val declaredMethod = source._1
-        val method = declaredMethod.definedMethod
-        val declaringClass: ObjectType = method.classFile.thisType
-        /*
-        * If this is not the method's declaration, but a non-overwritten method in a subtype, do
-        * not re-analyze the code.
-        */
-        if (declaringClass ne declaredMethod.declaringClassType) Some(baseMethodResult(source, propertyKey))
-        super.specialCase(source, propertyKey)
-    }
-
-    /**
-     * This method will be called if a non-overwritten declared method in a sub type shall be
-     * analyzed. Analyzes the defined method of the supertype instead.
-     *
-     * @param source A pair consisting of the declared method of the subtype and an input fact.
-     * @return The result of the analysis of the defined method of the supertype.
-     */
-    private def baseMethodResult(source: (DeclaredMethod, Fact), propertyKey: IFDSPropertyMetaInformation[JavaStatement, Fact]): ProperPropertyComputationResult = {
-
-        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) ⇒ Result(source, p)
-
-            case ep @ InterimUBP(ub: Property) ⇒
-                InterimResult.forUB(source, ub, Set(ep), c)
-
-            case epk ⇒
-                InterimResult.forUB(source, propertyKey.create(Map.empty), Set(epk), c)
-        }
-        c(propertyStore((declaredMethods(source._1.definedMethod), source._2), propertyKey.key))
+    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact) ⇒ Set[Fact]] = callee.body.isDefined match {
+        case true  ⇒ None
+        case false ⇒ Some((_call: JavaStatement, _successor: JavaStatement, in: Fact) ⇒ Set(in))
     }
 }
 
-abstract class JavaBackwardIFDSProblem[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](project: SomeProject) extends JavaIFDSProblem[IFDSFact](project) with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement] {
+object JavaIFDSProblem {
     /**
-     * Checks for the analyzed entity, if an unbalanced return should be performed.
-     *
-     * @param source The analyzed entity.
-     * @return False, if no unbalanced return should be performed.
+     * The type of the TAC domain.
      */
-    def shouldPerformUnbalancedReturn(source: (DeclaredMethod, IFDSFact)): Boolean =
-        source._2.isInstanceOf[UnbalancedReturnFact[IFDSFact]] || entryPoints.contains(source)
+    type V = DUVar[ValueInformation]
 }

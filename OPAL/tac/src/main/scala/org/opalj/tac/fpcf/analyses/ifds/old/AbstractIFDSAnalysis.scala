@@ -1,30 +1,28 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package tac
-package fpcf
-package analyses
-package ifds
+package org.opalj.tac.fpcf.analyses.ifds.old
 
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.{DeclaredMethod, DefinedMethod, Method, ObjectType}
 import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, Project, ProjectInformationKeys, SomeProject}
 import org.opalj.br.cfg.{BasicBlock, CFG, CFGNode}
 import org.opalj.br.fpcf.{FPCFAnalysesManagerKey, FPCFAnalysis, FPCFLazyAnalysisScheduler, PropertyStoreKey}
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.br.{DeclaredMethod, DefinedMethod, Method, ObjectType}
+import org.opalj.bytecode
 import org.opalj.fpcf._
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.ifds.old.{IFDSProblem, NumberOfCalls, Subsumable}
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProperty, IFDSPropertyMetaInformation, Statement}
 import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.properties.{TACAI, TheTACAI}
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.fpcf.analyses.ifds.{JavaStatement, old}
 import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
+import org.opalj.tac.fpcf.properties.{TACAI, TheTACAI}
+import org.opalj.tac._
 import org.opalj.util.Milliseconds
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.value.ValueInformation
 
 import java.io.{File, PrintWriter}
 import javax.swing.JOptionPane
@@ -37,10 +35,10 @@ import scala.collection.{mutable, Set ⇒ SomeSet}
  * @tparam IFDSFact
  */
 abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
-        val ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement, CFGNode],
-        val propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]
+        val ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, DeclaredMethodJavaStatement, CFGNode],
+        val propertyKey: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, IFDSFact]
 ) extends FPCFAnalysis
-    with Subsumable[JavaStatement, IFDSFact] {
+    with Subsumable[DeclaredMethodJavaStatement, IFDSFact] {
 
     /**
      * All declared methods in the project.
@@ -88,12 +86,12 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
             val code:                 Array[Stmt[V]],
             val cfg:                  CFG[Stmt[V], TACStmts[V]],
             var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
-            var pendingTacCallSites:  Map[DeclaredMethod, Set[BasicBlock]]                                                                         = Map.empty,
-            var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]] = Map.empty,
-            var pendingTacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                                         = Map.empty,
-            var pendingCgCallSites:   Set[BasicBlock]                                                                                              = Set.empty,
-            var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                               = Map.empty,
-            var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                                 = Map.empty
+            var pendingTacCallSites:  Map[DeclaredMethod, Set[BasicBlock]]                                                                                       = Map.empty,
+            var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]]] = Map.empty,
+            var pendingTacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                                                       = Map.empty,
+            var pendingCgCallSites:   Set[BasicBlock]                                                                                                            = Set.empty,
+            var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                                             = Map.empty,
+            var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                                               = Map.empty
     )
 
     /**
@@ -111,7 +109,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @return A map, mapping from each predecessor of all exit nodes to the facts, which hold at
      *         the exit node under the assumption that the predecessor was executed before.
      */
-    protected def collectResult(implicit state: State): Map[JavaStatement, Set[IFDSFact]]
+    protected def collectResult(implicit state: State): Map[DeclaredMethodJavaStatement, Set[IFDSFact]]
 
     /**
      * Creates an IFDSProperty containing the result of this analysis.
@@ -120,8 +118,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @return An IFDSProperty containing the `result`.
      */
     protected def createPropertyValue(
-        result: Map[JavaStatement, Set[IFDSFact]]
-    ): IFDSProperty[JavaStatement, IFDSFact] = propertyKey.create(result)
+        result: Map[DeclaredMethodJavaStatement, Set[IFDSFact]]
+    ): IFDSProperty[DeclaredMethodJavaStatement, IFDSFact] = propertyKey.create(result)
 
     /**
      * Determines the nodes, that will be analyzed after some `basicBlock`.
@@ -177,7 +175,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @param node The node.
      * @return The first statement of a node, that will be analyzed.
      */
-    protected def firstStatement(node: CFGNode)(implicit state: State): JavaStatement
+    protected def firstStatement(node: CFGNode)(implicit state: State): DeclaredMethodJavaStatement
 
     /**
      * Determines the statement, that will be analyzed after some other `statement`.
@@ -185,7 +183,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @param statement The source statement.
      * @return The successor statements
      */
-    protected def nextStatements(statement: JavaStatement)(implicit state: State): Set[JavaStatement]
+    protected def nextStatements(statement: DeclaredMethodJavaStatement)(implicit state: State): Set[DeclaredMethodJavaStatement]
 
     /**
      * Determines the facts, for which a `callee` is analyzed.
@@ -195,7 +193,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @param in The facts, which hold before the `call`.
      * @return The facts, for which `callee` will be analyzed.
      */
-    protected def callToStartFacts(call: JavaStatement, callee: DeclaredMethod, in: Set[IFDSFact])(
+    protected def callToStartFacts(call: DeclaredMethodJavaStatement, callee: DeclaredMethod, in: Set[IFDSFact])(
         implicit
         state: State
     ): Set[IFDSFact]
@@ -212,12 +210,12 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @return The summary edges plus the exit to return facts for `callee` and `successor`.
      */
     protected def addExitToReturnFacts(
-        summaryEdges: Map[JavaStatement, Set[IFDSFact]],
-        successors:   Set[JavaStatement],
-        call:         JavaStatement,
+        summaryEdges: Map[DeclaredMethodJavaStatement, Set[IFDSFact]],
+        successors:   Set[DeclaredMethodJavaStatement],
+        call:         DeclaredMethodJavaStatement,
         callee:       DeclaredMethod,
-        exitFacts:    Map[JavaStatement, Set[IFDSFact]]
-    )(implicit state: State): Map[JavaStatement, Set[IFDSFact]]
+        exitFacts:    Map[DeclaredMethodJavaStatement, Set[IFDSFact]]
+    )(implicit state: State): Map[DeclaredMethodJavaStatement, Set[IFDSFact]]
 
     /**
      * Performs an IFDS analysis for a method-fact-pair.
@@ -311,7 +309,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
 
             case interimEUBP @ InterimEUBP(
                 e: (DeclaredMethod, IFDSFact) @unchecked,
-                ub: IFDSProperty[JavaStatement, IFDSFact] @unchecked
+                ub: IFDSProperty[DeclaredMethodJavaStatement, IFDSFact] @unchecked
                 ) ⇒
                 if (ub.flows.values
                     .forall(facts ⇒ facts.size == 1 && facts.forall(_ == ifdsProblem.nullFact))) {
@@ -319,7 +317,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
                     // Update the pendingIfdsDependee entry to the new interim result.
                     state.pendingIfdsDependees +=
                         e -> interimEUBP
-                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
+                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]]]
                 } else
                     reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
@@ -364,18 +362,18 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      */
     protected def handleCall(
         basicBlock:           BasicBlock,
-        call:                 JavaStatement,
+        call:                 DeclaredMethodJavaStatement,
         callees:              SomeSet[Method],
         in:                   Set[IFDSFact],
         calleeWithUpdateFact: Option[IFDSFact]
     )(
         implicit
         state: State
-    ): Map[JavaStatement, Set[IFDSFact]] = {
+    ): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
         val successors = nextStatements(call)
         val inputFacts = beforeHandleCall(call, in)
         // Facts valid at the start of each successor
-        var summaryEdges: Map[JavaStatement, Set[IFDSFact]] = Map.empty
+        var summaryEdges: Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = Map.empty
 
         /*
      * If calleeWithUpdateFact is present, this means that the basic block already has been
@@ -408,7 +406,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
                         else {
                             propagateNullFact(inputFacts, callToStartFacts(call, callee, inputFacts))
                         }
-                    var allNewExitFacts: Map[JavaStatement, Set[IFDSFact]] = Map.empty
+                    var allNewExitFacts: Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = Map.empty
                     // Collect exit facts for each input fact separately
                     for (fact ← callToStart) {
                         /*
@@ -429,14 +427,14 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
                         } else {
                             val e = (callee, fact)
                             val callFlows = propertyStore(e, propertyKey.key)
-                                .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
+                                .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]]]
                             val oldValue = state.pendingIfdsDependees.get(e)
-                            val oldExitFacts: Map[JavaStatement, Set[IFDSFact]] = oldValue match {
-                                case Some(ep: InterimEUBP[_, IFDSProperty[JavaStatement, IFDSFact]]) ⇒ ep.ub.flows
+                            val oldExitFacts: Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = oldValue match {
+                                case Some(ep: InterimEUBP[_, IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]]) ⇒ ep.ub.flows
                                 case _ ⇒ Map.empty
                             }
-                            val exitFacts: Map[JavaStatement, Set[IFDSFact]] = callFlows match {
-                                case ep: FinalEP[_, IFDSProperty[JavaStatement, IFDSFact]] ⇒
+                            val exitFacts: Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = callFlows match {
+                                case ep: FinalEP[_, IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]] ⇒
                                     if (state.pendingIfdsCallSites.contains(e)
                                         && state.pendingIfdsCallSites(e).nonEmpty) {
                                         val newDependee =
@@ -445,7 +443,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
                                     }
                                     state.pendingIfdsDependees -= e
                                     ep.p.flows
-                                case ep: InterimEUBP[_, IFDSProperty[JavaStatement, IFDSFact]] ⇒
+                                case ep: InterimEUBP[_, IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]] ⇒
                                     /*
                    * Add the call site to `pendingIfdsCallSites` and
                    * `pendingIfdsDependees` and continue with the facts in the interim
@@ -493,7 +491,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @param in The input facts, which hold before the `call`.
      * @return The changed set of input facts.
      */
-    protected def beforeHandleCall(call: JavaStatement, in: Set[IFDSFact]): Set[IFDSFact] = in
+    protected def beforeHandleCall(call: DeclaredMethodJavaStatement, in: Set[IFDSFact]): Set[IFDSFact] = in
 
     /**
      * Gets the set of all methods directly callable at some call statement.
@@ -504,7 +502,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @return All methods directly callable at the statement index.
      */
     protected def getCallees(
-        statement: JavaStatement,
+        statement: DeclaredMethodJavaStatement,
         caller:    DeclaredMethod
     ): Iterator[DeclaredMethod] = {
         val pc = statement.code(statement.index).pc
@@ -656,9 +654,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      */
         def collectInformation(
             index: Int
-        ): (JavaStatement, Option[SomeSet[Method]], Option[IFDSFact]) = {
+        ): (DeclaredMethodJavaStatement, Option[SomeSet[Method]], Option[IFDSFact]) = {
             val stmt = state.code(index)
-            val statement = JavaStatement(state.method, basicBlock, stmt, index, state.code, state.cfg, state.source._1)
+            val statement = old.DeclaredMethodJavaStatement(state.method, basicBlock, stmt, index, state.code, state.cfg, state.source._1)
             val calleesO =
                 if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate.map(Set(_))
                 else getCalleesIfCallStatement(statement)
@@ -678,7 +676,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
             val next = nextIndex(index)
             flows = if (calleesO.isEmpty) {
                 val successor =
-                    JavaStatement(state.method, basicBlock, state.code(next), next, state.code, state.cfg, state.source._1)
+                    old.DeclaredMethodJavaStatement(state.method, basicBlock, state.code(next), next, state.code, state.cfg, state.source._1)
                 numberOfCalls.normalFlow += 1
                 sumOfInputFactsForCallbacks += in.size
                 ifdsProblem.normalFlow(statement, Some(successor), flows)
@@ -744,7 +742,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      * @return All methods possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    private def getCalleesIfCallStatement(statement: JavaStatement)(
+    private def getCalleesIfCallStatement(statement: DeclaredMethodJavaStatement)(
         implicit
         state: State
     ): Option[SomeSet[Method]] = {
@@ -817,7 +815,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      */
     private def addIfdsDependee(
         entity:         (DeclaredMethod, IFDSFact),
-        calleeProperty: EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]],
+        calleeProperty: EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]],
         callBB:         BasicBlock,
         callIndex:      Int
     )(implicit state: State): Unit = {
@@ -831,12 +829,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
 }
 
 object AbstractIFDSAnalysis {
-
-    /**
-     * The type of the TAC domain.
-     */
-    type V = DUVar[ValueInformation]
-
     /**
      * When true, the cross product of exit and successor in returnFLow will be optimized.
      */
@@ -866,7 +858,7 @@ object AbstractIFDSAnalysis {
  * @param code The method's TAC code.
  * @param cfg The method's CFG.
  */
-case class JavaStatement(
+case class DeclaredMethodJavaStatement(
         method:         Method,
         node:           CFGNode,
         stmt:           Stmt[V],
@@ -879,14 +871,14 @@ case class JavaStatement(
     override def hashCode(): Int = method.hashCode() * 31 + index
 
     override def equals(o: Any): Boolean = o match {
-        case s: JavaStatement ⇒ s.index == index && s.method == method
-        case _                ⇒ false
+        case s: DeclaredMethodJavaStatement ⇒ s.index == index && s.method == method
+        case _                              ⇒ false
     }
 
     override def toString: String = s"${method.toJava}"
     override def callable(): DeclaredMethod = declaredMethod
 
-    def asNewJavaStatement: NewJavaStatement = NewJavaStatement(method, index, code, cfg)
+    def asJavaStatement: JavaStatement = JavaStatement(method, index, code, cfg)
 }
 
 abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact]
@@ -894,7 +886,7 @@ abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact]
 
     final override type InitializationData = AbstractIFDSAnalysis[IFDSFact]
 
-    def property: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]
+    def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, IFDSFact]
 
     final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
 

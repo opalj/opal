@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj.tac.fpcf.analyses.ifds.old
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.ifds.{AbstractIFDSFact, SubsumableFact, SubsumableNullFact}
 import org.opalj.tac._
@@ -80,8 +80,8 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
      * If there is a field read, a new VariableType will be created with the field's declared type.
      */
     override def normalFlow(
-        statement: JavaStatement,
-        successor: Option[JavaStatement],
+        statement: DeclaredMethodJavaStatement,
+        successor: Option[DeclaredMethodJavaStatement],
         in:        Set[VTAFact]
     ): Set[VTAFact] = {
         val stmt = statement.stmt
@@ -116,7 +116,7 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
      * created for the callee context.
      */
     override def callFlow(
-        call:   JavaStatement,
+        call:   DeclaredMethodJavaStatement,
         callee: DeclaredMethod,
         in:     Set[VTAFact],
         source: (DeclaredMethod, VTAFact)
@@ -152,8 +152,8 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
      * VariableType, which could be the call's target.
      */
     override def callToReturnFlow(
-        call:      JavaStatement,
-        successor: JavaStatement,
+        call:      DeclaredMethodJavaStatement,
+        successor: DeclaredMethodJavaStatement,
         in:        Set[VTAFact],
         source:    (DeclaredMethod, VTAFact)
     ): Set[VTAFact] = {
@@ -175,10 +175,10 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
      * created in the caller context with the returned variable's type.
      */
     override def returnFlow(
-        call:      JavaStatement,
+        call:      DeclaredMethodJavaStatement,
         callee:    DeclaredMethod,
-        exit:      JavaStatement,
-        successor: JavaStatement,
+        exit:      DeclaredMethodJavaStatement,
+        successor: DeclaredMethodJavaStatement,
         in:        Set[VTAFact]
     ): Set[VTAFact] =
         // We only create a new fact, if the call returns a value, which is assigned to a variable.
@@ -202,7 +202,7 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
             super.outsideAnalysisContext(callee).isEmpty)
             None
         else {
-            Some(((call: JavaStatement, successor: JavaStatement, in: Set[VTAFact]) ⇒ {
+            Some(((call: DeclaredMethodJavaStatement, successor: DeclaredMethodJavaStatement, in: Set[VTAFact]) ⇒ {
                 val returnType = callee.descriptor.returnType
                 if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
                     Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))

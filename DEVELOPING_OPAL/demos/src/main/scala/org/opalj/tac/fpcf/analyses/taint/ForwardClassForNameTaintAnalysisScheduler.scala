@@ -6,9 +6,10 @@ import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.taint._
+import org.opalj.tac.fpcf.analyses.ifds.old._
+import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, Variable}
 import org.opalj.tac.fpcf.analyses.ifds._
-import org.opalj.tac.fpcf.properties.Taint
+import org.opalj.tac.fpcf.properties.OldTaint
 
 import java.io.File
 
@@ -21,10 +22,10 @@ import java.io.File
  * @author Michael Eichberg
  */
 class ForwardClassForNameTaintAnalysis$Scheduler private (implicit val project: SomeProject)
-    extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), Taint)
+    extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), OldTaint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
-    extends ForwardTaintProblem(project) with TaintProblem[DeclaredMethod, JavaStatement, Fact] {
+    extends old.taint.ForwardTaintProblem(project) with old.taint.TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, Fact] {
 
     /**
      * The string parameters of all public methods are entry points.
@@ -45,19 +46,19 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParameters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * This analysis does not create new taints on the fly.
      * Instead, the string parameters of all public methods are tainted in the entry points.
      */
-    override protected def createTaints(callee: DeclaredMethod, call: JavaStatement): Set[Fact] =
+    override protected def createTaints(callee: DeclaredMethod, call: DeclaredMethodJavaStatement): Set[Fact] =
         Set.empty
 
     /**
      * Create a FlowFact, if Class.forName is called with a tainted variable for the first parameter.
      */
-    override protected def createFlowFact(callee: DeclaredMethod, call: JavaStatement,
+    override protected def createFlowFact(callee: DeclaredMethod, call: DeclaredMethodJavaStatement,
                                           in: Set[Fact]): Option[FlowFact] =
         if (isClassForName(callee) && in.contains(Variable(-2)))
             Some(FlowFact(Seq(JavaMethod(call.method))))
@@ -91,7 +92,7 @@ object ForwardClassForNameTaintAnalysis$Scheduler extends IFDSAnalysisScheduler[
         new ForwardClassForNameTaintAnalysis$Scheduler()(p)
     }
 
-    override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
+    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, Fact] = OldTaint
 }
 
 class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
@@ -102,7 +103,7 @@ class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
         for {
             e ← analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysis$Scheduler.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[JavaStatement, Fact]].flows.values.flatten.toSet[Fact]
+            fact ← flows.ub.asInstanceOf[IFDSProperty[DeclaredMethodJavaStatement, Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {
                 case FlowFact(flow) ⇒ println(s"flow: "+flow.asInstanceOf[Set[Method]].map(_.toJava).mkString(", "))

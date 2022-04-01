@@ -1,13 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.taint
 
+import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br._
-import org.opalj.fpcf.{EPS, Entity, FinalEP, Property}
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.tac.fpcf.analyses.ifds.taint.{BackwardTaintAnalysisFixtureScheduler, Fact, FlowFact}
-import org.opalj.tac.fpcf.properties.Taint
+import org.opalj.fpcf.{EPS, Entity, FinalEP, Property}
+import org.opalj.tac.fpcf.analyses.ifds.taint.old.BackwardTaintAnalysisFixtureScheduler
+import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact}
+import org.opalj.tac.fpcf.properties.OldTaint
 
 /**
  * @author Mario Trageser
@@ -32,7 +33,7 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
                 case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method ⇒
                     (m, inputFact)
             }.flatMap(propertyStore(_, propertyKey) match {
-                case FinalEP(_, Taint(result)) ⇒
+                case FinalEP(_, OldTaint(result)) ⇒
                     result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).collect {
                         case FlowFact(methods) ⇒ methods.map(_.name)
                     }

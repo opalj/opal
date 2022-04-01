@@ -18,14 +18,14 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.DefinedMethod
 import org.opalj.br.MultipleDefinedMethods
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.analyses.ifds.NewJavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
 import org.opalj.tac.FunctionCall
 import org.opalj.tac.LazyDetachedTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.MethodCall
@@ -44,7 +44,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeProvider
  * @param project The project, which is analyzed.
  * @author Mario Trageser
  */
-abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[NewJavaStatement, Method] {
+abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaStatement, Method] {
 
     val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] =
         project.get(LazyDetachedTACAIKey)
@@ -52,31 +52,31 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[NewJava
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
-    override def getMethodOf(stmt: NewJavaStatement): Method = stmt.method
+    override def getMethodOf(stmt: JavaStatement): Method = stmt.method
 
-    override def getPredsOf(stmt: NewJavaStatement): JList[NewJavaStatement] = {
+    override def getPredsOf(stmt: JavaStatement): JList[JavaStatement] = {
         stmt.cfg
             .predecessors(stmt.index)
             .toChain
             .map { index ⇒
-                NewJavaStatement(stmt.method, index, stmt.code, stmt.cfg)
+                JavaStatement(stmt.method, index, stmt.code, stmt.cfg)
             }
             .toList
             .asJava
     }
 
-    override def getSuccsOf(stmt: NewJavaStatement): JList[NewJavaStatement] = {
+    override def getSuccsOf(stmt: JavaStatement): JList[JavaStatement] = {
         stmt.cfg
             .successors(stmt.index)
             .toChain
             .map { index ⇒
-                NewJavaStatement(stmt.method, index, stmt.code, stmt.cfg)
+                JavaStatement(stmt.method, index, stmt.code, stmt.cfg)
             }
             .toList
             .asJava
     }
 
-    override def getCalleesOfCallAt(callInstr: NewJavaStatement): JCollection[Method] = {
+    override def getCalleesOfCallAt(callInstr: JavaStatement): JCollection[Method] = {
         val declaredMethod = declaredMethods(callInstr.method)
         val FinalEP(_, callees) = ps(declaredMethod, Callees.key)
         callees
@@ -92,7 +92,7 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[NewJava
             .asJava
     }
 
-    override def getCallersOf(m: Method): JCollection[NewJavaStatement] = {
+    override def getCallersOf(m: Method): JCollection[JavaStatement] = {
         val declaredMethod = declaredMethods(m)
         val FinalEP(_, callers) = ps(declaredMethod, Callers.key)
         callers
@@ -101,31 +101,31 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[NewJava
                 case (method, pc, true) ⇒
                     val TACode(_, code, pcToIndex, cfg, _) = tacai(method.definedMethod)
                     val index = pcToIndex(pc)
-                    Some(NewJavaStatement(method.definedMethod, index, code, cfg))
+                    Some(JavaStatement(method.definedMethod, index, code, cfg))
                 case _ ⇒ None
             }
             .toSet
             .asJava
     }
 
-    override def getCallsFromWithin(m: Method): JSet[NewJavaStatement] = {
+    override def getCallsFromWithin(m: Method): JSet[JavaStatement] = {
         val TACode(_, code, _, cfg, _) = tacai(m)
         code.zipWithIndex
             .collect {
-                case (mc: MethodCall[V], index) ⇒ NewJavaStatement(m, index, code, cfg)
+                case (mc: MethodCall[V], index) ⇒ JavaStatement(m, index, code, cfg)
                 case (as @ Assignment(_, _, _: FunctionCall[V]), index) ⇒
-                    NewJavaStatement(m, index, code, cfg)
+                    JavaStatement(m, index, code, cfg)
                 case (ex @ ExprStmt(_, _: FunctionCall[V]), index) ⇒
-                    NewJavaStatement(m, index, code, cfg)
+                    JavaStatement(m, index, code, cfg)
             }
             .toSet
             .asJava
     }
 
-    override def getReturnSitesOfCallAt(callInstr: NewJavaStatement): JCollection[NewJavaStatement] =
+    override def getReturnSitesOfCallAt(callInstr: JavaStatement): JCollection[JavaStatement] =
         getSuccsOf(callInstr)
 
-    override def isCallStmt(stmt: NewJavaStatement): Boolean = {
+    override def isCallStmt(stmt: JavaStatement): Boolean = {
         def isCallExpr(expr: Expr[V]) = expr.astID match {
             case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
                 true
@@ -141,8 +141,8 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[NewJava
         }
     }
 
-    override def isFallThroughSuccessor(stmt: NewJavaStatement, succ: NewJavaStatement): Boolean = ???
+    override def isFallThroughSuccessor(stmt: JavaStatement, succ: JavaStatement): Boolean = ???
 
-    override def isBranchTarget(stmt: NewJavaStatement, succ: NewJavaStatement): Boolean = ???
+    override def isBranchTarget(stmt: JavaStatement, succ: JavaStatement): Boolean = ???
 
 }

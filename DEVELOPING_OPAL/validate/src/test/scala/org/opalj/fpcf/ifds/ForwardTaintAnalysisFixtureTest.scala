@@ -1,17 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.ifds
 
-import java.net.URL
-
-import org.opalj.fpcf.properties.taint.ForwardFlowPath
-import org.opalj.fpcf.PropertiesTest
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.Project
+import org.opalj.fpcf.PropertiesTest
+import org.opalj.fpcf.properties.taint.ForwardFlowPath
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintAnalysisFixtureScheduler
 import org.opalj.tac.fpcf.analyses.ifds.taint.NullFact
+
+import java.net.URL
 
 /**
  * @author Mario Trageser
@@ -33,10 +32,9 @@ class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
     describe("Test the ForwardFlowPath annotations") {
         val testContext = executeAnalyses(ForwardTaintAnalysisFixtureScheduler)
         val project = testContext.project
-        val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
-            case (methods, entityString, annotations) ⇒
-                ((declaredMethods(methods), NullFact), entityString, annotations)
+            case (method, entityString, annotations) ⇒
+                ((method, NullFact), entityString, annotations)
         }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(ForwardFlowPath.PROPERTY_VALIDATOR_KEY))

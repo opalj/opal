@@ -19,7 +19,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.VTAFact
+import org.opalj.tac.fpcf.analyses.ifds.old.VTAFact
 
 abstract class VTAMatcher extends AbstractPropertyMatcher {
 

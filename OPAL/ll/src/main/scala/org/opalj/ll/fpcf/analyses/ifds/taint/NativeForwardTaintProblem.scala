@@ -4,9 +4,9 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeIFDSProblem}
 import org.opalj.ll.llvm.{Function, PHI}
-import org.opalj.tac.fpcf.analyses.ifds.taint.NewTaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
-abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with NewTaintProblem[Function, LLVMStatement, NativeFact] {
+abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
     override def nullFact: NativeFact = NativeNullFact
 
     /**

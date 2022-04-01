@@ -2,19 +2,15 @@
 package org.opalj.tac.fpcf.analyses.heros.analyses
 
 import scala.annotation.tailrec
-
 import java.io.File
 import java.util
 import java.util.Collections
-
 import scala.collection.JavaConverters._
-
 import heros.FlowFunctions
 import heros.FlowFunction
 import heros.flowfunc.Identity
 import heros.TwoElementSet
 import heros.flowfunc.KillAll
-
 import org.opalj.util.Milliseconds
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -30,7 +26,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.analyses.ifds.NewJavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.GetStatic
@@ -41,11 +37,7 @@ import org.opalj.tac.ArrayStore
 import org.opalj.tac.GetField
 import org.opalj.tac.Var
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.CalleeType
-import org.opalj.tac.fpcf.analyses.ifds.VariableType
-import org.opalj.tac.fpcf.analyses.ifds.VTAFact
-import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
+import org.opalj.tac.fpcf.analyses.ifds.old.{AbstractIFDSAnalysis, CalleeType, VTAFact, VTANullFact, VariableType}
 
 /**
  * An implementation of the IFDSBasedVariableTypeAnalysis in the Heros framework.
@@ -59,8 +51,8 @@ class HerosVariableTypeAnalysis(
         initialMethods: Map[Method, util.Set[VTAFact]]
 ) extends HerosAnalysis[VTAFact](p, icfg) {
 
-    override val initialSeeds: util.Map[NewJavaStatement, util.Set[VTAFact]] = {
-        var result: Map[NewJavaStatement, util.Set[VTAFact]] = Map.empty
+    override val initialSeeds: util.Map[JavaStatement, util.Set[VTAFact]] = {
+        var result: Map[JavaStatement, util.Set[VTAFact]] = Map.empty
         for ((m, facts) ← initialMethods) {
             result += icfg.getStartPointsOf(m).iterator().next() -> facts
         }
@@ -69,13 +61,13 @@ class HerosVariableTypeAnalysis(
 
     override def createZeroValue(): VTAFact = VTANullFact
 
-    override protected def createFlowFunctionsFactory(): FlowFunctions[NewJavaStatement, VTAFact, Method] = {
+    override protected def createFlowFunctionsFactory(): FlowFunctions[JavaStatement, VTAFact, Method] = {
 
-        new FlowFunctions[NewJavaStatement, VTAFact, Method]() {
+        new FlowFunctions[JavaStatement, VTAFact, Method]() {
 
             override def getNormalFlowFunction(
-                statement: NewJavaStatement,
-                succ:      NewJavaStatement
+                statement: JavaStatement,
+                succ:      JavaStatement
             ): FlowFunction[VTAFact] = {
                 if (!insideAnalysisContext(statement.method)) return KillAll.v()
                 val stmt = statement.stmt
@@ -103,7 +95,7 @@ class HerosVariableTypeAnalysis(
                 }
             }
 
-            override def getCallFlowFunction(stmt: NewJavaStatement, callee: Method): FlowFunction[VTAFact] =
+            override def getCallFlowFunction(stmt: JavaStatement, callee: Method): FlowFunction[VTAFact] =
                 if (!insideAnalysisContext(callee)) KillAll.v()
                 else {
                     val callObject = asCall(stmt.stmt)
@@ -129,10 +121,10 @@ class HerosVariableTypeAnalysis(
                 }
 
             override def getReturnFlowFunction(
-                stmt:   NewJavaStatement,
+                stmt:   JavaStatement,
                 callee: Method,
-                exit:   NewJavaStatement,
-                succ:   NewJavaStatement
+                exit:   JavaStatement,
+                succ:   JavaStatement
             ): FlowFunction[VTAFact] =
                 if (exit.stmt.astID == ReturnValue.ASTID && stmt.stmt.astID == Assignment.ASTID) {
                     val returnValue = exit.stmt.asReturnValue.expr.asVar
@@ -147,8 +139,8 @@ class HerosVariableTypeAnalysis(
                 } else KillAll.v()
 
             override def getCallToReturnFlowFunction(
-                statement: NewJavaStatement,
-                succ:      NewJavaStatement
+                statement: JavaStatement,
+                succ:      JavaStatement
             ): FlowFunction[VTAFact] = {
                 if (!insideAnalysisContext(statement.method)) return KillAll.v()
                 val stmt = statement.stmt
@@ -227,7 +219,7 @@ class HerosVariableTypeAnalysis(
         callee.body.isDefined && (callee.classFile.fqn.startsWith("java/lang") ||
             callee.classFile.fqn.startsWith("org/opalj/fpcf/fixtures/vta"))
 
-    private def getCallees(statement: NewJavaStatement): Iterator[DeclaredMethod] = {
+    private def getCallees(statement: JavaStatement): Iterator[DeclaredMethod] = {
         val context = typeProvider.newContext(declaredMethods(statement.method))
         val FinalEP(_, callees) = propertyStore(declaredMethods(statement.method), Callees.key)
         callees.directCallees(context, statement.stmt.pc).map(_.method)

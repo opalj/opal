@@ -1,16 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj.tac.fpcf.analyses.ifds.old
 
-import java.io.File
-import java.io.PrintWriter
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyBounds
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
 import org.opalj.ifds.old.{NumberOfSubsumptions, Subsuming}
 import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.cg.Callers
+
+import java.io.{File, PrintWriter}
 
 /**
  * A variable type analysis implemented as an IFDS analysis.
@@ -33,28 +31,28 @@ object IFDSBasedVariableTypeAnalysisScheduler extends IFDSAnalysisScheduler[VTAF
 
     override def init(p: SomeProject, ps: PropertyStore): IFDSBasedVariableTypeAnalysis = {
         implicit val project = p
-        if (SUBSUMING) new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p)) with Subsuming[JavaStatement, VTAFact]
+        if (SUBSUMING) new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p)) with Subsuming[DeclaredMethodJavaStatement, VTAFact]
         else new IFDSBasedVariableTypeAnalysis(new VariableTypeProblem(p))
     }
 
-    override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
+    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, VTAFact] = VTAResult
 }
 
 /**
  * The IFDSProperty for this analysis.
  */
-case class VTAResult(flows: Map[JavaStatement, Set[VTAFact]]) extends IFDSProperty[JavaStatement, VTAFact] {
+case class VTAResult(flows: Map[DeclaredMethodJavaStatement, Set[VTAFact]]) extends IFDSProperty[DeclaredMethodJavaStatement, VTAFact] {
 
     override type Self = VTAResult
-    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result)
+    override def create(result: Map[DeclaredMethodJavaStatement, Set[VTAFact]]): IFDSProperty[DeclaredMethodJavaStatement, VTAFact] = new VTAResult(result)
 
     override def key: PropertyKey[VTAResult] = VTAResult.key
 }
 
-object VTAResult extends IFDSPropertyMetaInformation[JavaStatement, VTAFact] {
+object VTAResult extends IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, VTAFact] {
 
     override type Self = VTAResult
-    override def create(result: Map[JavaStatement, Set[VTAFact]]): IFDSProperty[JavaStatement, VTAFact] = new VTAResult(result)
+    override def create(result: Map[DeclaredMethodJavaStatement, Set[VTAFact]]): IFDSProperty[DeclaredMethodJavaStatement, VTAFact] = new VTAResult(result)
 
     val key: PropertyKey[VTAResult] = PropertyKey.create("VTA", new VTAResult(Map.empty))
 }

@@ -2,14 +2,11 @@
 package org.opalj.tac.fpcf.analyses
 
 import java.io.File
-
 import org.opalj.tac.fpcf.analyses.heros.analyses.taint.HerosBackwardClassForNameAnalysisRunner
 import org.opalj.tac.fpcf.analyses.heros.analyses.taint.HerosForwardClassForNameAnalysisRunner
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosVariableTypeAnalysisRunner
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisRunner
+import org.opalj.tac.fpcf.analyses.ifds.old.{AbstractIFDSAnalysis, IFDSBasedVariableTypeAnalysisRunner, IFDSBasedVariableTypeAnalysisScheduler}
 import org.opalj.tac.fpcf.analyses.taint.BackwardClassForNameTaintAnalysisRunner
 import org.opalj.tac.fpcf.analyses.taint.ForwardClassForNameAnalysisRunner
 

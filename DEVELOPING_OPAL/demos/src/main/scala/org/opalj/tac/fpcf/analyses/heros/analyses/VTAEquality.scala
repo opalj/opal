@@ -3,14 +3,11 @@ package org.opalj.tac.fpcf.analyses.heros.analyses
 
 import java.io.File
 import java.net.URL
-
 import scala.collection.JavaConverters._
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import heros.solver.IFDSSolver
 import org.opalj.BaseConfig
-
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
@@ -29,17 +26,12 @@ import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
-import org.opalj.tac.fpcf.analyses.ifds.CalleeType
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.ifds.NewJavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.VariableType
-import org.opalj.tac.fpcf.analyses.ifds.VTAFact
-import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
-import org.opalj.tac.fpcf.analyses.ifds.VTAResult
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.Assignment
 import org.opalj.tac.New
 import org.opalj.tac.Return
 import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.ifds.old.{CalleeType, IFDSBasedVariableTypeAnalysisScheduler, VTAFact, VTANullFact, VTAResult, VariableType}
 
 object VTAEquality {
 
@@ -115,7 +107,7 @@ object VTAEquality {
             piKeyUnidueId != PropertyStoreKey.uniqueId
         }
         val propertyStore = project.get(PropertyStoreKey)
-        var result = Map.empty[NewJavaStatement, Set[VTAFact]]
+        var result = Map.empty[JavaStatement, Set[VTAFact]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
             case Some(requirements) ⇒
@@ -134,8 +126,8 @@ object VTAEquality {
                     case FinalEP(_, VTAResult(map)) ⇒ map
                     case _                          ⇒ throw new RuntimeException
                 }
-                entityResult.keys.foreach { oldStatement ⇒
-                    val statement = oldStatement.asNewJavaStatement
+                entityResult.keys.foreach { declaredMethodStatement ⇒
+                    val statement = declaredMethodStatement.asJavaStatement
                     /*
                      * Heros returns the facts before the statements.
                      * However, CalleeType facts hold after the statement and are therefore not returned.
@@ -144,7 +136,7 @@ object VTAEquality {
                      */
                     result = result.updated(
                         statement,
-                        result.getOrElse(statement, Set.empty) ++ entityResult(oldStatement)
+                        result.getOrElse(statement, Set.empty) ++ entityResult(declaredMethodStatement)
                             .filter(fact ⇒ fact != VTANullFact && !fact.isInstanceOf[CalleeType])
                     )
                 }

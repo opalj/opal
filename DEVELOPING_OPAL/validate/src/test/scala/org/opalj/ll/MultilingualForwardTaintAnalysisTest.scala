@@ -5,9 +5,9 @@ import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler}
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, NullFact}
 import org.opalj.ifds.IFDSProperty
+import org.opalj.tac.fpcf.analyses.ifds.old.DeclaredMethodJavaStatement
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -32,7 +32,7 @@ class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers
                 println("---METHOD: "+method.toJava+"  ---")
                 for {
                     fact ← flows.ub
-                        .asInstanceOf[IFDSProperty[JavaStatement, Fact]]
+                        .asInstanceOf[IFDSProperty[DeclaredMethodJavaStatement, Fact]]
                         .flows
                         .values
                         .flatten

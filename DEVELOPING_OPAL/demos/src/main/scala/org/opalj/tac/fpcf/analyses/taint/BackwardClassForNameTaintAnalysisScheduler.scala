@@ -1,17 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.taint
 
-import java.io.File
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
-import org.opalj.br.{DeclaredMethod, DefinedMethod, Method}
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.{DeclaredMethod, DefinedMethod, Method}
+import org.opalj.fpcf.{EPS, FinalEP, PropertyStore}
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.{AbsractIFDSAnalysisRunner, AbstractIFDSAnalysis, BackwardIFDSAnalysis, IFDSAnalysisScheduler, JavaMethod, JavaStatement, UnbalancedReturnFact}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, BackwardTaintProblem, Fact, FlowFact, InstanceField, Variable}
-import org.opalj.tac.fpcf.properties.Taint
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.old.taint.BackwardTaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.old._
+import org.opalj.tac.fpcf.analyses.ifds.taint._
+import org.opalj.tac.fpcf.properties.OldTaint
+
+import java.io.File
 
 /**
  * A backward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,
@@ -20,7 +21,7 @@ import org.opalj.tac.fpcf.properties.Taint
  * @author Mario Trageser
  */
 class BackwardClassForNameTaintAnalysisScheduler private (implicit val project: SomeProject)
-    extends BackwardIFDSAnalysis(new BackwardClassForNameTaintProblem(project), Taint)
+    extends BackwardIFDSAnalysis(new BackwardClassForNameTaintProblem(project), OldTaint)
 
 class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProblem(p) {
 
@@ -42,7 +43,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParameters(call: JavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
 
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.
@@ -58,7 +59,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
      * This analysis does not create FlowFacts at calls.
      * Instead, FlowFacts are created at the start node of methods.
      */
-    override protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
+    override protected def createFlowFactAtCall(call: DeclaredMethodJavaStatement, in: Set[Fact],
                                                 source: (DeclaredMethod, Fact)): Option[FlowFact] = None
 
     /**
@@ -98,7 +99,7 @@ object BackwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[
         new BackwardClassForNameTaintAnalysisScheduler()(p)
     }
 
-    override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
+    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, Fact] = OldTaint
 }
 
 class BackwardClassForNameTaintAnalysisRunner extends AbsractIFDSAnalysisRunner {
@@ -111,7 +112,7 @@ class BackwardClassForNameTaintAnalysisRunner extends AbsractIFDSAnalysisRunner 
             case EPS((m: DefinedMethod, inputFact)) if canBeCalledFromOutside(m, ps) ⇒
                 (m, inputFact)
         }.flatMap(ps(_, propertyKey) match {
-            case FinalEP(_, Taint(result)) ⇒
+            case FinalEP(_, OldTaint(result)) ⇒
                 result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).filter {
                     case FlowFact(_) ⇒ true
                     case _           ⇒ false

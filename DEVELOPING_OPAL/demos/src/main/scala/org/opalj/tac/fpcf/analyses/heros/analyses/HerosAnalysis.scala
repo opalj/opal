@@ -22,14 +22,14 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalICFG
-import org.opalj.tac.fpcf.analyses.ifds.NewJavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
 import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 
 /**
  * A common subclass of all Heros analyses.
@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
  * @author Mario Trageser
  */
 abstract class HerosAnalysis[F](p: SomeProject, icfg: OpalICFG)
-    extends DefaultIFDSTabulationProblem[NewJavaStatement, F, Method, OpalICFG](icfg) {
+    extends DefaultIFDSTabulationProblem[JavaStatement, F, Method, OpalICFG](icfg) {
 
     /**
      * The project's property store.

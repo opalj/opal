@@ -1,32 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj.tac.fpcf.analyses.ifds.old
 
-import scala.annotation.tailrec
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalE
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ValueInformation
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFGNode
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.cfg.CatchNode
-import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.{BasicBlock, CFG, CFGNode, CatchNode}
+import org.opalj.fpcf._
 import org.opalj.ifds.old.IFDSProblem
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.tac._
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.fpcf.analyses.ifds.old
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.{TACAI, TheTACAI}
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import org.opalj.tac.DUVar
-import org.opalj.tac.Return
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
+import org.opalj.value.ValueInformation
+
+import scala.annotation.tailrec
 
 /**
  * An IFDS analysis, which analyzes the code against the control flow direction.
@@ -35,7 +22,7 @@ import org.opalj.tac.TACode
  *                            concrete analysis.
  * @author Mario Trageser
  */
-abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, JavaStatement, CFGNode] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, JavaStatement], propertyKey: IFDSPropertyMetaInformation[JavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
+abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDSFact <: IFDSFact with UnbalancedReturnFact[IFDSFact]](ifdsProblem: IFDSProblem[IFDSFact, DeclaredMethod, DeclaredMethodJavaStatement, CFGNode] with BackwardIFDSProblem[IFDSFact, UnbalancedIFDSFact, DeclaredMethod, DeclaredMethodJavaStatement], propertyKey: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, IFDSFact]) extends AbstractIFDSAnalysis[IFDSFact](ifdsProblem, propertyKey) {
     /**
      * If this method is analyzed for an unbalanced return fact, the single star block is the block,
      * which contains the call.
@@ -56,11 +43,11 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
     /**
      * Collects the output facts of the entry point of the analyzed method.
      */
-    override protected def collectResult(implicit state: State): Map[JavaStatement, Set[IFDSFact]] = {
+    override protected def collectResult(implicit state: State): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
         val startBlock = state.cfg.startBlock
         val startPC = startBlock.startPC
         val statement =
-            JavaStatement(state.method, startBlock, state.code(startPC), startPC, state.code, state.cfg, state.source._1)
+            old.DeclaredMethodJavaStatement(state.method, startBlock, state.code(startPC), startPC, state.code, state.cfg, state.source._1)
         val exitFacts = state.outgoingFacts.get(startBlock).flatMap(_.get(SyntheticStartNode))
         if (exitFacts.isDefined) Map(statement -> exitFacts.get)
         else Map.empty
@@ -90,12 +77,12 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
        */
             case interimEUBP @ InterimEUBP(
                 e: (DeclaredMethod, IFDSFact) @unchecked,
-                _: IFDSProperty[JavaStatement, IFDSFact] @unchecked
+                _: IFDSProperty[DeclaredMethodJavaStatement, IFDSFact] @unchecked
                 ) ⇒
                 if (e._2.isInstanceOf[UnbalancedReturnFact[IFDSFact]]) {
                     state.pendingIfdsDependees +=
                         e -> interimEUBP
-                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
+                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]]]
                     createResult()
                 } else super.propertyUpdate(eps)
 
@@ -211,13 +198,13 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
      * If it is a catch node, the first statement of its throwing block will be returned.
      * If it is a synthetic start node, an artificial statement without code will be returned.
      */
-    override protected def firstStatement(node: CFGNode)(implicit state: State): JavaStatement = {
+    override protected def firstStatement(node: CFGNode)(implicit state: State): DeclaredMethodJavaStatement = {
         if (node.isBasicBlock) {
             val index = node.asBasicBlock.endPC
-            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
+            old.DeclaredMethodJavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
         } else if (node.isCatchNode) firstStatement(node.successors.head)
         else if (node == SyntheticStartNode)
-            JavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
+            old.DeclaredMethodJavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
         else throw new IllegalArgumentException(s"Unknown node type: $node")
     }
 
@@ -225,8 +212,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
      * The successor statements against the control flow direction.
      */
     override protected def nextStatements(
-        statement: JavaStatement
-    )(implicit state: State): Set[JavaStatement] = {
+        statement: DeclaredMethodJavaStatement
+    )(implicit state: State): Set[DeclaredMethodJavaStatement] = {
         val index = statement.index
         val basicBlock = statement.node.asBasicBlock
         if (index == 0) {
@@ -236,7 +223,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         else {
             val nextIndex = index - 1
             Set(
-                JavaStatement(
+                old.DeclaredMethodJavaStatement(
                     statement.method,
                     basicBlock,
                     statement.code(nextIndex),
@@ -254,7 +241,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
      * direction, which my be executed after them. Calls returnFlow on those pairs.
      */
     override protected def callToStartFacts(
-        call:   JavaStatement,
+        call:   DeclaredMethodJavaStatement,
         callee: DeclaredMethod,
         in:     Set[IFDSFact]
     )(implicit state: State): Set[IFDSFact] = {
@@ -271,7 +258,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                         val calleeStmts = tac.stmts
                         val exitStmt = calleeStmts(exitPc)
                         val exitStatement =
-                            JavaStatement(definedCallee, cfg.bb(exitPc), exitStmt, exitPc, calleeStmts, cfg, state.source._1)
+                            old.DeclaredMethodJavaStatement(definedCallee, cfg.bb(exitPc), exitStmt, exitPc, calleeStmts, cfg, state.source._1)
                         for {
                             successor ← successors
                             if !AbstractIFDSAnalysis.OPTIMIZE_CROSS_PRODUCT_IN_RETURN_FLOW ||
@@ -303,12 +290,12 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
      * edges. exitFacts should at most contain the callee's entry point.
      */
     override protected def addExitToReturnFacts(
-        summaryEdges: Map[JavaStatement, Set[IFDSFact]],
-        successors:   Set[JavaStatement],
-        call:         JavaStatement,
+        summaryEdges: Map[DeclaredMethodJavaStatement, Set[IFDSFact]],
+        successors:   Set[DeclaredMethodJavaStatement],
+        call:         DeclaredMethodJavaStatement,
         callee:       DeclaredMethod,
-        exitFacts:    Map[JavaStatement, Set[IFDSFact]]
-    )(implicit state: State): Map[JavaStatement, Set[IFDSFact]] = {
+        exitFacts:    Map[DeclaredMethodJavaStatement, Set[IFDSFact]]
+    )(implicit state: State): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
         var result = summaryEdges
         if (exitFacts.nonEmpty) {
             val in = exitFacts.head._2
@@ -331,7 +318,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
     /**
      * If there is an unbalanced return fact for this call, it will be replaced by its inner fact.
      */
-    override protected def beforeHandleCall(call: JavaStatement, in: Set[IFDSFact]): Set[IFDSFact] =
+    override protected def beforeHandleCall(call: DeclaredMethodJavaStatement, in: Set[IFDSFact]): Set[IFDSFact] =
         in.map {
             case unbalancedFact: UnbalancedReturnFact[IFDSFact] if unbalancedFact.index == call.index ⇒
                 unbalancedFact.innerFact
@@ -348,8 +335,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
      * @return A map, mapping from a predecessor statement to the corresponding node.
      */
     private def predecessorStatementsWithNode(
-        statement: JavaStatement
-    )(implicit state: State): Map[JavaStatement, CFGNode] = {
+        statement: DeclaredMethodJavaStatement
+    )(implicit state: State): Map[DeclaredMethodJavaStatement, CFGNode] = {
         val index = statement.index
         val basicBlock = statement.node.asBasicBlock
         if (index == basicBlock.endPC)
@@ -359,7 +346,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         else {
             val nextIndex = index + 1
             Map(
-                JavaStatement(
+                old.DeclaredMethodJavaStatement(
                     statement.method,
                     basicBlock,
                     statement.code(nextIndex),
@@ -382,12 +369,12 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
      *
      * @return The  last statement of `node`.
      */
-    @tailrec private def lastStatement(node: CFGNode)(implicit state: State): JavaStatement = {
+    @tailrec private def lastStatement(node: CFGNode)(implicit state: State): DeclaredMethodJavaStatement = {
         if (node.isBasicBlock) {
             val index = node.asBasicBlock.startPC
-            JavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
+            old.DeclaredMethodJavaStatement(state.method, node, state.code(index), index, state.code, state.cfg, state.source._1)
         } else if (node.isCatchNode) lastStatement(node.successors.head)
-        else if (node.isExitNode) JavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
+        else if (node.isExitNode) old.DeclaredMethodJavaStatement(state.method, node, null, 0, state.code, state.cfg, state.source._1)
         else throw new IllegalArgumentException(s"Unknown node type: $node")
     }
 
@@ -407,7 +394,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
     )(implicit state: State): Unit = {
         val callerStmts = tac.stmts
         val callerCfg = tac.cfg
-        val call = JavaStatement(
+        val call = old.DeclaredMethodJavaStatement(
             caller.definedMethod,
             callerCfg.bb(callIndex),
             callerStmts(callIndex),
@@ -429,7 +416,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                     val pendingIfdsCallSites = state.pendingIfdsCallSites
                     state.pendingIfdsDependees += callerEntity ->
                         callerAnalysisResult
-                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[JavaStatement, IFDSFact]]]
+                        .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]]]
                     state.pendingIfdsCallSites += callerEntity ->
                         (pendingIfdsCallSites.getOrElse(callerEntity, Set.empty) +
                             ((state.cfg.startBlock, 0)))

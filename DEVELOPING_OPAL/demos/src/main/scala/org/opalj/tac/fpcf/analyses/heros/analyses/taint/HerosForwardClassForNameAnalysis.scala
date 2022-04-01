@@ -30,13 +30,7 @@ import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaMethod, NewJavaStatement}
-import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
-import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
-import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
-import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
-import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
+import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
@@ -47,8 +41,10 @@ import org.opalj.tac.PrefixExpr
 import org.opalj.tac.PrimitiveTypecastExpr
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
+import org.opalj.tac.fpcf.analyses.ifds.old.AbstractIFDSAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, Fact, FlowFact, InstanceField, StaticField, Variable}
 
 /**
  * An implementation of the ForwardClassForNameAnalysis in the Heros framework.
@@ -62,8 +58,8 @@ class HerosForwardClassForNameAnalysis(
         initialMethods: Map[Method, util.Set[Fact]]
 ) extends HerosTaintAnalysis(p, icfg) {
 
-    override val initialSeeds: util.Map[NewJavaStatement, util.Set[Fact]] = {
-        var result: Map[NewJavaStatement, util.Set[Fact]] = Map.empty
+    override val initialSeeds: util.Map[JavaStatement, util.Set[Fact]] = {
+        var result: Map[JavaStatement, util.Set[Fact]] = Map.empty
         for ((m, facts) ← initialMethods) {
             result += icfg.getStartPointsOf(m).iterator().next() -> facts
         }
@@ -74,11 +70,11 @@ class HerosForwardClassForNameAnalysis(
 
     var flowFacts = Map.empty[Method, Set[FlowFact]]
 
-    override def createFlowFunctionsFactory(): FlowFunctions[NewJavaStatement, Fact, Method] = {
+    override def createFlowFunctionsFactory(): FlowFunctions[JavaStatement, Fact, Method] = {
 
-        new FlowFunctions[NewJavaStatement, Fact, Method]() {
+        new FlowFunctions[JavaStatement, Fact, Method]() {
 
-            override def getNormalFlowFunction(stmt: NewJavaStatement, succ: NewJavaStatement): FlowFunction[Fact] = {
+            override def getNormalFlowFunction(stmt: JavaStatement, succ: JavaStatement): FlowFunction[Fact] = {
                 stmt.stmt.astID match {
                     case Assignment.ASTID ⇒
                         handleAssignment(stmt, stmt.stmt.asAssignment.expr)
@@ -127,7 +123,7 @@ class HerosForwardClassForNameAnalysis(
                 }
             }
 
-            def handleAssignment(stmt: NewJavaStatement, expr: Expr[V]): FlowFunction[Fact] =
+            def handleAssignment(stmt: JavaStatement, expr: Expr[V]): FlowFunction[Fact] =
                 expr.astID match {
                     case Var.ASTID ⇒
                         (source: Fact) ⇒ {
@@ -194,7 +190,7 @@ class HerosForwardClassForNameAnalysis(
                     case _ ⇒ Identity.v()
                 }
 
-            override def getCallFlowFunction(stmt: NewJavaStatement, callee: Method): FlowFunction[Fact] = {
+            override def getCallFlowFunction(stmt: JavaStatement, callee: Method): FlowFunction[Fact] = {
                 val callObject = asCall(stmt.stmt)
                 val allParams = callObject.allParams
                 if (relevantCallee(callee)) {
@@ -248,10 +244,10 @@ class HerosForwardClassForNameAnalysis(
             }
 
             override def getReturnFlowFunction(
-                stmt:   NewJavaStatement,
+                stmt:   JavaStatement,
                 callee: Method,
-                exit:   NewJavaStatement,
-                succ:   NewJavaStatement
+                exit:   JavaStatement,
+                succ:   JavaStatement
             ): FlowFunction[Fact] = {
 
                 def isRefTypeParam(index: Int): Boolean =
@@ -344,8 +340,8 @@ class HerosForwardClassForNameAnalysis(
             }
 
             override def getCallToReturnFlowFunction(
-                stmt: NewJavaStatement,
-                succ: NewJavaStatement
+                stmt: JavaStatement,
+                succ: JavaStatement
             ): FlowFunction[Fact] =
                 Identity.v()
         }

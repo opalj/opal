@@ -1,67 +1,34 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.cfg.CFGNode
+import org.opalj.br.{DeclaredMethod, Method}
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{FinalEP, PropertyStore}
-import org.opalj.ifds.AbstractIFDSFact
-import org.opalj.ifds.old.ICFG
+import org.opalj.ifds.{AbstractIFDSFact, ICFG}
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.{Assignment, DUVar, Expr, ExprStmt, LazyDetachedTACAIKey, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, TACMethodParameter, TACode, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.value.ValueInformation
 
-class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit
-        propertyStore: PropertyStore,
-                                                typeProvider:    TypeProvider,
-                                                declaredMethods: DeclaredMethods
-) extends ICFG[IFDSFact, DeclaredMethod, JavaStatement, CFGNode] {
-    /**
-     * Determines the basic blocks, at which the analysis starts.
-     *
-     * @param sourceFact The source fact of the analysis.
-     * @param callable   The analyzed callable.
-     * @return The basic blocks, at which the analysis starts.
-     */
-    override def startNodes(sourceFact: IFDSFact, callable: DeclaredMethod): Set[CFGNode] = ???
+class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit project: SomeProject)
+    extends ICFG[IFDSFact, Method, JavaStatement] {
+    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
     /**
-     * Determines the nodes, that will be analyzed after some `basicBlock`.
+     * Determines the statements at which the analysis starts.
      *
-     * @param node The basic block, that was analyzed before.
-     * @return The nodes, that will be analyzed after `basicBlock`.
+     * @param callable The analyzed callable.
+     * @return The statements at which the analysis starts.
      */
-    override def nextNodes(node: CFGNode): Set[CFGNode] = ???
-
-    /**
-     * Checks, if some `node` is the last node.
-     *
-     * @return True, if `node` is the last node, i.e. there is no next node.
-     */
-    override def isLastNode(node: CFGNode): Boolean = ???
-
-    /**
-     * Determines the first index of some `basic block`, that will be analyzed.
-     *
-     * @param basicBlock The basic block.
-     * @return The first index of some `basic block`, that will be analyzed.
-     */
-    override def firstStatement(basicBlock: CFGNode): JavaStatement = ???
-
-    /**
-     * Determines the last index of some `basic block`, that will be analzyed.
-     *
-     * @param basicBlock The basic block.
-     * @return The last index of some `basic block`, that will be analzyed.
-     */
-    override def lastStatement(basicBlock: CFGNode): JavaStatement = ???
-
-    /**
-     * Determines the statement that will be analyzed after some other statement.
-     *
-     * @param statement The current statement.
-     * @return The statement that will be analyzed after `statement`.
-     */
-    override def nextStatement(statement: JavaStatement): JavaStatement = ???
+    override def startStatements(callable: Method): Set[JavaStatement] = {
+        val TACode(_, code, _, cfg, _) = tacai(callable)
+        Set(JavaStatement(callable, 0, code, cfg))
+    }
 
     /**
      * Determines the statement, that will be analyzed after some other `statement`.
@@ -69,7 +36,13 @@ class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit
      * @param statement The source statement.
      * @return The successor statements
      */
-    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = ???
+    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = {
+        statement.cfg
+            .successors(statement.index)
+            .toChain
+            .map { index ⇒ JavaStatement(statement, index) }
+            .toSet
+    }
 
     /**
      * Gets the set of all methods possibly called at some statement.
@@ -78,18 +51,68 @@ class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    override def getCalleesIfCallStatement(statement: JavaStatement): Option[collection.Set[DeclaredMethod]] = {
+    override def getCalleesIfCallStatement(statement: JavaStatement): Option[collection.Set[Method]] =
+        statement.stmt.astID match {
+            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+                Some(getCallees(statement))
+            case Assignment.ASTID | ExprStmt.ASTID ⇒
+                getExpression(statement.stmt).astID match {
+                    case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+                        Some(getCallees(statement))
+                    case _ ⇒ None
+                }
+            case _ ⇒ None
+        }
+
+    /**
+     * Retrieves the expression of an assignment or expression statement.
+     *
+     * @param statement The statement. Must be an Assignment or ExprStmt.
+     * @return The statement's expression.
+     */
+    private def getExpression(statement: Stmt[_]): Expr[_] = statement.astID match {
+        case Assignment.ASTID ⇒ statement.asAssignment.expr
+        case ExprStmt.ASTID   ⇒ statement.asExprStmt.expr
+        case _                ⇒ throw new UnknownError("Unexpected statement")
+    }
+
+    private def getCallees(statement: JavaStatement): collection.Set[Method] = {
         val pc = statement.code(statement.index).pc
-        val caller = declaredMethods(statement.method)
+        val caller = declaredMethods(statement.callable)
         val ep = propertyStore(caller, Callees.key)
         ep match {
-            case FinalEP(_, p) ⇒ Some(p.directCallees(typeProvider.newContext(caller), pc).map(_.method).toSet)
+            case FinalEP(_, p) ⇒ definedMethods(p.directCallees(typeProvider.newContext(caller), pc).map(_.method))
             case _ ⇒
                 throw new IllegalStateException(
-                    "call graph mut be computed before the analysis starts"
+                    "call graph must be computed before the analysis starts"
                 )
         }
     }
 
-    override def isExitStatement(statement: JavaStatement): Boolean = ???
+    override def isExitStatement(statement: JavaStatement): Boolean = {
+        statement.index == statement.node.asBasicBlock.endPC &&
+            statement.node.successors.exists(_.isExitNode)
+    }
+
+    /**
+     * Maps some declared methods to their defined methods.
+     *
+     * @param declaredMethods Some declared methods.
+     * @return All defined methods of `declaredMethods`.
+     */
+    private def definedMethods(declaredMethods: Iterator[DeclaredMethod]): collection.Set[Method] = {
+        val result = scala.collection.mutable.Set.empty[Method]
+        declaredMethods
+            .filter(
+                declaredMethod ⇒
+                    declaredMethod.hasSingleDefinedMethod ||
+                        declaredMethod.hasMultipleDefinedMethods
+            )
+            .foreach(
+                declaredMethod ⇒
+                    declaredMethod
+                        .foreachDefinedMethod(defineMethod ⇒ result.add(defineMethod))
+            )
+        result
+    }
 }

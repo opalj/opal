@@ -1,19 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds.taint
+package org.opalj.tac.fpcf.analyses.ifds.old.taint
 
-import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Compare, Expr, GetField, NewArray, PrefixExpr, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, Var}
-import org.opalj.tac.fpcf.analyses.ifds.{AbstractIFDSAnalysis, JavaBackwardIFDSProblem, JavaStatement}
+import org.opalj.br.{DeclaredMethod, Method, ObjectType}
+import org.opalj.tac._
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.fpcf.analyses.ifds.old.{AbstractIFDSAnalysis, JavaBackwardIFDSProblem, DeclaredMethodJavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.taint._
 
-abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIFDSProblem[Fact, UnbalancedTaintFact](project) with TaintProblem[DeclaredMethod, JavaStatement, Fact] {
+abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIFDSProblem[Fact, UnbalancedTaintFact](project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, Fact] {
     override def nullFact: Fact = NullFact
 
     /**
      * If a tainted variable gets assigned a value, this value will be tainted.
      */
-    override def normalFlow(statement: JavaStatement, successor: Option[JavaStatement],
+    override def normalFlow(statement: DeclaredMethodJavaStatement, successor: Option[DeclaredMethodJavaStatement],
                             in: Set[Fact]): Set[Fact] = {
         val stmt = statement.stmt
         stmt.astID match {
@@ -62,7 +63,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * context were tainted.
      * Does not taint anything, if the sanitize method was called.
      */
-    override def callFlow(call: JavaStatement, callee: DeclaredMethod,
+    override def callFlow(call: DeclaredMethodJavaStatement, callee: DeclaredMethod,
                           in: Set[Fact], source: (DeclaredMethod, Fact)): Set[Fact] =
         if (sanitizesReturnValue(callee)) Set.empty
         else taintActualsIfFormalsTainted(callee, call, in, source)
@@ -72,8 +73,8 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * context will be tainted. If an actual pass-by-reference-parameter in the caller context is
      * tainted, the formal parameter in the callee context will be tainted.
      */
-    override def returnFlow(call: JavaStatement, callee: DeclaredMethod, exit: JavaStatement,
-                            successor: JavaStatement, in: Set[Fact]): Set[Fact] = {
+    override def returnFlow(call: DeclaredMethodJavaStatement, callee: DeclaredMethod, exit: DeclaredMethodJavaStatement,
+                            successor: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] = {
         val callObject = asCall(call.stmt)
         val staticCall = callee.definedMethod.isStatic
         val flow = collection.mutable.Set.empty[Fact]
@@ -119,7 +120,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * Adds a FlowFact, if `createFlowFactAtCall` creates one.
      * Removes taints according to `sanitizeParamters`.
      */
-    override def callToReturnFlow(call: JavaStatement, successor: JavaStatement,
+    override def callToReturnFlow(call: DeclaredMethodJavaStatement, successor: DeclaredMethodJavaStatement,
                                   in:     Set[Fact],
                                   source: (DeclaredMethod, Fact)): Set[Fact] = {
         val flowFact = createFlowFactAtCall(call, in, source)
@@ -133,7 +134,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      */
     override def outsideAnalysisContext(callee: DeclaredMethod): Option[OutsideAnalysisContextHandler] =
         super.outsideAnalysisContext(callee) match {
-            case Some(_) ⇒ Some((call: JavaStatement, successor: JavaStatement, in: Set[Fact]) ⇒ {
+            case Some(_) ⇒ Some((call: DeclaredMethodJavaStatement, successor: DeclaredMethodJavaStatement, in: Set[Fact]) ⇒ {
                 val callStatement = asCall(call.stmt)
                 in ++ in.collect {
                     case Variable(index) if index == call.index ⇒
@@ -151,7 +152,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * Creates an UnbalancedTaintFact for each actual parameter on the caller side, of the formal
      * parameter of this method is tainted.
      */
-    override def unbalancedReturnFlow(facts: Set[Fact], call: JavaStatement,
+    override def unbalancedReturnFlow(facts: Set[Fact], call: DeclaredMethodJavaStatement,
                                       caller: DeclaredMethod,
                                       source: (DeclaredMethod, Fact)): Set[UnbalancedTaintFact] =
         taintActualsIfFormalsTainted(source._1, call, facts, source, isCallFlow = false)
@@ -167,7 +168,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * @param source The entity, which is analyzed.
      * @return Some FlowFact, if necessary. Otherwise None.
      */
-    protected def createFlowFactAtCall(call: JavaStatement, in: Set[Fact],
+    protected def createFlowFactAtCall(call: DeclaredMethodJavaStatement, in: Set[Fact],
                                        source: (DeclaredMethod, Fact)): Option[FlowFact]
 
     /**
@@ -257,7 +258,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * @param statement The statement, which contains the expression.
      * @return The new taints.
      */
-    private def createNewTaints(expression: Expr[V], statement: JavaStatement): Set[Fact] =
+    private def createNewTaints(expression: Expr[V], statement: DeclaredMethodJavaStatement): Set[Fact] =
         expression.astID match {
             case Var.ASTID ⇒ expression.asVar.definedBy.map(Variable)
             case ArrayLoad.ASTID ⇒
@@ -289,7 +290,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      * @return An ArrayElement fact for the expression and the tainted element.
      */
     private def createNewArrayElementTaints(expression: Expr[V], taintedElement: Int,
-                                            statement: JavaStatement): Set[Fact] =
+                                            statement: DeclaredMethodJavaStatement): Set[Fact] =
         createNewTaints(expression, statement).map {
             case Variable(variableIndex)            ⇒ ArrayElement(variableIndex, taintedElement)
             // We do not nest taints. Instead, we taint the whole inner array.
@@ -298,7 +299,7 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
         }
 
     private def createNewInstanceFieldTaints(expression: Expr[V], declaringClass: ObjectType,
-                                             name: String, statement: JavaStatement): Set[Fact] =
+                                             name: String, statement: DeclaredMethodJavaStatement): Set[Fact] =
         createNewTaints(expression, statement).map {
             case Variable(variableIndex)        ⇒ InstanceField(variableIndex, declaringClass, name)
             // We do not nest taints. Instead, taint the whole field.
@@ -322,10 +323,10 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
      */
     private def taintActualsIfFormalsTainted(
         callee:      DeclaredMethod,
-        call:        JavaStatement,
+        call:        DeclaredMethodJavaStatement,
         calleeFacts: Set[Fact],
         source:      (DeclaredMethod, Fact),
-        isCallFlow:  Boolean                = true
+        isCallFlow:  Boolean                     = true
     ): Set[Fact] = {
         val stmt = call.stmt
         val callStatement = asCall(stmt)

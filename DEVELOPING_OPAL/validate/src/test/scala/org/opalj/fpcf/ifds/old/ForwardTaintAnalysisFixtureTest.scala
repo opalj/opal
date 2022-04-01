@@ -1,20 +1,21 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ifds
+package org.opalj.fpcf.ifds.old
+
+import org.opalj.ai.domain.l2
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
+import org.opalj.fpcf.PropertiesTest
+import org.opalj.fpcf.properties.taint.ForwardFlowPath
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.ifds.taint.old.{ForwardTaintAnalysisFixtureScheduler}
+import org.opalj.tac.fpcf.analyses.ifds.taint.NullFact
 
 import java.net.URL
 
-import org.opalj.fpcf.PropertiesTest
-import org.opalj.fpcf.properties.vta.ExpectedCallee
-import org.opalj.fpcf.properties.vta.ExpectedType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.l2
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
-
-class VTATest extends PropertiesTest {
+/**
+ * @author Mario Trageser
+ */
+class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(
@@ -28,17 +29,15 @@ class VTATest extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    describe("Test the ExpectedType annotations") {
-        val testContext = executeAnalyses(IFDSBasedVariableTypeAnalysisScheduler)
+    describe("Test the ForwardFlowPath annotations") {
+        val testContext = executeAnalyses(ForwardTaintAnalysisFixtureScheduler)
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
             case (methods, entityString, annotations) ⇒
-                ((declaredMethods(methods), VTANullFact), entityString, annotations)
+                ((declaredMethods(methods), NullFact), entityString, annotations)
         }
         testContext.propertyStore.shutdown()
-        validateProperties(testContext, eas, Set(ExpectedType.PROPERTY_VALIDATOR_KEY))
-        validateProperties(testContext, eas, Set(ExpectedCallee.PROPERTY_VALIDATOR_KEY))
+        validateProperties(testContext, eas, Set(ForwardFlowPath.PROPERTY_VALIDATOR_KEY))
     }
-
 }

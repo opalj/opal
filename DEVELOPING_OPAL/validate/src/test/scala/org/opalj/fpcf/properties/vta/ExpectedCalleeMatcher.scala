@@ -14,9 +14,7 @@ import org.opalj.br.Method
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.CalleeType
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.ifds.VTAResult
+import org.opalj.tac.fpcf.analyses.ifds.old.{CalleeType, IFDSBasedVariableTypeAnalysisScheduler, VTAResult}
 
 class ExpectedCalleeMatcher extends VTAMatcher {
 
