@@ -1,28 +1,26 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj.ll.llvm.value
 
 import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM.{LLVMFunctionValueKind, LLVMGetEntryBasicBlock, LLVMGetFirstBasicBlock, LLVMGetFirstParam, LLVMGetNextBasicBlock, LLVMGetNextParam, LLVMGetValueKind, LLVMViewFunctionCFG, LLVMViewFunctionCFGOnly}
+import org.bytedeco.llvm.global.LLVM._
 import org.opalj.io.writeAndOpen
 
 case class Function(ref: LLVMValueRef) extends Value(ref) {
     assert(LLVMGetValueKind(ref) == LLVMFunctionValueKind, "ref has to be a function")
 
-    def basicBlocks(): BasicBlockIterator = {
+    def basicBlocks: BasicBlockIterator = {
         new BasicBlockIterator(LLVMGetFirstBasicBlock(ref))
     }
 
-    def arguments(): ArgumentIterator = {
+    def arguments: ArgumentIterator = {
         new ArgumentIterator(LLVMGetFirstParam(ref))
     }
+    def argument(index: Int): Argument = Argument(LLVMGetParam(ref, index))
 
-    def entryBlock(): BasicBlock = {
-        BasicBlock(LLVMGetEntryBasicBlock(ref))
-    }
+    def entryBlock: BasicBlock = BasicBlock(LLVMGetEntryBasicBlock(ref))
 
     def viewCFG(): Unit = {
-        val entryNode = entryBlock()
-        val cfg_dot = org.opalj.graphs.toDot(Set(entryNode))
+        val cfg_dot = org.opalj.graphs.toDot(Set(entryBlock))
         writeAndOpen(cfg_dot, name+"-CFG", ".gv")
     }
 
@@ -35,7 +33,7 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
     }
 
     override def toString: String = {
-        s"Function(${name()}(${arguments.map(_.typ().repr()).mkString(", ")}))"
+        s"Function(${name}(${arguments.map(_.typ.repr).mkString(", ")}))"
     }
 }
 

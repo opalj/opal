@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ifds
 
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.ifds.Dependees.Getter
 
 /**
  * A framework for IFDS analyses.
@@ -12,6 +12,8 @@ import org.opalj.fpcf.ProperPropertyComputationResult
  * @author Marc Clement
  */
 abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, _]](val icfg: ICFG[IFDSFact, C, S]) {
+    type Work = (S, IFDSFact, Option[S])
+
     /**
      * The null fact of this analysis.
      */
@@ -92,8 +94,8 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
 
     def needsPredecessor(statement: S): Boolean
 
-    type OutsideAnalysisContextHandler = ((S, S, IFDSFact) ⇒ Set[IFDSFact]) {
-        def apply(call: S, successor: S, in: IFDSFact): Set[IFDSFact]
+    type OutsideAnalysisContextHandler = ((S, S, IFDSFact, Getter) ⇒ Set[IFDSFact]) {
+        def apply(call: S, successor: S, in: IFDSFact, dependeesGetter: Getter): Set[IFDSFact]
     }
 
     /**
@@ -110,6 +112,4 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
      *         It returns facts, which hold after the call, excluding the call to return flow.
      */
     def outsideAnalysisContext(callee: C): Option[OutsideAnalysisContextHandler]
-
-    def specialCase(source: (C, IFDSFact), propertyKey: IFDSPropertyMetaInformation[S, IFDSFact]): Option[ProperPropertyComputationResult] = None
 }

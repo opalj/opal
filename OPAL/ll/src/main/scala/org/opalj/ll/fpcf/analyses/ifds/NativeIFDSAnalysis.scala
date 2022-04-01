@@ -6,7 +6,8 @@ import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProblem, Statement}
 import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.llvm.{BasicBlock, Function, Instruction}
+import org.opalj.ll.llvm.value.{BasicBlock, Instruction}
+import org.opalj.ll.llvm.value
 
 /**
  *
@@ -16,23 +17,24 @@ import org.opalj.ll.llvm.{BasicBlock, Function, Instruction}
  */
 class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
         project:     SomeProject,
-        ifdsProblem: IFDSProblem[IFDSFact, Function, LLVMStatement],
+        ifdsProblem: IFDSProblem[IFDSFact, value.Function, LLVMStatement],
         propertyKey: IFDSPropertyMetaInformation[LLVMStatement, IFDSFact]
 )
-    extends IFDSAnalysis[IFDSFact, Function, LLVMStatement]()(project, ifdsProblem, propertyKey)
+    extends IFDSAnalysis[IFDSFact, value.Function, LLVMStatement]()(project, ifdsProblem, propertyKey)
 
 /**
  * A statement that is passed to the concrete analysis.
  *
  * @param instruction The LLVM instruction.
  */
-case class LLVMStatement(instruction: Instruction) extends Statement[Function, BasicBlock] {
-    def function(): Function = instruction.function
-    def basicBlock(): BasicBlock = instruction.parent
-    override def node(): BasicBlock = basicBlock
-    override def callable(): Function = function
+case class LLVMStatement(instruction: Instruction) extends Statement[value.Function, BasicBlock] {
+    def function: value.Function = instruction.function
+    def basicBlock: BasicBlock = instruction.parent
+    override def node: BasicBlock = basicBlock
+    override def callable: value.Function = function
+    override def toString: String = s"${function.name}\n\t${instruction}\n\t${function}"
 }
 
-abstract class NativeIFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact] extends IFDSAnalysisScheduler[IFDSFact, Function, LLVMStatement] {
+abstract class NativeIFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact] extends IFDSAnalysisScheduler[IFDSFact, value.Function, LLVMStatement] {
     override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
 }

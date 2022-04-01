@@ -4,6 +4,7 @@ package org.opalj.tac.fpcf.analyses.ifds
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.{CFG, CFGNode}
+import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
 import org.opalj.tac.{Assignment, Call, DUVar, ExprStmt, Stmt, TACStmts}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
@@ -58,9 +59,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
         case _                ⇒ call.asMethodCall
     }
 
-    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact) ⇒ Set[Fact]] = callee.body.isDefined match {
+    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact, Getter) ⇒ Set[Fact]] = callee.body.isDefined match {
         case true  ⇒ None
-        case false ⇒ Some((_call: JavaStatement, _successor: JavaStatement, in: Fact) ⇒ Set(in))
+        case false ⇒ Some((_: JavaStatement, _: JavaStatement, in: Fact, _: Getter) ⇒ Set(in))
     }
 }
 
@@ -69,4 +70,17 @@ object JavaIFDSProblem {
      * The type of the TAC domain.
      */
     type V = DUVar[ValueInformation]
+
+    /**
+     * Converts the index of a method's formal parameter to its tac index in the method's scope and
+     * vice versa.
+     *
+     * @param index The index of a formal parameter in the parameter list or of a variable.
+     * @param isStaticMethod States, whether the method is static.
+     * @return A tac index if a parameter index was passed or a parameter index if a tac index was
+     *         passed.
+     */
+    def switchParamAndVariableIndex(index: Int, isStaticMethod: Boolean): Int =
+        (if (isStaticMethod) -2 else -1) - index
+
 }

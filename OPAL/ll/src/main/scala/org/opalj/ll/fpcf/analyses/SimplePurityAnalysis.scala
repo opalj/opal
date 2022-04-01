@@ -5,7 +5,7 @@ import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis, FPCFAnalysisScheduler}
 import org.opalj.fpcf._
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.llvm.{Function, GlobalVariable, Store}
+import org.opalj.ll.llvm.value.{Function, GlobalVariable, Store}
 
 sealed trait SimplePurityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = SimplePurity
@@ -42,11 +42,11 @@ object SimplePurity extends SimplePurityPropertyMetaInformation {
 class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def analyzeSimplePurity(function: Function): ProperPropertyComputationResult = {
         function
-            .basicBlocks()
-            .flatMap(_.instructions())
+            .basicBlocks
+            .flatMap(_.instructions)
             .foreach {
                 case instruction: Store ⇒
-                    instruction.dst() match {
+                    instruction.dst match {
                         case _: GlobalVariable ⇒
                             return Result(function, Impure)
                         case _ ⇒ Unit
@@ -79,7 +79,7 @@ object EagerSimplePurityAnalysis
     ): FPCFAnalysis = {
         val analysis = new SimplePurityAnalysis(project)
         val llvm_project = project.get(LLVMProjectKey)
-        propertyStore.scheduleEagerComputationsForEntities(llvm_project.functions())(
+        propertyStore.scheduleEagerComputationsForEntities(llvm_project.functions)(
             analysis.analyzeSimplePurity
         )
         analysis

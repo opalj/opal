@@ -2,7 +2,7 @@
 package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.ifds.{AbstractIFDSFact, ICFG}
-import org.opalj.ll.llvm.{Function, Instruction, Ret, Terminator}
+import org.opalj.ll.llvm.value.{Call, Function, Instruction, Ret, Terminator}
 
 class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Function, LLVMStatement] {
     /**
@@ -12,7 +12,7 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @return The statements at which the analysis starts.
      */
     override def startStatements(callable: Function): Set[LLVMStatement] = {
-        Set(LLVMStatement(callable.entryBlock().firstInstruction()))
+        Set(LLVMStatement(callable.entryBlock.firstInstruction))
     }
 
     /**
@@ -22,8 +22,8 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @return The successor statements
      */
     override def nextStatements(statement: LLVMStatement): Set[LLVMStatement] = {
-        if (!statement.instruction.isTerminator) return Set(LLVMStatement(statement.instruction.next().get))
-        statement.instruction.asInstanceOf[Instruction with Terminator].successors().map(LLVMStatement(_)).toSet
+        if (!statement.instruction.isTerminator) return Set(LLVMStatement(statement.instruction.next.get))
+        statement.instruction.asInstanceOf[Instruction with Terminator].successors.map(LLVMStatement(_)).toSet
     }
 
     /**
@@ -33,7 +33,10 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[Function]] = None //TODO
+    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[Function]] = statement.instruction match {
+        case call: Call ⇒ Some(Set(call.calledValue))
+        case _          ⇒ None
+    }
 
     override def isExitStatement(statement: LLVMStatement): Boolean = statement.instruction match {
         case Ret(_) ⇒ true

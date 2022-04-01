@@ -3,6 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.ObjectType
 import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
+import org.opalj.ll.llvm.value.Value
 
 trait NativeFact extends AbstractIFDSFact
 
@@ -11,9 +12,10 @@ case object NativeNullFact extends NativeFact with AbstractIFDSNullFact
 /**
  * A tainted variable.
  *
- * @param definitionSite The variable's definition site.
+ * @param index The variable's definition site.
  */
-case class NativeVariable(definitionSite: Any) extends NativeFact
+case class JavaVariable(index: Int) extends NativeFact
+case class NativeVariable(value: Value) extends NativeFact
 
 /**
  * A tainted array element.
@@ -21,7 +23,8 @@ case class NativeVariable(definitionSite: Any) extends NativeFact
  * @param index The array's definition site.
  * @param element The index of the tainted element in the array.
  */
-case class NativeArrayElement(index: Int, element: Int) extends NativeFact
+case class JavaArrayElement(index: Int, element: Int) extends NativeFact
+case class NativeArrayElement(value: Value, element: Int) extends NativeFact
 
 /**
  * A tainted static field.
@@ -29,7 +32,7 @@ case class NativeArrayElement(index: Int, element: Int) extends NativeFact
  * @param classType The field's class.
  * @param fieldName The field's name.
  */
-case class NativeStaticField(classType: ObjectType, fieldName: String) extends NativeFact
+case class JavaStaticField(classType: ObjectType, fieldName: String) extends NativeFact
 
 /**
  * A tainted instance field.
@@ -38,7 +41,7 @@ case class NativeStaticField(classType: ObjectType, fieldName: String) extends N
  * @param classType The field's type.
  * @param fieldName The field's value.
  */
-case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends NativeFact
+case class JavaInstanceField(index: Int, classType: ObjectType, fieldName: String) extends NativeFact
 
 /**
  * A path of method calls, originating from the analyzed method, over which a tainted variable

@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-
-package org.opalj.ll.llvm
+package org.opalj.ll.llvm.value
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 

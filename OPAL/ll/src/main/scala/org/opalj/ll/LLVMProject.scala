@@ -1,16 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll
 
-import org.opalj.ll.llvm.{Function, Module, Reader}
+import org.opalj.ll.llvm.{Module, Reader, value}
 
 class LLVMProject(val modules: Iterable[Module]) {
-    def functions(): Iterable[Function] = {
-        modules.flatMap(module ⇒ module.functions())
-    }
+    def functions: Iterable[value.Function] =
+        modules.flatMap(module ⇒ module.functions)
 
-    def function(name: String): Option[Function] = {
-        functions.find(_.name() == name)
-    }
+    def function(name: String): Option[value.Function] =
+        functions.find(_.name == name)
 }
 
 object LLVMProject {

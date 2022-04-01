@@ -6,8 +6,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.old.{AbstractIFDSAnalysis, JavaIFDSProblem, DeclaredMethodJavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.old.{JavaIFDSProblem, DeclaredMethodJavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint._
+import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem ⇒ NewJavaIFDSProblem}
 
 abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[Fact](project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, Fact] {
     override def nullFact: Fact = NullFact
@@ -75,7 +76,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
                 case Variable(index) ⇒
                     allParamsWithIndices.foreach {
                         case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
-                            facts += Variable(AbstractIFDSAnalysis.switchParamAndVariableIndex(
+                            facts += Variable(NewJavaIFDSProblem.switchParamAndVariableIndex(
                                 paramIndex,
                                 callee.definedMethod.isStatic
                             ))
@@ -87,7 +88,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
                     allParamsWithIndices.foreach {
                         case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
                             facts += ArrayElement(
-                                AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, callee.definedMethod.isStatic),
+                                NewJavaIFDSProblem.switchParamAndVariableIndex(paramIndex, callee.definedMethod.isStatic),
                                 taintedIndex
                             )
                         case _ ⇒ // Nothing to do
@@ -98,10 +99,10 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
                     // Only if the formal parameter is of a type that may have that field!
                     allParamsWithIndices.foreach {
                         case (param, pIndex) if param.asVar.definedBy.contains(index) &&
-                            (AbstractIFDSAnalysis.switchParamAndVariableIndex(pIndex, callee.definedMethod.isStatic) != -1 ||
+                            (NewJavaIFDSProblem.switchParamAndVariableIndex(pIndex, callee.definedMethod.isStatic) != -1 ||
                                 project.classHierarchy.isSubtypeOf(declClass, callee.declaringClassType)) ⇒
                             facts += InstanceField(
-                                AbstractIFDSAnalysis.switchParamAndVariableIndex(pIndex, callee.definedMethod.isStatic),
+                                NewJavaIFDSProblem.switchParamAndVariableIndex(pIndex, callee.definedMethod.isStatic),
                                 declClass, taintedField
                             )
                         case _ ⇒ // Nothing to do
@@ -136,7 +137,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
             else {
                 val parameterOffset = if (callee.definedMethod.isStatic) 0 else 1
                 callee.descriptor.parameterType(
-                    AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.definedMethod.isStatic)
+                    NewJavaIFDSProblem.switchParamAndVariableIndex(index, callee.definedMethod.isStatic)
                         - parameterOffset
                 ).isReferenceType
             }
@@ -149,21 +150,21 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
             // Taint actual parameter if formal parameter is tainted
             case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
                 val param = allParams(
-                    AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.definedMethod.isStatic)
+                    NewJavaIFDSProblem.switchParamAndVariableIndex(index, callee.definedMethod.isStatic)
                 )
                 flows ++= param.asVar.definedBy.iterator.map(Variable)
 
             // Taint element of actual parameter if element of formal parameter is tainted
             case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
                 val param = allParams(
-                    AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.definedMethod.isStatic)
+                    NewJavaIFDSProblem.switchParamAndVariableIndex(index, callee.definedMethod.isStatic)
                 )
                 flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
 
             case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
                 // Taint field of actual parameter if field of formal parameter is tainted
                 val param =
-                    allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.definedMethod.isStatic))
+                    allParams(NewJavaIFDSProblem.switchParamAndVariableIndex(index, callee.definedMethod.isStatic))
                 param.asVar.definedBy.foreach { defSite ⇒
                     flows += InstanceField(defSite, declClass, taintedField)
                 }

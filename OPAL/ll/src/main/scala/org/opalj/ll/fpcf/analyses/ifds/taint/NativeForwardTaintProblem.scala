@@ -2,8 +2,8 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeIFDSProblem}
-import org.opalj.ll.llvm.{Function, PHI}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeIFDSProblem}
+import org.opalj.ll.llvm.value.{Add, Alloca, Function, Load, PHI, Ret, Store}
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
 abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
@@ -20,7 +20,22 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         that the facts in `in` held before `statement` and `successor` will be
      *         executed next.
      */
-    override def normalFlow(statement: LLVMStatement, in: NativeFact, predecessor: Option[LLVMStatement]): Set[NativeFact] = ???
+    override def normalFlow(statement: LLVMStatement, in: NativeFact, predecessor: Option[LLVMStatement]): Set[NativeFact] = statement.instruction match {
+        case _: Alloca ⇒ Set(in)
+        case store: Store ⇒ in match {
+            case NativeVariable(value) if value == store.src ⇒ Set(in, NativeVariable(store.dst))
+            case _                                           ⇒ Set(in)
+        }
+        case load: Load ⇒ in match {
+            case NativeVariable(value) if value == load.src ⇒ Set(in, NativeVariable(load))
+            case _                                          ⇒ Set(in)
+        }
+        case add: Add ⇒ in match {
+            case NativeVariable(value) if value == add.op1 || value == add.op2 ⇒ Set(in, NativeVariable(add))
+            case _ ⇒ Set(in)
+        }
+        case _ ⇒ Set(in)
+    }
 
     /**
      * Computes the data flow for a call to start edge.
@@ -28,11 +43,17 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @param call   The analyzed call statement.
      * @param callee The called method, for which the data flow shall be computed.
      * @param in     The fact which holds before the execution of the `call`.
-     * @param source The entity, which is analyzed.
      * @return The facts, which hold after the execution of `statement` under the assumption that
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
-    override def callFlow(call: LLVMStatement, callee: Function, in: NativeFact): Set[NativeFact] = ???
+    override def callFlow(call: LLVMStatement, callee: Function, in: NativeFact): Set[NativeFact] = in match {
+        // Taint formal parameter if actual parameter is tainted
+        case NativeVariable(value) ⇒ if (callee.arguments.exists(_ == value)) Set(in) else Set()
+        // TODO pass other java taints
+        case NativeNullFact        ⇒ Set(in)
+        case _                     ⇒ Set() // Nothing to do
+
+    }
 
     /**
      * Computes the data flow for an exit to return edge.
@@ -44,7 +65,24 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         under the assumption that `in` held before the execution of `exit` and that
      *         `successor` will be executed next.
      */
-    override def returnFlow(exit: LLVMStatement, in: NativeFact, call: LLVMStatement, callFact: NativeFact): Set[NativeFact] = ???
+    override def returnFlow(exit: LLVMStatement, in: NativeFact, call: LLVMStatement, callFact: NativeFact): Set[NativeFact] = {
+        var flows: Set[NativeFact] = in match {
+            case NativeVariable(value) ⇒ exit.instruction match {
+                case ret: Ret if ret.value == value ⇒ Set(in)
+                case _                              ⇒ Set()
+            }
+            case NativeNullFact ⇒ Set(NativeNullFact)
+            case NativeFlowFact(flow) if !flow.contains(LLVMFunction(call.function)) ⇒
+                Set(NativeFlowFact(LLVMFunction(call.function) +: flow))
+            case _ ⇒ Set()
+        }
+        if (exit.callable.name == "sink") in match {
+            case NativeVariable(value) if value == exit.callable.argument(0) ⇒
+                flows += NativeFlowFact(Seq(LLVMFunction(call.callable), LLVMFunction(exit.callable)))
+            case _ ⇒
+        }
+        flows
+    }
 
     /**
      * Computes the data flow for a call to return edge.
@@ -54,7 +92,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return The facts, which hold after the call independently of what happens in the callee
      *         under the assumption that `in` held before `call`.
      */
-    override def callToReturnFlow(call: LLVMStatement, in: NativeFact): Set[NativeFact] = ???
+    override def callToReturnFlow(call: LLVMStatement, in: NativeFact): Set[NativeFact] = Set(in)
 
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
         case PHI(_) ⇒ true

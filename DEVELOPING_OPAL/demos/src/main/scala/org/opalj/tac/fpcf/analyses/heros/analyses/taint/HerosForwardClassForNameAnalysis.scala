@@ -1,50 +1,25 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.heros.analyses.taint
 
+import heros.{FlowFunction, FlowFunctions, TwoElementSet}
+import heros.flowfunc.{Identity, KillAll}
+import org.opalj.br.{ClassHierarchy, DeclaredMethod, Method, ObjectType}
+import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.{FinalEP, PropertyStore}
+import org.opalj.tac._
+import org.opalj.tac.fpcf.analyses.heros.analyses.{HerosAnalysis, HerosAnalysisRunner}
+import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.fpcf.analyses.ifds.taint._
+import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.util.Milliseconds
+
 import java.io.File
 import java.util
 import java.util.Collections
 import scala.collection.JavaConverters._
-import heros.FlowFunction
-import heros.FlowFunctions
-import heros.TwoElementSet
-import heros.flowfunc.Identity
-import heros.flowfunc.KillAll
-import org.opalj.util.Milliseconds
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.DeclaredMethod
-import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
-import org.opalj.tac.Assignment
-import org.opalj.tac.Expr
-import org.opalj.tac.GetField
-import org.opalj.tac.GetStatic
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.Var
-import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
-import org.opalj.tac.ArrayLength
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.BinaryExpr
-import org.opalj.tac.Compare
-import org.opalj.tac.NewArray
-import org.opalj.tac.PrefixExpr
-import org.opalj.tac.PrimitiveTypecastExpr
-import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
-import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
-import org.opalj.tac.fpcf.analyses.ifds.old.AbstractIFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, Fact, FlowFact, InstanceField, StaticField, Variable}
 
 /**
  * An implementation of the ForwardClassForNameAnalysis in the Heros framework.
@@ -202,7 +177,7 @@ class HerosForwardClassForNameAnalysis(
                                     .collect {
                                         case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
                                             Variable(
-                                                AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic)
+                                                JavaIFDSProblem.switchParamAndVariableIndex(paramIdx, callee.isStatic)
                                             )
                                     }
                                     .toSet[Fact]
@@ -213,7 +188,7 @@ class HerosForwardClassForNameAnalysis(
                                     .collect {
                                         case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
                                             ArrayElement(
-                                                AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic),
+                                                JavaIFDSProblem.switchParamAndVariableIndex(paramIdx, callee.isStatic),
                                                 taintedIndex
                                             )
                                     }
@@ -225,13 +200,13 @@ class HerosForwardClassForNameAnalysis(
                                 allParamsWithIndices
                                     .collect {
                                         case (param, paramIdx) if param.asVar.definedBy.contains(index) &&
-                                            (AbstractIFDSAnalysis.switchParamAndVariableIndex(
+                                            (JavaIFDSProblem.switchParamAndVariableIndex(
                                                 paramIdx,
                                                 callee.isStatic
                                             ) != -1 ||
                                                 classHierarchy.isSubtypeOf(declClass, callee.classFile.thisType)) ⇒
                                             InstanceField(
-                                                AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIdx, callee.isStatic),
+                                                JavaIFDSProblem.switchParamAndVariableIndex(paramIdx, callee.isStatic),
                                                 declClass,
                                                 taintedField
                                             )
@@ -256,7 +231,7 @@ class HerosForwardClassForNameAnalysis(
                         val parameterOffset = if (callee.isStatic) 0 else 1
                         callee.descriptor
                             .parameterType(
-                                AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic)
+                                JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                                     - parameterOffset
                             )
                             .isReferenceType
@@ -270,7 +245,7 @@ class HerosForwardClassForNameAnalysis(
 
                         case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
                             val params = allParams(
-                                AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic)
+                                JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                             )
                             params.asVar.definedBy.iterator.map(Variable).toSet
 
@@ -278,7 +253,7 @@ class HerosForwardClassForNameAnalysis(
                             // Taint element of actual parameter if element of formal parameter is tainted
                             val params =
                                 asCall(stmt.stmt).allParams(
-                                    AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic)
+                                    JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                                 )
                             params.asVar.definedBy.iterator
                                 .map(ArrayElement(_, taintedIndex))
@@ -288,7 +263,7 @@ class HerosForwardClassForNameAnalysis(
                         case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
                             // Taint field of actual parameter if field of formal parameter is tainted
                             val params =
-                                allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, callee.isStatic))
+                                allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
                             params.asVar.definedBy.iterator
                                 .map(InstanceField(_, declClass, taintedField))
                                 .asInstanceOf[Iterator[Fact]]

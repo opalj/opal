@@ -5,6 +5,7 @@ import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.ifds.{AbstractIFDSFact, SubsumableFact, SubsumableNullFact}
+import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem ⇒ NewJavaIFDSProblem}
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
 
@@ -135,7 +136,7 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
                     case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) ⇒
                         // If this is the case, create a new fact for the method's formal parameter.
                         flow += VariableType(
-                            AbstractIFDSAnalysis
+                            NewJavaIFDSProblem
                                 .switchParamAndVariableIndex(parameterIndex, callee.definedMethod.isStatic),
                             t,
                             upperBound
@@ -316,7 +317,7 @@ class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact]
  * subtype of its compile time type.
  */
                 VariableType(
-                    AbstractIFDSAnalysis.switchParamAndVariableIndex(index, method.definedMethod.isStatic),
+                    NewJavaIFDSProblem.switchParamAndVariableIndex(index, method.definedMethod.isStatic),
                     t.asReferenceType,
                     upperBound = true
                 )

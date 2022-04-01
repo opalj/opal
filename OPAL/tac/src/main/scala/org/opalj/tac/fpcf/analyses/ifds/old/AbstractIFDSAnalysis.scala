@@ -833,19 +833,6 @@ object AbstractIFDSAnalysis {
      * When true, the cross product of exit and successor in returnFLow will be optimized.
      */
     var OPTIMIZE_CROSS_PRODUCT_IN_RETURN_FLOW: Boolean = true
-
-    /**
-     * Converts the index of a method's formal parameter to its tac index in the method's scope and
-     * vice versa.
-     *
-     * @param index The index of a formal parameter in the parameter list or of a variable.
-     * @param isStaticMethod States, whether the method is static.
-     * @return A tac index if a parameter index was passed or a parameter index if a tac index was
-     *         passed.
-     */
-    def switchParamAndVariableIndex(index: Int, isStaticMethod: Boolean): Int =
-        (if (isStaticMethod) -2 else -1) - index
-
 }
 
 /**

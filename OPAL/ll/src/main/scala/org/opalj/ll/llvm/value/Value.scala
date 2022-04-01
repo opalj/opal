@@ -1,34 +1,39 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj.ll.llvm.value
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM._
+import org.opalj.ll.llvm.Type
 
-class OptionalValue
-
-class Value(ref: LLVMValueRef) extends OptionalValue {
-    def repr(): String = {
+class Value(ref: LLVMValueRef) {
+    def repr: String = {
         val bytePointer = LLVMPrintValueToString(ref)
         val string = bytePointer.getString
         LLVMDisposeMessage(bytePointer)
         string
     }
 
-    def name(): String = {
+    def name: String = {
         LLVMGetValueName(ref).getString
     }
 
-    def typ(): Type = Type(LLVMTypeOf(ref))
+    def typ: Type = Type(LLVMTypeOf(ref))
+
+    val address = ref.address
+    override def equals(other: Any): Boolean =
+        other.isInstanceOf[Value] && address == other.asInstanceOf[Value].address
+
+    override def toString: String = {
+        s"${getClass.getSimpleName}(${repr})"
+    }
 }
 
-case class NullValue() extends OptionalValue
-
 object Value {
-    def apply(ref: LLVMValueRef): OptionalValue = {
-        if (ref == null) return NullValue()
-        if (ref.isNull) return NullValue()
-        LLVMGetValueKind(ref) match {
-            //LLVMArgumentValueKind
+    def apply(ref: LLVMValueRef): Option[Value] = {
+        if (ref == null) return None
+        if (ref.isNull) return None
+        Some(LLVMGetValueKind(ref) match {
+            case LLVMArgumentValueKind       ⇒ Argument(ref)
             case LLVMBasicBlockValueKind     ⇒ BasicBlock(LLVMValueAsBasicBlock(ref))
             //LLVMMemoryUseValueKind
             //LLVMMemoryDefValueKind
@@ -46,7 +51,7 @@ object Value {
             //LLVMConstantAggregateZeroValueKind
             //LLVMConstantDataArrayValueKind
             //LLVMConstantDataVectorValueKind
-            //LLVMConstantIntValueKind
+            case LLVMConstantIntValueKind    ⇒ ConstantIntValue(ref)
             //LLVMConstantFPValueKind
             //LLVMConstantPointerNullValueKind
             //LLVMConstantTokenNoneValueKind
@@ -55,6 +60,6 @@ object Value {
             case LLVMInstructionValueKind    ⇒ Instruction(ref)
             //LLVMPoisonValueValueKind
             case valueKind                   ⇒ throw new IllegalArgumentException("unknown valueKind: "+valueKind)
-        }
+        })
     }
 }

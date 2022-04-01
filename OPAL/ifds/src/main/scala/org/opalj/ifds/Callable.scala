@@ -5,10 +5,10 @@ abstract class Callable {
     /**
      * The name of the Callable
      */
-    def name(): String
+    def name: String
 
     /**
      * The full name of the Callable including its signature
      */
-    def signature(): String
+    def signature: String
 }

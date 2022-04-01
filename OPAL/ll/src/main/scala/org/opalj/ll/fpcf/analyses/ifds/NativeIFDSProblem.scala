@@ -6,7 +6,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.llvm.Function
+import org.opalj.ll.llvm.value.Function
 
 abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, Function, LLVMStatement](new NativeForwardICFG[Fact]) {
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)

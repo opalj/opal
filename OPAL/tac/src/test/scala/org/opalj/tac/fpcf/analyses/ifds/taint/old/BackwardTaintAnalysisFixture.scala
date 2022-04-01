@@ -10,6 +10,7 @@ import org.opalj.tac.fpcf.analyses.ifds.old._
 import org.opalj.tac.fpcf.analyses.ifds.old.taint.BackwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, Variable}
 import org.opalj.tac.fpcf.properties.OldTaint
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 
 case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Method])
     extends UnbalancedReturnFact[Fact] with Fact
@@ -29,7 +30,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(_.methods).filter(_.name == "sink")
         .map(method ⇒ declaredMethods(method) →
-            Variable(AbstractIFDSAnalysis.switchParamAndVariableIndex(0, isStaticMethod = true)))
+            Variable(JavaIFDSProblem.switchParamAndVariableIndex(0, isStaticMethod = true)))
 
     /**
      * The sanitize method is the sanitizer.

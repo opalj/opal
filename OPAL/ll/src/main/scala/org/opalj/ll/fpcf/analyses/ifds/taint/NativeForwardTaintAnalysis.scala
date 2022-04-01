@@ -4,9 +4,9 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyBounds, PropertyStore}
 import org.opalj.ifds.IFDSPropertyMetaInformation
-import org.opalj.ll.fpcf.analyses.ifds.{NativeIFDSAnalysis, LLVMFunction, LLVMStatement, NativeIFDSAnalysisScheduler}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
-import org.opalj.ll.llvm.Function
+import org.opalj.ll.llvm.value.Function
 
 class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaintProblem(p) {
     /**
@@ -29,7 +29,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
      * Creates a new variable fact for the callee, if the source was called.
      */
     protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeFact] =
-        if (callee.name == "source") Set(NativeVariable(call))
+        if (callee.name == "source") Set.empty //TODO Set(NativeVariable())
         else Set.empty
 
     /**
@@ -41,7 +41,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
         call:   LLVMStatement,
         in:     Set[NativeFact]
     ): Option[NativeFlowFact] =
-        if (callee.name == "sink" && in.contains(NativeVariable(-2))) Some(NativeFlowFact(Seq(LLVMFunction(call.function))))
+        if (callee.name == "sink" && in.contains(JavaVariable(-2))) Some(NativeFlowFact(Seq(LLVMFunction(call.function))))
         else None
 }
 

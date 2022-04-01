@@ -5,7 +5,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.old.{AbstractIFDSAnalysis, JavaBackwardIFDSProblem, DeclaredMethodJavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem ⇒ NewJavaIFDSProblem}
+import org.opalj.tac.fpcf.analyses.ifds.old.{JavaBackwardIFDSProblem, DeclaredMethodJavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 
 abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIFDSProblem[Fact, UnbalancedTaintFact](project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, Fact] {
@@ -99,14 +100,14 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
                 val paramIndex = pair._2
                 in.foreach {
                     case Variable(index) if param.definedBy.contains(index) ⇒
-                        flow += Variable(AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall))
+                        flow += Variable(NewJavaIFDSProblem.switchParamAndVariableIndex(paramIndex, staticCall))
                     case ArrayElement(index, taintedElement) if param.definedBy.contains(index) ⇒
                         flow += ArrayElement(
-                            AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall), taintedElement
+                            NewJavaIFDSProblem.switchParamAndVariableIndex(paramIndex, staticCall), taintedElement
                         )
                     case InstanceField(index, declaringClass, name) if param.definedBy.contains(index) ⇒
                         flow += InstanceField(
-                            AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall),
+                            NewJavaIFDSProblem.switchParamAndVariableIndex(paramIndex, staticCall),
                             declaringClass, name
                         )
                     case staticField: StaticField ⇒ flow += staticField
@@ -333,21 +334,21 @@ abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIF
         val staticCall = callee.definedMethod.isStatic
         val thisOffset = if (staticCall) 0 else 1
         val formalParameterIndices = (0 until callStatement.descriptor.parametersCount)
-            .map(index ⇒ AbstractIFDSAnalysis.switchParamAndVariableIndex(index + thisOffset, staticCall))
+            .map(index ⇒ NewJavaIFDSProblem.switchParamAndVariableIndex(index + thisOffset, staticCall))
         val facts = scala.collection.mutable.Set.empty[Fact]
         calleeFacts.foreach {
             case Variable(index) if formalParameterIndices.contains(index) ⇒
                 facts ++= createNewTaints(
-                    callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)), call
+                    callStatement.allParams(NewJavaIFDSProblem.switchParamAndVariableIndex(index, staticCall)), call
                 )
             case ArrayElement(index, taintedElement) if formalParameterIndices.contains(index) ⇒
                 facts ++= createNewArrayElementTaints(
-                    callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)),
+                    callStatement.allParams(NewJavaIFDSProblem.switchParamAndVariableIndex(index, staticCall)),
                     taintedElement, call
                 )
             case InstanceField(index, declaringClass, name) if formalParameterIndices.contains(index) ⇒
                 facts ++= createNewInstanceFieldTaints(
-                    callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)),
+                    callStatement.allParams(NewJavaIFDSProblem.switchParamAndVariableIndex(index, staticCall)),
                     declaringClass, name, call
                 )
             case staticField: StaticField ⇒ facts += staticField

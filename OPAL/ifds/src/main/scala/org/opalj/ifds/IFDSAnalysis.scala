@@ -4,6 +4,7 @@ package org.opalj.ifds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf._
+import org.opalj.ifds.Dependees.Getter
 
 import scala.collection.{mutable, Set ⇒ SomeSet}
 
@@ -33,6 +34,13 @@ case class Dependees[Work]() {
         dependees -= epk
         dependee.worklist
     }
+
+    def getter()(implicit propertyStore: PropertyStore, work: Work): Getter =
+        (entity: Entity, propertyKey: PropertyKey[Property]) ⇒ get(entity, propertyKey)
+}
+
+object Dependees {
+    type Getter = (Entity, PropertyKey[Property]) ⇒ SomeEOptionP
 }
 
 /**
@@ -266,7 +274,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                     // Let the concrete analysis decide what to do.
                     for {
                         successor ← successors
-                        out ← outsideAnalysisHandler(call, successor, in) // ifds line 17 (only summary edges)
+                        out ← outsideAnalysisHandler(call, successor, in, state.dependees.getter()) // ifds line 17 (only summary edges)
                     } {
                         propagate(successor, out, call) // ifds line 18
                     }

@@ -1,23 +1,24 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj.ll.llvm.value
 
 import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM.{LLVMBasicBlockAsValue, LLVMGetBasicBlockName, LLVMGetBasicBlockParent, LLVMGetBasicBlockTerminator, LLVMGetFirstInstruction, LLVMGetLastInstruction, LLVMGetNextInstruction}
+import org.bytedeco.llvm.global.LLVM._
 import org.opalj.graphs.Node
+import org.opalj.ll.llvm.value
 
 case class BasicBlock(block_ref: LLVMBasicBlockRef)
     extends Value(LLVMBasicBlockAsValue(block_ref))
     with Node {
-    def parent() = Function(LLVMGetBasicBlockParent(block_ref))
-    def instructions(): InstructionIterator = new InstructionIterator(LLVMGetFirstInstruction(block_ref))
-    def firstInstruction(): Instruction = Instruction(LLVMGetFirstInstruction(block_ref))
-    def lastInstruction(): Instruction = Instruction(LLVMGetLastInstruction(block_ref))
+    def parent = Function(LLVMGetBasicBlockParent(block_ref))
+    def instructions: InstructionIterator = new InstructionIterator(LLVMGetFirstInstruction(block_ref))
+    def firstInstruction: Instruction = Instruction(LLVMGetFirstInstruction(block_ref))
+    def lastInstruction: Instruction = Instruction(LLVMGetLastInstruction(block_ref))
 
-    def terminator(): Option[Instruction with Terminator] = {
+    def terminator(): Option[Instruction with value.Terminator] = {
         OptionalInstruction(LLVMGetBasicBlockTerminator(block_ref)) match {
             case Some(terminator) ⇒ {
-                assert(terminator.isTerminator())
-                Some(terminator.asInstanceOf[Instruction with Terminator])
+                assert(terminator.isTerminator)
+                Some(terminator.asInstanceOf[Instruction with value.Terminator])
             }
             case None ⇒ None
         }
@@ -29,7 +30,7 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
      * Returns a human readable representation (HRR) of this node.
      */
     override def toHRR: Option[String] = {
-        Some(name()) //TODO: maybe add more info
+        Some(name) //TODO: maybe add more info
     }
 
     /**

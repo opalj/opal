@@ -31,7 +31,7 @@ import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
-import org.opalj.tac.fpcf.analyses.ifds.old.AbstractIFDSAnalysis
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, Fact, FlowFact, InstanceField, StaticField, Variable}
 
@@ -143,14 +143,14 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
                             val paramIndex = pair._2
                             source match {
                                 case Variable(index) if param.definedBy.contains(index) ⇒
-                                    Some(Variable(AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall)))
+                                    Some(Variable(JavaIFDSProblem.switchParamAndVariableIndex(paramIndex, staticCall)))
                                 case ArrayElement(index, taintedElement) if param.definedBy.contains(index) ⇒
                                     Some(ArrayElement(
-                                        AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall), taintedElement
+                                        JavaIFDSProblem.switchParamAndVariableIndex(paramIndex, staticCall), taintedElement
                                     ))
                                 case InstanceField(index, declaringClass, name) if param.definedBy.contains(index) ⇒
                                     Some(InstanceField(
-                                        AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall),
+                                        JavaIFDSProblem.switchParamAndVariableIndex(paramIndex, staticCall),
                                         declaringClass, name
                                     ))
                                 case staticField: StaticField ⇒ Some(staticField)
@@ -169,21 +169,21 @@ class HerosBackwardClassForNameAnalysis(p: SomeProject, icfg: OpalBackwardICFG) 
                 val staticCall = callee.isStatic
                 val thisOffset = if (staticCall) 0 else 1
                 val formalParameterIndices = (0 until callStatement.descriptor.parametersCount)
-                    .map(index ⇒ AbstractIFDSAnalysis.switchParamAndVariableIndex(index + thisOffset, staticCall))
+                    .map(index ⇒ JavaIFDSProblem.switchParamAndVariableIndex(index + thisOffset, staticCall))
                 source: Fact ⇒
                     (source match {
                         case Variable(index) if formalParameterIndices.contains(index) ⇒
                             createNewTaints(
-                                callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)), statement
+                                callStatement.allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, staticCall)), statement
                             )
                         case ArrayElement(index, taintedElement) if formalParameterIndices.contains(index) ⇒
                             toArrayElement(createNewTaints(
-                                callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)),
+                                callStatement.allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, staticCall)),
                                 statement
                             ), taintedElement)
                         case InstanceField(index, declaringClass, name) if formalParameterIndices.contains(index) ⇒
                             toInstanceField(createNewTaints(
-                                callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)),
+                                callStatement.allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, staticCall)),
                                 statement
                             ), declaringClass, name)
                         case staticField: StaticField ⇒ Set[Fact](staticField)

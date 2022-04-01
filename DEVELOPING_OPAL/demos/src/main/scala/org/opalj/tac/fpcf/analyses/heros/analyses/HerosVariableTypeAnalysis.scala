@@ -1,43 +1,26 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.heros.analyses
 
-import scala.annotation.tailrec
+import heros.{FlowFunction, FlowFunctions, TwoElementSet}
+import heros.flowfunc.{Identity, KillAll}
+import org.opalj.br.{ArrayType, DeclaredMethod, FieldType, Method}
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.fpcf.{FinalEP, PropertyStore}
+import org.opalj.tac._
+import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
+import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.old.{CalleeType, VTAFact, VTANullFact, VariableType}
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.util.Milliseconds
+import org.opalj.value.ValueInformation
+
 import java.io.File
 import java.util
 import java.util.Collections
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import heros.FlowFunctions
-import heros.FlowFunction
-import heros.flowfunc.Identity
-import heros.TwoElementSet
-import heros.flowfunc.KillAll
-import org.opalj.util.Milliseconds
-import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
-import org.opalj.br.Method
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ArrayType
-import org.opalj.br.FieldType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.DeclaredMethod
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.Assignment
-import org.opalj.tac.Expr
-import org.opalj.tac.GetStatic
-import org.opalj.tac.New
-import org.opalj.tac.DUVar
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.GetField
-import org.opalj.tac.Var
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.fpcf.analyses.ifds.old.{AbstractIFDSAnalysis, CalleeType, VTAFact, VTANullFact, VariableType}
 
 /**
  * An implementation of the IFDSBasedVariableTypeAnalysis in the Heros framework.
@@ -107,7 +90,7 @@ class HerosVariableTypeAnalysis(
                                 allParams.iterator.zipWithIndex.foreach {
                                     case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) ⇒
                                         flow += VariableType(
-                                            AbstractIFDSAnalysis
+                                            JavaIFDSProblem
                                                 .switchParamAndVariableIndex(parameterIndex, callee.isStatic),
                                             t,
                                             upperBound
@@ -258,7 +241,7 @@ class HerosVariableTypeAnalysisRunner
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType ⇒
                 VariableType(
-                    AbstractIFDSAnalysis.switchParamAndVariableIndex(index, method.isStatic),
+                    JavaIFDSProblem.switchParamAndVariableIndex(index, method.isStatic),
                     t.asReferenceType,
                     upperBound = true
                 )

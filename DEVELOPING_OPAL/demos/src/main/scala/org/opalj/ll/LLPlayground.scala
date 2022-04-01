@@ -8,7 +8,7 @@ object LLPlayground {
 
     def main(args: Array[String]): Unit = {
         val module = Reader.readIR("./OPAL/ll/src/test/resources/org/opalj/ll/test_jsmn.ll").get
-        val function = module.get_function("jsmn_parse_string")
+        val function = module.function("jsmn_parse_string")
         println(function.name)
         function.viewLLVMCFG(false)
         function.viewCFG()

@@ -5,6 +5,6 @@ import org.opalj.br.Method
 import org.opalj.ifds.Callable
 
 case class JavaMethod(method: Method) extends Callable {
-    override def name(): String = method.name
-    override def signature(): String = method.toJava
+    override def name: String = method.name
+    override def signature: String = method.toJava
 }

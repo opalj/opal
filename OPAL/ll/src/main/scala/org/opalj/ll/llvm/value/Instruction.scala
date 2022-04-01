@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj.ll.llvm.value
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM._
+import org.opalj.ll.llvm.Type
 
 object OptionalInstruction {
     def apply(ref: LLVMValueRef): Option[Instruction] = {
@@ -89,33 +90,39 @@ object Instruction {
 
 trait Terminator {
     val ref: LLVMValueRef
-    def numSuccessors(): Int = LLVMGetNumSuccessors(ref)
-    def hasSuccessors(): Boolean = numSuccessors() > 0
+    def numSuccessors: Int = LLVMGetNumSuccessors(ref)
+    def hasSuccessors: Boolean = numSuccessors > 0
     def getSuccessor(i: Int) = BasicBlock(LLVMGetSuccessor(ref, i))
-    def foreachSuccessor(f: BasicBlock ⇒ Unit): Unit = {
-        (0 to numSuccessors() - 1).foreach(i ⇒ f(getSuccessor(i)))
-    }
-    def successors(): Seq[Instruction] = {
-        (0 to numSuccessors() - 1).map(i ⇒ getSuccessor(i).firstInstruction())
-    }
+    def foreachSuccessor(f: BasicBlock ⇒ Unit): Unit =
+        (0 to numSuccessors - 1).foreach(i ⇒ f(getSuccessor(i)))
+    def successors: Seq[Instruction] =
+        (0 to numSuccessors - 1).map(i ⇒ getSuccessor(i).firstInstruction)
 }
 
 sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
-    def isTerminator(): Boolean = !LLVMIsATerminatorInst(ref).isNull
-    def parent(): BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
-    def function(): Function = parent.parent
-    def next(): Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
+    def isTerminator: Boolean = LLVMIsATerminatorInst(ref) != null
+    def parent: BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
+    def function: Function = parent.parent
+    def next: Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
 
     /*def successors(): Seq[Instruction] = next match {
         case Some(successor) ⇒ Seq(successor)
         case None            ⇒ Seq()
     }*/
     override def toString: String = {
-        s"${this.getClass.getSimpleName}(${repr()})"
+        s"${this.getClass.getSimpleName}(${repr})"
+    }
+
+    def numOperands: Int = LLVMGetNumOperands(ref)
+    def operand(index: Int): Value = {
+        assert(index < numOperands)
+        Value(LLVMGetOperand(ref, index)).get
     }
 }
 
-case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator {
+    def value: Value = operand(0)
+}
 case class Br(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class Switch(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class IndirectBr(ref: LLVMValueRef) extends Instruction(ref) with Terminator
@@ -123,7 +130,10 @@ case class Invoke(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class Unreachable(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class CallBr(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class FNeg(ref: LLVMValueRef) extends Instruction(ref)
-case class Add(ref: LLVMValueRef) extends Instruction(ref)
+case class Add(ref: LLVMValueRef) extends Instruction(ref) {
+    def op1: Value = operand(0)
+    def op2: Value = operand(1)
+}
 case class FAdd(ref: LLVMValueRef) extends Instruction(ref)
 case class Sub(ref: LLVMValueRef) extends Instruction(ref)
 case class FSub(ref: LLVMValueRef) extends Instruction(ref)
@@ -141,16 +151,15 @@ case class AShr(ref: LLVMValueRef) extends Instruction(ref)
 case class And(ref: LLVMValueRef) extends Instruction(ref)
 case class Or(ref: LLVMValueRef) extends Instruction(ref)
 case class Xor(ref: LLVMValueRef) extends Instruction(ref)
-case class Alloca(ref: LLVMValueRef) extends Instruction(ref)
-case class Load(ref: LLVMValueRef) extends Instruction(ref)
+case class Alloca(ref: LLVMValueRef) extends Instruction(ref) {
+    def allocatedType: Type = Type(LLVMGetAllocatedType(ref))
+}
+case class Load(ref: LLVMValueRef) extends Instruction(ref) {
+    def src: Value = operand(0)
+}
 case class Store(ref: LLVMValueRef) extends Instruction(ref) {
-    def src(): Value = {
-        Value(LLVMGetOperand(ref, 0)).asInstanceOf[Value]
-    }
-
-    def dst(): Value = {
-        Value(LLVMGetOperand(ref, 1)).asInstanceOf[Value]
-    }
+    def src: Value = operand(0)
+    def dst: Value = operand(1)
 }
 case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref)
 case class Trunc(ref: LLVMValueRef) extends Instruction(ref)
@@ -169,7 +178,10 @@ case class AddrSpaceCast(ref: LLVMValueRef) extends Instruction(ref)
 case class ICmp(ref: LLVMValueRef) extends Instruction(ref)
 case class FCmp(ref: LLVMValueRef) extends Instruction(ref)
 case class PHI(ref: LLVMValueRef) extends Instruction(ref)
-case class Call(ref: LLVMValueRef) extends Instruction(ref)
+case class Call(ref: LLVMValueRef) extends Instruction(ref) {
+    def calledValue: Function = Function(LLVMGetCalledValue(ref))
+    def calledFunctionType: Type = Type(LLVMGetCalledFunctionType(ref))
+}
 case class Select(ref: LLVMValueRef) extends Instruction(ref)
 case class UserOp1(ref: LLVMValueRef) extends Instruction(ref)
 case class UserOp2(ref: LLVMValueRef) extends Instruction(ref)
