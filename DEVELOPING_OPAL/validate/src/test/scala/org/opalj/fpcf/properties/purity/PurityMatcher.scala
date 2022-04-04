@@ -158,7 +158,7 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet �
 
         if (!properties.exists {
             case `expected` ⇒ true
-            case _ ⇒ false
+            case _          ⇒ false
         }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)

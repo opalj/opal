@@ -57,6 +57,9 @@ import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.tac.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.Assignable
+import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.LazilyInitialized
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -82,8 +85,6 @@ import org.opalj.tac.fpcf.properties.cg.NoCallers
  * @author Dominik Helm
  */
 class L1PurityAnalysis private[analyses] (val project: SomeProject) extends AbstractPurityAnalysis {
-
-    import org.opalj.br.fpcf.properties.FieldAssignability
 
     /**
      * Holds the state of this analysis.
@@ -262,10 +263,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - classes files for class types returned (for their mutability)
      */
     def continuation(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
-        import org.opalj.br.fpcf.properties.Assignable
-        import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-        import org.opalj.br.fpcf.properties.FieldAssignability
-        import org.opalj.br.fpcf.properties.LazilyInitialized
+
         state.dependees = state.dependees.filter(_.e ne eps.e)
         val oldPurity = state.ubPurity
 

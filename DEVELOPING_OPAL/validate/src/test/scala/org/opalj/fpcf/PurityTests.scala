@@ -4,22 +4,14 @@ package fpcf
 
 import java.net.URL
 
-import org.opalj.br.analyses.Project
-
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0ClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -28,6 +20,12 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0ClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldAssignabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0TypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -37,6 +35,8 @@ import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
  * @author Dominik Helm
  */
 class PurityTests extends PropertiesTest {
+
+    import org.opalj.br.analyses.Project
 
     override def withRT = true
 
@@ -53,6 +53,7 @@ class PurityTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
+
         val as =
             executeAnalyses(
                 Set(

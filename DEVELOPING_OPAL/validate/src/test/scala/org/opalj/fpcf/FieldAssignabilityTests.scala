@@ -52,7 +52,7 @@ class FieldAssignabilityTests extends PropertiesTest {
     }
     L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
-    describe("the org.opalj.fpcf.analyses.L0ReferenceImmutability is executed") {
+    describe("the org.opalj.fpcf.analyses.L3FieldAssignability is executed") {
         val as = executeAnalyses(
             Set(
                 EagerL3FieldAssignabilityAnalysis,

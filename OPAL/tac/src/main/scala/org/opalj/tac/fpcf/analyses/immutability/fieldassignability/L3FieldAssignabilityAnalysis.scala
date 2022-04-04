@@ -97,6 +97,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     private[analyses] def determineFieldAssignability(
         field: Field
     ): ProperPropertyComputationResult = {
+        if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+            print("start determination")
+        }
 
         if (field.isFinal)
             return Result(field, NonAssignable);
@@ -125,7 +128,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 return Result(field, Assignable);
             }
         }
-
+        if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+            print("after prequel checks")
+        }
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             (taCode, callers) ← getTACAIAndCallers(method, pcs) //TODO field accesses via this
@@ -152,6 +157,15 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 c
             )
         } else {
+            if (state.field.name == "hash" && state.field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                print(
+                    s"""
+                     | field: ${state.field}
+                     | field assignability: ${state.fieldAssignability}
+                     | escape dependees: ${state.escapeDependees}
+                     |""".stripMargin
+                )
+            }
             Result(state.field, state.fieldAssignability)
         }
     }
@@ -166,6 +180,11 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
+                if (state.field.name == "hash" && state.field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                    print("=======================================")
+                    print(newEP)
+                    print("---------------------------------------")
+                }
                 state.escapeDependees = state.escapeDependees.iterator.filter(_.e != newEP.e).toSet
                 handleEscapeProperty(newEP)
 
@@ -208,7 +227,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
-
+        if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+            println("1")
+        }
         pcs.iterator.exists { pc ⇒
             val index = taCode.pcToIndex(pc)
             if (index > -1) { //TODO actually, unnecessary but required because there are '-1'; dead
@@ -216,6 +237,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 if (stmt.pc == pc) {
                     (stmt.astID: @switch) match {
                         case PutStatic.ASTID | PutField.ASTID ⇒
+                            if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                println("2")
+                            }
                             if (method.isInitializer) {
                                 if (field.isStatic) {
                                     method.isConstructor
@@ -224,7 +248,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                     receiverDefs != SelfReferenceParameter
                                 }
                             } else {
-
+                                if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                    println("3")
+                                }
                                 if (field.isStatic ||
                                     stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
                                     // We consider lazy initialization if there is only single write
@@ -238,6 +264,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                         // A field written outside an initializer must be lazily
                                         // initialized or it is assignable
                                         {
+                                            if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                                println("3")
+                                            }
                                             if (considerLazyInitialization) {
                                                 val result = isAssignable(
                                                     index,
@@ -250,6 +279,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                                 true
                                         }
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method, callers)) {
+                                    if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                        println("4")
+                                    }
                                     // Here the clone pattern is determined among others
                                     //
                                     // note that here we assume real three address code (flat hierarchy)
@@ -264,6 +296,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                     // write the field as long as that new object did not yet escape.
                                     true
                                 } else {
+                                    if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                        println("5")
+                                    }
                                     val writes = fieldAccessInformation.writeAccesses(state.field)
                                     val reads = fieldAccessInformation.readAccesses(state.field)
                                     val writesInMethod = writes.iterator.filter(_._1 eq method).toList.head._2
@@ -279,9 +314,14 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                         return true;
 
                                     val assignedValueObjectVar = stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
-
+                                    if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                        println("6")
+                                    }
                                     if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index ⇒
                                         val stmt = stmts(index)
+                                        if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                            println("7")
+                                        }
                                         // val writeStmt  = stmts(fieldWriteInMethodIndex)
                                         fieldWriteInMethodIndex == index || //The value is itself written to another object
                                             stmt.isPutField && stmt.asPutField.name != state.field.name ||
@@ -292,13 +332,21 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                         return true;
 
                                     val fieldReadsInMethod = reads.iterator.filter(_._1 eq method).map(_._2).toList
-
+                                    if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                        println("8")
+                                    }
                                     if (fieldReadsInMethod.size > 1 && !fieldReadsInMethod.head.forall { pc ⇒
+                                        if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                            println("9")
+                                        }
                                         val index = taCode.pcToIndex(pc)
                                         fieldWriteInMethodIndex == index ||
                                             dominates(fieldWriteInMethodIndex, index, taCode)
                                     })
                                         return true;
+                                    if (field.name == "hash" && field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                                        println("10")
+                                    }
                                     false
                                 }
 
@@ -332,7 +380,12 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
                 else {
+                    if (state.field.name == "hash" && state.field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+                        println(20)
+                        println(callers)
+                    }
                     var hasEscaped = false
+
                     callers.forNewCalleeContexts(null, dm) { context ⇒
                         val entity = (context, definitionSites(method, definition.pc))
                         val escapeProperty = propertyStore(entity, EscapeProperty.key)
@@ -353,6 +406,11 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         ep: EOptionP[(Context, DefinitionSite), EscapeProperty]
     )(implicit state: State): Boolean = {
         import org.opalj.br.fpcf.properties.EscapeInCallee
+        if (state.field.name == "hash" && state.field.classFile.thisType.simpleName.contains("IdentityHashtableEntry")) {
+            print("=======================================")
+            print(ep)
+            print("---------------------------------------")
+        }
         ep match {
             case FinalP(NoEscape | EscapeViaReturn | EscapeInCallee) ⇒ false //
             case FinalP(AtMost(_))                                   ⇒ true

@@ -6,6 +6,7 @@ package analyses
 package purity
 
 import scala.annotation.switch
+import scala.reflect.runtime.universe.runtimeMirror
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -56,6 +57,9 @@ import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.properties.FieldAssignability
+import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.LazilyInitialized
+import org.opalj.br.fpcf.properties.NonAssignable
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -63,10 +67,6 @@ import org.opalj.br.fpcf.properties.FieldAssignability
  * Provides types and methods needed for purity analyses.
  */
 trait AbstractPurityAnalysis extends FPCFAnalysis {
-
-    import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-    import org.opalj.br.fpcf.properties.LazilyInitialized
-    import org.opalj.br.fpcf.properties.NonAssignable
 
     /** The type of the TAC domain. */
     type V = DUVar[ValueInformation]
@@ -643,7 +643,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def resolveDomainSpecificRater(fqn: String): DomainSpecificRater = {
-        import scala.reflect.runtime.universe.runtimeMirror
+
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
             val module = mirror.staticModule(fqn)
