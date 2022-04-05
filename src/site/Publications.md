@@ -96,7 +96,7 @@ There are also links to [related presentations](#related-presentations) below.
 
 ## Research Using OPAL
 
-> [**CiFi: Versatile Analysis of Class and Field Immutability**](https://ieeexplore.ieee.org/document/9678903)  
+> [**CiFi: Versatile Analysis of Class and Field Immutability**](/articles/CiFi@ASE21.pdf) 
 > ASE 2021  
 > *Tobias Roth, Dominik Helm, Michael Reif, Mira Mezini*  
 > <details><summary>Abstract</summary>

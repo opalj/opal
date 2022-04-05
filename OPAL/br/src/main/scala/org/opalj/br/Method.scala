@@ -271,7 +271,7 @@ sealed abstract class JVMMethod
 
     final def isNative: Boolean = (ACC_NATIVE.mask & accessFlags) != 0
 
-    final def isStrict: Boolean = (ACC_STRICT.mask & accessFlags) != 0
+    def isStrict: Boolean = (ACC_STRICT.mask & accessFlags) != 0
 
     final def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
@@ -467,6 +467,17 @@ final class Method private[br] (
     override def isMethod: Boolean = true
 
     override def asMethod: this.type = this
+
+    /**
+     *
+     * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
+     *         Strict evaluation of float expressions was also required in Java 1.0 and 1.1.
+     */
+    override def isStrict: Boolean =
+        if (this.classFile.version.major >= bi.Java17MajorVersion || this.classFile.version.major < bi.Java1_2MajorVersion)
+            true
+        else
+            (ACC_STRICT.mask & accessFlags) != 0
 
     def isAccessibleBy(
         objectType: ObjectType,

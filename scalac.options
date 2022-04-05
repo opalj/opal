@@ -23,3 +23,4 @@
 -Ywarn-adapted-args
 -Xdisable-assertions
 -Ybackend-parallelism 8
+-Wconf:cat=unused-nowarn:s
