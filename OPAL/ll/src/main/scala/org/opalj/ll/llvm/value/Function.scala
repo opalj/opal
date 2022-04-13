@@ -15,7 +15,11 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
     def arguments: ArgumentIterator = {
         new ArgumentIterator(LLVMGetFirstParam(ref))
     }
-    def argument(index: Int): Argument = Argument(LLVMGetParam(ref, index))
+    def argumentCount: Int = LLVMCountParams(ref)
+    def argument(index: Int): Argument = {
+        assert(index < argumentCount)
+        Argument(LLVMGetParam(ref, index))
+    }
 
     def entryBlock: BasicBlock = BasicBlock(LLVMGetEntryBasicBlock(ref))
 

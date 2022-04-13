@@ -297,7 +297,8 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
 
     private def concreteCallFlow(call: S, callee: C, in: IFDSFact)(implicit state: State, work: Work): Set[IFDSFact] = {
         var result = Set.empty[IFDSFact]
-        for (entryFact ← callFlow(call, callee, in)) { // ifds line 14
+        val entryFacts = callFlow(call, callee, in)
+        for (entryFact ← entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[S, Set[IFDSFact]] = if (e == state.source) {
                 // handle self dependency on our own because property store can't handle it

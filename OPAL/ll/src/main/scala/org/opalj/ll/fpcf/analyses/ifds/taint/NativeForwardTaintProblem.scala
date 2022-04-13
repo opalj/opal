@@ -3,7 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeIFDSProblem}
-import org.opalj.ll.llvm.value.{Add, Alloca, Function, Load, PHI, Ret, Store}
+import org.opalj.ll.llvm.value.{Add, Alloca, Call, Function, Load, PHI, Ret, Store}
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
 abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
@@ -48,10 +48,13 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      */
     override def callFlow(call: LLVMStatement, callee: Function, in: NativeFact): Set[NativeFact] = in match {
         // Taint formal parameter if actual parameter is tainted
-        case NativeVariable(value) ⇒ if (callee.arguments.exists(_ == value)) Set(in) else Set()
+        case NativeVariable(value) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
+            case Some(index) ⇒ Set(NativeVariable(callee.argument(index)))
+            case None        ⇒ Set()
+        }
         // TODO pass other java taints
-        case NativeNullFact        ⇒ Set(in)
-        case _                     ⇒ Set() // Nothing to do
+        case NativeNullFact ⇒ Set(in)
+        case _              ⇒ Set() // Nothing to do
 
     }
 
@@ -69,12 +72,16 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
         var flows: Set[NativeFact] = in match {
             case NativeVariable(value) ⇒ exit.instruction match {
                 case ret: Ret if ret.value == value ⇒ Set(in)
+                case _: Ret                         ⇒ Set()
                 case _                              ⇒ Set()
             }
             case NativeNullFact ⇒ Set(NativeNullFact)
             case NativeFlowFact(flow) if !flow.contains(LLVMFunction(call.function)) ⇒
                 Set(NativeFlowFact(LLVMFunction(call.function) +: flow))
             case _ ⇒ Set()
+        }
+        if (exit.callable.name == "source") in match {
+            case NativeNullFact ⇒ flows += NativeVariable(call.instruction)
         }
         if (exit.callable.name == "sink") in match {
             case NativeVariable(value) if value == exit.callable.argument(0) ⇒

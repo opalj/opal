@@ -181,6 +181,11 @@ case class PHI(ref: LLVMValueRef) extends Instruction(ref)
 case class Call(ref: LLVMValueRef) extends Instruction(ref) {
     def calledValue: Function = Function(LLVMGetCalledValue(ref))
     def calledFunctionType: Type = Type(LLVMGetCalledFunctionType(ref))
+    def indexOfArgument(argument: Value): Option[Int] = {
+        for (i ← 0 to numOperands)
+            if (operand(i) == argument) return Some(i)
+        None
+    }
 }
 case class Select(ref: LLVMValueRef) extends Instruction(ref)
 case class UserOp1(ref: LLVMValueRef) extends Instruction(ref)
