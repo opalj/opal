@@ -143,8 +143,8 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     )
     final val explicitMethods = List(setClass, setClassName, setComponent)
 
-    val intentFilters: ListBuffer[IntentFilter] = ListBuffer.empty[IntentFilter]
-    val edges: ListBuffer[((Method, Int), Method)] = ListBuffer.empty[((Method, Int), Method)]
+    var intentFilters: List[IntentFilter] = List.empty[IntentFilter]
+    var edges: List[((Method, Int), Method)] = List.empty[((Method, Int), Method)]
     val explicitIntents: ListBuffer[ExplicitIntent] = ListBuffer.empty[ExplicitIntent]
     val implicitIntents: ListBuffer[ImplicitIntent] = ListBuffer.empty[ImplicitIntent]
 
@@ -188,10 +188,11 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         intentMatching()
         val typeProvider = project.get(TypeProviderKey)
         val decMeths = project.get(DeclaredMethodsKey)
-        val res = edges.toList.flatMap { e ⇒
+        val res = edges.flatMap { e ⇒
             val calls = new IndirectCalls()
-            calls.addCall(typeProvider.newContext(decMeths(e._1._1)), e._1._2, typeProvider.newContext(decMeths(e._2)))
-            calls.partialResults(typeProvider.newContext(decMeths(e._1._1))).seq
+            val callerContext = typeProvider.newContext(decMeths(e._1._1))
+            calls.addCall(callerContext, e._1._2, typeProvider.newContext(decMeths(e._2)))
+            calls.partialResults(callerContext).seq
         }
         Results(res)
     }
@@ -260,9 +261,8 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 }
                 val lifecycleList = l.toList
                 //Making lifecycle calls.
-                for (index ← 1 until lifecycleList.size) {
-                    edges += (lifecycleList(index - 1), 0) -> lifecycleList(index)
-                }
+                edges ++= (for (index ← 1 until lifecycleList.size) yield (lifecycleList(index - 1), 0) -> lifecycleList(index))
+
                 makeEdge(lifecycleList(3), lifecycleList(2)) //onPause -> onResume
                 makeEdge(lifecycleList(4), restart.get) //onStop -> onRestart
                 makeEdge(restart.get, lifecycleList(1)) //onRestart -> onStart
@@ -271,9 +271,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             } else {
                 //Super methods are not available, only reconstruct calls from available methods.
                 val lifecycleList = lifecycleListOption.flatten
-                for (index ← 1 until lifecycleList.size) {
-                    edges += (lifecycleList(index - 1), 0) -> lifecycleList(index)
-                }
+                edges ++= (for (index ← 1 until lifecycleList.size) yield (lifecycleList(index - 1), 0) -> lifecycleList(index))
                 makeEdge(pause, resume)
                 makeEdge(stop, restart)
                 makeEdge(restart, start)
@@ -317,12 +315,12 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     def makeEdge(src: Method, tgt: Method): Unit = {
-        edges += ((src, 0) -> tgt)
+        edges :+ ((src, 0) -> tgt)
     }
 
     def makeEdge(src: Option[Method], tgt: Option[Method]): Unit = {
         if (src.isDefined && tgt.isDefined) {
-            edges += ((src.get, 0) -> tgt.get)
+            edges :+ ((src.get, 0) -> tgt.get)
         }
     }
 
@@ -504,7 +502,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 callbackMethods.foreach { ce ⇒
                     if (ce.classFile != m.classFile) {
                         relevantLifecycleMethods.foreach { lm ⇒
-                            edges += ((lm, 0) -> ce)
+                            edges :+ ((lm, 0) -> ce)
                         }
                     }
                 }
@@ -518,7 +516,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 callbackMethods.foreach { ce ⇒
                     if (ce.classFile != m.classFile) {
                         relevantLifecycleMethods.foreach { lm ⇒
-                            edges += ((lm, 0) -> ce)
+                            edges :+ ((lm, 0) -> ce)
                         }
                     }
                 }
@@ -808,12 +806,12 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         intentFilter: IntentFilter
     ): Unit = {
         if (intentFilter.registeredReceivers.nonEmpty) {
-            intentFilter.registeredReceivers.map(r ⇒ project.classFile(r)).
-                filter(cf ⇒ cf.isDefined).map(_.get).foreach { addRec ⇒
+            intentFilters ++= intentFilter.registeredReceivers.map(r ⇒ project.classFile(r)).
+                filter(cf ⇒ cf.isDefined).map(_.get).map { addRec ⇒
                     val addFilter = intentFilter.cloneFilter()
                     addFilter.receiver = addRec
-                    intentFilters += addFilter
-                }
+                    addFilter
+                }.toList
         }
     }
 
@@ -989,7 +987,7 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def intentMatching(): Unit = {
         //ordering Filters in maps for matching
         var filterMap: Map[String, mutable.Map[String, mutable.Map[ListBuffer[String], ListBuffer[IntentFilter]]]] = Map.empty
-        intentFilters.toList.foreach { f ⇒
+        intentFilters.foreach { f ⇒
             f.actions += ""
             for (action ← f.actions) {
                 if (!filterMap.contains(f.componentType)) {
@@ -1057,10 +1055,10 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
             }
         }
         //adding explicit intent edges
-        explicitIntents.foreach { i ⇒
+        edges ++= explicitIntents.flatMap { i ⇒
             val caller = i.caller
-            i.calledMethod.foreach { m ⇒
-                edges += ((caller, i.pc) -> m)
+            i.calledMethod.map { m ⇒
+                (caller, i.pc) -> m
             }
         }
     }
@@ -1110,8 +1108,8 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
         filter: IntentFilter
     ): Unit = {
         val caller = intent.caller
-        findCalledMethods(filter.receiver, intent.calledMethods, intent.componentTypes).foreach { m ⇒
-            edges += ((caller, intent.pc) -> m)
+        edges ++= findCalledMethods(filter.receiver, intent.calledMethods, intent.componentTypes).map { m ⇒
+            (caller, intent.pc) -> m
         }
     }
 
@@ -1120,28 +1118,22 @@ class AndroidICCAnalysis(val project: SomeProject) extends FPCFAnalysis {
     ): Integer = {
         val ssi = uri.indexOf(":")
         if (uri.substring(ssi).startsWith("//")) {
-            for (index ← ssi + 3 to uri.length) {
-                uri.charAt(index) match {
-                    case '/' | '\\' | '?' | '#' ⇒ return index;
-                    case _                      ⇒
-                }
-            }
-        }
-        uri.length
+            val sub = uri.substring(ssi + 3)
+            val indexList = List('/', '\\', '?', '#').map(_.toInt).map(sub.indexOf).filter(_ != -1)
+            if (indexList.nonEmpty) ssi + 3 + indexList.min
+            else uri.length
+        } else uri.length
     }
 
     def findPath(
         uri:   String,
         start: Integer
     ): String = {
-        var i = start + 1
-        while (i < uri.length) {
-            uri.charAt(i) match {
-                case '?' | '#' | '*' ⇒ return uri.substring(start + 1, i);
-                case _               ⇒ i += 1
-            }
-        }
-        uri.substring(start + 1)
+        val i = start + 1
+        val sub = uri.substring(i)
+        val indexList = List('?', '#', '*').map(_.toInt).map(sub.indexOf).filter(_ != -1)
+        if (indexList.nonEmpty) uri.substring(i, i + indexList.min)
+        else uri.substring(start + 1)
     }
 
     def findCalledMethods(
