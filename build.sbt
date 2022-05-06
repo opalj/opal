@@ -349,8 +349,9 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     name := "LLVM",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
-    libraryDependencies ++= Dependencies.ll
-  )
+    javaCppPresetLibs ++= Seq("llvm" -> "11.1.0"),
+    javaCppVersion := "1.5.5"
+)
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
