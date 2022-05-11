@@ -219,13 +219,13 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
 
     def zip[X <: AnyRef](that: RefIterator[X]): RefIterator[(T, X)] = new RefIterator[(T, X)] {
         def hasNext: Boolean = self.hasNext && that.hasNext
-        def next: (T, X) = (self.next(), that.next())
+        def next(): (T, X) = (self.next(), that.next())
     }
 
     override def zipWithIndex: RefIterator[(T, Int)] = new RefIterator[(T, Int)] {
         private[this] var idx = 0
         def hasNext: Boolean = self.hasNext
-        def next: (T, Int) = { val ret = (self.next(), idx); idx += 1; ret }
+        def next(): (T, Int) = { val ret = (self.next(), idx); idx += 1; ret }
     }
 
 }

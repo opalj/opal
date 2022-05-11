@@ -19,8 +19,8 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
         new LongIterator {
             private[this] var it = self
             override def hasNext = it != null
-            override def next: Long = {
-                val v = it.next
+            override def next(): Long = {
+                val v = it.next()
                 if (!it.hasNext) {
                     it = if (it eq self) other else null
                 }

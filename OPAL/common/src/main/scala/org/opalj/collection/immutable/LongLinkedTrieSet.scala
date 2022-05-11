@@ -1332,7 +1332,7 @@ private[immutable] class LargeLongLinkedTrieSet(
     final override def iterator: LongIterator = new LongIterator {
         private[this] var currentL = set.l
         override def hasNext: Boolean = currentL ne null
-        override def next: Long = {
+        override def next(): Long = {
             val v = currentL.value
             currentL = currentL.next
             v

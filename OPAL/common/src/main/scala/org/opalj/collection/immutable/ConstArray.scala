@@ -84,7 +84,7 @@ final class ConstArray[T <: AnyRef] private (
                 this.length == that.length && {
                     val thisIt = this.toIterator
                     val thatIt = that.toIterator
-                    while (thisIt.hasNext && thisIt.next == thatIt.next) { /*continue*/ }
+                    while (thisIt.hasNext && thisIt.next() == thatIt.next()) { /*continue*/ }
                     !thisIt.hasNext // <=> all elements are equal
                 }
             case _ =>

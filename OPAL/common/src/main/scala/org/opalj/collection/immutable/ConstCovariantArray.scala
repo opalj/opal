@@ -42,7 +42,7 @@ final class ConstCovariantArray[+T <: AnyRef] private (private[this] val data: A
                 this.size == that.size && {
                     val thisIt = this.iterator
                     val thatIt = that.iterator
-                    while (thisIt.hasNext && thisIt.next == thatIt.next) { /*continue*/ }
+                    while (thisIt.hasNext && thisIt.next() == thatIt.next()) { /*continue*/ }
                     !thisIt.hasNext // <=> all elements are equal
                 }
             case _ =>

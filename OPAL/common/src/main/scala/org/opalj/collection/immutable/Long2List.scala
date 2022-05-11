@@ -154,7 +154,7 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
             private[this] var list: Long2List4 = rest
             private[this] var index: Int = 0
             def hasNext: Boolean = list != null
-            def next: Long = {
+            def next(): Long = {
                 index match {
                     case 0 => { index += 1; list.v1 }
                     case 1 => { index += 1; list.v2 }
@@ -227,7 +227,7 @@ private[immutable] final class Long2List1(
 
     override def iterator: LongIterator = {
         var it = LongIterator(v1)
-        if (rest != null) it ++= restIterator
+        if (rest != null) it ++= restIterator()
         it
     }
 
@@ -277,7 +277,7 @@ private[immutable] final class Long2List2(
 
     override def iterator: LongIterator = {
         var it = LongIterator(v1, v2)
-        if (rest != null) it ++= restIterator
+        if (rest != null) it ++= restIterator()
         it
     }
 
@@ -333,7 +333,7 @@ private[immutable] final class Long2List3(
 
     override def iterator: LongIterator = {
         var it = LongIterator(v1, v2, v3)
-        if (rest != null) it ++= restIterator
+        if (rest != null) it ++= restIterator()
         it
     }
 
@@ -398,7 +398,7 @@ private[immutable] final class Long2List4(
 
     override def iterator: LongIterator = {
         var it = LongIterator(v1, v2, v3, v4)
-        if (rest != null) it ++= restIterator
+        if (rest != null) it ++= restIterator()
         it
     }
 
