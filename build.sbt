@@ -122,6 +122,9 @@ lazy val buildSettings =
     // see https://github.com/sbt/sbt-assembly/issues/391
     Seq(assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
+      case PathList("META-INF", "versions", xs @ _, "module-info.class") => MergeStrategy.discard
+      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "jni-config.json") => MergeStrategy.discard
+      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "reflect-config.json") => MergeStrategy.discard
       case other => (assembly / assemblyMergeStrategy).value(other)
     })
 
