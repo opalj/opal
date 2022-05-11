@@ -2,7 +2,7 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable.ConstArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Represents a declared method of a class identified by [[declaringClassType]];
@@ -61,7 +61,7 @@ sealed abstract class DeclaredMethod {
      *
      * The behavior of this method is undefined if [[hasMultipleDefinedMethods]] returns false.
      */
-    def definedMethods: ConstArray[Method]
+    def definedMethods: ArraySeq[Method]
 
     /**
      * Executes the given function for each method definition.
@@ -104,7 +104,7 @@ final class VirtualDeclaredMethod private[br] (
     override def asDefinedMethod: DefinedMethod = throw new ClassCastException();
 
     override def hasMultipleDefinedMethods: Boolean = false
-    override def definedMethods: ConstArray[Method] = throw new UnsupportedOperationException();
+    override def definedMethods: ArraySeq[Method] = throw new UnsupportedOperationException();
     override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
 
     override def foreachDefinedMethod[U](f: Method => U): Unit = {
@@ -135,7 +135,7 @@ final class DefinedMethod private[br] (
     override def asDefinedMethod: DefinedMethod = this
 
     override def hasMultipleDefinedMethods: Boolean = false
-    override def definedMethods: ConstArray[Method] = throw new UnsupportedOperationException();
+    override def definedMethods: ArraySeq[Method] = throw new UnsupportedOperationException();
     override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
 
     override def foreachDefinedMethod[U](f: Method => U): Unit = f(definedMethod)
@@ -147,7 +147,7 @@ final class DefinedMethod private[br] (
 
 final class MultipleDefinedMethods private[br] (
         override val declaringClassType: ObjectType,
-        override val definedMethods:     ConstArray[Method],
+        override val definedMethods:     ArraySeq[Method],
         override val id:                 Int
 ) extends DeclaredMethod {
 

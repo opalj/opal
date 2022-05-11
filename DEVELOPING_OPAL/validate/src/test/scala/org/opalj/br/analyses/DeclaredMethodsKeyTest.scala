@@ -6,7 +6,6 @@ package analyses
 import java.io.File
 import java.net.URL
 
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec

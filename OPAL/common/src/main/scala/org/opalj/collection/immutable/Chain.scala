@@ -10,7 +10,8 @@ import scala.collection.GenTraversableOnce
 import scala.collection.AbstractIterator
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
-import scala.collection.generic.FilterMonadic
+import scala.collection.WithFilter
+import scala.collection.IterableOps
 import scala.collection.AbstractIterable
 
 /**
@@ -32,15 +33,14 @@ import scala.collection.AbstractIterable
  * @author Michael Eichberg
  */
 sealed trait Chain[@specialized(Int) +T]
-    extends TraversableOnce[T]
-    with FilterMonadic[T, Chain[T]]
+    extends IterableOps[T, Chain, Chain[T]]
     with Serializable { self =>
 
     /**
      * Represents a filtered [[Chain]]. Instances of [[ChainWithFilter]] are typically
      * created by [[Chain]]'s `withFilter` method.
      */
-    class ChainWithFilter(p: T => Boolean) extends FilterMonadic[T, Chain[T]] {
+    class ChainWithFilter(p: T => Boolean) extends WithFilter[T, Chain] {
 
         def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
             val list = self
@@ -66,7 +66,7 @@ sealed trait Chain[@specialized(Int) +T]
             var rest = list
             while (rest.nonEmpty) {
                 val x = rest.head
-                if (p(x)) b ++= f(x).seq
+                if (p(x)) b ++= f(x).toSeq
                 rest = rest.tail
             }
             b.result()
@@ -176,7 +176,7 @@ sealed trait Chain[@specialized(Int) +T]
         var rest = this
         while (rest.nonEmpty) {
             val t = rest.head
-            b ++= f(t).seq
+            b ++= f(t).toSeq
             rest = rest.tail
         }
         b.result()

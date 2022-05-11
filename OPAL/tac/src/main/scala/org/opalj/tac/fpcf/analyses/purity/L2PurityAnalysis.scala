@@ -11,7 +11,6 @@ import scala.collection.immutable.IntMap
 
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP

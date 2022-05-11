@@ -4,7 +4,8 @@ package br
 package analyses
 
 import scala.collection.mutable.OpenHashMap
-import org.opalj.collection.immutable.ConstArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -17,14 +18,14 @@ import org.opalj.collection.immutable.ConstArray
  * @author Florian Kuebler
  */
 class VirtualFormalParameters private[analyses] (
-        val data: scala.collection.Map[DeclaredMethod, ConstArray[VirtualFormalParameter]]
+        val data: scala.collection.Map[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
 ) {
     /**
      * Returns the virtual formal parameters array for the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)
-     * [[org.opalj.collection.immutable.ConstArray]] is returned.
+     * [[scala.collection.immutable.ArraySeq]] is returned.
      */
-    def apply(m: DeclaredMethod): ConstArray[VirtualFormalParameter] = data.getOrElse(m, null)
+    def apply(m: DeclaredMethod): ArraySeq[VirtualFormalParameter] = data.getOrElse(m, null)
 
     def virtualFormalParameters: Iterable[VirtualFormalParameter] = {
         // todo Why should it ever be null?
@@ -56,7 +57,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      */
     override def compute(p: SomeProject): VirtualFormalParameters = {
 
-        val sites = new OpenHashMap[DeclaredMethod, ConstArray[VirtualFormalParameter]]
+        val sites = new OpenHashMap[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
 
         for {
             dm ← p.get(DeclaredMethodsKey).declaredMethods

@@ -4,9 +4,10 @@ package org.opalj
 import scala.language.experimental.macros
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox.Context
-
 import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.IntArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines common control abstractions.
@@ -170,12 +171,12 @@ package object control {
      *          precisely specified.
      */
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: Array[T], comparable: Comparable[T]): Option[T] = {
+    def find[T <: AnyRef](data: ArraySeq[T], comparable: Comparable[T]): Option[T] = {
         find(data)(comparable.compareTo)
     }
 
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: Array[T])(compareTo: T => Int): Option[T] = {
+    def find[T <: AnyRef](data: ArraySeq[T])(compareTo: T => Int): Option[T] = {
         @tailrec @inline def find(low: Int, high: Int): Option[T] = {
             if (high < low)
                 return None;

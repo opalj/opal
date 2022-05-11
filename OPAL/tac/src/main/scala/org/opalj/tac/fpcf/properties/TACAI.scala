@@ -76,7 +76,6 @@ object TACAI extends TACAIPropertyMetaInformation {
                     val taCode = TACAIFactory(p, m)(d)
                     TheTACAI(
                         // the following cast is safe - see TACode for details
-                        // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
                         taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
                     )
             }

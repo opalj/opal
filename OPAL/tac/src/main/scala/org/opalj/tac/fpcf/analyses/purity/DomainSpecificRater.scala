@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package purity
 
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.value.ValueInformation
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject

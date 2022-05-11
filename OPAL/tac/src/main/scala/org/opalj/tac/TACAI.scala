@@ -3,8 +3,6 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
-
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Method
@@ -33,6 +31,8 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.mutable.RefAppendChain
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -382,14 +382,14 @@ object TACAI {
                 UVar(aiResult.domain)(locals(index), defSites)
             }
 
-            def useOperands(operandsCount: Int): ConstArray[UVar[aiResult.domain.DomainValue]] = {
+            def useOperands(operandsCount: Int): ArraySeq[UVar[aiResult.domain.DomainValue]] = {
                 val ops = new Array[UVar[aiResult.domain.DomainValue]](operandsCount)
                 var i = 0
                 while (i < operandsCount) {
                     ops(i) = operandUse(i)
                     i += 1
                 }
-                ConstArray(ops)
+                ArraySeq.unsafeWrapArray(ops)
             }
 
             def arrayLoad(): Unit = {

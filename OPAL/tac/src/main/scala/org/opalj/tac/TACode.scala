@@ -43,7 +43,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
      */
     def params: Parameters[P]
 
-    def stmts: Array[Stmt[V]] // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+    def stmts: Array[Stmt[V]]
     /**
      * The mapping between the pcs of the original bytecode instructions to the
      * index of the first statement that was generated for the bytecode instruction -
@@ -169,7 +169,7 @@ object TACode {
 
 final class AITACode[P <: AnyRef, VI <: ValueInformation](
         val params:            Parameters[P],
-        val stmts:             Array[Stmt[DUVar[VI]]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+        val stmts:             Array[Stmt[DUVar[VI]]],
         val pcToIndex:         Array[Int],
         val cfg:               CFG[Stmt[DUVar[VI]], TACStmts[DUVar[VI]]],
         val exceptionHandlers: ExceptionHandlers
@@ -213,7 +213,7 @@ object AITACode {
 
 final class NaiveTACode[P <: AnyRef](
         val params:            Parameters[P],
-        val stmts:             Array[Stmt[IdBasedVar]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+        val stmts:             Array[Stmt[IdBasedVar]],
         val pcToIndex:         Array[Int],
         val cfg:               CFG[Stmt[IdBasedVar], TACStmts[IdBasedVar]],
         val exceptionHandlers: ExceptionHandlers

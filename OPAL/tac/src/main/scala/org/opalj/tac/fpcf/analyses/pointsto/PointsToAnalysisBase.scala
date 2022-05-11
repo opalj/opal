@@ -6,8 +6,6 @@ package analyses
 package pointsto
 
 import scala.collection.mutable.ArrayBuffer
-
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -32,6 +30,8 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Base class for handling instructions in points-to analysis scenarios.
@@ -84,7 +84,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     @inline protected[this] def getFormalParameter(
-        index: Int, formalParameters: ConstArray[VirtualFormalParameter], context: Context
+        index: Int, formalParameters: ArraySeq[VirtualFormalParameter], context: Context
     ): Entity = {
         val fp = formalParameters(index)
         typeProvider match {

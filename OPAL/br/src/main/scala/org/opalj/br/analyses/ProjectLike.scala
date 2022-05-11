@@ -5,15 +5,11 @@ package analyses
 
 import scala.collection.{Map => SomeMap}
 import scala.collection.{Set => SomeSet}
-
 import com.typesafe.config.Config
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.ConstArray.find
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.Java11MajorVersion
 import org.opalj.bi.Java1MajorVersion
@@ -26,6 +22,9 @@ import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
+
+import scala.collection.immutable.ArraySeq
+import control.find
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an
@@ -214,7 +213,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
      * enable fast look-up of the target method. (See [[MethodDeclarationContext]]'s
      * `compareAccessibilityAware` method for further details.)
      */
-    protected[this] val instanceMethods: SomeMap[ObjectType, ConstArray[MethodDeclarationContext]]
+    protected[this] val instanceMethods: SomeMap[ObjectType, ArraySeq[MethodDeclarationContext]]
 
     /**
      * Returns the nest host (see JVM 11 Spec. 5.4.4) for the given type, if explicitly given. For
@@ -242,7 +241,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
         if (definedMethodsOption.isEmpty) {
             return Unknown;
         }
-        val definedMethods: ConstArray[MethodDeclarationContext] = definedMethodsOption.get
+        val definedMethods: ArraySeq[MethodDeclarationContext] = definedMethodsOption.get
         val declaringPackageName = method.classFile.thisType.packageName
 
         val result: Option[MethodDeclarationContext] = find(definedMethods) { definedMethodContext =>

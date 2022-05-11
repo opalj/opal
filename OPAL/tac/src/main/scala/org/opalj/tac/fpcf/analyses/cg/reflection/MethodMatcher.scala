@@ -6,7 +6,6 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.RefArray
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsPrimitiveValue

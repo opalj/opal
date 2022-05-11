@@ -31,7 +31,6 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.mutable.RefArrayBuffer
@@ -49,6 +48,8 @@ import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java17FrameworkWithDynamicRewritingAndCaching
 import org.opalj.br.reader.Java17LibraryFramework
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -140,15 +141,15 @@ class Project[Source] private (
         final val classFilesCount:                    Int,
         final val methodsCount:                       Int,
         final val fieldsCount:                        Int,
-        final val allProjectClassFiles:               ConstArray[ClassFile],
-        final val allLibraryClassFiles:               ConstArray[ClassFile],
+        final val allProjectClassFiles:               ArraySeq[ClassFile],
+        final val allLibraryClassFiles:               ArraySeq[ClassFile],
         final val allClassFiles:                      Iterable[ClassFile],
         final val allMethods:                         Iterable[Method],
         final val allFields:                          Iterable[Field],
         final val allSourceElements:                  Iterable[SourceElement],
         final val virtualMethodsCount:                Int,
         final val classHierarchy:                     ClassHierarchy,
-        final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
+        final val instanceMethods:                    Map[ObjectType, ArraySeq[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
         final val nests:                              Map[ObjectType, ObjectType],
         // Note that the referenced array will never shrink!
@@ -239,10 +240,10 @@ class Project[Source] private (
 
     final val VarHandleClassFile: Option[ClassFile] = classFile(ObjectType.VarHandle)
 
-    final val allMethodsWithBody: ConstArray[Method] = ConstArray._UNSAFE_from(this.methodsWithBody)
+    final val allMethodsWithBody: ArraySeq[Method] = ArraySeq.unsafeWrapArray(this.methodsWithBody)
 
-    final val allMethodsWithBodyWithContext: ConstArray[MethodInfo[Source]] = {
-        ConstArray._UNSAFE_from(this.methodsWithBodyAndContext)
+    final val allMethodsWithBodyWithContext: ArraySeq[MethodInfo[Source]] = {
+        ArraySeq.unsafeWrapArray(this.methodsWithBodyAndContext)
     }
 
     /**
@@ -1257,7 +1258,7 @@ object Project {
     )(
         implicit
         logContext: LogContext
-    ): Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
+    ): Map[ObjectType, ArraySeq[MethodDeclarationContext]] = time {
 
         import org.opalj.br.analyses.ProjectLike.findMaximallySpecificSuperinterfaceMethods
 
@@ -2148,9 +2149,9 @@ object Project {
 
             val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-            val allProjectClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(projectClassFilesArray)
+            val allProjectClassFiles: ArraySeq[ClassFile] = ArraySeq.unsafeWrapArray(projectClassFilesArray)
 
-            val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(libraryClassFilesArray)
+            val allLibraryClassFiles: ArraySeq[ClassFile] = ArraySeq.unsafeWrapArray(libraryClassFilesArray)
 
             val allClassFiles: Iterable[ClassFile] = {
                 new Iterable[ClassFile] {
