@@ -33,13 +33,13 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     // Setup
     //
     val jlsCHFile = "ClassHierarchyJLS.ths"
-    val jlsCHCreator = List(() ⇒ getClass.getResourceAsStream(jlsCHFile))
+    val jlsCHCreator = List(() => getClass.getResourceAsStream(jlsCHFile))
     val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
-    val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
+    val javaLangCHCreator = List(() => getClass.getResourceAsStream(javaLangCHFile))
     val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
@@ -746,7 +746,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val apacheANTCH =
         ClassHierarchy(
             Traversable.empty,
-            List(() ⇒ getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
+            List(() => getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
         )(GlobalLogContext)
 
     it should "be possible to get all supertypes, even if not all information is available" in {
@@ -795,7 +795,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
                 s"Window >: ${classHierarchy.allSubtypes(window, false)}\n"+
                 classHierarchy.asTSV)
 
-        clusteringProject.classFile(simpleWindow).get.methods find { method ⇒
+        clusteringProject.classFile(simpleWindow).get.methods find { method =>
             method.name == "draw" && method.descriptor == NoArgsAndReturnVoid
         } should be('defined)
 
@@ -812,7 +812,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     it should "correctly iterate over all suptypes of Object, even without the JDK included" in {
         var foundSomeEnumerationClass = false
-        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ObjectType.Object, false) { subTypeCF ⇒
+        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ObjectType.Object, false) { subTypeCF =>
             val subType = subTypeCF.thisType
             if (subType == ObjectType("class_types/SomeEnumeration")) {
                 foundSomeEnumerationClass = true

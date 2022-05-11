@@ -159,7 +159,7 @@ object Instruction {
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[Int /*PC*/ ] = {
         var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
-        exceptions foreach { exception ⇒
+        exceptions foreach { exception =>
             pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++!: pcs
         }
         pcs

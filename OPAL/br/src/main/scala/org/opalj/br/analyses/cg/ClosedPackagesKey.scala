@@ -61,7 +61,7 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] 
             val constructor = Class.forName(analysisClassName).getConstructors.head
             constructor.newInstance(project).asInstanceOf[ClosedPackages]
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 val m = "cannot compute closed packages; all packages are now considered open"
                 error("project configuration", m, t)(project.logContext)
                 new OpenCodeBase(project)

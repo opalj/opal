@@ -82,7 +82,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
                 typeProvider.typesProperty(
                     param, callerContext, callPC.asInstanceOf[Entity], tac.stmts
                 )
-            ) { tpe ⇒ handleType(tpe, callerContext, callPC, thisActual, indirectCalls) }
+            ) { tpe => handleType(tpe, callerContext, callPC, thisActual, indirectCalls) }
 
             returnResult(param, thisActual, indirectCalls)
         } else {
@@ -144,7 +144,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
         // ensures, that we only add new vm reachable methods
         val indirectCalls = new IndirectCalls()
 
-        typeProvider.continuation(thisVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType ⇒
+        typeProvider.continuation(thisVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
             handleType(newType, state.callContext, pc, thisActual, indirectCalls)
         }(state)
 

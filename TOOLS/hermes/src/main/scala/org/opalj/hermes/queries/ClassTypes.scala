@@ -71,11 +71,11 @@ class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
                     classTypesLocations(5) += location
                 } else {
                     var isJava8Interface = false
-                    if (explicitlyDefinedMethods.exists(m ⇒ !m.isAbstract && !m.isStatic)) {
+                    if (explicitlyDefinedMethods.exists(m => !m.isAbstract && !m.isStatic)) {
                         classTypesLocations(6) += location
                         isJava8Interface = true
                     }
-                    if (explicitlyDefinedMethods.exists(m ⇒ m.isStatic)) {
+                    if (explicitlyDefinedMethods.exists(m => m.isStatic)) {
                         classTypesLocations(7) += location
                         isJava8Interface = true
                     }

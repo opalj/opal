@@ -63,7 +63,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val number_of_classes = in.readUnsignedShort
         if (number_of_classes > 0 || reifyEmptyAttributes) {

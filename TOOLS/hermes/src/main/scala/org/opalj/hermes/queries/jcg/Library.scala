@@ -54,16 +54,16 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            fieldTypes = classFile.fields.filter(f ⇒ f.isNotFinal && !f.isPrivate).collect {
-                case f: Field if f.fieldType.id >= 0 ⇒ f.fieldType.id
+            fieldTypes = classFile.fields.filter(f => f.isNotFinal && !f.isPrivate).collect {
+                case f: Field if f.fieldType.id >= 0 => f.fieldType.id
             }
             method @ MethodWithBody(body) ← classFile.methods
             paramTypes = method.parameterTypes.map(_.id).filter(_ >= 0)
             if (fieldTypes.nonEmpty || paramTypes.nonEmpty)
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation ← body collect {
-                case iv: INVOKEVIRTUAL   ⇒ iv
-                case ii: INVOKEINTERFACE ⇒ ii
+                case iv: INVOKEVIRTUAL   => iv
+                case ii: INVOKEINTERFACE => ii
             }
         } {
             val pc = pcAndInvocation.pc
@@ -88,14 +88,14 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         val cf = cfO.get
                         val cacheKey = s"${cf.thisType.id}-$name-${descriptor.toJVMDescriptor}"
                         val targets = cbsCache.get(cacheKey) match {
-                            case None ⇒ {
+                            case None => {
                                 val newTargets = cf.findMethod(name, descriptor)
                                     .map(getCBSTargets(projectIndex, project, _))
                                     .getOrElse(Set.empty[Method])
                                 cbsCache = cbsCache + ((cacheKey, newTargets))
                                 newTargets
                             }
-                            case Some(result) ⇒ result
+                            case Some(result) => result
                         }
 
                         var publicTarget = false
@@ -211,11 +211,11 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         while (itr.hasNext) {
             val subtype = itr.next
             project.classFile(subtype) match {
-                case Some(subclassFile) ⇒
+                case Some(subclassFile) =>
                     if (subclassFile.findMethod(methodName, methodDescriptor).isEmpty
                         && classHierarchy.isSubtypeOf(subtype, interfaceType))
                         return Yes;
-                case None ⇒
+                case None =>
                     isUnknown = false
             }
         }

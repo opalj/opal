@@ -31,19 +31,19 @@ class FieldValues(
     private[this] def operandsArray = result.operandsArray
 
     def collectReadFieldValues: Chain[PCAndAnyRef[String]] = {
-        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) ⇒
+        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) =>
             instruction match {
                 case fra @ FieldReadAccess(_ /*decl.ClassType*/ , _ /* name*/ , fieldType) if {
                     val nextPC = fra.indexOfNextInstruction(pc)
                     val operands = operandsArray(nextPC)
                     operands != null &&
                         operands.head.isMorePreciseThan(result.domain.TypedValue(pc, fieldType))
-                } ⇒
+                } =>
                     PCAndAnyRef(
                         pc,
                         s"${operandsArray(fra.indexOfNextInstruction(pc)).head} ← $fra"
                     ) :&: readFields
-                case _ ⇒
+                case _ =>
                     readFields
             }
         }
@@ -52,7 +52,7 @@ class FieldValues(
     def toXHTML(basicInfoOnly: Boolean): Node = {
         import PCLineComprehension.{pcNode, lineNode, line}
         val readFieldValues =
-            collectReadFieldValues map { fieldData ⇒
+            collectReadFieldValues map { fieldData =>
                 val pc = fieldData.pc
                 val details = fieldData.value
                 <li>
@@ -81,7 +81,7 @@ class FieldValues(
 
         Json.obj(
             "type" → "FieldValues",
-            "values" → collectReadFieldValues.map { fieldData ⇒
+            "values" → collectReadFieldValues.map { fieldData =>
                 val pc = fieldData.pc
                 val details = fieldData.value
 

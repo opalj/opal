@@ -20,9 +20,9 @@ abstract class NegateInstruction
 
     final def isShiftInstruction: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = 0
 

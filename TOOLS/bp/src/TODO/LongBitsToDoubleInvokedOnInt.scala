@@ -42,7 +42,7 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 
         // In all method bodies, look for occurrences of (I2L, INVOKESTATIC) instruction
@@ -55,8 +55,8 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
                 case (
                     I2L,
                     INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`)
-                    ) ⇒ true
-                case _ ⇒ false
+                    ) => true
+                case _ => false
             }
         } yield {
             LineAndColumnBasedReport(

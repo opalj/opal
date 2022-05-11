@@ -49,11 +49,11 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
         typeProvider: TypeProvider
     ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
         callContexts(method).foldLeft(List[(DeclaredMethod, Int, Boolean)]()) {
-            (results, contextData) ⇒
+            (results, contextData) =>
                 val (_, callerContext, pc, isDirect) = contextData
                 callerContext match {
-                    case NoContext ⇒ results
-                    case _         ⇒ (callerContext.method, pc, isDirect) :: results
+                    case NoContext => results
+                    case _         => (callerContext.method, pc, isDirect) :: results
                 }
         }
     }
@@ -70,14 +70,14 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
     )(implicit typeProvider: TypeProvider): TraversableOnce[Context]
 
     def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ ⇒ Unit
+        handleContext: Context /*Callee*/ => Unit
     )(
         implicit
         typeProvider: TypeProvider
     ): Unit
 
     def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) ⇒ Unit
+        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
     )(
         implicit
         typeProvider: TypeProvider
@@ -157,7 +157,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     }
 
     override def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ ⇒ Unit
+        handleContext: Context /*Callee*/ => Unit
     )(
         implicit
         typeProvider: TypeProvider
@@ -168,7 +168,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     }
 
     override def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) ⇒ Unit
+        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
     )(
         implicit
         typeProvider: TypeProvider
@@ -228,9 +228,9 @@ sealed trait CallersImplementation extends Callers {
         typeProvider: TypeProvider
     ): TraversableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
         val contexts = encodedCallers.iterator.flatMap {
-            case (calleeContextId, callers) ⇒
+            case (calleeContextId, callers) =>
                 val calleeContext = typeProvider.contextFromId(calleeContextId)
-                callers.iterator.map { callerData ⇒
+                callers.iterator.map { callerData =>
                     val (callerContextId, pc, isDirect) = Callers.toContextPcAndIsDirect(callerData)
                     (calleeContext, typeProvider.contextFromId(callerContextId), pc, isDirect)
                 }
@@ -257,7 +257,7 @@ sealed trait CallersImplementation extends Callers {
     }
 
     final override def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ ⇒ Unit
+        handleContext: Context /*Callee*/ => Unit
     )(
         implicit
         typeProvider: TypeProvider
@@ -266,7 +266,7 @@ sealed trait CallersImplementation extends Callers {
         val unknownContextId = unknownContext.id
 
         encodedCallers.foreach {
-            case (calleeContextId, _) ⇒
+            case (calleeContextId, _) =>
                 if (old eq null)
                     handleContext(typeProvider.contextFromId(calleeContextId))
                 else if (old.callersForContextId(calleeContextId).isEmpty) {
@@ -283,16 +283,16 @@ sealed trait CallersImplementation extends Callers {
     }
 
     final override def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) ⇒ Unit
+        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
     )(
         implicit
         typeProvider: TypeProvider
     ): Unit = {
         encodedCallers.foreach {
-            case (calleeContextId, callers) ⇒
+            case (calleeContextId, callers) =>
                 val calleeContext = typeProvider.contextFromId(calleeContextId)
                 val seen = if (old eq null) 0 else old.callersForContextId(calleeContextId).size
-                callers.forFirstN(callers.size - seen) { encodedPair: Long ⇒
+                callers.forFirstN(callers.size - seen) { encodedPair: Long =>
                     val (callerContextId, pc, isDirect) = Callers.toContextPcAndIsDirect(encodedPair)
                     val callerContext = typeProvider.contextFromId(callerContextId)
                     handleContext(calleeContext, callerContext, pc, isDirect)
@@ -429,9 +429,9 @@ object Callers extends CallersPropertyMetaInformation {
         val name = "opalj.CallersProperty"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoCallers
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoCallers
+                case _ =>
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
         )

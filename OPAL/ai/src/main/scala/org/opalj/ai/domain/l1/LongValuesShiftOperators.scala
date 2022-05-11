@@ -13,13 +13,13 @@ import org.opalj.br.LongType
  * @author Riadh Chtara
  */
 trait LongValuesShiftOperators extends LongValuesDomain {
-    this: ConcreteLongValues with ConcreteIntegerValues ⇒
+    this: ConcreteLongValues with ConcreteIntegerValues =>
 
     override def lshl(
         pc: Int, longValue: DomainValue, shiftValue: DomainValue
     ): DomainTypedValue[LongType] = {
-        this.longValue(longValue) { v ⇒
-            this.intValue(shiftValue)(s ⇒
+        this.longValue(longValue) { v =>
+            this.intValue(shiftValue)(s =>
                 LongValue(pc, v << s))(
                 LongValue(pc)
             )
@@ -31,8 +31,8 @@ trait LongValuesShiftOperators extends LongValuesDomain {
     override def lshr(
         pc: Int, longValue: DomainValue, shiftValue: DomainValue
     ): DomainTypedValue[LongType] = {
-        this.longValue(longValue) { v ⇒
-            this.intValue(shiftValue)(s ⇒
+        this.longValue(longValue) { v =>
+            this.intValue(shiftValue)(s =>
                 LongValue(pc, v >> s))(
                 LongValue(pc)
             )
@@ -44,8 +44,8 @@ trait LongValuesShiftOperators extends LongValuesDomain {
     override def lushr(
         pc: Int, longValue: DomainValue, shiftValue: DomainValue
     ): DomainTypedValue[LongType] = {
-        this.longValue(longValue) { v ⇒
-            this.intValue(shiftValue)(s ⇒ LongValue(pc, v >>> s))(
+        this.longValue(longValue) { v =>
+            this.intValue(shiftValue)(s => LongValue(pc, v >>> s))(
                 LongValue(pc)
             )
         } {

@@ -54,7 +54,7 @@ object ThrowsExceptionAnalysis {
                     (
                         domain.exceptionHandlerSuccessorsOf(pc).nonEmpty ||
                         domain.allThrownExceptions.get(pc).nonEmpty
-                    ) ⇒
+                    ) =>
                     (pc, i)
             }
 
@@ -74,11 +74,11 @@ object ThrowsExceptionAnalysis {
                             Set.empty
                     }
 
-                    domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
+                    domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC =>
                         operandsArray(handlerPC).head match {
-                            case domain.DomainSingleOriginReferenceValue(sorv) ⇒
+                            case domain.DomainSingleOriginReferenceValue(sorv) =>
                                 allExceptions += sorv
-                            case domain.DomainMultipleReferenceValues(morv) ⇒
+                            case domain.DomainMultipleReferenceValues(morv) =>
                                 allExceptions ++= morv.values
                         }
                     }
@@ -111,7 +111,7 @@ object ThrowsExceptionAnalysis {
                             new Operands(
                                 code,
                                 pc,
-                                operands.take(instruction.numberOfPoppedOperands { x ⇒ ??? }),
+                                operands.take(instruction.numberOfPoppedOperands { x => ??? }),
                                 result.localsArray(pc)
                             ),
                             new LocalVariables(code, pc, result.localsArray(pc))

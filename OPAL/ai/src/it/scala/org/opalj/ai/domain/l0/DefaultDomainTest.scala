@@ -42,7 +42,7 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
             if evaluatedInstructions.contains(pc)
             operands = operandsArray(pc)
         } {
-            instruction.nextInstructions(pc, regularSuccessorsOnly = true).foreach { nextPC ⇒
+            instruction.nextInstructions(pc, regularSuccessorsOnly = true).foreach { nextPC =>
                 if (evaluatedInstructions.contains(nextPC)) {
                     val nextOperands = operandsArray(nextPC)
                     val stackSizeBefore = operands.foldLeft(0)(_ + _.computationalType.operandSize)

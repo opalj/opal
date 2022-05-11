@@ -85,11 +85,11 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
             theReturnedValue match {
                 case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`)) if (
                     rv.isNull.isUnknown && !rv.isPrecise
-                ) ⇒
+                ) =>
                     // the return type will not be more precise than the original type
                     ai.interrupt()
 
-                case _ ⇒ /*go on*/
+                case _ => /*go on*/
             }
 
             isUpdated
@@ -104,7 +104,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         val methodsWithRefinedReturnTypes = time {
             for {
@@ -123,7 +123,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
             } yield {
                 RefinedReturnType(method, domain.returnedValue)
             }
-        } { ns ⇒ println(s"the analysis took ${ns.toSeconds}") }
+        } { ns => println(s"the analysis took ${ns.toSeconds}") }
 
         BasicReport(
             methodsWithRefinedReturnTypes.mkString(

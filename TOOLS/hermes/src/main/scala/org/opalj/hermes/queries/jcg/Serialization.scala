@@ -103,9 +103,9 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation ← body collect {
-                case i @ INVOKEVIRTUAL(declClass, "writeObject", OOSwriteObject) if classHierarchy.isSubtypeOf(declClass, OOS)               ⇒ i
-                case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject) if classHierarchy.isSubtypeOf(declClass, OIS)             ⇒ i
-                case i @ INVOKEVIRTUAL(declClass, "registerValidation", OISregisterValidation) if classHierarchy.isSubtypeOf(declClass, OIS) ⇒ i
+                case i @ INVOKEVIRTUAL(declClass, "writeObject", OOSwriteObject) if classHierarchy.isSubtypeOf(declClass, OOS)               => i
+                case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject) if classHierarchy.isSubtypeOf(declClass, OIS)             => i
+                case i @ INVOKEVIRTUAL(declClass, "registerValidation", OISregisterValidation) if classHierarchy.isSubtypeOf(declClass, OIS) => i
             }
             tac = tacai(method)
         } {
@@ -128,7 +128,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     locations(7) += l
             } else {
                 invocation.astID match {
-                    case Assignment.ASTID ⇒
+                    case Assignment.ASTID =>
                         handleReadObject(
                             invocation.asAssignment,
                             l,
@@ -137,7 +137,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             externalizableTypes,
                             notExternalizableTypes
                         )
-                    case ExprStmt.ASTID ⇒
+                    case ExprStmt.ASTID =>
                         handleReadObjectWithoutCasts(
                             l,
                             serializableTypes,
@@ -167,7 +167,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val paramVar = invocation.params.head.asVar
         val param = paramVar.value.asReferenceValue
 
-        if (paramVar.definedBy.exists { defSite ⇒
+        if (paramVar.definedBy.exists { defSite =>
             if (defSite >= 0) {
                 val expr = stmts(defSite).asAssignment.expr
                 expr.astID == InvokedynamicFunctionCall.ASTID && isLambdaMetafactoryCall(expr.asInvokedynamicFunctionCall)
@@ -188,31 +188,31 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 locations(5) += l
 
         } else if (param.allValues.forall(_.isPrecise)) {
-            if (param.allValues.exists { pt ⇒
+            if (param.allValues.exists { pt =>
                 pt.isNull.isNo &&
                     hasMethod(pt.asReferenceType, "writeObject", WriteObjectDescriptor) &&
                     !classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
             })
                 locations(1) += l
 
-            if (param.allValues.exists { pt ⇒
+            if (param.allValues.exists { pt =>
                 pt.isNull.isNo &&
                     hasMethod(pt.asReferenceType, "writeReplace", JustReturnsObject)
             })
                 locations(5) += l
 
-            if (param.allValues.exists { pt ⇒
+            if (param.allValues.exists { pt =>
                 pt.isNull.isNo &&
                     classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
             })
                 locations(9) += l
         } else {
-            if (notExternalizableTypes.exists { subtype ⇒
+            if (notExternalizableTypes.exists { subtype =>
                 hasMethod(subtype, "writeObject", WriteObjectDescriptor)
             })
                 locations(2) += l
 
-            if (serializableTypes.exists { subtype ⇒
+            if (serializableTypes.exists { subtype =>
                 hasMethod(subtype, "writeReplace", JustReturnsObject)
             })
                 locations(5) += l
@@ -244,7 +244,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val ret = invocation.targetVar
 
         val castTypes = ret.usedBy.iterator.collect {
-            case index if stmts(index).astID == Checkcast.ASTID ⇒ stmts(index).asCheckcast.cmpTpe
+            case index if stmts(index).astID == Checkcast.ASTID => stmts(index).asCheckcast.cmpTpe
         }.toSeq
 
         if (castTypes.isEmpty) {
@@ -255,23 +255,23 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 notExternalizableTypes
             )
         } else {
-            if (castTypes.exists { cType ⇒
+            if (castTypes.exists { cType =>
                 hasMethod(cType, "readObject", ReadObjectDescriptor) &&
                     !classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable)
             })
                 locations(4) += l
 
-            if (castTypes.exists { cType ⇒
+            if (castTypes.exists { cType =>
                 hasMethod(cType, "readResolve", JustReturnsObject)
             })
                 locations(6) += l
 
-            if (castTypes.exists { cType ⇒
+            if (castTypes.exists { cType =>
                 !classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable)
             })
                 locations(8) += l
 
-            if (castTypes.exists { cType ⇒
+            if (castTypes.exists { cType =>
                 classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable) ||
                     cType.isObjectType &&
                     classHierarchy.allSubclassTypes(cType.asObjectType, reflexive = false).exists {
@@ -293,12 +293,12 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         locations: Array[LocationsContainer[S]],
         project:   SomeProject
     ): Unit = {
-        if (notExternalizableTypes.exists { subtype ⇒
+        if (notExternalizableTypes.exists { subtype =>
             hasMethod(subtype, "readObject", ReadObjectDescriptor)
         })
             locations(3) += l
 
-        if (serializableTypes.exists { subtype ⇒
+        if (serializableTypes.exists { subtype =>
             hasMethod(subtype, "readResolve", JustReturnsObject)
         })
             locations(6) += l

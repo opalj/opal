@@ -94,7 +94,7 @@ final class BasicBlock(
      * @param     code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
      *             belongs.
      */
-    def foreach[U](f: Int ⇒ U)(implicit code: Code): Unit = {
+    def foreach[U](f: Int => U)(implicit code: Code): Unit = {
         val instructions = code.instructions
 
         var pc = this.startPC

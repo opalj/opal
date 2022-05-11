@@ -58,7 +58,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
             "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
         )
-    ) foreach { biProject ⇒
+    ) foreach { biProject =>
             val (projectName, projectFactory) = biProject
 
             for ((name, analyses, properties) ← analysisConfigurations) {
@@ -72,15 +72,15 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                             p = projectFactory()
 
                             p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                                case None ⇒
+                                case None =>
                                     Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                                case Some(requirements) ⇒
+                                case Some(requirements) =>
                                     requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
                             }
                         } else {
                             // Recreate project keeping all ProjectInformationKeys other than the
                             // PropertyStore as we are interested only in FPCF analysis results.
-                            p = p.recreate { id ⇒
+                            p = p.recreate { id =>
                                 id != PropertyStoreKey.uniqueId &&
                                     id != FPCFAnalysesManagerKey.uniqueId &&
                                     id != CHACallGraphKey.uniqueId
@@ -93,7 +93,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                         time {
                             // todo do not want to run this for every setting
                             p.get(CHACallGraphKey)
-                        } { t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}") }
+                        } { t => info(s"call graph and tac analysis took ${t.toSeconds}") }
 
                         time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)
                     }
@@ -103,12 +103,12 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                         // Get EPs for the properties we're interested in
                         // Filter for fallback property, as the entities with fallbacks may be different
                         // on each execution.
-                        val actual = properties.iterator.flatMap { property ⇒
-                            ps.entities(property.key).filter { ep ⇒
+                        val actual = properties.iterator.flatMap { property =>
+                            ps.entities(property.key).filter { ep =>
                                 if (ep.isRefinable)
                                     fail(s"intermediate results left over $ep")
                                 isRecordedProperty(property.key, ep)
-                            }.map(ep ⇒ s"${ep.e} => ${ep.ub}").toSeq.sorted
+                            }.map(ep => s"${ep.e} => ${ep.ub}").toSeq.sorted
                         }.toSeq
 
                         val actualIt = actual.iterator
@@ -214,7 +214,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
  * same project.
  */
 object FPCFAnalysesIntegrationTest {
-    var factory: () ⇒ SomeProject = () ⇒ null
+    var factory: () => SomeProject = () => null
     var p: SomeProject = _
     var ps: PropertyStore = _
 }

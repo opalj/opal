@@ -23,7 +23,7 @@ class EOptionPSetTest extends AnyFunSuite {
         val e1 = InterimEUBP(new Object, Marker.IsMarked)
         val set = EOptionPSet[Entity, Property](e1)
         var count = 0
-        set.foreach(e ⇒ { count += 1; assert(e == e1) })
+        set.foreach(e => { count += 1; assert(e == e1) })
         assert(count == 1)
     }
 

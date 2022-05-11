@@ -115,9 +115,9 @@ class LocalsTest extends AnyFlatSpec with Matchers {
                 v2 = v2.updated(i, i)
                 v3 = v3.updated(i, i + 1)
             }
-            v1.fuse(v2, (a, b) ⇒ { a should equal(b); a })
-            val vm = v1.fuse(v3, (a, b) ⇒ { a should not equal (b); -1 })
-            vm.foreach { v ⇒
+            v1.fuse(v2, (a, b) => { a should equal(b); a })
+            val vm = v1.fuse(v3, (a, b) => { a should not equal (b); -1 })
+            vm.foreach { v =>
                 if (v == null || v != -1)
                     fail("null is not -1 (size="+size+"; va="+v1.toString ++ "; vb="+v3.toString+"; vm="+vm.toString+")")
             }
@@ -138,12 +138,12 @@ class LocalsTest extends AnyFlatSpec with Matchers {
                 v2 = v2.updated(i, i)
                 v3 = v3.updated(i, i + 1)
             }
-            v1.fuse(v2, (a, b) ⇒ a) should be theSameInstanceAs v1
+            v1.fuse(v2, (a, b) => a) should be theSameInstanceAs v1
 
-            v1.fuse(v3, (a, b) ⇒ b) should be theSameInstanceAs v3
-            v1.fuse(v3, (a, b) ⇒ a) should be theSameInstanceAs v1
-            v3.fuse(v1, (a, b) ⇒ b) should be theSameInstanceAs v1
-            v3.fuse(v1, (a, b) ⇒ a) should be theSameInstanceAs v3
+            v1.fuse(v3, (a, b) => b) should be theSameInstanceAs v3
+            v1.fuse(v3, (a, b) => a) should be theSameInstanceAs v1
+            v3.fuse(v1, (a, b) => b) should be theSameInstanceAs v1
+            v3.fuse(v1, (a, b) => a) should be theSameInstanceAs v3
         }
     }
 
@@ -183,7 +183,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
             val v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
 
-            (v eq v.mapConserve(id ⇒ id)) should be(true)
+            (v eq v.mapConserve(id => id)) should be(true)
 
         }
     }
@@ -210,7 +210,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
             val v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
 
-            val newV = v.mapKV[Integer] { (i, v) ⇒ assert(i == v); i }
+            val newV = v.mapKV[Integer] { (i, v) => assert(i == v); i }
 
             for { i ← 0 until size } {
                 newV(i) should be(i)

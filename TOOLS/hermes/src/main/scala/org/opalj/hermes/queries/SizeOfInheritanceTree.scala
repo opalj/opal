@@ -45,16 +45,16 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
         val features = Array.fill[LocationsContainer[S]](featureIDs.size)(new LocationsContainer[S])
         var classCount = 0
         var sumOfSizeOfInheritanceTrees = 0
-        classHierarchy.foreachKnownType { t ⇒
+        classHierarchy.foreachKnownType { t =>
             if (project.isProjectType(t)) {
                 val l = ClassFileLocation(project, t)
                 classHierarchy.supertypeInformation(t) match {
-                    case Some(supertypeInformation) if isSupertypeInformationComplete(t) ⇒
+                    case Some(supertypeInformation) if isSupertypeInformationComplete(t) =>
                         val sizeOfInheritanceTree = supertypeInformation.size
                         features(Math.min(sizeOfInheritanceTree / CategorySize, 5)) += l
                         classCount += 1
                         sumOfSizeOfInheritanceTrees += sizeOfInheritanceTree
-                    case _ /* None or <incomplete> */ ⇒
+                    case _ /* None or <incomplete> */ =>
                         features(6) += l
                 }
             }

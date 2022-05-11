@@ -122,7 +122,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                 ("e" → "d")
             )
             var permutationCount = 0
-            data.permutations.foreach { aPermutation ⇒
+            data.permutations.foreach { aPermutation =>
                 permutationCount += 1
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(5)
@@ -192,7 +192,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
         var permutationCount = 0
         var testedCount = 0
         val random = new java.util.Random // testing all permutations takes too long...
-        data.permutations.foreach { aPermutation ⇒
+        data.permutations.foreach { aPermutation =>
             permutationCount += 1
             if (random.nextInt(2500) == 1) {
                 testedCount += 1
@@ -221,7 +221,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
         var permutationCount = 0
         var testedCount = 0
         val random = new java.util.Random // testing all permutations takes FAR too long...
-        data.permutations.foreach { aPermutation ⇒
+        data.permutations.foreach { aPermutation =>
             permutationCount += 1
             if (random.nextInt(250000) == 1) {
                 val data = List(
@@ -245,7 +245,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with four nodes with a path which has a connection to one cSCCs" should
         "contain one cSCCs" in {
             val data = List(("a" → "b"), ("b" → "c"), ("c" → "a"), ("b" → "d"), ("d" → "d"))
-            data.permutations.foreach { aPermutation ⇒
+            data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(4)
                 val cSCCs = closedSCCs(g)
@@ -373,7 +373,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with a long path leading to a simple cSCC consisting of two nodes" should
         "contain one cSCC" in {
             val data = List(("a" → "b"), ("b" → "c"), ("c" → "d"), ("d" → "c"), ("d" -> "d"))
-            data.permutations.foreach { aPermutation ⇒
+            data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(4)
 
@@ -389,7 +389,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with multiple paths leading to a simple cSCC" should
         "contain one cSCC" in {
             val data = List(("a" → "c"), ("b" → "c"), ("c" → "c"))
-            data.permutations.foreach { aPermutation ⇒
+            data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(3)
 
@@ -405,7 +405,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with a long path leading to two simple cSCCs" should
         "contain two cSCCs" in {
             val data = List(("a" → "b"), ("b" → "c"), ("b" → "d"), ("c" -> "c"), ("d" -> "d"))
-            data.permutations.foreach { aPermutation ⇒
+            data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(4)
 
@@ -421,7 +421,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with one node with multiple outgoing edges leading to a complex cSCCs" should
         "contain one cSCC" in {
             val data = List(("a" → "b"), ("a" → "c"), ("a" → "d"), ("b" -> "c"), ("c" -> "d"), ("d" -> "b"))
-            data.permutations.foreach { aPermutation ⇒
+            data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(4)
 
@@ -441,7 +441,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
         )
         var permutationCounter = 1
         PerformanceEvaluation.time {
-            data.permutations.take(20000).foreach { aPermutation ⇒
+            data.permutations.take(20000).foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 val cSCCs = closedSCCs(g).map(_.toSet).toSet
                 val expected = Set(Set("e"), Set("g"))
@@ -455,11 +455,11 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                     permutationCounter += 1
                 }
             }
-        }(t ⇒ info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
+        }(t => info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
     }
 
     "a graph with two cSCCs where one is a chain " should "contain two cSCCs" in {
-        List(1, 2, 3, 4, 5, 6, 7, 8, 9, 0).permutations.take(50).foreach { lis ⇒
+        List(1, 2, 3, 4, 5, 6, 7, 8, 9, 0).permutations.take(50).foreach { lis =>
             val a = "n"+lis(0)
             val b = "n"+lis(1)
             val d = "n"+lis(2)
@@ -480,7 +480,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             )
             var permutationCounter = 1
             PerformanceEvaluation.time {
-                data.permutations.take(50).foreach { aPermutation ⇒
+                data.permutations.take(50).foreach { aPermutation =>
                     val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                     val cSCCs = closedSCCs(g).map(_.toSet).toSet
                     val expected = Set(Set(h, j, i), Set(b, d, e, r))
@@ -494,19 +494,19 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                         permutationCounter += 1
                     }
                 }
-            }(t ⇒ info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
+            }(t => info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
         }
     }
 
     "a graph with multiple cycles embedded in a larger cycle " should "contain one cSCC" in {
-        List(1, 2, 3).permutations.foreach { lis ⇒
+        List(1, 2, 3).permutations.foreach { lis =>
             val a = "n"+lis(0)
             val b = "n"+lis(1)
             val c = "n"+lis(2)
             val data = List(a → b, a → c, b → a, b -> c, c -> a)
             var permutationCounter = 1
             PerformanceEvaluation.time {
-                data.permutations.foreach { aPermutation ⇒
+                data.permutations.foreach { aPermutation =>
                     val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                     val rawCSCCs = closedSCCs(g)
                     val cSCCs = rawCSCCs.map(_.toSet).toSet
@@ -521,7 +521,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
                         permutationCounter += 1
                     }
                 }
-            }(t ⇒ info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
+            }(t => info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
         }
     }
 }

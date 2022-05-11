@@ -92,7 +92,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
 trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
-    val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis
+    val createAnalysis: SomeProject => ArraycopyPointsToAnalysis
 
     override type InitializationData = Null
 
@@ -114,12 +114,12 @@ trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
 
 object TypeBasedArraycopyPointsToAnalysisScheduler extends ArraycopyPointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis =
+    override val createAnalysis: SomeProject => ArraycopyPointsToAnalysis =
         new ArraycopyPointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedArraycopyPointsToAnalysisScheduler extends ArraycopyPointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis =
+    override val createAnalysis: SomeProject => ArraycopyPointsToAnalysis =
         new ArraycopyPointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

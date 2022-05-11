@@ -17,9 +17,9 @@ final case class MethodSignature(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: MethodSignature ⇒
+            case that: MethodSignature =>
                 this.descriptor == that.descriptor && this.name == that.name
-            case _ ⇒
+            case _ =>
                 false
         }
     }

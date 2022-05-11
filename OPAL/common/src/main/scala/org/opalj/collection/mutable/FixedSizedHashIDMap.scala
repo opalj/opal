@@ -28,7 +28,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         private var theKeys:        Array[K],
         private var theValues:      Array[V],
         private var hashCodeOffset: Int // basically -minValue
-) { self ⇒
+) { self =>
 
     /**
      * Returns the value stored for the given key.
@@ -47,7 +47,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         this
     }
 
-    def foreach(f: ((K, V)) ⇒ Unit): Unit = {
+    def foreach(f: ((K, V)) => Unit): Unit = {
         val keys = this.theKeys
         val values = this.theValues
         var i = 0
@@ -60,7 +60,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         }
     }
 
-    def iterate(f: (K, V) ⇒ Unit): Unit = {
+    def iterate(f: (K, V) => Unit): Unit = {
         val keys = this.theKeys
         val values = this.theValues
         var i = 0

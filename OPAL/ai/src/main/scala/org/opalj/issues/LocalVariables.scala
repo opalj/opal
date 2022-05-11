@@ -31,7 +31,7 @@ class LocalVariables(
         if (basicInfoOnly)
             return Text("");
 
-        val sortedLVDefs = localVariableDefinitions.toSeq.sortWith((a, b) ⇒ a._1 < b._1)
+        val sortedLVDefs = localVariableDefinitions.toSeq.sortWith((a, b) => a._1 < b._1)
         val lvsAsXHTML =
             for ((index, theLV) ← sortedLVDefs) yield {
                 val localValue = localVariables(index)
@@ -62,7 +62,7 @@ class LocalVariables(
 
     override def toIDL: JsValue = {
         val lvDefs = code.localVariablesAt(pc)
-        val lvValues = lvDefs.toSeq.sortWith((a, b) ⇒ a._1 < b._1).map { e ⇒
+        val lvValues = lvDefs.toSeq.sortWith((a, b) => a._1 < b._1).map { e =>
             val (index, localVariable) = e
             val localValue = localVariables(index)
             Json.obj(

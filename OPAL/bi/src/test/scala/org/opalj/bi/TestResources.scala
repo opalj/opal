@@ -19,19 +19,19 @@ object TestResources {
 
     private def pathPrefixCandidates(
         subProjectFolder: String
-    ): Array[String ⇒ Option[String]] = Array(
+    ): Array[String => Option[String]] = Array(
         // if the current path is set to OPAL's root folder
-        resourceFile ⇒ { Some("OPAL/"+resourceFile) },
+        resourceFile => { Some("OPAL/"+resourceFile) },
         // if the current path is set to "<SUB-PROJECT>/<BIN>"
-        resourceFile ⇒ { Some("../../"+resourceFile) },
+        resourceFile => { Some("../../"+resourceFile) },
         // if the current path is set to "DEVELOPING_OPAL/<SUB-PROJECT>/<BIN>"
-        resourceFile ⇒ { Some("../../../OPAL/"+resourceFile) },
+        resourceFile => { Some("../../../OPAL/"+resourceFile) },
         // if we are in the sub-project's root folder
-        resourceFile ⇒ { Some("../"+subProjectFolder + resourceFile) },
+        resourceFile => { Some("../"+subProjectFolder + resourceFile) },
         // if we are in a "developing opal" sub-project's root folder
-        resourceFile ⇒ { Some("../../OPAL/"+resourceFile) },
+        resourceFile => { Some("../../OPAL/"+resourceFile) },
         // if the current path is set to "target/scala-.../classes"
-        resourceFile ⇒ {
+        resourceFile => {
             val userDir = System.getProperty("user.dir")
             if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {
                 Some("../../../src/test/resources/"+resourceFile)
@@ -58,9 +58,9 @@ object TestResources {
             s"$subProjectFolder/$unmanagedResourcesFolder$resourceName",
             s"$subProjectFolder/$managedResourcesFolder/$resourceName"
         )
-        pathPrefixCandidates(subProjectFolder) foreach { pathFunction ⇒
-            resourceFiles foreach { rf ⇒
-                pathFunction(rf) foreach { fCandidate ⇒
+        pathPrefixCandidates(subProjectFolder) foreach { pathFunction =>
+            resourceFiles foreach { rf =>
+                pathFunction(rf) foreach { fCandidate =>
                     val f = new File(fCandidate)
                     if (f.exists) return f; // <======== NORMAL RETURN
                 }

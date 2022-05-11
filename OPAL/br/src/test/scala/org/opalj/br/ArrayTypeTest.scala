@@ -25,7 +25,7 @@ class ArrayTypeTest extends AnyFunSuite {
     }
 
     test("ArrayType (Array of Array of Primitives) Field Descriptor") {
-        FieldType("[[S") match { case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/ }
+        FieldType("[[S") match { case ArrayType(ArrayType(ShortType)) => /*OK*/ }
     }
 
     test("toJavaClass") {
@@ -64,7 +64,7 @@ class ArrayTypeTest extends AnyFunSuite {
         val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
 
         at1 match {
-            case ArrayType(ArrayType(ArrayType(ObjectType(className)))) ⇒
+            case ArrayType(ArrayType(ArrayType(ObjectType(className)))) =>
                 assert(className === "java/lang/Object")
         }
     }

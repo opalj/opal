@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
@@ -256,16 +256,16 @@ object Type {
     def apply(clazz: Class[_]): Type = {
         if (clazz.isPrimitive) {
             clazz match {
-                case java.lang.Boolean.TYPE   ⇒ BooleanType
-                case java.lang.Byte.TYPE      ⇒ ByteType
-                case java.lang.Character.TYPE ⇒ CharType
-                case java.lang.Short.TYPE     ⇒ ShortType
-                case java.lang.Integer.TYPE   ⇒ IntegerType
-                case java.lang.Long.TYPE      ⇒ LongType
-                case java.lang.Float.TYPE     ⇒ FloatType
-                case java.lang.Double.TYPE    ⇒ DoubleType
-                case java.lang.Void.TYPE      ⇒ VoidType
-                case _ ⇒
+                case java.lang.Boolean.TYPE   => BooleanType
+                case java.lang.Byte.TYPE      => ByteType
+                case java.lang.Character.TYPE => CharType
+                case java.lang.Short.TYPE     => ShortType
+                case java.lang.Integer.TYPE   => IntegerType
+                case java.lang.Long.TYPE      => LongType
+                case java.lang.Float.TYPE     => FloatType
+                case java.lang.Double.TYPE    => DoubleType
+                case java.lang.Void.TYPE      => VoidType
+                case _ =>
                     throw new UnknownError(s"unknown primitive type $clazz")
             }
         } else {
@@ -349,17 +349,17 @@ object FieldType {
     )
     def apply(ft: String): FieldType = {
         (ft.charAt(0): @scala.annotation.switch) match {
-            case 'B' ⇒ ByteType
-            case 'C' ⇒ CharType
-            case 'D' ⇒ DoubleType
-            case 'F' ⇒ FloatType
-            case 'I' ⇒ IntegerType
-            case 'J' ⇒ LongType
-            case 'S' ⇒ ShortType
-            case 'Z' ⇒ BooleanType
-            case 'L' ⇒ ObjectType(ft.substring(1, ft.length - 1))
-            case '[' ⇒ ArrayType(FieldType(ft.substring(1)))
-            case _   ⇒ throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
+            case 'B' => ByteType
+            case 'C' => CharType
+            case 'D' => DoubleType
+            case 'F' => FloatType
+            case 'I' => IntegerType
+            case 'J' => LongType
+            case 'S' => ShortType
+            case 'Z' => BooleanType
+            case 'L' => ObjectType(ft.substring(1, ft.length - 1))
+            case '[' => ArrayType(FieldType(ft.substring(1)))
+            case _   => throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
         }
     }
 }
@@ -603,11 +603,11 @@ sealed abstract class ByteType private () extends IntLikeType {
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id |
                 ShortType.id |
-                IntegerType.id ⇒ NoConversion
-            case CharType.id   ⇒ IntToChar
-            case LongType.id   ⇒ IntToLong
-            case FloatType.id  ⇒ IntToFloat
-            case DoubleType.id ⇒ IntToDouble
+                IntegerType.id => NoConversion
+            case CharType.id   => IntToChar
+            case LongType.id   => IntToLong
+            case FloatType.id  => IntToFloat
+            case DoubleType.id => IntToDouble
         }
     }
 
@@ -652,12 +652,12 @@ sealed abstract class CharType private () extends IntLikeType {
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id                  ⇒ IntToByte
-            case ShortType.id                 ⇒ IntToShort
-            case CharType.id | IntegerType.id ⇒ NoConversion
-            case LongType.id                  ⇒ IntToLong
-            case FloatType.id                 ⇒ IntToFloat
-            case DoubleType.id                ⇒ IntToDouble
+            case ByteType.id                  => IntToByte
+            case ShortType.id                 => IntToShort
+            case CharType.id | IntegerType.id => NoConversion
+            case LongType.id                  => IntToLong
+            case FloatType.id                 => IntToFloat
+            case DoubleType.id                => IntToDouble
         }
     }
 
@@ -707,13 +707,13 @@ sealed abstract class DoubleType private () extends NumericType {
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ Double2Byte
-            case CharType.id    ⇒ Double2Char
-            case ShortType.id   ⇒ Double2Short
-            case IntegerType.id ⇒ Double2Integer
-            case LongType.id    ⇒ Double2Long
-            case FloatType.id   ⇒ Double2Float
-            case DoubleType.id  ⇒ NoConversion
+            case ByteType.id    => Double2Byte
+            case CharType.id    => Double2Char
+            case ShortType.id   => Double2Short
+            case IntegerType.id => Double2Integer
+            case LongType.id    => Double2Long
+            case FloatType.id   => Double2Float
+            case DoubleType.id  => NoConversion
         }
     }
 
@@ -764,13 +764,13 @@ sealed abstract class FloatType private () extends NumericType {
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ Float2Byte
-            case CharType.id    ⇒ Float2Char
-            case ShortType.id   ⇒ Float2Short
-            case IntegerType.id ⇒ Float2Integer
-            case LongType.id    ⇒ Float2Long
-            case FloatType.id   ⇒ NoConversion
-            case DoubleType.id  ⇒ Float2Double
+            case ByteType.id    => Float2Byte
+            case CharType.id    => Float2Char
+            case ShortType.id   => Float2Short
+            case IntegerType.id => Float2Integer
+            case LongType.id    => Float2Long
+            case FloatType.id   => NoConversion
+            case DoubleType.id  => Float2Double
         }
     }
 
@@ -815,13 +815,13 @@ sealed abstract class ShortType private () extends IntLikeType {
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ IntToByte
-            case ShortType.id   ⇒ NoConversion
-            case CharType.id    ⇒ IntToChar
-            case IntegerType.id ⇒ NoConversion
-            case LongType.id    ⇒ IntToLong
-            case FloatType.id   ⇒ IntToFloat
-            case DoubleType.id  ⇒ IntToDouble
+            case ByteType.id    => IntToByte
+            case ShortType.id   => NoConversion
+            case CharType.id    => IntToChar
+            case IntegerType.id => NoConversion
+            case LongType.id    => IntToLong
+            case FloatType.id   => IntToFloat
+            case DoubleType.id  => IntToDouble
         }
     }
 
@@ -858,8 +858,8 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     override def isWiderThan(targetType: NumericType): Boolean =
         (targetType.id: @scala.annotation.switch) match {
-            case ShortType.id | CharType.id | ByteType.id ⇒ true
-            case _                                        ⇒ false
+            case ShortType.id | CharType.id | ByteType.id => true
+            case _                                        => false
         }
 
     override def convertTo[T](
@@ -870,13 +870,13 @@ sealed abstract class IntegerType private () extends IntLikeType {
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ IntToByte
-            case ShortType.id   ⇒ IntToShort
-            case CharType.id    ⇒ IntToChar
-            case IntegerType.id ⇒ NoConversion
-            case LongType.id    ⇒ IntToLong
-            case FloatType.id   ⇒ IntToFloat
-            case DoubleType.id  ⇒ IntToDouble
+            case ByteType.id    => IntToByte
+            case ShortType.id   => IntToShort
+            case CharType.id    => IntToChar
+            case IntegerType.id => NoConversion
+            case LongType.id    => IntToLong
+            case FloatType.id   => IntToFloat
+            case DoubleType.id  => IntToDouble
         }
     }
 
@@ -926,13 +926,13 @@ sealed abstract class LongType private () extends NumericType {
     ): T = {
         import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ Long2Byte
-            case CharType.id    ⇒ Long2Char
-            case ShortType.id   ⇒ Long2Short
-            case IntegerType.id ⇒ Long2Integer
-            case LongType.id    ⇒ NoConversion
-            case FloatType.id   ⇒ Long2Float
-            case DoubleType.id  ⇒ Long2Double
+            case ByteType.id    => Long2Byte
+            case CharType.id    => Long2Char
+            case ShortType.id   => Long2Short
+            case IntegerType.id => Long2Integer
+            case LongType.id    => NoConversion
+            case FloatType.id   => Long2Float
+            case DoubleType.id  => Long2Double
         }
     }
 
@@ -1064,7 +1064,7 @@ object ObjectType {
             val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get)
             cacheRWLock.readLock().lock()
             try {
-                cache.values.forEach { wot ⇒
+                cache.values.forEach { wot =>
                     val ot = wot.get
                     if (ot != null && ot.id < newObjectTypes.length) {
                         newObjectTypes(ot.id) = ot
@@ -1106,14 +1106,14 @@ object ObjectType {
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
 
-    @volatile private[this] var objectTypeCreationListener: ObjectType ⇒ Unit = null
+    @volatile private[this] var objectTypeCreationListener: ObjectType => Unit = null
 
     /**
      * Sets the listener and immediately calls it (multiple times) to inform the listener
      * about all known object types. It is guaranteed that the listener will not miss any
      * object type creation. However, invocation may occur concurrently.
      */
-    def setObjectTypeCreationListener(f: ObjectType ⇒ Unit): Unit = {
+    def setObjectTypeCreationListener(f: ObjectType => Unit): Unit = {
         cacheRWLock.readLock().lock()
         try {
             objectTypeCreationListener = f
@@ -1385,17 +1385,17 @@ object ObjectType {
     }
 
     def primitiveTypeWrapperMatcher[Args, T](
-        booleanMatch: Args ⇒ T,
-        byteMatch:    Args ⇒ T,
-        charMatch:    Args ⇒ T,
-        shortMatch:   Args ⇒ T,
-        integerMatch: Args ⇒ T,
-        longMatch:    Args ⇒ T,
-        floatMatch:   Args ⇒ T,
-        doubleMatch:  Args ⇒ T,
-        orElse:       Args ⇒ T
-    ): (ObjectType, Args) ⇒ T = {
-        val fs = new Array[Args ⇒ T](8)
+        booleanMatch: Args => T,
+        byteMatch:    Args => T,
+        charMatch:    Args => T,
+        shortMatch:   Args => T,
+        integerMatch: Args => T,
+        longMatch:    Args => T,
+        floatMatch:   Args => T,
+        doubleMatch:  Args => T,
+        orElse:       Args => T
+    ): (ObjectType, Args) => T = {
+        val fs = new Array[Args => T](8)
         fs(0) = booleanMatch
         fs(1) = byteMatch
         fs(2) = charMatch
@@ -1405,7 +1405,7 @@ object ObjectType {
         fs(6) = floatMatch
         fs(7) = doubleMatch
 
-        (objectType: ObjectType, args: Args) ⇒ {
+        (objectType: ObjectType, args: Args) => {
             val oid = objectType.id
             if (oid > javaLangDoubleId || oid < javaLangBooleanId) {
                 orElse(args)
@@ -1459,8 +1459,8 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      */
     def elementType: FieldType = {
         componentType match {
-            case at: ArrayType ⇒ at.elementType
-            case _             ⇒ componentType
+            case at: ArrayType => at.elementType
+            case _             => componentType
         }
     }
 
@@ -1469,7 +1469,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * "Object[][]" has two dimensions.
      */
     def dimensions: Int = {
-        1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
+        1 + (componentType match { case at: ArrayType => at.dimensions; case _ => 0 })
     }
 
     /**
@@ -1484,9 +1484,9 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      */
     def drop(dimensions: Int): FieldType = {
         dimensions match {
-            case 0 ⇒ this
-            case 1 ⇒ this.componentType
-            case _ ⇒ this.componentType.asArrayType.drop(dimensions - 1)
+            case 0 => this
+            case 1 => this.componentType
+            case _ => this.componentType.asArrayType.drop(dimensions - 1)
         }
     }
 
@@ -1526,7 +1526,7 @@ object ArrayType {
         if (-nextId.get > arrayTypes.length) {
             val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
             cache.synchronized {
-                cache.values.forEach { wat ⇒
+                cache.values.forEach { wat =>
                     val at = wat.get
                     if (at != null && -at.id < newArrayTypes.length) {
                         newArrayTypes(-at.id) = at
@@ -1625,9 +1625,9 @@ object ElementReferenceType {
 
     def unapply(rt: ReferenceType): Option[ObjectType] = {
         rt match {
-            case ot: ObjectType                   ⇒ Some(ot)
-            case ArrayElementType(ot: ObjectType) ⇒ Some(ot)
-            case _                                ⇒ None
+            case ot: ObjectType                   => Some(ot)
+            case ArrayElementType(ot: ObjectType) => Some(ot)
+            case _                                => None
         }
     }
 

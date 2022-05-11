@@ -28,7 +28,7 @@ object DomainRegistry {
 
     case class DomainMetaInformation(
             lessPreciseDomains: Set[Class[_ <: Domain]],
-            factory:            (SomeProject, Method) ⇒ Domain
+            factory:            (SomeProject, Method) => Domain
     )
 
     type ClassRegistry = Map[Class[_ <: Domain], DomainMetaInformation]
@@ -51,7 +51,7 @@ object DomainRegistry {
         domainDescription:  String,
         domainClass:        Class[_ <: Domain],
         lessPreciseDomains: Set[Class[_ <: Domain]],
-        factory:            (SomeProject, Method) ⇒ Domain
+        factory:            (SomeProject, Method) => Domain
     ): Unit = {
         this.synchronized {
             if (classRegistry.get(domainClass).nonEmpty)
@@ -70,7 +70,7 @@ object DomainRegistry {
             val domain = domainsToAnalyze.head
             domainsToAnalyze = domainsToAnalyze.tail
             domains += domain
-            classRegistry(domain).lessPreciseDomains.foreach { d ⇒
+            classRegistry(domain).lessPreciseDomains.foreach { d =>
                 if (!domains.contains(d)) domainsToAnalyze += d
             }
         }
@@ -79,8 +79,8 @@ object DomainRegistry {
     }
 
     def selectCandidates(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
-        classRegistry.keys.filter { candidate ⇒
-            requirements.forall(r ⇒ r.isAssignableFrom(candidate))
+        classRegistry.keys.filter { candidate =>
+            requirements.forall(r => r.isAssignableFrom(candidate))
         }.toSet
     }
 
@@ -104,7 +104,7 @@ object DomainRegistry {
 
         val d: Class[_ <: Domain] = candidateClasses.head
         val rootSet = Set[Class[_ <: Domain]](d)
-        val (best, _) = candidateClasses.tail.foldLeft((rootSet, allLessPreciseDomains(d))) { (c, n) ⇒
+        val (best, _) = candidateClasses.tail.foldLeft((rootSet, allLessPreciseDomains(d))) { (c, n) =>
             // select the most precise domains...
             val (candidateDomains, lessPreciseThanCurrent) = c
             if (lessPreciseThanCurrent.contains(n))
@@ -127,7 +127,7 @@ object DomainRegistry {
 
         val d: Class[_ <: Domain] = candidateClasses.head
         val rootSet = Set[Class[_ <: Domain]](d)
-        candidateClasses.tail.foldLeft(rootSet) { (c, n) ⇒
+        candidateClasses.tail.foldLeft(rootSet) { (c, n) =>
             // select the least precise/cheapest domains...
             val lessPreciseThanN = allLessPreciseDomains(n)
             if (lessPreciseThanN.exists(c.contains)) {
@@ -136,7 +136,7 @@ object DomainRegistry {
             } else {
                 // This one is less precise than all other, is one the other acutally
                 // more precise than N
-                c.filter(c ⇒ !allLessPreciseDomains(c).contains(n)) + n
+                c.filter(c => !allLessPreciseDomains(c).contains(n)) + n
             }
         }
     }
@@ -148,9 +148,9 @@ object DomainRegistry {
         requirements: Traversable[Class[_ <: AnyRef]]
     ): Set[Class[_ <: Domain]] = {
         config.getString(configStrategySelectionKey) match {
-            case "cheapest" ⇒ selectCheapest(requirements)
-            case "best"     ⇒ selectBest(requirements)
-            case s          ⇒ throw new UnsupportedOperationException(s"unknown strategy: $s")
+            case "cheapest" => selectCheapest(requirements)
+            case "best"     => selectBest(requirements)
+            case s          => throw new UnsupportedOperationException(s"unknown strategy: $s")
         }
     }
 
@@ -209,14 +209,14 @@ object DomainRegistry {
         "computations are done at the type level",
         classOf[domain.l0.BaseDomain[_]],
         lessPreciseDomains = Set.empty,
-        (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomain(project, method)
+        (project: SomeProject, method: Method) => new domain.l0.BaseDomain(project, method)
     )
 
     register(
         "computations are done at the type level; cfg and def/use information is recorded",
         classOf[domain.l0.PrimitiveTACAIDomain],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
-        (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomainWithDefUse(project, method)
+        (project: SomeProject, method: Method) => new domain.l0.BaseDomainWithDefUse(project, method)
     )
 
     register(
@@ -225,7 +225,7 @@ object DomainRegistry {
             "signature refinements are used",
         classOf[fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement(project, method)
         }
     )
@@ -234,7 +234,7 @@ object DomainRegistry {
         "computations related to int values are done using intervals",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l1.DefaultIntervalValuesDomain(project, method)
         }
     )
@@ -243,7 +243,7 @@ object DomainRegistry {
         "computations related to int/long values are done using sets",
         classOf[domain.l1.DefaultSetValuesDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l1.DefaultSetValuesDomain(project, method)
         }
     )
@@ -252,7 +252,7 @@ object DomainRegistry {
         "computations related to reference types track nullness, must alias and origin information",
         classOf[domain.l1.DefaultReferenceValuesDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l1.DefaultReferenceValuesDomain(project, method)
         }
     )
@@ -261,7 +261,7 @@ object DomainRegistry {
         "computations related to reference types track nullness, must alias and origin information; records the ai-time def-use information",
         classOf[domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse[_]],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse(project, method)
         }
     )
@@ -270,7 +270,7 @@ object DomainRegistry {
         "computations related to ints use intervals; tracks nullness, must alias and origin information of reference values",
         classOf[domain.l1.DefaultDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l1.DefaultDomain(project, method)
         }
     )
@@ -279,7 +279,7 @@ object DomainRegistry {
         "uses intervals for int values; tracks nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
         }
     )
@@ -294,7 +294,7 @@ object DomainRegistry {
             classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
             classOf[fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement]
         ),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement(project, method)
         }
     )
@@ -306,7 +306,7 @@ object DomainRegistry {
             classOf[domain.l1.DefaultIntervalValuesDomain[_]],
             classOf[domain.l1.DefaultReferenceValuesDomain[_]]
         ),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l2.DefaultPerformInvocationsDomain(project, method)
         }
     )
@@ -318,7 +318,7 @@ object DomainRegistry {
             classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
             classOf[domain.l2.DefaultPerformInvocationsDomain[_]]
         ),
-        (project: SomeProject, method: Method) ⇒ {
+        (project: SomeProject, method: Method) => {
             new domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(project, method)
         }
     )
@@ -327,7 +327,7 @@ object DomainRegistry {
         "called methods are context-sensitively analyzed (up to two levels per default)",
         classOf[domain.l2.DefaultDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l2.DefaultPerformInvocationsDomain[_]]),
-        (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
+        (project: SomeProject, method: Method) => new domain.l2.DefaultDomain(project, method)
     )
 
 }

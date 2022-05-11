@@ -33,7 +33,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
     private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    import DominatorsPerformanceEvaluation.{time ⇒ dTime}
+    import DominatorsPerformanceEvaluation.{time => dTime}
 
     class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain
@@ -55,7 +55,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 
-    def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: ⇒ String)(f: ⇒ T): T = {
+    def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: => String)(f: => T): T = {
         @volatile var result: T = null
         val t = new Thread(new Runnable { def run(): Unit = { result = f } })
         t.start()
@@ -75,7 +75,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
         val failures = new java.util.concurrent.ConcurrentLinkedQueue[(String, Throwable)]
 
-        project.parForeachMethodWithBody() { methodInfo ⇒
+        project.parForeachMethodWithBody() { methodInfo =>
             val method = methodInfo.method
             try {
                 val domain = new RecordCFGDomain(method, project)
@@ -89,7 +89,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 val bbAICFG = dTime('BasicBlocksBasedAICFG) { domain.bbCFG }
 
                 val pcs = new mutable.BitSet(method.body.size)
-                bbAICFG.allBBs.foreach { bbAI ⇒
+                bbAICFG.allBBs.foreach { bbAI =>
 
                     assert(bbAI.startPC <= bbAI.endPC, s"${bbAI.startPC}> ${bbAI.endPC}")
 
@@ -111,10 +111,10 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                                 s" and bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
                         )
                     }
-                    val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock ⇒ bb }
-                    val allAIPredecessors = bbAI.predecessors.collect { case bb: BasicBlock ⇒ bb }
-                    allAIPredecessors.foreach { predecessorBB ⇒
-                        if (!allBRPredecessors.exists { p ⇒ p.endPC == predecessorBB.endPC })
+                    val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock => bb }
+                    val allAIPredecessors = bbAI.predecessors.collect { case bb: BasicBlock => bb }
+                    allAIPredecessors.foreach { predecessorBB =>
+                        if (!allBRPredecessors.exists { p => p.endPC == predecessorBB.endPC })
                             fail(
                                 s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):"+
                                     allAIPredecessors.mkString("ai:{", ",", "} vs. ") +
@@ -123,13 +123,13 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     }
                 }
 
-                evaluatedInstructions.iterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc =>
 
-                    domain.foreachSuccessorOf(pc) { succPC ⇒
+                    domain.foreachSuccessorOf(pc) { succPC =>
                         domain.predecessorsOf(succPC).contains(pc) should be(true)
                     }
 
-                    domain.foreachPredecessorOf(pc) { predPC ⇒
+                    domain.foreachPredecessorOf(pc) { predPC =>
                         domain.allSuccessorsOf(predPC).contains(pc) should be(true)
                     }
 
@@ -150,7 +150,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                         dTime('ControlDependencies) { domain.pdtBasedControlDependencies }
                     }
 
-                evaluatedInstructions.iterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc =>
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
                         !evaluatedInstructions.contains(dt.dom(pc))) {
@@ -167,17 +167,17 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     }
                     try {
                         dTime('QueryingControlDependencies) {
-                            cdg.xIsControlDependentOn(pc)(x ⇒ { /* "somke test" */ })
+                            cdg.xIsControlDependentOn(pc)(x => { /* "somke test" */ })
                         }
                     } catch {
-                        case t: Throwable ⇒
+                        case t: Throwable =>
                             t.printStackTrace
                             fail(s"getting the control dependency information for $pc failed", t)
                     }
                 }
 
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     t.printStackTrace()
                     failures.add((method.toJava, t))
             }
@@ -189,7 +189,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 while (root.getCause != null) root = root.getCause
                 val location =
                     if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
-                        root.getStackTrace().take(5).map { stackTraceElement ⇒
+                        root.getStackTrace().take(5).map { stackTraceElement =>
                             stackTraceElement.getClassName+
                                 " { "+
                                 stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
@@ -212,13 +212,13 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
-        def evaluateProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
+        def evaluateProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
             it(s"should be possible for all methods of $projectName") {
                 DominatorsPerformanceEvaluation.resetAll()
                 val project = projectFactory()
                 time {
                     analyzeProject(projectName, project)
-                } { t ⇒ info("the analysis took (real time):                            "+t.toSeconds) }
+                } { t => info("the analysis took (real time):                            "+t.toSeconds) }
 
                 import DominatorsPerformanceEvaluation.getTime
                 info("performing AI took (CPU time):                            "+getTime('AI).toSeconds)
@@ -240,10 +240,10 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
             }
         }
 
-        evaluateProject("the JDK", () ⇒ createJREProject)
+        evaluateProject("the JDK", () => createJREProject)
 
         var projectsCount = 0
-        br.TestSupport.allBIProjects(reader, None) foreach { biProject ⇒
+        br.TestSupport.allBIProjects(reader, None) foreach { biProject =>
             val (projectName, projectFactory) = biProject
             evaluateProject(projectName, projectFactory)
             projectsCount += 1

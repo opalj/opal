@@ -8,7 +8,7 @@
 4:/*pc=12:*/ lv4 = 1
 5:/*pc=13:*/ lv5 = {lv2, lv7} + {lv4}
 6:/*pc=14:*/ {lv1}[{lv2, lv7}] = {lv5}
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 6 →
 7:/*pc=15:*/ lv7 = {lv2, lv7} + 1

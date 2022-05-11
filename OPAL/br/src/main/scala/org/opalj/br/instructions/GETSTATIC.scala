@@ -26,7 +26,7 @@ case class GETSTATIC(
 
     final def mayThrowExceptions: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def stackSlotsChange: Int = fieldType.computationalType.operandSize
 

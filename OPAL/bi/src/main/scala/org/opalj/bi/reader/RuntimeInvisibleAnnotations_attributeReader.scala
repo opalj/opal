@@ -52,7 +52,7 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length = */ in.readInt()
         val annotations = Annotations(cp, in)
         if (annotations.nonEmpty || reifyEmptyAttributes) {

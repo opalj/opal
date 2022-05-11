@@ -132,7 +132,7 @@ case class AnnotatedWith(
             val thatEVPs = that.elementValuePairs
 
             thatEVPs.size == thisEVPs.size &&
-                thisEVPs.forall(thisEVP ⇒ thatEVPs.exists(_ == thisEVP))
+                thisEVPs.forall(thisEVP => thatEVPs.exists(_ == thisEVP))
         }
     }
 
@@ -184,7 +184,7 @@ object AnnotatedWith {
     ): AnnotatedWith = {
         new AnnotatedWith(
             ObjectType(annotationTypeName.asString),
-            elementValuePairs.map(kv ⇒ ElementValuePair(kv._1, kv._2)).toSeq
+            elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
         )
     }
     def apply(
@@ -193,7 +193,7 @@ object AnnotatedWith {
     ): AnnotatedWith = {
         new AnnotatedWith(
             ObjectType(annotationTypeName.asString),
-            elementValuePairs.map(kv ⇒ ElementValuePair(kv._1, kv._2)).toSeq
+            elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
         )
     }
 }

@@ -18,7 +18,7 @@ trait DefaultLongSetValues
     extends DefaultSpecialDomainValuesBinding
     with CorrelationalDomain
     with LongSetValues {
-    domain: IntegerRangeValuesFactory with Configuration with ExceptionsFactory ⇒
+    domain: IntegerRangeValuesFactory with Configuration with ExceptionsFactory =>
 
     class ALongValue() extends super.ALongValue {
 
@@ -57,8 +57,8 @@ trait DefaultLongSetValues
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
-                case _: ALongValue ⇒ StructuralUpdate(LongValue(pc))
-                case LongSet(thatValues) ⇒
+                case _: ALongValue => StructuralUpdate(LongValue(pc))
+                case LongSet(thatValues) =>
                     val thisValues = this.values
                     val newValues = thisValues ++ thatValues
                     val newValuesSize = newValues.size
@@ -81,9 +81,9 @@ trait DefaultLongSetValues
 
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (other match {
-                case that: LongSet ⇒
+                case that: LongSet =>
                     that.values.subsetOf(this.values)
-                case _ ⇒ false
+                case _ => false
             })
         }
 
@@ -103,9 +103,9 @@ trait DefaultLongSetValues
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: LongSet ⇒
+                case that: LongSet =>
                     (this eq that) || (this.values == that.values)
-                case _ ⇒
+                case _ =>
                     false
             }
         }

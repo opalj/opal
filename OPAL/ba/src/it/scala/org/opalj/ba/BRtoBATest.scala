@@ -67,7 +67,7 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
 
                 entriesCount.incrementAndGet()
             } catch {
-                case e: Exception ⇒
+                case e: Exception =>
                     Lock.synchronized {
                         Console.err.println(s"reading/writing of $url -> failed: ${e.getMessage}\n")
                         e.printStackTrace(Console.err)

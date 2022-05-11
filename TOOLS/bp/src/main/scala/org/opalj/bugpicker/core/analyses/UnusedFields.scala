@@ -37,7 +37,7 @@ object UnusedFields {
 
         val typeExtensibility = theProject.get(TypeExtensibilityKey)
 
-        val candidateFields = classFile.fields.filterNot { field ⇒
+        val candidateFields = classFile.fields.filterNot { field =>
             (field.isSynthetic) ||
                 // These fields are inlined by compilers; hence, even if the field is not accessed
                 // it may be used in the source code.
@@ -52,20 +52,20 @@ object UnusedFields {
         if (candidateFields.isEmpty)
             return Nil;
 
-        val unusedFields = candidateFields.filterNot { field ⇒
+        val unusedFields = candidateFields.filterNot { field =>
             // Test if the field defines a (probably inlined) constant string.
             field.isFinal && (field.fieldType eq ObjectType.String) &&
                 {
                     field.constantFieldValue match {
-                        case Some(ConstantString(value)) ⇒
+                        case Some(ConstantString(value)) =>
                             stringConstantsInformation.get(value).isDefined
-                        case _ ⇒
+                        case _ =>
                             false
                     }
                 }
         }
 
-        val unusedAndNotReflectivelyAccessedFields = unusedFields.filterNot { field ⇒
+        val unusedAndNotReflectivelyAccessedFields = unusedFields.filterNot { field =>
             // Let's test if we can find:
             //  - the field's name,
             //  - or the simpleName followed by the field's name
@@ -93,7 +93,7 @@ object UnusedFields {
                 // analyzed library.
                 unusedAndNotReflectivelyAccessedFields.filter(_.isPrivate)
             } else if (analysisMode == AnalysisModes.CPA) {
-                unusedAndNotReflectivelyAccessedFields.filter(f ⇒
+                unusedAndNotReflectivelyAccessedFields.filter(f =>
                     f.isPrivate || f.isPackagePrivate || {
                         f.isProtected && typeExtensibility(classFile.thisType).isNo
                     })

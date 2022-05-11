@@ -40,7 +40,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                     var seconds: Seconds = Seconds.None
                     val classFiles = PerformanceEvaluation.time {
                         val Lock = new Object
-                        val exceptionHandler = (source: AnyRef, throwable: Throwable) ⇒ {
+                        val exceptionHandler = (source: AnyRef, throwable: Throwable) => {
                             Lock.synchronized {
                                 exceptions ::= ((source, throwable))
                             }
@@ -54,7 +54,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                         }
 
                         classFiles
-                    } { t ⇒ seconds = t.toSeconds }
+                    } { t => seconds = t.toSeconds }
                     info(s"reading of ${classFiles.size} class files took $seconds")
 
                     it(s"reading should not result in exceptions") {
@@ -69,7 +69,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
 
                 it(s"should be able to create the xHTML representation for every class") {
 
-                    val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
+                    val classFilesGroupedByPackage = classFiles.groupBy { e =>
                         val (classFile, _ /*url*/ ) = e
                         val fqn = classFile.thisType.asJava
                         if (fqn.contains('.'))
@@ -92,14 +92,14 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                                             classFile.toXHTML(None).label should be("html")
                                             transformationCounter.incrementAndGet()
                                         } catch {
-                                            case e: Exception ⇒
+                                            case e: Exception =>
                                                 e.printStackTrace()
                                                 result = Some((url, e))
                                         }
                                         result
                                     }
                                 ).seq.flatten
-                            } { t ⇒
+                            } { t =>
                                 info(
                                     s"transformation of ${transformationCounter.get} class files "+
                                         s"in $packageName (parallelized) took ${t.toSeconds}"

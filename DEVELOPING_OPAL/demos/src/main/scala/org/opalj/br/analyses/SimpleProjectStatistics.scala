@@ -20,32 +20,32 @@ object SimpleProjectStatistics extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         // the following is highly inefficient
 
         val classFilesDistribution =
             project.allClassFiles.
-                groupBy(cf ⇒ org.opalj.bi.jdkVersion(cf.majorVersion)).toSeq.
-                sortWith((l, r) ⇒ l._1 < r._1).
-                map { e ⇒
+                groupBy(cf => org.opalj.bi.jdkVersion(cf.majorVersion)).toSeq.
+                sortWith((l, r) => l._1 < r._1).
+                map { e =>
                     val (group, es) = e
                     (group, es.size)
                 }
 
         val maxInstanceFieldsInAClass =
-            project.allClassFiles.map(_.fields.filter(f ⇒ !f.isStatic).size).max
+            project.allClassFiles.map(_.fields.filter(f => !f.isStatic).size).max
         val classWithMaxInstanceFields =
             project.allClassFiles.find(
-                _.fields.filter(f ⇒ !f.isStatic).size == maxInstanceFieldsInAClass
+                _.fields.filter(f => !f.isStatic).size == maxInstanceFieldsInAClass
             ).map(_.thisType.toJava)
 
         val maxClassFieldsInAClass =
-            project.allClassFiles.map(_.fields.filter(f ⇒ f.isStatic).size).max
+            project.allClassFiles.map(_.fields.filter(f => f.isStatic).size).max
         val classWithMaxClassFields =
             project.allClassFiles.find(
-                _.fields.filter(f ⇒ f.isStatic).size == maxClassFieldsInAClass
+                _.fields.filter(f => f.isStatic).size == maxClassFieldsInAClass
             ).map(_.thisType.toJava)
 
         val maxMethodsInAClass =

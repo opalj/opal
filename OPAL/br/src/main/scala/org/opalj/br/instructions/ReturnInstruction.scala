@@ -32,7 +32,7 @@ abstract class ReturnInstruction
 
     final def length: Int = 1
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this eq code.instructions(otherPC)
@@ -80,16 +80,16 @@ object ReturnInstruction {
 
     def apply(theType: Type): ReturnInstruction = {
         (theType.id: @switch) match {
-            case VoidType.id    ⇒ RETURN
-            case IntegerType.id ⇒ IRETURN
-            case ShortType.id   ⇒ IRETURN
-            case ByteType.id    ⇒ IRETURN
-            case CharType.id    ⇒ IRETURN
-            case BooleanType.id ⇒ IRETURN
-            case LongType.id    ⇒ LRETURN
-            case FloatType.id   ⇒ FRETURN
-            case DoubleType.id  ⇒ DRETURN
-            case _              ⇒ ARETURN
+            case VoidType.id    => RETURN
+            case IntegerType.id => IRETURN
+            case ShortType.id   => IRETURN
+            case ByteType.id    => IRETURN
+            case CharType.id    => IRETURN
+            case BooleanType.id => IRETURN
+            case LongType.id    => LRETURN
+            case FloatType.id   => FRETURN
+            case DoubleType.id  => DRETURN
+            case _              => ARETURN
         }
     }
 
@@ -100,9 +100,9 @@ object ReturnInstruction {
                 | LRETURN.opcode
                 | FRETURN.opcode
                 | DRETURN.opcode
-                | ARETURN.opcode ⇒
+                | ARETURN.opcode =>
                 Some(instruction.asInstanceOf[ReturnInstruction])
-            case _ ⇒
+            case _ =>
                 None
         }
 
@@ -139,8 +139,8 @@ object MethodCompletionInstruction {
             case ATHROW.opcode |
                 RETURN.opcode |
                 ARETURN.opcode |
-                IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode ⇒ true
-            case _ ⇒ false
+                IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode => true
+            case _ => false
         }
 
     }

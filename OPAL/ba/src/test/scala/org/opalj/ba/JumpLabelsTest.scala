@@ -15,7 +15,7 @@ import scala.reflect.runtime.universe._
 import org.opalj.bc.Assembler
 import org.opalj.br.Method
 import org.opalj.br.instructions._
-import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java8Framework.{ClassFile => ClassFileReader}
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -59,7 +59,7 @@ class JumpLabelsTest extends AnyFlatSpec {
             methods = METHODS(methodTemplate)
         ).toDA()
     val rawJava5ClassFile = Assembler(daJava5ClassFile)
-    val brJava5ClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(rawJava5ClassFile)).head
+    val brJava5ClassFile = ClassFileReader(() => new ByteArrayInputStream(rawJava5ClassFile)).head
 
     // We basically test that we compute the (correct) stack map table attribute
     val (daJava8ClassFile, _) =
@@ -70,7 +70,7 @@ class JumpLabelsTest extends AnyFlatSpec {
             methods = METHODS(methodTemplate)
         ).toDA()
     val rawJava8ClassFile = Assembler(daJava8ClassFile)
-    val brJava8ClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(rawJava8ClassFile)).head
+    val brJava8ClassFile = ClassFileReader(() => new ByteArrayInputStream(rawJava8ClassFile)).head
 
     "the method returnInt" should "execute as expected" in {
         val classes = Map("TestJumpJava5" → rawJava5ClassFile, "TestJumpJava8" → rawJava8ClassFile)

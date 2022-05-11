@@ -53,7 +53,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
         }
     }
 
-    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain => Unit): Unit = {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(method, domain)
@@ -66,7 +66,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
     behavior of "the DefaultPerInstructionPostProcessing trait"
 
     it should "be able to analyze a method that always throws an exception" in {
-        evaluateMethod("alwaysThrows") { domain ⇒
+        evaluateMethod("alwaysThrows") { domain =>
             import domain._
             allThrownExceptions should be(
                 Map((8 → Set(ObjectValue(0, No, true, ObjectType.RuntimeException))))
@@ -75,14 +75,14 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
     }
 
     it should "be able to analyze a method that catches everything" in {
-        evaluateMethod("alwaysCatch") { domain ⇒
+        evaluateMethod("alwaysCatch") { domain =>
             import domain._
             allReturnVoidInstructions should be(IntTrieSet(7)) // <= void return
         }
     }
 
     it should "be able to identify all potentially thrown exceptions when different exceptions are stored in a variable which is then passed to a throw statement" in {
-        evaluateMethod("throwsThisOrThatException") { domain ⇒
+        evaluateMethod("throwsThisOrThatException") { domain =>
             import domain._
             allThrownExceptions should be(
                 Map(
@@ -94,7 +94,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
     }
 
     it should "be able to analyze a method that catches the thrown exceptions" in {
-        evaluateMethod("throwsNoException") { domain ⇒
+        evaluateMethod("throwsNoException") { domain =>
             import domain._
             allThrownExceptions should be(LongMap.empty)
             allReturnVoidInstructions should be(IntTrieSet(39)) // <= void return
@@ -102,7 +102,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
     }
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
-        evaluateMethod("leverageException") { domain ⇒
+        evaluateMethod("leverageException") { domain =>
             import domain._
             allReturnVoidInstructions should be(IntTrieSet(38)) // <= void return
             allThrownExceptions should be(LongMap.empty)
@@ -114,7 +114,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
     }
 
     it should "be able to analyze a method that always throws an exception but also swallows several exceptions" in {
-        evaluateMethod("withFinallyAndThrows") { domain ⇒
+        evaluateMethod("withFinallyAndThrows") { domain =>
             import domain._
             allThrownExceptions should be(
                 Map(

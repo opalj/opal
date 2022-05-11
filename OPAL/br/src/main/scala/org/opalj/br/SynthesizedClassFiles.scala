@@ -31,9 +31,9 @@ case class SynthesizedClassFiles(
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
     override def toString: String = {
-        classFiles.map { cfAndReason ⇒
+        classFiles.map { cfAndReason =>
             val (cf, reason) = cfAndReason
-            cf.thisType.toJava + (reason.map(r ⇒ s"/*$r*/").getOrElse(""))
+            cf.thisType.toJava + (reason.map(r => s"/*$r*/").getOrElse(""))
         }.mkString("SynthesizedClassFiles(", ", ", ")")
     }
 }

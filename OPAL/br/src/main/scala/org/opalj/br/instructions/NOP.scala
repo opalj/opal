@@ -22,9 +22,9 @@ case object NOP extends ConstantLengthInstruction with NoLabels with Instruction
 
     final val length = 1
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def stackSlotsChange: Int = 0
 

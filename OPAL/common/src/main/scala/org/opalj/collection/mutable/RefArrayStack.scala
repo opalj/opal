@@ -2,7 +2,7 @@
 package org.opalj.collection
 package mutable
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
 import scala.collection.mutable
 import scala.collection.generic
@@ -25,7 +25,7 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
 ) extends mutable.IndexedSeq[N]
     with mutable.IndexedSeqLike[N, RefArrayStack[N]]
     with mutable.Cloneable[RefArrayStack[N]]
-    with Serializable { stack ⇒
+    with Serializable { stack =>
 
     def this(initialSize: Int = 4) { this(new Array[AnyRef](initialSize), 0) }
 
@@ -173,7 +173,7 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
         this.data(0).asInstanceOf[N]
     }
 
-    override def foreach[U](f: N ⇒ U): Unit = {
+    override def foreach[U](f: N => U): Unit = {
         val data = this.data
         var i = this.size0 - 1
         while (i >= 0) {
@@ -182,7 +182,7 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
         }
     }
 
-    override def foldLeft[B](z: B)(f: (B, N) ⇒ B): B = {
+    override def foldLeft[B](z: B)(f: (B, N) => B): B = {
         val data = this.data
         var v = z
         var i = this.size0 - 1

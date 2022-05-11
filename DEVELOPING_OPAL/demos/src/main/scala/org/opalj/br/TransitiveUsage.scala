@@ -47,12 +47,12 @@ object TransitiveUsage extends AnalysisApplication {
         ): Unit = {
             def process(vse: VirtualSourceElement): Unit = {
                 vse match {
-                    case VirtualClass(declaringClassType) ⇒
+                    case VirtualClass(declaringClassType) =>
                         processType(declaringClassType)
-                    case VirtualField(declaringClassType, _, fieldType) ⇒
+                    case VirtualField(declaringClassType, _, fieldType) =>
                         processType(declaringClassType)
                         processType(fieldType)
-                    case VirtualMethod(declaringClassType, _, descriptor) ⇒
+                    case VirtualMethod(declaringClassType, _, descriptor) =>
                         processType(declaringClassType)
                         processType(descriptor.returnType)
                         descriptor.parameterTypes.view foreach { processType(_) }
@@ -85,7 +85,7 @@ object TransitiveUsage extends AnalysisApplication {
         override def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ) = {
 
             val baseType = ObjectType(parameters.head.substring(7).replace('.', '/'))

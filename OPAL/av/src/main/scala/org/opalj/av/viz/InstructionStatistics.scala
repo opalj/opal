@@ -25,7 +25,7 @@ object InstructionStatistics extends AnalysisApplication {
         def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ): BasicReport = {
 
             import scala.collection.mutable.{HashSet, HashMap}

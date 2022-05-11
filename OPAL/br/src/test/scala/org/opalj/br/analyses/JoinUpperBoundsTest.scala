@@ -20,7 +20,7 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
     val classhierachy =
         ClassHierarchy(
             Traversable.empty,
-            List(() ⇒ this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
+            List(() => this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
         )(GlobalLogContext)
 
     implicit def stringToUIDSetObjectType(str: String) = UIDSet(ObjectType(str))

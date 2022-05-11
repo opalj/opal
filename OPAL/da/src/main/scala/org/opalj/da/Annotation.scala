@@ -16,7 +16,7 @@ case class Annotation(
 ) extends AbstractAnnotation {
 
     final def attribute_length: Int = {
-        2 + element_value_pairs.foldLeft(2 /*num_...*/ )((c, n) ⇒ c + n.attribute_length)
+        2 + element_value_pairs.foldLeft(2 /*num_...*/ )((c, n) => c + n.attribute_length)
     }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {

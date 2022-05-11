@@ -91,7 +91,7 @@ final class TypePropagationAnalysis private[analyses] (
         val bytecode = state.callContext.method.definedMethod.body.get
         val tac = state.tac
         tac.stmts.foreach {
-            case stmt @ Assignment(_, _, expr) if expr.isFieldRead ⇒
+            case stmt @ Assignment(_, _, expr) if expr.isFieldRead =>
                 val fieldRead = expr.asFieldRead
                 if (fieldRead.declaredFieldType.isReferenceType) {
                     // Internally, generic fields have type "Object" due to type erasure. In many cases
@@ -105,53 +105,53 @@ final class TypePropagationAnalysis private[analyses] (
                             fieldRead.declaredFieldType.asReferenceType
 
                     fieldRead.resolveField match {
-                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
+                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) =>
                             registerEntityForBackwardPropagation(f, mostPreciseFieldType)
-                        case _ ⇒
+                        case _ =>
                             val ef = ExternalField(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
                             registerEntityForBackwardPropagation(ef, mostPreciseFieldType)
                     }
                 }
 
-            case fieldWrite: FieldWriteAccessStmt[_] ⇒
+            case fieldWrite: FieldWriteAccessStmt[_] =>
                 if (fieldWrite.declaredFieldType.isReferenceType) {
                     fieldWrite.resolveField match {
-                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
+                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) =>
                             registerEntityForForwardPropagation(f, UIDSet(f.fieldType.asReferenceType))
-                        case _ ⇒
+                        case _ =>
                             val ef = ExternalField(fieldWrite.declaringClass, fieldWrite.name, fieldWrite.declaredFieldType)
                             registerEntityForForwardPropagation(ef, UIDSet(ef.declaredFieldType.asReferenceType))
                     }
                 }
 
-            case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID ⇒
+            case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID =>
                 state.methodReadsArrays = true
 
-            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID ⇒
+            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID =>
                 state.methodWritesArrays = true
 
-            case _ ⇒
+            case _ =>
         }
     }
 
     private def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
 
-        case EUBP(e: DefinedMethod, _: Callees) ⇒
+        case EUBP(e: DefinedMethod, _: Callees) =>
             if (debug) {
                 assert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
             }
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(state)
 
-        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity ⇒
+        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
             handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
-        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) ⇒
+        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
             handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
-        case _ ⇒
+        case _ =>
             sys.error("received unexpected update")
     }
 
@@ -445,7 +445,7 @@ final class TypePropagationAnalysis private[analyses] (
             return None;
         }
 
-        val filteredTypes = newTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, nt) ⇒
+        val filteredTypes = newTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, nt) =>
             val fitr = filters.iterator
             var canditateMatches = false
             while (!canditateMatches && fitr.hasNext) {

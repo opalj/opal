@@ -63,7 +63,7 @@ final class Code private (
     with InstructionsContainer
     with CodeSequence[Instruction]
     with FilterMonadic[PCAndInstruction, Nothing] {
-    code ⇒
+    code =>
 
     def copy(
         maxStack:          Int                = this.maxStack,
@@ -77,8 +77,8 @@ final class Code private (
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: Code ⇒ this.similar(that, config)
-            case _          ⇒ false
+            case that: Code => this.similar(that, config)
+            case _          => false
         }
     }
 
@@ -118,46 +118,46 @@ final class Code private (
      * Represents some filtered code. Primarily, implicitly used when a for-comprehension
      * is used to process the code.
      */
-    class FilteredCode( final val p: PCAndInstruction ⇒ Boolean)
+    class FilteredCode( final val p: PCAndInstruction => Boolean)
         extends FilterMonadic[PCAndInstruction, Nothing] {
 
         def map[B, That](
-            f: PCAndInstruction ⇒ B
+            f: PCAndInstruction => B
         )(
             implicit
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code foreach { instructionLocation ⇒
+            code foreach { instructionLocation =>
                 if (p(instructionLocation)) that += f(instructionLocation)
             }
             that.result
         }
 
         def flatMap[B, That](
-            f: PCAndInstruction ⇒ scala.collection.GenTraversableOnce[B]
+            f: PCAndInstruction => scala.collection.GenTraversableOnce[B]
         )(
             implicit
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code foreach { instructionLocation: PCAndInstruction ⇒
+            code foreach { instructionLocation: PCAndInstruction =>
                 if (p(instructionLocation)) {
-                    f(instructionLocation) foreach { v ⇒ that += v }
+                    f(instructionLocation) foreach { v => that += v }
                 }
             }
             that.result
         }
 
-        def foreach[U](f: PCAndInstruction ⇒ U): Unit = {
-            code foreach { instructionLocation: PCAndInstruction ⇒
+        def foreach[U](f: PCAndInstruction => U): Unit = {
+            code foreach { instructionLocation: PCAndInstruction =>
                 if (p(instructionLocation)) f(instructionLocation)
             }
         }
 
-        def withFilter(p: PCAndInstruction ⇒ Boolean): FilteredCode = {
+        def withFilter(p: PCAndInstruction => Boolean): FilteredCode = {
             new FilteredCode(
-                (instructionLocation: PCAndInstruction) ⇒ {
+                (instructionLocation: PCAndInstruction) => {
                     this.p(instructionLocation) && p(instructionLocation)
                 }
             )
@@ -165,7 +165,7 @@ final class Code private (
     }
 
     def map[B, That](
-        f: PCAndInstruction ⇒ B
+        f: PCAndInstruction => B
     )(
         implicit
         bf: CanBuildFrom[Nothing, B, That]
@@ -176,17 +176,17 @@ final class Code private (
     }
 
     def flatMap[B, That](
-        f: (PCAndInstruction) ⇒ scala.collection.GenTraversableOnce[B]
+        f: (PCAndInstruction) => scala.collection.GenTraversableOnce[B]
     )(
         implicit
         bf: CanBuildFrom[Nothing, B, That]
     ): That = {
         val that = bf()
-        code foreach { instructionLocation ⇒ f(instructionLocation).foreach(that += _) }
+        code foreach { instructionLocation => f(instructionLocation).foreach(that += _) }
         that.result
     }
 
-    def withFilter(p: (PCAndInstruction) ⇒ Boolean): FilteredCode = new FilteredCode(p)
+    def withFilter(p: (PCAndInstruction) => Boolean): FilteredCode = new FilteredCode(p)
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
@@ -202,7 +202,7 @@ final class Code private (
         def next(): Int = { val pc = nextPC; nextPC = pcOfNextInstruction(nextPC); pc }
     }
 
-    def foreachProgramCounter[U](f: Int ⇒ U): Unit = {
+    def foreachProgramCounter[U](f: Int => U): Unit = {
         var nextPC = 0 // there is always at least one instruction
         val maxPC = instructions.length
         while (nextPC < maxPC) {
@@ -260,36 +260,36 @@ final class Code private (
                     val instruction = instructions(pc)
 
                     (instruction.opcode: @switch) match {
-                        case ATHROW.opcode                                    ⇒
+                        case ATHROW.opcode                                    =>
                         /* Nothing do to; will be handled when we deal with exceptions. */
 
-                        case /* xReturn: */ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                        case /* xReturn: */ 176 | 175 | 174 | 172 | 173 | 177 =>
                         /* Nothing to do; there are no successor! */
 
-                        case RET.opcode                                       ⇒
+                        case RET.opcode                                       =>
                         /*Nothing to do; handled by JSR*/
-                        case JSR.opcode | JSR_W.opcode ⇒
+                        case JSR.opcode | JSR_W.opcode =>
                             val UnconditionalBranchInstruction(branchoffset) = instruction
                             nextSubroutines.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
-                        case GOTO.opcode | GOTO_W.opcode ⇒
+                        case GOTO.opcode | GOTO_W.opcode =>
                             val UnconditionalBranchInstruction(branchoffset) = instruction
                             nextPCs.enqueue(pc + branchoffset)
 
                         case /*IFs:*/ 165 | 166 | 198 | 199 |
                             159 | 160 | 161 | 162 | 163 | 164 |
-                            153 | 154 | 155 | 156 | 157 | 158 ⇒
+                            153 | 154 | 155 | 156 | 157 | 158 =>
                             val SimpleConditionalBranchInstruction(branchoffset) = instruction
                             nextPCs.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
-                        case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
+                        case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
                             val SwitchInstruction(defaultOffset, jumpOffsets) = instruction
                             nextPCs.enqueue(pc + defaultOffset)
-                            jumpOffsets foreach { jumpOffset ⇒ nextPCs.enqueue(pc + jumpOffset) }
+                            jumpOffsets foreach { jumpOffset => nextPCs.enqueue(pc + jumpOffset) }
 
-                        case _ ⇒
+                        case _ =>
                             nextPCs.enqueue(pcOfNextInstruction(pc))
                     }
                 }
@@ -319,7 +319,7 @@ final class Code private (
                 false
             }
 
-            remainingExceptionHandlers = remainingExceptionHandlers filter { eh ⇒
+            remainingExceptionHandlers = remainingExceptionHandlers filter { eh =>
                 subroutineIds(eh.handlerPC) == -1 && // we did not already analyze the handler
                     !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
             }
@@ -354,7 +354,7 @@ final class Code private (
         val instructions = this.instructions
         val instructionsLength = instructions.length
         val cfJoins = new mutable.BitSet(instructionsLength)
-        exceptionHandlers.foreach { eh ⇒
+        exceptionHandlers.foreach { eh =>
             // [REFINE] For non-finally handlers, test if multiple paths
             // can lead to the respective exception
             cfJoins += eh.handlerPC
@@ -375,21 +375,21 @@ final class Code private (
                     isReached += pc
             }
             (instruction.opcode: @scala.annotation.switch) match {
-                case ATHROW.opcode ⇒ /*already handled*/
+                case ATHROW.opcode => /*already handled*/
 
-                case RET.opcode    ⇒ /*Nothing to do; handled by JSR*/
-                case JSR.opcode | JSR_W.opcode ⇒
+                case RET.opcode    => /*Nothing to do; handled by JSR*/
+                case JSR.opcode | JSR_W.opcode =>
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     runtimeSuccessor(pc + jsrInstr.branchoffset)
                     runtimeSuccessor(nextPC)
 
-                case GOTO.opcode | GOTO_W.opcode ⇒
+                case GOTO.opcode | GOTO_W.opcode =>
                     val bInstr = instruction.asInstanceOf[UnconditionalBranchInstruction]
                     runtimeSuccessor(pc + bInstr.branchoffset)
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
-                    153 | 154 | 155 | 156 | 157 | 158 ⇒
+                    153 | 154 | 155 | 156 | 157 | 158 =>
                     val bInstr = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
                     val jumpTargetPC = pc + bInstr.branchoffset
                     if (jumpTargetPC != nextPC) {
@@ -399,15 +399,15 @@ final class Code private (
                     }
                     runtimeSuccessor(nextPC)
 
-                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
-                    instruction.nextInstructions(pc)(code, null /*not required!*/ ) foreach { pc ⇒
+                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
+                    instruction.nextInstructions(pc)(code, null /*not required!*/ ) foreach { pc =>
                         runtimeSuccessor(pc)
                     }
 
-                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 =>
                 /*Nothing to do. (no successor!)*/
 
-                case _ ⇒
+                case _ =>
                     runtimeSuccessor(nextPC)
             }
             pc = nextPC
@@ -435,14 +435,14 @@ final class Code private (
             }
 
             (instruction.opcode: @switch) match {
-                case RET.opcode ⇒ // potential path joins are determined when we process JSRs
+                case RET.opcode => // potential path joins are determined when we process JSRs
 
-                case JSR.opcode | JSR_W.opcode ⇒
+                case JSR.opcode | JSR_W.opcode =>
                     val UnconditionalBranchInstruction(branchoffset) = instruction
                     runtimeSuccessor(pc + branchoffset)
                     runtimeSuccessor(nextPC)
 
-                case _ ⇒
+                case _ =>
                     val nextPCs = instruction.nextInstructions(pc)(this, classHierarchy)
                     nextPCs.foreach(runtimeSuccessor)
             }
@@ -492,13 +492,13 @@ final class Code private (
             val i = instructions(pc)
             val nextPCs =
                 if (i.opcode == RET.opcode)
-                    i.asInstanceOf[RET].nextInstructions(pc, () ⇒ cfg)
+                    i.asInstanceOf[RET].nextInstructions(pc, () => cfg)
                 else
                     i.nextInstructions(pc, regularSuccessorsOnly = false)
             if (nextPCs.isEmpty) {
                 exitPCs += pc
             } else {
-                nextPCs foreach { nextPC ⇒
+                nextPCs foreach { nextPC =>
                     if (nextPC < instructionsLength) {
                         // compute cfJoins
                         runtimeSuccessor(nextPC)
@@ -555,9 +555,9 @@ final class Code private (
         val liveVariables = new Array[BitArraySet](instructionsLength)
         val workqueue = IntQueue.empty
         val AllDead = BitArraySet.empty
-        finalPCs foreach { pc ⇒ liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
+        finalPCs foreach { pc => liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
         // required to handle endless loops!
-        cfJoins foreach { pc ⇒
+        cfJoins foreach { pc =>
             val instruction = instructions(pc)
             var liveVariableInfo = AllDead
             if (instruction.readsLocal) {
@@ -598,7 +598,7 @@ final class Code private (
             //      23   |     areturn
             // predecessorPCs(pc) will be null!
             if (thePCPredecessorPCs ne null) {
-                thePCPredecessorPCs foreach { predecessorPC ⇒
+                thePCPredecessorPCs foreach { predecessorPC =>
                     val predecessorLiveVariableInfo = liveVariables(predecessorPC)
                     if (predecessorLiveVariableInfo eq null) {
                         liveVariables(predecessorPC) = liveVariableInfo
@@ -667,18 +667,18 @@ final class Code private (
             }
 
             (instruction.opcode: @switch) match {
-                case RET.opcode ⇒
+                case RET.opcode =>
                     // The ret may return to different sites;
                     // the potential path joins are determined when we process the JSR.
                     cfForks +!= pc
                     cfForkTargets += ((pc, cfg.successors(pc)))
 
-                case JSR.opcode | JSR_W.opcode ⇒
+                case JSR.opcode | JSR_W.opcode =>
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     runtimeSuccessor(pc + jsrInstr.branchoffset)
                     runtimeSuccessor(nextPC)
 
-                case _ ⇒
+                case _ =>
                     val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
@@ -695,7 +695,7 @@ final class Code private (
     /**
      * Iterates over all instructions and calls the given function `f` for every instruction.
      */
-    @inline final def iterate[U](f: ( /*pc:*/ Int, Instruction) ⇒ U): Unit = {
+    @inline final def iterate[U](f: ( /*pc:*/ Int, Instruction) => U): Unit = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
@@ -711,7 +711,7 @@ final class Code private (
     @inline final def iterate[U](
         instructionType: InstructionMetaInformation
     )(
-        f: ( /*pc:*/ Int, Instruction) ⇒ U
+        f: ( /*pc:*/ Int, Instruction) => U
     ): Unit = {
         val opcode = instructionType.opcode
         val instructionsLength = instructions.length
@@ -723,7 +723,7 @@ final class Code private (
         }
     }
 
-    @inline final def forall(f: ( /*pc:*/ Int, Instruction) ⇒ Boolean): Boolean = {
+    @inline final def forall(f: ( /*pc:*/ Int, Instruction) => Boolean): Boolean = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
@@ -740,7 +740,7 @@ final class Code private (
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */
-    @inline final def foreachInstruction[U](f: Instruction ⇒ U): Unit = {
+    @inline final def foreachInstruction[U](f: Instruction => U): Unit = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
@@ -754,7 +754,7 @@ final class Code private (
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */
-    @inline final def foreachPC[U](f: PC ⇒ U): Unit = {
+    @inline final def foreachPC[U](f: PC => U): Unit = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
@@ -767,7 +767,7 @@ final class Code private (
      * Iterates over all instructions until an instruction is found that matches
      * the given predicate.
      */
-    @inline final def exists(p: ( /*pc*/ Int, Instruction) ⇒ Boolean): Boolean = {
+    @inline final def exists(p: ( /*pc*/ Int, Instruction) => Boolean): Boolean = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
@@ -795,7 +795,7 @@ final class Code private (
     def handlersFor(pc: Int, justExceptions: Boolean = false): Chain[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
         val ehs = Chain.newBuilder[ExceptionHandler]
-        exceptionHandlers forall { eh ⇒
+        exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
                 if (catchTypeOption.isDefined) {
@@ -852,7 +852,7 @@ final class Code private (
         var handledExceptions = Set.empty[ObjectType]
 
         val ehs = Chain.newBuilder[ExceptionHandler]
-        exceptionHandlers forall { eh ⇒
+        exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
                 if (catchTypeOption.isDefined) {
@@ -896,7 +896,7 @@ final class Code private (
         var handledExceptions = Set.empty[ObjectType]
 
         val pcs = Chain.newBuilder[Int] /*PC*/
-        exceptionHandlers forall { eh ⇒
+        exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
                 if (catchTypeOption.isDefined) {
@@ -967,7 +967,7 @@ final class Code private (
      *          attribute may not be reified.
      */
     def lineNumberTable: Option[LineNumberTable] = {
-        attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }
+        attributes collectFirst { case lnt: LineNumberTable => lnt }
     }
 
     /**
@@ -984,7 +984,7 @@ final class Code private (
      * is not available `None` is returned.
      */
     def haveSameLineNumber(firstPC: Int, secondPC: Int): Option[Boolean] = {
-        lineNumber(firstPC).flatMap(firstLN ⇒ lineNumber(secondPC).map(_ == firstLN))
+        lineNumber(firstPC).flatMap(firstLN => lineNumber(secondPC).map(_ == firstLN))
     }
 
     /**
@@ -1012,7 +1012,7 @@ final class Code private (
      *         attribute may not be reified.
      */
     def localVariableTable: Option[LocalVariables] = {
-        attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
+        attributes collectFirst { case LocalVariableTable(lvt) => lvt }
     }
 
     /**
@@ -1023,7 +1023,7 @@ final class Code private (
      */
     def localVariablesAt(pc: Int): Map[Int, LocalVariable] = { // IMRPOVE Use IntMap for the return value.
         localVariableTable match {
-            case Some(lvt) ⇒
+            case Some(lvt) =>
                 lvt.collect {
                     case lv @ LocalVariable(
                         startPC,
@@ -1031,10 +1031,10 @@ final class Code private (
                         _ /*name*/ ,
                         _ /*fieldType*/ ,
                         index
-                        ) if startPC <= pc && startPC + length > pc ⇒
+                        ) if startPC <= pc && startPC + length > pc =>
                         (index, lv)
                 }.toMap
-            case _ ⇒
+            case _ =>
                 Map.empty
         }
     }
@@ -1044,8 +1044,8 @@ final class Code private (
      * the given instruction (pc).
      */
     def localVariable(pc: Int, index: Int): Option[LocalVariable] = {
-        localVariableTable flatMap { lvs ⇒
-            lvs find { lv ⇒
+        localVariableTable flatMap { lvs =>
+            lvs find { lv =>
                 val result = lv.index == index &&
                     lv.startPC <= pc &&
                     (lv.startPC + lv.length) > pc
@@ -1061,7 +1061,7 @@ final class Code private (
      *       attribute may not be reified.
      */
     def localVariableTypeTable: Iterable[LocalVariableTypes] = {
-        attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
+        attributes collect { case LocalVariableTypeTable(lvtt) => lvtt }
     }
 
     /**
@@ -1072,7 +1072,7 @@ final class Code private (
      *         attribute may not be reified.
      */
     def stackMapTable: Option[StackMapTable] = {
-        attributes collectFirst { case smt: StackMapTable ⇒ smt }
+        attributes collectFirst { case smt: StackMapTable => smt }
     }
 
     /**
@@ -1089,22 +1089,22 @@ final class Code private (
     def stackMapTablePCs(implicit classHierarchy: ClassHierarchy): IntArraySet = {
 
         var stackMapTablePCs: IntArraySet = IntArraySet.empty
-        iterate { (pc, instruction) ⇒
+        iterate { (pc, instruction) =>
             if (instruction.isControlTransferInstruction) {
                 instruction.opcode match {
-                    case JSR.opcode | JSR_W.opcode | RET.opcode ⇒
+                    case JSR.opcode | JSR_W.opcode | RET.opcode =>
                         throw BytecodeProcessingFailedException(
                             "computation of stack map tables containing JSR/RET is not supported; "+
                                 "the attribute is neither required nor helpful in this case"
                         )
-                    case GOTO.opcode | GOTO_W.opcode ⇒
+                    case GOTO.opcode | GOTO_W.opcode =>
                         stackMapTablePCs += pc + instruction.asGotoInstruction.branchoffset
                         val nextPC = code.pcOfNextInstruction(pc)
                         if (nextPC < codeSize) {
                             // test for a goto at the end...
                             stackMapTablePCs += nextPC
                         }
-                    case _ ⇒
+                    case _ =>
                         stackMapTablePCs ++=
                             instruction.asControlTransferInstruction.jumpTargets(pc)(
                                 code = this,
@@ -1114,7 +1114,7 @@ final class Code private (
             }
         }
 
-        code.exceptionHandlers.foreach(ex ⇒ stackMapTablePCs += ex.handlerPC)
+        code.exceptionHandlers.foreach(ex => stackMapTablePCs += ex.handlerPC)
 
         stackMapTablePCs
     }
@@ -1140,7 +1140,7 @@ final class Code private (
         }
     }
 
-    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) ⇒ T): T = {
+    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) => T): T = {
         val max_pc = instructions.length
         var pc = 0
         var vs = start
@@ -1205,13 +1205,13 @@ final class Code private (
      * field name is "last".
      * {{{
      * collect({
-     *  case GETFIELD(declaringClass, "last", _) ⇒ declaringClass
+     *  case GETFIELD(declaringClass, "last", _) => declaringClass
      * })
      * }}}
      *
      * Example usage to collect all instances of a "DUP" instruction.
      * {{{
-     * code.collect({ case dup @ DUP ⇒ dup })
+     * code.collect({ case dup @ DUP => dup })
      * }}}
      *
      * @return The result of applying the function f to all instructions for which f is
@@ -1237,7 +1237,7 @@ final class Code private (
      * Tests if an instruction matches the given filter. If so, the index of the first
      * matching instruction is returned.
      */
-    def find(f: Instruction ⇒ Boolean): Option[PC] = { // IMPROVE [L3] Use IntOption
+    def find(f: Instruction => Boolean): Option[PC] = { // IMPROVE [L3] Use IntOption
         val max_pc = instructions.length
         var pc = 0
         while (pc < max_pc) {
@@ -1250,7 +1250,7 @@ final class Code private (
         None
     }
 
-    def foreach[U](f: PCAndInstruction ⇒ U): Unit = {
+    def foreach[U](f: PCAndInstruction => U): Unit = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
@@ -1275,7 +1275,7 @@ final class Code private (
         None
     }
 
-    def filter[B](f: (PC, Instruction) ⇒ Boolean): IntArraySet = {
+    def filter[B](f: (PC, Instruction) => Boolean): IntArraySet = {
         val max_pc = instructions.length
 
         val pcs = IntArrayStack.empty
@@ -1297,7 +1297,7 @@ final class Code private (
      *      case (
      *          INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
      *          INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
-     *      ) if (...) ⇒ (...)
+     *      ) if (...) => (...)
      *      } yield ...
      * }}}
      */
@@ -1393,13 +1393,13 @@ final class Code private (
      *      case (
      *          INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
      *          INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
-     *      ) ⇒ { (receiver1 eq receiver2) && (returnType ne parameterType) }
-     *      case _ ⇒ false
+     *      ) => { (receiver1 eq receiver2) && (returnType ne parameterType) }
+     *      case _ => false
      *      })
      *  } yield (classFile, method, pc)
      * }}}
      */
-    def matchPair(f: (Instruction, Instruction) ⇒ Boolean): Chain[Int /*PC*/ ] = {
+    def matchPair(f: (Instruction, Instruction) => Boolean): Chain[Int /*PC*/ ] = {
         val max_pc = instructions.length
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
@@ -1419,7 +1419,7 @@ final class Code private (
     /**
      * Finds all sequences of three consecutive instructions that are matched by `f`.
      */
-    def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): Chain[Int /*PC*/ ] = {
+    def matchTriple(f: (Instruction, Instruction, Instruction) => Boolean): Chain[Int /*PC*/ ] = {
         matchTriple(Int.MaxValue, f)
     }
 
@@ -1432,8 +1432,8 @@ final class Code private (
      *                        passed to `f`.
      */
     def matchTriple(
-        matchMaxTriples: Int                                               = Int.MaxValue,
-        f:               (Instruction, Instruction, Instruction) ⇒ Boolean
+        matchMaxTriples: Int                                                = Int.MaxValue,
+        f:               (Instruction, Instruction, Instruction) => Boolean
     ): Chain[Int /*PC*/ ] = {
         val max_pc = instructions.length
         var matchedTriplesCount = 0
@@ -1469,8 +1469,8 @@ final class Code private (
      */
     @tailrec def nextNonGotoInstruction(pc: Int): /*PC*/ Int = {
         instructions(pc) match {
-            case GotoInstruction(branchoffset) ⇒ nextNonGotoInstruction(pc + branchoffset)
-            case _                             ⇒ pc
+            case GotoInstruction(branchoffset) => nextNonGotoInstruction(pc + branchoffset)
+            case _                             => pc
         }
     }
 
@@ -1521,8 +1521,8 @@ final class Code private (
     @inline def alwaysResultsInException(
         pc:           Int,
         cfJoins:      IntTrieSet,
-        anInvocation: ( /*PC*/ Int) ⇒ Boolean,
-        aThrow:       ( /*PC*/ Int) ⇒ Boolean
+        anInvocation: ( /*PC*/ Int) => Boolean,
+        aThrow:       ( /*PC*/ Int) => Boolean
     ): Boolean = {
 
         var currentPC = pc
@@ -1530,37 +1530,37 @@ final class Code private (
             val instruction = instructions(currentPC)
 
             (instruction.opcode: @scala.annotation.switch) match {
-                case ATHROW.opcode ⇒
+                case ATHROW.opcode =>
                     val result = aThrow(currentPC)
                     return result;
 
-                case RET.opcode | JSR.opcode | JSR_W.opcode ⇒
+                case RET.opcode | JSR.opcode | JSR_W.opcode =>
                     return false;
 
-                case GOTO.opcode | GOTO_W.opcode ⇒
+                case GOTO.opcode | GOTO_W.opcode =>
                     currentPC += instruction.asInstanceOf[GotoInstruction].branchoffset
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
-                    153 | 154 | 155 | 156 | 157 | 158 ⇒
+                    153 | 154 | 155 | 156 | 157 | 158 =>
                     return false;
 
-                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
+                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
                     return false;
 
-                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 =>
                     return false;
 
                 case INVOKEINTERFACE.opcode
                     | INVOKESPECIAL.opcode
                     | INVOKESTATIC.opcode
-                    | INVOKEVIRTUAL.opcode ⇒
+                    | INVOKEVIRTUAL.opcode =>
                     if (anInvocation(currentPC))
                         return true;
 
                     currentPC = pcOfNextInstruction(currentPC)
 
-                case _ ⇒
+                case _ =>
                     currentPC = pcOfNextInstruction(currentPC)
             }
         }
@@ -1611,7 +1611,7 @@ final class Code private (
             }
             paths = paths.tail
             val newStackDepth = initialStackDepth + instructions(pc).stackSlotsChange
-            cfg.foreachSuccessor(pc) { succPC ⇒
+            cfg.foreachSuccessor(pc) { succPC =>
                 if (visitedPCs.add(succPC)) {
                     paths :&:= ((succPC, newStackDepth))
                 }
@@ -1690,7 +1690,7 @@ final class Code private (
      * are the target of a conditional branch instruction:
      * {{{
      * code.collectWithIndex({
-     *  case (pc, cbi: ConditionalBranchInstruction) ⇒
+     *  case (pc, cbi: ConditionalBranchInstruction) =>
      *      Seq(cbi.indexOfNextInstruction(pc, code), pc + cbi.branchoffset)
      *  }) // .flatten should equal (Seq(...))
      * }}}
@@ -1724,7 +1724,7 @@ final class Code private (
      * identified sequences.
      * {{{
      * code.slidingCollect(2)({
-     *      case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
+     *      case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) => (pc)
      * }) should be(Seq(...))
      * }}}
      *
@@ -1800,7 +1800,7 @@ object Code {
 
         var localVariableTablesCount = 0
         var lineNumberTablesCount = 0
-        attributes foreach { a ⇒
+        attributes foreach { a =>
             if (a.isInstanceOf[LocalVariableTable]) {
                 localVariableTablesCount += 1
             } else if (a.isInstanceOf[UnpackedLineNumberTable]) {
@@ -1826,7 +1826,7 @@ object Code {
             val newAttributes2 =
                 if (lineNumberTables.nonEmpty && lineNumberTables.size > 1) {
                     val mergedTables = lineNumberTables.flatMap[LineNumber](_.lineNumbers)
-                    val sortedTable = mergedTables.sortWith[LineNumber]((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+                    val sortedTable = mergedTables.sortWith[LineNumber]((ltA, ltB) => ltA.startPC < ltB.startPC)
                     otherAttributes2 :+ new UnpackedLineNumberTable(sortedTable)
                 } else {
                     newAttributes1
@@ -1893,7 +1893,7 @@ object Code {
     ): Int = {
         Math.max(
             computeMaxLocalsRequiredByCode(instructions),
-            descriptor.parameterTypes.foldLeft(if (isInstanceMethod) 1 else 0) { (c, n) ⇒
+            descriptor.parameterTypes.foldLeft(if (isInstanceMethod) 1 else 0) { (c, n) =>
                 c + n.computationalType.operandSize
             }
         )
@@ -1967,7 +1967,7 @@ object Code {
             paths = paths.tail
             val stackDepth = initialStackDepth + instructions(pc).stackSlotsChange
             maxStackDepth = Math.max(maxStackDepth, stackDepth)
-            cfg.foreachSuccessor(pc) { succPC ⇒
+            cfg.foreachSuccessor(pc) { succPC =>
                 if (visitedPCs.add(succPC)) {
                     paths :&:= IntIntPair(succPC, stackDepth)
                 }

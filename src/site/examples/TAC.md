@@ -38,8 +38,8 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
  E.g., to set the domain to the simplest/most basic supported domain, you can use:
 
     p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-      case None               ⇒ Set(classOf[domain.l0.BaseDomainWithDefUse[_]])
-      case Some(requirements) ⇒ requirements + classOf[domain.l0.BaseDomainWithDefUse[_]]
+      case None               => Set(classOf[domain.l0.BaseDomainWithDefUse[_]])
+      case Some(requirements) => requirements + classOf[domain.l0.BaseDomainWithDefUse[_]]
     }
 
  For example, creating the TAC using the simplest domain – and a production build of OPAL – takes roughly one third of the time of using the default domain. However, the default domain provides much more information and is therefore the recommended base analysis. To be more precise, on a Core i7 (4 Cores - Sandy Bridge, 2011) generating the standard TAC for the rt.jar of the JDK 8u121 using the simplest possible domain takes 13 seconds and for the default domain 33 seconds.

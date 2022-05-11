@@ -60,17 +60,17 @@ class CLASS[T](
         val annotationsMap: Map[MethodSignature, Option[T]] =
             /*
             Map.empty ++
-                brAnnotatedMethods.iterator.map[(MethodSignature, Option[T])](mt ⇒
+                brAnnotatedMethods.iterator.map[(MethodSignature, Option[T])](mt =>
                     { val (m, t) = mt; (m.signature, t) })
             */
-            brAnnotatedMethods.foldLeft(Map.empty[MethodSignature, Option[T]]) { (map, mt) ⇒
+            brAnnotatedMethods.foldLeft(Map.empty[MethodSignature, Option[T]]) { (map, mt) =>
                 val (m, t) = mt
                 map + ((m.signature, t))
             }
 
         assert(annotationsMap.size == brAnnotatedMethods.size, "duplicate method signatures found")
 
-        var brMethods = brAnnotatedMethods.map[MethodTemplate](m ⇒ m._1)
+        var brMethods = brAnnotatedMethods.map[MethodTemplate](m => m._1)
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
             brMethods.exists(_.isConstructor) ||
@@ -83,7 +83,7 @@ class CLASS[T](
             brMethods :+= br.Method.defaultConstructor(superclassType.get)
         }
 
-        val attributes = this.attributes.map[br.Attribute] { attributeBuilder ⇒
+        val attributes = this.attributes.map[br.Attribute] { attributeBuilder =>
             attributeBuilder(
                 version,
                 accessFlags, thisType, superclassType, interfaceTypes,

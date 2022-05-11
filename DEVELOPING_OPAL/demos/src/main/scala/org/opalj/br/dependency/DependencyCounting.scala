@@ -20,7 +20,7 @@ object DependencyCounting extends AnalysisApplication with OneStepAnalysis[URL, 
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         println("Press enter to start the dependency collection.")
         scala.io.StdIn.readLine
@@ -32,7 +32,7 @@ object DependencyCounting extends AnalysisApplication with OneStepAnalysis[URL, 
             // process the class files in parallel to speed up the collection process
             project.allClassFiles.par foreach (extractor.process)
             counter
-        } { t ⇒ println(s"[info] Time to count the dependencies: $t") }
+        } { t => println(s"[info] Time to count the dependencies: $t") }
 
         BasicReport(
             (f"Number of inter source-element dependencies: ${counter.currentDependencyCount}%,9d%n") +

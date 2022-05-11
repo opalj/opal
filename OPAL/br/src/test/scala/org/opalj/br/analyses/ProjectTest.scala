@@ -280,7 +280,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         it should s"return that same methods for $name as a manual search" in {
             val mutex = new Object
             var methods = List.empty[Method]
-            project.parForeachMethodWithBody()(mi ⇒ mutex.synchronized { methods ::= mi.method })
+            project.parForeachMethodWithBody()(mi => mutex.synchronized { methods ::= mi.method })
             val missedMethods = for {
                 c ← project.allClassFiles
                 m ← c.methods
@@ -292,7 +292,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             assert(
                 missedMethods.isEmpty, {
                     s"; missed ${missedMethods.size} methods: "+
-                        missedMethods.map { mm ⇒
+                        missedMethods.map { mm =>
                             val (c, m) = mm
                             val belongsToProject = project.isProjectType(c.thisType)
                             m.toJava(

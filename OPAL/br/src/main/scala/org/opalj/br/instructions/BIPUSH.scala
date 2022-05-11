@@ -31,8 +31,8 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BIPUSH ⇒ this eq that
-            case _            ⇒ false
+            case that: BIPUSH => this eq that
+            case _            => false
         }
     }
 

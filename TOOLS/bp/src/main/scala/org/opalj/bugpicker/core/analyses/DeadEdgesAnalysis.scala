@@ -73,7 +73,7 @@ object DeadEdgesAnalysis {
         */
         def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
             instructions(pc) match {
-                case MethodInvocationInstruction(receiver: ObjectType, isInterface, name, descriptor) ⇒
+                case MethodInvocationInstruction(receiver: ObjectType, isInterface, name, descriptor) =>
                     val callees = domain.callees(method, receiver, isInterface, name, descriptor)
                     if (callees.size != 1)
                         return false;
@@ -85,11 +85,11 @@ object DeadEdgesAnalysis {
                     // catch(Exception e) {
                     //     /*return|athrow*/ handleException(e);
                     // }
-                    callees.head.body.map(code ⇒ !code.exists { (pc, i) ⇒
+                    callees.head.body.map(code => !code.exists { (pc, i) =>
                         i.isReturnInstruction
                     }).getOrElse(false)
 
-                case _ ⇒
+                case _ =>
                     false
             }
         }
@@ -120,14 +120,14 @@ object DeadEdgesAnalysis {
 
         def mostSpecificFinallyHandlerOfPC(pc: PC): Seq[ExceptionHandler] = {
             val candidateHandlers =
-                body.exceptionHandlers.filter { eh ⇒
+                body.exceptionHandlers.filter { eh =>
                     eh.catchType.isEmpty && isRegularPredecessorOf(eh.handlerPC, pc)
                 }
             if (candidateHandlers.size > 1) {
-                candidateHandlers.tail.foldLeft(List(candidateHandlers.head)) { (c, n) ⇒
+                candidateHandlers.tail.foldLeft(List(candidateHandlers.head)) { (c, n) =>
                     var mostSpecificHandlers: List[ExceptionHandler] = List.empty
                     var addN = false
-                    c.foreach { c ⇒
+                    c.foreach { c =>
                         if (isRegularPredecessorOf(c.handlerPC, n.handlerPC)) {
                             addN = true
                         } else if (isRegularPredecessorOf(n.handlerPC, c.handlerPC)) {
@@ -199,7 +199,7 @@ object DeadEdgesAnalysis {
                         body.haveSameLineNumber(pc, otherPC).getOrElse(true) &&
                         !isRegularPredecessorOf(pc, otherPC) &&
                         !isRegularPredecessorOf(otherPC, pc) &&
-                        (finallyHandler intersect mostSpecificFinallyHandlerOfPC(otherPC)).isEmpty ⇒
+                        (finallyHandler intersect mostSpecificFinallyHandlerOfPC(otherPC)).isEmpty =>
                         (otherPC)
                 }
                 correspondingPCs.nonEmpty
@@ -207,8 +207,8 @@ object DeadEdgesAnalysis {
 
             lazy val isProvenAssertion = {
                 instructions(nextPC) match {
-                    case NEW(AssertionError) ⇒ true
-                    case _                   ⇒ false
+                    case NEW(AssertionError) => true
+                    case _                   => false
                 }
             }
 
@@ -238,10 +238,10 @@ object DeadEdgesAnalysis {
                 body.alwaysResultsInException(
                     nextPC,
                     cfJoins,
-                    (invocationPC) ⇒ {
+                    (invocationPC) => {
                         isAlwaysExceptionThrowingMethodCall(invocationPC)
                     },
-                    (athrowPC) ⇒ {
+                    (athrowPC) => {
                         // Let's do a basic analysis to determine the type of
                         // the thrown exception.
                         // What we do next is basic a local data-flow analysis that
@@ -260,7 +260,7 @@ object DeadEdgesAnalysis {
                         zOperandsArray(nextPC) = zInitialOperands
                         val zLocalsArray = new zDomain.LocalsArray(codeLength)
                         zLocalsArray(nextPC) =
-                            localsArray(pc) map { l ⇒
+                            localsArray(pc) map { l =>
                                 if (l ne null)
                                     l.adapt(zDomain, Int.MinValue)
                                 else
@@ -295,12 +295,12 @@ object DeadEdgesAnalysis {
                 )
 
             val poppedOperandsCount =
-                instruction.numberOfPoppedOperands { index ⇒
+                instruction.numberOfPoppedOperands { index =>
                     allOperands(index).computationalType.category
                 }
             val operands = allOperands.take(poppedOperandsCount)
 
-            val line = body.lineNumber(nextPC).map(l ⇒ s" (line=$l)").getOrElse("")
+            val line = body.lineNumber(nextPC).map(l => s" (line=$l)").getOrElse("")
 
             val isJustDeadPath = evaluatedInstructions.contains(nextPC)
             val isTechnicalArtifact =

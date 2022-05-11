@@ -46,13 +46,13 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
     allBIProjects(
         config = ConfigFactory.load("LibraryProject.conf")
-    ) foreach { biProject ⇒
+    ) foreach { biProject =>
             val (name, projectFactory) = biProject
             if (!ignoredProjects.contains(name))
                 checkProject(name, projectFactory)
         }
 
-    def checkProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
+    def checkProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
 
         behavior of s"the call graph analyses on $projectName"
 
@@ -77,8 +77,8 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             rtaProject = project.recreate {
                 case DeclaredMethodsKey.uniqueId | IsOverridableMethodKey.uniqueId |
                     TypeExtensibilityKey.uniqueId | ClosedPackagesKey.uniqueId |
-                    ClassExtensibilityKey.uniqueId ⇒ true
-                case _ ⇒ false
+                    ClassExtensibilityKey.uniqueId => true
+                case _ => false
             }
             rtaPS = rtaProject.get(PropertyStoreKey)
             rta = rtaProject.get(RTACallGraphKey)
@@ -100,8 +100,8 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             pointsToProject = rtaProject.recreate {
                 case DeclaredMethodsKey.uniqueId | IsOverridableMethodKey.uniqueId |
                     TypeExtensibilityKey.uniqueId | ClosedPackagesKey.uniqueId |
-                    ClassExtensibilityKey.uniqueId ⇒ true
-                case _ ⇒ false
+                    ClassExtensibilityKey.uniqueId => true
+                case _ => false
             }
             val pointsToPS = pointsToProject.get(PropertyStoreKey)
             pointsTo = pointsToProject.get(TypeBasedPointsToCallGraphKey)
@@ -124,13 +124,13 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
         lessPreciseTypeProvider: TypeProvider
     ): Unit = {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
-        morePreciseCG.reachableMethods().foreach { context ⇒
+        morePreciseCG.reachableMethods().foreach { context =>
             val method = context.method
             val callersLPCG = lessPreciseCG.callersPropertyOf(method)
             val callersMPCG = morePreciseCG.callersPropertyOf(method)
             if ((callersLPCG eq NoCallers) &&
                 !callersMPCG.callers(method)(morePreciseTypeProvider).forall {
-                    callSite ⇒
+                    callSite =>
                         val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
                         !callSite._3 &&
                             callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
@@ -169,7 +169,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             callee ← tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee.method, Callers.key).asFinal
-            assert(callersProperty.callers(dm).map(caller ⇒ (caller._1, caller._2)).toSet.contains(dm → pc))
+            assert(callersProperty.callers(dm).map(caller => (caller._1, caller._2)).toSet.contains(dm → pc))
         }
 
         for {

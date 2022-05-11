@@ -4,8 +4,8 @@ package ai
 
 import scala.annotation.tailrec
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
+import org.opalj.collection.immutable.{Chain => List}
+import org.opalj.collection.immutable.{Naught => Nil}
 
 /**
  * Common utility functionality.
@@ -27,7 +27,7 @@ package object util {
     @inline final def removeFirstUnless(
         worklist: List[Int /*PC*/ ], pc: Int
     )(
-        test: Int ⇒ Boolean
+        test: Int => Boolean
     ): List[Int /*PC*/ ] = {
         var newWorklist: List[Int /*PC*/ ] = Nil
         var remainingWorklist = worklist

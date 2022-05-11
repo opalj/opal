@@ -40,7 +40,7 @@ case class PropertyKindsConfiguration(
             propertyKindsComputedInThisPhase.map(PropertyKey.name).mkString("computedInThisPhase={", ", ", "}\n\t") +
             propertyKindsComputedInLaterPhase.map(PropertyKey.name).mkString("computedInLaterPhase={", ", ", "}\n\t") +
             suppressInterimUpdates.map {
-                case (targetPK, sourcePKs) ⇒
+                case (targetPK, sourcePKs) =>
                     PropertyKey.name(targetPK)+
                         "<-"+
                         sourcePKs.map(PropertyKey.name).mkString("{", ", ", "}")

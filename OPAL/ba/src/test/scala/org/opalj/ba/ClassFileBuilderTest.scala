@@ -18,7 +18,7 @@ import org.opalj.bi.isCurrentJREAtLeastJava16
 import org.opalj.bi.isCurrentJREAtLeastJava17
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java17Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java17Framework.{ClassFile => ClassFileReader}
 import org.opalj.bc.Assembler
 import org.opalj.collection.immutable.RefArray
 
@@ -122,13 +122,13 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     val sealedClassAsm = Assembler(sealedClass)
     val sealedClassSubclassAsm = Assembler(sealedClassSubclass)
 
-    val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
-    val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
-    val nestedClassInnerBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassInnerAsm)).head
-    val nestedClassOuterBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassOuterAsm)).head
-    val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
-    val sealedClassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassAsm)).head
-    val sealedClassSubclassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassSubclassAsm)).head
+    val abstractBRClassFile = ClassFileReader(() => new ByteArrayInputStream(abstractAsm)).head
+    val concreteBRClassFile = ClassFileReader(() => new ByteArrayInputStream(concreteAsm)).head
+    val nestedClassInnerBRClassFile = ClassFileReader(() => new ByteArrayInputStream(nestedClassInnerAsm)).head
+    val nestedClassOuterBRClassFile = ClassFileReader(() => new ByteArrayInputStream(nestedClassOuterAsm)).head
+    val recordBRClassFile = ClassFileReader(() => new ByteArrayInputStream(recordAsm)).head
+    val sealedClassBRClassFile = ClassFileReader(() => new ByteArrayInputStream(sealedClassAsm)).head
+    val sealedClassSubclassBRClassFile = ClassFileReader(() => new ByteArrayInputStream(sealedClassSubclassAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
@@ -192,8 +192,8 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     }
 
     it should "implement MarkerInterface1 and MarkerInterface2" in {
-        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface1"))
-        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface2"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i => i.fqn).contains("MarkerInterface1"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i => i.fqn).contains("MarkerInterface2"))
     }
 
     it should "be public final synthetic (super)" in {

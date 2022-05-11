@@ -120,8 +120,8 @@ object JavaFixtureCompiler extends AutoPlugin {
         streams: TaskStreams
     ): Seq[JavaFixtureCompilationResult] = {
       val log = streams.log
-      val std = new PrintWriter(new LogWriter((s: String) ⇒ log.info(s)))
-      val err = new PrintWriter(new LogWriter((s: String) ⇒ log.error(s)))
+      val std = new PrintWriter(new LogWriter((s: String) => log.info(s)))
+      val err = new PrintWriter(new LogWriter((s: String) => log.error(s)))
 
       val results = (
         for (fixtureTask ← tasks.par) yield {
@@ -191,7 +191,7 @@ object JavaFixtureCompiler extends AutoPlugin {
       if (packagingNecessary) {
         val targetFolderLength = compilationResult.task.targetFolder.toString.length + 1
         val classFiles: Traversable[(File, String)] =
-          (compilationResult.task.targetFolder ** "*.class").get map { classFile ⇒
+          (compilationResult.task.targetFolder ** "*.class").get map { classFile =>
             ((classFile, classFile.toString.substring(targetFolderLength)))
           }
 

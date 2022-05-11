@@ -83,8 +83,8 @@ final class ClassFile private (
         val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
-    methods.foreach { m ⇒ assert(m.declaringClassFile == null); m.declaringClassFile = this }
-    fields.foreach { f ⇒ assert(f.declaringClassFile == null); f.declaringClassFile = this }
+    methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
+    fields.foreach { f => assert(f.declaringClassFile == null); f.declaringClassFile = this }
 
     /**
      * Compares this class file with the given one; returns (the first) differences if any. The
@@ -187,8 +187,8 @@ final class ClassFile private (
         thisType:       ObjectType         = this.thisType,
         superclassType: Option[ObjectType] = this.superclassType,
         interfaceTypes: ObjectTypes        = this.interfaceTypes,
-        fields:         FieldTemplates     = this.fields.map[FieldTemplate](f ⇒ f.copy()),
-        methods:        MethodTemplates    = this.methods.map[MethodTemplate](m ⇒ m.copy()),
+        fields:         FieldTemplates     = this.fields.map[FieldTemplate](f => f.copy()),
+        methods:        MethodTemplates    = this.methods.map[MethodTemplate](m => m.copy()),
         attributes:     Attributes         = this.attributes
     ): ClassFile = {
         ClassFile(
@@ -211,10 +211,10 @@ final class ClassFile private (
      */
     def _UNSAFE_replaceAttributes(newAttributes: Attributes): ClassFile = {
         val newMethods = this.methods
-        newMethods.foreach(m ⇒ m.detach())
+        newMethods.foreach(m => m.detach())
 
         val newFields = this.fields
-        newFields.foreach(f ⇒ f.detach())
+        newFields.foreach(f => f.detach())
 
         new ClassFile(
             this.version,
@@ -277,11 +277,11 @@ final class ClassFile private (
             )
         val insertionPoint = -index - 1
         var newMethods = this.methods
-        newMethods.foreach(m ⇒ m.detach())
+        newMethods.foreach(m => m.detach())
         newMethods = newMethods.insertedAt(insertionPoint, newMethod)
 
         val newFields = this.fields
-        newFields.foreach(f ⇒ f.detach())
+        newFields.foreach(f => f.detach())
 
         new ClassFile(
             this.version,
@@ -388,10 +388,10 @@ final class ClassFile private (
     /**
      * Returns Java 9's module attribute if defined.
      */
-    def module: Option[Module] = { attributes collectFirst { case m: Module ⇒ m } }
+    def module: Option[Module] = { attributes collectFirst { case m: Module => m } }
 
     def enclosingMethod: Option[EnclosingMethod] = {
-        attributes collectFirst { case em: EnclosingMethod ⇒ em }
+        attributes collectFirst { case em: EnclosingMethod => em }
     }
 
     /**
@@ -402,14 +402,14 @@ final class ClassFile private (
      *          are rewritten.
      */
     def bootstrapMethodTable: Option[BootstrapMethodTable] = {
-        attributes collectFirst { case bmt: BootstrapMethodTable ⇒ bmt }
+        attributes collectFirst { case bmt: BootstrapMethodTable => bmt }
     }
 
     /**
      * Returns OPAL's [[SynthesizedClassFiles]] attribute if it is defined.
      */
     def synthesizedClassFiles: Option[SynthesizedClassFiles] = {
-        attributes collectFirst { case scf: SynthesizedClassFiles ⇒ scf }
+        attributes collectFirst { case scf: SynthesizedClassFiles => scf }
     }
 
     /**
@@ -423,7 +423,7 @@ final class ClassFile private (
      * @see [[nestedClasses]]
      */
     def innerClasses: Option[InnerClasses] = {
-        attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
+        attributes collectFirst { case InnerClassTable(ice) => ice }
     }
 
     /**
@@ -434,13 +434,13 @@ final class ClassFile private (
      */
     def isAnonymousInnerClass: Boolean = {
         /*
-        isClassDeclaration && innerClasses.isDefined &&  innerClasses.get.exists { i ⇒
+        isClassDeclaration && innerClasses.isDefined &&  innerClasses.get.exists { i =>
                     i.innerClassType == thisType && {
                         if (i.innerName.isEmpty) true else return false;
                     }
             }
         */
-        isClassDeclaration && innerClasses.isDefined && !innerClasses.get.forall { i ⇒
+        isClassDeclaration && innerClasses.isDefined && !innerClasses.get.forall { i =>
             i.innerClassType != thisType || i.innerName.nonEmpty
         }
     }
@@ -474,9 +474,9 @@ final class ClassFile private (
         }
 
         val nestedClassesCandidates =
-            innerClasses.map { innerClasses ⇒
+            innerClasses.map { innerClasses =>
                 innerClasses
-                    .filter(innerClass ⇒
+                    .filter(innerClass =>
                         // it does not describe this class:
                         (!isThisType(innerClass)) &&
                             // it does not give information about an outer class:
@@ -510,15 +510,15 @@ final class ClassFile private (
             }
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
             classFileRepository.classFile(ObjectType(outerFQN)) match {
-                case Some(outerClass) ⇒
+                case Some(outerClass) =>
 
                     def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
                         var nestedTypes: Set[ObjectType] = Set.empty
-                        objectTypes.foreach { objectType ⇒
+                        objectTypes.foreach { objectType =>
                             classFileRepository.classFile(objectType) match {
-                                case Some(classFile) ⇒
+                                case Some(classFile) =>
                                     nestedTypes ++= classFile.nestedClasses(classFileRepository)
-                                case None ⇒
+                                case None =>
                                     OPALLogger.warn(
                                         "class file reader",
                                         "cannot get informaton about "+objectType.toJava+
@@ -550,7 +550,7 @@ final class ClassFile private (
                     val filteredNestedClasses =
                         nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains)
                     return filteredNestedClasses;
-                case None ⇒
+                case None =>
                     val disclaimer = "; the inner classes information may be incomplete"
                     OPALLogger.warn(
                         "project configuration",
@@ -570,17 +570,17 @@ final class ClassFile private (
      * @example To collect all nested types:
      * {{{
      *   var allNestedTypes: Set[ObjectType] = Set.empty
-     *   foreachNestedClasses(innerclassesProject, { nc ⇒ allNestedTypes += nc.thisType })
+     *   foreachNestedClasses(innerclassesProject, { nc => allNestedTypes += nc.thisType })
      * }}}
      */
     def foreachNestedClass(
-        f: (ClassFile) ⇒ Unit
+        f: (ClassFile) => Unit
     )(
         implicit
         classFileRepository: ClassFileRepository
     ): Unit = {
-        nestedClasses(classFileRepository) foreach { nestedType ⇒
-            classFileRepository.classFile(nestedType) foreach { nestedClassFile ⇒
+        nestedClasses(classFileRepository) foreach { nestedType =>
+            classFileRepository.classFile(nestedType) foreach { nestedClassFile =>
                 f(nestedClassFile)
                 nestedClassFile.foreachNestedClass(f)
             }
@@ -596,9 +596,9 @@ final class ClassFile private (
      *      inner class.
      */
     def outerType: Option[(ObjectType, Int)] = {
-        innerClasses flatMap { innerClasses ⇒
+        innerClasses flatMap { innerClasses =>
             innerClasses collectFirst {
-                case InnerClass(`thisType`, Some(outerType), _, accessFlags) ⇒
+                case InnerClass(`thisType`, Some(outerType), _, accessFlags) =>
                     (outerType, accessFlags)
             }
         }
@@ -608,14 +608,14 @@ final class ClassFile private (
      * Each class file optionally defines a class signature.
      */
     def classSignature: Option[ClassSignature] = {
-        attributes collectFirst { case s: ClassSignature ⇒ s }
+        attributes collectFirst { case s: ClassSignature => s }
     }
 
     /**
      * The SourceFile attribute is an optional attribute [...]. There can be
      * at most one `SourceFile` attribute.
      */
-    def sourceFile: Option[String] = attributes collectFirst { case SourceFile(s) ⇒ s }
+    def sourceFile: Option[String] = attributes collectFirst { case SourceFile(s) => s }
 
     /**
      * The SourceDebugExtension attribute is an optional attribute [...]. There can be
@@ -626,7 +626,7 @@ final class ClassFile private (
      * The returned Array must not be mutated.
      */
     def sourceDebugExtension: Option[Array[Byte]] = {
-        attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
+        attributes collectFirst { case SourceDebugExtension(s) => s }
     }
 
     /**
@@ -671,7 +671,7 @@ final class ClassFile private (
      * constructors, or static initializers.
      */
     def instanceMethods: RefIterator[Method] = {
-        methods.iterator.filterNot { m ⇒ m.isStatic || m.isConstructor || m.isStaticInitializer }
+        methods.iterator.filterNot { m => m.isStatic || m.isConstructor || m.isStaticInitializer }
     }
 
     /**
@@ -745,7 +745,7 @@ final class ClassFile private (
      * Returns the field with the given name and type.
      */
     def findField(name: String, fieldType: FieldType): Option[Field] = {
-        findField(name).find(f ⇒ f.fieldType eq fieldType)
+        findField(name).find(f => f.fieldType eq fieldType)
     }
 
     /**
@@ -835,9 +835,9 @@ final class ClassFile private (
     ): Result[Method] = {
         assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
 
-        findMethod(name, descriptor).filter(m ⇒ !m.isStatic) match {
+        findMethod(name, descriptor).filter(m => !m.isStatic) match {
 
-            case Some(candidateMethod) ⇒
+            case Some(candidateMethod) =>
                 import VisibilityModifier.isAtLeastAsVisibleAs
                 if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName) &&
                     isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility))
@@ -845,7 +845,7 @@ final class ClassFile private (
                 else
                     Failure
 
-            case None ⇒
+            case None =>
                 Empty
         }
 
@@ -868,7 +868,7 @@ final class ClassFile private (
         descriptor: MethodDescriptor,
         matcher:    AccessFlagsMatcher
     ): Option[Method] = {
-        findMethod(name, descriptor) filter { m ⇒ matcher.unapply(m.accessFlags) }
+        findMethod(name, descriptor) filter { m => matcher.unapply(m.accessFlags) }
     }
 
     /**
@@ -879,8 +879,8 @@ final class ClassFile private (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: ClassFile ⇒ that eq this
-            case _               ⇒ false
+            case that: ClassFile => that eq this
+            case _               => false
         }
     }
 
@@ -940,8 +940,8 @@ object ClassFile {
             UShortPair(minorVersion, majorVersion),
             accessFlags,
             thisType, superclassType, interfaceTypes,
-            fields.sorted[JVMField].map[Field](f ⇒ f.prepareClassFileAttachement()),
-            methods.sorted[JVMMethod].map[Method](f ⇒ f.prepareClassFileAttachement()),
+            fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachement()),
+            methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachement()),
             attributes
         )
     }

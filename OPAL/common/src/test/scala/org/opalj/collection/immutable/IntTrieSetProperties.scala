@@ -30,8 +30,8 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
 
     implicit val arbIntArraySet: Arbitrary[IntArraySet] = Arbitrary {
-        Gen.sized { l ⇒
-            val s = (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒
+        Gen.sized { l =>
+            val s = (0 until l).foldLeft(IntArraySet.empty) { (c, n) =>
                 val nextValue = r.nextInt(75000) - 25000
                 c + (if (n % 2 == 0) nextValue else -nextValue - 100000)
             }
@@ -40,13 +40,13 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     }
 
     implicit val arbListOfIntArraySet: Arbitrary[List[IntArraySet]] = Arbitrary {
-        Gen.sized { s ⇒ Gen.listOfN(s, Arbitrary.arbitrary[IntArraySet]) }
+        Gen.sized { s => Gen.listOfN(s, Arbitrary.arbitrary[IntArraySet]) }
     }
 
     // NOT TO BE USED BY TESTS THAT TEST THE CORRECT CONSTRUCTION!
     implicit val arbIntTrieSet: Arbitrary[IntTrieSet] = Arbitrary {
-        Gen.sized { l ⇒
-            (0 until l).foldLeft(IntTrieSet.empty) { (c, n) ⇒
+        Gen.sized { l =>
+            (0 until l).foldLeft(IntTrieSet.empty) { (c, n) =>
                 val nextValue = r.nextInt(75000) - 25000
                 c + (if (n % 2 == 0) nextValue else -nextValue - 100000)
             }
@@ -54,11 +54,11 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     }
 
     implicit val arbPairOfIntArraySet: Arbitrary[(IntArraySet, IntArraySet)] = Arbitrary {
-        Gen.sized { l ⇒
-            Gen.sized { j ⇒
+        Gen.sized { l =>
+            Gen.sized { j =>
                 (
-                    (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 },
-                    (0 until j).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 }
+                    (0 until l).foldLeft(IntArraySet.empty) { (c, n) => c + r.nextInt(100) - 50 },
+                    (0 until j).foldLeft(IntArraySet.empty) { (c, n) => c + r.nextInt(100) - 50 }
                 )
             }
         }
@@ -67,7 +67,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
 
-    property("create singleton IntTrieSet") = forAll { v: Int ⇒
+    property("create singleton IntTrieSet") = forAll { v: Int =>
         val factoryITS = IntTrieSet1(v)
         val viaEmptyITS = EmptyIntTrieSet + v
         factoryITS.size == 1 &&
@@ -79,7 +79,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             viaEmptyITS == factoryITS
     }
 
-    property("create IntTrieSet from Set step by step") = forAll { s: IntArraySet ⇒
+    property("create IntTrieSet from Set step by step") = forAll { s: IntArraySet =>
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
@@ -89,7 +89,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
-    property("create IntTrieSet from IntSet using ++") = forAll { s: IntTrieSet ⇒
+    property("create IntTrieSet from IntSet using ++") = forAll { s: IntTrieSet =>
         val its = EmptyIntTrieSet ++ s
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
@@ -99,7 +99,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
-    property("create IntTrieSet from Set[Int] using ++") = forAll { s: Set[Int] ⇒
+    property("create IntTrieSet from Set[Int] using ++") = forAll { s: Set[Int] =>
         val its = EmptyIntTrieSet ++ s
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
@@ -109,14 +109,14 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
-    property("create IntTrieSet from List (i.e., with duplicates)") = forAll { l: List[Int] ⇒
+    property("create IntTrieSet from List (i.e., with duplicates)") = forAll { l: List[Int] =>
         val its = l.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val lWithoutDuplicates = l.toSet.toList
         (its.size == lWithoutDuplicates.size) :| "matching size" &&
             its.iterator.toList.sorted == lWithoutDuplicates.sorted
     }
 
-    property("create IntTrieSet from Iterator (i.e., with duplicates)") = forAll { l: List[Int] ⇒
+    property("create IntTrieSet from Iterator (i.e., with duplicates)") = forAll { l: List[Int] =>
         val its = EmptyIntTrieSet ++ l.iterator
         val newits = its.iterator.toSet
         its.size == newits.size &&
@@ -125,14 +125,14 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             newits.forall(its.contains)
     }
 
-    property("head") = forAll { s: IntArraySet ⇒
+    property("head") = forAll { s: IntArraySet =>
         s.nonEmpty ==> {
             val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
             s.contains(its.head)
         }
     }
 
-    property("head and headAndTail should return the same head") = forAll { s: IntTrieSet ⇒
+    property("head and headAndTail should return the same head") = forAll { s: IntTrieSet =>
         var its = s
         var success = true
         while (its.nonEmpty && success) {
@@ -144,7 +144,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         success
     }
 
-    property("mkString(String,String,String)") = forAll { (s: Set[Int], pre: String, in: String, post: String) ⇒
+    property("mkString(String,String,String)") = forAll { (s: Set[Int], pre: String, in: String, post: String) =>
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val itsString = its.mkString(pre, in, post)
         val sString = its.iterator.mkString(pre, in, post)
@@ -154,7 +154,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             itsString.startsWith(pre) && itsString.endsWith(post)
     }
 
-    property("mkString(String)") = forAll { (s: Set[Int], in: String) ⇒
+    property("mkString(String)") = forAll { (s: Set[Int], in: String) =>
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val itsString = its.mkString(in)
         val sString = its.iterator.mkString(in)
@@ -163,34 +163,34 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             ((itsString.length == lString.length) :| "length of generated string (its vs l)")
     }
 
-    property("contains") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("contains") = forAll { (s1: IntArraySet, s2: IntArraySet) =>
         val its = s1.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         s1.forall(its.contains) :| "contains expected value" &&
-            s2.forall(v ⇒ s1.contains(v) == its.contains(v))
+            s2.forall(v => s1.contains(v) == its.contains(v))
     }
 
-    property("foreach") = forAll { s: IntArraySet ⇒
+    property("foreach") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         var newS = IntArraySet.empty
         its foreach { newS += _ } // use foreach to compute a new set
         s == newS
     }
 
-    property("foreachPair") = forAll { s: IntArraySet ⇒
+    property("foreachPair") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         var itsPairs = Set.empty[(Int, Int)]
-        its foreachPair { (p1: Int, p2: Int) ⇒
+        its foreachPair { (p1: Int, p2: Int) =>
             if (p1 < p2)
                 itsPairs += ((p1, p2))
             else
                 itsPairs += ((p2, p1))
         }
         var sPairs = Set.empty[(Int, Int)]
-        s foreachPair { (p1: Int, p2: Int) ⇒ sPairs += ((p1, p2)) }
+        s foreachPair { (p1: Int, p2: Int) => sPairs += ((p1, p2)) }
         (sPairs == itsPairs) :| s"$sPairs vs. $itsPairs"
     }
 
-    property("map") = forAll { s: IntArraySet ⇒
+    property("map") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         val mappedIts = its.map(_ * 2)
         val mappedS = s.map(_ * 2)
@@ -200,36 +200,36 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("transform") = forAll { s: IntTrieSet ⇒
+    property("transform") = forAll { s: IntTrieSet =>
         val its = s.transform(_ * 2, Chain.newBuilder[Int]).toIterator.toList.sorted
         its == s.map(_ * 2).iterator.toList.sorted
     }
 
-    property("exists") = forAll { s: IntArraySet ⇒
+    property("exists") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         classify(its.isEmpty, "the set is empty") {
-            s.forall(v ⇒ its.exists(_ == v)) &&
-                s.forall(v ⇒ its.exists(_ != v) == s.exists(_ != v))
+            s.forall(v => its.exists(_ == v)) &&
+                s.forall(v => its.exists(_ != v) == s.exists(_ != v))
         }
     }
 
-    property("forall") = forAll { s: IntArraySet ⇒
+    property("forall") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         its.forall(s.contains) &&
-            its.forall(v ⇒ s.contains(-v)) == s.forall(v ⇒ s.contains(-v))
+            its.forall(v => s.contains(-v)) == s.forall(v => s.contains(-v))
     }
 
-    property("foldLeft") = forAll { s: IntArraySet ⇒
+    property("foldLeft") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         its.foldLeft(0)(_ + _) == s.foldLeft(0)(_ + _)
     }
 
-    property("toChain") = forAll { s: IntArraySet ⇒
+    property("toChain") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         its.toChain.toIterator.toList.sorted == s.iterator.toList.sorted
     }
 
-    property("headAndTail") = forAll { s: IntArraySet ⇒
+    property("headAndTail") = forAll { s: IntArraySet =>
         var its = EmptyIntTrieSet ++ s.iterator
         var removed = Chain.empty[Int]
         while (its.nonEmpty) {
@@ -241,15 +241,15 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (removed.size == s.size) :| "all values are returned"
     }
 
-    property("flatMap") = forAll { listOfSets: List[IntArraySet] ⇒
+    property("flatMap") = forAll { listOfSets: List[IntArraySet] =>
         listOfSets.nonEmpty ==> {
             val arrayOfSets = listOfSets.toArray
-            val arrayOfITSets = arrayOfSets.map(s ⇒ IntTrieSet.empty ++ s.iterator)
+            val arrayOfITSets = arrayOfSets.map(s => IntTrieSet.empty ++ s.iterator)
             val l = arrayOfSets.length
 
-            val flatMappedITSet = arrayOfITSets(0).flatMap(v ⇒
+            val flatMappedITSet = arrayOfITSets(0).flatMap(v =>
                 arrayOfITSets(Math.abs(v) % l))
-            val flatMappedSSet = arrayOfSets(0).flatMap(v ⇒
+            val flatMappedSSet = arrayOfSets(0).flatMap(v =>
                 arrayOfSets(Math.abs(v) % l))
 
             classify(flatMappedSSet.size > 50, "set with more than 50 elements") {
@@ -261,30 +261,30 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("not equals") = forAll { s: IntArraySet ⇒
+    property("not equals") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
         its != (new Object)
     }
 
-    property("+!") = forAll { s: IntTrieSet ⇒
+    property("+!") = forAll { s: IntTrieSet =>
         val its = EmptyIntTrieSet ++! s
         its == s
     }
 
-    property("equals") = forAll { s: IntTrieSet ⇒
+    property("equals") = forAll { s: IntTrieSet =>
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
         val newS = s + i - i
         s == newS && s.hashCode == newS.hashCode
     }
 
-    property("toString") = forAll { s: IntArraySet ⇒
+    property("toString") = forAll { s: IntArraySet =>
         val its = s.foldLeft(IntTrieSet.empty)(_ +! _)
         val itsToString = its.toString
         itsToString.startsWith("IntTrieSet(") && itsToString.endsWith(")")
         // IMPROVE add content based test
     }
 
-    property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Int) ⇒
+    property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Int) =>
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ +! _)
         val its2 = s1.foldLeft(IntTrieSet.empty)(_ +! _) +! i
         classify(its1.size == 0, "its1 is empty") {
@@ -298,7 +298,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("subsetOf (always succeeding)") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("subsetOf (always succeeding)") = forAll { (s1: IntArraySet, s2: IntArraySet) =>
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
         val mergedIts = its1 ++ its2
@@ -307,12 +307,12 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("filter (identity if no value is filtered)") = forAll { s: IntTrieSet ⇒
+    property("filter (identity if no value is filtered)") = forAll { s: IntTrieSet =>
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
         s.filter(_ != i) eq s
     }
 
-    property("filter") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("filter") = forAll { (s1: IntArraySet, s2: IntArraySet) =>
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = its1.filter(!its2.contains(_))
@@ -322,7 +322,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("-") = forAll { ps: (IntArraySet, IntArraySet) ⇒
+    property("-") = forAll { ps: (IntArraySet, IntArraySet) =>
         val (s, other) = ps
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = other.foldLeft(its)(_ - _)
@@ -333,40 +333,40 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("intersect") = forAll { ps: (IntArraySet, IntArraySet) ⇒
+    property("intersect") = forAll { ps: (IntArraySet, IntArraySet) =>
         val (ias1, ias2) = ps
         val s1 = ias1.foldLeft(IntTrieSet.empty)(_ + _)
         val s2 = ias2.foldLeft(IntTrieSet.empty)(_ + _)
-        val expected = s1.foldLeft(IntTrieSet.empty)((c, n) ⇒ if (s2.contains(n)) c + n else c)
+        val expected = s1.foldLeft(IntTrieSet.empty)((c, n) => if (s2.contains(n)) c + n else c)
         (s1 intersect s2) == expected &&
             (s2 intersect s1) == expected
     }
 
-    property("- (all elements)") = forAll { s: IntArraySet ⇒
+    property("- (all elements)") = forAll { s: IntArraySet =>
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = s.foldLeft(its)(_ - _)
         newits.size == 0 && newits.isEmpty &&
             newits == EmptyIntTrieSet
     }
 
-    property("filter (all elements)") = forAll { s: IntArraySet ⇒
+    property("filter (all elements)") = forAll { s: IntArraySet =>
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
-        its.filter(i ⇒ false) eq EmptyIntTrieSet
+        its.filter(i => false) eq EmptyIntTrieSet
     }
 
-    property("withFilter") = forAll { ss: (IntArraySet, IntArraySet) ⇒
+    property("withFilter") = forAll { ss: (IntArraySet, IntArraySet) =>
         val (s1: IntArraySet, s2: IntArraySet) = ss
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
         var evaluated = false
-        val newits = its1.withFilter(i ⇒ { evaluated = true; !its2.contains(i) })
+        val newits = its1.withFilter(i => { evaluated = true; !its2.contains(i) })
         val news = s1.withFilter(!s2.contains(_))
         !evaluated :| "not eagerly evaluated" &&
-            news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
+            news.forall(i => newits.exists(newi => newi == i)) :| "exists check" &&
             (news.forall(newits.contains) && newits.forall(news.contains)) :| "contains check" &&
-            news.forall(i ⇒ newits.iterator.contains(i)) :| s"IntIterator.contains $news vs. $newits" &&
+            news.forall(i => newits.iterator.contains(i)) :| s"IntIterator.contains $news vs. $newits" &&
             newits.iterator.forall(news.contains) :| "IntIterator.forall" &&
-            news.forall(i ⇒ newits.iterator.contains(i)) && newits.iterator.forall(news.contains) :| "Iterator[Int]"
+            news.forall(i => newits.iterator.contains(i)) && newits.iterator.forall(news.contains) :| "Iterator[Int]"
     }
 
 }
@@ -677,21 +677,21 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
 
         it("should create the canonical representation as soon as we just have two values left") {
             val its = IntTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
-            val filteredIts = its.filter(i ⇒ i == 8192 || i == 8192 + 2048 + 16384)
+            val filteredIts = its.filter(i => i == 8192 || i == 8192 + 2048 + 16384)
             filteredIts.size should be(2)
             filteredIts shouldBe an[IntTrieSet2]
         }
 
         it("should create the canonical representation as soon as we just have one value left in each branch ") {
             val its = IntTrieSet(0, 8, 12, 4)
-            val filteredIts = its.filter(i ⇒ i == 8 || i == 12)
+            val filteredIts = its.filter(i => i == 8 || i == 12)
             filteredIts.size should be(2)
             filteredIts shouldBe an[IntTrieSet2]
         }
 
         it("should create the canonical representation as soon as we just have one value left") {
             val its = IntTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
-            val filteredIts = its.filter(i ⇒ i == 8192 + 2048 + 16384)
+            val filteredIts = its.filter(i => i == 8192 + 2048 + 16384)
             filteredIts.size should be(1)
             filteredIts shouldBe an[IntTrieSet1]
         }
@@ -703,10 +703,10 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
         val is2 = IntTrieSet(3, 4)
         val is3 = IntTrieSet(256, 512, 1037)
 
-        assert(is0.map(i ⇒ i) eq is0)
-        assert(is1.map(i ⇒ i) eq is1)
-        assert(is2.map(i ⇒ i) eq is2)
-        assert(is3.map(i ⇒ i) eq is3)
+        assert(is0.map(i => i) eq is0)
+        assert(is1.map(i => i) eq is1)
+        assert(is2.map(i => i) eq is2)
+        assert(is3.map(i => i) eq is3)
     }
 
     describe("map using array") {
@@ -788,8 +788,8 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                         opalS += v
                     }
                     opalS
-                } { t ⇒ info(s"IntTrieSet took ${t.toSeconds}") }
-            } { mu ⇒ info(s"IntTrieSet required $mu bytes") }
+                } { t => info(s"IntTrieSet took ${t.toSeconds}") }
+            } { mu => info(s"IntTrieSet required $mu bytes") }
 
             val scalaS = PerformanceEvaluation.memory {
                 PerformanceEvaluation.time {
@@ -801,18 +801,18 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                         scalaS += v
                     }
                     scalaS
-                } { t ⇒ info(s"Set[Int] took ${t.toSeconds}") }
-            } { mu ⇒ info(s"Set[Int] required $mu bytes") }
+                } { t => info(s"Set[Int] took ${t.toSeconds}") }
+            } { mu => info(s"Set[Int] required $mu bytes") }
 
             var opalTotal = 0L
             PerformanceEvaluation.time {
                 for { v ← opalS } { opalTotal += v }
-            } { t ⇒ info(s"OPAL ${t.toSeconds} for foreach") }
+            } { t => info(s"OPAL ${t.toSeconds} for foreach") }
 
             var scalaTotal = 0L
             PerformanceEvaluation.time {
                 for { v ← scalaS } { scalaTotal += v }
-            } { t ⇒ info(s"Scala ${t.toSeconds} for foreach") }
+            } { t => info(s"Scala ${t.toSeconds} for foreach") }
 
             assert(opalTotal == scalaTotal)
         }
@@ -839,7 +839,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t ⇒ info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t => info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
 
         it("for small sets (8 to 16 elements) creation and contains check should finish in reasonable time (all values are positive)") {
@@ -864,7 +864,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t ⇒ info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t => info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
 
         it("for small sets (16 to 32 elements) creation and contains check should finish in reasonable time (all values are positive)") {
@@ -889,7 +889,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t ⇒ info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t => info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
 
         it("for sets with up to 10000 elements creation and contains check should finish in reasonable time") {
@@ -914,7 +914,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
-            } { t ⇒ info(s"${t.toSeconds} to create 10_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+            } { t => info(s"${t.toSeconds} to create 10_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
 
         it("operations on 2500 sets with ~10000 elements each") {
@@ -931,14 +931,14 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     }
                     s
                 }
-            } { mu ⇒ info(s"required $mu bytes") }
+            } { mu => info(s"required $mu bytes") }
 
             var total = 0L
             PerformanceEvaluation.time {
                 for { set ← allSets; v ← set } {
                     total += v
                 }
-            } { t ⇒ info(s"${t.toSeconds} for foreach") }
+            } { t => info(s"${t.toSeconds} for foreach") }
 
             info(s"overall size: ${allSets.map(_.size).sum}; sum: $total")
         }

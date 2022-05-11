@@ -59,7 +59,7 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
                     var isomorphicCount = 0
                     var notIsomorphicCount = 0
                     var lastPC = -1
-                    body iterate { (pc, instruction) ⇒
+                    body iterate { (pc, instruction) =>
                         assert(
                             instruction.isIsomorphic(pc, pc)(body),
                             s"$instruction should be isomorphic to itself"

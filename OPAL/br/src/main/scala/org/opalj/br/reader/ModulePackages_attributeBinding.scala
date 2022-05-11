@@ -26,7 +26,7 @@ trait ModulePackages_attributeBinding
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
         new ModulePackages(
-            RefArray.mapFrom(package_index_table) { p ⇒ cp(p).asPackageIdentifier(cp) }
+            RefArray.mapFrom(package_index_table) { p => cp(p).asPackageIdentifier(cp) }
         )
     }
 

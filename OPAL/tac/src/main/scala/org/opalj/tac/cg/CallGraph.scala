@@ -83,17 +83,17 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeProvider: TypePro
     def reachableMethods(): Iterator[Context] = {
         val callersProperties = ps.entities(Callers.key)
         callersProperties.flatMap {
-            case EUBP(m: DeclaredMethod, ub: Callers) if ub ne NoCallers ⇒
-                ub.calleeContexts(m).map { context ⇒
+            case EUBP(m: DeclaredMethod, ub: Callers) if ub ne NoCallers =>
+                ub.calleeContexts(m).map { context =>
                     if (context.hasContext) context
                     else typeProvider.newContext(m)
                 }
-            case _ ⇒
+            case _ =>
                 Iterator.empty
         }
     }
 
     lazy val numEdges: Int = {
-        ps.entities(Callers.key).map { cs ⇒ cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).size }.sum
+        ps.entities(Callers.key).map { cs => cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).size }.sum
     }
 }

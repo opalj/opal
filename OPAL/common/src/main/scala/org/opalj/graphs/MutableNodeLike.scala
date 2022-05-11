@@ -28,7 +28,7 @@ import scala.collection.Map
  */
 class MutableNodeLike[I, N <: Node](
         private[this] var theIdentifier:       I,
-        val identifierToString:                I ⇒ String,
+        val identifierToString:                I => String,
         private[this] var theVisualProperties: Map[String, String],
         private[this] var theChildren:         List[N]
 ) extends MutableNode[I, N] {
@@ -67,7 +67,7 @@ class MutableNodeLike[I, N <: Node](
         theChildren = theChildren.filterNot(_ == node)
     }
 
-    override def foreachSuccessor(f: Node ⇒ Unit): Unit = this.synchronized { children.foreach(f) }
+    override def foreachSuccessor(f: Node => Unit): Unit = this.synchronized { children.foreach(f) }
 
     override def hasSuccessors: Boolean = this.synchronized { children.nonEmpty }
 

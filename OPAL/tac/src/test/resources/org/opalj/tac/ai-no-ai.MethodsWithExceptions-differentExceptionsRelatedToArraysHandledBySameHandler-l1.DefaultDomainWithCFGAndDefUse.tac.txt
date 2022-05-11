@@ -14,7 +14,7 @@
 6:/*pc=23:*/ lv6 = 0
 7:/*pc=25:*/ lv7 = new java.lang.Object
 8:/*pc=29:*/ {lv7}/*(non-virtual) java.lang.Object*/.<init>()
-// ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.Exception → 12
+// ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.Exception → 12
 
 // 8 →
 9:/*pc=32:*/ ;
@@ -30,7 +30,7 @@
 12:/*pc=40:*/ caught java.lang.Exception /* <= {exception@8,exception[VM]@10}*/
 13:/*pc=42:*/ lvd = java.lang.System.out
 14:/*pc=47:*/ {lvd}/*java.io.PrintStream*/.println({exception@8, exception[VM]@10})
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 11, 14 →
 15:/*pc=50:*/ return

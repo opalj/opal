@@ -47,10 +47,10 @@ object SecondInstrumentation extends App {
     val newVersion = bi.Java8Version
     val newMethods = for (m ← cf.methods) yield {
         m.body match {
-            case None ⇒
+            case None =>
                 m.copy() // these are native and abstract methods
 
-            case Some(code) ⇒
+            case Some(code) =>
                 // let's search all "println" calls where the parameter has a specific
                 // type (which is statically known, and which is NOT the parameter type)
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
@@ -92,11 +92,11 @@ object SecondInstrumentation extends App {
     //
 
     // Let's see the old class file...
-    val oldDACF = ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head
+    val oldDACF = ClassFile(() => p.source(TheType).get.openConnection().getInputStream).head
     println("original: "+writeAndOpen(oldDACF.toXHTML(None), "SimpleInstrumentationDemo", ".html"))
 
     // Let's see the new class file...
-    val newDACF = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head
+    val newDACF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head
     val newCFHTML = writeAndOpen(newDACF.toXHTML(None), "NewSimpleInstrumentationDemo", ".html")
     println("instrumented: "+newCFHTML)
 

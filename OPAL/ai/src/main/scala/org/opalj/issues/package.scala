@@ -70,9 +70,9 @@ package object issues {
      */
     def urlToLocationIdentifier(url: URL): String = {
         url.getProtocol() match {
-            case "file" ⇒ absoluteToRelative(url.getPath())
-            case "jar"  ⇒ prettifyJarUrl(url.toExternalForm())
-            case _      ⇒ url.toExternalForm()
+            case "file" => absoluteToRelative(url.getPath())
+            case "jar"  => prettifyJarUrl(url.toExternalForm())
+            case _      => url.toExternalForm()
         }
     }
 
@@ -99,15 +99,15 @@ package object issues {
 
     def typeToIDL(t: Type): JsValue = {
         t match {
-            case bt: BaseType ⇒ Json.obj("bt" → bt.toJava)
-            case CTIntType    ⇒ Json.obj("bt" → "<Computational Type Int>")
+            case bt: BaseType => Json.obj("bt" → bt.toJava)
+            case CTIntType    => Json.obj("bt" → "<Computational Type Int>")
 
-            case ot: ObjectType ⇒
+            case ot: ObjectType =>
                 Json.obj("ot" → ot.toJava, "simpleName" → ot.simpleName)
-            case at: ArrayType ⇒
+            case at: ArrayType =>
                 Json.obj("at" → typeToIDL(at.elementType), "dimensions" → at.dimensions)
 
-            case VoidType ⇒ Json.obj("vt" → "void")
+            case VoidType => Json.obj("vt" → "void")
 
         }
     }

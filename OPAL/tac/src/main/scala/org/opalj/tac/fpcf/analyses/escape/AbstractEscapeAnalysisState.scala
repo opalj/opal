@@ -112,11 +112,11 @@ trait AbstractEscapeAnalysisState {
         _tacai = Some(tacai)
 
         context.entity match {
-            case (_: Context, ds: DefinitionSiteLike) ⇒
+            case (_: Context, ds: DefinitionSiteLike) =>
                 _defSite = tacai.properStmtIndexForPC(ds.pc)
                 _uses = ds.usedBy(tacai)
 
-            case (_: Context, fp: VirtualFormalParameter) ⇒
+            case (_: Context, fp: VirtualFormalParameter) =>
                 val param = tacai.params.parameter(fp.origin)
                 _uses = param.useSites
                 _defSite = param.origin
@@ -145,7 +145,7 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
         assert(params.forall(_.isVar))
-        params.exists { case UVar(_, defSites) ⇒ defSites.contains(_defSite) }
+        params.exists { case UVar(_, defSites) => defSites.contains(_defSite) }
     }
 }
 

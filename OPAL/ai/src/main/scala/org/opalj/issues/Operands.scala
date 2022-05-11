@@ -26,7 +26,7 @@ class Operands(
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
         val detailsNodes = instruction match {
-            case cbi: SimpleConditionalBranchInstruction[_] ⇒
+            case cbi: SimpleConditionalBranchInstruction[_] =>
 
                 val condition =
                     if (cbi.operandCount == 1)
@@ -42,20 +42,20 @@ class Operands(
                         )
                 <span class="keyword">if&nbsp;</span> :: condition
 
-            case cbi: CompoundConditionalBranchInstruction ⇒
+            case cbi: CompoundConditionalBranchInstruction =>
                 Seq(
                     <span class="keyword">switch </span>,
                     <span class="value">{ operands.head } </span>,
                     <span> (case values: { cbi.caseValues.mkString(", ") } )</span>
                 )
 
-            case smi: StackManagementInstruction ⇒
+            case smi: StackManagementInstruction =>
                 val representation =
                     <span class="keyword">{ smi.mnemonic } </span> ::
-                        (operands.map(op ⇒ <span class="value">{ op } </span>).to[List])
+                        (operands.map(op => <span class="value">{ op } </span>).to[List])
                 representation
 
-            case IINC(lvIndex, constValue) ⇒
+            case IINC(lvIndex, constValue) =>
                 val representation =
                     List(
                         <span class="keyword">iinc </span>,
@@ -68,12 +68,12 @@ class Operands(
                     )
                 representation
 
-            case instruction ⇒
+            case instruction =>
                 val operandsCount =
-                    instruction.numberOfPoppedOperands { x ⇒ throw new UnknownError() }
+                    instruction.numberOfPoppedOperands { x => throw new UnknownError() }
 
                 val parametersNode =
-                    operands.take(operandsCount).reverse.map { op ⇒
+                    operands.take(operandsCount).reverse.map { op =>
                         <span class="value">{ op } </span>
                     }
                 List(
@@ -90,45 +90,45 @@ class Operands(
 
     override def toIDL: JsValue = {
         instruction match {
-            case cbi: SimpleConditionalBranchInstruction[_] ⇒
+            case cbi: SimpleConditionalBranchInstruction[_] =>
                 Json.obj(
                     "type" → "SimpleConditionalBranchInstruction",
                     "operator" → cbi.operator,
                     "value" → {
                         cbi.operandCount match {
-                            case 1 ⇒ operands.head.toString
-                            case _ ⇒ operands.tail.head.toString
+                            case 1 => operands.head.toString
+                            case _ => operands.tail.head.toString
                         }
                     },
                     "value2" → {
                         cbi.operandCount match {
-                            case 1 ⇒ JsNull
-                            case _ ⇒ operands.head.toString
+                            case 1 => JsNull
+                            case _ => operands.head.toString
                         }
                     }
                 )
-            case cbi: CompoundConditionalBranchInstruction ⇒
+            case cbi: CompoundConditionalBranchInstruction =>
                 Json.obj(
                     "type" → "CompoundConditionalBranchInstruction",
                     "value" → operands.head.toString,
                     "caseValues" → cbi.caseValues.mkString(", ")
                 )
-            case smi: StackManagementInstruction ⇒
+            case smi: StackManagementInstruction =>
                 Json.obj(
                     "type" → "StackManagementInstruction",
                     "mnemonic" → smi.mnemonic,
                     "values" → operands.map(_.toString).toList
                 )
-            case IINC(lvIndex, constValue) ⇒
+            case IINC(lvIndex, constValue) =>
                 Json.obj(
                     "type" → "IINC",
                     "value" → localVariables(lvIndex).toString,
                     "constValue" → constValue
                 )
 
-            case instruction ⇒
+            case instruction =>
                 val operandsCount =
-                    instruction.numberOfPoppedOperands { x ⇒
+                    instruction.numberOfPoppedOperands { x =>
                         val message = "a stack management instruction is related to an issue"
                         throw new UnknownError(message)
                     }

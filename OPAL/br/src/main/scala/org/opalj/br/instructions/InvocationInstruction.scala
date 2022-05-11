@@ -43,7 +43,7 @@ abstract class InvocationInstruction
      */
     def isInstanceMethod: Boolean
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = {
         if (methodDescriptor.returnType.isVoidType) 0 else 1
     }
 

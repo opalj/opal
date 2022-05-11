@@ -3,7 +3,7 @@ package org.opalj
 package br
 
 import org.opalj.collection.immutable._
-import org.opalj.util.{Nanoseconds ⇒ NS}
+import org.opalj.util.{Nanoseconds => NS}
 
 object UIDSetDemo extends App {
 
@@ -112,7 +112,7 @@ object UIDSetDemo extends App {
             println("Using Set: "+NS(System.nanoTime - t).toSeconds)
         }
     }
-    (0 to 5).foreach(e ⇒ evalAdd)
+    (0 to 5).foreach(e => evalAdd)
 
     /////////////////////////////////// EXTENSIVE EVAL ///////////////////////////////////
 

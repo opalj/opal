@@ -119,21 +119,21 @@ object CODE {
         catchLabelsToIndexes.defaultReturnValue(Int.MinValue)
 
         // Step 1
-        iterateUntil(0, codeElementsSize) { index ⇒
+        iterateUntil(0, codeElementsSize) { index =>
             codeElements(index) match {
 
-                case LabelElement(label) ⇒
+                case LabelElement(label) =>
                     if (labelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"jump '$label is already used")
                     }
                     labelsToIndexes.put(label, index)
 
-                case TRY(label) ⇒
+                case TRY(label) =>
                     if (tryLabelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"try '${label.name} is already used")
                     }
                     tryLabelsToIndexes.put(label, index)
-                case TRYEND(label) ⇒
+                case TRYEND(label) =>
                     if (tryEndLabelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"tryend '${label.name} is already used")
                     }
@@ -144,13 +144,13 @@ object CODE {
                     }
                     tryEndLabelsToIndexes.put(label, index)
 
-                case CATCH(label, _, _) ⇒
+                case CATCH(label, _, _) =>
                     if (catchLabelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"catch '${label.name} is already used")
                     }
                     catchLabelsToIndexes.put(label, index)
 
-                case _ ⇒ // nothing to do
+                case _ => // nothing to do
             }
         }
 
@@ -259,19 +259,19 @@ object CODE {
                         // JSR is live... i.e., a RET exists (which should always be the case for
                         // proper code!)
                         continueIteration = currentInstruction match {
-                            case pi: PseudoInstruction ⇒
+                            case pi: PseudoInstruction =>
                                 true
 
-                            case InstructionLikeElement(li) ⇒
+                            case InstructionLikeElement(li) =>
                                 if (li.isControlTransferInstruction) {
                                     li.branchTargets.foreach(handleBranchTarget)
                                     // let's check if we have a "fall-through"
                                     li match {
                                         case _: LabeledJSR | _: LabeledJSR_W |
-                                            _: LabeledSimpleConditionalBranchInstruction ⇒
+                                            _: LabeledSimpleConditionalBranchInstruction =>
                                             // let's continue...
                                             true
-                                        case _ ⇒
+                                        case _ =>
                                             // ... we have a goto(_w) instruction, hence
                                             // the next instruction like element is only live
                                             // if we have an explicit jump to it, or if it is
@@ -316,39 +316,39 @@ object CODE {
             //          remappings!
 
             // If we just had some dead PC based labels, we continue using the old code elements...
-            iterateUntil(0, codeElementsSize) { index ⇒
+            iterateUntil(0, codeElementsSize) { index =>
                 if (!isLive(index)) {
                     codeElements(index) match {
-                        case LabelElement(_: PCLabel) ⇒
+                        case LabelElement(_: PCLabel) =>
                             isLiveCount += 1
                             isLive(index) = true
 
-                        case _: LINENUMBER ⇒
+                        case _: LINENUMBER =>
                             var nextIndex = index + 1
                             while (nextIndex < codeElementsSize) {
                                 codeElements(nextIndex) match {
 
-                                    case _: InstructionLikeElement[T] if isLive(nextIndex) ⇒
+                                    case _: InstructionLikeElement[T] if isLive(nextIndex) =>
                                         isLive(index) = true
                                         isLiveCount += 1
                                         nextIndex = Int.MaxValue // <=> abort loop
 
-                                    case _: LINENUMBER ⇒
+                                    case _: LINENUMBER =>
                                         nextIndex = Int.MaxValue // <=> abort loop
 
-                                    case _ ⇒
+                                    case _ =>
                                         nextIndex += 1
                                 }
                             }
 
-                        case tryStart @ TRY(label) ⇒
+                        case tryStart @ TRY(label) =>
                             // We have to check if some relevant instruction belonging to the
                             // try block is live.
                             var nextIndex = index + 1
                             while (nextIndex < codeElementsSize) {
                                 codeElements(nextIndex) match {
 
-                                    case i: InstructionLikeElement[T] ⇒
+                                    case i: InstructionLikeElement[T] =>
                                         val instruction = i.instruction
                                         if (isLive(nextIndex) &&
                                             instruction.mayThrowExceptions &&
@@ -364,10 +364,10 @@ object CODE {
                                             nextIndex += 1
                                         }
 
-                                    case TRYEND(`label`) ⇒
+                                    case TRYEND(`label`) =>
                                         nextIndex = Int.MaxValue // <=> abort loop (successful)
 
-                                    case _ ⇒
+                                    case _ =>
                                         nextIndex += 1
                                 }
                             }
@@ -375,7 +375,7 @@ object CODE {
                                 throw new IllegalArgumentException(s"'try $label without try end")
                             }
 
-                        case TRYEND(label) ⇒
+                        case TRYEND(label) =>
                             // We have found a "still dead" try end; if the TRY is (now) live,
                             // we simply set TRYEND to live... otherwise it remains dead;
                             // we check the intermediate range when we see the TRY (if required).
@@ -384,7 +384,7 @@ object CODE {
                                 isLive(index) = true
                             }
 
-                        case _ ⇒ // nothing to do
+                        case _ => // nothing to do
                     }
                 }
             }
@@ -413,7 +413,7 @@ object CODE {
             }
             if (logDeadCode) {
                 val deadCode = new ArrayBuffer[String](deadCodeElementsCount)
-                iterateUntil(0, codeElements.size) { index ⇒
+                iterateUntil(0, codeElements.size) { index =>
                     if (!isLive(index)) {
                         deadCode += s"$index: ${codeElements(index)}"
                     }
@@ -425,7 +425,7 @@ object CODE {
             }
 
             val newCodeElements = new ArrayBuffer[CodeElement[T]](isLiveCount)
-            iterateUntil(0, codeElementsSize) { index ⇒
+            iterateUntil(0, codeElementsSize) { index =>
                 if (isLive(index)) {
                     newCodeElements += codeElements(index)
                 }
@@ -468,9 +468,9 @@ object CODE {
         var nextPC = 0
         var modifiedByWide = false
         // fill the instructionLikes array with `null`s for PCs representing instruction arguments
-        iterateUntil(0, codeElementsSize) { index ⇒
+        iterateUntil(0, codeElementsSize) { index =>
             codeElements(index) match {
-                case ile @ InstructionLikeElement(i) ⇒
+                case ile @ InstructionLikeElement(i) =>
                     currentPC = nextPC
                     nextPC = i.indexOfNextInstruction(currentPC, modifiedByWide)
                     if (ile.isAnnotated) annotations += ((currentPC, ile.annotation))
@@ -483,16 +483,16 @@ object CODE {
                     modifiedByWide = i == WIDE
                     hasControlTransferInstructions |= i.isControlTransferInstruction
 
-                case LabelElement(label) ⇒
+                case LabelElement(label) =>
                     if (label.isPCLabel) {
                         // let's store the mapping to make it possible to remap the other attributes..
                         pcMapping += (label.pc, nextPC)
                     }
                     labels += (label → nextPC)
 
-                case e: ExceptionHandlerElement ⇒ exceptionHandlerTableBuilder.add(e, nextPC)
+                case e: ExceptionHandlerElement => exceptionHandlerTableBuilder.add(e, nextPC)
 
-                case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, nextPC)
+                case l: LINENUMBER              => lineNumberTableBuilder.add(l, nextPC)
             }
         }
 
@@ -503,7 +503,7 @@ object CODE {
 
         val instructions = new Array[Instruction](codeSize)
         var codeElementsToRewrite = IntArraySet.empty
-        iterateUntil(0, codeSize) { pc ⇒
+        iterateUntil(0, codeSize) { pc =>
             // Idea: first collect all instructions that definitively need to be rewritten;
             // then do the rewriting and then start the code generation again. Due to the
             // rewriting – which will cause the code to become even longer - it might be
@@ -516,7 +516,7 @@ object CODE {
                 try {
                     instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
                 } catch {
-                    case _: BranchoffsetOutOfBoundsException ⇒
+                    case _: BranchoffsetOutOfBoundsException =>
                         val codeIndex = pcToCodeElementIndex.get(pc)
                         if (logCodeRewriting) {
                             info(
@@ -532,14 +532,14 @@ object CODE {
             val newCodeElements = new ArrayBuffer[CodeElement[T]](codeElementsSize)
             newCodeElements ++= codeElements
 
-            codeElementsToRewrite.reverseIntIterator.foreach { index ⇒
+            codeElementsToRewrite.reverseIntIterator.foreach { index =>
                 val InstructionElement(i) = codeElements(index)
                 i match {
-                    case LabeledGOTO(label) ⇒ newCodeElements(index) = LabeledGOTO_W(label)
+                    case LabeledGOTO(label) => newCodeElements(index) = LabeledGOTO_W(label)
 
-                    case LabeledJSR(label)  ⇒ newCodeElements(index) = LabeledJSR_W(label)
+                    case LabeledJSR(label)  => newCodeElements(index) = LabeledJSR_W(label)
 
-                    case scbi: LabeledSimpleConditionalBranchInstruction ⇒
+                    case scbi: LabeledSimpleConditionalBranchInstruction =>
                         //          if_<cond> => y
                         //   x:     ...
                         //   y:     ...
@@ -553,8 +553,8 @@ object CODE {
                         newCodeElements.insert(index + 1, LabeledGOTO_W(y))
                         newCodeElements.insert(index + 2, LabelElement(r))
 
-                    case _: LabeledTABLESWITCH  ⇒ ??? // TODO implement rewriting table switches if the branch offsets are out of bounds
-                    case _: LabeledLOOKUPSWITCH ⇒ ??? // TODO implement rewriting lookup switches if the branch offsets are out of bounds
+                    case _: LabeledTABLESWITCH  => ??? // TODO implement rewriting table switches if the branch offsets are out of bounds
+                    case _: LabeledLOOKUPSWITCH => ??? // TODO implement rewriting lookup switches if the branch offsets are out of bounds
 
                 }
             }

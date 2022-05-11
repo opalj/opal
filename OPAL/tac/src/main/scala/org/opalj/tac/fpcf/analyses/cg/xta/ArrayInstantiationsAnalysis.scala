@@ -57,7 +57,7 @@ final class ArrayInstantiationsAnalysis(
 
         // We only care about arrays of reference types.
         val instantiatedArrays = code.instructions.collect {
-            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType ⇒ arr.arrayType
+            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType => arr.arrayType
         }
 
         val multidimensionalArrayPartialResults = multidimensionalArrayInitialAssignments(instantiatedArrays)

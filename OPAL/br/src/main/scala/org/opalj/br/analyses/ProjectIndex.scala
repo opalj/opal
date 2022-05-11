@@ -53,7 +53,7 @@ class ProjectIndex private (
         def getMostOftenUsed(
             elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]
         ) = {
-            elementsWithSharedName.foldLeft((0, Set.empty[String])) { (c, n) ⇒
+            elementsWithSharedName.foldLeft((0, Set.empty[String])) { (c, n) =>
                 val nName = n._1
                 val nSize = n._2.size
                 if (c._1 < nSize)
@@ -69,7 +69,7 @@ class ProjectIndex private (
         val mostOftenUsedFieldName = getMostOftenUsed(fieldsWithSharedName)
 
         val methodsWithSharedName =
-            methods.view.filter(kv ⇒ kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1)
+            methods.view.filter(kv => kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1)
         val mostOftenUsedMethodName = getMostOftenUsed(methodsWithSharedName)
 
         Map(
@@ -115,15 +115,15 @@ object ProjectIndex {
                 val fieldName = field.name
                 val fieldType = field.fieldType
                 fields.get(fieldName) match {
-                    case None ⇒
+                    case None =>
                         val fieldTypeToField = new AnyRefMap[FieldType, List[Field]](4)
                         fieldTypeToField.update(fieldType, List(field))
                         fields.update(fieldName, fieldTypeToField)
-                    case Some(fieldTypeToField) ⇒
+                    case Some(fieldTypeToField) =>
                         fieldTypeToField.get(fieldType) match {
-                            case None ⇒
+                            case None =>
                                 fieldTypeToField.put(fieldType, List(field))
-                            case Some(theFields) ⇒
+                            case Some(theFields) =>
                                 fieldTypeToField.put(fieldType, field :: theFields)
                         }
                 }
@@ -140,15 +140,15 @@ object ProjectIndex {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {
-                    case None ⇒
+                    case None =>
                         val descriptorToField = new AnyRefMap[MethodDescriptor, List[Method]](4)
                         descriptorToField.update(methodDescriptor, List(method))
                         methods.update(methodName, descriptorToField)
-                    case Some(descriptorToField) ⇒
+                    case Some(descriptorToField) =>
                         descriptorToField.get(methodDescriptor) match {
-                            case None ⇒
+                            case None =>
                                 descriptorToField.put(methodDescriptor, List(method))
-                            case Some(theMethods) ⇒
+                            case Some(theMethods) =>
                                 descriptorToField.put(methodDescriptor, method :: theMethods)
                         }
                 }

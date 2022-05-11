@@ -43,7 +43,7 @@ package object br {
             assert(false) // <= test whether assertions are turned on or off...
             info(FrameworkName, "Production Build")
         } catch {
-            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
+            case _: AssertionError => info(FrameworkName, "Development Build with Assertions")
         }
     }
 
@@ -159,7 +159,7 @@ package object br {
         after:       String      = ""
     ): String = {
 
-        val annotationToJava: Annotation ⇒ String = { annotation: Annotation ⇒
+        val annotationToJava: Annotation => String = { annotation: Annotation =>
             val s = annotation.toJava
             if (s.length() > 50 && annotation.elementValuePairs.nonEmpty)
                 annotation.annotationType.toJava+"(...)"
@@ -198,22 +198,22 @@ package object br {
      */
     def typeToXHTML(t: Type, abbreviateType: Boolean = true): Node = {
         t match {
-            case ot: ObjectType ⇒
+            case ot: ObjectType =>
                 if (abbreviateType)
                     <abbr class="type object_type" title={ ot.toJava }>
                         { ot.simpleName }
                     </abbr>
                 else
                     <span class="type object_type">{ ot.toJava }</span>
-            case at: ArrayType ⇒
+            case at: ArrayType =>
                 <span class="type array_type">
                     { typeToXHTML(at.elementType, abbreviateType) }{ "[]" * at.dimensions }
                 </span>
-            case bt: BaseType ⇒
+            case bt: BaseType =>
                 <span class="type base_type">{ bt.toJava }</span>
-            case VoidType ⇒
+            case VoidType =>
                 <span class="type void_type">void</span>
-            case CTIntType ⇒
+            case CTIntType =>
                 <span class="type base_type">{ "<Computational Type Integer>" }</span>
         }
     }
@@ -250,7 +250,7 @@ package object br {
                 List(Text(""))
             else {
                 val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbreviateTypes))
-                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) ⇒
+                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) =>
                     r :: Text(", ") :: c
                 }.reverse
             }

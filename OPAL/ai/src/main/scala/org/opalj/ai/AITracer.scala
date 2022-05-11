@@ -2,7 +2,7 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import org.opalj.collection.mutable.IntArrayStack
@@ -258,7 +258,7 @@ trait AITracer {
     def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[Int /*PC*/ ], message: ⇒ String // IMPROVE Use IntOption
+        pc: Option[Int /*PC*/ ], message: => String // IMPROVE Use IntOption
     ): Unit
 
 }

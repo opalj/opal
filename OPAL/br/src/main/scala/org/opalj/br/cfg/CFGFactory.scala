@@ -35,7 +35,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
 object CFGFactory {
 
     def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction, Code]] = {
-        method.body.map(code ⇒ apply(code, classHierarchy))
+        method.body.map(code => apply(code, classHierarchy))
     }
 
     /**
@@ -105,7 +105,7 @@ object CFGFactory {
         var runningBB: BasicBlock = null
         var previousPC: PC = 0
         var subroutineReturnPCs = IntMap.empty[IntArraySet] // PC => IntArraySet
-        code.iterate { (pc, instruction) ⇒
+        code.iterate { (pc, instruction) =>
             if (runningBB eq null) {
                 runningBB = bbs(pc)
                 if (runningBB eq null)
@@ -173,7 +173,7 @@ object CFGFactory {
                     }
                     targetBB.endPC = code.pcOfPreviousInstruction(targetBBStartPC)
                     newTargetBB.setSuccessors(targetBB.successors)
-                    targetBB.successors.foreach { targetBBsuccessorBB ⇒
+                    targetBB.successors.foreach { targetBBsuccessorBB =>
                         targetBBsuccessorBB.updatePredecessor(oldBB = targetBB, newBB = newTargetBB)
                     }
                     newTargetBB.setPredecessors(Set(sourceBB, targetBB))
@@ -200,8 +200,8 @@ object CFGFactory {
 
             def handleExceptions(currentBB: BasicBlock, jvmExceptions: List[ObjectType]): Unit = {
                 var areHandled = true
-                jvmExceptions.foreach { thrownException ⇒
-                    areHandled &= code.handlersFor(pc).exists { eh ⇒
+                jvmExceptions.foreach { thrownException =>
+                    areHandled &= code.handlersFor(pc).exists { eh =>
                         val catchType = eh.catchType
                         if (catchType.isEmpty) {
                             linkWithExceptionHandler(currentBB, eh)
@@ -229,14 +229,14 @@ object CFGFactory {
 
             (instruction.opcode: @switch) match {
 
-                case RET.opcode ⇒
+                case RET.opcode =>
                     // We cannot determine the target instructions at the moment;
                     // we first need to be able to connect the ret instruction with
                     // its jsr instructions.
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     runningBB = null // <=> the next instruction gets a new bb
-                case JSR.opcode | JSR_W.opcode ⇒
+                case JSR.opcode | JSR_W.opcode =>
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     val subroutinePC = pc + jsrInstr.branchoffset
                     val thisSubroutineReturnPCs =
@@ -250,14 +250,14 @@ object CFGFactory {
                     /*val subroutineBB = */ connect(currentBB, subroutinePC)
                     runningBB = null // <=> the next instruction gets a new bb
 
-                case ATHROW.opcode ⇒
+                case ATHROW.opcode =>
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     // We typically don't know anything about the current exception;
                     // hence, we connect this bb with every exception handler in place.
                     var isHandled: Boolean = false
                     val catchNodeSuccessors =
-                        code.handlersFor(pc).map { eh ⇒
+                        code.handlersFor(pc).map { eh =>
                             val catchType = eh.catchType
                             isHandled = isHandled ||
                                 catchType.isEmpty || catchType.get == ObjectType.Throwable
@@ -272,15 +272,15 @@ object CFGFactory {
                     }
                     runningBB = null
 
-                case GOTO.opcode | GOTO_W.opcode ⇒
+                case GOTO.opcode | GOTO_W.opcode =>
                     // GOTO WILL NEVER THROW AN EXCEPTION
                     instruction match {
-                        case GOTO(3) | GOTO_W(4) ⇒
+                        case GOTO(3) | GOTO_W(4) =>
                             // THE GOTO INSTRUCTION IS EFFECTIVELY USELESS (A NOP) AS IT IS JUST
                             // A JUMP TO THE NEXT INSTRUCTION; HENCE, WE DO NOT HAVE TO END THE
                             // CURRENT BLOCK.
                             useRunningBB()
-                        case _ ⇒
+                        case _ =>
                             val currentBB = useRunningBB()
                             currentBB.endPC = pc
                             val GOTO = instruction.asInstanceOf[UnconditionalBranchInstruction]
@@ -290,7 +290,7 @@ object CFGFactory {
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
-                    153 | 154 | 155 | 156 | 157 | 158 ⇒
+                    153 | 154 | 155 | 156 | 157 | 158 =>
                     val IF = instruction.asSimpleConditionalBranchInstruction
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
@@ -300,16 +300,16 @@ object CFGFactory {
                     // fall through case
                     runningBB = connect(newCurrentBB, code.pcOfNextInstruction(pc))._1
 
-                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
+                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
                     val SWITCH = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     val (selfBB, _ /*targetBB*/ ) = connect(currentBB, pc + SWITCH.defaultOffset)
                     val newCurrentBB = if (selfBB ne currentBB) selfBB else currentBB
-                    SWITCH.jumpOffsets.foreach { offset ⇒ connect(newCurrentBB, pc + offset) }
+                    SWITCH.jumpOffsets.foreach { offset => connect(newCurrentBB, pc + offset) }
                     runningBB = null
 
-                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 =>
                     val currentBB = useRunningBB()
                     handleExceptions(currentBB, instruction.jvmExceptions)
                     currentBB.endPC = pc
@@ -317,7 +317,7 @@ object CFGFactory {
                     normalReturnNode.addPredecessor(currentBB)
                     runningBB = null
 
-                case _ /* INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
+                case _ /* INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ =>
                     assert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
 
                     val currentBB = useRunningBB()
@@ -333,9 +333,9 @@ object CFGFactory {
                     instruction.opcode match {
                         case INVOKEDYNAMIC.opcode |
                             INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode |
-                            INVOKESTATIC.opcode | INVOKESPECIAL.opcode ⇒
+                            INVOKESTATIC.opcode | INVOKESPECIAL.opcode =>
                             // just treat every exception handler as a potential target
-                            val isHandled = code.handlersFor(pc).exists { eh ⇒
+                            val isHandled = code.handlersFor(pc).exists { eh =>
                                 if (eh.catchType.isEmpty) {
                                     linkWithExceptionHandler(currentBB, eh)
                                     true // also aborts the evaluation
@@ -351,7 +351,7 @@ object CFGFactory {
                             }
                             endBasicBlock()
 
-                        case _ ⇒
+                        case _ =>
                             val jvmExceptions = instruction.jvmExceptions
                             handleExceptions(currentBB, jvmExceptions)
                             if (jvmExceptions.nonEmpty) {
@@ -365,10 +365,10 @@ object CFGFactory {
         // Analyze the control flow graphs of all subroutines to connect the ret
         // instructions with their correct target addresses.
         if (subroutineReturnPCs.nonEmpty) {
-            subroutineReturnPCs.foreach(subroutine ⇒ bbs(subroutine._1).setIsStartOfSubroutine())
+            subroutineReturnPCs.foreach(subroutine => bbs(subroutine._1).setIsStartOfSubroutine())
             for ((subroutinePC, returnToAddresses) ← subroutineReturnPCs) {
                 val returnBBs = returnToAddresses.transform[CFGNode, Set[CFGNode]](
-                    ra ⇒ bbs(ra),
+                    ra => bbs(ra),
                     Set.newBuilder[CFGNode]
                 )
                 val subroutineBB = bbs(subroutinePC)
@@ -379,9 +379,9 @@ object CFGFactory {
             }
         }
 
-        val effectiveExceptionHandlers = exceptionHandlers.values filter { catchNode ⇒
+        val effectiveExceptionHandlers = exceptionHandlers.values filter { catchNode =>
             catchNode.predecessors.nonEmpty || {
-                catchNode.successors foreach { successor ⇒ successor.removePredecessor(catchNode) }
+                catchNode.successors foreach { successor => successor.removePredecessor(catchNode) }
                 false
             }
         }

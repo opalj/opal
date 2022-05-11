@@ -58,27 +58,27 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
         }
 
         (allocatedType.id: @switch) match {
-            case StringBuilderId ⇒
+            case StringBuilderId =>
                 if (mergeStringBuilderBuffer)
                     stringBuilderPointsToSet
                 else
                     createNewPointsToSet()
-            case StringBufferId ⇒
+            case StringBufferId =>
                 if (mergeStringBuilderBuffer)
                     stringBufferPointsToSet
                 else
                     createNewPointsToSet()
-            case StringId ⇒
+            case StringId =>
                 if (mergeStringConstants && isConstant)
                     stringConstPointsToSet
                 else
                     createNewPointsToSet()
-            case ClassId ⇒
+            case ClassId =>
                 if (mergeClassConstants && isConstant)
                     classConstPointsToSet
                 else
                     createNewPointsToSet()
-            case _ ⇒
+            case _ =>
                 if (mergeExceptions &&
                     classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)

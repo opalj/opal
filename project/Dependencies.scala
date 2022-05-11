@@ -32,10 +32,10 @@ object Dependencies {
     // --- general dependencies
 
     private[this] val osName = System.getProperty("os.name") match {
-      case n if n.startsWith("Linux") ⇒ "linux"
-      case n if n.startsWith("Mac") ⇒ "mac"
-      case n if n.startsWith("Windows") ⇒ "win"
-      case _ ⇒ throw new Exception("Unknown platform!")
+      case n if n.startsWith("Linux") => "linux"
+      case n if n.startsWith("Mac") => "mac"
+      case n if n.startsWith("Windows") => "win"
+      case _ => throw new Exception("Unknown platform!")
     }
 
     def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % scalaVersion

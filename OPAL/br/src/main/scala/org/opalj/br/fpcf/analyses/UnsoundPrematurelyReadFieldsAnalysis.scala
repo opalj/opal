@@ -69,7 +69,7 @@ object LazyUnsoundPrematurelyReadFieldsAnalysis
         val analysis = new UnsoundPrematurelyReadFieldsAnalysis(project)
         propertyStore.registerLazyPropertyComputation(
             FieldPrematurelyRead.key,
-            (field: Field) ⇒ analysis.determinePrematureReads(field)
+            (field: Field) => analysis.determinePrematureReads(field)
         )
         analysis
     }

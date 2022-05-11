@@ -27,7 +27,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
 
         val testProject = biProject("proxy.jar")
 
-        val proxies: Seq[(ClassFile, URL)] = testProject.allMethods.map { m ⇒
+        val proxies: Seq[(ClassFile, URL)] = testProject.allMethods.map { m =>
             val classFile = m.classFile
             val t = classFile.thisType
             var proxy: ClassFile = null
@@ -157,12 +157,12 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
             }
 
             it("should have the right class files") {
-                testProject.allProjectClassFiles foreach { cf ⇒
+                testProject.allProjectClassFiles foreach { cf =>
                     extendedProject.classFile(cf.thisType) should be('defined)
                     if (testProject.source(cf.thisType).isDefined)
                         extendedProject.source(cf.thisType) should be('defined)
                 }
-                proxies foreach { p ⇒
+                proxies foreach { p =>
                     val (proxy, _ /* source*/ ) = p
                     extendedProject.classFile(proxy.thisType) should be('defined)
                     extendedProject.source(proxy.thisType) should be('defined)

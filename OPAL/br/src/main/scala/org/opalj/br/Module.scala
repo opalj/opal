@@ -44,7 +44,7 @@ case class Requires(requires: String, flags: Int, version: Option[String]) {
     def toJava: String = {
         var flags = AccessFlags.toString(this.flags, AccessFlagsContexts.MODULE)
         if (flags.nonEmpty) flags += " "
-        val version = this.version.map(v ⇒ s" //$v").getOrElse("")
+        val version = this.version.map(v => s" //$v").getOrElse("")
         s"requires $flags$requires;$version"
     }
 }

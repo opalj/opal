@@ -57,11 +57,11 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
             value match {
-                case i: IntegerRange if i.lowerBound == i.upperBound ⇒
+                case i: IntegerRange if i.lowerBound == i.upperBound =>
                     Some(Integer.valueOf(i.lowerBound))
-                case r: ReferenceValue if r.upperTypeBound.includes(ObjectType.StringBuilder) ⇒
+                case r: ReferenceValue if r.upperTypeBound.includes(ObjectType.StringBuilder) =>
                     Some(new java.lang.StringBuilder())
-                case _ ⇒
+                case _ =>
                     super.toJavaObject(pc, value)
             }
         }

@@ -120,7 +120,7 @@ trait TypeProviderState extends AnalysisState {
         // IMPROVE: make it more efficient (maybe use immutable map and join traversables)
         var allDependees = super.dependees
 
-        _dependees.valuesIterator.foreach { d ⇒
+        _dependees.valuesIterator.foreach { d =>
             assert(_dependeeToDependers.contains(d.toEPK))
             allDependees += d
         }

@@ -94,14 +94,14 @@ class ThreadStartAnalysis private[cg] (
         implicit val _state: CGState[ContextType] = state
 
         eps.ub match {
-            case _: TACAI ⇒
+            case _: TACAI =>
                 for {
                     (allocationPC, (callPC, allocationContext)) ← state.dependersOf(epk).asInstanceOf[Set[(Int, (Int, ContextType))]]
                 } {
                     AllocationsUtil.handleAllocation(
                         allocationContext, allocationPC, allocationContext,
-                        () ⇒ indirectCalls.addIncompleteCallSite(callPC)
-                    ) { (allocationContext, allocationIndex, stmts) ⇒
+                        () => indirectCalls.addIncompleteCallSite(callPC)
+                    ) { (allocationContext, allocationIndex, stmts) =>
                             handleThreadInit(
                                 state.callContext,
                                 callPC,
@@ -113,7 +113,7 @@ class ThreadStartAnalysis private[cg] (
                         }
                 }
 
-            case _ ⇒
+            case _ =>
                 val callPC = state.dependersOf(epk).head.asInstanceOf[Int]
 
                 val receiver = state.tac.stmts(
@@ -122,15 +122,15 @@ class ThreadStartAnalysis private[cg] (
 
                 typeProvider.continuationForAllocations(
                     receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]
-                ) { (tpe, allocationContext, allocationPC) ⇒
+                ) { (tpe, allocationContext, allocationPC) =>
                     val hasRunnable = handleTypeAndHasRunnable(
                         tpe, state.callContext, callPC, state.tac.stmts, receiver, indirectCalls
                     )
                     if (hasRunnable)
                         AllocationsUtil.handleAllocation(
                             allocationContext, allocationPC, (callPC, allocationContext),
-                            () ⇒ indirectCalls.addIncompleteCallSite(callPC)
-                        ) { (allocationContext, allocationIndex, stmts) ⇒
+                            () => indirectCalls.addIncompleteCallSite(callPC)
+                        ) { (allocationContext, allocationIndex, stmts) =>
                                 handleThreadInit(
                                     state.callContext,
                                     callPC,
@@ -193,15 +193,15 @@ class ThreadStartAnalysis private[cg] (
         )
 
         typeProvider.foreachAllocation(receiver, callContext, state.tac.stmts, types) {
-            (tpe, method, pc) ⇒
+            (tpe, method, pc) =>
                 val hasRunnable = handleTypeAndHasRunnable(
                     tpe, callContext, callPC, state.tac.stmts, receiver, indirectCalls
                 )
                 if (hasRunnable)
                     AllocationsUtil.handleAllocation(
                         method, pc, (callPC, method),
-                        () ⇒ indirectCalls.addIncompleteCallSite(callPC)
-                    ) { (allocationContext, allocationIndex, stmts) ⇒
+                        () => indirectCalls.addIncompleteCallSite(callPC)
+                    ) { (allocationContext, allocationIndex, stmts) =>
                             handleThreadInit(
                                 callContext,
                                 callPC,
@@ -249,7 +249,7 @@ class ThreadStartAnalysis private[cg] (
         expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]
     ): Iterator[NonVirtualMethodCall[V]] = {
         var r = List.empty[NonVirtualMethodCall[V]]
-        expr.asVar.usedBy.foreach { use ⇒
+        expr.asVar.usedBy.foreach { use =>
             val stmt = stmts(use)
             if (stmt.isInstanceOf[NonVirtualMethodCall[V]]) {
                 val call = stmt.asNonVirtualMethodCall
@@ -273,7 +273,7 @@ class ThreadStartAnalysis private[cg] (
         stmts:             Array[Stmt[V]],
         indirectCalls:     IndirectCalls
     ): Unit = stmts(threadDefSite) match {
-        case Assignment(_, thread, New(_, _)) ⇒
+        case Assignment(_, thread, New(_, _)) =>
             for {
                 NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, threadDefSite, stmts)
             } {
@@ -303,7 +303,7 @@ class ThreadStartAnalysis private[cg] (
                     }
                 }
             }
-        case _ ⇒
+        case _ =>
             // the thread object is not newly allocated
             indirectCalls.addIncompleteCallSite(callPC)
     }
@@ -438,7 +438,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         // ensures, that we only add new vm reachable methods
         val vmReachableMethods = new VMReachableMethods()
 
-        typeProvider.continuation(receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType ⇒
+        typeProvider.continuation(receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
             handleType(newType, state.callContext, pc, vmReachableMethods)
         }(state)
 
@@ -484,7 +484,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
             typeProvider.typesProperty(
                 receiver, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
             )
-        ) { tpe ⇒ handleType(tpe, callContext, callPC, vmReachableMethods) }
+        ) { tpe => handleType(tpe, callContext, callPC, vmReachableMethods) }
     }
 
     // todo refactor
@@ -559,7 +559,7 @@ class ThreadRelatedCallsAnalysis private[cg] (
             ObjectType.Thread, "", ObjectType.Thread, "start", MethodDescriptor.NoArgsAndReturnVoid
         ))
 
-        classHierarchy.foreachSubclass(ObjectType.Thread, project) { cf ⇒
+        classHierarchy.foreachSubclass(ObjectType.Thread, project) { cf =>
             val setUncaughtExcpetionHandlerOpt = cf.findMethod(
                 "setUncaughtExceptionHandler", setUncaughtExceptionHandlerDescriptor
             ).map(declaredMethods.apply)
@@ -575,11 +575,11 @@ class ThreadRelatedCallsAnalysis private[cg] (
                 threadStartMethods ::= threadStartOpt.get
         }
 
-        val uncaughtExceptionHandlerResults = setUncaughtExceptionHandlerMethods.iterator.map { m ⇒
+        val uncaughtExceptionHandlerResults = setUncaughtExceptionHandlerMethods.iterator.map { m =>
             new UncaughtExceptionHandlerAnalysis(p, m).registerAPIMethod()
         }
 
-        val threadStartResults = threadStartMethods.iterator.map { m ⇒
+        val threadStartResults = threadStartMethods.iterator.map { m =>
             new ThreadStartAnalysis(p, m).registerAPIMethod()
         }
 

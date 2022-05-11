@@ -103,14 +103,14 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      * Returns this field's type signature.
      */
     def fieldTypeSignature: Option[FieldTypeSignature] = {
-        attributes collectFirst { case s: FieldTypeSignature ⇒ s }
+        attributes collectFirst { case s: FieldTypeSignature => s }
     }
 
     /**
      * Returns this field's constant value.
      */
     def constantFieldValue: Option[ConstantFieldValue[_]] = {
-        attributes collectFirst { case cv: ConstantFieldValue[_] ⇒ cv }
+        attributes collectFirst { case cv: ConstantFieldValue[_] => cv }
     }
 
     def signatureToJava(withAccessFlags: Boolean = false): String = {

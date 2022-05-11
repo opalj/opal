@@ -58,18 +58,18 @@ class TypeRelationTest extends AnyFunSpec with Matchers {
 
         it("should be false for types that are not larger") {
 
-            Seq(ShortType, IntegerType, LongType, FloatType, DoubleType) foreach { t ⇒
+            Seq(ShortType, IntegerType, LongType, FloatType, DoubleType) foreach { t =>
                 assert(!ByteType.isWiderThan(t))
                 assert(!CharType.isWiderThan(t))
             }
 
-            Seq(IntegerType, LongType, FloatType, DoubleType) foreach (t ⇒
+            Seq(IntegerType, LongType, FloatType, DoubleType) foreach (t =>
                 assert(!ShortType.isWiderThan(t)))
 
-            Seq(LongType, FloatType, DoubleType) foreach (t ⇒
+            Seq(LongType, FloatType, DoubleType) foreach (t =>
                 assert(!IntegerType.isWiderThan(t)))
 
-            Seq(FloatType, DoubleType) foreach (t ⇒ assert(!LongType.isWiderThan(t)))
+            Seq(FloatType, DoubleType) foreach (t => assert(!LongType.isWiderThan(t)))
 
             assert(!FloatType.isWiderThan(DoubleType))
         }

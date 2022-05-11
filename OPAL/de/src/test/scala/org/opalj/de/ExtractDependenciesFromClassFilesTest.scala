@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 
 import org.opalj.bi.TestResources.allManagedBITestJARs
-import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java8Framework.{ClassFile => ClassFileReader}
 
 /**
  * Tests whether all class files contained in the "test/classfiles" directory
@@ -33,8 +33,8 @@ class ExtractDependenciesFromClassFilesTest extends AnyFlatSpec with Matchers {
             if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
                 val className = zipentry.getName
                 it should (s"be able to extract dependencies of $className in $jarName") in {
-                    val classFiles = ClassFileReader(() ⇒ zipfile.getInputStream(zipentry))
-                    classFiles foreach (classFile ⇒ dependencyExtractor.process(classFile))
+                    val classFiles = ClassFileReader(() => zipfile.getInputStream(zipentry))
+                    classFiles foreach (classFile => dependencyExtractor.process(classFile))
                 }
             }
         }

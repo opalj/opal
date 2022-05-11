@@ -80,10 +80,10 @@ object VisibilityModifier {
      */
     def get(accessFlags: Int): Option[VisibilityModifier] = {
         ((accessFlags & mask): @switch) match {
-            case ACC_PUBLIC.mask    ⇒ SOME_PUBLIC
-            case ACC_PRIVATE.mask   ⇒ SOME_PRIVATE
-            case ACC_PROTECTED.mask ⇒ SOME_PROTECTED
-            case _                  ⇒ None /*DEFAULT VISIBILITY*/
+            case ACC_PUBLIC.mask    => SOME_PUBLIC
+            case ACC_PRIVATE.mask   => SOME_PRIVATE
+            case ACC_PROTECTED.mask => SOME_PROTECTED
+            case _                  => None /*DEFAULT VISIBILITY*/
         }
     }
 
@@ -96,10 +96,10 @@ object VisibilityModifier {
         b: Option[VisibilityModifier]
     ): Boolean = {
         a match {
-            case Some(ACC_PUBLIC)      ⇒ true
-            case Some(ACC_PROTECTED)   ⇒ b.isEmpty || b.get != ACC_PUBLIC
-            case None                  ⇒ b.isEmpty || b.get == ACC_PRIVATE
-            case a @ Some(ACC_PRIVATE) ⇒ b == a
+            case Some(ACC_PUBLIC)      => true
+            case Some(ACC_PROTECTED)   => b.isEmpty || b.get != ACC_PUBLIC
+            case None                  => b.isEmpty || b.get == ACC_PRIVATE
+            case a @ Some(ACC_PRIVATE) => b == a
 
         }
     }

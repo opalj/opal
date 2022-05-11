@@ -50,7 +50,7 @@ object XHTML {
         theDomain:           D,
         minimumDumpInterval: Long       = 500L
     )(
-        f: AIResult { val domain: theDomain.type } ⇒ T
+        f: AIResult { val domain: theDomain.type } => T
     ): T = {
         val result = ai(method, theDomain)
         val operandsArray = result.operandsArray
@@ -59,8 +59,8 @@ object XHTML {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
         } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case e: Throwable ⇒
+            case ct: ControlThrowable => throw ct
+            case e: Throwable =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
@@ -94,14 +94,14 @@ object XHTML {
         result:              AIResult,
         minimumDumpInterval: Long              = 500L
     )(
-        f: ⇒ T
+        f: => T
     ): T = {
         try {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
         } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case e: Throwable ⇒
+            case ct: ControlThrowable => throw ct
+            case e: Throwable =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
@@ -142,7 +142,7 @@ object XHTML {
     def annotationsAsXHTML(method: Method): Node =
         <div class="annotations">
             {
-                this.annotations(method) map { annotation ⇒
+                this.annotations(method) map { annotation =>
                     val info = annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")
                     <div class="annotation">{ Unparsed(info) }</div>
                 }
@@ -173,7 +173,7 @@ object XHTML {
         createXHTML(
             title,
             Seq[Node](
-                title.map(t ⇒ <h1>{ t }</h1>).getOrElse(Text("")),
+                title.map(t => <h1>{ t }</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
                 dumpAIState(code, domain)(cfJoins, operandsArray, localsArray)
@@ -197,11 +197,11 @@ object XHTML {
                     "⚡: "+index+" "+eh.catchType.map(_.toJava).getOrElse("<finally>")+
                         " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
                 }
-            ).map(eh ⇒ <p>{ eh }</p>)
+            ).map(eh => <p>{ eh }</p>)
 
         val ids = new java.util.IdentityHashMap[AnyRef, Integer]
         var nextId = 1
-        val idsLookup = (value: AnyRef) ⇒ {
+        val idsLookup = (value: AnyRef) => {
             var id = ids.get(value)
             if (id == null) {
                 id = nextId
@@ -270,7 +270,7 @@ object XHTML {
         localsArray:   TheLocalsArray[domain.Locals]
     )(
         implicit
-        ids: Option[AnyRef ⇒ Int]
+        ids: Option[AnyRef => Int]
     ): Array[Node] = {
 
         val belongsToSubroutine = code.belongsToSubroutine()
@@ -303,7 +303,7 @@ object XHTML {
         locals:   domain.Locals
     )(
         implicit
-        ids: Option[AnyRef ⇒ Int]
+        ids: Option[AnyRef => Int]
     ): Node = {
 
         val pcAsXHTML =
@@ -333,17 +333,17 @@ object XHTML {
         </tr>
     }
 
-    def dumpStack(operands: Operands[_ <: AnyRef])(implicit ids: Option[AnyRef ⇒ Int]): Node = {
+    def dumpStack(operands: Operands[_ <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-                { operands.map(op ⇒ <li>{ valueToString(op) }</li>).toIterable }
+                { operands.map(op => <li>{ valueToString(op) }</li>).toIterable }
             </ul>
         }
     }
 
-    def dumpLocals(locals: Locals[_ <: AnyRef])(implicit ids: Option[AnyRef ⇒ Int]): Node = {
+    def dumpLocals(locals: Locals[_ <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)

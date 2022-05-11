@@ -47,7 +47,7 @@ class DeclaredMethods(
         name:         String,
         descriptor:   MethodDescriptor
     ): DeclaredMethod = {
-        val dmSet = data.computeIfAbsent(runtimeType, _ ⇒ new ConcurrentHashMap)
+        val dmSet = data.computeIfAbsent(runtimeType, _ => new ConcurrentHashMap)
 
         val context = new MethodContextQuery(p, declaredType, packageName, name, descriptor)
         var method = dmSet.get(context)

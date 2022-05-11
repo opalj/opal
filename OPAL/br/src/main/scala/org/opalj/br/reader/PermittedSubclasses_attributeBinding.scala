@@ -25,7 +25,7 @@ trait PermittedSubclasses_attributeBinding
         classes:              PermittedSubclassesArray
     ): PermittedSubclasses_attribute = {
         new PermittedSubclasses(
-            RefArray.mapFrom(classes) { p ⇒ cp(p).asObjectType(cp) }
+            RefArray.mapFrom(classes) { p => cp(p).asObjectType(cp) }
         )
     }
 }

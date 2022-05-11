@@ -60,10 +60,10 @@ object ThirdInstrumentation extends App {
     // let's transform the methods
     val newMethods = for (m ← cf.methods) yield {
         m.body match {
-            case None ⇒
+            case None =>
                 m.copy() // these are native and abstract methods
 
-            case Some(code) ⇒
+            case Some(code) =>
                 val cfg = CFGFactory(code, classHierarchy)
                 val lCode = LabeledCode(code)
                 var removeDeadCode = false
@@ -181,11 +181,11 @@ object ThirdInstrumentation extends App {
     //
 
     // Let's see the old file...
-    val oldCFHTML = ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None)
+    val oldCFHTML = ClassFile(() => p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None)
     println("original: "+writeAndOpen(oldCFHTML, "SimpleInstrumentationDemo", ".html"))
 
     // Let's see the new file...
-    val newCFHTML = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
+    val newCFHTML = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
     val newCFFile = writeAndOpen(newCFHTML, "NewSimpleInstrumentationDemo", ".html")
     println("instrumented: "+newCFFile)
 
@@ -216,7 +216,7 @@ object ThirdInstrumentation extends App {
     try {
         newClass.getMethod("killMe2", classOf[Boolean]).invoke(instance, java.lang.Boolean.TRUE)
     } catch {
-        case ite: java.lang.reflect.InvocationTargetException ⇒
+        case ite: java.lang.reflect.InvocationTargetException =>
             if (!ite.getCause.isInstanceOf[RuntimeException]) {
                 Console.err.println("Big Bug!")
             } else {

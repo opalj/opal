@@ -46,7 +46,7 @@ object LocalsEval extends App {
                 i += 1
             }
             data
-        }) { (t, ts) ⇒
+        }) { (t, ts) =>
             val sTs = ts.map(_.toSeconds).mkString(", ")
             val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {
@@ -78,7 +78,7 @@ object LocalsEval extends App {
                 i += 1
             }
             data
-        }) { (t, ts) ⇒
+        }) { (t, ts) =>
             val sTs = ts.mkString(", ")
             val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {

@@ -8,7 +8,7 @@ import org.opalj.bi.reader.MethodsReader
 /**
  * @author Michael Eichberg
  */
-trait MethodsBinding extends MethodsReader { this: ConstantPoolBinding with AttributeBinding ⇒
+trait MethodsBinding extends MethodsReader { this: ConstantPoolBinding with AttributeBinding =>
 
     type Method_Info = br.Method
 

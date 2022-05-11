@@ -213,7 +213,7 @@ object ClassFileFactory {
                 RefArray(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
-            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex.map[FieldTemplate] { p ⇒
+            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex.map[FieldTemplate] { p =>
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
@@ -261,7 +261,7 @@ object ClassFileFactory {
             factoryMethodName
         )
 
-        bridgeMethodDescriptors.foreachWithIndex { (bridgeMethodDescriptor, i) ⇒
+        bridgeMethodDescriptors.foreachWithIndex { (bridgeMethodDescriptor, i) =>
             methods(3 + i) = createBridgeMethod(
                 methodName,
                 bridgeMethodDescriptor,
@@ -339,7 +339,7 @@ object ClassFileFactory {
         // val a = new ArrayBuffer[Object](100)
         var buildMethodType: Array[Instruction] = Array() // IMPROVE [L10] Use ArrayBuffer
 
-        bootstrapArguments.iterator.zipWithIndex.foreach { ia ⇒
+        bootstrapArguments.iterator.zipWithIndex.foreach { ia =>
             val (arg, idx) = ia
             val staticHandle = arg.asInstanceOf[InvokeStaticMethodHandle]
 
@@ -405,7 +405,7 @@ object ClassFileFactory {
                 )
 
                 // The following parameters are put into an array of Class
-                staticHandle.methodDescriptor.parameterTypes.tail.zipWithIndex.foreach { pt ⇒
+                staticHandle.methodDescriptor.parameterTypes.tail.zipWithIndex.foreach { pt =>
                     val (param, i) = pt
                     buildMethodType ++= Array(
                         DUP,
@@ -682,7 +682,7 @@ object ClassFileFactory {
         var currentInstructionPC = 0
         var nextLocalVariableIndex = 1
 
-        fields foreach { f ⇒
+        fields foreach { f =>
             instructions(currentInstructionPC) = ALOAD_0
             currentInstructionPC = ALOAD_0.indexOfNextInstruction(currentInstructionPC, false)
             val llvi = LoadLocalVariableInstruction(f.fieldType, nextLocalVariableIndex)
@@ -707,7 +707,7 @@ object ClassFileFactory {
     ): Int = {
         var numberOfInstructions = 0
         var localVariableIndex = localVariableOffset
-        fieldTypes foreach { ft ⇒
+        fieldTypes foreach { ft =>
             numberOfInstructions += (if (localVariableIndex <= 3) 1 else 2)
             localVariableIndex += ft.computationalType.operandSize
         }
@@ -746,7 +746,7 @@ object ClassFileFactory {
         instructions(currentPC) = DUP
         currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
         var currentVariableIndex = 0
-        fieldTypes.foreach { t ⇒
+        fieldTypes.foreach { t =>
             val instruction = LoadLocalVariableInstruction(t, currentVariableIndex)
             currentVariableIndex += t.computationalType.operandSize
             instructions(currentPC) = instruction
@@ -819,7 +819,7 @@ object ClassFileFactory {
         )
 
         additionalFieldsForStaticParameters.zipWithIndex.foreach {
-            case (x, i) ⇒
+            case (x, i) =>
                 instructions ++= Array(
                     DUP,
                     BIPUSH(i), null,
@@ -996,7 +996,7 @@ object ClassFileFactory {
             )
 
         val forwardingCallInstruction: Array[Instruction] = (invocationInstruction: @switch) match {
-            case INVOKESTATIC.opcode ⇒
+            case INVOKESTATIC.opcode =>
                 Array(
                     INVOKESTATIC(
                         implMethod.receiverType.asObjectType, receiverIsInterface,
@@ -1004,7 +1004,7 @@ object ClassFileFactory {
                     ), null, null
                 )
 
-            case INVOKESPECIAL.opcode ⇒
+            case INVOKESPECIAL.opcode =>
                 val methodDescriptor =
                     if (implMethod.name == "<init>") {
                         MethodDescriptor(fixedImplDescriptor.parameterTypes, VoidType)
@@ -1017,11 +1017,11 @@ object ClassFileFactory {
                 )
                 Array(invoke, null, null)
 
-            case INVOKEINTERFACE.opcode ⇒
+            case INVOKEINTERFACE.opcode =>
                 val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
                 Array(invoke, null, null, null, null)
 
-            case INVOKEVIRTUAL.opcode ⇒
+            case INVOKEVIRTUAL.opcode =>
                 val invoke = INVOKEVIRTUAL(implMethod.receiverType, implMethod.name, fixedImplDescriptor)
                 Array(invoke, null, null)
         }
@@ -1107,7 +1107,7 @@ object ClassFileFactory {
 
             var numberOfInstructions = 3 + // need to create a new object array
                 LoadConstantInstruction(arraySize).length
-            forwarderParameters.zipWithIndex foreach { p ⇒
+            forwarderParameters.zipWithIndex foreach { p =>
                 val (t, i) = p
                 val loadInstructions = if (lvIndex > 3) 2 else 1
                 // primitive types need 3 for a boxing (invokestatic)
@@ -1131,7 +1131,7 @@ object ClassFileFactory {
             instructions(nextIndex) = ANEWARRAY(ObjectType.Object)
             nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
 
-            forwarderParameters.zipWithIndex foreach { p ⇒
+            forwarderParameters.zipWithIndex foreach { p =>
                 val (t, i) = p
 
                 instructions(nextIndex) = DUP
@@ -1234,7 +1234,7 @@ object ClassFileFactory {
                     if (rt != ft) {
                         if (ft.isNumericType && rt.isNumericType) {
                             val conversion = ft.asNumericType.convertTo(rt.asNumericType)
-                            conversion foreach { instr ⇒
+                            conversion foreach { instr =>
                                 instructions(currentIndex) = instr
                                 currentIndex = instr.indexOfNextInstruction(currentIndex, false)
                             }
@@ -1264,7 +1264,7 @@ object ClassFileFactory {
             instructions
         }
     } catch {
-        case t: Throwable ⇒
+        case t: Throwable =>
             OPALLogger.error(
                 "internal error",
                 s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+

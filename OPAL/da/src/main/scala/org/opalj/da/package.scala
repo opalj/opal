@@ -84,8 +84,8 @@ package object da {
 
         val explicitAccessFlags =
             VisibilityModifier.get(access_flags) match {
-                case None ⇒ if (accessFlags.length() == 0) "default" else accessFlags+" default"
-                case _    ⇒ accessFlags
+                case None => if (accessFlags.length() == 0) "default" else accessFlags+" default"
+                case _    => accessFlags
             }
 
         (
@@ -150,25 +150,25 @@ package object da {
      */
     def parseFieldType(descriptor: String): FieldTypeInfo = {
         (descriptor.charAt(0): @scala.annotation.switch) match {
-            case 'B' ⇒ ByteTypeInfo
-            case 'C' ⇒ CharTypeInfo
-            case 'D' ⇒ DoubleTypeInfo
-            case 'F' ⇒ FloatTypeInfo
-            case 'I' ⇒ IntTypeInfo
-            case 'J' ⇒ LongTypeInfo
-            case 'S' ⇒ ShortTypeInfo
-            case 'Z' ⇒ BooleanTypeInfo
-            case 'L' ⇒ asJavaObjectType(descriptor.substring(1, descriptor.length - 1))
-            case '[' ⇒
+            case 'B' => ByteTypeInfo
+            case 'C' => CharTypeInfo
+            case 'D' => DoubleTypeInfo
+            case 'F' => FloatTypeInfo
+            case 'I' => IntTypeInfo
+            case 'J' => LongTypeInfo
+            case 'S' => ShortTypeInfo
+            case 'Z' => BooleanTypeInfo
+            case 'L' => asJavaObjectType(descriptor.substring(1, descriptor.length - 1))
+            case '[' =>
                 val componentType = descriptor.substring(1)
                 parseFieldType(componentType) match {
-                    case ArrayTypeInfo(elementType, dimensions, elementTypeIsBaseType) ⇒
+                    case ArrayTypeInfo(elementType, dimensions, elementTypeIsBaseType) =>
                         ArrayTypeInfo(elementType, dimensions + 1, elementTypeIsBaseType)
-                    case TypeInfo(elementType, elementTypeIsBaseType) ⇒
+                    case TypeInfo(elementType, elementTypeIsBaseType) =>
                         ArrayTypeInfo(elementType, 1, elementTypeIsBaseType)
                 }
 
-            case _ ⇒
+            case _ =>
                 val message = s"$descriptor is not a valid field type descriptor"
                 throw new IllegalArgumentException(message)
         }
@@ -213,14 +213,14 @@ package object da {
                 if (parameters.nonEmpty) {
                     val spanParameters: Seq[Node] =
                         if (methodParameters.isEmpty) {
-                            parameters map { p ⇒ p.asSpan("parameter") }
+                            parameters map { p => p.asSpan("parameter") }
                         } else {
-                            parameters.zip(methodParameters.get) map { parameter ⇒
+                            parameters.zip(methodParameters.get) map { parameter =>
                                 val (fti, methodParameter) = parameter
                                 methodParameter.toXHTML(fti)
                             }
                         }
-                    spanParameters.tail.foldLeft(List(spanParameters.head)) { (r, n) ⇒
+                    spanParameters.tail.foldLeft(List(spanParameters.head)) { (r, n) =>
                         r ++ List(Text(", "), n)
                     }
                 } else {
@@ -236,15 +236,15 @@ package object da {
     private[da] def parseParameterType(md: String, startIndex: Int): (FieldTypeInfo, Int) = {
         val td = md.charAt(startIndex)
         (td: @switch) match {
-            case 'L' ⇒
+            case 'L' =>
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
                     ObjectTypeInfo(md.substring(startIndex + 1, endIndex).replace('/', '.')),
                     endIndex + 1
                 )
-            case '[' ⇒
+            case '[' =>
                 parseParameterType(md, startIndex + 1) match {
-                    case (ati: ArrayTypeInfo, index) ⇒
+                    case (ati: ArrayTypeInfo, index) =>
                         (
                             ArrayTypeInfo(
                                 ati.elementTypeAsJava,
@@ -253,10 +253,10 @@ package object da {
                             ),
                                 index
                         )
-                    case (t, index) ⇒
+                    case (t, index) =>
                         (ArrayTypeInfo(t.asJava, 1, t.elementTypeIsBaseType), index)
                 }
-            case _ ⇒
+            case _ =>
                 (
                     parseFieldType(td.toString),
                     startIndex + 1
@@ -272,6 +272,6 @@ package object da {
     }
 
     def byteArrayToNode(info: Array[Byte]): Node = {
-        <pre>{ info.map(b ⇒ f"$b%02x").grouped(32).map(_.mkString("", " ", "\n")).mkString }</pre>
+        <pre>{ info.map(b => f"$b%02x").grouped(32).map(_.mkString("", " ", "\n")).mkString }</pre>
     }
 }

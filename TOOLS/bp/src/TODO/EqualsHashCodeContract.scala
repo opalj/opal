@@ -30,7 +30,7 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[ClassBasedReport[Source]] = {
 
         val mutex = new Object
@@ -41,12 +41,12 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
             var definesHashCodeMethod = false
             for (method ← classFile.methods) method match {
                 case Method(_, "equals", MethodDescriptor(Seq(ObjectType.Object),
-                    BooleanType)) ⇒
+                    BooleanType)) =>
                     definesEqualsMethod = true
                 case Method(_, "hashCode", MethodDescriptor(Seq(),
-                    IntegerType)) ⇒
+                    IntegerType)) =>
                     definesHashCodeMethod = true
-                case _ ⇒
+                case _ =>
             }
 
             if (definesEqualsMethod != definesHashCodeMethod) {

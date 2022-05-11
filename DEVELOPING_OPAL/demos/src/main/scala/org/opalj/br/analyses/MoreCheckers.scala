@@ -51,7 +51,7 @@ object MoreCheckers {
 
     def main(args: Array[String]): Unit = {
 
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".jar"))) {
+        if (args.length == 0 || !args.forall(arg => arg.endsWith(".jar"))) {
             printUsage()
             sys.exit(1)
         }
@@ -71,12 +71,12 @@ object MoreCheckers {
         // for CLASSES.jar - we use 2 warumup runs
         for (i ← 1 to 2) {
             println("\n\n\n\n\n\n\n"+i+"======================================================================="+i);
-            //time(t ⇒ println("Performing all analyses took: "+nsToSecs(t))) {
+            //time(t => println("Performing all analyses took: "+nsToSecs(t))) {
             analyze(args)
             System.gc();
             //}
         }
-        results.foreach(X ⇒ { val (id, times) = X; println(id+","+times.mkString(",")) })
+        results.foreach(X => { val (id, times) = X; println(id+","+times.mkString(",")) })
         results.clear();
 
         println(Console.BOLD+"\n\n\n\nMEASUREMENT PHASE"+Console.RESET)
@@ -84,13 +84,13 @@ object MoreCheckers {
             println(); //i+"======================================================================="+i);
             time {
                 analyze(args)
-            } { executionTime ⇒
+            } { executionTime =>
                 println("Reading class files and executing all analyses: "+executionTime)
             }
             System.gc();
             println();
         }
-        results.foreach(X ⇒ { val (id, times) = X; println(id+","+times.mkString(",")) })
+        results.foreach(X => { val (id, times) = X; println(id+","+times.mkString(",")) })
 
         sys.exit(0)
     }
@@ -109,10 +109,10 @@ object MoreCheckers {
                 classFile
             }
             cf
-        }(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
+        }(mu => println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
         val classHierarchy = ClassHierarchy(classFiles)(GlobalLogContext)
 
-        val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisType, cf)).toMap // SAME AS IN PROJECT
+        val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf => (cf.thisType, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()
 
         //println("Number of class files: "+classFilesCount)
@@ -123,7 +123,7 @@ object MoreCheckers {
                 classFile ← classFiles if classFile.isFinal;
                 field ← classFile.fields if field.isProtected
             ) yield (classFile, field)
-        } { t ⇒ collect("CI_CONFUSED_INHERITANCE", t /*nsToSecs(t)*/ ) }
+        } { t => collect("CI_CONFUSED_INHERITANCE", t /*nsToSecs(t)*/ ) }
         println(", " /*"\tViolations: "*/ +protectedFields.size)
 
         // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
@@ -136,13 +136,13 @@ object MoreCheckers {
                     cloneables ← classHierarchy.allSubtypes(cloneable, false)
                     classFile ← getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
-                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true
-                        case _ ⇒ false
+                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) => true
+                        case _ => false
                     })
                 } yield classFile.thisType.fqn
             } else
                 List.empty[String]
-        } { t ⇒ collect("CN_IDIOM", t /*nsToSecs(t)*/ ) }
+        } { t => collect("CN_IDIOM", t /*nsToSecs(t)*/ ) }
         println(", "+cloneableNoClone.size)
 
         // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
@@ -155,11 +155,11 @@ object MoreCheckers {
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
-                    case INVOKESPECIAL(`superClass`, _, "clone", JustReturnsObject) ⇒ true
-                    case _ ⇒ false
+                    case INVOKESPECIAL(`superClass`, _, "clone", JustReturnsObject) => true
+                    case _ => false
                 }
             } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
-        } { t ⇒ collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
+        } { t => collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
         println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.length /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
@@ -171,7 +171,7 @@ object MoreCheckers {
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if classHierarchy.isASubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isYesOrUnknown
             } yield (classFile.thisType.fqn, method.name)
-        }(t ⇒ collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
+        }(t => collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
 
         // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
@@ -188,7 +188,7 @@ object MoreCheckers {
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) ← classFile.methods
                 if parameterType != ObjectType("java/lang/Object")
             } yield (classFile, method)
-        }(t ⇒ collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
+        }(t => collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +covariantCompareToMethods.size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
@@ -202,12 +202,12 @@ object MoreCheckers {
             ) {
                 instruction match {
                     case INVOKESTATIC(ObjectType("java/lang/System"), false, "gc", NoArgsAndReturnVoid) |
-                        INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgsAndReturnVoid) ⇒
+                        INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgsAndReturnVoid) =>
                         garbageCollectingMethods = (classFile, method, instruction) :: garbageCollectingMethods
-                    case _ ⇒
+                    case _ =>
                 }
             }
-        }(t ⇒ collect("DM_GC", t /*nsToSecs(t)*/ ))
+        }(t => collect("DM_GC", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +garbageCollectingMethods.size)
 
         // FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)
@@ -221,17 +221,17 @@ object MoreCheckers {
             ) {
                 instruction match {
                     case INVOKESTATIC(ObjectType("java/lang/System"), false, "runFinalizersOnExit", JustTakesBoolean) |
-                        INVOKESTATIC(ObjectType("java/lang/Runtime"), false, "runFinalizersOnExit", JustTakesBoolean) ⇒
+                        INVOKESTATIC(ObjectType("java/lang/Runtime"), false, "runFinalizersOnExit", JustTakesBoolean) =>
                         methodsThatCallRunFinalizersOnExit = (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
-                    case _ ⇒
+                    case _ =>
                 }
             }
-        }(t ⇒ collect("DM_RUN_FINALIZERS_ON_EXIT", t /*nsToSecs(t)*/ ))
+        }(t => collect("DM_RUN_FINALIZERS_ON_EXIT", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +methodsThatCallRunFinalizersOnExit.size)
         //methodsThatCallRunFinalizersOnExit.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
 
         //        // FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)
-        //        var abstractClassThatDefinesCovariantEquals = time(t ⇒ println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
+        //        var abstractClassThatDefinesCovariantEquals = time(t => println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
         //            for (
         //                classFile ← classFiles if classFile.isAbstract;
         //                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
@@ -245,23 +245,23 @@ object MoreCheckers {
                 classFile ← classFiles;
                 method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) ← classFile.methods if method.isAbstract
             ) yield (classFile, method);
-        }(t ⇒ collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
+        }(t => collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +abstractCovariantEquals.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
         val classesWithPublicFinalizeMethods = time {
             for {
                 classFile ← classFiles
-                if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", HasNoArgsAndReturnsVoid()) ⇒ true; case _ ⇒ false })
+                if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", HasNoArgsAndReturnsVoid()) => true; case _ => false })
             } yield classFile
-        }(t ⇒ collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ ))
+        }(t => collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +classesWithPublicFinalizeMethods.length)
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
 
         // The following solution reports all pairs of seriablizable classes and their non-seriablizable
         // superclasses that do not define a default constructor.
-        //        val classesWithoutDefaultConstructor = time(t ⇒ println("SE_NO_SUITABLE_CONSTRUCTOR: "+nsToSecs(t))) {
+        //        val classesWithoutDefaultConstructor = time(t => println("SE_NO_SUITABLE_CONSTRUCTOR: "+nsToSecs(t))) {
         //            for (
         //                serializableClass ← serializableClasses;
         //                superclasses ← classHierarchy.superclasses(serializableClass)
@@ -283,7 +283,7 @@ object MoreCheckers {
                 if !superClassFile.isInterfaceDeclaration
                 if !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
             } yield superclass // there can be at most one method
-        }(t ⇒ collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ ))
+        }(t => collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +classesWithoutDefaultConstructor.size);
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
@@ -297,15 +297,15 @@ object MoreCheckers {
                     instruction ← method.body.get.instructions
                 } {
                     instruction match {
-                        case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
-                        case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
-                        case _                                    ⇒
+                        case GETFIELD(`declaringClass`, name, _)  => privateFields -= name
+                        case GETSTATIC(`declaringClass`, name, _) => privateFields -= name
+                        case _                                    =>
                     }
                 }
                 if (privateFields.size > 0)
                     unusedFields = (classFile, privateFields) :: unusedFields
             }
-        }(t ⇒ collect("UUF_UNUSED_FIELD", t /*nsToSecs(t)*/ ))
+        }(t => collect("UUF_UNUSED_FIELD", t /*nsToSecs(t)*/ ))
         println(", "+ /*"\tViolations: "+*/ unusedFields.size)
         //            var allFields = List[(ObjectType, String)]()
         //            var readFields = Set[(ObjectType, String)]()
@@ -322,11 +322,11 @@ object MoreCheckers {
         //                    instruction ← body.instructions
         //                ) {
         //                    instruction match {
-        //                        case GETFIELD(declaringClass, name, _)  ⇒ readFields += ((declaringClass, name))
-        //                        case GETSTATIC(declaringClass, name, _) ⇒ readFields += ((declaringClass, name))
-        //                        case PUTSTATIC(declaringClass, name, _) ⇒ writtenFields += ((declaringClass, name))
-        //                        case PUTFIELD(declaringClass, name, _)  ⇒ writtenFields += ((declaringClass, name))
-        //                        case _                                  ⇒
+        //                        case GETFIELD(declaringClass, name, _)  => readFields += ((declaringClass, name))
+        //                        case GETSTATIC(declaringClass, name, _) => readFields += ((declaringClass, name))
+        //                        case PUTSTATIC(declaringClass, name, _) => writtenFields += ((declaringClass, name))
+        //                        case PUTFIELD(declaringClass, name, _)  => writtenFields += ((declaringClass, name))
+        //                        case _                                  =>
         //                    }
         //                }
         //            }
@@ -344,7 +344,7 @@ object MoreCheckers {
                 method @ MethodWithBody(body) ← classFile.methods
                 exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
             } yield (classFile, method)
-        }(t ⇒ collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
+        }(t => collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +catchesIllegalMonitorStateException.size)
     }
 }

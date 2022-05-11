@@ -25,7 +25,7 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override def featureIDs: IndexedSeq[String] = {
         var ordinalNumber = 0
-        JVMInstructions.map { i ⇒
+        JVMInstructions.map { i =>
             val (opcode, mnemonic) = i
             OpcodesToOrdinalNumbers(opcode) = ordinalNumber
             ordinalNumber += 1

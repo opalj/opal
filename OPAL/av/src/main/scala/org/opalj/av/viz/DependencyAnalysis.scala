@@ -48,8 +48,8 @@ object DependencyAnalysis extends AnalysisApplication {
 
     def readParameter(param: String, args: Seq[String], default: String = ""): (String, Seq[String]) = {
         args.partition(_.startsWith("-"+param+"=")) match {
-            case (Seq(), parameters1) ⇒ (default, parameters1)
-            case (Seq(p), parameters1) ⇒ {
+            case (Seq(), parameters1) => (default, parameters1)
+            case (Seq(p), parameters1) => {
                 if (p.startsWith("-"+param+"=\"") && p.endsWith("\""))
                     (p.substring(param.length + 3, p.length - 1), parameters1)
                 else
@@ -88,14 +88,14 @@ object DependencyAnalysis extends AnalysisApplication {
         val pattern = "<%[A-Z_]+%>".r
         val option = pattern findFirstIn doc
         option match {
-            case Some(o) ⇒ {
+            case Some(o) => {
                 println(
                     Console.YELLOW+
                         "[warn] HtmlDocument has at least one unset option "+o +
                         Console.RESET
                 )
             }
-            case None ⇒
+            case None =>
         }
         doc
     }
@@ -108,7 +108,7 @@ object DependencyAnalysis extends AnalysisApplication {
         def analyze(
             project:                Project[URL],
             parameters:             Seq[String],
-            initProgressManagement: (Int) ⇒ ProgressManagement
+            initProgressManagement: (Int) => ProgressManagement
         ) = {
 
             val pm = initProgressManagement(3)
@@ -208,9 +208,9 @@ object DependencyAnalysis extends AnalysisApplication {
             val maxCount = dependencyProcessor.currentMaxDependencyCount
 
             var data = ("["+packages.foldRight("")(
-                (p1, l1) ⇒ "["+
+                (p1, l1) => "["+
                     packages.foldRight("")(
-                        (p2, l2) ⇒ (dependencyProcessor.currentDependencyCount(p1, p2) / maxCount)+","+l2
+                        (p2, l2) => (dependencyProcessor.currentDependencyCount(p1, p2) / maxCount)+","+l2
                     )+"],"+l1
             )+"]").replaceAll(",]", "]")
 
@@ -221,10 +221,10 @@ object DependencyAnalysis extends AnalysisApplication {
 
             val addOut =
                 if (debug)
-                    ("<table> <tr><th"+cS+"></th>"+packages.foldRight("</tr>")((p, l) ⇒ "<th"+cS+">"+p+"</th>"+l) + packages.foldRight("</table>")(
-                        (p1, l1) ⇒ "<tr><td"+cS+"><b>"+p1+"</b></td>"+
+                    ("<table> <tr><th"+cS+"></th>"+packages.foldRight("</tr>")((p, l) => "<th"+cS+">"+p+"</th>"+l) + packages.foldRight("</table>")(
+                        (p1, l1) => "<tr><td"+cS+"><b>"+p1+"</b></td>"+
                             packages.foldRight("</tr>\n")(
-                                (p2, l2) ⇒ "<td"+cS+">"+(dependencyProcessor.currentDependencyCount(p1, p2))+"</td>"+l2
+                                (p2, l2) => "<td"+cS+">"+(dependencyProcessor.currentDependencyCount(p1, p2))+"</td>"+l2
                             ) + l1
                     ))
                 else
@@ -245,7 +245,7 @@ object DependencyAnalysis extends AnalysisApplication {
             htmlDocument = htmlDocument.replace("<%ADDITIONAL_OUTPUT%>", addOut)
 
             htmlDocument = htmlDocument.replace("<%PACKAGES%>", "["+packages.foldRight("")(
-                (name, json) ⇒
+                (name, json) =>
                     s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json
             )+"]")
             writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")

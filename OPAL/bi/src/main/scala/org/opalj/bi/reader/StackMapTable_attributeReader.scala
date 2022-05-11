@@ -55,7 +55,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val number_of_entries = in.readUnsignedShort()
         if (number_of_entries > 0 || reifyEmptyAttributes) {

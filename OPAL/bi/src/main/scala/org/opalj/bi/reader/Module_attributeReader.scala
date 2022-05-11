@@ -154,7 +154,7 @@ trait Module_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length = */ in.readInt()
 
         val name_index = in.readUnsignedShort()

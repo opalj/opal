@@ -19,14 +19,14 @@
 
 // 6 →
 7:/*pc=26:*/ ai.MethodsWithExceptions.processIt({exception@1})
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 7 →
 8:/*pc=29:*/ goto 17
 
 // 5 →
 9:/*pc=42:*/ ai.MethodsWithExceptions.processIt({exception@1})
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 9 →
 10:/*pc=45:*/ goto 17
@@ -41,14 +41,14 @@
 // java.lang.Throwable →
 13:/*pc=92:*/ caught java.lang.Throwable /* <= {exception@11}*/
 14:/*pc=100:*/ ai.MethodsWithExceptions.processIt({exception@11})
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 14 →
 15:/*pc=103:*/ goto 17
 
 // 12 →
 16:/*pc=116:*/ ai.MethodsWithExceptions.processIt({lv0})
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 10, 15, 16, 8 →
 17:/*pc=119:*/ return

@@ -44,7 +44,7 @@ trait DynamicConstantRewriting
     extends DeferredDynamicConstantResolution
     with BootstrapArgumentLoading {
 
-    this: ClassFileBinding ⇒
+    this: ClassFileBinding =>
 
     import org.opalj.br.reader.DynamicConstantRewriting._
 
@@ -53,7 +53,7 @@ trait DynamicConstantRewriting
             try {
                 config.getBoolean(RewritingConfigKey)
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     error("class file reader", s"couldn't read: $RewritingConfigKey", t)
                     false
             }
@@ -69,7 +69,7 @@ trait DynamicConstantRewriting
             try {
                 config.getBoolean(LogRewritingsConfigKey)
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     error("class file reader", s"couldn't read: $LogRewritingsConfigKey", t)
                     false
             }
@@ -85,7 +85,7 @@ trait DynamicConstantRewriting
             try {
                 config.getBoolean(LogUnknownDynamicConstantsConfigKey)
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     error(
                         "class file reader",
                         s"couldn't read: $LogUnknownDynamicConstantsConfigKey", t
@@ -104,7 +104,7 @@ trait DynamicConstantRewriting
             try {
                 config.getBoolean(LogUnresolvedDynamicConstantsConfigKey)
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     error(
                         "class file reader",
                         s"couldn't read: $LogUnresolvedDynamicConstantsConfigKey", t
@@ -173,7 +173,7 @@ trait DynamicConstantRewriting
                 i += 1
             }
             if (logRewrites)
-                info("rewriting dynamic constant", s"Java: $load ⇒ $head")
+                info("rewriting dynamic constant", s"Java: $load => $head")
         } else if (instructionLength == 3) { // Replace ldc(2)_w with invocation
             val newMethodName = newTargetMethodName(
                 cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_contstant"
@@ -195,7 +195,7 @@ trait DynamicConstantRewriting
             instructions(pc) = newInvoke
 
             if (logRewrites)
-                info("rewriting dynamic constant", s"Java: $load ⇒ $newInvoke")
+                info("rewriting dynamic constant", s"Java: $load => $newInvoke")
         } else { // Can't replace ldc with invocation, it has only 2 bytes
             if (logUnresolvedDynamicConstants) {
                 val t = updatedClassFile.thisType.toJava

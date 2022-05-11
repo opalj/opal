@@ -19,7 +19,7 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
     behavior of "LabeledInstructionsTest"
 
     val label = InstructionLabel('TestLabel)
-    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, InstructionLabel ⇒ LabeledSimpleConditionalBranchInstruction)] = {
+    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, InstructionLabel => LabeledSimpleConditionalBranchInstruction)] = {
         List(
             IFEQ(label) → LabeledIFEQ,
             IFNE(label) → LabeledIFNE,
@@ -43,7 +43,7 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
     }
 
     val resolvedSimpleBranchInstructions = {
-        simpleBranchInstructionsMap.zipWithIndex.map { instructionWithIndex ⇒
+        simpleBranchInstructionsMap.zipWithIndex.map { instructionWithIndex =>
             val ((labeledInstruction, _), index) = instructionWithIndex
             labeledInstruction.resolveJumpTargets(0, Map(label → index))
         }
@@ -51,7 +51,7 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
 
     "the convenience factories of SimpleConditionalBranchInstructions" should
         "return the correct type of LabeledBranchInstruction" in {
-            simpleBranchInstructionsMap foreach { bi ⇒
+            simpleBranchInstructionsMap foreach { bi =>
                 val (factoryMethodResult, constructorResult) = bi
                 assert(factoryMethodResult == constructorResult(label))
             }

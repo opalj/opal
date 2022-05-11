@@ -89,7 +89,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
     override def analyze(
         theProject:             Project[URL],
         parameters:             Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement
+        initProgressManagement: (Int) => ProgressManagement
     ): BugPickerResults = {
 
         import theProject.config
@@ -110,7 +110,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val maxCardinalityOfIntegerRanges = analysisParameters.as[Long]("maxCardinalityOfLongSets")
         val maxCardinalityOfLongSets = analysisParameters.as[Int]("maxCardinalityOfLongSets")
         val configuredAnalyses = analysisParameters.as[List[String]]("fpcfAnalyses")
-        val fpcfAnalyses = configuredAnalyses.map { a ⇒ FPCFAnalysesRegistry.factory(a) }
+        val fpcfAnalyses = configuredAnalyses.map { a => FPCFAnalysesRegistry.factory(a) }
         val maxCallChainLength = theProject.config.as[Int](
             "org.opalj.bugpicker.analysis.RootBugPickerAnalysisDomain.maxCallChainLength"
         )
@@ -190,7 +190,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted _
+        val doInterrupt: () => Boolean = progressManagement.isInterrupted _
 
         val filteredResults = new ConcurrentLinkedQueue[Issue]()
         val issuesPackageFilterString = config.as[String]("org.opalj.bugpicker.issues.packages")
@@ -201,13 +201,13 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val issuesPackageFilter = issuesPackageFilterString.r
         def addResults(issues: Iterable[Issue]): Unit = {
             if (issues.nonEmpty) {
-                val filteredIssues = issues.filter { issue ⇒
+                val filteredIssues = issues.filter { issue =>
                     issue.locations.head match {
-                        case l: PackageLocation ⇒
+                        case l: PackageLocation =>
                             val packageName = l.thePackage
                             val allMatches = issuesPackageFilter.findFirstIn(packageName)
                             allMatches.isDefined && packageName == allMatches.get
-                        case _ ⇒
+                        case _ =>
                             // the issue is a project level issue and hence kept
                             true
                     }
@@ -375,7 +375,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val identifiedIssues = time {
             val stepIds = new AtomicInteger(PreAnalysesCount + 1)
 
-            theProject.parForeachProjectClassFile(doInterrupt) { classFile ⇒
+            theProject.parForeachProjectClassFile(doInterrupt) { classFile =>
                 val stepId = stepIds.getAndIncrement()
                 try {
                     progressManagement.start(stepId, classFile.thisType.toJava)
@@ -407,21 +407,21 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                         try {
                             analyzeMethod(method, body)
                         } catch {
-                            case afe: InterpretationFailedException ⇒
+                            case afe: InterpretationFailedException =>
                                 val ms = method.fullyQualifiedSignature
                                 val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
                                 val message =
                                     s"the analysis of $ms failed/was aborted after $steps steps"
                                 exceptions add (AnalysisException(message, afe))
-                            case ct: ControlThrowable ⇒ throw ct
-                            case t: Throwable ⇒
+                            case ct: ControlThrowable => throw ct
+                            case t: Throwable =>
                                 val ms = method.fullyQualifiedSignature
                                 val message = s"the analysis of ${ms} failed"
                                 exceptions add (AnalysisException(message, t))
                         }
                     }
                 } catch {
-                    case t: Throwable ⇒
+                    case t: Throwable =>
                         OPALLogger.error(
                             "internal error", s"evaluation step $stepId failed", t
                         )
@@ -431,7 +431,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 }
             }
             filteredResults.asScala.toSeq
-        } { t ⇒ analysisTime = t }
+        } { t => analysisTime = t }
 
         OPALLogger.info(
             "analysis progress",
@@ -515,10 +515,10 @@ object BugPickerAnalysis {
             import scala.collection.SortedMap
             val groupedMessages =
                 SortedMap.empty[String, List[Issue]] ++
-                    issues.groupBy { i ⇒
+                    issues.groupBy { i =>
                         i.locations.head match {
-                            case thePackage: PackageLocation ⇒ thePackage.thePackage
-                            case _: ProjectLocation          ⇒ "<project>"
+                            case thePackage: PackageLocation => thePackage.thePackage
+                            case _: ProjectLocation          => "<project>"
                         }
                     }
             val result =
@@ -580,7 +580,7 @@ object BugPickerAnalysis {
                         <summary>Parameters</summary>
                         <ul>
                             {
-                                config.filterNot(_.contains("debug")).map(p ⇒ <li>{ p }</li>)
+                                config.filterNot(_.contains("debug")).map(p => <li>{ p }</li>)
                             }
                         </ul>
                     </details>

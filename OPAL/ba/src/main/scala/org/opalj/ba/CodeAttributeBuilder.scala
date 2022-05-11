@@ -71,7 +71,7 @@ class CodeAttributeBuilder[T] private[ba] (
 
     def instruction(index: Int): Instruction = instructions(index)
 
-    def foreachInstructionWithIndex[U](f: IntRefPair[Instruction] ⇒ U): Unit = {
+    def foreachInstructionWithIndex[U](f: IntRefPair[Instruction] => U): Unit = {
         val instructions = this.instructions
         var i = 0
         val max = instructions.length
@@ -191,7 +191,7 @@ class CodeAttributeBuilder[T] private[ba] (
 
         // We need to compute the stack map table if we don't have one already!
         if (classFileVersion.major >= bi.Java6MajorVersion &&
-            attributes.forall(a ⇒ a.kindId != StackMapTable.KindId) &&
+            attributes.forall(a => a.kindId != StackMapTable.KindId) &&
             (hasControlTransferInstructions || exceptionHandlers.nonEmpty)) {
             // Let's create fake code and method objects to make it possible
             // to use the AI framework for computing the stack map table...
@@ -262,11 +262,11 @@ object CodeAttributeBuilder {
             while (index <= lastLocalsIndex) {
                 b += (
                     locals(index) match {
-                        case null | r.domain.TheIllegalValue ⇒
+                        case null | r.domain.TheIllegalValue =>
                             index += 1
                             TopVariableInfo
 
-                        case dv ⇒
+                        case dv =>
                             val operandSize = dv.computationalType.operandSize
                             if (operandSize == 2 && locals(index + 1) != null) {
                                 // This situation may arises in cases where we use a local variable
@@ -293,7 +293,7 @@ object CodeAttributeBuilder {
         val framePCs = c.stackMapTablePCs(classHierarchy)
         val fs = new Array[AnyRef /*actually StackMapFrame*/ ](framePCs.size)
         var frameIndex = 0
-        framePCs.foreach { pc ⇒
+        framePCs.foreach { pc =>
             val verificationTypeInfoLocals: VerificationTypeInfos = {
                 val locals = r.localsArray(pc)
                 if (locals == null) {
@@ -302,7 +302,7 @@ object CodeAttributeBuilder {
                         c.instructions.
                             zipWithIndex.
                             filter(_._1 != null).
-                            map(e ⇒ e._2+": "+e._1)
+                            map(e => e._2+": "+e._1)
                     val instructionsAsString = instructions.mkString("\n\t\t", "\n\t\t", "\n")
                     val body =
                         s"; pc $pc is dead; unable to compute stack map table:"+
@@ -363,7 +363,7 @@ object CodeAttributeBuilder {
                 // all "still" existing locals are equal...
                 verificationTypeInfoLocals.iterator
                 .zipWithIndex
-                .forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
+                .forall { case (vtil, index) => vtil == lastVerificationTypeInfoLocals(index) }
             )) {
                 // ---- CHOP FRAME ...
                 //
@@ -373,7 +373,7 @@ object CodeAttributeBuilder {
                 // all previously existing locals are equal...
                 lastVerificationTypeInfoLocals.iterator
                 .zipWithIndex
-                .forall { case (vtil, index) ⇒ vtil == verificationTypeInfoLocals(index) }
+                .forall { case (vtil, index) => vtil == verificationTypeInfoLocals(index) }
             )) {
                 // ---- APPEND FRAME ...
                 //

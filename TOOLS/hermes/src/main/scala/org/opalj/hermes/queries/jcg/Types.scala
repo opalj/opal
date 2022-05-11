@@ -60,9 +60,9 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val pc = pcAndInstruction.pc
 
             instruction.opcode match {
-                case CHECKCAST.opcode  ⇒ instructionsLocations(0) += InstructionLocation(methodLocation, pc)
-                case INSTANCEOF.opcode ⇒ instructionsLocations(3) += InstructionLocation(methodLocation, pc)
-                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                case CHECKCAST.opcode  => instructionsLocations(0) += InstructionLocation(methodLocation, pc)
+                case INSTANCEOF.opcode => instructionsLocations(3) += InstructionLocation(methodLocation, pc)
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
                     val ai = BaseAI
                     val aiResult = ai.apply(method, BaseDomain(project, method))
                     val operands = aiResult.operandsArray.apply(pc)
@@ -70,13 +70,13 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         val op1Type = operands(0).asDomainReferenceValue.leastUpperType
                         val op2Type = operands(1).asDomainReferenceValue.leastUpperType
                         val isClassRefCheck = op1Type.exists {
-                            op1 ⇒ (op1 eq Class) && (op1 eq op2Type.getOrElse(Object))
+                            op1 => (op1 eq Class) && (op1 eq op2Type.getOrElse(Object))
                         }
                         if (isClassRefCheck) {
                             instructionsLocations(2) += InstructionLocation(methodLocation, pc)
                         }
                     }
-                case INVOKEVIRTUAL.opcode ⇒
+                case INVOKEVIRTUAL.opcode =>
                     val INVOKEVIRTUAL(declaringClass, name, _) = instruction.asInstanceOf[INVOKEVIRTUAL];
                     if (declaringClass.isObjectType && (declaringClass.asObjectType eq Class)) {
                         if (name eq "cast") {
@@ -90,7 +90,7 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             instructionsLocations(5) += InstructionLocation(methodLocation, pc)
                         }
                     }
-                case _ ⇒
+                case _ =>
             }
         }
 

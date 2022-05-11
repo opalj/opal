@@ -22,10 +22,10 @@ object ASTORE extends InstructionMetaInformation {
 
     def canonicalRepresentation(lvIndex: Int): StoreLocalVariableInstruction =
         (lvIndex: @scala.annotation.switch) match {
-            case 0 ⇒ ASTORE_0
-            case 1 ⇒ ASTORE_1
-            case 2 ⇒ ASTORE_2
-            case 3 ⇒ ASTORE_3
-            case _ ⇒ new ASTORE(lvIndex)
+            case 0 => ASTORE_0
+            case 1 => ASTORE_1
+            case 2 => ASTORE_2
+            case 3 => ASTORE_3
+            case _ => new ASTORE(lvIndex)
         }
 }

@@ -22,7 +22,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         implicit val ch: ClassHierarchy = theProject.classHierarchy
@@ -67,11 +67,11 @@ object ExceptionUsage extends ProjectAnalysisApplication {
                 operand ← operands
             } {
                 operand match {
-                    case v: result.domain.SingleOriginReferenceValue ⇒
+                    case v: result.domain.SingleOriginReferenceValue =>
                         collectExceptions(v)
-                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) ⇒
+                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) =>
                         singleOriginReferenceValues.foreach(collectExceptions)
-                    case _ ⇒ /*not relevant*/
+                    case _ => /*not relevant*/
                 }
             }
 
@@ -87,36 +87,36 @@ object ExceptionUsage extends ProjectAnalysisApplication {
                 usageKind: UsageKind.Value
             ): Unit = {
                 value match {
-                    case v: result.domain.SingleOriginReferenceValue ⇒
+                    case v: result.domain.SingleOriginReferenceValue =>
                         updateUsageKindForValue(v, usageKind)
-                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) ⇒
-                        singleOriginReferenceValues.foreach { v ⇒
+                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) =>
+                        singleOriginReferenceValues.foreach { v =>
                             updateUsageKindForValue(v, usageKind)
                         }
-                    case _ ⇒ /*not relevant*/
+                    case _ => /*not relevant*/
                 }
             }
 
-            body.iterate { (pc, instruction) ⇒
+            body.iterate { (pc, instruction) =>
                 val operands = result.operandsArray(pc)
                 if (operands != null) { // the instruction is reached...
                     instruction match {
-                        case ATHROW ⇒
+                        case ATHROW =>
                             updateUsageKind(operands.head, UsageKind.IsThrown)
-                        case i: MethodInvocationInstruction ⇒
+                        case i: MethodInvocationInstruction =>
                             val methodDescriptor = i.methodDescriptor
                             val parametersCount = methodDescriptor.parametersCount
                             operands.take(parametersCount).foreach(updateUsageKind(_, UsageKind.UsedAsParameter))
                             if (i.isVirtualMethodCall) {
                                 updateUsageKind(operands.drop(parametersCount).head, UsageKind.UsedAsReceiver)
                             }
-                        case _: FieldWriteAccess ⇒
+                        case _: FieldWriteAccess =>
                             updateUsageKind(operands.head, UsageKind.StoredInField)
-                        case ARETURN ⇒
+                        case ARETURN =>
                             updateUsageKind(operands.head, UsageKind.IsReturned)
-                        case AASTORE ⇒
+                        case AASTORE =>
                             updateUsageKind(operands.head, UsageKind.StoredInArray)
-                        case _ ⇒
+                        case _ =>
                         /*nothing to do*/
                     }
                 }

@@ -64,15 +64,15 @@ object FixtureDiscovery {
       if (configFile.exists) {
         val (requires, configurationOptions) = fromFile(configFile).getLines
           .map(_.trim)
-          .filter(l ⇒ l.nonEmpty && !l.startsWith("#"))
+          .filter(l => l.nonEmpty && !l.startsWith("#"))
           .toList
           .partition(_.startsWith("requires"))
 
         ( // return value: pair of mapped requires specs and config options (rest)
           requires
-            .map(librarySpec ⇒ librarySpec.substring(librarySpec.indexOf('=') + 1))
+            .map(librarySpec => librarySpec.substring(librarySpec.indexOf('=') + 1))
             . /* support library name */
-            map(libraryName ⇒ supportDir / libraryName)
+            map(libraryName => supportDir / libraryName)
             . /* support library folder */
             mkString(" "),
           configurationOptions
@@ -100,7 +100,7 @@ object FixtureDiscovery {
 
   }
 
-  class LogWriter(println: String ⇒ Unit) extends Writer {
+  class LogWriter(println: String => Unit) extends Writer {
     override def flush(): Unit = {}
     override def close(): Unit = ??? // not expected to be called
     override def write(chars: Array[Char], offset: Int, length: Int): Unit = {

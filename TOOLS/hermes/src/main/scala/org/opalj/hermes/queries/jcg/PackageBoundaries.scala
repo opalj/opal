@@ -46,7 +46,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation ← body collect {
-                case iv: INVOKEVIRTUAL ⇒ iv
+                case iv: INVOKEVIRTUAL => iv
             }
         } {
             val pc = pcAndInvocation.pc
@@ -76,7 +76,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     )
 
                 if (matchesPreconditions) {
-                    if (project.classHierarchy.existsSubclass(rtOt, project) { cf ⇒
+                    if (project.classHierarchy.existsSubclass(rtOt, project) { cf =>
                         val ot = cf.thisType
                         if (ot.packageName eq callerPackage) {
                             isMethodOverriddenInDiffPackage(rtOt, ot, name, methodDescriptor, project)
@@ -104,7 +104,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         methodDescriptor: MethodDescriptor,
         project:          Project[S]
     ) = {
-        project.classHierarchy.existsSubclass(rtOt, project) { sot ⇒
+        project.classHierarchy.existsSubclass(rtOt, project) { sot =>
             (sot.thisType.packageName ne callerPackage) &&
                 sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
         }
@@ -122,7 +122,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         val callingPackage = declaredType.packageName
 
         val worklist = ArrayBuffer[Int]()
-        classHierarchy.directSupertypes(targetType).foreach { sot ⇒
+        classHierarchy.directSupertypes(targetType).foreach { sot =>
             worklist.append(sot.id)
         }
         while (worklist.nonEmpty) {
@@ -135,7 +135,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     return true;
                 }
             }
-            classHierarchy.directSupertypes(ot).foreach { sot ⇒
+            classHierarchy.directSupertypes(ot).foreach { sot =>
                 worklist.append(sot.id)
             }
         }

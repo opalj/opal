@@ -34,7 +34,7 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         if (!analyses.exists(as.contains))
             return false;
@@ -44,8 +44,8 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         if (prematurelyRead) {
             val propertyStore = p.get(PropertyStoreKey)
             propertyStore(e, FieldPrematurelyRead.key) match {
-                case FinalP(PrematurelyReadField) ⇒ true
-                case _                            ⇒ false
+                case FinalP(PrematurelyReadField) => true
+                case _                            => false
             }
         } else {
             true
@@ -59,7 +59,7 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (properties.forall(p ⇒ p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
+        if (properties.forall(p => p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
             None
         else {
             Some(a.elementValuePairs.head.value.toString)

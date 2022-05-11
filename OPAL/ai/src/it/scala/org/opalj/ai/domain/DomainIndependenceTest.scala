@@ -109,10 +109,10 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
     it should "always calculate the same result" in {
 
         def corresponds(r1: AIResult, r2: AIResult): Option[String] = {
-            r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
+            r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) =>
                 (lOperands == null && rOperands == null) ||
                     (lOperands != null && rOperands != null &&
-                        lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
+                        lOperands.corresponds(rOperands) { (lValue, rValue) =>
                             val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                             val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                             if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
@@ -122,10 +122,10 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                         })
             }
 
-            r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) ⇒
+            r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) =>
                 (lLocals == null && rLocals == null) ||
                     (lLocals != null && rLocals != null &&
-                        lLocals.corresponds(rLocals) { (lValue, rValue) ⇒
+                        lLocals.corresponds(rLocals) { (lValue, rValue) =>
                             (lValue == null && rValue == null) || (
                                 lValue != null && rValue != null && {
                                     val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
@@ -183,7 +183,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
             if (r2.wasAborted) abort(a2, r1)
             if (r3.wasAborted) abort(a3, r1)
 
-            corresponds(r1, r2).foreach { m ⇒
+            corresponds(r1, r2).foreach { m =>
                 failed.incrementAndGet()
                 // let's test if r1 is stable....
                 val a1_2 = TheAI()
@@ -207,7 +207,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
             }
             comparisonCount.incrementAndGet()
 
-            corresponds(r2, r3).foreach { m ⇒
+            corresponds(r2, r3).foreach { m =>
                 failed.incrementAndGet()
                 info(
                     classFile.thisType.toJava+"{ "+

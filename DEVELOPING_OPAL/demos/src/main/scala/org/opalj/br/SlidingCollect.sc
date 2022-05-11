@@ -52,8 +52,8 @@ object SlidingCollect {
                     returnType != paramType // coercion to another type performed
                 )
             } yield ((classFile.fqn, method.toJava, pc))
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsBeforePullRequest
@@ -73,11 +73,11 @@ object SlidingCollect {
                         receiver1 == receiver2 &&
                         name.endsWith("Value") &&
                         returnType != paramType // coercion to another type performed
-                    ) ⇒ pc
+                    ) => pc
                 })
             } yield (classFile.fqn, method.toJava, pc)
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsAfterPullRequest
@@ -96,11 +96,11 @@ object SlidingCollect {
                         (returnType ne paramType) && // coercion to another type performed
                         receiver1.asObjectType.fqn.startsWith("java/lang/") &&
                         name.endsWith("Value")
-                    ) ⇒ pc
+                    ) => pc
                 }
             } yield (classFile.fqn, method.toJava, pc)
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcher
@@ -140,11 +140,11 @@ object SlidingCollect {
                         (returnType ne paramType) && // coercion to another type performed
                         theTypes.contains(receiver1.fqn) &&
                         theMethods.contains(name)
-                    ) ⇒ pc
+                    ) => pc
                 }
             } yield (classFile.fqn, method.toJava, pc)
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndSet
@@ -182,11 +182,11 @@ object SlidingCollect {
                         (returnType ne paramType) && // coercion to another type performed
                         theTypes.contains(receiver1.fqn) &&
                         theMethods.contains(name)
-                    ) ⇒ ()
+                    ) => ()
                 }
             } yield (classFile.fqn, method.toJava, pc)
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndSetAndFindSequence
@@ -222,11 +222,11 @@ object SlidingCollect {
                         (receiver1 eq receiver2) &&
                         (returnType ne paramType) && // coercion to another type performed
                         theTypes.contains(receiver1.fqn) &&
-                        theMethods.contains(name)) ⇒ ()
+                        theMethods.contains(name)) => ()
                 }
             } yield (classFile.fqn, method.toJava, pc)
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndSetAndFindPair
@@ -250,17 +250,17 @@ object SlidingCollect {
                     case (
                         INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
                         INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
-                        ) ⇒
+                        ) =>
                         (receiver1 eq receiver2) &&
                             (returnType ne parameterType) && // coercion to another type performed
                             receiver1.isPrimitiveTypeWrapper &&
                             theMethods.contains(name)
 
-                    case _ ⇒ false
+                    case _ => false
                 })
             } yield (classFile.fqn, method.toJava, pc)
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndSetAndMatchPair
@@ -290,7 +290,7 @@ object SlidingCollect {
             for {
                 classFile ← project.view.map(_._1).par
                 method @ MethodWithBody(body) ← classFile.methods
-                pc ← body.matchPair { (i1, i2) ⇒
+                pc ← body.matchPair { (i1, i2) =>
                     if (i1.opcode == INVOKESPECIAL.opcode && i2.opcode == INVOKEVIRTUAL.opcode) {
                         val ispecial = i1.asInstanceOf[INVOKESPECIAL]
                         val ivirtual = i2.asInstanceOf[INVOKEVIRTUAL]
@@ -315,18 +315,18 @@ object SlidingCollect {
                     case (
                         INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
                         INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
-                        ) ⇒ {
+                        ) => {
                         (receiver1 eq receiver2) &&
                             (returnType ne parameterType) && // coercion to another type performed
                             theTypes.contains(receiver1) &&
                             theMethods.contains(name)
                     }
-                    case _ ⇒ false
+                    case _ => false
                     */
                 }
             } yield (classFile.fqn, method.toJava, pc)
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndSetAndMatchPairManual
@@ -358,21 +358,21 @@ object SlidingCollect {
                 while (next_pc < max_pc) {
                     // if (pc + 3 == next_pc) {
                     instructions(pc) match {
-                        case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) ⇒
+                        case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) =>
                             instructions(next_pc) match {
                                 case INVOKEVIRTUAL(`receiver1`, name, NoArgumentMethodDescriptor(returnType: BaseType)) if (returnType ne parameterType) &&
                                     (receiver1.isPrimitiveTypeWrapper &&
-                                        theMethods.contains(name)) ⇒
+                                        theMethods.contains(name)) =>
                                     result = (classFile.fqn, method.toJava, pc) :: result
                                     // we have matched the sequence
                                     pc = body.pcOfNextInstruction(next_pc)
 
-                                case _ ⇒
+                                case _ =>
                                     pc = next_pc
                                     next_pc = body.pcOfNextInstruction(pc)
 
                             }
-                        case _ ⇒
+                        case _ =>
                             pc = next_pc
                             next_pc = body.pcOfNextInstruction(pc)
                     }
@@ -383,8 +383,8 @@ object SlidingCollect {
                 }
             }
             result
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (avg, t, ts) =>
+            val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndUnrolled
@@ -408,12 +408,12 @@ for {
         case (
             INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
             INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
-            ) ⇒ {
+            ) => {
             (receiver1 eq receiver2) &&
                 receiver1.isPrimitiveTypeWrapper &&
                 theMethods.contains(name)
         }
-        case _ ⇒ false
+        case _ => false
     })
 } println (classFile.fqn +" {"+ method.toJava+"} ::"+ method.body.get.lineNumber(pc))
 		*/

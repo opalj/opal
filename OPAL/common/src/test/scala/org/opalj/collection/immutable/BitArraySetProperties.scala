@@ -14,7 +14,7 @@ import org.scalacheck.Arbitrary
 
 import java.util.Random
 
-import scala.collection.immutable.{BitSet ⇒ SBitSet}
+import scala.collection.immutable.{BitSet => SBitSet}
 
 /**
  * Tests `BitArraySet`.
@@ -37,17 +37,17 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     // generates an IntArraySet which only contains positive values
     implicit val arbIntArraySet: Arbitrary[IntArraySet] = Arbitrary {
-        Gen.sized { s ⇒
-            Gen.frequency(frequencies: _*).map { max ⇒
-                (0 until s).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(max) }
+        Gen.sized { s =>
+            Gen.frequency(frequencies: _*).map { max =>
+                (0 until s).foldLeft(IntArraySet.empty) { (c, n) => c + r.nextInt(max) }
             }
         }
     }
 
     implicit val arbIntBitSet: Arbitrary[SBitSet] = Arbitrary {
-        Gen.sized { s ⇒
-            Gen.frequency(frequencies: _*).map { max ⇒
-                (0 until s).foldLeft(SBitSet.empty) { (c, n) ⇒ c + r.nextInt(max) }
+        Gen.sized { s =>
+            Gen.frequency(frequencies: _*).map { max =>
+                (0 until s).foldLeft(SBitSet.empty) { (c, n) => c + r.nextInt(max) }
             }
         }
     }
@@ -55,7 +55,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
 
-    property("<BitArraySet>.+|iterator(.forall)|contains") = forAll { s: IntArraySet ⇒
+    property("<BitArraySet>.+|iterator(.forall)|contains") = forAll { s: IntArraySet =>
         val bas = s.foldLeft(BitArraySet.empty)(_ + _)
         classify(s.isEmpty, "empty set") {
             classify(s.nonEmpty && s.max < 32, "set with max value < 32") {
@@ -68,7 +68,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
         }
     }
 
-    property("BitArraySet.apply(value)") = forAll { s: IntArraySet ⇒
+    property("BitArraySet.apply(value)") = forAll { s: IntArraySet =>
         s.nonEmpty ==> {
             val sIt = s.iterator
             val firstI = sIt.next
@@ -82,12 +82,12 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
         }
     }
 
-    property("the same set is returned if a value in the set should be added") = forAll { s: IntArraySet ⇒
+    property("the same set is returned if a value in the set should be added") = forAll { s: IntArraySet =>
         val bas = s.foldLeft(BitArraySet.empty)(_ + _)
-        s.forall(v ⇒ (bas + v) eq bas)
+        s.forall(v => (bas + v) eq bas)
     }
 
-    property("<BitArraySet>.++(|)") = forAll { (s1: SBitSet, s2: SBitSet) ⇒
+    property("<BitArraySet>.++(|)") = forAll { (s1: SBitSet, s2: SBitSet) =>
         val bas1 = s1.foldLeft(BitArraySet.empty)(_ + _)
         val bas2 = s2.foldLeft(BitArraySet.empty)(_ + _)
         val bas3 = bas1 | bas2
@@ -103,13 +103,13 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
         }
     }
 
-    property("adding a subset of this set to this set should return this set") = forAll { s: IntArraySet ⇒
+    property("adding a subset of this set to this set should return this set") = forAll { s: IntArraySet =>
         val bas1 = s.foldLeft(BitArraySet.empty)(_ + _)
         val bas2 = s.foldLeft(BitArraySet.empty)(_ + _)
         (bas1 ++ bas2) eq bas1
     }
 
-    property("adding this set to another set of which this set is a subset of should return the other set") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("adding this set to another set of which this set is a subset of should return the other set") = forAll { (s1: IntArraySet, s2: IntArraySet) =>
         val sMerged = s1 ++ s2
         val bas1 = s1.foldLeft(BitArraySet.empty)(_ + _)
         val bas2 = s2.foldLeft(BitArraySet.empty)(_ + _)
@@ -120,45 +120,45 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
             (basRemerged eq basMerged) :| "same instance"
     }
 
-    property("iterator") = forAll { s: IntArraySet ⇒
+    property("iterator") = forAll { s: IntArraySet =>
         val bas = s.foldLeft(BitArraySet.empty)(_ + _)
         val basIt = bas.iterator
         val basIntIt = bas.iterator
-        basIt.forall(v ⇒ basIntIt.next == v) :| "the scala iterator iterates over the same values" &&
+        basIt.forall(v => basIntIt.next == v) :| "the scala iterator iterates over the same values" &&
             basIntIt.isEmpty :| "the scala iterator does not miss any values"
     }
 
-    property("- (in order)") = forAll { (s: IntArraySet, other: IntArraySet) ⇒
+    property("- (in order)") = forAll { (s: IntArraySet, other: IntArraySet) =>
         var bas = s.foldLeft(BitArraySet.empty)(_ + _)
-        other.forall({ v ⇒ bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
-            s.forall({ v ⇒ bas -= v; !bas.contains(v) }) :| "we successively delete the initial values" &&
+        other.forall({ v => bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
+            s.forall({ v => bas -= v; !bas.contains(v) }) :| "we successively delete the initial values" &&
             (bas == BitArraySet0) :| "the empty set is always represented by the singleton instance"
     }
 
-    property("- (in reverse order)") = forAll { (s: IntArraySet, other: IntArraySet) ⇒
+    property("- (in reverse order)") = forAll { (s: IntArraySet, other: IntArraySet) =>
         var bas = s.foldLeft(BitArraySet.empty)(_ + _)
-        other.forall({ v ⇒ bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
-            s.toChain.reverse.forall({ v ⇒
+        other.forall({ v => bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
+            s.toChain.reverse.forall({ v =>
                 bas -= v
                 !bas.contains(v)
             }) :| "we successively delete the initial values in reverse order" &&
             (bas == BitArraySet0) :| "the empty set is always represented by the singleton instance"
     }
 
-    property("equals And hashCode (expected equal)") = forAll { s: IntArraySet ⇒
+    property("equals And hashCode (expected equal)") = forAll { s: IntArraySet =>
         val bas1 = s.foldLeft(BitArraySet.empty)(_ + _)
         val bas2 = s.foldLeft(BitArraySet.empty)(_ + _)
         bas1 == bas2 && bas1.hashCode == bas2.hashCode
     }
 
-    property("equals And hashCode") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("equals And hashCode") = forAll { (s1: IntArraySet, s2: IntArraySet) =>
         val bas1 = s1.foldLeft(BitArraySet.empty)(_ + _)
         val bas2 = s2.foldLeft(BitArraySet.empty)(_ + _)
         val sEquals = s1 == s2
         (bas1 == bas2) == sEquals && (!sEquals || bas1.hashCode == bas2.hashCode)
     }
 
-    property("toString") = forAll { s: IntArraySet ⇒
+    property("toString") = forAll { s: IntArraySet =>
         val bas = s.foldLeft(BitArraySet.empty)(_ + _)
         val basToString = bas.toString.substring(8)
         val sToString = s.toString.substring(8)

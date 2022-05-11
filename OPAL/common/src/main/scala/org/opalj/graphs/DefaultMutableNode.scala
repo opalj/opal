@@ -14,7 +14,7 @@ import scala.collection.Map
  */
 class DefaultMutableNode[I](
         theIdentifier:       I,
-        identifierToString:  I ⇒ String                  = (_: Any).toString,
+        identifierToString:  I => String                 = (_: Any).toString,
         theVisualProperties: Map[String, String]         = Map.empty,
         theChildren:         List[DefaultMutableNode[I]] = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
@@ -26,14 +26,14 @@ class DefaultMutableNode[I](
 
     def this(
         identifier:         I,
-        identifierToString: I ⇒ String,
+        identifierToString: I => String,
         fillcolor:          Option[String]
     ) {
         this(
             identifier,
             identifierToString,
             theVisualProperties =
-                fillcolor.map(c ⇒ DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" → c)).
+                fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" → c)).
                     getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
         )
     }

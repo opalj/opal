@@ -28,7 +28,7 @@ object TypesUtil {
         project:         SomeProject,
         onlyObjectTypes: Boolean
     ): Option[Set[ObjectType]] = {
-        StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls ⇒
+        StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls =>
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
                 if (tpe.isArrayType)
@@ -36,7 +36,7 @@ object TypesUtil {
                     else Some(ObjectType.Object)
                 else Some(tpe.asObjectType)
             } catch {
-                case _: Exception ⇒ None
+                case _: Exception => None
             }
         }.filter(project.classFile(_).isDefined))
     }
@@ -55,7 +55,7 @@ object TypesUtil {
         depender:        Entity,
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        failure:         () ⇒ Unit,
+        failure:         () => Unit,
         onlyObjectTypes: Boolean
     )(
         implicit
@@ -63,7 +63,7 @@ object TypesUtil {
         state:        TypeProviderState,
         ps:           PropertyStore
     ): Set[ObjectType] = {
-        StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls ⇒
+        StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls =>
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
                 if (tpe.isArrayType)
@@ -71,7 +71,7 @@ object TypesUtil {
                     else Some(ObjectType.Object)
                 else Some(tpe.asObjectType)
             } catch {
-                case _: Exception ⇒ None
+                case _: Exception => None
             }
         }.filter(project.classFile(_).isDefined)
     }
@@ -85,7 +85,7 @@ object TypesUtil {
         project:          SomeProject,
         onlyObjectTypes:  Boolean
     ): Option[ObjectType] = {
-        StringUtil.getString(classNameDefSite, stmts).flatMap { cls ⇒
+        StringUtil.getString(classNameDefSite, stmts).flatMap { cls =>
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
                 if (tpe.isArrayType)
@@ -93,7 +93,7 @@ object TypesUtil {
                     else Some(ObjectType.Object)
                 else Some(tpe.asObjectType)
             } catch {
-                case _: Exception ⇒ None
+                case _: Exception => None
             }
         }.filter(project.classFile(_).isDefined)
     }
@@ -162,7 +162,7 @@ object TypesUtil {
                     return None;
                 }
 
-                possibleTypes ++= typesOfVarOpt.get.filter { tpe ⇒
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe =>
                     tpe.isObjectType || !onlyObjectTypes
                 }
             } else if (!onlyObjectTypes) {
@@ -190,7 +190,7 @@ object TypesUtil {
         depender:        Entity,
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        failure:         () ⇒ Unit,
+        failure:         () => Unit,
         onlyObjectTypes: Boolean
     )(
         implicit
@@ -202,7 +202,7 @@ object TypesUtil {
 
         AllocationsUtil.handleAllocations(
             value, context, depender, stmts, _ eq ObjectType.Class, failure
-        ) { (allocationContext, defSite, _stmts) ⇒
+        ) { (allocationContext, defSite, _stmts) =>
             possibleTypes ++= getPossibleClasses(
                 allocationContext, defSite, depender, _stmts, project, failure, onlyObjectTypes
             )
@@ -227,7 +227,7 @@ object TypesUtil {
         depender:        Entity,
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
-        failure:         () ⇒ Unit,
+        failure:         () => Unit,
         onlyObjectTypes: Boolean
     )(
         implicit
@@ -258,7 +258,7 @@ object TypesUtil {
             if (typesOfVarOpt.isEmpty)
                 failure()
             else
-                possibleTypes ++= typesOfVarOpt.get.filter { tpe ⇒
+                possibleTypes ++= typesOfVarOpt.get.filter { tpe =>
                     tpe.isObjectType || !onlyObjectTypes
                 }
         } else if (isBaseTypeLoad(expr) && !onlyObjectTypes) {

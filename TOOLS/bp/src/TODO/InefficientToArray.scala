@@ -66,7 +66,7 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 
         val classHierarchy: ClassHierarchy = project.classHierarchy
@@ -81,9 +81,9 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
                 case (ICONST_0,
                     _: ANEWARRAY,
                     VirtualMethodInvocationInstruction(targetType, "toArray", `toArrayDescriptor`)
-                    ) ⇒
+                    ) =>
                     isCollectionType(targetType)
-                case _ ⇒ false
+                case _ => false
             }
         } yield {
             LineAndColumnBasedReport(

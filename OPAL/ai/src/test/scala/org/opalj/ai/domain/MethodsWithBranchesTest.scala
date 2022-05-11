@@ -51,7 +51,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
         def id = "MethodsWithBranchesTestDomain: "+name
     }
 
-    private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit): Unit = {
+    private def evaluateMethod(name: String)(f: TestDomain => Unit): Unit = {
         val domain = new TestDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(method, domain)
@@ -69,7 +69,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
     //
     // RETURNS
     it should "be able to analyze a method that performs a comparison with \"nonnull\"" in {
-        evaluateMethod("nullComp") { domain ⇒
+        evaluateMethod("nullComp") { domain =>
             //    0  aload_0 [o]
             //    1  ifnonnull 6
             //    4  iconst_1
@@ -81,14 +81,14 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
                 Map((5 → AnIntegerValue), (7 → AnIntegerValue))
             )
 
-            domain.allConstraints exists { constraint ⇒
+            domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 4 &&
                     domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
                     kind == "is null"
             } should be(true)
 
-            domain.allConstraints exists { constraint ⇒
+            domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 6 &&
                     domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
@@ -98,7 +98,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to analyze a method that performs a comparison with \"null\"" in {
-        evaluateMethod("nonnullComp") { domain ⇒
+        evaluateMethod("nonnullComp") { domain =>
             //    0  aload_0 [o]
             //    1  ifnull 6
             //    4  iconst_1
@@ -110,14 +110,14 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
                 Map((5 → AnIntegerValue), (7 → AnIntegerValue))
             )
 
-            domain.allConstraints exists { constraint ⇒
+            domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 6 &&
                     domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
                     kind == "is null"
             } should be(true)
 
-            domain.allConstraints exists { constraint ⇒
+            domain.allConstraints exists { constraint =>
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 4 &&
                     domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
@@ -127,7 +127,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to analyze methods that perform multiple comparisons" in {
-        evaluateMethod("multipleComp") { domain ⇒
+        evaluateMethod("multipleComp") { domain =>
             //     0  aload_0 [a]
             //     1  ifnull 17
             //     4  aload_1 [b]

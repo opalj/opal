@@ -120,7 +120,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         methodParams: Seq[Option[Expr[V]]],
         tac:          TACode[TACMethodParameter, V]
     )(implicit indirectCalls: IndirectCalls): Unit = {
-        val line = context.method.definedMethod.body.flatMap(b ⇒ b.lineNumber(pc)).getOrElse(-1)
+        val line = context.method.definedMethod.body.flatMap(b => b.lineNumber(pc)).getOrElse(-1)
         val targets = tamiFlexLogData.methods(context.method, key, line)
         if (targets.isEmpty)
             return ;
@@ -131,17 +131,17 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
             // source line number
             (
                 methodParams.head.map(_.asVar),
-                methodParams(1).flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, tac.stmts))
+                methodParams(1).flatMap(p => VarargsUtil.getParamsFromVararg(p, tac.stmts))
             )
         } else if (methodParams.size == 1) { // Constructor.newInstance
             (
                 None,
-                methodParams.head.flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, tac.stmts))
+                methodParams.head.flatMap(p => VarargsUtil.getParamsFromVararg(p, tac.stmts))
             )
         } else { // Class.newInstance
             (None, Some(Seq.empty))
         }
-        val persistentMethodInvokeReceiver = methodInvokeReceiver.flatMap(r ⇒ persistentUVar(r)(tac.stmts))
+        val persistentMethodInvokeReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(tac.stmts))
         val persistentMethodInvokeActualParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(tac.stmts))).getOrElse(Seq.empty)
 

@@ -77,14 +77,14 @@ object ChainProperties extends Properties("Chain") {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
 
-    property("create[AnyRef]") = forAll { s: String ⇒
+    property("create[AnyRef]") = forAll { s: String =>
         val fl1 = Chain(s)
         val fl2 = (Chain.newBuilder[String] += s).result
         val fl3 = s :&: Naught
         fl1.head == s && fl2.head == s && fl3.head == s
     }
 
-    property("create[Int]") = forAll { i: Int ⇒
+    property("create[Int]") = forAll { i: Int =>
         val fl1 = Chain(i)
         val fl2 = new :&:[Int](i, Naught)
         val fl3 = (Chain.newBuilder[Int] += i).result
@@ -100,13 +100,13 @@ object ChainProperties extends Properties("Chain") {
             fl6.head == i && isSpecialized(fl6)
     }
 
-    property("==|hashCode") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("==|hashCode") = forAll { (l1: List[String], l2: List[String]) =>
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         (l1 == l2) == (fl1 == fl2) && (fl1 != fl2 || fl1.hashCode() == fl2.hashCode())
     }
 
-    property("==|hashCode[Int vs. AnyRef](I.e., a specialized list of ints should be equal to the same list containing boxed values)") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+    property("==|hashCode[Int vs. AnyRef](I.e., a specialized list of ints should be equal to the same list containing boxed values)") = forAll { (l1: List[Int], l2: List[Int]) =>
         val fl1 = Chain(l1: _*)
         val l1AsAny = l1: List[Any]
         val fl1alt = Chain(l1AsAny: _*)
@@ -122,12 +122,12 @@ object ChainProperties extends Properties("Chain") {
 
     // METHODS DEFINED BY CHAINED LIST
 
-    property("hasMultipleElements") = forAll { l1: List[String] ⇒
+    property("hasMultipleElements") = forAll { l1: List[String] =>
         val fl1 = Chain(l1: _*)
         (l1.size >= 2 && fl1.hasMultipleElements) || (l1.size <= 1 && !fl1.hasMultipleElements)
     }
 
-    property("startsWith") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("startsWith") = forAll { (l1: List[String], l2: List[String]) =>
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         classify(l1.startsWith(l2) || l2.startsWith(l1), "a list starts with the other list") {
@@ -137,7 +137,7 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
-    property("sharedPrefix") = forAll(listsOfSingleCharStringsGen) { ls ⇒
+    property("sharedPrefix") = forAll(listsOfSingleCharStringsGen) { ls =>
         val (l1: List[String], l2: List[String]) = ls
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
@@ -161,29 +161,29 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
-    property("WithFilter") = forAll { orig: List[String] ⇒
+    property("WithFilter") = forAll { orig: List[String] =>
         def test(s: String): Boolean = s.length > 0
-        val cl = Chain(orig: _*).withFilter(test).map[String, Chain[String]](s ⇒ s)
-        val l = orig.withFilter(test).map[String, List[String]](s ⇒ s)
+        val cl = Chain(orig: _*).withFilter(test).map[String, Chain[String]](s => s)
+        val l = orig.withFilter(test).map[String, List[String]](s => s)
         cl == Chain(l: _*)
     }
 
-    property("hasDefiniteSize") = forAll { l: List[String] ⇒
+    property("hasDefiniteSize") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         fl.hasDefiniteSize
     }
 
-    property("isTraversableAgain") = forAll { l: List[String] ⇒
+    property("isTraversableAgain") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         fl.isTraversableAgain
     }
 
-    property("seq") = forAll { l: List[String] ⇒
+    property("seq") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         fl.seq eq fl
     }
 
-    property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
+    property("flatMap") = forAll(listOfListGen) { l: List[List[String]] =>
         val fl = Chain(l: _*)
         classify(l.isEmpty, "outer list is empty") {
             classify(l.nonEmpty && l.forall(_.isEmpty), "all (at least one) inner lists are empty") {
@@ -193,13 +193,13 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
-    property("map") = forAll { l: List[String] ⇒
+    property("map") = forAll { l: List[String] =>
         def f(s: String): Int = s.length()
         val fl = Chain(l: _*)
         fl.map(f) == Chain(l.map(f): _*)
     }
 
-    property("chained lists can be used in for loop") = forAll { orig: List[String] ⇒
+    property("chained lists can be used in for loop") = forAll { orig: List[String] =>
         // In the following we, have an implicit foreach call
         var newL = List.empty[String]
         for {
@@ -210,7 +210,7 @@ object ChainProperties extends Properties("Chain") {
     }
 
     property("chained lists can be used in for comprehensions") = {
-        forAll(listOfListGen) { orig: List[List[String]] ⇒
+        forAll(listOfListGen) { orig: List[List[String]] =>
             // In the following we, have an implicit withFilter, map and flatMap call!
             val cl = for {
                 es ← Chain(orig: _*)
@@ -233,110 +233,110 @@ object ChainProperties extends Properties("Chain") {
     }
 
     property("a for-comprehension constructs specialized lists when possible") = {
-        forAll { orig: List[List[Int]] ⇒
+        forAll { orig: List[List[Int]] =>
             // In the following we, have an implicit withFilter, map and flatMap call!
             val cl = for { es ← Chain(orig: _*) } yield Chain(es: _*)
-            cl.forall(icl ⇒ isSpecialized(icl))
+            cl.forall(icl => isSpecialized(icl))
         }
     }
 
-    property("hasDefiniteSize") = forAll { l: List[String] ⇒
+    property("hasDefiniteSize") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         fl.hasDefiniteSize
     }
 
-    property("isTraversableAgain") = forAll { l: List[String] ⇒
+    property("isTraversableAgain") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         fl.isTraversableAgain
     }
 
-    property("head") = forAll { l: List[String] ⇒
+    property("head") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         (l.nonEmpty && l.head == fl.head) ||
             // if the list is empty, an exception needs to be thrown
-            { try { fl.head; false } catch { case _: Throwable ⇒ true } }
+            { try { fl.head; false } catch { case _: Throwable => true } }
     }
 
-    property("headOption") = forAll { l: List[String] ⇒
+    property("headOption") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         fl.headOption == l.headOption
     }
 
-    property("tail") = forAll { l: List[String] ⇒
+    property("tail") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         (l.nonEmpty && Chain(l.tail: _*) == fl.tail) ||
             // if the list is empty, an exception needs to be thrown
-            { try { fl.tail; false } catch { case _: Throwable ⇒ true } }
+            { try { fl.tail; false } catch { case _: Throwable => true } }
     }
 
-    property("last") = forAll { l: List[String] ⇒
+    property("last") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         (l.nonEmpty && l.last == fl.last) ||
             // if the list is empty, an exception needs to be thrown
-            { try { fl.last; false } catch { case _: Throwable ⇒ true } }
+            { try { fl.last; false } catch { case _: Throwable => true } }
     }
 
-    property("(is|non)Empty") = forAll { l: List[String] ⇒
+    property("(is|non)Empty") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         l.isEmpty == fl.isEmpty && l.nonEmpty == fl.nonEmpty
     }
 
-    property("apply") = forAll(listAndIndexGen) { (listAndIndex: (List[String], Int)) ⇒
+    property("apply") = forAll(listAndIndexGen) { (listAndIndex: (List[String], Int)) =>
         val (l, index) = listAndIndex
         classify(index == 0, "takes first") {
             classify(index == l.length - 1, "takes last") {
                 val fl = Chain(l: _*)
                 (index < l.length && fl(index) == l(index)) ||
                     // if the index is not valid an exception
-                    { try { fl(index); false } catch { case _: Throwable ⇒ true } }
+                    { try { fl(index); false } catch { case _: Throwable => true } }
             }
         }
     }
 
-    property("exists") = forAll { (l: List[String], c: Int) ⇒
+    property("exists") = forAll { (l: List[String], c: Int) =>
         val fl = Chain(l: _*)
         def test(s: String): Boolean = s.length == c
         l.exists(test) == fl.exists(test)
     }
 
-    property("forall") = forAll { (l: List[String], c: Int) ⇒
+    property("forall") = forAll { (l: List[String], c: Int) =>
         val fl = Chain(l: _*)
         def test(s: String): Boolean = s.length <= c
         l.forall(test) == fl.forall(test)
     }
 
-    property("contains") = forAll { (l: List[String], s: String) ⇒
+    property("contains") = forAll { (l: List[String], s: String) =>
         val fl = Chain(l: _*)
         l.contains(s) == fl.contains(s) &&
             l.forall(fl.contains(_))
     }
 
-    property("find") = forAll { (l: List[Int], i: Int) ⇒
+    property("find") = forAll { (l: List[Int], i: Int) =>
         val fl = Chain(l: _*)
         l.find(_ == i) == fl.find(_ == i)
     }
 
-    property("size") = forAll { l: List[String] ⇒
+    property("size") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         l.size == fl.size
     }
 
-    property("isSingletonList") = forAll { l: List[String] ⇒
+    property("isSingletonList") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         (l.size == 1) == (fl.isSingletonList)
     }
 
-    property(":&:") = forAll { (l: List[String], es: List[String]) ⇒
+    property(":&:") = forAll { (l: List[String], es: List[String]) =>
         var fle = Chain(l: _*)
         var le = l
-        es.forall { e ⇒
+        es.forall { e =>
             fle :&:= e
             le ::= e
             fle.head == le.head
         }
     }
 
-    property(":&::") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property(":&::") = forAll { (l1: List[String], l2: List[String]) =>
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         val fl3 = fl2 :&:: fl1
@@ -344,7 +344,7 @@ object ChainProperties extends Properties("Chain") {
         fl3.toList == l3
     }
 
-    property("++[Chain[String]]]") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("++[Chain[String]]]") = forAll { (l1: List[String], l2: List[String]) =>
         l1.nonEmpty ==> {
             val fl1 = Chain(l1: _*)
             val fl2 = Chain(l2: _*)
@@ -354,14 +354,14 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
-    property("++[List[String]]") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("++[List[String]]") = forAll { (l1: List[String], l2: List[String]) =>
         val fl1 = Chain(l1: _*)
         val fl3 = fl1 ++ l2
         val l3 = l1 ++ l2
         fl3.toList == l3
     }
 
-    property("++[Chain[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+    property("++[Chain[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) =>
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         val fl3 = fl1 ++ fl2
@@ -372,7 +372,7 @@ object ChainProperties extends Properties("Chain") {
             fl3.toList == l3
     }
 
-    property("++[List[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+    property("++[List[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) =>
         val fl1 = Chain(l1: _*)
         val jfl = fl1 ++ l2
         val l3 = l1 ++ l2
@@ -381,7 +381,7 @@ object ChainProperties extends Properties("Chain") {
             jfl.toList == l3
     }
 
-    property("copy") = forAll { (l1: List[Int]) ⇒
+    property("copy") = forAll { (l1: List[Int]) =>
         val fl1 = Chain(l1: _*)
         val (fl1Copy, last) = fl1.copy()
         isSpecialized(fl1) :| "specialization of fl1" &&
@@ -389,7 +389,7 @@ object ChainProperties extends Properties("Chain") {
             ((fl1 ne fl1Copy) && last != null && last.rest == Naught)
     }
 
-    property("++!:[Chain[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+    property("++!:[Chain[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) =>
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         val fl3 = fl1 ++!: fl2
@@ -399,7 +399,7 @@ object ChainProperties extends Properties("Chain") {
             (fl1.isEmpty || fl2.isEmpty || (fl3 eq fl1)) :| "reference equality"
     }
 
-    property("++![Chain[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+    property("++![Chain[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) =>
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         val fl3 = fl1 ++! fl2
@@ -407,10 +407,10 @@ object ChainProperties extends Properties("Chain") {
         fl3.toList == l3 && isSpecialized(fl3) && (fl1.isEmpty || (fl3 eq fl1))
     }
 
-    property("foreach") = forAll { l: List[String] ⇒
+    property("foreach") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         var lRest = l
-        fl.foreach { e ⇒
+        fl.foreach { e =>
             if (e != lRest.head)
                 throw new UnknownError;
             else
@@ -419,7 +419,7 @@ object ChainProperties extends Properties("Chain") {
         true
     }
 
-    property("take") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
+    property("take") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) =>
         val (l, count) = listAndCount
         classify(l.isEmpty, "list is empty") {
             classify(count == 0, "takes no elements") {
@@ -429,14 +429,14 @@ object ChainProperties extends Properties("Chain") {
                         (
                             count <= l.length &&
                             fl.take(count) == Chain(l.take(count): _*) && fl.size == l.size
-                        ) || { try { fl.take(count); false } catch { case _: Throwable ⇒ true } }
+                        ) || { try { fl.take(count); false } catch { case _: Throwable => true } }
                     }
                 }
             }
         }
     }
 
-    property("takeUpTo") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
+    property("takeUpTo") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) =>
         val (l, count) = listAndCount
         classify(l.isEmpty, "list is empty") {
             classify(count == 0, "takes no elements") {
@@ -450,58 +450,58 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
-    property("takeWhile") = forAll { (l: List[String], c: Int) ⇒
+    property("takeWhile") = forAll { (l: List[String], c: Int) =>
         def filter(s: String): Boolean = s.length() >= c
         val fl = Chain(l: _*)
         fl.takeWhile(filter) == Chain(l.takeWhile(filter): _*)
     }
 
-    property("foreachWhile") = forAll { (l: List[Int], c: Int) ⇒
+    property("foreachWhile") = forAll { (l: List[Int], c: Int) =>
         def filter(s: Int): Boolean = s >= c
         val fl = Chain(l: _*)
         var newL = List.empty[Int]
-        val result = fl.foreachWhile(s ⇒ if (filter(s)) { newL ::= s; true } else false)
+        val result = fl.foreachWhile(s => if (filter(s)) { newL ::= s; true } else false)
         classify(result, "processed the complete list") {
             (!result || newL.reverse == l) /* we took all values */ &&
                 (l.isEmpty && newL.isEmpty) || newL.reverse == l.takeWhile(filter)
         }
     }
 
-    property("dropWhile") = forAll { (l: List[String], c: Int) ⇒
+    property("dropWhile") = forAll { (l: List[String], c: Int) =>
         def filter(s: String): Boolean = s.length() < 2
         val fl = Chain(l: _*)
         fl.dropWhile(filter) == Chain(l.dropWhile(filter): _*)
     }
 
-    property("filter") = forAll { (l: List[String], c: Int) ⇒
+    property("filter") = forAll { (l: List[String], c: Int) =>
         def filter(s: String): Boolean = s.length() >= c
         val fl = Chain(l: _*)
         fl.filter(filter) == Chain(l.filter(filter): _*)
     }
 
-    property("filterNot") = forAll { (l: List[String], c: Int) ⇒
+    property("filterNot") = forAll { (l: List[String], c: Int) =>
         def filter(s: String): Boolean = s.length() >= c
         val fl = Chain(l: _*)
         fl.filterNot(filter) == Chain(l.filterNot(filter): _*)
     }
 
-    property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
+    property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) =>
         val (l, count) = listAndCount
         val fl = Chain(l: _*)
         (fl.drop(0) eq fl) && (
             (count <= l.length && fl.drop(count) == Chain(l.drop(count): _*)) ||
-            { try { fl.drop(count); false } catch { case _: Throwable ⇒ true } }
+            { try { fl.drop(count); false } catch { case _: Throwable => true } }
         )
     }
 
-    property("zip(GenIterable)") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("zip(GenIterable)") = forAll { (l1: List[String], l2: List[String]) =>
         val fl1 = Chain(l1: _*)
         classify(l1.size == l2.size, "same length") {
             fl1.zip(l2) == Chain(l1.zip(l2): _*)
         }
     }
 
-    property("zip(Chain)") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("zip(Chain)") = forAll { (l1: List[String], l2: List[String]) =>
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         classify(l1.isEmpty, "the first list is empty") {
@@ -513,14 +513,14 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
-    property("zipWithIndex") = forAll { l: List[String] ⇒
+    property("zipWithIndex") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         classify(l.isEmpty, "empty", "non empty") {
             fl.zipWithIndex == Chain(l.zipWithIndex: _*)
         }
     }
 
-    property("corresponds") = forAll(listsOfSingleCharStringsGen) { ls ⇒
+    property("corresponds") = forAll(listsOfSingleCharStringsGen) { ls =>
         val (l1: List[String], l2: List[String]) = ls
         def test(s1: String, s2: String): Boolean = s1 == s2
         val fl1 = Chain(l1: _*)
@@ -534,140 +534,140 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
-    property("mapConserve") = forAll { (l: List[String], c: Int) ⇒
+    property("mapConserve") = forAll { (l: List[String], c: Int) =>
         var alwaysTrue = true
         def transform(s: String): String = {
             if (s.length < c) s else { alwaysTrue = false; s + c }
         }
         val fl = Chain(l: _*)
-        classify(l.forall(s ⇒ transform(s) eq s), "all strings remain the same") {
+        classify(l.forall(s => transform(s) eq s), "all strings remain the same") {
             val mappedFL = fl.mapConserve(transform)
             (mappedFL == Chain(l.mapConserve(transform): _*)) &&
                 (!alwaysTrue || (fl eq mappedFL))
         }
     }
 
-    property("reverse") = forAll { l: List[String] ⇒
+    property("reverse") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         fl.reverse == Chain(l.reverse: _*)
     }
 
-    property("mkString") = forAll { (l: List[String], pre: String, sep: String, post: String) ⇒
+    property("mkString") = forAll { (l: List[String], pre: String, sep: String, post: String) =>
         val fl = Chain(l: _*)
         fl.mkString(pre, sep, post) == l.mkString(pre, sep, post)
     }
 
-    property("toIterable") = forAll { l: List[String] ⇒
+    property("toIterable") = forAll { l: List[String] =>
         val fl = Chain(l: _*).toIterable.toList
         fl == l
     }
-    property("toIterator") = forAll { l: List[String] ⇒
+    property("toIterator") = forAll { l: List[String] =>
         val fl = Chain(l: _*).toIterator.toList
         fl == l
     }
-    property("toIntTrieSet") = forAll { l: List[Int] ⇒
+    property("toIntTrieSet") = forAll { l: List[Int] =>
         val fl = Chain(l: _*).toIntTrieSet
         val lSet = l.toSet
         lSet.forall(fl.contains) && lSet.size == fl.size
     }
-    property("toIntArraySet") = forAll { l: List[Int] ⇒
+    property("toIntArraySet") = forAll { l: List[Int] =>
         val fl = Chain(l: _*).toIntArraySet
         val lSet = l.toSet
         lSet.forall(fl.contains) && lSet.size == fl.size
     }
 
-    property("toTraversable") = forAll { l: List[String] ⇒
+    property("toTraversable") = forAll { l: List[String] =>
         val fl = Chain(l: _*).toTraversable.toList
         fl == l
     }
 
-    property("implicit toTraversable") = forAll { l: List[String] ⇒
+    property("implicit toTraversable") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
         val tl: Traversable[String] = fl
         tl.isInstanceOf[Traversable[String]] && tl.toList == l
     }
 
-    property("toStream") = forAll { l: List[String] ⇒
+    property("toStream") = forAll { l: List[String] =>
         val fl = Chain(l: _*).toStream
         fl == l.toStream
     }
 
-    property("copyToArray") = forAll(listAndIntGen) { v ⇒
+    property("copyToArray") = forAll(listAndIntGen) { v =>
         val (l, i) = v
         val fl = Chain(l: _*)
         val la = new Array[String](10)
         val fla = new Array[String](10)
         l.copyToArray(la, i / 3, i * 2)
         fl.copyToArray(fla, i / 3, i * 2)
-        la.zip(fla).forall(e ⇒ e._1 == e._2)
+        la.zip(fla).forall(e => e._1 == e._2)
     }
 
-    property("fusing a list with itself result in the same list") = forAll { l: List[String] ⇒
+    property("fusing a list with itself result in the same list") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
-        fl.fuse(Chain(l: _*), (x, y) ⇒ x) eq fl
+        fl.fuse(Chain(l: _*), (x, y) => x) eq fl
     }
 
-    property("fuse(different lists but same elements)") = forAll(smallListsGen) { l1: List[String] ⇒
+    property("fuse(different lists but same elements)") = forAll(smallListsGen) { l1: List[String] =>
         val l2s: Iterator[List[String]] = l1.permutations
         val cl1 = Chain(l1: _*)
-        l2s.forall { l2 ⇒
+        l2s.forall { l2 =>
             val cl2 = Chain(l2: _*)
-            cl1.fuse[String](cl2, (x, y) ⇒ if (x == y) x else y).mkString ==
-                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
+            cl1.fuse[String](cl2, (x, y) => if (x == y) x else y).mkString ==
+                l1.zip(l2).map(v => if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
 
-    property("fuse of lists with the same elements do not call the given function") = forAll { l1: List[String] ⇒
+    property("fuse of lists with the same elements do not call the given function") = forAll { l1: List[String] =>
         val cl1 = Chain(l1: _*)
         val cl2 = Chain(l1: _*)
         var failed = false
-        cl1.fuse(cl2, (s1, s2) ⇒ { failed = true; s1 })
+        cl1.fuse(cl2, (s1, s2) => { failed = true; s1 })
         !failed
 
     }
 
-    property("fuse combines (zip and map)") = forAll { (l1: List[String]) ⇒
+    property("fuse combines (zip and map)") = forAll { (l1: List[String]) =>
         val cl1 = Chain(l1: _*)
-        val cl3 = cl1.fuse(cl1, (s1, s2) ⇒ s1 + s2)
+        val cl3 = cl1.fuse(cl1, (s1, s2) => s1 + s2)
         (cl3.size == cl1.size) :| "length" &&
-            Chain(l1.zip(l1).map { v ⇒
+            Chain(l1.zip(l1).map { v =>
                 val (s1: String, s2: String) = v
                 if (s1 eq s2) s1 else s1 + s2
             }: _*) == cl3
     }
 
-    property("(self) merge") = forAll { l: List[String] ⇒
+    property("(self) merge") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
-        fl.merge(Chain(l: _*))((x, y) ⇒ x) eq fl
+        fl.merge(Chain(l: _*))((x, y) => x) eq fl
     }
 
-    property("merge(different lists but same elements)") = forAll(smallListsGen) { l1: List[String] ⇒
+    property("merge(different lists but same elements)") = forAll(smallListsGen) { l1: List[String] =>
         val l2s: Iterator[List[String]] = l1.permutations
         val cl1 = Chain(l1: _*)
-        l2s.forall { l2 ⇒
+        l2s.forall { l2 =>
             val cl2 = Chain(l2: _*)
-            cl1.merge[String, String](cl2)((x, y) ⇒ if (x == y) x else y).mkString ==
-                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
+            cl1.merge[String, String](cl2)((x, y) => if (x == y) x else y).mkString ==
+                l1.zip(l2).map(v => if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
 
-    property("merge combines (zip and map)") = forAll { (l1: List[String]) ⇒
+    property("merge combines (zip and map)") = forAll { (l1: List[String]) =>
         val cl1 = Chain(l1: _*)
-        val cl3 = cl1.merge(cl1)((s1, s2) ⇒ s1 + s2)
+        val cl3 = cl1.merge(cl1)((s1, s2) => s1 + s2)
         (cl3.size == cl1.size) :| "length" &&
-            Chain(l1.zip(l1).map { v ⇒ val (s1: String, s2: String) = v; s1 + s2 }: _*) == cl3
+            Chain(l1.zip(l1).map { v => val (s1: String, s2: String) = v; s1 + s2 }: _*) == cl3
     }
 
-    property("forFirstN") = forAll { (l1: List[String]) ⇒
+    property("forFirstN") = forAll { (l1: List[String]) =>
         val cl1 = Chain(l1: _*)
-        l1.indices.forall { i ⇒
+        l1.indices.forall { i =>
             var result = ""
             cl1.forFirstN(i)(result += _)
             result == l1.take(i).foldLeft("")(_ + _)
         }
     }
 
-    property("toString") = forAll { l: List[String] ⇒
+    property("toString") = forAll { l: List[String] =>
         Chain(l: _*).toString.endsWith("Naught")
     }
 

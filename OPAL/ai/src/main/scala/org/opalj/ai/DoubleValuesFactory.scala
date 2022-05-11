@@ -10,7 +10,7 @@ import org.opalj.br.DoubleType
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait DoubleValuesFactory extends ValuesDomain { domain ⇒
+trait DoubleValuesFactory extends ValuesDomain { domain =>
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or

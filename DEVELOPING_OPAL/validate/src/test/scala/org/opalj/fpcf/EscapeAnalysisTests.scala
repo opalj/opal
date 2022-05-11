@@ -32,23 +32,23 @@ class EscapeAnalysisTests extends PropertiesTest {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               ⇒ Set(performInvocationsDomain)
-            case Some(requirements) ⇒ requirements + performInvocationsDomain
+            case None               => Set(performInvocationsDomain)
+            case Some(requirements) => requirements + performInvocationsDomain
         }
 
         p.get(RTACallGraphKey)
     }
 
     private[this] def mapEntities(
-        p: Project[URL], es: Traversable[(Entity, String ⇒ String, Traversable[AnnotationLike])]
-    ): Traversable[(Entity, String ⇒ String, Traversable[AnnotationLike])] = {
+        p: Project[URL], es: Traversable[(Entity, String => String, Traversable[AnnotationLike])]
+    ): Traversable[(Entity, String => String, Traversable[AnnotationLike])] = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val simpleContexts = p.get(SimpleContextsKey)
-        es.map { tuple ⇒
+        es.map { tuple =>
             (
                 tuple._1 match {
-                    case ds: DefinitionSite         ⇒ (simpleContexts(declaredMethods(ds.method)), ds)
-                    case fp: VirtualFormalParameter ⇒ (simpleContexts(fp.method), fp)
+                    case ds: DefinitionSite         => (simpleContexts(declaredMethods(ds.method)), ds)
+                    case fp: VirtualFormalParameter => (simpleContexts(fp.method), fp)
                 },
                 tuple._2,
                 tuple._3

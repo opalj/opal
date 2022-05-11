@@ -62,7 +62,7 @@ object Annotation {
             annotationType,
             RefArray
                 ._UNSAFE_from[(String, ElementValue)](elementValuePairs.toArray)
-                ._UNSAFE_mapped[ElementValuePair](e ⇒ ElementValuePair(e))
+                ._UNSAFE_mapped[ElementValuePair](e => ElementValuePair(e))
         )
     }
 

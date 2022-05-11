@@ -10,7 +10,7 @@ package ai
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait ReturnInstructionsDomain { domain: ValuesDomain ⇒
+trait ReturnInstructionsDomain { domain: ValuesDomain =>
 
     /**
      * Called when a return instruction with the given `pc` is reached.

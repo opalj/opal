@@ -44,12 +44,12 @@ object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val report = new ConcurrentLinkedQueue[String]
 
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val result = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
             val code = result.domain.code
@@ -59,13 +59,13 @@ object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
             } {
                 // getInstance is static, algorithm is first param
                 code.instructions(vos) match {
-                    case LoadString(value) ⇒
+                    case LoadString(value) =>
                         report.add(m.toJava(s"passed value ($pc): $value"))
-                    case invoke @ INVOKEINTERFACE(Key, "getAlgorithm", JustReturnsString) ⇒
+                    case invoke @ INVOKEINTERFACE(Key, "getAlgorithm", JustReturnsString) =>
                         report.add(m.toJava(s"return value of ($pc): ${invoke.toString}"))
 
-                    case get @ GETFIELD(_, _, _) ⇒ println("uknown value: "+get)
-                    case i                       ⇒ println("unsupported instruction: "+i)
+                    case get @ GETFIELD(_, _, _) => println("uknown value: "+get)
+                    case i                       => println("unsupported instruction: "+i)
                 }
             }
         }

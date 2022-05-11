@@ -9,7 +9,7 @@
 3:/*pc=14:*/ lv3 = 0
 4:/*pc=15:*/ lv4 = new java.lang.Object
 5:/*pc=19:*/ {lv4}/*(non-virtual) java.lang.Object*/.<init>()
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 5 →
 6:/*pc=22:*/ {lv2}[{lv3}] = {lv4}
@@ -36,18 +36,18 @@
 23:/*pc=59:*/ lv17 = 0
 24:/*pc=60:*/ lv18 = {lv8, lv12}[{lv17}]
 25:/*pc=61:*/ ai.MethodsWithArrays.processIt({lv18})
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 25 →
 26:/*pc=65:*/ lv1a = 1
 27:/*pc=66:*/ lv1b = {lv8, lv12}[{lv1a}]
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 27 →
 28:/*pc=67:*/ ai.MethodsWithArrays.processIt({lv1b})
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 28 →
 29:/*pc=71:*/ lv1d = 10
 30:/*pc=73:*/ /*expression value is ignored:*/{lv8, lv12}[{lv1d}]
-// ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception => abnormal return>

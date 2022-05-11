@@ -36,13 +36,13 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         // Get the set of type propagation variants for which this annotation applies.
         val variantsElementValues: Seq[ElementValue] =
             getValue(p, annotationType, a.elementValuePairs, "variants").asArrayValue.values
-        val variants = variantsElementValues.map(ev ⇒ TypePropagationVariant.valueOf(ev.asEnumValue.constName))
+        val variants = variantsElementValues.map(ev => TypePropagationVariant.valueOf(ev.asEnumValue.constName))
 
         // Get the variant which was actually executed.
         val executedVariant =
             p.get(PropertyStoreKey).getInformation[TypePropagationVariant](TypePropagationVariant.tag) match {
-                case Some(variant) ⇒ variant
-                case None          ⇒ sys.error("type propagation variant must be registered")
+                case Some(variant) => variant
+                case None          => sys.error("type propagation variant must be registered")
             }
 
         // If none of the annotated variants match the executed ones, return...
@@ -53,9 +53,9 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
         val instantiatedTypes = {
             properties.find(_.isInstanceOf[InstantiatedTypes]) match {
-                case Some(prop) ⇒
+                case Some(prop) =>
                     prop.asInstanceOf[InstantiatedTypes].types
-                case None ⇒
+                case None =>
                     implicit val ctx: LogContext = p.logContext
                     OPALLogger.warn("property matcher", s"Expected property InstantiatedTypes was not computed for $entity.")
                     UIDSet.empty[ReferenceType]
@@ -64,7 +64,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
         val expectedTypeNames: Seq[String] =
             getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "value").asArrayValue.values
-                .map(ev ⇒ ev.asStringValue.value)
+                .map(ev => ev.asStringValue.value)
 
         val expectedTypes = expectedTypeNames.map(ReferenceType(_)).toSet
 

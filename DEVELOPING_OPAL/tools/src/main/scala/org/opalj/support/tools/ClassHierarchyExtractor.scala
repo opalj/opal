@@ -23,7 +23,7 @@ object ClassHierarchyExtractor {
         implicit
         classHierarchy: ClassHierarchy
     ): String = {
-        val specLines = types.map { aType ⇒
+        val specLines = types.map { aType =>
             var specLine =
                 (
                     if (classHierarchy.isInterface(aType).isYes)
@@ -50,7 +50,7 @@ object ClassHierarchyExtractor {
         import org.opalj.br.reader.Java8Framework.ClassFiles
 
         if (args.length < 3 ||
-            !args.drop(2).forall(arg ⇒ arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
+            !args.drop(2).forall(arg => arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
             println("Usage:     java …ClassHierarchy supertype filterprefix <JAR|JMOD file>+")
             println("Example:   … java.lang.Enum \"\" .../rt.jar")
             println("           lists all subclasses of java.lang.Enum in rt.jar; \"\" effectively disables the filter.")
@@ -60,11 +60,11 @@ object ClassHierarchyExtractor {
         val supertypeName = args(0).replace('.', '/')
         val filterPrefix = args(1).replace('.', '/')
 
-        val classFiles = args.foldLeft(Nil: List[ClassFile]) { (classFiles, filename) ⇒
+        val classFiles = args.foldLeft(Nil: List[ClassFile]) { (classFiles, filename) =>
             classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
         }
         implicit val classHierarchy =
-            if (classFiles.forall(cf ⇒ cf.thisType != ObjectType.Object)) {
+            if (classFiles.forall(cf => cf.thisType != ObjectType.Object)) {
                 println("the class files do not contain java.lang.Object; adding default type hierarchy")
                 // load pre-configured class hierarchy...
                 ClassHierarchy(classFiles)(GlobalLogContext)
@@ -85,7 +85,7 @@ object ClassHierarchyExtractor {
                 "\""+filterPrefix+"\""
         )
         val allRelevantSubtypes =
-            classHierarchy.allSubtypes(supertype, true).filter { candidateType ⇒
+            classHierarchy.allSubtypes(supertype, true).filter { candidateType =>
                 candidateType.fqn.startsWith(filterPrefix)
             }
         val spec = deriveSpecification(allRelevantSubtypes)

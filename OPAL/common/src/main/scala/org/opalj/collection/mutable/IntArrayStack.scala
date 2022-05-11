@@ -21,7 +21,7 @@ final class IntArrayStack private (
 ) extends mutable.IndexedSeq[Int]
     with mutable.IndexedSeqLike[Int, IntArrayStack]
     with mutable.Cloneable[IntArrayStack]
-    with Serializable { stack ⇒
+    with Serializable { stack =>
 
     def this(initialSize: Int = 4) { this(new Array[Int](initialSize), 0) }
 
@@ -146,7 +146,7 @@ final class IntArrayStack private (
         this.data(0)
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int => U): Unit = {
         val data = this.data
         var i = this.size0 - 1
         while (i >= 0) {
@@ -155,7 +155,7 @@ final class IntArrayStack private (
         }
     }
 
-    def foreachReverse[U](f: Int ⇒ U): Unit = {
+    def foreachReverse[U](f: Int => U): Unit = {
         val data = this.data
         val max = this.size0 - 1
         var i = 0
@@ -165,7 +165,7 @@ final class IntArrayStack private (
         }
     }
 
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = {
         val data = this.data
         var v = z
         var i = this.size0 - 1

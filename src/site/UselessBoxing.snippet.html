@@ -30,10 +30,10 @@ for {
         case (
             INVOKESPECIAL(receiver1, _, _, TheArgument(parameterType: BaseType)),
             INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
-            ) ⇒ { (receiver1 eq receiver2) &amp;&amp;
+            ) => { (receiver1 eq receiver2) &amp;&amp;
                    receiver1.isPrimitiveTypeWrapper &amp;&amp;
                    theMethods.contains(name) }
-        case _ ⇒ false
+        case _ => false
     }
 } println (classFile.fqn +"{"+ method.toJava+"::"+ body.lineNumber(pc)+"}")</code></pre>
 You can paste the analysis in the Scala REPL to directly execute it. In this case, you'll get – for the OpenJDK 8 – the following result:

@@ -63,7 +63,7 @@ class CloneDoesNotCallSuperClone[Source] extends FindRealBugsAnalysis[Source] {
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
         // For each clone() methods that doesn't contain a call to super.clone()...
@@ -74,8 +74,8 @@ class CloneDoesNotCallSuperClone[Source] extends FindRealBugsAnalysis[Source] {
             method @ Method(_, "clone", JustReturnsObject) ← classFile.methods
             if method.body.isDefined
             if !method.body.get.instructions.exists {
-                case INVOKESPECIAL(`superClass`, "clone", JustReturnsObject) ⇒ true
-                case _ ⇒ false
+                case INVOKESPECIAL(`superClass`, "clone", JustReturnsObject) => true
+                case _ => false
             }
         } yield {
             MethodBasedReport(

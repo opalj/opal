@@ -47,7 +47,7 @@ case class ReachableMethodsDescription(reachableMethods: List[ReachableMethodDes
      * Converts the set of reachable methods into a mapping from method to the set of call sites.
      */
     lazy val toMap: Map[MethodDesc, List[CallSiteDescription]] = {
-        reachableMethods.groupBy(_.method).map { case (k, v) ⇒ k → v.flatMap(_.callSites) }
+        reachableMethods.groupBy(_.method).map { case (k, v) => k → v.flatMap(_.callSites) }
     }
 }
 
@@ -136,7 +136,7 @@ private class CallGraphDeserializer private[analyses] (
             val calls = new DirectCalls()
             val method = methodDesc.toDeclaredMethod
             for (
-                x ← callSites.groupBy(cs ⇒ (cs.declaredTarget, cs.line)).values;
+                x ← callSites.groupBy(cs => (cs.declaredTarget, cs.line)).values;
                 (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) ← x.zipWithIndex
             ) {
 

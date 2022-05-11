@@ -63,7 +63,7 @@ trait BaseBugPickerAnalysisDomain
     // We want to get the special treatment of calls on "Class" objects
     // and do not want to perform invocations in this case;
     // hence, we have to mix in this domain AFTER the PerformInvocations domain!
-    this: domain.l1.DefaultClassValuesBinding ⇒
+    this: domain.l1.DefaultClassValuesBinding =>
 }
 
 /**
@@ -92,7 +92,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     extends BaseBugPickerAnalysisDomain
     with PerformInvocationsWithRecursionDetection
     with PerformInvocationsWithBasicVirtualMethodCallResolution
-    with domain.l1.DefaultClassValuesBinding { callingDomain ⇒
+    with domain.l1.DefaultClassValuesBinding { callingDomain =>
 
     def debug: Boolean
 
@@ -130,7 +130,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
         pc:       PC,
         method:   Method,
         operands: callingDomain.Operands,
-        fallback: () ⇒ MethodCallResult
+        fallback: () => MethodCallResult
     ): MethodCallResult = {
         val result = super.doInvoke(pc, method, operands, fallback)
         if (debug) {
@@ -192,7 +192,7 @@ class InvocationBugPickerAnalysisDomain(
     with domain.RecordLastReturnedValues
     with domain.RecordAllThrownExceptions
     with ChildPerformInvocationsWithRecursionDetection {
-    callingDomain ⇒
+    callingDomain =>
 
     override def calledMethodDomain(method: Method) = {
         new InvocationBugPickerAnalysisDomain(
@@ -238,7 +238,7 @@ class RootBugPickerAnalysisDomain(
     // always fails etc.)
     with domain.l1.RecordAllThrownExceptions
     with domain.RecordCFG
-    with domain.RecordDefUse { callingDomain ⇒
+    with domain.RecordDefUse { callingDomain =>
 
     final def currentCallChainLength: Int = 0
     final def calledMethodAI = ai
@@ -248,7 +248,7 @@ class RootBugPickerAnalysisDomain(
     // in time the initial operands are available!
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
-            localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) ⇒
+            localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) =>
                 if (n ne null) n :&: l else l)
         CalledMethodsStore(coordinatingDomain, frequentEvaluationWarningLevel)(
             method, mapOperands(operands, coordinatingDomain)

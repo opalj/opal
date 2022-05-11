@@ -51,7 +51,7 @@ class Java8Invokedynamics(
         * Note: Scala's method references use the same mechanism as Java 8 and are therefore not
         * covered within this query.
         * */
-        (1 to 7).map(num ⇒ s"MR$num") ++ (1 to 9).map(num ⇒ s"Lambda$num")
+        (1 to 7).map(num => s"MR$num") ++ (1 to 9).map(num => s"Lambda$num")
 
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
@@ -65,7 +65,7 @@ class Java8Invokedynamics(
         for {
             m @ MethodWithBody(code) ← project.allMethodsWithBody
             pcAndInvocation ← code collect {
-                case dynInv: INVOKEDYNAMIC ⇒ dynInv
+                case dynInv: INVOKEDYNAMIC => dynInv
             }
         } {
 
@@ -73,7 +73,7 @@ class Java8Invokedynamics(
             val l = InstructionLocation(project.source(m.classFile).get, m, pc)
 
             val testCaseId = pcAndInvocation.value match {
-                case invDyn: INVOKEDYNAMIC ⇒
+                case invDyn: INVOKEDYNAMIC =>
                     {
 
                         if (isJava10StringConcatInvokedynamic(invDyn)) {
@@ -132,8 +132,8 @@ class Java8Invokedynamics(
 
     private def handleJava8InvokeDynamic[S](m: Method, handle: MethodCallMethodHandle) = {
         handle.referenceKind match {
-            case REF_invokeInterface ⇒ 0 /* MR1*/
-            case REF_invokeStatic ⇒ {
+            case REF_invokeInterface => 0 /* MR1*/
+            case REF_invokeStatic => {
                 val InvokeStaticMethodHandle(_, _, name, descriptor) = handle
                 // this just the called method is defined in the same class..
                 // if there is a method in the same class with the same name and descriptor,
@@ -159,7 +159,7 @@ class Java8Invokedynamics(
                     8 /* Lambda2 */
                 }
             }
-            case REF_invokeSpecial ⇒ {
+            case REF_invokeSpecial => {
                 val InvokeSpecialMethodHandle(_, isInterface, name, methodDescriptor) = handle
                 val localMethod = m.classFile.findMethod(name, methodDescriptor)
                 val isLocal = localMethod.isDefined
@@ -168,9 +168,9 @@ class Java8Invokedynamics(
                     if (callee.isSynthetic) 2 /* MR3  */ else 1 /* MR2 */
                 } else /* something unexpected */ 10
             }
-            case REF_invokeVirtual    ⇒ 6 /* MR 7 */
-            case REF_newInvokeSpecial ⇒ 5 /* MR 6 */
-            case hk                   ⇒ throw new RuntimeException("Unexpected handle Kind."+hk)
+            case REF_invokeVirtual    => 6 /* MR 7 */
+            case REF_newInvokeSpecial => 5 /* MR 6 */
+            case hk                   => throw new RuntimeException("Unexpected handle Kind."+hk)
         }
     }
 }

@@ -23,16 +23,16 @@ object FindUsages {
             time {
                 Java9Framework.processClassFiles(
                     List(new java.io.File(args(0))), // <= the root folders
-                    _ ⇒ (), // <= suppress debug info
+                    _ => (), // <= suppress debug info
                     {
-                        case (cf, url) ⇒
+                        case (cf, url) =>
                             c.incrementAndGet()
-                            if (cf.methodsWithBody.exists(_.body.get.exists((pc, i) ⇒ i.isMethodInvocationInstruction && i.asMethodInvocationInstruction.declaringClass.toJava.startsWith("org.bouncycastle"))))
+                            if (cf.methodsWithBody.exists(_.body.get.exists((pc, i) => i.isMethodInvocationInstruction && i.asMethodInvocationInstruction.declaringClass.toJava.startsWith("org.bouncycastle"))))
                                 println(url+" "+cf.thisType.toJava)
                     },
                     SuppressExceptionHandler
                 )
-            } { t ⇒
+            } { t =>
                 println(s"Done ${t.toSeconds}; analyzed class files: "+c.get)
             }
         }

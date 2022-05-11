@@ -19,12 +19,12 @@
 // <FINALLY> →
 6:/*pc=17:*/ caught <ANY> /* <= {exception[VM]@4,exception@4,param1}*/
 7:/*pc=19:*/ {param1}/*java.lang.Throwable*/.printStackTrace()
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 7 →
 8:/*pc=23:*/ throw {exception[VM]@4, exception@4, param1}
-// ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚡️ <uncaught exception => abnormal return>
 
 // 5 →
 9:/*pc=25:*/ {param1}/*java.lang.Throwable*/.printStackTrace()
-// ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception ⇒ abnormal return>
+// ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception => abnormal return>

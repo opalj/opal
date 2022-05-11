@@ -20,13 +20,13 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
 
     it should ("be empty if it is newly created") in {
         val stack = new IntArrayStack()
-        stack.foreach { e ⇒ fail("non empty") }
+        stack.foreach { e => fail("non empty") }
         stack.isEmpty should be(true)
         stack.nonEmpty should be(false)
         stack.size should be(0)
         stack.length should be(0)
 
-        (new IntArrayStack(100 /*sizeHint*/ )).foreach { e ⇒ fail("non empty") }
+        (new IntArrayStack(100 /*sizeHint*/ )).foreach { e => fail("non empty") }
     }
 
     it should ("should only contain those elements that are added") in {
@@ -41,7 +41,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         stack.nonEmpty should be(true)
 
         var values: List[Int] = Nil
-        stack.foreach { v ⇒ values ::= v }
+        stack.foreach { v => values ::= v }
         values.size should be(3)
         values should contain(2)
         values should contain(5)
@@ -62,7 +62,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
         stack.nonEmpty should be(true)
 
         var values: List[Int] = Nil
-        stack.foreach { v ⇒ values ::= v }
+        stack.foreach { v => values ::= v }
         values should be(List(4))
     }
 
@@ -84,7 +84,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
             val v = stack.pop()
             fail(s"unexpectedly popped $v from a presumably empty stack")
         } catch {
-            case _: Throwable ⇒ // everything is OK
+            case _: Throwable => // everything is OK
         }
     }
 
@@ -154,13 +154,13 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
 
         { // test iteration
             var nextValue = Max - 1
-            stack1.foreach { v ⇒ v should be(nextValue); nextValue -= 1 }
+            stack1.foreach { v => v should be(nextValue); nextValue -= 1 }
             stack1.size should be(Max)
         }
 
         { // test pop
             var nextValue = Max - 1
-            Range(start = 0, end = Max).foreach { v ⇒
+            Range(start = 0, end = Max).foreach { v =>
                 stack1.pop should be(nextValue); nextValue -= 1
             }
             stack1.size should be(0)

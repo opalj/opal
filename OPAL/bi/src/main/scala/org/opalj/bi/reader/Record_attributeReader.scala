@@ -81,7 +81,7 @@ trait Record_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val components_count = in.readUnsignedShort
         if (components_count > 0 || reifyEmptyAttributes) {

@@ -42,7 +42,7 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
         // For all classes referencing neither privilegedAction nor

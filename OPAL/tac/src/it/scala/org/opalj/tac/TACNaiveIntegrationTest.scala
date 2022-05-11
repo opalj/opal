@@ -52,7 +52,7 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
                 )
                 ToTxt(params, tacNaiveCode, cfg, true, true, true)
             } catch {
-                case e: Throwable ⇒ this.synchronized {
+                case e: Throwable => this.synchronized {
                     val methodSignature = m.toJava
                     mutex.synchronized {
                         println(methodSignature+" - size: "+body.instructions.length)
@@ -96,13 +96,13 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
         it("it should be able to convert all methods of the JDK") {
             time {
                 checkFolder(jreLibFolder)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            } { t => info(s"conversion took ${t.toSeconds}") }
         }
 
         it("it should be able to convert all methods of the set of collected class files") {
             time {
                 checkFolder(biClassfilesFolder)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            } { t => info(s"conversion took ${t.toSeconds}") }
         }
 
     }

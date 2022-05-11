@@ -56,7 +56,7 @@ object ObserverPatternUsage {
 
         import reader.read
         import reader.Java7Framework.ClassFiles
-        import reader.Java7LibraryFramework.{ ClassFiles ⇒ LibraryClassFiles }
+        import reader.Java7LibraryFramework.{ ClassFiles => LibraryClassFiles }
 
         var readApplicationClasses = true
         val applicationFiles = args.takeWhile(_ != "-lib")
@@ -116,14 +116,14 @@ object ObserverPatternUsage {
         var appObserverClasses: Set[ObjectType] = Set.empty
         val allObservers = {
             var observers = Set.empty[ObjectType]
-            classHierarchy foreachKnownType { objectType ⇒
+            classHierarchy foreachKnownType { objectType =>
                 // this is the Fully Qualified binary Name (fqn) e.g., java/lang/Object
                 val fqn = objectType.fqn
                 if (!observers.contains(objectType) &&
                     (fqn.endsWith("Observer") || fqn.endsWith("Listener"))) {
                     val observerTypes = allSubtypes(objectType, true)
                     observers ++= observerTypes
-                    observerTypes foreach { objectType ⇒
+                    observerTypes foreach { objectType =>
                         // If this class is "just" an interface and this type is later
                         // used in the code, it is extremely likely that we have a 
                         // relationship to the pattern; the error margin is very low.
@@ -148,17 +148,17 @@ object ObserverPatternUsage {
         val allObserverTypes = allObserverInterfaces ++
             // we also want to include classes such as WindowAdapater which are 
             // pure implementations of an observer interface
-            (allObservers filter { observerType ⇒
+            (allObservers filter { observerType =>
                 if (project(observerType).isDefined) { // check that the project is complete
                     val observerClassFile = project(observerType).get
                     if (!observerClassFile.isInterfaceDeclaration) {
                         val implObsIntfs = observerClassFile.interfaceTypes.filter(allObserverInterfaces.contains(_))
 
                         implObsIntfs.nonEmpty && (
-                            observerClassFile.methods forall { method ⇒
+                            observerClassFile.methods forall { method =>
                                 method.isInitialzer || method.isSynthetic ||
                                     // one of the implemented observer interfaces defines the method
-                                    implObsIntfs.exists(observerInterface ⇒
+                                    implObsIntfs.exists(observerInterface =>
                                         project(observerInterface).isDefined &&
                                             classHierarchy.lookupMethodInInterface(
                                                 project(observerInterface).get,
@@ -184,20 +184,20 @@ object ObserverPatternUsage {
                 if field.fieldType.isReferenceType
             } {
                 field.fieldType match {
-                    case ArrayType(ot: ObjectType) if (allObserverTypes.contains(ot)) ⇒
+                    case ArrayType(ot: ObjectType) if (allObserverTypes.contains(ot)) =>
                         observerFields += ((classFile, field))
-                    case ot: ObjectType ⇒
+                    case ot: ObjectType =>
                         if (allObserverTypes.contains(ot))
                             observerFields += ((classFile, field))
                         else { // check if it is a container type
                             field.fieldTypeSignature match {
-                                case Some(GenericContainer(c, ot: ObjectType)) if allObserverTypes.contains(ot) ⇒
+                                case Some(GenericContainer(c, ot: ObjectType)) if allObserverTypes.contains(ot) =>
                                     observerFields += ((classFile, field))
-                                case _ ⇒
+                                case _ =>
                                 /* Ignore */
                             }
                         }
-                    case _ ⇒ /* Ignore */
+                    case _ => /* Ignore */
                 }
             }
             observerFields
@@ -219,15 +219,15 @@ object ObserverPatternUsage {
             method ← observable.methods
         } {
             val hasMethodObserverParameter =
-                method.parameterTypes exists { pt ⇒
+                method.parameterTypes exists { pt =>
                     pt.isObjectType && allObserverInterfaces.contains(pt.asObjectType)
                 }
             if (hasMethodObserverParameter) {
                 observerManagementMethods += ((observable, method))
             } else if (method.body.isDefined &&
                 method.body.get.instructions.exists({
-                    case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) ⇒ true
-                    case _ ⇒ false
+                    case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) => true
+                    case _ => false
                 })) {
                 observerNotificationMethods += ((observable, method))
             }
@@ -240,9 +240,9 @@ object ObserverPatternUsage {
         println(BOLD+"Observer types in project ("+allObserverTypes.size+"): "+RESET + allObserverTypes.map(_.toJava).mkString(", "))
         println(BOLD+"Observer interfaces in application ("+appObserverInterfaces.size+"): "+RESET + appObserverInterfaces.map(_.toJava).mkString(", "))
         println(BOLD+"Observer classes in application ("+appObserverClasses.size+"): "+RESET + appObserverClasses.map(_.toJava).mkString(", "))
-        println(BOLD+"Fields to store observers in application ("+observerFields.size+"): "+RESET + observerFields.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.fieldType.toJava+" "+e._2.name+" }").mkString(", "))
-        println(BOLD+"Methods to manage observers in application ("+observerManagementMethods.size+"): "+RESET + observerManagementMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.toJava+" }").mkString(", "))
-        println(BOLD+"Methods that are related to observers in application ("+observerNotificationMethods.size+"): "+RESET + observerNotificationMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.toJava+" }").mkString(", "))
+        println(BOLD+"Fields to store observers in application ("+observerFields.size+"): "+RESET + observerFields.map(e => e._1.thisType.toJava+"{ "+e._2.fieldType.toJava+" "+e._2.name+" }").mkString(", "))
+        println(BOLD+"Methods to manage observers in application ("+observerManagementMethods.size+"): "+RESET + observerManagementMethods.map(e => e._1.thisType.toJava+"{ "+e._2.toJava+" }").mkString(", "))
+        println(BOLD+"Methods that are related to observers in application ("+observerNotificationMethods.size+"): "+RESET + observerNotificationMethods.map(e => e._1.thisType.toJava+"{ "+e._2.toJava+" }").mkString(", "))
     }
 
     //
@@ -343,8 +343,8 @@ object ObserverPatternUsage {
     //        }
     //        val data = ofDim[AnyRef](arrayColumnSize, 6)
     //        var j = 0; var n = 0;
-    //        stats.foreach(x ⇒ { data(n)(j) = x; n += 1 })
-    //        analysisList.foreach(x ⇒ { var n = 0; j += 1; x.foreach(i ⇒ { data(n)(j) = i.toString; n += 1 }) })
+    //        stats.foreach(x => { data(n)(j) = x; n += 1 })
+    //        analysisList.foreach(x => { var n = 0; j += 1; x.foreach(i => { data(n)(j) = i.toString; n += 1 }) })
     //        val model = new DefaultTableModel(data, columns)
     //        val fileName = (analysisName+".ods")
     //        val file = new File(fileName)
@@ -389,8 +389,8 @@ object ObserverPatternUsage {
     //            if ((thisFieldType.isObjectType && objectTypes.contains(thisFieldType.asObjectType))
     //                || (thisFieldType.isArrayType && thisFieldType.asArrayType.elementType.isObjectType && objectTypes.contains(thisFieldType.asArrayType.elementType.asObjectType))
     //                || (cts match {
-    //                    case GenericContainer(c, t) ⇒ true
-    //                    case _                      ⇒ false
+    //                    case GenericContainer(c, t) => true
+    //                    case _                      => false
     //                }))
     //        } yield {
     //            field
@@ -406,9 +406,9 @@ object ObserverPatternUsage {
     //            if classFile.thisType.fqn.startsWith(subject)
     //            method @ MethodWithBody(code) ← classFile.methods
     //            if method.name != "<init>" && method.name != "<clinit>"
-    //            (_, fa) ← code.collect({ case fa @ FieldWriteAccess((declClass, name, _)) if fields.exists(f ⇒ f.name == name && declClass == project.classFile(f).thisType) ⇒ fa })
+    //            (_, fa) ← code.collect({ case fa @ FieldWriteAccess((declClass, name, _)) if fields.exists(f => f.name == name && declClass == project.classFile(f).thisType) => fa })
     //        } yield {
-    //            val field = fields.find(f ⇒ f.name == fa.name && fa.declaringClass == project.classFile(f).thisType).get
+    //            val field = fields.find(f => f.name == fa.name && fa.declaringClass == project.classFile(f).thisType).get
     //            (classFile, method, field)
     //        }
     //        result.toSet

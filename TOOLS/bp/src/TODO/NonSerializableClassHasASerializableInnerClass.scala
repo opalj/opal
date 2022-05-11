@@ -39,7 +39,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[ClassBasedReport[Source]] = {
 
         import project.classHierarchy.isSubtypeOf

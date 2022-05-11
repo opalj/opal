@@ -23,11 +23,11 @@ object ShowLocalVariableTypeTables extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         params:        Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val messages = new ConcurrentLinkedQueue[String]()
-        project.parForeachMethodWithBody(isInterrupted) { mi ⇒
+        project.parForeachMethodWithBody(isInterrupted) { mi =>
             val m = mi.method
             val lvtt = m.body.get.localVariableTypeTable
             if (lvtt.nonEmpty)

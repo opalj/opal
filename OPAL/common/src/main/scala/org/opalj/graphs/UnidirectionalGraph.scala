@@ -45,7 +45,7 @@ class UnidirectionalGraph(
             sSuccessors
     }
 
-    def edges: Int ⇒ IntIterator = (n: Int) ⇒ { theSuccessors(n).iterator }
+    def edges: Int => IntIterator = (n: Int) => { theSuccessors(n).iterator }
 
     /**
      * Adds a new edge between the given vertices.

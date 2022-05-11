@@ -25,7 +25,7 @@ case class METHODS[T](methods: RefArray[METHOD[T]]) {
         implicit
         classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): RefArray[(br.MethodTemplate, Option[T])] = {
-        methods.map[(br.MethodTemplate, Option[T])](m ⇒
+        methods.map[(br.MethodTemplate, Option[T])](m =>
             m.result(classFileVersion, declaringClassType))
     }
 

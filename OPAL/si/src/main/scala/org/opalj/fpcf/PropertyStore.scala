@@ -3,7 +3,7 @@ package org.opalj
 package fpcf
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 import java.util.concurrent.RejectedExecutionException
 
 import scala.util.control.ControlThrowable
@@ -12,7 +12,7 @@ import scala.collection.mutable
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.log.OPALLogger.{debug ⇒ trace}
+import org.opalj.log.OPALLogger.{debug => trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
@@ -144,8 +144,8 @@ abstract class PropertyStore {
      * has to ensure that the overall process of adding/querying/removing is well defined and
      * the ordered is ensured.
      */
-    final def getOrCreateInformation[T <: AnyRef](key: AnyRef, f: ⇒ T): T = {
-        externalInformation.computeIfAbsent(key, _ ⇒ f).asInstanceOf[T]
+    final def getOrCreateInformation[T <: AnyRef](key: AnyRef, f: => T): T = {
+        externalInformation.computeIfAbsent(key, _ => f).asInstanceOf[T]
     }
 
     /**
@@ -347,10 +347,10 @@ abstract class PropertyStore {
     /**
      * The set of transformers that will only be executed when required.
      */
-    protected[this] final val transformersByTargetPK: Array[( /*source*/ PropertyKey[Property], (Entity, Property) ⇒ FinalEP[Entity, Property])] = {
+    protected[this] final val transformersByTargetPK: Array[( /*source*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
-    protected[this] final val transformersBySourcePK: Array[( /*target*/ PropertyKey[Property], (Entity, Property) ⇒ FinalEP[Entity, Property])] = {
+    protected[this] final val transformersBySourcePK: Array[( /*target*/ PropertyKey[Property], (Entity, Property) => FinalEP[Entity, Property])] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
@@ -446,7 +446,7 @@ abstract class PropertyStore {
      * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
-    def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity]
+    def entities(propertyFilter: SomeEPS => Boolean): Iterator[Entity]
 
     /**
      * Returns all final entities with the given property.
@@ -455,7 +455,7 @@ abstract class PropertyStore {
      * @note Does not trigger lazy property computations.
      */
     def finalEntities[P <: Property](p: P): Iterator[Entity] = {
-        entities((otherEPS: SomeEPS) ⇒ otherEPS.isFinal && otherEPS.asFinal.p == p)
+        entities((otherEPS: SomeEPS) => otherEPS.isFinal && otherEPS.asFinal.p == p)
     }
 
     /** @see `get(epk:EPK)` for details. */
@@ -507,7 +507,7 @@ abstract class PropertyStore {
         e:  E,
         pk: PropertyKey[P]
     )(
-        pc: EOptionP[E, P] ⇒ InterimEP[E, P]
+        pc: EOptionP[E, P] => InterimEP[E, P]
     ): Unit = {
         if (!isIdle) {
             throw new IllegalStateException("analyses are already running")
@@ -522,7 +522,7 @@ abstract class PropertyStore {
         e:  E,
         pk: PropertyKey[P]
     )(
-        pc: EOptionP[E, P] ⇒ InterimEP[E, P]
+        pc: EOptionP[E, P] => InterimEP[E, P]
     ): Unit
 
     final def setupPhase(configuration: PropertyKindsConfiguration): Unit = {
@@ -573,7 +573,7 @@ abstract class PropertyStore {
         }
 
         require(
-            suppressInterimUpdates.forall { e ⇒
+            suppressInterimUpdates.forall { e =>
                 val (dependerPK, dependeePKs) = e
                 !dependeePKs.contains(dependerPK)
             },
@@ -587,30 +587,30 @@ abstract class PropertyStore {
         // information.
         // Note that "lazy" property computations may be executed accross several phases,
         // however, all "intermediate" values found at the end of a phase can still be executed.
-        this.propertyKindsComputedInThisPhase.iterator.zipWithIndex foreach { previousPhaseComputedPK ⇒
+        this.propertyKindsComputedInThisPhase.iterator.zipWithIndex foreach { previousPhaseComputedPK =>
             val (isComputed, pkId) = previousPhaseComputedPK
             if (isComputed && !propertyKindsComputedInThisPhase.exists(_.id == pkId)) {
                 propertyKindsComputedInEarlierPhase(pkId) = true
             }
         }
         JArrays.fill(this.propertyKindsComputedInThisPhase, false)
-        propertyKindsComputedInThisPhase foreach { pk ⇒
+        propertyKindsComputedInThisPhase foreach { pk =>
             this.propertyKindsComputedInThisPhase(pk.id) = true
         }
 
         // Step 2
         // Set the "propertyKindsComputedInLaterPhase" array to the specified values.
         JArrays.fill(this.propertyKindsComputedInLaterPhase, false)
-        propertyKindsComputedInLaterPhase foreach { pk ⇒
+        propertyKindsComputedInLaterPhase foreach { pk =>
             this.propertyKindsComputedInLaterPhase(pk.id) = true
         }
 
         // Step 3
         // Collect the information about which interim results should be suppressed.
-        suppressInterimUpdates foreach { dependerDependees ⇒
+        suppressInterimUpdates foreach { dependerDependees =>
             val (depender, dependees) = dependerDependees
             require(dependees.nonEmpty)
-            dependees foreach { dependee ⇒
+            dependees foreach { dependee =>
                 this.suppressInterimUpdates(depender.id)(dependee.id) = true
                 hasSuppressedDependers(dependee.id) = true
             }
@@ -672,7 +672,7 @@ abstract class PropertyStore {
         es: Traversable[E],
         pk: PropertyKey[P]
     ): Traversable[EOptionP[E, P]] = {
-        es.map(e ⇒ apply(EPK(e, pk)))
+        es.map(e => apply(EPK(e, pk)))
     }
 
     /**
@@ -810,7 +810,7 @@ abstract class PropertyStore {
         sourcePK: PropertyKey[SourceP],
         targetPK: PropertyKey[TargetP]
     )(
-        pc: (E, SourceP) ⇒ FinalEP[E, TargetP]
+        pc: (E, SourceP) => FinalEP[E, TargetP]
     ): Unit = {
         if (!isIdle) {
             throw new IllegalStateException(
@@ -819,10 +819,10 @@ abstract class PropertyStore {
         }
 
         transformersByTargetPK(targetPK.id) =
-            (sourcePK, pc.asInstanceOf[(Entity, Property) ⇒ FinalEP[Entity, Property]])
+            (sourcePK, pc.asInstanceOf[(Entity, Property) => FinalEP[Entity, Property]])
 
         transformersBySourcePK(sourcePK.id) =
-            (targetPK, pc.asInstanceOf[(Entity, Property) ⇒ FinalEP[Entity, Property]])
+            (targetPK, pc.asInstanceOf[(Entity, Property) => FinalEP[Entity, Property]])
     }
 
     /**
@@ -884,7 +884,7 @@ abstract class PropertyStore {
     )(
         c: PropertyComputation[E]
     ): Unit = {
-        es.foreach(e ⇒ scheduleEagerComputationForEntity(e)(c))
+        es.foreach(e => scheduleEagerComputationForEntity(e)(c))
     }
 
     /**
@@ -928,7 +928,7 @@ abstract class PropertyStore {
      * Executes the given function at some point between now and the return of a subsequent call
      * of waitOnPhaseCompletion.
      */
-    def execute(f: ⇒ Unit): Unit
+    def execute(f: => Unit): Unit
 
     /**
      * Awaits the completion of all property computations which were previously scheduled.
@@ -995,14 +995,14 @@ abstract class PropertyStore {
         throw t;
     }
 
-    @inline /*visibility should be package and subclasses*/ def handleExceptions[U](f: ⇒ U): U = {
+    @inline /*visibility should be package and subclasses*/ def handleExceptions[U](f: => U): U = {
         if (exception != null) throw exception;
 
         try {
             f
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
-            case t: Throwable         ⇒ collectAndThrowException(t)
+            case ct: ControlThrowable => throw ct;
+            case t: Throwable         => collectAndThrowException(t)
         }
     }
 }

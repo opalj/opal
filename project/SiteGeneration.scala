@@ -31,7 +31,7 @@ object SiteGeneration {
 
     val siteGenerationNecessary =
       !targetFolder.exists ||
-        (sourceFolder ** "*").get.exists { sourceFile ⇒
+        (sourceFolder ** "*").get.exists { sourceFile =>
           if (sourceFile.newerThan(targetFolder) && !sourceFile.isHidden) {
             log.info(
               s"At least $sourceFile was updated: " +
@@ -90,7 +90,7 @@ object SiteGeneration {
       val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build()
       val pages = for (page ← config.getAnyRefList("pages").asScala) yield {
         page match {
-          case pageConfig: java.util.Map[_, _] ⇒
+          case pageConfig: java.util.Map[_, _] =>
             val sourceFileName = pageConfig.get("source").toString
             val sourceFile = sourceFolder / sourceFileName
             val sourceStream = fromFile(sourceFile)
@@ -116,7 +116,7 @@ object SiteGeneration {
 
             // 2.3.2 copy page specific page resources (optional):
             pageConfig.get("resources") match {
-              case resources: java.util.List[_] ⇒
+              case resources: java.util.List[_] =>
                 for { resource ← resources.asScala } {
                   IO.copyFile(
                     sourceFolder / resource.toString,
@@ -124,9 +124,9 @@ object SiteGeneration {
                   )
                 }
 
-              case null ⇒ /* OK - resources are optional */
+              case null => /* OK - resources are optional */
 
-              case c ⇒
+              case c =>
                 val message = "unsupported resource configuration: " + c
                 throw new RuntimeException(message)
             }
@@ -139,7 +139,7 @@ object SiteGeneration {
               /* show in TOC */ Option(pageConfig.get("inTOC")).getOrElse(true).asInstanceOf[Boolean]
             )
 
-          case sectionTitle: String ⇒
+          case sectionTitle: String =>
             // the entry in the site.conf was "just" a title of some subsection
             (
               null,
@@ -150,11 +150,11 @@ object SiteGeneration {
               true
             )
 
-          case _ ⇒
+          case _ =>
             throw new RuntimeException("unsupported page configuration: " + page)
         }
       }
-      val toc /*Traversable[(String,String)]*/ = pages.filter(_._6).map { page ⇒
+      val toc /*Traversable[(String,String)]*/ = pages.filter(_._6).map { page =>
         val (baseFileName, _, title, _, _, _) = page
         (baseFileName, title)
       }

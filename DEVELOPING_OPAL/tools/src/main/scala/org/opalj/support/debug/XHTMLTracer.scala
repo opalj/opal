@@ -3,7 +3,7 @@ package org.opalj.support.debug
 
 import scala.xml.Node
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.io.writeAndOpen
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
@@ -65,21 +65,21 @@ trait XHTMLTracer extends AITracer {
         val openDialog = "$( \"#dialog"+flowId+"\" ).dialog(\"open\");"
         val instructionAsString =
             instruction match {
-                case NEW(objectType) ⇒
+                case NEW(objectType) =>
                     "new …"+objectType.simpleName;
-                case CHECKCAST(referenceType) ⇒
+                case CHECKCAST(referenceType) =>
                     "checkcast "+referenceType.toJava;
-                case LoadString(s) if s.size < 5 ⇒
+                case LoadString(s) if s.size < 5 =>
                     "Load \""+s+"\"";
-                case LoadString(s) ⇒
+                case LoadString(s) =>
                     "Load \""+s.substring(0, 4)+"…\""
-                case fieldAccess: FieldAccess ⇒
+                case fieldAccess: FieldAccess =>
                     fieldAccess.mnemonic+" "+fieldAccess.name
-                case invoke: NonVirtualMethodInvocationInstruction ⇒
+                case invoke: NonVirtualMethodInvocationInstruction =>
                     val declaringClass = invoke.declaringClass.toJava
                     "…"+declaringClass.substring(declaringClass.lastIndexOf('.') + 1)+" "+
                         invoke.name+"(…)"
-                case _ ⇒ instruction.toString(pc)
+                case _ => instruction.toString(pc)
             }
 
         <span onclick={ openDialog } title={ instruction.toString(pc) }>
@@ -103,7 +103,7 @@ trait XHTMLTracer extends AITracer {
         val pcsToRowIndex = SortedMap.empty[Int, Int] ++ pcs.zipWithIndex
         val ids = new java.util.IdentityHashMap[AnyRef, Integer]
         var nextId = 1
-        val idsLookup = (value: AnyRef) ⇒ {
+        val idsLookup = (value: AnyRef) => {
             var id = ids.get(value)
             if (id == null) {
                 id = nextId
@@ -138,7 +138,7 @@ trait XHTMLTracer extends AITracer {
                 <td>
                     {
                         flowEntity.
-                            map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).
+                            map(fe => instructionToNode(fe.flowId, pc, fe.instruction)).
                             getOrElse(xml.Text(" "))
                     }
                 </td>
@@ -210,7 +210,7 @@ trait XHTMLTracer extends AITracer {
                 <table>
                     <thead><tr>
                                <td>PC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-                               { (1 to inOrderFlow.size).map(index ⇒ <td>{ index }</td>) }
+                               { (1 to inOrderFlow.size).map(index => <td>{ index }</td>) }
                            </tr></thead>
                     <tbody>
                         { flowTable }
@@ -385,7 +385,7 @@ trait XHTMLTracer extends AITracer {
     override def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[Int], message: ⇒ String
+        pc: Option[Int], message: => String
     ): Unit = { /*EMPTY*/ }
 
     def result(result: AIResult): Unit = {

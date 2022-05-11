@@ -71,11 +71,11 @@ class InstantiatedTypesAnalysis private[analyses] (
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
 
         val callersUB: Callers = (callersEOptP: @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -91,7 +91,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val cfOpt = project.classFile(declaredType)
 
         // abstract classes can never be instantiated
-        cfOpt.foreach { cf ⇒
+        cfOpt.foreach { cf =>
             if (cf.isAbstract)
                 return NoResult;
         }
@@ -108,7 +108,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     ): PropertyComputationResult = {
         val partialResults = RefArrayBuffer.empty[PartialResult[TypeSetEntity, InstantiatedTypes]]
         callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
-            (_, callerContext, _, isDirect) ⇒
+            (_, callerContext, _, isDirect) =>
                 processCaller(declaredMethod, declaredType, callerContext, isDirect, partialResults)
         }
 
@@ -160,8 +160,8 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
 
         // actually it must be the direct subtype! -- we did the first check to return early
-        project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
-            cf.superclassType.foreach { supertype ⇒
+        project.classFile(caller.declaringClassType.asObjectType).foreach { cf =>
+            cf.superclassType.foreach { supertype =>
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller)
                     return ;
@@ -191,7 +191,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         )
 
         val pcsOfSuperCalls = callerMethod.body.get.collectInstructionsWithPC {
-            case pcAndInstr @ PCAndInstruction(_, `supercall`) ⇒ pcAndInstr
+            case pcAndInstr @ PCAndInstruction(_, `supercall`) => pcAndInstr
         }
 
         assert(pcsOfSuperCalls.nonEmpty)
@@ -207,7 +207,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // there must either be a new of the `declaredType` or it is a super call.
         val newInstr = NEW(declaredType)
         val hasNew = callerMethod.body.get.exists {
-            case (_, i) ⇒ i == newInstr
+            case (_, i) => i == newInstr
         }
         if (hasNew) {
             partialResults += partialResult(declaredType, caller)
@@ -246,8 +246,8 @@ class InstantiatedTypesAnalysis private[analyses] (
         instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
     ): UIDSet[ReferenceType] = {
         instantiatedTypesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ UIDSet.empty
+            case eps: EPS[_, _] => eps.ub.types
+            case _              => UIDSet.empty
         }
     }
 }
@@ -294,11 +294,11 @@ class InstantiatedTypesAnalysisScheduler(
 
         def initialize(setEntity: TypeSetEntity, types: UIDSet[ReferenceType]): Unit = {
             ps.preInitialize(setEntity, InstantiatedTypes.key) {
-                case UBP(typeSet) ⇒
+                case UBP(typeSet) =>
                     InterimEUBP(setEntity, typeSet.updated(types))
-                case _: EPK[_, _] ⇒
+                case _: EPK[_, _] =>
                     InterimEUBP(setEntity, InstantiatedTypes(types))
-                case eps ⇒
+                case eps =>
                     sys.error(s"unexpected property: $eps")
             }
         }
@@ -332,7 +332,7 @@ class InstantiatedTypesAnalysisScheduler(
 
                     val dim = pt.asArrayType.dimensions
                     val et = pt.asArrayType.elementType.asObjectType
-                    p.classHierarchy.allSubtypesForeachIterator(et, reflexive = true).foreach { subtype ⇒
+                    p.classHierarchy.allSubtypesForeachIterator(et, reflexive = true).foreach { subtype =>
                         if (initialInstantiatedTypes.contains(subtype)) {
                             val at = ArrayType(dim, subtype)
                             arrayTypeAssignments += at
@@ -344,8 +344,8 @@ class InstantiatedTypesAnalysisScheduler(
             val typeFilterSet = typeFilters.result()
 
             // Initial assignments of ObjectTypes
-            val objectTypeAssignments = initialInstantiatedTypes.filter(iit ⇒
-                typeFilterSet.exists(tf ⇒ p.classHierarchy.isSubtypeOf(iit, tf)))
+            val objectTypeAssignments = initialInstantiatedTypes.filter(iit =>
+                typeFilterSet.exists(tf => p.classHierarchy.isSubtypeOf(iit, tf)))
 
             val initialAssignment = objectTypeAssignments ++ arrayTypeAssignments.result()
 
@@ -385,7 +385,7 @@ class InstantiatedTypesAnalysisScheduler(
         ) {
             // Assign initial types to all accessible fields.
             p.classFile(ot) match {
-                case Some(cf) ⇒
+                case Some(cf) =>
                     for (f ← cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
                         val fieldType = f.fieldType.asReferenceType
                         import p.classHierarchy
@@ -393,7 +393,7 @@ class InstantiatedTypesAnalysisScheduler(
                         val initialAssignments = if (fieldType.isObjectType) {
                             val ot = fieldType.asObjectType
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
-                                (assignments, iit) ⇒
+                                (assignments, iit) =>
                                     if (classHierarchy.isSubtypeOf(iit, ot)) {
                                         assignments += iit
                                     }
@@ -406,7 +406,7 @@ class InstantiatedTypesAnalysisScheduler(
                             val et = at.elementType.asObjectType
                             val allSubtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
-                                (assignments, iit) ⇒
+                                (assignments, iit) =>
                                     if (allSubtypes.contains(iit.asObjectType)) {
                                         assignments += ArrayType(dim, iit)
                                     }
@@ -417,7 +417,7 @@ class InstantiatedTypesAnalysisScheduler(
                         val fieldSetEntity = selectSetEntity(f)
                         initialize(fieldSetEntity, initialAssignments)
                     }
-                case None ⇒
+                case None =>
                 // Nothing to do here, no classfile => no fields
             }
         }
@@ -439,7 +439,7 @@ class InstantiatedTypesAnalysisScheduler(
             val et = at.elementType.asObjectType
             val allSubtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
             val subtypes =
-                initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, iit) ⇒
+                initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, iit) =>
                     if (allSubtypes.contains(iit.asObjectType)) {
                         builder += iit
                     }

@@ -108,18 +108,18 @@ trait AttributesReader
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.
      */
-    private[this] var attributeReaders: Map[String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
+    private[this] var attributeReaders: Map[String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) => Attribute] = Map()
 
     /**
      * See `AttributeReader.registerAttributeReader` for details.
      */
     def registerAttributeReader(
-        reader: (String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
+        reader: (String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) => Attribute)
     ): Unit = {
         attributeReaders += reader
     }
 
-    private[this] var attributesPostProcessors = RefArray.empty[Attributes ⇒ Attributes]
+    private[this] var attributesPostProcessors = RefArray.empty[Attributes => Attributes]
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
@@ -129,7 +129,7 @@ trait AttributesReader
      * `localvar_target` structure of the `Runtime(In)VisibleTypeAnnotations` attribute
      * has a reference in the local variable table attribute.
      */
-    def registerAttributesPostProcessor(p: Attributes ⇒ Attributes): Unit = {
+    def registerAttributesPostProcessor(p: Attributes => Attributes): Unit = {
         attributesPostProcessors :+= p
     }
 
@@ -145,7 +145,7 @@ trait AttributesReader
                 Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
             }.filterNonNull // lets remove the attributes we don't need or understand
 
-        attributesPostProcessors.foldLeft(attributes)((a, p) ⇒ p(a))
+        attributesPostProcessors.foldLeft(attributes)((a, p) => p(a))
     }
 
     def Attribute(

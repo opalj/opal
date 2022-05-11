@@ -34,7 +34,7 @@ object SyncSetUnsyncGet {
     def apply(
         project:       SomeProject,
         parameters:    Seq[String]  = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
         // Look through non-static methods of all classes, collecting lists of

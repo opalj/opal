@@ -35,10 +35,10 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
         val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             factoryCalls.addAll(
                 mi.method.body.get.collectInstructions {
-                    case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
+                    case i: INVOKESTATIC if isProxyFactoryCall(i) => i
                 }.asJava
             )
             /*
@@ -57,10 +57,10 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
     protected def otherDynamicCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
         val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             factoryCalls.addAll(
                 mi.method.body.get.collectInstructions {
-                    case i: INVOKESTATIC if i.name.matches(TargetMethodNameRegEx) ⇒ i
+                    case i: INVOKESTATIC if i.name.matches(TargetMethodNameRegEx) => i
                 }.asJava
             )
         }

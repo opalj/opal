@@ -27,7 +27,7 @@ class FieldAccessInformation(
         // FIX We can also use a reference to a subclass to access a field in a supertype
         accessInformation.collectFirst {
             case (field, accesses) if field.name == fieldName &&
-                (field.classFile.thisType eq declaringClassType) ⇒ accesses
+                (field.classFile.thisType eq declaringClassType) => accesses
         }.getOrElse(Seq.empty)
     }
 
@@ -49,15 +49,15 @@ class FieldAccessInformation(
 
     def isRead(field: Field): Boolean = {
         allReadAccesses.get(field) match {
-            case Some(accesses) ⇒ accesses.nonEmpty
-            case None           ⇒ false
+            case Some(accesses) => accesses.nonEmpty
+            case None           => false
         }
     }
 
     def isWritten(field: Field): Boolean = {
         allWriteAccesses.get(field) match {
-            case Some(accesses) ⇒ accesses.nonEmpty
-            case None           ⇒ false
+            case Some(accesses) => accesses.nonEmpty
+            case None           => false
         }
     }
 

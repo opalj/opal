@@ -20,7 +20,7 @@ import org.opalj.br.VoidType
  * @author Michael Eichberg
  */
 trait TypedValuesFactory {
-    domain: ValuesDomain with ReferenceValuesFactory with PrimitiveValuesFactory ⇒
+    domain: ValuesDomain with ReferenceValuesFactory with PrimitiveValuesFactory =>
 
     /**
      * Factory method to create domain values with a specific type. I.e., values for
@@ -36,16 +36,16 @@ trait TypedValuesFactory {
      */
     def TypedValue(origin: ValueOrigin, valueType: Type): DomainValue =
         (valueType.id: @scala.annotation.switch) match {
-            case BooleanType.id ⇒ BooleanValue(origin)
-            case ByteType.id    ⇒ ByteValue(origin)
-            case ShortType.id   ⇒ ShortValue(origin)
-            case CharType.id    ⇒ CharValue(origin)
-            case IntegerType.id ⇒ IntegerValue(origin)
-            case FloatType.id   ⇒ FloatValue(origin)
-            case LongType.id    ⇒ LongValue(origin)
-            case DoubleType.id  ⇒ DoubleValue(origin)
-            case VoidType.id    ⇒ throw DomainException("cannot create void typed value")
-            case _              ⇒ ReferenceValue(origin, valueType.asReferenceType)
+            case BooleanType.id => BooleanValue(origin)
+            case ByteType.id    => ByteValue(origin)
+            case ShortType.id   => ShortValue(origin)
+            case CharType.id    => CharValue(origin)
+            case IntegerType.id => IntegerValue(origin)
+            case FloatType.id   => FloatValue(origin)
+            case LongType.id    => LongValue(origin)
+            case DoubleType.id  => DoubleValue(origin)
+            case VoidType.id    => throw DomainException("cannot create void typed value")
+            case _              => ReferenceValue(origin, valueType.asReferenceType)
         }
 
     /**
@@ -56,16 +56,16 @@ trait TypedValuesFactory {
      */
     final def DefaultValue(origin: ValueOrigin, theType: FieldType): DomainValue = {
         (theType.id: @scala.annotation.switch) match {
-            case BooleanType.id ⇒ BooleanValue(origin, false)
-            case ByteType.id    ⇒ ByteValue(origin, 0)
-            case CharType.id    ⇒ CharValue(origin, 0)
-            case ShortType.id   ⇒ ShortValue(origin, 0)
-            case IntegerType.id ⇒ IntegerValue(origin, 0)
-            case FloatType.id   ⇒ FloatValue(origin, 0.0f)
-            case LongType.id    ⇒ LongValue(origin, 0L)
-            case DoubleType.id  ⇒ DoubleValue(origin, 0.0d)
-            case VoidType.id    ⇒ throw DomainException("cannot create void typed value")
-            case _              ⇒ NullValue(origin)
+            case BooleanType.id => BooleanValue(origin, false)
+            case ByteType.id    => ByteValue(origin, 0)
+            case CharType.id    => CharValue(origin, 0)
+            case ShortType.id   => ShortValue(origin, 0)
+            case IntegerType.id => IntegerValue(origin, 0)
+            case FloatType.id   => FloatValue(origin, 0.0f)
+            case LongType.id    => LongValue(origin, 0L)
+            case DoubleType.id  => DoubleValue(origin, 0.0d)
+            case VoidType.id    => throw DomainException("cannot create void typed value")
+            case _              => NullValue(origin)
         }
     }
 }

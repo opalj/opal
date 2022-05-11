@@ -119,7 +119,7 @@ trait AnalysisApplication {
         //
         def splitCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
         def splitLibCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
-        args.foreach { arg ⇒
+        args.foreach { arg =>
             if (arg == "-help") {
                 printUsage
                 sys.exit(0)
@@ -187,7 +187,7 @@ trait AnalysisApplication {
             info("project configuration", "analysis specific parameters: "+unknownArgs.mkString(", "))
         val issues = checkAnalysisSpecificParameters(unknownArgs)
         if (issues.nonEmpty) {
-            issues.foreach { i ⇒ error("project configuration", i) }
+            issues.foreach { i => error("project configuration", i) }
             printUsage
             sys.exit(2)
         }
@@ -203,8 +203,8 @@ trait AnalysisApplication {
                     ConfigFactory.load(projectConfig.get)
             setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
-            case t: Throwable ⇒
+            case ct: ControlThrowable => throw ct;
+            case t: Throwable =>
                 error("fatal", "setting up the project failed", t)
                 printUsage
                 sys.exit(2)
@@ -255,7 +255,7 @@ trait AnalysisApplication {
             reader.readClassFiles(
                 cpFiles,
                 JavaClassFileReader.ClassFiles,
-                file ⇒ info("creating project", "\tfile: "+file)
+                file => info("creating project", "\tfile: "+file)
             )
 
         val (libraryClassFiles, exceptions2) = {
@@ -268,7 +268,7 @@ trait AnalysisApplication {
                     } else {
                         Java9LibraryFramework.ClassFiles
                     },
-                    file ⇒ info("creating project", "\tfile: "+file)
+                    file => info("creating project", "\tfile: "+file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
@@ -285,7 +285,7 @@ trait AnalysisApplication {
 
         val statistics =
             project
-                .statistics.map(kv ⇒ "- "+kv._1+": "+kv._2)
+                .statistics.map(kv => "- "+kv._1+": "+kv._2)
                 .toList.sorted.reverse
                 .mkString("project statistics:\n\t", "\n\t", "\n")
         info("project", statistics)(project.logContext)

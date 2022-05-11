@@ -47,7 +47,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         def id = "MethodsWithArraysTestDomain"
     }
 
-    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit): Unit = {
+    private def evaluateMethod(name: String, f: TestDomain => Unit): Unit = {
         val domain = new TestDomain
 
         val method = classFile.methods.find(_.name == name).get
@@ -60,7 +60,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
     behavior of "the abstract interpreter"
 
     it should "be able to analyze a method that processes a byte array" in {
-        evaluateMethod("byteArrays", domain ⇒ {
+        evaluateMethod("byteArrays", domain => {
             import domain._
             domain.allReturnedValues should be(
                 Map((15 → AByteValue))
@@ -69,7 +69,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to analyze a method that processes a boolean array" in {
-        evaluateMethod("booleanArrays", domain ⇒ {
+        evaluateMethod("booleanArrays", domain => {
             import domain._
             domain.allReturnedValues should be(
                 Map((14 → ABooleanValue))
@@ -78,7 +78,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to analyze a method that uses the Java feature that arrays are covariant" in {
-        evaluateMethod("covariantArrays", domain ⇒ {
+        evaluateMethod("covariantArrays", domain => {
             domain.allReturnedValues.size should be(1)
             domain.isValueASubtypeOf(
                 domain.allReturnedValues(24), ObjectType.Object
@@ -87,7 +87,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to analyze a method that does various (complex) type casts related to arrays" in {
-        evaluateMethod("integerArraysFrenzy", domain ⇒ {
+        evaluateMethod("integerArraysFrenzy", domain => {
             domain.allReturnedValues.size should be(2)
             domain.isValueASubtypeOf(
                 domain.allReturnedValues(78), ArrayType(IntegerType)

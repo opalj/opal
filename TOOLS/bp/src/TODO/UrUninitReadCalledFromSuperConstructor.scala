@@ -53,7 +53,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = Seq.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[SourceLocationBasedReport[Source]] = {
 
         import project.classHierarchy
@@ -68,8 +68,8 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
         def declaresField(classFile: ClassFile, name: String,
                           fieldType: FieldType): Boolean = {
             classFile.fields.exists {
-                case Field(_, `name`, `fieldType`) ⇒ true
-                case _                             ⇒ false
+                case Field(_, `name`, `fieldType`) => true
+                case _                             => false
             }
         }
 
@@ -103,8 +103,8 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
         def calls(source: Method, targetType: Type, target: Method): Boolean = {
             source.body.get.instructions.exists {
                 case MethodInvocationInstruction(`targetType`, target.name,
-                    target.descriptor) ⇒ true
-                case _ ⇒ false
+                    target.descriptor) => true
+                case _ => false
             }
         }
 
@@ -166,7 +166,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
             constructor: Method
         ): Option[Method] = {
             constructor.body.get.associateWithIndex.collectFirst({
-                case (pc, INVOKESPECIAL(typ, name, desc)) ⇒ maybeResolveMethodReference(
+                case (pc, INVOKESPECIAL(typ, name, desc)) => maybeResolveMethodReference(
                     classFile, constructor, pc, typ, name, desc
                 )
             }).flatten
