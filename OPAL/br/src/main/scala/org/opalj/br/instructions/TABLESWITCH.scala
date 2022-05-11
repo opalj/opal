@@ -5,11 +5,11 @@ package instructions
 
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntArray
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.ForeachRefIterator
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Access jump table by index and jump.
@@ -38,7 +38,7 @@ case class TABLESWITCH(
         defaultOffset: Int,
         low:           Int,
         high:          Int,
-        jumpOffsets:   IntArray
+        jumpOffsets:   ArraySeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
     final override def asTABLESWITCH: this.type = this
@@ -152,7 +152,7 @@ object TABLESWITCH extends InstructionMetaInformation {
         defaultBranchTarget: InstructionLabel,
         low:                 Int,
         high:                Int,
-        branchTargets:       RefArray[InstructionLabel]
+        branchTargets:       ArraySeq[InstructionLabel]
     ): LabeledTABLESWITCH = {
         require(
             branchTargets.size == high - low + 1,
@@ -171,7 +171,7 @@ case class LabeledTABLESWITCH(
         defaultBranchTarget: InstructionLabel,
         low:                 Int,
         high:                Int,
-        jumpTargets:         RefArray[InstructionLabel]
+        jumpTargets:         ArraySeq[InstructionLabel]
 ) extends LabeledInstruction with TABLESWITCHLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")

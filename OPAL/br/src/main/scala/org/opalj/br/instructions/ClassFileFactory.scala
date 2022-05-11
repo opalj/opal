@@ -4,14 +4,14 @@ package br
 package instructions
 
 import scala.annotation.switch
-
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.RefArray
-import org.opalj.bi.ACC_BRIDGE
+ArraySeqimport org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.MethodDescriptor.DefaultConstructorDescriptor
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Provides helper methods to facilitate the generation of classes.
@@ -208,16 +208,16 @@ object ClassFileFactory {
                     implMethod.methodDescriptor,
                     methodDescriptor
                 )) {
-                RefArray.empty
+                ArraySeq.empty
             } else {
-                RefArray(createField(fieldType = receiverType, name = ReceiverFieldName))
+                ArraySeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
             implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex.map[FieldTemplate] { p =>
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
-        val fields: RefArray[FieldTemplate] =
+        val fields: ArraySeq[FieldTemplate] =
             receiverField ++ additionalFieldsForStaticParameters
 
         val constructor: MethodTemplate = createConstructor(definingType, fields)
@@ -295,10 +295,10 @@ object ClassFileFactory {
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
-            definingType.theSuperinterfaceTypes.toRefArray,
+            definingType.theSuperinterfaceTypes.toArraySeq,
             fields,
-            RefArray._UNSAFE_from[MethodTemplate](methods),
-            RefArray(VirtualTypeFlag)
+            ArraySeq.unsafeWrapArray(methods),
+            ArraySeq(VirtualTypeFlag)
         )
     }
 
@@ -376,7 +376,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            RefArray(ObjectType.Class),
+                            ArraySeq(ObjectType.Class),
                             ObjectType.MethodType
                         )
                     ), null, null
@@ -390,7 +390,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            RefArray(ObjectType.Class, ObjectType.Class),
+                            ArraySeq(ObjectType.Class, ObjectType.Class),
                             ObjectType.MethodType
                         )
                     ), null, null
@@ -421,7 +421,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            RefArray(
+                            ArraySeq(
                                 ObjectType.Class,
                                 ObjectType.Class,
                                 ArrayType(ObjectType.Class)
@@ -444,7 +444,7 @@ object ClassFileFactory {
                     ObjectType.MethodHandles$Lookup,
                     "getStatic",
                     MethodDescriptor(
-                        RefArray(
+                        ArraySeq(
                             ObjectType.Class,
                             ObjectType.String,
                             ObjectType.MethodType
@@ -473,7 +473,7 @@ object ClassFileFactory {
                     false,
                     "methodType",
                     MethodDescriptor(
-                        RefArray(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
+                        ArraySeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
                     )
                 ), null, null,
                 ASTORE_3,
@@ -497,7 +497,7 @@ object ClassFileFactory {
                         false,
                         "bootstrap",
                         MethodDescriptor(
-                            RefArray(
+                            ArraySeq(
                                 ObjectType.MethodHandles$Lookup,
                                 ObjectType.String,
                                 ObjectType.MethodType,
@@ -527,15 +527,15 @@ object ClassFileFactory {
 
         val maxStack = Code.computeMaxStack(instructions)
 
-        val methods = RefArray(
+        val methods = ArraySeq(
             Method(
                 bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
                 staticMethodName,
                 MethodDescriptor(
-                    RefArray(ObjectType.SerializedLambda),
+                    ArraySeq(ObjectType.SerializedLambda),
                     ObjectType.Object
                 ),
-                RefArray(
+                ArraySeq(
                     Code(maxStack, maxLocals = 5, instructions, NoExceptionHandlers, NoAttributes)
                 )
             )
@@ -550,10 +550,10 @@ object ClassFileFactory {
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
-            definingType.theSuperinterfaceTypes.toRefArray,
+            definingType.theSuperinterfaceTypes.toArraySeq,
             NoFieldTemplates, // Class fields
             methods,
-            RefArray(VirtualTypeFlag)
+            ArraySeq(VirtualTypeFlag)
         )
     }
 
@@ -641,7 +641,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask,
             "<init>",
             MethodDescriptor(fields.map[FieldType](_.fieldType), VoidType),
-            RefArray(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
+            ArraySeq(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
         )
     }
 
@@ -762,7 +762,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
             factoryMethodName,
             MethodDescriptor(fieldTypes, typeToCreate),
-            RefArray(body)
+            ArraySeq(body)
         )
     }
 
@@ -838,7 +838,7 @@ object ClassFileFactory {
                 isInterface = false,
                 "<init>",
                 MethodDescriptor(
-                    RefArray(
+                    ArraySeq(
                         ObjectType.Class,
                         ObjectType.String,
                         ObjectType.String,
@@ -862,7 +862,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_SYNTHETIC.mask,
             "writeReplace",
             MethodDescriptor.JustReturnsObject,
-            RefArray(body)
+            ArraySeq(body)
         )
     }
 
@@ -898,7 +898,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask | bi.ACC_SYNTHETIC.mask,
             "$deserializeLambda$",
             deserializedLambdaMethodDescriptor,
-            RefArray(body)
+            ArraySeq(body)
         )
     }
 
@@ -927,7 +927,7 @@ object ClassFileFactory {
                 invocationInstruction
             )
 
-        Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, RefArray(code))
+        Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, ArraySeq(code))
     }
 
     /**
@@ -1404,7 +1404,7 @@ object ClassFileFactory {
             methodName,
             bridgeMethodDescriptor.parameterTypes,
             bridgeMethodDescriptor.returnType,
-            RefArray(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
+            ArraySeq(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
         )
     }
 

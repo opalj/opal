@@ -6,7 +6,6 @@ import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.collection.immutable.RefArray
 
 /**
  * @author Roberts Kolosovs
@@ -185,7 +184,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                         2,
                         ObjectType("tactest/StackManipulationAndSynchronization"), false,
                         "staticMethod",
-                        MethodDescriptor(RefArray(IntegerType, IntegerType), IntegerType),
+                        MethodDescriptor(ArraySeq(IntegerType, IntegerType), IntegerType),
                         List(SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))
                     )
                 ),
@@ -226,7 +225,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                         ObjectType("java/util/List"),
                         true,
                         "add",
-                        MethodDescriptor(RefArray(ObjectType.Object), BooleanType),
+                        MethodDescriptor(ArraySeq(ObjectType.Object), BooleanType),
                         SimpleVar(0, ComputationalTypeReference),
                         List(SimpleVar(1, ComputationalTypeReference))
                     )

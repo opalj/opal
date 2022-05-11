@@ -8,7 +8,6 @@ import org.junit.runner.RunWith
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.collection.immutable.RefArray
 
 /**
  * @author Michael Eichberg
@@ -51,7 +50,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
                     1,
                     10,
                     SimpleVar(0, ComputationalTypeInt),
-                    RefArray(IntIntPair(1, 4), IntIntPair(2, 6), IntIntPair(3, 8))
+                    ArraySeq(IntIntPair(1, 4), IntIntPair(2, 6), IntIntPair(3, 8))
                 ),
                 Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                 ReturnValue(29, SimpleVar(0, ComputationalTypeInt)),
@@ -103,7 +102,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
                     1,
                     8,
                     SimpleVar(0, ComputationalTypeInt),
-                    RefArray(IntIntPair(1, 4), IntIntPair(10, 6))
+                    ArraySeq(IntIntPair(1, 4), IntIntPair(10, 6))
                 ),
                 Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 10)),
                 ReturnValue(30, SimpleVar(0, ComputationalTypeInt)),

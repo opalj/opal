@@ -5,12 +5,11 @@ import scala.annotation.switch
 import scala.xml.Node
 import scala.xml.Text
 import scala.xml.NodeSeq
-
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntArray
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContext
 import org.opalj.bi.VisibilityModifier
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines convenience methods related to representing certain class file elements.
@@ -23,55 +22,55 @@ package object da {
     type Constant_Pool_Index = ClassFileReader.Constant_Pool_Index
     type Constant_Pool = ClassFileReader.Constant_Pool
 
-    type Interfaces = IntArray // <=> Array of Constant_Pool_Index
-    def NoInterfaces: Interfaces = IntArray.empty
+    type Interfaces = ArraySeq[Constant_Pool_Index]
+    def NoInterfaces: Interfaces = ArraySeq.empty
 
-    type Methods = RefArray[Method_Info]
-    def NoMethods: Methods = RefArray.empty
+    type Methods = ArraySeq[Method_Info]
+    def NoMethods: Methods = ArraySeq.empty
 
-    type MethodParameters = RefArray[MethodParameter]
+    type MethodParameters = ArraySeq[MethodParameter]
 
-    type Fields = RefArray[Field_Info]
-    def NoFields: Fields = RefArray.empty
+    type Fields = ArraySeq[Field_Info]
+    def NoFields: Fields = ArraySeq.empty
 
-    type Attributes = RefArray[Attribute]
-    def NoAttributes: Attributes = RefArray.empty
+    type Attributes = ArraySeq[Attribute]
+    def NoAttributes: Attributes = ArraySeq.empty
 
-    type ExceptionIndexTable = IntArray // <=> Array of Constant_Pool_Indexes identifying the types of the method's thrown exceptions
+    type ExceptionIndexTable = ArraySeq[Constant_Pool_Index]
 
-    type ExceptionTable = RefArray[ExceptionTableEntry]
-    def NoExceptionTable: ExceptionTable = RefArray.empty
+    type ExceptionTable = ArraySeq[ExceptionTableEntry]
+    def NoExceptionTable: ExceptionTable = ArraySeq.empty
 
-    type ElementValuePairs = RefArray[ElementValuePair]
-    def NoElementValuePairs: ElementValuePairs = RefArray.Empty
+    type ElementValuePairs = ArraySeq[ElementValuePair]
+    def NoElementValuePairs: ElementValuePairs = ArraySeq.empty
 
-    type Annotations = RefArray[da.Annotation]
+    type Annotations = ArraySeq[da.Annotation]
     type ParameterAnnotations = Annotations
-    type ParametersAnnotations = RefArray[ParameterAnnotations]
+    type ParametersAnnotations = ArraySeq[ParameterAnnotations]
 
-    type TypeAnnotations = RefArray[TypeAnnotation]
+    type TypeAnnotations = ArraySeq[TypeAnnotation]
 
-    type StackMapFrames = RefArray[StackMapFrame]
-    type TypeAnnotationPathElementsTable = RefArray[TypeAnnotationPathElement]
+    type StackMapFrames = ArraySeq[StackMapFrame]
+    type TypeAnnotationPathElementsTable = ArraySeq[TypeAnnotationPathElement]
 
-    type LocalvarTable = RefArray[LocalvarTableEntry]
+    type LocalvarTable = ArraySeq[LocalvarTableEntry]
 
-    type VerificationTypeInfos = RefArray[VerificationTypeInfo]
+    type VerificationTypeInfos = ArraySeq[VerificationTypeInfo]
 
-    type PackageIndexTable = IntArray // Array[Constant_Pool_Index]
+    type PackageIndexTable = ArraySeq[Constant_Pool_Index]
 
-    type Requires = RefArray[RequiresEntry]
-    type Exports = RefArray[ExportsEntry]
-    type ExportsToIndexTable = IntArray // Array[CONSTANT_Module_Index]
-    type Opens = RefArray[OpensEntry]
-    type OpensToIndexTable = IntArray // Array[CONSTANT_Module_Index]
-    type Uses = IntArray // Array[CONSTANT_Class_Index]
-    type Provides = RefArray[ProvidesEntry]
-    type ProvidesWithIndexTable = IntArray // Array[CONSTANT_Class_Index]
+    type Requires = ArraySeq[RequiresEntry]
+    type Exports = ArraySeq[ExportsEntry]
+    type ExportsToIndexTable = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Module_Index]
+    type Opens = ArraySeq[OpensEntry]
+    type OpensToIndexTable = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Module_Index]
+    type Uses = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Class_Index]
+    type Provides = ArraySeq[ProvidesEntry]
+    type ProvidesWithIndexTable = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Class_Index]
 
-    type ClassesArray = IntArray // Array[Constant_Pool_Index]
+    type ClassesArray = ArraySeq[Constant_Pool_Index] // Array[Constant_Pool_Index]
 
-    type RecordComponents = RefArray[RecordComponent]
+    type RecordComponents = ArraySeq[RecordComponent]
 
     /**
      * A node representing the context's access flags and a string that can be used

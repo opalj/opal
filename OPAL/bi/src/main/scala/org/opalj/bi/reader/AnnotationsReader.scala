@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Generic parser to parse a list of annotations. This reader is intended to be used in
@@ -24,7 +24,7 @@ trait AnnotationsReader extends AnnotationsAbstractions {
     // IMPLEMENTATION
     //
 
-    type Annotations = RefArray[Annotation]
+    type Annotations = ArraySeq[Annotation]
 
     /**
      * Reads the annotations of a annotations attributes.
@@ -41,7 +41,7 @@ trait AnnotationsReader extends AnnotationsAbstractions {
      * </pre>
      */
     def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
-        fillRefArray(in.readUnsignedShort) {
+        fillArraySeq(in.readUnsignedShort) {
             Annotation(cp, in)
         }
     }

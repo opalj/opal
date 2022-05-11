@@ -4,6 +4,7 @@ package collection
 package immutable
 
 import scala.collection.generic.CanBuildFrom
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
 
@@ -94,7 +95,7 @@ sealed abstract class UIDSet[T <: UID]
             UncomparableSets
     }
 
-    def toRefArray: RefArray[T] = new RefArray(toArray[AnyRef])
+    def toArraySeq: ArraySeq[T] = ArraySeq.unsafeWrapArray(toArray[T])
 
 }
 

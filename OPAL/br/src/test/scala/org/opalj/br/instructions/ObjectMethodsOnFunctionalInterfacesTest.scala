@@ -10,7 +10,8 @@ import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.br.reader.{Java8Framework, Java8LibraryFramework}
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.
@@ -72,7 +73,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
      * generated object's single method).
      */
     private def getInvokedMethod(annotations: Annotations): Option[Method] = {
-        val candidates: RefArray[Option[Method]] = for {
+        val candidates: ArraySeq[Option[Method]] = for {
             invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
             ElementValuePair("receiverType", StringValue(receiverType)) ← pairs

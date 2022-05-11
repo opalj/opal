@@ -41,7 +41,6 @@ import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.concurrent.BoundedExecutionContext
 import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.collection.immutable.RefArray
 import org.opalj.concurrent.Tasks
 
 /**
@@ -181,7 +180,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         error("class file reader", s"processing $source failed", t)
     }
 
-    private[this] var classFilePostProcessors = RefArray.empty[List[ClassFile] => List[ClassFile]]
+    private[this] var classFilePostProcessors = ArraySeq.empty[List[ClassFile] => List[ClassFile]]
 
     /**
      * Register a class file post processor. A class file post processor

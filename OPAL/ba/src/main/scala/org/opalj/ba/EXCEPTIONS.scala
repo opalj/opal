@@ -3,7 +3,8 @@ package org.opalj
 package ba
 
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for the [[org.opalj.br.ExceptionTable]] attribute.
@@ -18,7 +19,7 @@ case class EXCEPTIONS(exceptionTypes: String*) extends br.MethodAttributeBuilder
         descriptor:  br.MethodDescriptor
     ): br.ExceptionTable = {
         br.ExceptionTable(
-            RefArray.from(exceptionTypes.toArray[AnyRef])._UNSAFE_mapped(ObjectType.apply)
+          ArraySeq.from(exceptionTypes.toArray[String]).map(ObjectType.apply)
         )
     }
 

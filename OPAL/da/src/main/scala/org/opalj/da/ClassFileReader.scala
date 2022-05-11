@@ -3,7 +3,8 @@ package org.opalj
 package da
 
 import org.opalj.bi.AttributeParent
-import org.opalj.collection.immutable.IntArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Factory methods to read class files and create [[ClassFile]] objects.
@@ -86,7 +87,7 @@ object ClassFileReader
     ): ClassFile = {
         new ClassFile(
             cp, minor_version, major_version, access_flags,
-            this_class, super_class, IntArray._UNSAFE_from(interfaces),
+            this_class, super_class, ArraySeq.from(interfaces),
             fields, methods, attributes
         )
     }
@@ -238,7 +239,7 @@ object ClassFileReader
         attribute_name_index:  Constant_Pool_Index,
         exception_index_table: ExceptionIndexTable
     ): Exceptions_attribute = {
-        new Exceptions_attribute(attribute_name_index, IntArray._UNSAFE_from(exception_index_table))
+        new Exceptions_attribute(attribute_name_index, ArraySeq.unsafeWrapArray(exception_index_table))
     }
 
     type Instructions = da.Code
@@ -820,7 +821,7 @@ object ClassFileReader
         new Module_attribute(
             attribute_name_index,
             module_name_index, module_flags, module_version_index,
-            requires, exports, opens, IntArray._UNSAFE_from(uses), provides
+            requires, exports, opens, ArraySeq.from(uses), provides
         )
     }
 
@@ -842,7 +843,7 @@ object ClassFileReader
         new ExportsEntry(
             exports_index,
             exports_flags,
-            IntArray._UNSAFE_from(exports_to_index_table)
+            ArraySeq.from(exports_to_index_table)
         )
     }
 
@@ -852,7 +853,7 @@ object ClassFileReader
         opens_flags:          Int,
         opens_to_index_table: OpensToIndexTable
     ): OpensEntry = {
-        new OpensEntry(opens_index, opens_flags, IntArray._UNSAFE_from(opens_to_index_table))
+        new OpensEntry(opens_index, opens_flags, ArraySeq.from(opens_to_index_table))
     }
 
     def ProvidesEntry(
@@ -860,7 +861,7 @@ object ClassFileReader
         provides_index:            Constant_Pool_Index, // CONSTANT_Class
         provides_with_index_table: ProvidesWithIndexTable
     ): ProvidesEntry = {
-        new ProvidesEntry(provides_index, IntArray._UNSAFE_from(provides_with_index_table))
+        new ProvidesEntry(provides_index, ArraySeq.from(provides_with_index_table))
     }
 
     type ModulePackages_attribute = da.ModulePackages_attribute
@@ -872,7 +873,7 @@ object ClassFileReader
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
         new ModulePackages_attribute(
-            attribute_name_index, IntArray._UNSAFE_from(package_index_table)
+            attribute_name_index, ArraySeq.from(package_index_table)
         )
     }
 
@@ -911,7 +912,7 @@ object ClassFileReader
         classes_array:        ClassesArray
     ): NestMembers_attribute = {
         new NestMembers_attribute(
-            attribute_name_index, IntArray._UNSAFE_from(classes_array)
+            attribute_name_index, ArraySeq.from(classes_array)
         )
     }
 

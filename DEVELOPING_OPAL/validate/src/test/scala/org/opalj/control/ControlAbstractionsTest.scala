@@ -3,10 +3,11 @@ package org.opalj
 package control
 
 import org.junit.runner.RunWith
-import org.opalj.collection.immutable.IntArray
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the implemented control abstractions.
@@ -72,38 +73,38 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
 
     behavior of "the ControlAbstractions.fill(Int|AnyRef)Array macro"
 
-    it should "return a empty IntArray when the number of times is 0" in {
+    it should "return a empty ArraySeq when the number of times is 0" in {
         val result = fillIntArray(0) { 1 }
         result.isEmpty should be(true)
     }
 
-    it should "return a empty RefArray when the number of times is 0" in {
-        val result = fillRefArray(0) { "X" }
+    it should "return a empty ArraySeq when the number of times is 0" in {
+        val result = fillArraySeq(0) { "X" }
         result.isEmpty should be(true)
     }
 
-    it should "return an IntArray with one entry when the number of times is 1" in {
+    it should "return an ArraySeq with one entry when the number of times is 1" in {
         val result = fillIntArray(1) { 1 }
-        result should be(IntArray(1))
+        result should be(ArraySeq(1))
         result(0) should be(1)
         result.length should be(1)
     }
 
-    it should "return an RefArray with one entry when the number of times is 1" in {
-        val result = fillRefArray(1) { "Hello" }
+    it should "return an ArraySeq with one entry when the number of times is 1" in {
+        val result = fillArraySeq(1) { "Hello" }
         result(0) should be("Hello")
     }
 
-    it should "return an IntArray with five entries that are dynamically calculated when the number of times is 5" in {
+    it should "return an ArraySeq with five entries that are dynamically calculated when the number of times is 5" in {
         var index = 0
         val result = fillIntArray(5) { index += 1; index }
         result.length should be(5)
         result.toList should be(List(1, 2, 3, 4, 5))
     }
 
-    it should "return an RefArray with five entries that are dynamically calculated when the number of times is 5" in {
+    it should "return an ArraySeq with five entries that are dynamically calculated when the number of times is 5" in {
         var index = 0
-        val result = fillRefArray(5) { index += 1; "value="+index }
+        val result = fillArraySeq(5) { index += 1; "value="+index }
         result.length should be(5)
         result.toList should be(List("value=1", "value=2", "value=3", "value=4", "value=5"))
     }

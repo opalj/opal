@@ -8,7 +8,6 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
-import org.opalj.collection.immutable.RefArray
 
 /**
  * Represents a single field declaration/definition.
@@ -220,7 +219,7 @@ object Field {
     ): FieldTemplate = {
         this(
             accessFlags, name, fieldType,
-            RefArray(fieldAttributeBuilder(accessFlags, name, fieldType))
+            ArraySeq(fieldAttributeBuilder(accessFlags, name, fieldType))
         )
     }
 
@@ -228,7 +227,7 @@ object Field {
         accessFlags: Int        = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes = RefArray.empty
+        attributes:  Attributes = ArraySeq.empty
     ): FieldTemplate = {
         new FieldTemplate(accessFlags, name.intern(), fieldType, attributes)
     }
@@ -238,7 +237,7 @@ object Field {
         accessFlags: Int        = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes = RefArray.empty
+        attributes:  Attributes = ArraySeq.empty
     ): Field = {
         new Field(null, accessFlags, name.intern(), fieldType, attributes)
     }

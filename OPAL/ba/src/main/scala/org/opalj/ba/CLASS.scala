@@ -7,7 +7,8 @@ import org.opalj.br.MethodSignature
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodTemplate
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for [[org.opalj.br.ClassFile]] objects.
@@ -20,10 +21,10 @@ class CLASS[T](
         accessModifiers: AccessModifier,
         thisType:        String,
         superclassType:  Option[String],
-        interfaceTypes:  RefArray[String],
+        interfaceTypes:  ArraySeq[String],
         fields:          FIELDS,
         methods:         METHODS[T],
-        attributes:      RefArray[br.ClassFileAttributeBuilder]
+        attributes:      ArraySeq[br.ClassFileAttributeBuilder]
 ) {
 
     /**
@@ -51,10 +52,10 @@ class CLASS[T](
         val accessFlags = accessModifiers.accessFlags
         val thisType: ObjectType = br.ObjectType(this.thisType)
         val superclassType: Option[ObjectType] = this.superclassType.map(br.ObjectType.apply)
-        val interfaceTypes: RefArray[ObjectType] = this.interfaceTypes.map[br.ObjectType](br.ObjectType.apply)
+        val interfaceTypes: ArraySeq[ObjectType] = this.interfaceTypes.map[br.ObjectType](br.ObjectType.apply)
         val brFields = fields.result()
 
-        val brAnnotatedMethods: RefArray[(br.MethodTemplate, Option[T])] = {
+        val brAnnotatedMethods: ArraySeq[(br.MethodTemplate, Option[T])] = {
             methods.result(version, thisType)
         }
         val annotationsMap: Map[MethodSignature, Option[T]] =
@@ -147,10 +148,10 @@ object CLASS {
         accessModifiers: AccessModifier                         = SUPER,
         thisType:        String,
         superclassType:  Option[String]                         = Some("java/lang/Object"),
-        interfaceTypes:  RefArray[String]                       = RefArray.empty,
+        interfaceTypes:  ArraySeq[String]                       = ArraySeq.empty,
         fields:          FIELDS                                 = FIELDS(),
         methods:         METHODS[T]                             = METHODS[T](),
-        attributes:      RefArray[br.ClassFileAttributeBuilder] = RefArray.empty
+        attributes:      ArraySeq[br.ClassFileAttributeBuilder] = ArraySeq.empty
     ): CLASS[T] = {
         new CLASS(
             version, accessModifiers,

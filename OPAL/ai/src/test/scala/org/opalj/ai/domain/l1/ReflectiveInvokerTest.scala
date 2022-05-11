@@ -11,7 +11,8 @@ import org.scalatestplus.junit.JUnitRunner
 import br._
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the ReflectiveInvoker trait.
@@ -240,7 +241,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(RefArray(IntegerType, IntegerType), ObjectType.String)
+        val descriptor = MethodDescriptor(ArraySeq(IntegerType, IntegerType), ObjectType.String)
         val operands =
             /*p2=*/ IntegerValue(IrrelevantPC, 1) :&:
                 /*p1=*/ IntegerValue(IrrelevantPC, 3) :&:

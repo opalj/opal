@@ -5,7 +5,6 @@ package bc
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.io.ByteArrayInputStream
-
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_STATIC
@@ -23,7 +22,8 @@ import org.opalj.da.CONSTANT_String_info
 import org.opalj.da.Code_attribute
 import org.opalj.da.Code
 import org.opalj.br.reader.Java8Framework
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Demonstrates how to create a "HelloWorld" class and how
@@ -157,12 +157,12 @@ object DAandBR extends App {
         super_class = 3 /*extends java.lang.Object*/ ,
         // Interfaces.empty,
         // Fields.empty,
-        methods = RefArray(
+        methods = ArraySeq(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask,
                 name_index = 5,
                 descriptor_index = 6,
-                attributes = RefArray(
+                attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 7,
                         max_stack = 1,
@@ -184,7 +184,7 @@ object DAandBR extends App {
                 access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                 name_index = 14,
                 descriptor_index = 15,
-                attributes = RefArray(
+                attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 7,
                         max_stack = 2,
@@ -207,7 +207,7 @@ object DAandBR extends App {
                 )
             )
         ),
-        attributes = RefArray(SourceFile_attribute(32, 33))
+        attributes = ArraySeq(SourceFile_attribute(32, 33))
     )
 
     val assembledCF = Assembler(cf)

@@ -5,8 +5,6 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-
-import org.opalj.collection.immutable.RefArray
 import org.opalj.value.IsClassValue
 import org.opalj.value.TheClassValue
 import org.opalj.br.BooleanType
@@ -25,6 +23,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.Type
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -225,7 +225,7 @@ trait ClassValues
     ): Computation[DomainValue, Nothing] = {
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), RefArray()) =>
+            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), ArraySeq()) =>
                 ComputedValue(ClassValue(pc, FieldType(name)))
             case _ =>
                 super.loadDynamic(pc, bootstrapMethod, name, descriptor)
@@ -248,7 +248,7 @@ private object ClassValues {
 
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
-            RefArray(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+            ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
             ObjectType.Class
         )
     }

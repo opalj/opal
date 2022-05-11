@@ -7,7 +7,6 @@ package jcg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.value.ValueInformation
 import org.opalj.da.ClassFile
 import org.opalj.br.ObjectType
@@ -70,10 +69,10 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     val PropertiesT = ObjectType("java/util/Properties")
 
     val Invoke = MethodDescriptor(
-        RefArray(ObjectType.Object, ArrayType(ObjectType.Object)),
+        ArraySeq(ObjectType.Object, ArrayType(ObjectType.Object)),
         ObjectType.Object
     )
-    val GetMethodMD = MethodDescriptor(RefArray(ObjectType.String, ArrayType(ClassT)), MethodT)
+    val GetMethodMD = MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ClassT)), MethodT)
     val NewInstanceMD = MethodDescriptor(ArrayType(ObjectType.Object), ObjectType.Object)
     val GetFieldMD = MethodDescriptor(ObjectType.String, FieldT)
     val FieldGetMD = MethodDescriptor(ObjectType.Object, ObjectType.Object)
@@ -83,7 +82,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     val GetProperty1MD = MethodDescriptor(ObjectType.String, ObjectType.String)
     val GetProperty2MD =
-        MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
+        MethodDescriptor(ArraySeq(ObjectType.String, ObjectType.String), ObjectType.String)
     val GetMD = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     override def featureIDs: Seq[String] = {

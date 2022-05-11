@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -37,6 +36,8 @@ import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Handles the effect of tamiflex logs for the points-to sets.
@@ -98,7 +99,7 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.Array, "", ObjectType.Array,
                     "newInstance",
-                    MethodDescriptor(RefArray(ObjectType.Class, IntegerType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Class, IntegerType), ObjectType.Object)
                 ),
                 "Array.newInstance"
             ) with PointsToBase,
@@ -108,7 +109,7 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
                     ObjectType.Array, "", ObjectType.Array,
                     "newInstance",
                     MethodDescriptor(
-                        RefArray(ObjectType.Class, ArrayType(IntegerType)), ObjectType.Object
+                      ArraySeq(ObjectType.Class, ArrayType(IntegerType)), ObjectType.Object
                     )
                 ),
                 "Array.newInstance"
@@ -127,7 +128,7 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.Class, "", ObjectType.Class,
                     "forName",
-                    MethodDescriptor(RefArray(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")), ObjectType.Class)
+                    MethodDescriptor(ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")), ObjectType.Class)
                 )
             ) with PointsToBase,
             new TamiFlexPointsToClassGetMemberAnalysis(project, "getField", ObjectType.Field)() with PointsToBase,
@@ -154,14 +155,14 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.Class, "", ObjectType.Class,
                     "getMethod",
-                    MethodDescriptor(RefArray(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
+                    MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
                 )
             ) with PointsToBase,
             new TamiFlexPointsToClassGetMemberAnalysis(project, "getDeclaredMethod", ObjectType.Method)(
                 declaredMethods(
                     ObjectType.Class, "", ObjectType.Class,
                     "getDeclaredMethod",
-                    MethodDescriptor(RefArray(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
+                    MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
                 )
             ) with PointsToBase,
             new TamiFlexPointsToClassGetMembersAnalysis(project, "getMethods", ObjectType.Method) with PointsToBase,
@@ -234,7 +235,7 @@ abstract class TamiFlexPointsToArrayGetAnalysis(
         "",
         ObjectType.Array,
         "get",
-        MethodDescriptor(RefArray(ObjectType.Object, IntegerType), ObjectType.Object)
+        MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType), ObjectType.Object)
     )
 
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
@@ -279,7 +280,7 @@ abstract class TamiFlexPointsToArraySetAnalysis(
         "",
         ObjectType.Array,
         "set",
-        MethodDescriptor(RefArray(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
+        MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
     )
 
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
@@ -491,7 +492,7 @@ abstract class TamiFlexPointsToFieldSetAnalysis(
         "",
         ObjectType.Field,
         "set",
-        MethodDescriptor(RefArray(ObjectType.Object, ObjectType.Object), VoidType)
+        MethodDescriptor(ArraySeq(ObjectType.Object, ObjectType.Object), VoidType)
     )
 
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)

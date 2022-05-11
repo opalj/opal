@@ -4,11 +4,10 @@ package bi
 package reader
 
 import scala.annotation.switch
-
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Generic parser for the `target_type` and `target_info` fields of type annotations.
@@ -74,7 +73,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * }}}
      */
     type LocalvarTableEntry <: AnyRef
-    type LocalvarTable = RefArray[LocalvarTableEntry]
+    type LocalvarTable = ArraySeq[LocalvarTableEntry]
     /**
      * Factory method to create a `LocalvarTableEntry`. To completely resolve
      * such entries; i.e., to resolve the local_variable_table_index it may
@@ -129,7 +128,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     //
 
     def LocalvarTable(in: DataInputStream): LocalvarTable = {
-        fillRefArray(in.readUnsignedShort) {
+        fillArraySeq(in.readUnsignedShort) {
             LocalvarTableEntry(
                 in.readUnsignedShort(),
                 in.readUnsignedShort(),

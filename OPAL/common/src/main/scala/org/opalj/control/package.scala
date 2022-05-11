@@ -4,8 +4,6 @@ package org.opalj
 import scala.language.experimental.macros
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox.Context
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntArray
 
 import scala.collection.immutable.ArraySeq
 
@@ -53,7 +51,7 @@ package object control {
 
     /**
      * Evaluates the given expression `f` with type `T` the given number of
-     * `times` and stores the result in a [[org.opalj.collection.immutable.RefArray]].
+     * `times` and stores the result in a [[scala.collection.immutable.ArraySeq]].
      *
      * ==Example Usage==
      * {{{
@@ -73,11 +71,13 @@ package object control {
      *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
      *      returned.
      */
-    def fillRefArray[T <: AnyRef](
+    def fillArraySeq[T <: AnyRef](
         times: Int
     )(
         f: => T
-    ): RefArray[T] = macro ControlAbstractionsImplementation.fillRefArray[T]
+    ): ArraySeq[T] = ArraySeq.fill(times)(f)
+
+    // macro ControlAbstractionsImplementation.fillRefArray[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
     //        def repeat[T](times: Int)(f: => T): IndexedSeq[T] = {
@@ -95,7 +95,7 @@ package object control {
 
     /**
      * Evaluates the given expression `f` the given number of
-     * `times` and stores the result in an [[org.opalj.collection.immutable.IntArray]].
+     * `times` and stores the result in an [[scala.collection.immutable.ArraySeq[Int]].
      *
      * ==Example Usage==
      * {{{
@@ -117,7 +117,7 @@ package object control {
         times: Int
     )(
         f: Int
-    ): IntArray = macro ControlAbstractionsImplementation.fillIntArray
+    ): ArraySeq[Int] = ArraySeq.fill(times)(f)
 
     def fillArrayOfInt(
         times: Int
@@ -276,13 +276,13 @@ package control {
             times: c.Expr[Int]
         )(
             f: c.Expr[T]
-        ): c.Expr[RefArray[T]] = {
+        ): c.Expr[ArraySeq[T]] = {
             import c.universe._
 
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    RefArray.empty[T]
+                  ArraySeq.empty[T]
                 } else {
                     val array = new Array[AnyRef](size)
                     var i = 0
@@ -291,18 +291,18 @@ package control {
                         array(i) = value
                         i += 1
                     }
-                    RefArray._UNSAFE_from[T](array)
+                  ArraySeq.unsafeWrapArray[T](array.asInstanceOf[Array[T]])
                 }
             }
         }
 
-        def fillIntArray(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[IntArray] = {
+        def fillIntArray(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[ArraySeq[Int]] = {
             import c.universe._
 
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    IntArray.empty
+                    ArraySeq.empty
                 } else {
                     val array = new Array[Int](size)
                     var i = 0
@@ -311,7 +311,7 @@ package control {
                         array(i) = value
                         i += 1
                     }
-                    IntArray._UNSAFE_from(array)
+                    ArraySeq.unsafeWrapArray(array)
                 }
             }
         }
@@ -322,7 +322,7 @@ package control {
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    IntArray.EmptyArrayOfInt
+                    Array.empty
                 } else {
                     val array = new Array[Int](size)
                     var i = 0

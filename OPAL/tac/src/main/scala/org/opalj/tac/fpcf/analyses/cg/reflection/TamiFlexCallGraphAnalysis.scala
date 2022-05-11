@@ -7,7 +7,6 @@ package cg
 package reflection
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
@@ -53,7 +52,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     ObjectType.Method,
                     "invoke",
                     MethodDescriptor.apply(
-                        RefArray(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
+                      ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
                     )
                 ),
                 "Method.invoke"

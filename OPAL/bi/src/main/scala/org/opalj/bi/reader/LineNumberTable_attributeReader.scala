@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
@@ -20,7 +20,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     type LineNumberTable_attribute >: Null <: Attribute
 
     type LineNumberTableEntry <: AnyRef
-    type LineNumbers = RefArray[LineNumberTableEntry]
+    type LineNumbers = ArraySeq[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
         cp:                   Constant_Pool,
@@ -64,7 +64,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(line_number_table_length) {
+                fillArraySeq(line_number_table_length) {
                     LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
                 }
             )

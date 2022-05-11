@@ -3,17 +3,13 @@ package org.opalj
 package issues
 
 import scala.reflect.ClassTag
-
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
 import play.api.libs.json.Json
-
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable.Locals
-import org.opalj.collection.immutable.RefArray
 import org.opalj.br.Code
 import org.opalj.br.NoExceptionHandlers
 import org.opalj.br.FieldType
@@ -28,6 +24,8 @@ import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.NOP
 import org.opalj.collection.immutable.IntIntPair
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the toIDL method of IssueDetails
@@ -47,7 +45,7 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
 
     it should "return a valid issue description if we have a single int typed LocalVariable" in {
         val localVariable = LocalVariable(0, 1, "foo", FieldType("I"), 0)
-        val code = Code(0, 0, null, NoExceptionHandlers, RefArray(LocalVariableTable(RefArray(localVariable))))
+        val code = Code(0, 0, null, NoExceptionHandlers, ArraySeq(LocalVariableTable(ArraySeq(localVariable))))
         val localVariables = new LocalVariables(code, 0, Locals(IndexedSeq(ClassTag.Int)))
 
         localVariables.toIDL should be(Json.obj(
@@ -64,8 +62,8 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
     it should "return a valid issue description if we have an int and double LocalVariable" in {
         val localVariable = LocalVariable(0, 1, "foo", FieldType("I"), 0)
         val localVariable2 = LocalVariable(0, 1, "bar", FieldType("I"), 1)
-        val arrLocalVariable = RefArray(localVariable2, localVariable)
-        val code = Code(0, 0, null, NoExceptionHandlers, RefArray(LocalVariableTable(arrLocalVariable)))
+        val arrLocalVariable = ArraySeq(localVariable2, localVariable)
+        val code = Code(0, 0, null, NoExceptionHandlers, ArraySeq(LocalVariableTable(arrLocalVariable)))
         val localVariables = new LocalVariables(code, 0, Locals(IndexedSeq(ClassTag.Int, ClassTag.Double)))
 
         localVariables.toIDL should be(Json.obj(
@@ -100,7 +98,7 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return a valid issue description for the Operands of a CompoundConditionalBranchInstruction with a single case" in {
-        val instruction = LOOKUPSWITCH(0, RefArray(IntIntPair(0, 1)))
+        val instruction = LOOKUPSWITCH(0, ArraySeq(IntIntPair(0, 1)))
         val code = Code(0, 0, Array(instruction))
         val operands = new Operands(code, 0, Chain("foo"), null)
 
@@ -112,7 +110,7 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return a valid issue description for the Operands of a CompoundConditionalBranchInstruction with two cases" in {
-        val instruction = LOOKUPSWITCH(0, RefArray(IntIntPair(0, 1), IntIntPair(2, 3)))
+        val instruction = LOOKUPSWITCH(0, ArraySeq(IntIntPair(0, 1), IntIntPair(2, 3)))
         val code = Code(0, 0, Array(instruction))
         val operands = new Operands(code, 0, Chain("foo", "bar"), null)
 

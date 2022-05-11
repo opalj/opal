@@ -5,16 +5,12 @@ package fpcf
 package analyses
 
 import java.io.File
-
-import scala.collection.immutable.ListSet
-
+import scala.collection.immutable.{ArraySeq, ListSet}
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
@@ -225,7 +221,7 @@ class BasicIFDSTaintAnalysis private (
                 println(s"Found flow: $stmt")
             }
         } else if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
-            callee.descriptor.parameterTypes == RefArray(ObjectType.String)) {
+            callee.descriptor.parameterTypes == ArraySeq(ObjectType.String)) {
             if (in.exists {
                 case Variable(index) => call.params.exists(p => p.asVar.definedBy.contains(index))
                 case _               => false
@@ -354,7 +350,7 @@ class BasicIFDSTaintAnalysis private (
             }
         } else if (call.name == "forName" &&
             (call.declaringClass eq ObjectType.Class) &&
-            call.descriptor.parameterTypes == RefArray(ObjectType.String)) {
+            call.descriptor.parameterTypes == ArraySeq(ObjectType.String)) {
             if (in.exists {
                 case Variable(index) => call.params.exists(p => p.asVar.definedBy.contains(index))
                 case _               => false

@@ -5,10 +5,10 @@ package tac
 import org.opalj.br._
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntArray
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.value.ValueInformation
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Super trait of all three-address code/quadruple statements.
@@ -281,7 +281,7 @@ case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: Int,
         index:                     Expr[V],
-        private var npairs:        RefArray[IntIntPair /*(Case Value, Jump Target)*/ ]
+        private var npairs:        ArraySeq[IntIntPair /*(Case Value, Jump Target)*/ ]
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this
@@ -317,7 +317,7 @@ case class Switch[+V <: Var[V]](
 
     // Calling this method is only supported after the three-address code representation
     // is created and the remapping of pcs to instruction indexes has happened!
-    def caseStmts: IntArray = npairs.map(x => x._2)
+    def caseStmts: ArraySeq[Int] = npairs.map(x => x._2)
 
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!

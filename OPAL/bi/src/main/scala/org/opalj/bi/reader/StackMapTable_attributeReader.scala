@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Implementation of a template method to read in the StackMapTable attribute.
@@ -22,7 +22,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
     type StackMapTable_attribute >: Null <: Attribute
 
     type StackMapFrame <: AnyRef
-    type StackMapFrames = RefArray[StackMapFrame]
+    type StackMapFrames = ArraySeq[StackMapFrame]
 
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame
 
@@ -59,7 +59,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val number_of_entries = in.readUnsignedShort()
         if (number_of_entries > 0 || reifyEmptyAttributes) {
-            val frames = fillRefArray(number_of_entries) { StackMapFrame(cp, in) }
+            val frames = fillArraySeq(number_of_entries) { StackMapFrame(cp, in) }
             StackMapTable_attribute(
                 cp, ap_name_index, ap_descriptor_index, attribute_name_index, frames
             )

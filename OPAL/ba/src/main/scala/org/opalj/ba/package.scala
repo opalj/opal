@@ -3,14 +3,10 @@ package org.opalj
 
 import scala.language.implicitConversions
 import scala.annotation.switch
-
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
-
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.immutable.IntArray
-import org.opalj.collection.immutable.RefArray
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -57,8 +53,10 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_Dynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
-import org.opalj.br.cp._ // we need ALL of them...
-import org.opalj.br.instructions._ // we need ALL of them...
+import org.opalj.br.cp._
+import org.opalj.br.instructions._
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Implementation of an eDSL for creating Java bytecode. The eDSL is designed to facilitate
@@ -128,9 +126,9 @@ package object ba { ba =>
                 accessFlags:    Int,
                 thisType:       ObjectType,
                 superclassType: Option[ObjectType],
-                interfaceTypes: RefArray[ObjectType], // TODO Use a UIDSet here ...
-                fields:         RefArray[br.FieldTemplate],
-                methods:        RefArray[br.MethodTemplate]
+                interfaceTypes: ArraySeq[ObjectType], // TODO Use a UIDSet here ...
+                fields:         ArraySeq[br.FieldTemplate],
+                methods:        ArraySeq[br.MethodTemplate]
             ): Attribute = {
                 a
             }
@@ -1099,7 +1097,7 @@ package object ba { ba =>
                         da.ProvidesEntry(
                             CPEClass(provide.provides, false),
                             provide.withInterfaces.map(withInterface =>
-                                CPEClass(withInterface, false)): IntArray
+                                CPEClass(withInterface, false)): ArraySeq[Int]
                         ))
                 ))
 

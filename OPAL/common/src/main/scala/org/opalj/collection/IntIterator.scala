@@ -233,7 +233,7 @@ object IntIterator {
     final val empty: IntIterator = new IntIterator {
         override def hasNext: Boolean = false
         override def next(): Nothing = throw new NoSuchElementException("next on empty iterator")
-        override def toArray: Array[Int] = org.opalj.collection.immutable.IntArray.EmptyArrayOfInt
+        override def toArray: Array[Int] = Array()
         override def toSet: IntTrieSet = IntTrieSet.empty
         override def toSortedSet: IntArraySet = IntArraySet.empty
     }

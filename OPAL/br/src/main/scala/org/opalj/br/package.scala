@@ -4,19 +4,18 @@ package org.opalj
 import scala.xml.Node
 import scala.xml.Text
 import scala.collection.mutable.Builder
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.BitArraySet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -57,74 +56,74 @@ package object br {
 
     type LiveVariables = Array[BitArraySet]
 
-    type Attributes = RefArray[Attribute]
-    val Attributes: RefArray.type = RefArray
-    final def NoAttributes: Attributes = RefArray.empty
+    type Attributes = ArraySeq[Attribute]
+    val Attributes: ArraySeq.type = ArraySeq
+    final def NoAttributes: Attributes = ArraySeq.empty
 
-    type ElementValues = RefArray[ElementValue]
-    type ElementValuePairs = RefArray[ElementValuePair]
-    val ElementValuePairs: RefArray.type = RefArray
-    final def NoElementValuePairs: ElementValuePairs = RefArray.empty
+    type ElementValues = ArraySeq[ElementValue]
+    type ElementValuePairs = ArraySeq[ElementValuePair]
+    val ElementValuePairs: ArraySeq.type = ArraySeq
+    final def NoElementValuePairs: ElementValuePairs = ArraySeq.empty
 
-    type Annotations = RefArray[Annotation]
-    def NoAnnotations: RefArray[Annotation] = RefArray.empty
-    type TypeAnnotations = RefArray[TypeAnnotation]
-    final def NoTypeAnnotations: RefArray[TypeAnnotation] = RefArray.empty
+    type Annotations = ArraySeq[Annotation]
+    def NoAnnotations: ArraySeq[Annotation] = ArraySeq.empty
+    type TypeAnnotations = ArraySeq[TypeAnnotation]
+    final def NoTypeAnnotations: ArraySeq[TypeAnnotation] = ArraySeq.empty
 
-    type InnerClasses = RefArray[InnerClass]
+    type InnerClasses = ArraySeq[InnerClass]
 
-    type Interfaces = RefArray[ObjectType]
-    final def NoInterfaces: Interfaces = RefArray.empty
+    type Interfaces = ArraySeq[ObjectType]
+    final def NoInterfaces: Interfaces = ArraySeq.empty
 
-    type Methods = RefArray[Method]
-    val Methods: RefArray.type = RefArray
-    final def NoMethods: Methods = RefArray.empty
-    type MethodTemplates = RefArray[MethodTemplate]
-    final def NoMethodTemplates: MethodTemplates = RefArray.empty
+    type Methods = ArraySeq[Method]
+    val Methods: ArraySeq.type = ArraySeq
+    final def NoMethods: Methods = ArraySeq.empty
+    type MethodTemplates = ArraySeq[MethodTemplate]
+    final def NoMethodTemplates: MethodTemplates = ArraySeq.empty
 
-    type Exceptions = RefArray[ObjectType]
-    type ExceptionHandlers = RefArray[ExceptionHandler]
-    final def NoExceptionHandlers: ExceptionHandlers = RefArray.empty
+    type Exceptions = ArraySeq[ObjectType]
+    type ExceptionHandlers = ArraySeq[ExceptionHandler]
+    final def NoExceptionHandlers: ExceptionHandlers = ArraySeq.empty
 
-    type LineNumbers = RefArray[LineNumber]
-    type LocalVariableTypes = RefArray[LocalVariableType]
-    type LocalVariables = RefArray[LocalVariable]
-    type BootstrapMethods = RefArray[BootstrapMethod]
-    type BootstrapArguments = RefArray[BootstrapArgument]
-    type ParameterAnnotations = RefArray[Annotations]
-    final def NoParameterAnnotations: ParameterAnnotations = RefArray.empty
-    type StackMapFrames = RefArray[StackMapFrame]
-    type VerificationTypeInfoLocals = RefArray[VerificationTypeInfo]
-    type VerificationTypeInfoStack = RefArray[VerificationTypeInfo]
-    type MethodParameters = RefArray[MethodParameter]
+    type LineNumbers = ArraySeq[LineNumber]
+    type LocalVariableTypes = ArraySeq[LocalVariableType]
+    type LocalVariables = ArraySeq[LocalVariable]
+    type BootstrapMethods = ArraySeq[BootstrapMethod]
+    type BootstrapArguments = ArraySeq[BootstrapArgument]
+    type ParameterAnnotations = ArraySeq[Annotations]
+    final def NoParameterAnnotations: ParameterAnnotations = ArraySeq.empty
+    type StackMapFrames = ArraySeq[StackMapFrame]
+    type VerificationTypeInfoLocals = ArraySeq[VerificationTypeInfo]
+    type VerificationTypeInfoStack = ArraySeq[VerificationTypeInfo]
+    type MethodParameters = ArraySeq[MethodParameter]
 
-    type Fields = RefArray[Field]
-    final def NoFields: Fields = RefArray.empty
+    type Fields = ArraySeq[Field]
+    final def NoFields: Fields = ArraySeq.empty
 
-    type FieldTemplates = RefArray[FieldTemplate]
-    final def NoFieldTemplates: FieldTemplates = RefArray.empty
+    type FieldTemplates = ArraySeq[FieldTemplate]
+    final def NoFieldTemplates: FieldTemplates = ArraySeq.empty
 
     type Instructions = Array[instructions.Instruction]
 
-    type MethodDescriptors = RefArray[MethodDescriptor]
+    type MethodDescriptors = ArraySeq[MethodDescriptor]
 
-    type InstructionLabels = RefArray[instructions.InstructionLabel]
+    type InstructionLabels = ArraySeq[instructions.InstructionLabel]
 
-    type ObjectTypes = RefArray[ObjectType]
-    val ObjectTypes: RefArray.type = RefArray
+    type ObjectTypes = ArraySeq[ObjectType]
+    val ObjectTypes: ArraySeq.type = ArraySeq
 
-    type FieldTypes = RefArray[FieldType]
-    val FieldTypes: RefArray.type = RefArray
-    final def NoFieldTypes: FieldTypes = RefArray.empty
-    final def newFieldTypesBuilder(): Builder[FieldType, RefArray[FieldType]] = {
-        RefArray.newBuilder[FieldType]
+    type FieldTypes = ArraySeq[FieldType]
+    val FieldTypes: ArraySeq.type = ArraySeq
+    final def NoFieldTypes: FieldTypes = ArraySeq.empty
+    final def newFieldTypesBuilder(): Builder[FieldType, ArraySeq[FieldType]] = {
+      ArraySeq.newBuilder[FieldType]
     }
 
-    type Packages = RefArray[String]
+    type Packages = ArraySeq[String]
 
-    type Classes = RefArray[ObjectType]
+    type Classes = ArraySeq[ObjectType]
 
-    type RecordComponents = RefArray[RecordComponent]
+    type RecordComponents = ArraySeq[RecordComponent]
 
     final type SourceElementID = Int
 

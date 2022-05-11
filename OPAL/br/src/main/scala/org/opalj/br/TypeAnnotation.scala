@@ -2,7 +2,7 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Describes the kind of the target of a [[TypeAnnotation]].
@@ -144,11 +144,11 @@ case class TAOfThrows(throws_type_index: Int) extends TypeAnnotationTargetInMeto
 }
 
 sealed abstract class TypeAnnotationTargetInVarDecl extends TypeAnnotationTargetInCode {
-    def localVarTable: RefArray[LocalvarTableEntry]
+    def localVarTable: ArraySeq[LocalvarTableEntry]
 }
 
 case class TAOfLocalvarDecl(
-        localVarTable: RefArray[LocalvarTableEntry]
+        localVarTable: ArraySeq[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
 
     override def typeId: Int = 0x40
@@ -163,7 +163,7 @@ case class TAOfLocalvarDecl(
 }
 
 case class TAOfResourcevarDecl(
-        localVarTable: RefArray[LocalvarTableEntry]
+        localVarTable: ArraySeq[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
 
     override def typeId: Int = 0x41
@@ -355,7 +355,7 @@ case object TADirectlyOnType extends TypeAnnotationPath
 
 // path length > 0
 case class TAOnNestedType(
-        path: RefArray[TypeAnnotationPathElement]
+        path: ArraySeq[TypeAnnotationPathElement]
 ) extends TypeAnnotationPath
 
 case object TADeeperInArrayType extends TypeAnnotationPathElement {

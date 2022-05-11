@@ -9,7 +9,8 @@ import org.scalatest.matchers.should.Matchers
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests that type annotations can be read.
@@ -31,7 +32,7 @@ class TypeAnnotationsTest extends AnyFlatSpec with Matchers {
                 TAOfSupertype(1),
                 TADirectlyOnType,
                 aTA,
-                RefArray(ElementValuePair("value", StringValue("superinterface")))
+              ArraySeq(ElementValuePair("value", StringValue("superinterface")))
             )
         )
     }
@@ -41,9 +42,9 @@ class TypeAnnotationsTest extends AnyFlatSpec with Matchers {
         typeAnnotations should contain(
             TypeAnnotation(
                 TAOfSupertype(0),
-                TAOnNestedType(RefArray(TAOnTypeArgument(0))),
+                TAOnNestedType(ArraySeq(TAOnTypeArgument(0))),
                 aTA,
-                RefArray.empty
+              ArraySeq.empty
             )
         )
     }

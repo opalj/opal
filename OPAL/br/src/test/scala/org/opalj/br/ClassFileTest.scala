@@ -8,7 +8,6 @@ import org.scalatest.matchers.should.Matchers
 import scala.util.control.ControlThrowable
 import org.opalj.collection.immutable.Naught
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.collection.immutable.RefArray
 
 /**
  * @author Michael Eichberg
@@ -34,7 +33,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
             immutableList.findMethod(
                 "<init>",
                 MethodDescriptor(
-                    RefArray(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
+                    ArraySeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
                 )
             ).isDefined
         )

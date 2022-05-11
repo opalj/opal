@@ -2,12 +2,11 @@
 package org.opalj.br.instructions
 
 import org.junit.runner.RunWith
-
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntArray
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests instantiation and resolving of LabeledInstructions.
@@ -86,8 +85,8 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
             assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
         }
 
-    val table = RefArray(InstructionLabel('two), InstructionLabel('three))
-    val lookupTable = RefArray.from[(Int, InstructionLabel)](take = 2, (2 to 3).iterator zip table.iterator)
+    val table = ArraySeq(InstructionLabel('two), InstructionLabel('three))
+    val lookupTable = ArraySeq.from[(Int, InstructionLabel)]((2 to 3).iterator zip table.iterator).take(2)
     val labelsMap = Map[InstructionLabel, Int](
         label → 43,
         InstructionLabel('two) → 44,
@@ -116,7 +115,7 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
                 labelsMap
             )
             assert(resolvedTABLESWITCH.defaultOffset == 42)
-            assert(resolvedTABLESWITCH.jumpOffsets == IntArray(43, 44))
+            assert(resolvedTABLESWITCH.jumpOffsets == ArraySeq(43, 44))
         }
 
 }

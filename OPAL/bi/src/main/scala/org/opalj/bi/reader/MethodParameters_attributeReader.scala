@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
@@ -20,7 +20,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
     type MethodParameters_attribute >: Null <: Attribute
 
     type MethodParameter <: AnyRef
-    type MethodParameters = RefArray[MethodParameter]
+    type MethodParameters = ArraySeq[MethodParameter]
 
     def MethodParameters_attribute(
         cp:                   Constant_Pool,
@@ -68,7 +68,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(parameters_count) {
+                fillArraySeq(parameters_count) {
                     MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
                 }
             )

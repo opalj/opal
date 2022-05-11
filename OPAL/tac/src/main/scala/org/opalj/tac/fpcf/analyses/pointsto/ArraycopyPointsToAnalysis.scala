@@ -6,7 +6,6 @@ package analyses
 package pointsto
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -47,7 +46,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
         ObjectType.System, "", ObjectType.System,
         "arraycopy",
         MethodDescriptor(
-            RefArray(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+          ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     )

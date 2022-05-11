@@ -11,7 +11,8 @@ import org.opalj.br.IntegerType
 import org.opalj.ai.Configuration
 import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Hard-codes some part of the semantics of some very high-profile (native) methods of the JDK
@@ -83,7 +84,7 @@ object SpecialMethodsHandling {
 
     final val SystemArraycopyDescriptor = {
         MethodDescriptor(
-            RefArray(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+          ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     }

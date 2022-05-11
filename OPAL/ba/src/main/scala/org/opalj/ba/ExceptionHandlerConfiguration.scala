@@ -2,8 +2,7 @@
 package org.opalj
 package ba
 
-import org.opalj.collection.immutable.RefArray
-
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 private[ba] class ExceptionHandlerConfiguration(
@@ -48,8 +47,8 @@ class ExceptionHandlerTableBuilder {
      * for a single id was added.
      */
     def result(): br.ExceptionHandlers = {
-        RefArray.from(map).
-            _UNSAFE_sortedWith((left, right) => left._2.position < right._2.position).
+        ArraySeq.from(map)
+                .sortWith((left, right) => left._2.position < right._2.position)
             map[br.ExceptionHandler] { e =>
                 val (id, ehBuilder) = e
                 val errorMsg = s"invalid exception handler ($id): %s"

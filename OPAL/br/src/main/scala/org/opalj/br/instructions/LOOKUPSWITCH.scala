@@ -8,8 +8,9 @@ import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.ForeachRefIterator
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Access jump table by key match and jump.
@@ -43,7 +44,7 @@ trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
  */
 case class LOOKUPSWITCH(
         defaultOffset: Int,
-        npairs:        RefArray[IntIntPair]
+        npairs:        ArraySeq[IntIntPair]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
     final override def asLOOKUPSWITCH: this.type = this
@@ -148,7 +149,7 @@ object LOOKUPSWITCH extends InstructionMetaInformation {
      */
     def apply(
         defaultBranchTarget: InstructionLabel,
-        branchTargets:       RefArray[(Int, InstructionLabel)]
+        branchTargets:       ArraySeq[(Int, InstructionLabel)]
     ): LabeledLOOKUPSWITCH = LabeledLOOKUPSWITCH(defaultBranchTarget, branchTargets)
 
 }
@@ -162,7 +163,7 @@ object LOOKUPSWITCH extends InstructionMetaInformation {
  */
 case class LabeledLOOKUPSWITCH(
         defaultBranchTarget: InstructionLabel,
-        npairs:              RefArray[(Int, InstructionLabel)]
+        npairs:              ArraySeq[(Int, InstructionLabel)]
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
 
     override def tableSize: Int = npairs.size

@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Generic parser for the ''local variable table'' attribute.
@@ -20,7 +20,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     type LocalVariableTable_attribute >: Null <: Attribute
 
     type LocalVariableTableEntry <: AnyRef
-    type LocalVariables = RefArray[LocalVariableTableEntry]
+    type LocalVariables = ArraySeq[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(
         cp:               Constant_Pool,
@@ -75,7 +75,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
                 ap_descriptor_index,
                 attribute_name_index,
                 {
-                    fillRefArray(entriesCount) {
+                    fillArraySeq(entriesCount) {
                         LocalVariableTableEntry(
                             cp,
                             in.readUnsignedShort,

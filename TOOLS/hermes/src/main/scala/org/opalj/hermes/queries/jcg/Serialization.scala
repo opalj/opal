@@ -4,7 +4,6 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.value.ValueInformation
 import org.opalj.da.ClassFile
 import org.opalj.br.ObjectType
@@ -51,7 +50,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     val OOSwriteObject = MethodDescriptor.JustTakes(ObjectType.Object)
     val OISregisterValidation = MethodDescriptor(
-        RefArray(ObjectType("java/io/ObjectInputValidation"), IntegerType),
+        ArraySeq(ObjectType("java/io/ObjectInputValidation"), IntegerType),
         VoidType
     )
     val writeExternal = MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))

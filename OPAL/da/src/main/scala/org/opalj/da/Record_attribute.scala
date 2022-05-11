@@ -11,7 +11,7 @@ import scala.xml.Node
  */
 case class Record_attribute(
         attribute_name_index: Constant_Pool_Index,
-        components:           RecordComponents // RefArray[Constant_Pool_Index]
+        components:           RecordComponents // ArraySeq[Constant_Pool_Index]
 ) extends Attribute {
 
     override def attribute_length: Int = 2 + components.sum(_.length)

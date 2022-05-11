@@ -3,8 +3,7 @@ package org.opalj
 package br
 
 import java.util.{Arrays => JArrays}
-
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * A method's line number table.
@@ -25,7 +24,7 @@ import org.opalj.collection.immutable.RefArray
 case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumberTable {
 
     def lineNumbers: LineNumbers = {
-        val lineNumbersBuilder = RefArray.newBuilder[LineNumber]
+        val lineNumbersBuilder = ArraySeq.newBuilder[LineNumber]
         var e = 0
         val entries = rawLineNumbers.length / 4
         while (e < entries) {

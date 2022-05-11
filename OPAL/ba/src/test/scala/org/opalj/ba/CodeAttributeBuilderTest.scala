@@ -5,8 +5,6 @@ package ba
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
-
-import org.opalj.collection.immutable.RefArray
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bc.Assembler
@@ -19,6 +17,8 @@ import org.opalj.ai.util.XHTML
 import org.opalj.br.BooleanType
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.MethodDescriptor.JustTakes
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the require statements and warnings of a CodeAttributeBuilder.
@@ -53,10 +53,10 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     it should "fail with unresolvable labels in branch instructions" in {
         assertThrows[java.util.NoSuchElementException](CODE(IFGE('label)))
         assertThrows[java.util.NoSuchElementException](
-            CODE('default, LOOKUPSWITCH('default, RefArray((0, 'label))))
+            CODE('default, LOOKUPSWITCH('default, ArraySeq((0, 'label))))
         )
         assertThrows[java.util.NoSuchElementException](
-            CODE('default, 'label1, LOOKUPSWITCH('default, RefArray((0, 'label1), (0, 'label2))))
+            CODE('default, 'label1, LOOKUPSWITCH('default, ArraySeq((0, 'label1), (0, 'label2))))
         )
     }
 
@@ -509,7 +509,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             /* 8 */ IADD,
             /* 9 */ IRETURN
         ),
-            RefArray(ExceptionHandler(7, 10, 3, Some(ObjectType.RuntimeException))))
+            ArraySeq(ExceptionHandler(7, 10, 3, Some(ObjectType.RuntimeException))))
         val labeledCode = LabeledCode(code)
         val labeledInstructions = labeledCode.codeElements.toIndexedSeq
         assert(labeledInstructions(2) == CATCH('eh0, 0, Some(ObjectType.RuntimeException)))

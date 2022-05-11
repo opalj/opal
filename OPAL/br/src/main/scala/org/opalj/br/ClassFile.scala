@@ -3,7 +3,6 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -22,7 +21,8 @@ import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.VisibilityModifier
 import org.opalj.collection.RefIterator
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -488,7 +488,7 @@ final class ClassFile private (
                             ))
                     .map[ObjectType](_.innerClassType)
             }.getOrElse {
-                RefArray.empty
+              ArraySeq.empty
             }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED

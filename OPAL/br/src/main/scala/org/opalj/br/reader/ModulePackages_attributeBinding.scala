@@ -3,8 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.reader.ModulePackages_attributeReader
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * The factory method to create the `ModulePackages` attribute (Java 9).
@@ -26,7 +27,7 @@ trait ModulePackages_attributeBinding
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
         new ModulePackages(
-            RefArray.mapFrom(package_index_table) { p => cp(p).asPackageIdentifier(cp) }
+          ArraySeq.from(package_index_table).map{ p => cp(p).asPackageIdentifier(cp) }
         )
     }
 

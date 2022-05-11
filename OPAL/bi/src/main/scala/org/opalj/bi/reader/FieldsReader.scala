@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 trait FieldsReader extends Constant_PoolAbstractions {
 
@@ -15,7 +15,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
     //
 
     type Field_Info <: AnyRef
-    type Fields = RefArray[Field_Info]
+    type Fields = ArraySeq[Field_Info]
 
     type Attributes
 
@@ -42,7 +42,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
     // We need the constant pool to look up the attributes' names and other information.
     def Fields(cp: Constant_Pool, in: DataInputStream): Fields = {
         val fields_count = in.readUnsignedShort
-        fillRefArray(fields_count) {
+        fillArraySeq(fields_count) {
             Field_Info(cp, in)
         }
     }

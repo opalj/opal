@@ -23,7 +23,6 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
         private var data:  Array[AnyRef],
         private var size0: Int
 ) extends mutable.IndexedSeq[N]
-    with mutable.IndexedSeqLike[N, RefArrayStack[N]]
     with mutable.Cloneable[RefArrayStack[N]]
     with Serializable { stack =>
 

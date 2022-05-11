@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -95,7 +94,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
@@ -103,7 +102,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, IntegerType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
@@ -111,7 +110,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getObjectVolatile",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -120,7 +119,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -129,7 +128,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -138,7 +137,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putObjectVolatile",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -147,7 +146,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putOrderedObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -156,7 +155,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "compareAndSwapObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object, ObjectType.Object), BooleanType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object, ObjectType.Object), BooleanType)
                 )
             ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
@@ -164,7 +163,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getAndSetObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -173,7 +172,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getAndSetObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
                 )
             ) with PointsToBase
         )

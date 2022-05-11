@@ -4,7 +4,6 @@ package fpcf
 package properties
 package callgraph
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayValue
 import org.opalj.br.ClassValue
@@ -21,6 +20,8 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.cg.Callees
+
+import scala.collection.immutable.ArraySeq
 
 class DirectCallMatcher extends AbstractPropertyMatcher {
 
@@ -42,7 +43,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
         } else if (a.annotationType == containerAnnotation) {
             // Get sub-annotations from the container annotation.
-            val subAnnotations: RefArray[AnnotationLike] =
+            val subAnnotations: ArraySeq[AnnotationLike] =
                 getValue(p, containerAnnotation, a.elementValuePairs, "value")
                     .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
 
@@ -139,9 +140,9 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
             case _    => sys.error("Invalid annotation.")
         }
 
-        // TODO there HAS to be nicer way to get the RefArray for the MethodDescriptor
-        val parametersRefArray = RefArray.from(parameterTypes.asInstanceOf[Array[AnyRef]])
-        val descriptor = MethodDescriptor(parametersRefArray, returnType)
+        // TODO there HAS to be nicer way to get the ArraySeq for the MethodDescriptor
+        val parametersArray = ArraySeq.from(parameterTypes.asInstanceOf[Array[AnyRef]])
+        val descriptor = MethodDescriptor(parametersArray, returnType)
 
         val minimumExpectedCalleesSet = resolvedTargets.map {
             (lineNumber, _, methodName, descriptor)

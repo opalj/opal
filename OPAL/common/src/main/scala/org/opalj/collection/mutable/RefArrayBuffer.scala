@@ -3,9 +3,9 @@ package org.opalj.collection.mutable
 
 import scala.reflect.ClassTag
 import java.util.{Arrays => JArrays}
-
 import org.opalj.collection.RefIterator
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
@@ -83,11 +83,11 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
      * @param from the index of the first item (inclusive)
      * @param until the index of the last item (exclusive)
      */
-    def slice(from: Int, until: Int = size0): RefArray[N] = { // TODO Use RefArray
+    def slice(from: Int, until: Int = size0): ArraySeq[N] = {
         if (until > size0)
             throw new IndexOutOfBoundsException(s"$until > $size0(size of buffer)")
 
-        RefArray._UNSAFE_from[N](JArrays.copyOfRange(data, from, until, classOf[Array[AnyRef]]))
+        ArraySeq[N](JArrays.copyOfRange(data, from, until, classOf[Array[AnyRef]]))
     }
 
     def ++=(is: Traversable[N]): this.type = {

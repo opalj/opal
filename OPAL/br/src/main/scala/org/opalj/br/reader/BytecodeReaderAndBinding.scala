@@ -5,7 +5,7 @@ package reader
 
 import scala.annotation.switch
 
-import org.opalj.control.fillRefArray
+import org.opalj.control.fillArraySeq
 import org.opalj.control.fillIntArray
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.instructions._
@@ -328,7 +328,7 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                     in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
                     val npairsCount = in.readInt
-                    val npairs = fillRefArray(npairsCount) { IntIntPair(in.readInt, in.readInt) }
+                    val npairs = fillArraySeq(npairsCount) { IntIntPair(in.readInt, in.readInt) }
                     LOOKUPSWITCH(defaultOffset, npairs)
                 case 129 => LOR
                 case 113 => LREM

@@ -20,7 +20,8 @@ import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.reader.Java17Framework.{ClassFile => ClassFileReader}
 import org.opalj.bc.Assembler
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and
@@ -53,8 +54,8 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
             thisType = "ConcreteClass",
             superclassType = Some("org/opalj/bc/AbstractClass"),
-            interfaceTypes = RefArray("MarkerInterface1", "MarkerInterface2"),
-            attributes = RefArray(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
+            interfaceTypes = ArraySeq("MarkerInterface1", "MarkerInterface2"),
+            attributes = ArraySeq(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
         ).toDA()
 
     val nestedClassOuterType = br.ObjectType("NestedClassOuter")
@@ -65,12 +66,12 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
             thisType = "NestedClassInner",
             superclassType = Some("java/lang/Object"),
-            attributes = RefArray(nestedClassHostAttribute)
+            attributes = ArraySeq(nestedClassHostAttribute)
         ).toDA()
 
     val nestedClassInnerType = br.ObjectType("NestedClassInner")
 
-    val nestedClassesAttribute = br.NestMembers(RefArray(nestedClassInnerType))
+    val nestedClassesAttribute = br.NestMembers(ArraySeq(nestedClassInnerType))
 
     val (nestedClassOuter, _) =
         CLASS[Nothing](
@@ -78,11 +79,11 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
             thisType = "NestedClassOuter",
             superclassType = Some("java/lang/Object"),
-            attributes = RefArray(nestedClassesAttribute, br.Synthetic)
+            attributes = ArraySeq(nestedClassesAttribute, br.Synthetic)
         ).toDA()
 
-    val recordAttribute = br.Record(RefArray(
-        br.RecordComponent("component", IntegerType, RefArray.empty)
+    val recordAttribute = br.Record(ArraySeq(
+        br.RecordComponent("component", IntegerType, ArraySeq.empty)
     ))
     val (recordClass, _) =
         CLASS[Nothing](
@@ -90,7 +91,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
             thisType = "RecordClass",
             superclassType = Some("java/lang/Record"),
-            attributes = RefArray(recordAttribute, br.Synthetic)
+            attributes = ArraySeq(recordAttribute, br.Synthetic)
         ).toDA()
 
     val (sealedClassSubclass, _) =
@@ -103,7 +104,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
 
     val sealedClassSubclassType = br.ObjectType("SealedClassSubclass")
 
-    val permittedSubclassesAttribute = br.PermittedSubclasses(RefArray(sealedClassSubclassType))
+    val permittedSubclassesAttribute = br.PermittedSubclasses(ArraySeq(sealedClassSubclassType))
 
     val (sealedClass, _) =
         CLASS[Nothing](
@@ -111,7 +112,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.SUPER.SYNTHETIC,
             thisType = "SealedClass",
             superclassType = Some("java/lang/Object"),
-            attributes = RefArray(permittedSubclassesAttribute, br.Synthetic)
+            attributes = ArraySeq(permittedSubclassesAttribute, br.Synthetic)
         ).toDA()
 
     val abstractAsm = Assembler(abstractClass)

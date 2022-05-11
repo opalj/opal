@@ -6,7 +6,6 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsPrimitiveValue
 import org.opalj.value.IsReferenceValue
@@ -56,11 +55,11 @@ class ClassBasedMethodMatcher(
     // (for the contains check)
     private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c =>
         // todo what about "inherited" static methods?
-        val methodsInClassFile = p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
+        val methodsInClassFile = p.classFile(c).map(_.methods).getOrElse(ArraySeq.empty)
         if (onlyMethodsExactlyInClass)
             methodsInClassFile
         else
-            methodsInClassFile ++ p.instanceMethods.getOrElse(c, ConstArray.empty).map(_.method)
+            methodsInClassFile ++ p.instanceMethods.getOrElse(c, ArraySeq.empty).map(_.method)
 
     }
 
@@ -146,7 +145,7 @@ class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends M
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
         implicit val ch: ClassHierarchy = p.classHierarchy
         p.allClassFiles.iterator.flatMap { cf =>
-            var r = RefArray.empty[Method]
+            var r = ArraySeq.empty[Method]
             if (receiver.isNull.isNoOrUnknown && receiver.isValueASubtypeOf(cf.thisType).isYesOrUnknown)
                 r ++= cf.methods
             else if (receiver.isNull.isYesOrUnknown)

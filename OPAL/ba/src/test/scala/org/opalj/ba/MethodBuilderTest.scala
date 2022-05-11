@@ -4,16 +4,12 @@ package ba
 
 import scala.language.postfixOps
 import scala.reflect.runtime.universe._
-
 import org.junit.runner.RunWith
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
 
 import java.io.ByteArrayInputStream
-
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.MethodDescriptor
@@ -22,6 +18,8 @@ import org.opalj.br.reader.Java8Framework.{ClassFile => J8ClassFile}
 import org.opalj.br.MethodAttributeBuilder
 import org.opalj.br.ObjectType
 import org.opalj.br.IntegerType
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the properties of a method in a class build with the BytecodeAssembler DSL. The class is
@@ -42,7 +40,7 @@ class MethodBuilderTest extends AnyFlatSpec {
                 METHOD(
                     FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
                     CODE(ACONST_NULL, ARETURN),
-                    RefArray[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
+                    ArraySeq[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
                 )
             )
         ).toDA()

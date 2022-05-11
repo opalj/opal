@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
@@ -613,7 +612,7 @@ object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSchedul
 
     private[cg] val uncaughtExceptionDescriptor = {
         MethodDescriptor(
-            RefArray(ObjectType.Thread, ObjectType.Throwable), VoidType
+          ArraySeq(ObjectType.Thread, ObjectType.Throwable), VoidType
         )
     }
 }

@@ -4,7 +4,8 @@ package br
 package reader
 
 import org.opalj.bi.reader.Exceptions_attributeReader
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * The factory method to create a method's exception attribute.
@@ -26,7 +27,7 @@ trait Exceptions_attributeBinding
         exception_index_table: Array[Constant_Pool_Index]
     ): Exceptions_attribute = {
         new Exceptions_attribute(
-            RefArray.mapFrom(exception_index_table)(e_index => cp(e_index).asObjectType(cp))
+          ArraySeq.from(exception_index_table).map(e_index => cp(e_index).asObjectType(cp))
         )
     }
 }

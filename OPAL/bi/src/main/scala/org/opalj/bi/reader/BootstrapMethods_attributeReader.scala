@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Template method to read the (Java 7) ''BootstrapMethods'' attribute.
@@ -25,10 +25,10 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapMethods_attribute >: Null <: Attribute
 
     type BootstrapMethod <: AnyRef
-    type BootstrapMethods = RefArray[BootstrapMethod]
+    type BootstrapMethods = ArraySeq[BootstrapMethod]
 
     type BootstrapArgument <: AnyRef
-    type BootstrapArguments = RefArray[BootstrapArgument]
+    type BootstrapArguments = ArraySeq[BootstrapArgument]
 
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
@@ -61,7 +61,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         BootstrapMethod(
             cp,
             in.readUnsignedShort,
-            fillRefArray(in.readUnsignedShort) {
+            fillArraySeq(in.readUnsignedShort) {
                 BootstrapArgument(cp, in)
             }
         )
@@ -96,7 +96,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(num_bootstrap_methods) { BootstrapMethod(cp, in) }
+                fillArraySeq(num_bootstrap_methods) { BootstrapMethod(cp, in) }
             )
         } else {
             null

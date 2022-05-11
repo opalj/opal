@@ -15,7 +15,6 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogMessage
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.RefIndexedView
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
@@ -439,7 +438,7 @@ trait InvokedynamicRewriting
                 body ++= INVOKEVIRTUAL(
                     ObjectType.String,
                     "substring",
-                    MethodDescriptor(RefArray(IntegerType, IntegerType), ObjectType.String)
+                    MethodDescriptor(ArraySeq(IntegerType, IntegerType), ObjectType.String)
                 )
 
                 body ++= INVOKEVIRTUAL(
@@ -527,7 +526,7 @@ trait InvokedynamicRewriting
             // Access flags for the concat are `/* SYNTHETIC */ private static`
             val accessFlags = ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask
 
-            Method(accessFlags, name, descriptor, RefArray(code))
+            Method(accessFlags, name, descriptor, ArraySeq(code))
         }
 
         val concatName =
@@ -648,7 +647,7 @@ trait InvokedynamicRewriting
                 "apply",
                 // the invokedynamic's methodDescriptor (factoryDescriptor) determines
                 // the parameters that are actually pushed and popped from/to the stack
-                MethodDescriptor(RefArray(ObjectType.String), ObjectType.ScalaSymbol)
+                MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.ScalaSymbol)
             )
 
         if (logLambdaExpressionsRewrites) {
@@ -680,7 +679,7 @@ trait InvokedynamicRewriting
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
                 newMethodName,
                 MethodDescriptor.withNoArgs(ObjectType.ScalaSymbol),
-                RefArray(Code(maxStack, 0, newInstructions, NoExceptionHandlers, NoAttributes))
+                ArraySeq(Code(maxStack, 0, newInstructions, NoExceptionHandlers, NoAttributes))
             )
             updatedClassFile = updatedClassFile._UNSAFE_addMethod(newMethod)
 
@@ -755,7 +754,7 @@ trait InvokedynamicRewriting
         val code = Code(maxStack, 1, body.result(), NoExceptionHandlers, NoAttributes)
 
         val rewrittenMethod =
-            Method(methodToRewrite.accessFlags, methodName, methodDescriptor, RefArray(code))
+            Method(methodToRewrite.accessFlags, methodName, methodDescriptor, ArraySeq(code))
 
         updatedClassFile._UNSAFE_replaceMethod(methodToRewrite, rewrittenMethod)
     }
@@ -837,7 +836,7 @@ trait InvokedynamicRewriting
             isInterface = false, // the created proxy class is always a concrete class
             factoryMethod.name,
             MethodDescriptor(
-                RefArray(ObjectType.SerializedLambda),
+                ArraySeq(ObjectType.SerializedLambda),
                 ObjectType.Object
             )
         )
@@ -1112,7 +1111,7 @@ trait InvokedynamicRewriting
 
             val code = Code(maxStack, maxLocals, body.result(), NoExceptionHandlers, NoAttributes)
 
-            Method(accessFlags, name, m.descriptor, RefArray(code))
+            Method(accessFlags, name, m.descriptor, ArraySeq(code))
         }
 
         val isInterface = classFile.isInterfaceDeclaration
@@ -1184,7 +1183,7 @@ trait InvokedynamicRewriting
 
         val needsBridgeMethod = samMethodType != instantiatedMethodType
 
-        val bridgeMethodDescriptorBuilder = RefArray.newBuilder[MethodDescriptor]
+        val bridgeMethodDescriptorBuilder = ArraySeq.newBuilder[MethodDescriptor]
         if (needsBridgeMethod) {
             bridgeMethodDescriptorBuilder += samMethodType
         }
@@ -1407,7 +1406,7 @@ object InvokedynamicRewriting {
                         ObjectType.Class,
                         "getMethod",
                         MethodDescriptor(
-                            RefArray(ObjectType.String, ArrayType(ObjectType.Class)),
+                            ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)),
                             ObjectType.Method
                         )
                     ) &&

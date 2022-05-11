@@ -4,29 +4,16 @@ package ba
 
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.mutable.Locals
-import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.IntRefPair
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bi.ACC_STATIC
-import org.opalj.br.StackMapTable
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.Method
-import org.opalj.br.Methods
-import org.opalj.br.Attributes
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
-import org.opalj.br.FullFrame
-import org.opalj.br.ChopFrame
-import org.opalj.br.AppendFrame
-import org.opalj.br.SameLocals1StackItemFrameExtended
-import org.opalj.br.SameLocals1StackItemFrame
-import org.opalj.br.SameFrame
-import org.opalj.br.SameFrameExtended
-import org.opalj.br.VerificationTypeInfo
-import org.opalj.br.TopVariableInfo
+import org.opalj.br.{AppendFrame, Attributes, ChopFrame, ClassFile, ClassHierarchy, FullFrame, Method, Methods, ObjectType, SameFrame, SameFrameExtended, SameLocals1StackItemFrame, SameLocals1StackItemFrameExtended, StackMapFrame, StackMapTable, TopVariableInfo, VerificationTypeInfo}
 import org.opalj.br.instructions.Instruction
+import org.opalj.da.StackMapFrame
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. The ''Builder'' is
@@ -241,7 +228,7 @@ object CodeAttributeBuilder {
         implicit
         classHierarchy: ClassHierarchy
     ): StackMapTable = {
-        type VerificationTypeInfos = RefArray[VerificationTypeInfo]
+        type VerificationTypeInfos = ArraySeq[VerificationTypeInfo]
 
         val c = m.body.get
 
@@ -257,7 +244,7 @@ object CodeAttributeBuilder {
         ): VerificationTypeInfos = {
             val lastLocalsIndex = locals.indexOfLastNonNullValue
             var index = 0
-            val b = RefArray.newBuilder[VerificationTypeInfo]
+            val b = ArraySeq.newBuilder[VerificationTypeInfo]
             b.sizeHint(lastLocalsIndex + 1)
             while (index <= lastLocalsIndex) {
                 b += (
@@ -288,10 +275,10 @@ object CodeAttributeBuilder {
         var lastVerificationTypeInfoLocals: VerificationTypeInfos =
             computeLocalsVerificationTypeInfo(ils)
         var lastverificationTypeInfoStack: VerificationTypeInfos =
-            RefArray.empty // has to be empty...
+            ArraySeq.empty // has to be empty...
 
         val framePCs = c.stackMapTablePCs(classHierarchy)
-        val fs = new Array[AnyRef /*actually StackMapFrame*/ ](framePCs.size)
+        val fs = new Array[StackMapFrame](framePCs.size)
         var frameIndex = 0
         framePCs.foreach { pc =>
             val verificationTypeInfoLocals: VerificationTypeInfos = {
@@ -318,16 +305,16 @@ object CodeAttributeBuilder {
                 var operands = r.operandsArray(pc)
                 var operandIndex = operands.size
                 if (operandIndex == 0) {
-                    RefArray.empty // an empty stack is a VERY common case...
+                  ArraySeq.empty // an empty stack is a VERY common case...
                 } else {
-                    val os = new Array[AnyRef /*VerificationTypeInfo*/ ](operandIndex /*HERE == operands.size*/ )
+                    val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
                     do {
                         os(operandIndex) = operands.head.verificationTypeInfo
                         operands = operands.tail
                         operandIndex -= 1
                     } while (operandIndex >= 0)
-                    RefArray._UNSAFE_from[VerificationTypeInfo](os)
+                  ArraySeq.unsafeWrapArray[VerificationTypeInfo](os)
                 }
             }
 
@@ -407,6 +394,6 @@ object CodeAttributeBuilder {
             frameIndex += 1
             lastPC = pc
         }
-        StackMapTable(RefArray._UNSAFE_from(fs))
+        StackMapTable(ArraySeq.unsafeWrapArray(fs))
     }
 }

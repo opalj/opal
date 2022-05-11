@@ -4,9 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 trait StackMapFrameReader extends Constant_PoolAbstractions {
 
@@ -17,8 +17,8 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     type StackMapFrame <: AnyRef
 
     type VerificationTypeInfo <: AnyRef
-    type VerificationTypeInfoLocals = RefArray[VerificationTypeInfo]
-    type VerificationTypeInfoStack = RefArray[VerificationTypeInfo]
+    type VerificationTypeInfoLocals = ArraySeq[VerificationTypeInfo]
+    type VerificationTypeInfoStack = ArraySeq[VerificationTypeInfo]
 
     def VerificationTypeInfo(cp: Constant_Pool, in: DataInputStream): VerificationTypeInfo
 
@@ -79,16 +79,16 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
             AppendFrame(
                 frame_type,
                 in.readUnsignedShort,
-                fillRefArray(frame_type - 251 /*#entries*/ ) { VerificationTypeInfo(cp, in) }
+                fillArraySeq(frame_type - 251 /*#entries*/ ) { VerificationTypeInfo(cp, in) }
             )
         } else {
             FullFrame(
                 255,
                 in.readUnsignedShort,
-                fillRefArray(in.readUnsignedShort /*#entries*/ ) {
+                fillArraySeq(in.readUnsignedShort /*#entries*/ ) {
                     VerificationTypeInfo(cp, in) // ...locals
                 },
-                fillRefArray(in.readUnsignedShort /*#entries*/ ) {
+                fillArraySeq(in.readUnsignedShort /*#entries*/ ) {
                     VerificationTypeInfo(cp, in) // ...stack items
                 }
             )

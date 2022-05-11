@@ -4,7 +4,6 @@ package br
 package reader
 
 import java.io.File
-
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 import org.scalactic.Equality
@@ -20,7 +19,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.bi.TestResources.{locateTestResources => locate}
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
@@ -67,7 +67,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                     evp ← a.elementValuePairs
                     ArrayValue(values) = evp.value
                     ev @ AnnotationValue(annotation) ← values
-                    innerAnnotation = RefArray(annotation)
+                    innerAnnotation = ArraySeq(annotation)
                     expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                     actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
                     if MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
@@ -81,7 +81,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                         .flatMap[ElementValuePair](_.elementValuePairs)
                         .flatMap[ElementValue](_.value.asInstanceOf[ArrayValue].values)
                         .filter { invokeMethod =>
-                            val innerAnnotation = RefArray(invokeMethod.asInstanceOf[AnnotationValue].annotation)
+                            val innerAnnotation = ArraySeq(invokeMethod.asInstanceOf[AnnotationValue].annotation)
                             val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                             val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
                             MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
@@ -239,7 +239,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         findMethodRecursiveInner(classFile)
     }
 
-    private def getParameterTypes(pairs: ElementValuePairs): Option[RefArray[FieldType]] = {
+    private def getParameterTypes(pairs: ElementValuePairs): Option[ArraySeq[FieldType]] = {
         pairs.find(_.name == "parameterTypes").map { p =>
             p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
                 case ClassValue(x: ArrayType)  => x

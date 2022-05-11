@@ -6,7 +6,8 @@ package reader
 import org.opalj.bi.reader.TypeAnnotationsReader
 import org.opalj.bi.reader.TypeAnnotationTargetReader
 import org.opalj.bi.reader.TypeAnnotationPathReader
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Factory methods to create representations of Java type annotations.
@@ -197,7 +198,7 @@ trait TypeAnnotationsBinding
         TADirectlyOnType
 
     override def TypeAnnotationPath(
-        path: RefArray[TypeAnnotationPathElement]
+        path: ArraySeq[TypeAnnotationPathElement]
     ): TAOnNestedType = {
         TAOnNestedType(path)
     }

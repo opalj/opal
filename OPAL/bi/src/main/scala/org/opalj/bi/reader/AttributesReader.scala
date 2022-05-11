@@ -5,8 +5,7 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import org.opalj.control.fillArraySeq
 
 /**
  * Trait that implements a template method to read in the attributes of
@@ -119,7 +118,7 @@ trait AttributesReader
         attributeReaders += reader
     }
 
-    private[this] var attributesPostProcessors = RefArray.empty[Attributes => Attributes]
+    private[this] var attributesPostProcessors = ArraySeq.empty[Attributes => Attributes]
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
@@ -141,7 +140,7 @@ trait AttributesReader
         in:                  DataInputStream
     ): Attributes = {
         val attributes: Attributes =
-            fillRefArray(in.readUnsignedShort) {
+            fillArraySeq(in.readUnsignedShort) {
                 Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
             }.filterNonNull // lets remove the attributes we don't need or understand
 

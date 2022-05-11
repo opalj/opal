@@ -6,7 +6,6 @@ package analyses
 package cg
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
@@ -34,6 +33,8 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Models the behavior for `java.security.AccessController.doPrivileged*`.
@@ -199,7 +200,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedActionType, accessControlContextType),
+              ArraySeq(privilegedActionType, accessControlContextType),
                 ObjectType.Object
             )
         )
@@ -212,7 +213,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedActionType, accessControlContextType, permissionsArray),
+              ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )
@@ -235,7 +236,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType, accessControlContextType),
+                ArraySeq(privilegedExceptionActionType, accessControlContextType),
                 ObjectType.Object
             )
         )
@@ -248,7 +249,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedExceptionActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )
@@ -271,7 +272,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                RefArray(privilegedActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )
@@ -284,7 +285,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType),
+                ArraySeq(privilegedExceptionActionType),
                 ObjectType.Object
             )
         )
@@ -297,7 +298,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedExceptionActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )

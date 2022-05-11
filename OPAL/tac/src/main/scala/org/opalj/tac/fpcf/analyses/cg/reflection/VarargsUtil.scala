@@ -6,9 +6,10 @@ package analyses
 package cg
 package reflection
 import org.opalj.collection.immutable.IntArraySetBuilder
-import org.opalj.collection.immutable.RefArray
 import org.opalj.br.FieldType
 import org.opalj.br.FieldTypes
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Utility class to retrieve types or expressions for varargs.
@@ -24,7 +25,7 @@ object VarargsUtil {
     def getParamsFromVararg(
         expr:  Expr[V],
         stmts: Array[Stmt[V]]
-    ): Option[RefArray[V]] = {
+    ): Option[ArraySeq[V]] = {
         getTFromVarArgs(expr, stmts, fillParam)
     }
 
@@ -43,20 +44,20 @@ object VarargsUtil {
     private[this] def getTFromVarArgs[T](
         expr:      Expr[V],
         stmts:     Array[Stmt[V]],
-        fillEntry: (ArrayStore[V], Array[Stmt[V]], RefArray[T]) => Option[RefArray[T]]
-    ): Option[RefArray[T]] = {
+        fillEntry: (ArrayStore[V], Array[Stmt[V]], ArraySeq[T]) => Option[ArraySeq[T]]
+    ): Option[ArraySeq[T]] = {
         val definitions = expr.asVar.definedBy
         if (!definitions.isSingletonSet || definitions.head < 0) {
             None
         } else {
             val definition = stmts(definitions.head).asAssignment
             if (definition.expr.isNullExpr) {
-                Some(RefArray.empty)
+                Some(ArraySeq.empty)
             } else if (definition.expr.astID != NewArray.ASTID) {
                 None
             } else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                var params: RefArray[T] = RefArray.withSize(uses.size - 1)
+                var params: ArraySeq[T] = ArraySeq.withSize(uses.size - 1)
                 if (!uses.forall { useSite =>
                     val use = stmts(useSite)
                     if (useSite == uses.last)
@@ -82,8 +83,8 @@ object VarargsUtil {
 
     // todo: merge both methods
     @inline private[this] def fillParam(
-        use: ArrayStore[V], stmts: Array[Stmt[V]], params: RefArray[V]
-    ): Option[RefArray[V]] = {
+        use: ArrayStore[V], stmts: Array[Stmt[V]], params: ArraySeq[V]
+    ): Option[ArraySeq[V]] = {
         val indices = use.index.asVar.definedBy
         if (!indices.isSingletonSet || indices.head < 0)
             None
@@ -101,8 +102,8 @@ object VarargsUtil {
     }
 
     @inline private[this] def fillType(
-        use: ArrayStore[V], stmts: Array[Stmt[V]], params: RefArray[FieldType]
-    ): Option[RefArray[FieldType]] = {
+        use: ArrayStore[V], stmts: Array[Stmt[V]], params: ArraySeq[FieldType]
+    ): Option[ArraySeq[FieldType]] = {
         val typeDefs = use.asArrayStore.value.asVar.definedBy
         val indices = use.asArrayStore.index.asVar.definedBy
         if (!typeDefs.isSingletonSet || typeDefs.head < 0 ||

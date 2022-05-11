@@ -3,9 +3,9 @@ package org.opalj
 package da
 
 import scala.xml.Node
-
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * @author Michael Eichberg
@@ -15,7 +15,7 @@ import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
  */
 case class MethodParameters_attribute(
         attribute_name_index: Constant_Pool_Index,
-        parameters:           RefArray[MethodParameter]
+        parameters:           ArraySeq[MethodParameter]
 ) extends Attribute {
 
     final override def attribute_length: Int = 1 /*parameters_count*/ + parameters.size * 4

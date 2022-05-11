@@ -8,7 +8,6 @@ import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -182,7 +181,7 @@ trait DynamicConstantRewriting
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
                 newMethodName,
                 MethodDescriptor.withNoArgs(descriptor),
-                RefArray(Code(maxStack, 0, newInstructions, NoExceptionHandlers, NoAttributes))
+                ArraySeq(Code(maxStack, 0, newInstructions, NoExceptionHandlers, NoAttributes))
             )
             updatedClassFile = updatedClassFile._UNSAFE_addMethod(newMethod)
 

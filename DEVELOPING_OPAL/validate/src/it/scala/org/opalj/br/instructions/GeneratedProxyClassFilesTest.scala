@@ -13,7 +13,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.collection.immutable.RefArray
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -94,7 +93,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                         methodHandle,
                         invocationInstruction,
                         MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
-                        RefArray.empty
+                      ArraySeq.empty
                     )
 
                 def verifyMethod(method: Method): Unit = {

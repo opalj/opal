@@ -13,7 +13,8 @@ import org.opalj.br.CodeAttribute
 import org.opalj.br.UnpackedLineNumberTable
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.br.instructions.PCLabel
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Mutable container for some labeled code.
@@ -215,13 +216,13 @@ class LabeledCode(
                                 newLNs.put(ln.startPC, ln.lineNumber)
                             }
                             explicitLNs.foreach(ln => newLNs.put(ln.startPC, ln.lineNumber))
-                            val finalLNs = new Array[AnyRef](newLNs.size)
+                            val finalLNs = new Array[LineNumber](newLNs.size)
                             var index = 0
                             newLNs.int2IntEntrySet().iterator().forEachRemaining { e =>
                                 finalLNs(index) = LineNumber(e.getIntKey, e.getIntValue)
                                 index += 1
                             }
-                            UnpackedLineNumberTable(RefArray._UNSAFE_from[LineNumber](finalLNs))
+                            UnpackedLineNumberTable(ArraySeq.unsafeWrapArray[LineNumber](finalLNs))
                     }
 
                 case ca: CodeAttribute => ca.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)

@@ -178,10 +178,10 @@ The DSL interacts seamlessly with the bytecode representation and all attibutes 
             METHOD(
                 FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
                 CODE(ACONST_NULL, ARETURN),
-                RefArray(EXCEPTIONS("java/lang/Exception"), Deprecated)
+                ArraySeq(EXCEPTIONS("java/lang/Exception"), Deprecated)
             )
         ),
-        attributes = RefArray(SourceFile("ClassFileBuilderTest.scala"), Synthetic)
+        attributes = ArraySeq(SourceFile("ClassFileBuilderTest.scala"), Synthetic)
     )
 
 

@@ -3,7 +3,6 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -44,6 +43,8 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.IRETURN
 import org.opalj.br.instructions.LoadInt_W
 import org.opalj.br.instructions.NEW
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Provides functionality to produce bytecode that loads a bootstrap argument. Loading of dynamic
@@ -111,7 +112,7 @@ trait BootstrapArgumentLoading {
         }
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, methodName, _), args: RefArray[ConstantValue[_]] @unchecked) =>
+            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, methodName, _), args: ArraySeq[ConstantValue[_]] @unchecked) =>
 
                 methodName match {
                     case "arrayVarHandle" =>
@@ -358,7 +359,7 @@ trait BootstrapArgumentLoading {
      */
     private def invokeMethodHandle(
         methodHandle: ConstantValue[_],
-        arguments:    RefArray[ConstantValue[_]],
+        arguments:    ArraySeq[ConstantValue[_]],
         returnType:   FieldType,
         instructions: InstructionsBuilder,
         classFile:    ClassFile,
@@ -537,7 +538,7 @@ trait BootstrapArgumentLoading {
                             isInterface = false,
                             "equals",
                             MethodDescriptor(
-                                RefArray(ObjectType.Object, ObjectType.Object),
+                                ArraySeq(ObjectType.Object, ObjectType.Object),
                                 BooleanType
                             )
                         )
@@ -548,7 +549,7 @@ trait BootstrapArgumentLoading {
                 body ++= ICONST_1 // return true;
                 body ++= IRETURN
 
-                MethodDescriptor(RefArray(recordType, ObjectType.Object), BooleanType)
+                MethodDescriptor(ArraySeq(recordType, ObjectType.Object), BooleanType)
 
             case "toString" =>
                 val components = bootstrapArgs(1) match {
@@ -640,9 +641,9 @@ trait BootstrapArgumentLoading {
         val maxLocals = targetDescriptor.requiredRegisters + (if (getters.isEmpty) 0 else 1)
 
         val attributes = if ("equals" == methodName) {
-            RefArray(StackMapTable(RefArray(SameFrame(7), SameFrame(1))))
+            ArraySeq(StackMapTable(ArraySeq(SameFrame(7), SameFrame(1))))
         } else {
-            RefArray.empty
+            ArraySeq.empty
         }
 
         val code = Code(maxStack, maxLocals, body.result(), NoExceptionHandlers, attributes)
@@ -650,7 +651,7 @@ trait BootstrapArgumentLoading {
         // Access flags for the target method are `/* SYNTHETIC */ private static`
         val accessFlags = ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask
 
-        val targetMethod = Method(accessFlags, newMethodName, targetDescriptor, RefArray(code))
+        val targetMethod = Method(accessFlags, newMethodName, targetDescriptor, ArraySeq(code))
 
         val updatedClassFile = classFile._UNSAFE_addMethod(targetMethod)
 

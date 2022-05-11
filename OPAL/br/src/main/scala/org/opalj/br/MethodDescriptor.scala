@@ -7,8 +7,6 @@ import scala.annotation.switch
 import scala.collection.Seq
 import scala.math.Ordered
 
-import org.opalj.collection.immutable.RefArray
-
 /**
  * A method descriptor represents the parameters that the method takes and
  * the value that it returns.
@@ -217,7 +215,7 @@ private final class SingleArgumentMethodDescriptor(
         val returnType:    Type
 ) extends MethodDescriptor {
 
-    override def parameterTypes: FieldTypes = RefArray(parameterType)
+    override def parameterTypes: FieldTypes = ArraySeq(parameterType)
 
     override def parameterType(index: Int): FieldType = {
         if (index == 0)
@@ -266,7 +264,7 @@ private final class TwoArgumentsMethodDescriptor(
         val returnType:          Type
 ) extends MethodDescriptor {
 
-    override def parameterTypes: FieldTypes = RefArray(firstParameterType, secondParameterType)
+    override def parameterTypes: FieldTypes = ArraySeq(firstParameterType, secondParameterType)
 
     override def parameterType(index: Int): FieldType = {
         (index: @switch) match {
@@ -558,7 +556,7 @@ object MethodDescriptor {
      */
     final val LambdaMetafactoryDescriptor = {
         MethodDescriptor(
-            RefArray(
+            ArraySeq(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -575,7 +573,7 @@ object MethodDescriptor {
      */
     final val LambdaAltMetafactoryDescriptor = {
         MethodDescriptor(
-            RefArray(
+            ArraySeq(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -590,7 +588,7 @@ object MethodDescriptor {
      */
     final val ScalaLambdaDeserializeDescriptor = {
         MethodDescriptor(
-            RefArray(
+            ArraySeq(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -605,7 +603,7 @@ object MethodDescriptor {
      */
     final val ScalaSymbolLiteralDescriptor = {
         MethodDescriptor(
-            RefArray(
+            ArraySeq(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -620,7 +618,7 @@ object MethodDescriptor {
      */
     final val ScalaStructuralCallSiteDescriptor = {
         MethodDescriptor(
-            RefArray(
+            ArraySeq(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -635,7 +633,7 @@ object MethodDescriptor {
      */
     final val ConstantBootstrapsPrimitiveClassDescriptor = {
         MethodDescriptor(
-            RefArray(
+            ArraySeq(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.Class
@@ -650,7 +648,7 @@ object MethodDescriptor {
      */
     final val FindVarHandleDescriptor = {
         MethodDescriptor(
-            RefArray(
+            ArraySeq(
                 ObjectType.Class,
                 ObjectType.String,
                 ObjectType.Class

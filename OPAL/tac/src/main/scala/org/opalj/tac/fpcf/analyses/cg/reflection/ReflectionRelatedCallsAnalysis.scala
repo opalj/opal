@@ -7,12 +7,10 @@ package cg
 package reflection
 
 import scala.language.existentials
-
 import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
@@ -54,6 +52,8 @@ import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMat
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+
+import scala.collection.immutable.ArraySeq
 
 sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 
@@ -327,7 +327,7 @@ class ClassNewInstanceAnalysis private[analyses] (
 
                 val matchers = Set(
                     MatcherUtil.constructorMatcher,
-                    new ParameterTypesBasedMethodMatcher(RefArray.empty),
+                    new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
                     retrieveSuitableMatcher[Set[ObjectType]](
                         Some(classes.asInstanceOf[Set[ObjectType]]),
                         callPC,
@@ -348,7 +348,7 @@ class ClassNewInstanceAnalysis private[analyses] (
 
                 val matchers = Set(
                     MatcherUtil.constructorMatcher,
-                    new ParameterTypesBasedMethodMatcher(RefArray.empty),
+                    new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
                     retrieveSuitableMatcher[Set[ObjectType]](
                         classOpt.map(Set(_)),
                         data._1,
@@ -377,7 +377,7 @@ class ClassNewInstanceAnalysis private[analyses] (
 
         val matchers = Set(
             MatcherUtil.constructorMatcher,
-            new ParameterTypesBasedMethodMatcher(RefArray.empty),
+            new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
             MatcherUtil.retrieveClassBasedMethodMatcher(
                 callContext,
                 classExpr,
@@ -400,7 +400,7 @@ class ClassNewInstanceAnalysis private[analyses] (
         if (HighSoundnessMode) {
             val matchers: Set[MethodMatcher] = Set(
                 MatcherUtil.constructorMatcher,
-                new ParameterTypesBasedMethodMatcher(RefArray.empty)
+                new ParameterTypesBasedMethodMatcher(ArraySeq.empty)
             )
             addCalls(state.callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
         } else {
@@ -662,7 +662,7 @@ class MethodInvokeAnalysis private[analyses] (
         ObjectType.Method,
         "invoke",
         MethodDescriptor.apply(
-            RefArray(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
+            ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
         )
     )
 
@@ -1382,7 +1382,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     ObjectType.Class,
                     "forName",
                     MethodDescriptor(
-                        RefArray(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+                        ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
                         ObjectType.Class
                     )
                 )
@@ -1395,7 +1395,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     ObjectType.Class,
                     "forName",
                     MethodDescriptor(
-                        RefArray(ObjectType("java/lang/Module"), ObjectType.String),
+                        ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
                         ObjectType.Class
                     )
                 ),

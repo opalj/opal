@@ -17,7 +17,8 @@ import com.typesafe.config.Config
 import org.opalj.br.reader.InvokedynamicRewriting
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * @author Arne Lottmann
@@ -414,7 +415,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         ),
                         INVOKESTATIC.opcode,
                         MethodDescriptor.NoArgsAndReturnVoid, // not tested...
-                        RefArray.empty // <= not tested...
+                        ArraySeq.empty // <= not tested...
                     )
 
                 val method = collectTheForwardingMethod(proxy)
@@ -515,21 +516,21 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             methodHandle,
                             invocationInstruction,
                             MethodDescriptor.NoArgsAndReturnVoid, // not tested...
-                            RefArray.empty // <= not tested...
+                            ArraySeq.empty // <= not tested...
                         )
 
                     val constructor = collectTheConstructor(proxy)
                     if (method.isStatic) {
-                        constructor.parameterTypes should be(RefArray(IntegerType))
+                        constructor.parameterTypes should be(ArraySeq(IntegerType))
                     } else {
-                        constructor.parameterTypes should be(RefArray(theType, IntegerType))
+                        constructor.parameterTypes should be(ArraySeq(theType, IntegerType))
                     }
 
                     val factory = collectTheFactoryMethod(proxy)
                     if (method.isStatic) {
-                        factory.parameterTypes should be(RefArray(IntegerType))
+                        factory.parameterTypes should be(ArraySeq(IntegerType))
                     } else {
-                        factory.parameterTypes should be(RefArray(theType, IntegerType))
+                        factory.parameterTypes should be(ArraySeq(theType, IntegerType))
                     }
 
                     val forwarder = collectTheForwardingMethod(proxy)
@@ -610,7 +611,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             methodHandle,
                             invocationInstruction,
                             MethodDescriptor.NoArgsAndReturnVoid, // not tested...
-                            RefArray.empty // <= not tested...
+                            ArraySeq.empty // <= not tested...
                         )
                     val forwarderMethod = collectTheForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
@@ -734,7 +735,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             methodHandle,
                             invocationInstruction,
                             MethodDescriptor.NoArgsAndReturnVoid, // not tested...
-                            RefArray.empty // <= not tested...
+                            ArraySeq.empty // <= not tested...
                         )
                     val forwarderMethod = collectTheForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
@@ -849,7 +850,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     ),
                     INVOKESPECIAL.opcode,
                     MethodDescriptor.NoArgsAndReturnVoid, // not tested...
-                    RefArray.empty // <= not tested...
+                    ArraySeq.empty // <= not tested...
                 )
 
                 val proxyMethod = proxy.findMethod("get").head
@@ -905,7 +906,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     ),
                     INVOKEVIRTUAL.opcode,
                     MethodDescriptor.NoArgsAndReturnVoid, // not tested...
-                    RefArray.empty // <= not tested...
+                    ArraySeq.empty // <= not tested...
                 )
 
                 it("and result in a proxy method that passes in the explicit this") {
@@ -946,7 +947,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         ),
                         INVOKESTATIC.opcode,
                         MethodDescriptor.NoArgsAndReturnVoid, // not tested...
-                        RefArray.empty // <= not tested...
+                        ArraySeq.empty // <= not tested...
                     )
                 val factoryMethod = collectTheFactoryMethod(proxy)
                 factoryMethod.name should be(ClassFileFactory.AlternativeFactoryMethodName)
@@ -960,7 +961,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
                 val proxyType = ObjectType(receiverType.simpleName + '$'+"Proxy")
                 val methodDescriptor =
-                    MethodDescriptor(RefArray(ObjectType.String, DoubleType), IntegerType)
+                    MethodDescriptor(ArraySeq(ObjectType.String, DoubleType), IntegerType)
                 val proxy =
                     ClassFileFactory.Proxy(
                         lambdas.thisType,
@@ -1061,7 +1062,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 )
 
             def testConstructor(
-                fieldTypes:     RefArray[FieldType],
+                fieldTypes:     ArraySeq[FieldType],
                 expectedLocals: Int, expectedStack: Int
             ): Unit = {
                 val fields = fieldTypes.zipWithIndex.map { p =>

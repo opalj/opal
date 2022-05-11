@@ -7,8 +7,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.propBoolean
-
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests RefIterator (and to some degree implicitly also RefArray.)
@@ -17,7 +16,7 @@ import org.opalj.collection.immutable.RefArray
  */
 object RefIteratorProperties extends Properties("RefIterator") {
 
-    implicit val arbRefArray: Arbitrary[RefArray[String]] = Arbitrary {
+    implicit val arbRefArray: Arbitrary[ArraySeq[String]] = Arbitrary {
         val r = new java.util.Random()
         Gen.sized { l =>
             val a = RefArray._UNSAFE_from[String](new Array[AnyRef](l))

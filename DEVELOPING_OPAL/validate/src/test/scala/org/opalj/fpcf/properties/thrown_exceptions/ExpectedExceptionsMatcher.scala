@@ -4,11 +4,12 @@ package fpcf
 package properties
 package thrown_exceptions
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.ThrownExceptions
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Trait to extract the concrete and upper bound exceptions specified in the test cases.
@@ -20,7 +21,7 @@ private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractProperty
     def getConcreteAndUpperBoundExceptionAnnotations(
         p: SomeProject,
         a: AnnotationLike
-    ): (RefArray[ObjectType], RefArray[ObjectType]) = {
+    ): (ArraySeq[ObjectType], ArraySeq[ObjectType]) = {
         val annotationType = a.annotationType.asObjectType
         val exceptionTypesAnnotation = getValue(
             p,

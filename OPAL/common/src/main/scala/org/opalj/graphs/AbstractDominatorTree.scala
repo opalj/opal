@@ -4,7 +4,8 @@ package graphs
 
 import scala.annotation.tailrec
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Representation of a (post) dominator tree of, for example, a control flow graph.
@@ -106,7 +107,7 @@ abstract class AbstractDominatorTree {
     /**
      * The array which stores the immediate dominator for each node.
      */
-    def immediateDominators: IntArray = IntArray._UNSAFE_from(idom)
+    def immediateDominators: ArraySeq[Int] = ArraySeq.unsafeWrapArray(idom)
 
     /**
      * (Re-)computes the dominator tree's leaf nodes. Due to the way the graph is stored,

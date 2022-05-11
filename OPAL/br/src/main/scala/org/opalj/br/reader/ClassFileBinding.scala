@@ -8,7 +8,6 @@ import net.ceedubs.ficus.Ficus._
 import org.opalj.log.OPALLogger
 import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
-import org.opalj.collection.immutable.RefArray
 
 /**
  *
@@ -46,8 +45,8 @@ trait ClassFileBinding extends ClassFileReader {
 
     type ClassFile = br.ClassFile
 
-    //type Fields = RefArray[Field_Info]
-    //type Methods = RefArray[Method_Info]
+    //type Fields = ArraySeq[Field_Info]
+    //type Methods = ArraySeq[Method_Info]
 
     def ClassFile(
         cp:                Constant_Pool,
@@ -71,7 +70,7 @@ trait ClassFileBinding extends ClassFileReader {
                 else
                     Some(cp(super_class_index).asObjectType(cp))
             },
-            RefArray.mapFrom(interfaces)(cp(_).asObjectType(cp)),
+            ArraySeq.mapFrom(interfaces)(cp(_).asObjectType(cp)),
             fields,
             methods,
             attributes

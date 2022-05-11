@@ -21,7 +21,6 @@ import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
-import org.opalj.collection.immutable.RefArray
 
 /**
  * Represents a single method.
@@ -644,7 +643,7 @@ object Method {
         name:           String,
         parameterTypes: FieldTypes = NoFieldTypes,
         returnType:     Type       = VoidType,
-        attributes:     Attributes = RefArray.empty
+        attributes:     Attributes = ArraySeq.empty
     ): MethodTemplate = {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
@@ -667,6 +666,6 @@ object Method {
             )
         ))
         val accessFlags = ACC_PUBLIC.mask
-        new MethodTemplate(accessFlags, "<init>", NoArgsAndReturnVoid, body, RefArray.empty)
+        new MethodTemplate(accessFlags, "<init>", NoArgsAndReturnVoid, body, ArraySeq.empty)
     }
 }

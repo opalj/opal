@@ -7,8 +7,8 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.RefArray
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.OpenHashMap
 
@@ -34,7 +34,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
     )
 
     override def compute(p: SomeProject): CallBySignatureTargets = {
-        val cbsTargets = new OpenHashMap[Method, RefArray[ObjectType]]
+        val cbsTargets = new OpenHashMap[Method, ArraySeq[ObjectType]]
         val index = p.get(ProjectIndexKey)
         val isOverridableMethod = p.get(IsOverridableMethodKey)
 
@@ -68,7 +68,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
                 i = i + 1
             }
 
-            cbsTargets.put(method, RefArray.empty ++ targets)
+            cbsTargets.put(method, ArraySeq.empty ++ targets)
         }
 
         new CallBySignatureTargets(cbsTargets)
@@ -76,12 +76,12 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
 }
 
 class CallBySignatureTargets private[analyses] (
-        val data: scala.collection.Map[Method, RefArray[ObjectType]]
+        val data: scala.collection.Map[Method, ArraySeq[ObjectType]]
 ) {
     /**
      * Returns all call-by-signature targets of the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)
-     * [[org.opalj.collection.immutable.RefArray]] is returned.
+     * [[scala.collection.immutable.ArraySeq]] is returned.
      */
-    def apply(m: Method): RefArray[ObjectType] = data.getOrElse(m, RefArray.empty)
+    def apply(m: Method): ArraySeq[ObjectType] = data.getOrElse(m, ArraySeq.empty)
 }
