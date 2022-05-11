@@ -35,7 +35,7 @@
   </check>
   <check enabled="true" class="org.scalastyle.scalariform.EmptyClassChecker" level="error"/>
   <check level="error" class="org.scalastyle.scalariform.NoWhitespaceBeforeLeftBracketChecker" enabled="true"/>
-  <check level="error" class="org.scalastyle.scalariform.NoWhitespaceAfterLeftBracketChecker" enabled="false"/>
+  <check level="error" class="org.scalastyle.scalariform.NoWhitespaceAfterLeftBracketChecker" enabled="true"/>
   <check level="error" class="org.scalastyle.scalariform.UppercaseLChecker" enabled="true"/>
   <check level="error" class="org.scalastyle.scalariform.SimplifyBooleanExpressionChecker" enabled="true"/>  
   <!-- DISABLED CHECKERS -->    
