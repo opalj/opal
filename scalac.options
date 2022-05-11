@@ -12,15 +12,15 @@
 -Xlint
 -Xfuture
 -Xfatal-warnings
--Ywarn-numeric-widen
--Ywarn-nullary-unit
--Ywarn-nullary-override
--Ywarn-unused:imports,privates,locals,implicits
+-Wnumeric-widen
+-Xlint:nullary-unit
+-Xlint:nullary-override
+-Wunused:imports,privates,locals,implicits
 // Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
--Ywarn-infer-any
--Ywarn-dead-code
--Ywarn-inaccessible
--Ywarn-adapted-args
+-Xlint:infer-any
+-Wdead-code
+-Xlint:inaccessible
+-Xlint:adapted-args
 -Xdisable-assertions
 -Ybackend-parallelism 8
 -Wconf:cat=unused-nowarn:s
