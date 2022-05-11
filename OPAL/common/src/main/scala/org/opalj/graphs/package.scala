@@ -669,7 +669,7 @@ package object graphs {
                 // the next node that should be processed.
                 do {
                     val n = ws.pop()
-                    var remainingSuccessors = wsSuccessors.pop
+                    var remainingSuccessors = wsSuccessors.pop()
                     if (remainingSuccessors eq null) {
                         // ... we are processing the node n for the first time
                         nIndex(n) = index

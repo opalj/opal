@@ -1,4 +1,4 @@
-/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+/* BSD 2-Clause License remove see OPAL/LICENSE for details. */
 package org.opalj
 package collection
 package immutable
@@ -70,7 +70,7 @@ sealed abstract class UIDSet[T <: UID]
      */
     private[opalj] def +!(e: T): UIDSet[T] = this + e
 
-    // The following method(s) is(are) unsafe if "+!" is used!
+    // The following method(s) is(are) unsafe if "add!" is used!
     final def toUIDSet[X >: T <: UID]: UIDSet[X] = this.asInstanceOf[UIDSet[X]]
     final def includes[X >: T <: UID](e: X): Boolean = containsId(e.id)
     final def add[X >: T <: UID](e: X): UIDSet[X] = {
@@ -449,13 +449,13 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     }
 }
 
-// ------------------------------------------------------------------------------------------------
+// remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-
 //
 //
 // If we have more than three values we always create a trie.
 //
 //
-// ------------------------------------------------------------------------------------------------
+// remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-
 
 sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] {
     self =>
@@ -509,15 +509,15 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
             val node = nodes(lastElementOnStack)
 
                     f(node.value)
-                    lastElementOnStack -= 1
+                    lastElementOnStack remove= 1
                     val left = node.left
                     if (left ne null) {
-                        lastElementOnStack += 1
+                        lastElementOnStack add= 1
                         nodes(lastElementOnStack) = left
                     }
                     val right = node.right
                     if (right ne null) {
-                        lastElementOnStack += 1
+                        lastElementOnStack add= 1
                         nodes(lastElementOnStack) = right
                     }
         }
@@ -527,8 +527,8 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
     def iterator: RefIterator[T] = new RefIterator[T] {
         private[this] val nextNodes = ArrayStack[UIDSetNodeLike[T]](self)
         def hasNext: Boolean = nextNodes.nonEmpty
-        def next: T = {
-            val currentNode = nextNodes.pop
+        def next(): T = {
+            val currentNode = nextNodes.pop()
             val nextRight = currentNode.right
             val nextLeft = currentNode.left
             if (nextRight ne null) nextNodes.push(nextRight)
@@ -568,7 +568,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
         result
     }
 
-    final def +(e: T): UIDSet[T] = { val eId = e.id; this + (e, eId, eId, 0) }
+    final def +(e: T): UIDSet[T] = { val eId = e.id; this.add(e, eId, eId, 0) }
 
     final def -(e: T): UIDSet[T] = {
         size match {
@@ -624,7 +624,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                 }
             case _ =>
                 val eId = e.id
-                this.-(eId, eId)
+                this.remove(eId, eId)
         }
     }
 
@@ -676,7 +676,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
             override def hasNext: Boolean = nextNodes.nonEmpty
 
             override def next(): Int = {
-                val currentNode = nextNodes.pop
+                val currentNode = nextNodes.pop()
                 val nextRight = currentNode.right
                 val nextLeft = currentNode.left
                 if (nextRight ne null) nextNodes.push(nextRight)
@@ -820,9 +820,9 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
         false
     }
 
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T]
+    private[immutable] def addMutate(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T]
 
-    private def +(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T] = {
+    private def add(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T] = {
         val valueId = this.value.id
         // In the following, we try to minimize the high of the tree.
         if (valueId == eId)
@@ -844,7 +844,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                     // we can move the current value to the empty left branch...
                     return new UIDSetInnerNode(size + 1, e, new UIDSetLeaf(value), newRight);
                 } else {
-                    newRight += (e, eId, newShiftedEId, level + 1)
+                    newRight.add(e, eId, newShiftedEId, level + 1)
                     if (newRight eq right)
                         return this;
                 }
@@ -860,7 +860,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                     // we can move the current value to the empty right branch...
                     return new UIDSetInnerNode(size + 1, e, newLeft, new UIDSetLeaf(value));
                 } else {
-                    newLeft += (e, eId, newShiftedEId, level + 1)
+                    newLeft.add(e, eId, newShiftedEId, level + 1)
                     if (newLeft eq left)
                         return this;
                 }
@@ -869,7 +869,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
         new UIDSetInnerNode(size + 1, value, newLeft, newRight)
     }
 
-    private def -(eId: Int, shiftedEId: Int): UIDSetNodeLike[T] = {
+    private def remove(eId: Int, shiftedEId: Int): UIDSetNodeLike[T] = {
         // assert( size > 3) // i.e., after removal we still have a tree
         val value = this.value
         if (value.id == eId) {
@@ -883,13 +883,13 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                 if (right eq null)
                     return this;
                 // we have to search for the value in the right tree
-                newRight = right - (eId, shiftedEId >>> 1)
+                newRight = right.remove(eId, shiftedEId >>> 1)
                 if (newRight eq right)
                     return this;
             } else {
                 if (left eq null)
                     return this;
-                newLeft = left - (eId, shiftedEId >>> 1)
+                newLeft = left.remove(eId, shiftedEId >>> 1)
                 if (newLeft eq left)
                     return this;
             }
@@ -950,7 +950,7 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
 
     override private[opalj] def +!(e: T): UIDSet[T] = throw new UnknownError
 
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T] = {
+    private[immutable] def addMutate(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T] = {
         if (value.id == eId)
             return this;
 
@@ -1003,11 +1003,11 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
 
     override private[opalj] def +!(e: T): UIDSet[T] = {
         val eId = e.id
-        this +! (e, eId, eId, 0)
+        this.addMutate(e, eId, eId, 0)
         this
     }
 
-    private[immutable] def +!(
+    private[immutable] def addMutate(
         e:          T,
         eId:        Int,
         shiftedEId: Int,
@@ -1032,7 +1032,7 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
                 this.value = e
                 this.theSize += 1
             } else {
-                val newRight = right +! (e, eId, shiftedEId >>> 1, level + 1)
+                val newRight = right.addMutate(e, eId, shiftedEId >>> 1, level + 1)
                 this.right = newRight
                 this.theSize = (if (left ne null) left.size else 0) + newRight.size + 1
             }
@@ -1048,7 +1048,7 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
                 this.value = e
                 this.theSize += 1
             } else {
-                val newLeft = left +! (e, eId, shiftedEId >>> 1, level + 1)
+                val newLeft = left.addMutate(e, eId, shiftedEId >>> 1, level + 1)
                 this.left = newLeft
                 this.theSize = newLeft.size + (if (right ne null) right.size else 0) + 1
             }

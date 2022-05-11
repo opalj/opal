@@ -92,9 +92,9 @@ final class DominanceFrontiers private (
             val (df, s /*index*/ ) = e
             if (isNodeValid(s)) {
                 if (df == null) {
-                    g += s
+                    g addVertice s
                 } else {
-                    df.foreach { t => g += (s, t) }
+                    df.foreach { t => g.addEdge(s, t) }
                 }
             }
         }

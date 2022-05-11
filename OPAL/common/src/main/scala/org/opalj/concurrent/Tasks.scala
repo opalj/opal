@@ -70,7 +70,7 @@ final class SequentialTasks[T](
     def join(): Unit = {
         while (tasksQueue.nonEmpty) {
             try {
-                process(this, tasksQueue.dequeue)
+                process(this, tasksQueue.dequeue())
             } catch {
                 case t: Throwable => {
                     if (concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()

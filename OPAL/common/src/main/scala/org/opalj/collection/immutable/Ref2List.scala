@@ -155,7 +155,7 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
             private[this] var currentList: Ref2List[T] = list
             private[this] var head: Boolean = list.h != null
             def hasNext: Boolean = currentList ne Ref2ListEnd
-            def next: T = {
+            def next(): T = {
                 if (head) {
                     head = false
                     currentList.h

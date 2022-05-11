@@ -243,7 +243,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def iterator: IntIterator = new IntIterator {
         private[this] var i = 0
         def hasNext: Boolean = i < 3
-        def next: Int = { i += 1; if (i == 1) i1 else if (i == 2) i2 else i3 }
+        def next(): Int = { i += 1; if (i == 1) i1 else if (i == 2) i2 else i3 }
     }
     override def reverseIntIterator: IntIterator = IntIterator(i3, i2, i1)
     override def foreach[U](f: Int => U): Unit = { f(i1); f(i2); f(i3) }
@@ -622,9 +622,9 @@ class IntArraySetBuilder private[immutable] (
     require(size <= is.length)
 
     // TODO implement sizeHint...
-    def this() { this(new Array[Int](4), 0) }
+    def this() = this(new Array[Int](4), 0)
 
-    def this(initialSize: Int) { this(new Array[Int](Math.max(initialSize, 4)), 0) }
+    def this(initialSize: Int) = this(new Array[Int](Math.max(initialSize, 4)), 0)
 
     override def +=(elem: Int): this.type = {
         import System.arraycopy

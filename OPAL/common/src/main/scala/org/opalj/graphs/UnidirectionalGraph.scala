@@ -52,7 +52,7 @@ class UnidirectionalGraph(
      *
      * (If the vertices were not previously added, they will be added.)
      */
-    def +=(s: Int, t: Int): this.type = {
+    def add(s: Int, t: Int): this.type = {
         successors(s) = theSuccessors(s) + t
         this
     }

@@ -46,11 +46,11 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
             fieldType = field.fieldType
         } {
             if (fieldType.isObjectType) {
-                g += (classType.id, fieldType.asObjectType.id)
+                g add (classType.id, fieldType.asObjectType.id)
             } else if (fieldType.isArrayType) {
                 val elementType = fieldType.asArrayType.elementType
                 if (elementType.isObjectType) {
-                    g += (classType.id, elementType.asObjectType.id)
+                    g add (classType.id, elementType.asObjectType.id)
                 }
             }
         }

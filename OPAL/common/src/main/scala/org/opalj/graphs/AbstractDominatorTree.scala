@@ -151,7 +151,7 @@ abstract class AbstractDominatorTree {
         idom.zipWithIndex.foreach { e =>
             val (t, s /*index*/ ) = e
             if (isIndexValid(s) && s != startNode)
-                g += (t, s)
+                g.addEdge(t, s)
         }
         g.toDot(rankdir = "BT", ranksep = "0.3")
     }

@@ -27,12 +27,13 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
     with mutable.Cloneable[RefArrayStack[N]]
     with Serializable { stack =>
 
-    def this(initialSize: Int = 4) { this(new Array[AnyRef](initialSize), 0) }
+    def this(initialSize: Int = 4) = this(new Array[AnyRef](initialSize), 0)
 
-    def this(e: N, initialSize: Int) {
+    def this(e: N, initialSize: Int) = {
         this(new Array[AnyRef](Math.max(initialSize, 1)), 1)
         data(0) = e
     }
+
 
     /**
      * Resets the size of the stack, but does not clear the underlying array; hence,

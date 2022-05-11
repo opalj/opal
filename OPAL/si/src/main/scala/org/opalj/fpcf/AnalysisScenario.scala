@@ -81,8 +81,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         allCS foreach { cs =>
             // all derived properties depend on all used properties
             cs.derives foreach { derived =>
-                psDeps += derived
-                cs.uses(ps) foreach { use => psDeps += (derived, use) }
+                psDeps addVertice derived
+                cs.uses(ps) foreach { use => psDeps addEdge (derived, use) }
             }
         }
         psDeps
@@ -110,11 +110,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             derivedBy
         }
         allCS foreach { cs =>
-            compDeps += cs
+            compDeps addVertice cs
             cs.uses(ps) foreach { usedPK =>
                 derivedBy.get(usedPK).iterator.flatten.foreach { providerCS =>
                     if (providerCS ne cs) {
-                        compDeps += (cs, providerCS)
+                        compDeps addEdge (cs, providerCS)
                     }
                 }
             }
@@ -126,10 +126,10 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             var lastCS = headCS
             do {
                 val nextCS = cssIt.next()
-                compDeps += (lastCS -> nextCS)
+                compDeps addEdge (lastCS -> nextCS)
                 lastCS = nextCS
             } while (cssIt.hasNext)
-            compDeps += (lastCS -> headCS)
+            compDeps addEdge (lastCS -> headCS)
         }
 
         compDeps

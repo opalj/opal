@@ -36,11 +36,11 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
         override def foreach[U](f: T => U): Unit = set.foreach(f)
     }
     def iterator: RefIterator[T]
-    def +(value: T): UIDTrieSet[T]
+    def add(value: T): UIDTrieSet[T]
     def head: T
 
     // TODO: optimize implementation
-    def ++(other: UIDTrieSet[T]): UIDTrieSet[T] = other.foldLeft(this)((r, e) => r + e)
+    def ++(other: UIDTrieSet[T]): UIDTrieSet[T] = other.foldLeft(this)((r, e) => r add e)
 
     final override def equals(other: Any): Boolean = {
         other match {
@@ -88,7 +88,7 @@ private[immutable] sealed trait UIDTrieSetNode[T <: UID] {
     // IMPLEMENTATION "INTERNAL" METHODS
     //
     // Adds the value with the id to the trie at the specified level where `key is id >> level`.
-    private[immutable] def +(value: T, id: Int, key: Int, level: Int): UIDTrieSetNode[T]
+    private[immutable] def add(value: T, id: Int, key: Int, level: Int): UIDTrieSetNode[T]
     private[immutable] def containsId(id: Int, key: Int): Boolean
     private[immutable] def toString(indent: Int): String
 }
@@ -119,7 +119,7 @@ case object UIDTrieSet0 extends UIDTrieSetLeaf[UID] {
     override def forall(p: UID => Boolean): Boolean = true
     override def exists(p: UID => Boolean): Boolean = false
     override def foldLeft[B](z: B)(op: (B, UID) => B): B = z
-    override def +(i: UID): UIDTrieSet1[UID] = new UIDTrieSet1(i)
+    override def add(i: UID): UIDTrieSet1[UID] = new UIDTrieSet1(i)
     override def iterator: RefIterator[UID] = RefIterator.empty
     override def containsId(id: Int): Boolean = false
     override def head: UID = throw new NoSuchElementException
@@ -128,13 +128,13 @@ case object UIDTrieSet0 extends UIDTrieSetLeaf[UID] {
     override def hashCode: Int = 0
     override def toString: String = "UIDTrieSet()"
 
-    override private[immutable] def +(
+    override private[immutable] def add(
         value: UID,
         id:    Int,
         key:   Int,
         level: Int
     ): UIDTrieSetNode[UID] = {
-        this + value
+        this add value
     }
 }
 
@@ -147,7 +147,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
     override def forall(p: T => Boolean): Boolean = p(i)
     override def exists(p: T => Boolean): Boolean = p(i)
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(z, i)
-    override def +(value: T): UIDTrieSetLeaf[T] = {
+    override def add(value: T): UIDTrieSetLeaf[T] = {
         val v = this.i
         if (v.id == value.id) this else new UIDTrieSet2(v, value)
     }
@@ -166,13 +166,13 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
 
     override def toString: String = s"UIDTrieSet($i)"
 
-    override private[immutable] def +(
+    override private[immutable] def add(
         value: T,
         id:    Int,
         key:   Int,
         level: Int
     ): UIDTrieSetNode[T] = {
-        this + value
+        this add value
     }
 }
 
@@ -194,7 +194,7 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(op(z, i1), i2)
     override def containsId(id: Int): Boolean = id == i1.id || id == i2.id
     override def head: T = i1
-    override def +(value: T): UIDTrieSetLeaf[T] = {
+    override def add(value: T): UIDTrieSetLeaf[T] = {
         val id = value.id
 
         val i1 = this.i1
@@ -226,13 +226,13 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
 
     override def toString: String = s"UIDTrieSet($i1, $i2)"
 
-    override private[immutable] def +(
+    override private[immutable] def add(
         value: T,
         id:    Int,
         key:   Int,
         level: Int
     ): UIDTrieSetNode[T] = {
-        this + value
+        this add value
     }
 
 }
@@ -256,9 +256,9 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
     override def exists(p: T => Boolean): Boolean = { p(i1) || p(i2) || p(i3) }
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(op(op(z, i1), i2), i3)
 
-    override def +(value: T): UIDTrieSet[T] = {
+    override def add(value: T): UIDTrieSet[T] = {
         val id = value.id
-        val newSet = this + (value, id, id, 0)
+        val newSet = this.add(value, id, id, 0)
         if (newSet ne this)
             new UIDTrieSetN(4, newSet)
         else
@@ -282,7 +282,7 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
 
     override def toString: String = s"UIDTrieSet($i1, $i2, $i3)"
 
-    override private[immutable] def +(
+    override private[immutable] def add(
         value: T,
         id:    Int,
         key:   Int,
@@ -442,7 +442,7 @@ private[immutable] final class UIDTrieSetN[T <: UID](
         private[this] var index = 0
         private[this] val furtherNodes = RefArrayStack.empty[UIDTrieSetNode[T]]
         def hasNext: Boolean = currentNode ne null
-        def next: T = {
+        def next(): T = {
             (this.currentNode: @unchecked) match {
                 case n: UIDTrieSet1[T] =>
                     this.currentNode = if (furtherNodes.nonEmpty) furtherNodes.pop() else null
@@ -491,10 +491,10 @@ private[immutable] final class UIDTrieSetN[T <: UID](
 
     override def hashCode: Int = root.hashCode * size
 
-    override def +(value: T): UIDTrieSet[T] = {
+    override def add(value: T): UIDTrieSet[T] = {
         val id = value.id
         val root = this.root
-        val newRoot = root + (value, id, id, 0)
+        val newRoot = root.add(value, id, id, 0)
         if (newRoot ne root) {
             new UIDTrieSetN(size + 1, newRoot)
         } else {
@@ -520,7 +520,7 @@ private[immutable] final class UIDTrieSetNode_0_1[T <: UID](
 
     override def hashCode: Int = v.id ^ _0.hashCode ^ _1.hashCode
 
-    override private[immutable] def +(
+    override private[immutable] def add(
         value: T,
         id:    Int,
         key:   Int,
@@ -529,14 +529,14 @@ private[immutable] final class UIDTrieSetNode_0_1[T <: UID](
         val v = this.v
         if (v.id != id) {
             if ((key & 1) == 0) {
-                val new_0 = _0.+(value, id, key >> 1, level + 1)
+                val new_0 = _0.add(value, id, key >> 1, level + 1)
                 if (new_0 ne _0) {
                     new UIDTrieSetNode_0_1(v, new_0, _1)
                 } else {
                     this
                 }
             } else {
-                val new_1 = _1.+(value, id, key >> 1, level + 1)
+                val new_1 = _1.add(value, id, key >> 1, level + 1)
                 if (new_1 ne _1) {
                     new UIDTrieSetNode_0_1(v, _0, new_1)
                 } else {
@@ -575,7 +575,7 @@ private[immutable] final class UIDTrieSetNode_0[T <: UID](
     override def exists(p: T => Boolean): Boolean = { p(v) || _0.forall(p) }
     override def head: T = v
 
-    override private[immutable] def +(
+    override private[immutable] def add(
         value: T,
         id:    Int,
         key:   Int,
@@ -594,7 +594,7 @@ private[immutable] final class UIDTrieSetNode_0[T <: UID](
                         this
                     }
                 } else {
-                    val new_0 = _0.+(value, id, key >> 1, level + 1)
+                    val new_0 = _0.add(value, id, key >> 1, level + 1)
                     if (new_0 ne _0) {
                         new UIDTrieSetNode_0(v, new_0)
                     } else {
@@ -633,7 +633,7 @@ private[immutable] final class UIDTrieSetNode_1[T <: UID](
     override def exists(p: T => Boolean): Boolean = { p(v) || _1.forall(p) }
     override def head: T = v
 
-    override private[immutable] def +(
+    override private[immutable] def add(
         value: T,
         id:    Int,
         key:   Int,
@@ -655,7 +655,7 @@ private[immutable] final class UIDTrieSetNode_1[T <: UID](
                         this
                     }
                 } else {
-                    val new_1 = _1.+(value, id, key >> 1, level + 1)
+                    val new_1 = _1.add(value, id, key >> 1, level + 1)
                     if (new_1 ne _1) {
                         new UIDTrieSetNode_1(v, new_1)
                     } else {

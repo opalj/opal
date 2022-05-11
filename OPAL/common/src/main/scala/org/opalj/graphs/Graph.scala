@@ -33,7 +33,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
     /**
      * Adds a new vertice.
      */
-    def +=(n: N): this.type = {
+    def addVertice(n: N): this.type = {
         vertices += n
         this
     }
@@ -43,9 +43,9 @@ class Graph[@specialized(Int) N: ClassTag] private (
      *
      * (If the vertices were not previously added, they will be added.)
      */
-    def +=(e: (N, N)): this.type = {
+    def addEdge(e: (N, N)): this.type = {
         val (s, t) = e
-        this += (s, t)
+        this.addEdge(s, t)
     }
 
     /**
@@ -53,7 +53,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
      *
      * (If the vertices were not previously added, they will be added.)
      */
-    def +=(s: N, t: N): this.type = {
+    def addEdge(s: N, t: N): this.type = {
         vertices += s += t
         successors += ((s, t :&: successors.getOrElse(s, Naught)))
         predecessors += ((t, s :&: predecessors.getOrElse(t, Naught)))
@@ -63,7 +63,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
     /**
      * Removes the given vertice from this graph.
      */
-    def -=(v: N): this.type = {
+    def removeVertice(v: N): this.type = {
         vertices -= v
         val oldSuccessorsOpt = successors.get(v)
         oldSuccessorsOpt.foreach(_ foreach { s => predecessors(s) = predecessors(s) filter (_ != v) })
@@ -74,7 +74,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
         this
     }
 
-    def --=(vs: TraversableOnce[N]): this.type = { vs foreach { v => this -= v }; this }
+    def --=(vs: TraversableOnce[N]): this.type = { vs foreach { v => this removeVertice v }; this }
 
     /**
      * All nodes which only have incoming dependencies/which have no successors.
@@ -86,7 +86,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
         val indexToN = new Array[N](size)
         val nToIndex = new HashMap[N, Int] { override def initialSize = size }
         for {
-            e ← vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
+            e <- vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
         } {
             val (n, index) = e
             indexToN(index) = n
@@ -123,7 +123,7 @@ object Graph {
         edges foreach { e =>
             val (s, ts) = e
             ts foreach { t =>
-                g += (s → t)
+                g addEdge (s → t)
             }
         }
         g

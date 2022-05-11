@@ -52,8 +52,8 @@ trait AbstractGraph[@specialized(Int) N] extends (N => TraversableOnce[N]) {
     def rootNodes(ignoreSelfRecursiveDependencies: Boolean = true): Set[N] = {
         var rootNodes = vertices.toSet
         for {
-            v ← vertices
-            t ← this(v)
+            v <- vertices
+            t <- this(v)
             if ignoreSelfRecursiveDependencies || (t != v)
         } {
             rootNodes -= t

@@ -99,7 +99,7 @@ private[immutable] sealed trait LongTrieSetNode {
     //
     // IMPLEMENTATION "INTERNAL" METHODS
     //
-    private[immutable] def +(i: Long, level: Int): LongTrieSetNode
+    private[immutable] def add(i: Long, level: Int): LongTrieSetNode
     private[immutable] def contains(value: Long, key: Long): Boolean
     private[immutable] def toString(indent: Int): String
 
@@ -154,7 +154,7 @@ private[immutable] final class LongTrieSet1(val i1: Long) extends LongTrieSetLea
                 new LongTrieSet2(i, i1)
         }
     }
-    override private[immutable] def +(i: Long, level: Int): LongTrieSetNode = this.+(i)
+    override private[immutable] def add(i: Long, level: Int): LongTrieSetNode = this.+(i)
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -206,7 +206,7 @@ private[immutable] final class LongTrieSet2(
             new LongTrieSet3(i1, i2, i)
         }
     }
-    override private[immutable] def +(i: Long, level: Int): LongTrieSetNode = this.+(i)
+    override private[immutable] def add(i: Long, level: Int): LongTrieSetNode = this.+(i)
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -261,7 +261,7 @@ private[immutable] final class LongTrieSet3(
 
         new LongTrieSetN(4, this.grow(i, 0))
     }
-    override private[immutable] def +(i: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(i: Long, level: Int): LongTrieSetNode = {
         if (i < i2) {
             if (i == i1)
                 return this;
@@ -527,7 +527,7 @@ private[immutable] final class LongTrieSetN(
         }
         moveToNextLeafNode()
         def hasNext: Boolean = leafNode ne null
-        def next: Long = {
+        def next(): Long = {
             var index = this.index
             val i = leafNode(index)
             index += 1
@@ -562,7 +562,7 @@ private[immutable] final class LongTrieSetN(
 
     override def +(i: Long): LongTrieSet = {
         val root = this.root
-        val newRoot = root + (i, 0)
+        val newRoot = root.add(i, 0)
         if (newRoot ne root) {
             new LongTrieSetN(size + 1, newRoot)
         } else {
@@ -591,10 +591,10 @@ private[immutable] final class LongTrieSetNode1(
         }
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         val vBits = ((v >> level) & 7L).toInt
         if (vBits == n1Bits) {
-            val newN1 = n1 + (v, level + 3)
+            val newN1 = n1.add(v, level + 3)
             if (newN1 ne n1) {
                 new LongTrieSetNode1(n1Bits, newN1)
             } else {
@@ -720,7 +720,7 @@ private[immutable] final class LongTrieSetNode2(
         n2.foldLeft(n1.foldLeft(z)(op))(op)
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         val vBits = ((v >> level) & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         vIndex match {
@@ -729,14 +729,14 @@ private[immutable] final class LongTrieSetNode2(
                 val newN3 = new LongTrieSet1(v)
                 new LongTrieSetNode3(newLookupTable, n1, n2, newN3)
             case 1 =>
-                val newN1 = n1 + (v, level + 3)
+                val newN1 = n1.add(v, level + 3)
                 if (newN1 ne n1) {
                     new LongTrieSetNode2(lookupTable, newN1, n2)
                 } else {
                     this
                 }
             case 2 =>
-                val newN2 = n2 + (v, level + 3)
+                val newN2 = n2.add(v, level + 3)
                 if (newN2 ne n2) {
                     new LongTrieSetNode2(lookupTable, n1, newN2)
                 } else {
@@ -779,7 +779,7 @@ private[immutable] final class LongTrieSetNode3(
         }
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         val vBits = ((v >> level) & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         vIndex match {
@@ -788,21 +788,21 @@ private[immutable] final class LongTrieSetNode3(
                 val newN4 = new LongTrieSet1(v)
                 new LongTrieSetNode4(newLookupTable, n1, n2, n3, newN4)
             case 1 =>
-                val newN1 = n1 + (v, level + 3)
+                val newN1 = n1.add(v, level + 3)
                 if (newN1 ne n1) {
                     new LongTrieSetNode3(lookupTable, newN1, n2, n3)
                 } else {
                     this
                 }
             case 2 =>
-                val newN2 = n2 + (v, level + 3)
+                val newN2 = n2.add(v, level + 3)
                 if (newN2 ne n2) {
                     new LongTrieSetNode3(lookupTable, n1, newN2, n3)
                 } else {
                     this
                 }
             case 3 =>
-                val newN3 = n3 + (v, level + 3)
+                val newN3 = n3.add(v, level + 3)
                 if (newN3 ne n3) {
                     new LongTrieSetNode3(lookupTable, n1, n2, newN3)
                 } else {
@@ -847,7 +847,7 @@ private[immutable] final class LongTrieSetNode4(
         }
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         val vBits = ((v >> level) & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         vIndex match {
@@ -856,28 +856,28 @@ private[immutable] final class LongTrieSetNode4(
                 val newN5 = new LongTrieSet1(v)
                 new LongTrieSetNode5(newLookupTable, n1, n2, n3, n4, newN5)
             case 1 =>
-                val newN1 = n1 + (v, level + 3)
+                val newN1 = n1.add(v, level + 3)
                 if (newN1 ne n1) {
                     new LongTrieSetNode4(lookupTable, newN1, n2, n3, n4)
                 } else {
                     this
                 }
             case 2 =>
-                val newN2 = n2 + (v, level + 3)
+                val newN2 = n2.add(v, level + 3)
                 if (newN2 ne n2) {
                     new LongTrieSetNode4(lookupTable, n1, newN2, n3, n4)
                 } else {
                     this
                 }
             case 3 =>
-                val newN3 = n3 + (v, level + 3)
+                val newN3 = n3.add(v, level + 3)
                 if (newN3 ne n3) {
                     new LongTrieSetNode4(lookupTable, n1, n2, newN3, n4)
                 } else {
                     this
                 }
             case 4 =>
-                val newN4 = n4 + (v, level + 3)
+                val newN4 = n4.add(v, level + 3)
                 if (newN4 ne n4) {
                     new LongTrieSetNode4(lookupTable, n1, n2, n3, newN4)
                 } else {
@@ -927,7 +927,7 @@ private[immutable] final class LongTrieSetNode5(
         }
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         val vBits = ((v >> level) & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         vIndex match {
@@ -936,35 +936,35 @@ private[immutable] final class LongTrieSetNode5(
                 val newN6 = new LongTrieSet1(v)
                 new LongTrieSetNode6(newLookupTable, n1, n2, n3, n4, n5, newN6)
             case 1 =>
-                val newN1 = n1 + (v, level + 3)
+                val newN1 = n1.add(v, level + 3)
                 if (newN1 ne n1) {
                     new LongTrieSetNode5(lookupTable, newN1, n2, n3, n4, n5)
                 } else {
                     this
                 }
             case 2 =>
-                val newN2 = n2 + (v, level + 3)
+                val newN2 = n2.add(v, level + 3)
                 if (newN2 ne n2) {
                     new LongTrieSetNode5(lookupTable, n1, newN2, n3, n4, n5)
                 } else {
                     this
                 }
             case 3 =>
-                val newN3 = n3 + (v, level + 3)
+                val newN3 = n3.add(v, level + 3)
                 if (newN3 ne n3) {
                     new LongTrieSetNode5(lookupTable, n1, n2, newN3, n4, n5)
                 } else {
                     this
                 }
             case 4 =>
-                val newN4 = n4 + (v, level + 3)
+                val newN4 = n4.add(v, level + 3)
                 if (newN4 ne n4) {
                     new LongTrieSetNode5(lookupTable, n1, n2, n3, newN4, n5)
                 } else {
                     this
                 }
             case 5 =>
-                val newN5 = n5 + (v, level + 3)
+                val newN5 = n5.add(v, level + 3)
                 if (newN5 ne n5) {
                     new LongTrieSetNode5(lookupTable, n1, n2, n3, n4, newN5)
                 } else {
@@ -1023,7 +1023,7 @@ private[immutable] final class LongTrieSetNode6(
         }
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         val vBits = ((v >> level) & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         vIndex match {
@@ -1032,42 +1032,42 @@ private[immutable] final class LongTrieSetNode6(
                 val newN7 = new LongTrieSet1(v)
                 new LongTrieSetNode7(newLookupTable, n1, n2, n3, n4, n5, n6, newN7)
             case 1 =>
-                val newN1 = n1 + (v, level + 3)
+                val newN1 = n1.add(v, level + 3)
                 if (newN1 ne n1) {
                     new LongTrieSetNode6(lookupTable, newN1, n2, n3, n4, n5, n6)
                 } else {
                     this
                 }
             case 2 =>
-                val newN2 = n2 + (v, level + 3)
+                val newN2 = n2.add(v, level + 3)
                 if (newN2 ne n2) {
                     new LongTrieSetNode6(lookupTable, n1, newN2, n3, n4, n5, n6)
                 } else {
                     this
                 }
             case 3 =>
-                val newN3 = n3 + (v, level + 3)
+                val newN3 = n3.add(v, level + 3)
                 if (newN3 ne n3) {
                     new LongTrieSetNode6(lookupTable, n1, n2, newN3, n4, n5, n6)
                 } else {
                     this
                 }
             case 4 =>
-                val newN4 = n4 + (v, level + 3)
+                val newN4 = n4.add(v, level + 3)
                 if (newN4 ne n4) {
                     new LongTrieSetNode6(lookupTable, n1, n2, n3, newN4, n5, n6)
                 } else {
                     this
                 }
             case 5 =>
-                val newN5 = n5 + (v, level + 3)
+                val newN5 = n5.add(v, level + 3)
                 if (newN5 ne n5) {
                     new LongTrieSetNode6(lookupTable, n1, n2, n3, n4, newN5, n6)
                 } else {
                     this
                 }
             case 6 =>
-                val newN6 = n6 + (v, level + 3)
+                val newN6 = n6.add(v, level + 3)
                 if (newN6 ne n6) {
                     new LongTrieSetNode6(lookupTable, n1, n2, n3, n4, n5, newN6)
                 } else {
@@ -1130,7 +1130,7 @@ private[immutable] final class LongTrieSetNode7(
         }
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         val vBits = ((v >> level) & 7L).toInt
         val vIndex = (lookupTable >> (vBits * 4)) & 15
         vIndex match {
@@ -1147,49 +1147,49 @@ private[immutable] final class LongTrieSetNode7(
                 val newN8 = if (vBits == 7) newV else node(lookupTable >> 28 & 15)
                 new LongTrieSetNode8(newN1, newN2, newN3, newN4, newN5, newN6, newN7, newN8)
             case 1 =>
-                val newN1 = n1 + (v, level + 3)
+                val newN1 = n1.add(v, level + 3)
                 if (newN1 ne n1) {
                     new LongTrieSetNode7(lookupTable, newN1, n2, n3, n4, n5, n6, n7)
                 } else {
                     this
                 }
             case 2 =>
-                val newN2 = n2 + (v, level + 3)
+                val newN2 = n2.add(v, level + 3)
                 if (newN2 ne n2) {
                     new LongTrieSetNode7(lookupTable, n1, newN2, n3, n4, n5, n6, n7)
                 } else {
                     this
                 }
             case 3 =>
-                val newN3 = n3 + (v, level + 3)
+                val newN3 = n3.add(v, level + 3)
                 if (newN3 ne n3) {
                     new LongTrieSetNode7(lookupTable, n1, n2, newN3, n4, n5, n6, n7)
                 } else {
                     this
                 }
             case 4 =>
-                val newN4 = n4 + (v, level + 3)
+                val newN4 = n4.add(v, level + 3)
                 if (newN4 ne n4) {
                     new LongTrieSetNode7(lookupTable, n1, n2, n3, newN4, n5, n6, n7)
                 } else {
                     this
                 }
             case 5 =>
-                val newN5 = n5 + (v, level + 3)
+                val newN5 = n5.add(v, level + 3)
                 if (newN5 ne n5) {
                     new LongTrieSetNode7(lookupTable, n1, n2, n3, n4, newN5, n6, n7)
                 } else {
                     this
                 }
             case 6 =>
-                val newN6 = n6 + (v, level + 3)
+                val newN6 = n6.add(v, level + 3)
                 if (newN6 ne n6) {
                     new LongTrieSetNode7(lookupTable, n1, n2, n3, n4, n5, newN6, n7)
                 } else {
                     this
                 }
             case 7 =>
-                val newN7 = n7 + (v, level + 3)
+                val newN7 = n7.add(v, level + 3)
                 if (newN7 ne n7) {
                     new LongTrieSetNode7(lookupTable, n1, n2, n3, n4, n5, n6, newN7)
                 } else {
@@ -1256,59 +1256,59 @@ private[immutable] final class LongTrieSetNode8(
         }).contains(value, key >> 3)
     }
 
-    override private[immutable] def +(v: Long, level: Int): LongTrieSetNode = {
+    override private[immutable] def add(v: Long, level: Int): LongTrieSetNode = {
         ((v >> level) & 7L).toInt match {
             case 0 =>
-                val newN1 = n1 + (v, level + 3)
+                val newN1 = n1.add(v, level + 3)
                 if (newN1 ne n1) {
                     new LongTrieSetNode8(newN1, n2, n3, n4, n5, n6, n7, n8)
                 } else {
                     this
                 }
             case 1 =>
-                val newN2 = n2 + (v, level + 3)
+                val newN2 = n2.add(v, level + 3)
                 if (newN2 ne n2) {
                     new LongTrieSetNode8(n1, newN2, n3, n4, n5, n6, n7, n8)
                 } else {
                     this
                 }
             case 2 =>
-                val newN3 = n3 + (v, level + 3)
+                val newN3 = n3.add(v, level + 3)
                 if (newN3 ne n3) {
                     new LongTrieSetNode8(n1, n2, newN3, n4, n5, n6, n7, n8)
                 } else {
                     this
                 }
             case 3 =>
-                val newN4 = n4 + (v, level + 3)
+                val newN4 = n4.add(v, level + 3)
                 if (newN4 ne n4) {
                     new LongTrieSetNode8(n1, n2, n3, newN4, n5, n6, n7, n8)
                 } else {
                     this
                 }
             case 4 =>
-                val newN5 = n5 + (v, level + 3)
+                val newN5 = n5.add(v, level + 3)
                 if (newN5 ne n5) {
                     new LongTrieSetNode8(n1, n2, n3, n4, newN5, n6, n7, n8)
                 } else {
                     this
                 }
             case 5 =>
-                val newN6 = n6 + (v, level + 3)
+                val newN6 = n6.add(v, level + 3)
                 if (newN6 ne n6) {
                     new LongTrieSetNode8(n1, n2, n3, n4, n5, newN6, n7, n8)
                 } else {
                     this
                 }
             case 6 =>
-                val newN7 = n7 + (v, level + 3)
+                val newN7 = n7.add(v, level + 3)
                 if (newN7 ne n7) {
                     new LongTrieSetNode8(n1, n2, n3, n4, n5, n6, newN7, n8)
                 } else {
                     this
                 }
             case 7 =>
-                val newN8 = n8 + (v, level + 3)
+                val newN8 = n8.add(v, level + 3)
                 if (newN8 ne n8) {
                     new LongTrieSetNode8(n1, n2, n3, n4, n5, n6, n7, newN8)
                 } else {

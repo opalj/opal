@@ -190,9 +190,9 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
     private[this] def grow(i: Long, level: Int): LongTrieSetNode = {
         val l = new LongTrieSet1(i)
         var r: LongTrieSetNode = new LongTrieSetNode1(((i >> level) & 7L).toInt, l)
-        r = r + (i1, level)
-        r = r + (i2, level)
-        r = r + (i3, level)
+        r = r.add(i1, level)
+        r = r.add(i2, level)
+        r = r.add(i3, level)
         r
     }
 
@@ -238,7 +238,7 @@ private[immutable] final class LongTrieSetWithListN(
 
     override def +(i: Long): LongTrieSetWithList = {
         val root = this.root
-        val newRoot = root + (i, 0)
+        val newRoot = root.add(i, 0)
         if (newRoot ne root) {
             new LongTrieSetWithListN(size + 1, newRoot, i +: list)
         } else {

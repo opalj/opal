@@ -26,7 +26,7 @@ object UIDTrieSetProperties extends Properties("UIDTrieSet") {
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
     implicit def toSUIDSet(l: Traversable[Int]): UIDTrieSet[SUID] = {
-        l.foldLeft(UIDTrieSet.empty[SUID])(_ + SUID(_))
+        l.foldLeft(UIDTrieSet.empty[SUID])(_ add SUID(_))
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ object UIDTrieSetProperties extends Properties("UIDTrieSet") {
     //                             P R O P E R T I E S
 
     property("create set(+) and forall and contains(id)") = forAll { intSet: Set[Int] =>
-        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
 
         val sUIDSet = intSet.map(SUID(_))
         (sUIDSet.isEmpty == oUIDTrieSet.isEmpty) :| "isEmpty" &&
@@ -59,7 +59,7 @@ object UIDTrieSetProperties extends Properties("UIDTrieSet") {
     }
 
     property("create set(+) and foreach") = forAll { intSet: Set[Int] =>
-        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
         val sUIDSet = intSet.map(SUID(_))
         var newSUIDSet = Set.empty[SUID]
         oUIDTrieSet.foreach { e => newSUIDSet += e }
@@ -67,7 +67,7 @@ object UIDTrieSetProperties extends Properties("UIDTrieSet") {
     }
 
     property("create set(+) and iterator") = forAll { intSet: Set[Int] =>
-        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
         val sUIDSet = intSet.map(SUID(_))
         var newSUIDSet = Set.empty[SUID]
         oUIDTrieSet.iterator.foreach { e => newSUIDSet += e }
@@ -88,7 +88,7 @@ object UIDTrieSetProperties extends Properties("UIDTrieSet") {
         intSet.nonEmpty ==> {
             val oUIDTrieSet = toSUIDSet(intSet)
             oUIDTrieSet.iterator.toList.tail.tails.forall { tailUIDTrieSet =>
-                tailUIDTrieSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _) != oUIDTrieSet
+                tailUIDTrieSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _) != oUIDTrieSet
             }
         }
     }
@@ -109,7 +109,7 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                 for { i ← 1 to 100000 } {
                     var s = UIDTrieSet.empty[SUID]
                     for { j ← 1 to 500 } {
-                        s += SUID(rngGen.nextInt())
+                        s add SUID(rngGen.nextInt())
                     }
 
                     var sumForeach = 0
@@ -156,7 +156,7 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                         var opalS = UIDTrieSet.empty[SUID]
                         for { i ← 0 to 50 } {
                             val v = rngGen.nextInt()
-                            opalS += SUID(v)
+                            opalS add SUID(v)
                         }
                         totalSize += opalS.size
                         lastOpalS = opalS
@@ -201,7 +201,7 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                         var opalS = UIDTrieSet.empty[SUID]
                         for { i ← 0 to 50 } {
                             val v = rngGen.nextInt()
-                            opalS += SUID(v)
+                            opalS add SUID(v)
                         }
                         allSets ::= opalS
                     }

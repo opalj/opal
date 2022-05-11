@@ -28,7 +28,7 @@ class DefaultMutableNode[I](
         identifier:         I,
         identifierToString: I => String,
         fillcolor:          Option[String]
-    ) {
+    ) =
         this(
             identifier,
             identifierToString,
@@ -36,7 +36,6 @@ class DefaultMutableNode[I](
                 fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" → c)).
                     getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
         )
-    }
 
 }
 object DefaultMutableMode {
