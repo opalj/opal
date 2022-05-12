@@ -3,10 +3,10 @@ package org.opalj
 package collection
 package immutable
 
-import scala.collection.generic.CanBuildFrom
+import scala.collection.mutable
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.Builder
-import scala.collection.mutable.ArrayStack
+import scala.reflect.ClassTag
 
 /**
  * An '''unordered''' trie-set based on the unique ids of the stored [[UID]] objects. I.e.,
@@ -24,13 +24,12 @@ import scala.collection.mutable.ArrayStack
  */
 sealed abstract class UIDSet[T <: UID]
     extends scala.collection.immutable.Set[T]
-    with scala.collection.SetLike[T, UIDSet[T]] { set =>
+    with scala.collection.immutable.SetOps[T, Set, UIDSet[T]] { set =>
 
     final override def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
     final override def contains(e: T): Boolean = containsId(e.id)
-
-    override def exists(p: T => Boolean): Boolean
-    override def forall(p: T => Boolean): Boolean
+    override def exists(p: (T) => Boolean): Boolean
+    override def forall(p: (T) => Boolean): Boolean
     override def head: T
     /**
      * Returns the current last value, which is never head if the underlying set contains
@@ -39,9 +38,11 @@ sealed abstract class UIDSet[T <: UID]
      */
     override def last: T
     override def tail: UIDSet[T] = throw new UnknownError()
-    override def +(e: T): UIDSet[T]
-    override def -(e: T): UIDSet[T]
+    override def incl(e: T): UIDSet[T]
+    override def excl(e: T): UIDSet[T]
     override def foldLeft[B](z: B)(op: (B, T) => B): B
+    override def fromSpecific(coll: IterableOnce[T]): UIDSet[T] = UIDSet.fromSpecific(coll)
+    override def newSpecificBuilder: mutable.Builder[T, UIDSet[T]] = UIDSet.newBuilder[T]
 
     //
     // METHODS DEFINED BY UIDSet
@@ -69,13 +70,13 @@ sealed abstract class UIDSet[T <: UID]
     /**
      * Adds the given element to this set by mutating it!
      */
-    private[opalj] def +!(e: T): UIDSet[T] = this + e
+    private[opalj] def addMutate(e: T): UIDSet[T] = this.incl(e)
 
     // The following method(s) is(are) unsafe if "add!" is used!
     final def toUIDSet[X >: T <: UID]: UIDSet[X] = this.asInstanceOf[UIDSet[X]]
     final def includes[X >: T <: UID](e: X): Boolean = containsId(e.id)
     final def add[X >: T <: UID](e: X): UIDSet[X] = {
-        (this + (e.asInstanceOf[T] /*pure fiction*/ )).asInstanceOf[UIDSet[X] /*pure fiction*/ ]
+        (this.incl(e.asInstanceOf[T] /*pure fiction*/ )).asInstanceOf[UIDSet[X] /*pure fiction*/ ]
     }
 
     /**
@@ -95,7 +96,7 @@ sealed abstract class UIDSet[T <: UID]
             UncomparableSets
     }
 
-    def toArraySeq: ArraySeq[T] = ArraySeq.unsafeWrapArray(toArray[T])
+    def toArraySeq(implicit classTag: ClassTag[T]): ArraySeq[T] = ArraySeq.unsafeWrapArray(toArray[T])
 
 }
 
@@ -105,7 +106,6 @@ sealed abstract class UIDSet[T <: UID]
 object UIDSet0 extends UIDSet[UID] {
 
     override def isEmpty: Boolean = true
-    override def nonEmpty: Boolean = false
     override def size: Int = 0
 
     override def find(p: UID => Boolean): Option[UID] = None
@@ -119,8 +119,8 @@ object UIDSet0 extends UIDSet[UID] {
     override def tail: UIDSet[UID] = throw new NoSuchElementException
     override def filter(p: UID => Boolean): UIDSet[UID] = this
     override def filterNot(p: UID => Boolean): UIDSet[UID] = this
-    override def +(e: UID): UIDSet[UID] = new UIDSet1(e)
-    override def -(e: UID): UIDSet[UID] = this
+    override def incl(e: UID): UIDSet[UID] = new UIDSet1(e)
+    override def excl(e: UID): UIDSet[UID] = this
     override def foldLeft[B](z: B)(op: (B, UID) => B): B = z
     override def drop(n: Int): UIDSet[UID] = this
     // default equals/hashCode are a perfect fit
@@ -144,7 +144,6 @@ object UIDSet0 extends UIDSet[UID] {
 sealed abstract class NonEmptyUIDSet[T <: UID] extends UIDSet[T] {
 
     final override def isEmpty: Boolean = false
-    final override def nonEmpty: Boolean = true
     final override def headOption: Option[T] = Some(head)
 }
 
@@ -161,9 +160,8 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     override def iterator: RefIterator[T] = RefIterator(value)
     override def filter(p: T => Boolean): UIDSet[T] = if (p(value)) this else empty
     override def filterNot(p: T => Boolean): UIDSet[T] = if (p(value)) empty else this
-
-    override def +(e: T): UIDSet[T] = if (value.id == e.id) this else new UIDSet2(value, e)
-    override def -(e: T): UIDSet[T] = if (value.id == e.id) empty else this
+    override def incl(e: T): UIDSet[T] = if (value.id == e.id) this else new UIDSet2(value, e)
+    override def excl(e: T): UIDSet[T] = if (value.id == e.id) empty else this
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(z, value)
     override def drop(n: Int): UIDSet[T] = if (n == 0) this else empty
 
@@ -191,8 +189,8 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
 
         es.size match {
             case 0 => this
-            case 1 => this + es.head
-            case _ => es + value
+            case 1 => this.incl(es.head)
+            case _ => es.incl(value)
         }
     }
 
@@ -255,7 +253,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
         if (n == 0) this else if (n == 1) new UIDSet1(value2) else empty
     }
 
-    override def +(e: T): UIDSet[T] = {
+    override def incl(e: T): UIDSet[T] = {
         val eId = e.id
         val value1 = this.value1
         if (eId == value1.id)
@@ -267,7 +265,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
         new UIDSet3(value1, value2, e)
     }
 
-    override def -(e: T): UIDSet[T] = {
+    override def excl(e: T): UIDSet[T] = {
         val eId = e.id
         if (value1.id == eId)
             new UIDSet1(value2)
@@ -310,9 +308,9 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
 
         es.size match {
             case 0 => this
-            case 1 => this + es.head
-            case 2 => this + es.head + es.last
-            case _ => this.foldLeft(es)(_ + _) // es is larger... which should be less work
+            case 1 => this.incl(es.head)
+            case 2 => this.incl(es.head).incl(es.last)
+            case _ => this.foldLeft(es)(_ incl _) // es is larger... which should be less work
         }
     }
 }
@@ -375,7 +373,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
         }
     }
 
-    override def +(e: T): UIDSet[T] = {
+    override def incl(e: T): UIDSet[T] = {
         val eId = e.id
         val value1 = this.value1
         if (eId == value1.id)
@@ -388,10 +386,10 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             return this;
 
         // we only use the trie for sets with more than three elements
-        new UIDSetInnerNode(1, value1, null, null) +! value2 +! value3 +! e
+        new UIDSetInnerNode(1, value1, null, null) addMutate value2 addMutate value3 addMutate e
     }
 
-    override def -(e: T): UIDSet[T] = {
+    override def excl(e: T): UIDSet[T] = {
         val eId = e.id
         if (value1.id == eId)
             new UIDSet2(value2, value3)
@@ -443,9 +441,9 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
 
         es.size match {
             case 0 => this
-            case 1 => this + es.head
-            case 2 => this + es.head + es.last
-            case _ => this.foldLeft(es)(_ + _) // es is at least as large as this set
+            case 1 => this.incl(es.head)
+            case 2 => this.incl(es.head).incl(es.last)
+            case _ => this.foldLeft(es)(_ incl _) // es is at least as large as this set
         }
     }
 }
@@ -525,8 +523,8 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
 */
     }
 
-    def iterator: RefIterator[T] = new RefIterator[T] {
-        private[this] val nextNodes = ArrayStack[UIDSetNodeLike[T]](self)
+    override def iterator: RefIterator[T] = new RefIterator[T] {
+        private[this] val nextNodes = mutable.Stack[UIDSetNodeLike[T]](self)
         def hasNext: Boolean = nextNodes.nonEmpty
         def next(): T = {
             val currentNode = nextNodes.pop()
@@ -569,9 +567,9 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
         result
     }
 
-    final def +(e: T): UIDSet[T] = { val eId = e.id; this.add(e, eId, eId, 0) }
+    final def incl(e: T): UIDSet[T] = { val eId = e.id; this.add(e, eId, eId, 0) }
 
-    final def -(e: T): UIDSet[T] = {
+    final def excl(e: T): UIDSet[T] = {
         size match {
             case 1 => throw new UnknownError
             case 2 =>
@@ -672,7 +670,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
     override def idIterator: IntIterator = {
         new IntIterator {
 
-            private[this] val nextNodes = ArrayStack[UIDSetNodeLike[T]](self)
+            private[this] val nextNodes = mutable.Stack[UIDSetNodeLike[T]](self)
 
             override def hasNext: Boolean = nextNodes.nonEmpty
 
@@ -717,13 +715,13 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
 
         es.size match {
             case 0 => this
-            case 1 => this + es.head
-            case 2 => this + es.head + es.last
+            case 1 => this.incl(es.head)
+            case 2 => this.incl(es.head).incl(es.last)
             case esSize =>
                 if (this.size > esSize)
-                    es.foldLeft(this: UIDSet[T])(_ + _)
+                    es.foldLeft(this: UIDSet[T])(_ incl _)
                 else
-                    this.foldLeft(es: UIDSet[T])(_ + _)
+                    this.foldLeft(es: UIDSet[T])(_ incl _)
         }
     }
 
@@ -949,7 +947,7 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
         }
     }
 
-    override private[opalj] def +!(e: T): UIDSet[T] = throw new UnknownError
+    override private[opalj] def addMutate(e: T): UIDSet[T] = throw new UnknownError
 
     private[immutable] def addMutate(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T] = {
         if (value.id == eId)
@@ -1002,7 +1000,7 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
         }
     }
 
-    override private[opalj] def +!(e: T): UIDSet[T] = {
+    override private[opalj] def addMutate(e: T): UIDSet[T] = {
         val eId = e.id
         this.addMutate(e, eId, eId, 0)
         this
@@ -1072,41 +1070,35 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
 
 }
 
+
 object UIDSet {
 
-    class UIDSetBuilder[T <: UID] extends Builder[T, UIDSet[T]] {
-        private var s: UIDSet[T] = empty[T]
-        def +=(elem: T): this.type = {
-            s +!= elem
+    class UIDSetBuilder[T <: UID](var set: UIDSet[T]) extends Builder[T, UIDSet[T]] {
+        override def addOne(elem: T): this.type = {
+            set.addMutate(elem)
             this
         }
-        def clear(): Unit = s = empty
-        def result(): UIDSet[T] = s
+        override def clear(): Unit = set = empty
+        override def result(): UIDSet[T] = set
     }
 
-    implicit def canBuildFrom[T <: UID]: CanBuildFrom[UIDSet[_], T, UIDSet[T]] = {
-        new CanBuildFrom[UIDSet[_], T, UIDSet[T]] {
-            override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[T]
-            override def apply(): UIDSetBuilder[T] = newBuilder[T]
-        }
-    }
-
-    def canBuildUIDSet[T <: UID]: CanBuildFrom[Any, T, UIDSet[T]] = {
-        new CanBuildFrom[Any, T, UIDSet[T]] {
-            override def apply(from: Any): UIDSetBuilder[T] = newBuilder[T]
-            override def apply(): UIDSetBuilder[T] = newBuilder[T]
-        }
-    }
-
-    def newBuilder[T <: UID]: UIDSetBuilder[T] = new UIDSetBuilder[T]
+    def newBuilder[T <: UID]: UIDSetBuilder[T] = new UIDSetBuilder[T](empty)
 
     def empty[T <: UID]: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
+
+    def fromSpecific[T <: UID](it: IterableOnce[T]): UIDSet[T] = {
+      val builder = newBuilder[T]
+      val iterator = it.iterator
+      while (iterator.hasNext)
+        builder.addOne(iterator.next())
+      return builder.result()
+    }
 
     def apply[T <: UID](vs: T*): UIDSet[T] = {
         if (vs.isEmpty)
             empty[T]
         else {
-            vs.foldLeft(empty[T]: UIDSet[T])(_ +! _)
+            vs.foldLeft(empty[T]: UIDSet[T])(_ addMutate _)
         }
     }
 
