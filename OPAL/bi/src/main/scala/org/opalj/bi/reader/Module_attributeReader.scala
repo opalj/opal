@@ -8,6 +8,7 @@ import org.opalj.control.fillArraySeq
 import org.opalj.control.fillArrayOfInt
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''Module'' attribute (Java 9).
@@ -21,9 +22,11 @@ trait Module_attributeReader extends AttributeReader {
     type Module_attribute <: Attribute
 
     type RequiresEntry <: AnyRef
+    implicit val requiresEntryType: ClassTag[RequiresEntry] // TODO: Replace in Scala 3 by `type RequiresEntry : ClassTag`
     type Requires = ArraySeq[RequiresEntry]
 
     type ExportsEntry <: AnyRef
+    implicit val exportsEntryType: ClassTag[ExportsEntry] // TODO: Replace in Scala 3 by `type ExportsEntry : ClassTag`
     type Exports = ArraySeq[ExportsEntry]
 
     // CONCEPTUALLY:
@@ -31,6 +34,7 @@ trait Module_attributeReader extends AttributeReader {
     type ExportsToIndexTable = Array[Constant_Pool_Index] // CONSTANT_Module_Index[]
 
     type OpensEntry <: AnyRef
+    implicit val opensEntryType: ClassTag[OpensEntry] // TODO: Replace in Scala 3 by `type OpensEntry : ClassTag`
     type Opens = ArraySeq[OpensEntry]
 
     // CONCEPTUALLY:
@@ -46,6 +50,7 @@ trait Module_attributeReader extends AttributeReader {
     type ProvidesWithIndexTable = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
 
     type ProvidesEntry <: AnyRef
+    implicit val providesTypeEntry: ClassTag[ProvidesEntry] // TODO: Replace in Scala 3 by `type ProvidesEntry : ClassTag`
     type Provides = ArraySeq[ProvidesEntry]
 
     //
@@ -224,5 +229,5 @@ trait Module_attributeReader extends AttributeReader {
         )
     }: Attribute
 
-    registerAttributeReader(ModuleAttribute.Name → parserFactory())
+    registerAttributeReader(ModuleAttribute.Name -> parserFactory())
 }

@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''inner classes'' attribute.
@@ -18,6 +19,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
     //
 
     type InnerClassesEntry <: AnyRef
+    implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] // TODO: Replace in Scala 3 by `type InnerClassesEntry : ClassTag`
     type InnerClasses = ArraySeq[InnerClassesEntry]
 
     type InnerClasses_attribute >: Null <: Attribute
@@ -85,5 +87,5 @@ trait InnerClasses_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(InnerClassesAttribute.Name → parserFactory())
+    registerAttributeReader(InnerClassesAttribute.Name -> parserFactory())
 }

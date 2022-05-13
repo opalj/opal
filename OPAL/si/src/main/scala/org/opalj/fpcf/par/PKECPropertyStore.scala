@@ -293,7 +293,7 @@ class PKECPropertyStore(
 
             case MultiResult.id =>
                 val MultiResult(results) = r
-                results foreach { finalEP => handleFinalResult(finalEP) }
+                results.iterator.foreach { finalEP => handleFinalResult(finalEP) }
 
             case InterimResult.id =>
                 val interimR = r.asInterimResult
@@ -530,7 +530,7 @@ class PKECPropertyStore(
 
     private[this] val interimStates: Array[ArrayBuffer[EPKState]] =
         Array.fill(THREAD_COUNT)(null)
-    private[this] val successors: Array[EPKState => Traversable[EPKState]] =
+    private[this] val successors: Array[EPKState => Iterable[EPKState]] =
         Array.fill(THREAD_COUNT)(null)
 
     // executed on the main thread only
@@ -666,7 +666,7 @@ class PKECPropertyStore(
                         ps(eOptionP.pk.id).get(eOptionP.e)
                     }
                 } else {
-                    Traversable.empty
+                    Iterable.empty
                 }
             }
         }

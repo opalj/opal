@@ -3,7 +3,7 @@ package org.opalj
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.HashMap
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * ==Design Goals==

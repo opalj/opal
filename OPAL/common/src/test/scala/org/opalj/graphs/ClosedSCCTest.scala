@@ -8,6 +8,8 @@ import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Tests the SCC algorithm.
  *

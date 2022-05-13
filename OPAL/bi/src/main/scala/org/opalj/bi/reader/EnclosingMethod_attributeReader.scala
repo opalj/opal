@@ -58,5 +58,5 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(EnclosingMethodAttribute.Name → parserFactory())
+    registerAttributeReader(EnclosingMethodAttribute.Name -> parserFactory())
 }

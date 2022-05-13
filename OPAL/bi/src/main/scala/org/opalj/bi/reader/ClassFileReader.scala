@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.jar.JarInputStream
 import java.util.jar.JarEntry
 import scala.util.control.ControlThrowable
-import scala.collection.JavaConverters.*
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -424,7 +424,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     val baos = new ByteArrayOutputStream()
                     val buffer = new Array[Byte](32 * 1024)
 
-                    Stream.continually(in.read(buffer)).takeWhile(_ > 0).foreach { bytesRead =>
+                    LazyList.continually(in.read(buffer)).takeWhile(_ > 0).foreach { bytesRead =>
                         baos.write(buffer, 0, bytesRead)
                         baos.flush()
                     }
@@ -482,14 +482,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         exceptionHandler: ExceptionHandler
     ): Unit = {
 
-        import scala.collection.JavaConverters._
-
         // First let's collect all inner Jar Entries, then do the processing.
         // Otherwise - if the OPALExecutionContextTaskSupport uses a fixed
         // sized thread pool - we may run out of threads... to process anything.
         val innerJarEntries = new ConcurrentLinkedQueue[ZipEntry]
 
-        val jarEntries = jarFile.entries.asScala.toArray
+        val jarEntries: Array[ZipEntry] = jarFile.entries().asScala.toArray
         val nextEntryIndex = new AtomicInteger(jarEntries.length - 1)
         val parallelismLevel = NumberOfThreadsForIOBoundTasks
         val futures: Array[Future[Unit]] = new Array(parallelismLevel)
@@ -666,9 +664,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     }
 
     def AllClassFiles(
-        files:            Traversable[File],
+        files:            Iterable[File],
         exceptionHandler: ExceptionHandler  = defaultExceptionHandler
-    ): Traversable[(ClassFile, URL)] = {
+    ): Iterable[(ClassFile, URL)] = {
         files.flatMap(file => ClassFiles(file, exceptionHandler))
     }
 
@@ -714,7 +712,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * Goes over all files in parallel and calls back the given function which has to be thread-safe!
      */
     def processClassFiles(
-        files:              Traversable[File],
+        files:              Iterable[File],
         progressReporter:   File => Unit,
         classFileProcessor: ((ClassFile, URL)) => Unit,
         exceptionHandler:   ExceptionHandler           = defaultExceptionHandler
@@ -759,7 +757,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *              then, all files in that directory are processed.
      */
     def findClassFile(
-        files:            Traversable[File],
+        files:            Iterable[File],
         progressReporter: File => Unit,
         classFileFilter:  ClassFile => Boolean,
         className:        ClassFile => String,

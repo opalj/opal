@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''Record'' attribute (Java 16).
@@ -27,6 +28,7 @@ trait Record_attributeReader extends AttributeReader {
     type Record_attribute >: Null <: Attribute
 
     type RecordComponent <: AnyRef
+    implicit val recordComponentType: ClassTag[RecordComponent] // TODO: Replace in Scala 3 by `type RecordComponent : ClassTag`
     type RecordComponents = ArraySeq[RecordComponent]
 
     def Record_attribute(
@@ -113,6 +115,6 @@ trait Record_attributeReader extends AttributeReader {
         }
     }: Record_attribute
 
-    registerAttributeReader(RecordAttribute.Name → parserFactory())
+    registerAttributeReader(RecordAttribute.Name -> parserFactory())
 
 }

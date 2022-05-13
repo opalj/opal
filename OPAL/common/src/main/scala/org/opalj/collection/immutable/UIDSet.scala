@@ -43,6 +43,7 @@ sealed abstract class UIDSet[T <: UID]
     override def foldLeft[B](z: B)(op: (B, T) => B): B
     override def fromSpecific(coll: IterableOnce[T]): UIDSet[T] = UIDSet.fromSpecific(coll)
     override def newSpecificBuilder: mutable.Builder[T, UIDSet[T]] = UIDSet.newBuilder[T]
+    def mapUIDSet[B <: UID](f: T => B): UIDSet[B]
 
     //
     // METHODS DEFINED BY UIDSet
@@ -138,6 +139,8 @@ object UIDSet0 extends UIDSet[UID] {
     override def compare(that: UIDSet[UID]): SetRelation = {
         if (that.isEmpty) EqualSets else /* this is a */ StrictSubset
     }
+    override def mapUIDSet[B <: UID](f: UID => B): UIDSet[B] = UIDSet.empty
+
 
 }
 
@@ -204,6 +207,9 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
         else
             UncomparableSets
     }
+
+    override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
+      UIDSet1(f(value))
 }
 
 final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
@@ -313,6 +319,9 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
             case _ => this.foldLeft(es)(_ incl _) // es is larger... which should be less work
         }
     }
+
+    override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
+      UIDSet2(f(value1), f(value2))
 }
 final object UIDSet2 {
     def apply[T <: UID](value1: T, value2: T): UIDSet2[T] = new UIDSet2[T](value1, value2)
@@ -446,6 +455,9 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             case _ => this.foldLeft(es)(_ incl _) // es is at least as large as this set
         }
     }
+
+    override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
+      new UIDSet3(f(value1), f(value2), f(value3))
 }
 
 // remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-
@@ -962,6 +974,8 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
     override def containsId(id: Int): Boolean = id == value.id
     protected[immutable] def growIdSet(set: IntTrieSet): IntTrieSet = set + value.id
 
+    override def mapUIDSet[B <: UID](f: T => B): UIDSetNodeLike[B] =
+      new UIDSetLeaf[B](f(value))
 }
 
 // we wan't to be able to adapt the case class...
@@ -1068,6 +1082,12 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
         newSet
     }
 
+    override def mapUIDSet[B <: UID](f: T => B): UIDSetNodeLike[B] =
+        new UIDSetInnerNode(
+          this.theSize,
+          f(this.value),
+          this.left.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]],
+          this.right.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]])
 }
 
 object UIDSet {

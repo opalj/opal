@@ -15,7 +15,7 @@ package org.opalj.collection.mutable
  */
 final class RefAccumulator[A <: AnyRef] private (
         private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
-) extends {
+) {
 
     def isEmpty: Boolean = data.isEmpty
     def nonEmpty: Boolean = data.nonEmpty

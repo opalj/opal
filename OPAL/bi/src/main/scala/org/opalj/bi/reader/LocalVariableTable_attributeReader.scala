@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''local variable table'' attribute.
@@ -20,6 +21,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     type LocalVariableTable_attribute >: Null <: Attribute
 
     type LocalVariableTableEntry <: AnyRef
+    implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] // TODO: Replace in Scala 3 by `type LocalVariableTableEntry : ClassTag`
     type LocalVariables = ArraySeq[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(
@@ -92,5 +94,5 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(LocalVariableTableAttribute.Name → parserFactory())
+    registerAttributeReader(LocalVariableTableAttribute.Name -> parserFactory())
 }

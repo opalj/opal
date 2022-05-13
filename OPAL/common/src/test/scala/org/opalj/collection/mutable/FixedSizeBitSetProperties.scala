@@ -77,7 +77,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
     property("equals and hashCode of two identical sets") = forAll { (e: (IntArraySet, Int)) =>
         val (ias, max) = e
         val bs1 = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
-        val bs2 = ias.toChain.reverse.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        val bs2 = ias.toList.reverse.foldLeft(FixedSizeBitSet.create(max))(_ += _)
         bs1.hashCode == bs2.hashCode && bs1 == bs2
     }
 

@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Defines a template method to read in the code attribute.
@@ -22,6 +23,7 @@ trait Code_attributeReader extends AttributeReader {
     //
 
     type ExceptionTableEntry <: AnyRef
+    implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] // TODO: Replace in Scala 3 by `type ExceptionTableEntry : ClassTag`
     type ExceptionHandlers = ArraySeq[ExceptionTableEntry]
 
     type Instructions
@@ -115,6 +117,6 @@ trait Code_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(CodeAttribute.Name → parserFactory())
+    registerAttributeReader(CodeAttribute.Name -> parserFactory())
 
 }

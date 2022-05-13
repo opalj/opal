@@ -75,6 +75,6 @@ trait PermittedSubclasses_attributeReader extends AttributeReader {
         }
     }: PermittedSubclasses_attribute
 
-    registerAttributeReader(PermittedSubclassesAttribute.Name → parserFactory())
+    registerAttributeReader(PermittedSubclassesAttribute.Name -> parserFactory())
 
 }

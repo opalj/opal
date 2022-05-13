@@ -63,6 +63,6 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(SourceDebugExtensionAttribute.Name → parserFactory())
+    registerAttributeReader(SourceDebugExtensionAttribute.Name -> parserFactory())
 
 }

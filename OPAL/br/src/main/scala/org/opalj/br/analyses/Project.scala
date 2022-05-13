@@ -31,7 +31,6 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.concurrent.SequentialTasks
 import org.opalj.concurrent.Tasks
@@ -250,7 +249,7 @@ class Project[Source] private (
     // TODO Consider extracting to a ProjectInformationKey
     // TODO Java 9+
     final val classesPerPackage: Map[String, immutable.Set[ClassFile]] = {
-        var classesPerPackage = Map.empty[String, RefArrayBuffer[ClassFile]]
+        var classesPerPackage = Map.empty[String, ArrayBuffer[ClassFile]]
         allClassFiles foreach { cf =>
             val packageName = cf.thisType.packageName
             val buffer =

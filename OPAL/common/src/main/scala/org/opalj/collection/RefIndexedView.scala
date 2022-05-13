@@ -21,7 +21,7 @@ object RefIndexedView {
         override def isEmpty: Boolean = true
         override def size: Int = 0
         override def apply(index: Int): Nothing = throw new IndexOutOfBoundsException("empty view")
-        override def iterator: Iterator[Nothing] = RefIterator.empty
+        override def iterator: Iterator[Nothing] = Iterator.empty
     }
 
     def empty[T <: AnyRef]: RefIndexedView[T] = Empty

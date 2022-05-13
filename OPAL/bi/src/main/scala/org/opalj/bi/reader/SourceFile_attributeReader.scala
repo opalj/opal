@@ -55,5 +55,5 @@ trait SourceFile_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(SourceFileAttribute.Name → parserFactory())
+    registerAttributeReader(SourceFileAttribute.Name -> parserFactory())
 }

@@ -6,7 +6,7 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -21,7 +21,6 @@ import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -40,6 +39,8 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.cg.TypeProviderKey
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -106,7 +107,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         callersUB:      Callers,
         seenCallers:    Callers
     ): PropertyComputationResult = {
-        val partialResults = RefArrayBuffer.empty[PartialResult[TypeSetEntity, InstantiatedTypes]]
+        val partialResults = ArrayBuffer.empty[PartialResult[TypeSetEntity, InstantiatedTypes]]
         callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
             (_, callerContext, _, isDirect) =>
                 processCaller(declaredMethod, declaredType, callerContext, isDirect, partialResults)
@@ -130,7 +131,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         declaredType:   ObjectType,
         callContext:    Context,
         isDirect:       Boolean,
-        partialResults: RefArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]
+        partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]
     ): Unit = {
         // a constructor is called from an unknown context, there could be an initialization.
         if (!callContext.hasContext) {

@@ -5,8 +5,6 @@ package reader
 
 import java.io.DataInputStream
 
-import scala.collection.GenTraversableOnce
-
 /**
  * Generic parser for `RuntimeVisibleAnnotations` attribute.
  */
@@ -18,7 +16,7 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
 
     type Annotation
 
-    type Annotations <: GenTraversableOnce[Annotation]
+    type Annotations <: IterableOnce[Annotation]
     def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations
 
     type RuntimeVisibleAnnotations_attribute >: Null <: Attribute
@@ -45,7 +43,7 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
     ) => {
         /*val attribute_length =*/ in.readInt()
         val annotations = Annotations(cp, in)
-        if (annotations.nonEmpty || reifyEmptyAttributes) {
+        if (annotations.iterator.nonEmpty || reifyEmptyAttributes) {
             RuntimeVisibleAnnotations_attribute(
                 cp, ap_name_index, ap_descriptor_index, attribute_name_index, annotations
             )
@@ -54,5 +52,5 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(RuntimeVisibleAnnotationsAttribute.Name → parserFactory())
+    registerAttributeReader(RuntimeVisibleAnnotationsAttribute.Name -> parserFactory())
 }

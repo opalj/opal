@@ -59,6 +59,6 @@ trait ModulePackages_attributeReader extends AttributeReader {
         }
     }: ModulePackages_attribute
 
-    registerAttributeReader(ModulePackagesAttribute.Name → parserFactory())
+    registerAttributeReader(ModulePackagesAttribute.Name -> parserFactory())
 
 }

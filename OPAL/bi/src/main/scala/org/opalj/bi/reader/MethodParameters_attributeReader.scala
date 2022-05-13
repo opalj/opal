@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
@@ -20,6 +21,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
     type MethodParameters_attribute >: Null <: Attribute
 
     type MethodParameter <: AnyRef
+    implicit val methodParameterType: ClassTag[MethodParameter] // TODO: Replace in Scala 3 by `type MethodParameter : ClassTag`
     type MethodParameters = ArraySeq[MethodParameter]
 
     def MethodParameters_attribute(
@@ -77,5 +79,5 @@ trait MethodParameters_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(MethodParametersAttribute.Name → parserFactory())
+    registerAttributeReader(MethodParametersAttribute.Name -> parserFactory())
 }

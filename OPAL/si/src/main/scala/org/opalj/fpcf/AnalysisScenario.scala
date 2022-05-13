@@ -56,7 +56,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         allCS += cs
 
-        initializationData += cs → cs.init(ps)
+        initializationData += cs -> cs.init(ps)
 
         this
     }
@@ -282,7 +282,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         // Interim updates have to be suppressed when an analysis uses a property for which
         // the wrong bounds/not enough bounds are computed.
         transformersCS foreach { cs =>
-            suppressInterimUpdates += (cs.derivesLazily.get.pk → cs.uses(ps).map(_.pk))
+            suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk))
         }
 
         // 3. create the batch

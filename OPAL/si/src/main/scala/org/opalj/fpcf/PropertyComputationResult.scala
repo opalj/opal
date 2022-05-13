@@ -231,7 +231,7 @@ object InterimResult {
 
     def unapply[P >: Null <: Property](
         r: InterimResult[P]
-    ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation)] = {
+    ): Some[(SomeEPS, Iterable[SomeEOptionP], OnUpdateContinuation)] = {
         Some((r.eps, r.dependees, r.c))
     }
 
@@ -306,41 +306,42 @@ object Results {
         def foreach(f: ProperPropertyComputationResult => Unit): Unit = results.foreach(f)
     }
 
-    def apply(results: TraversableOnce[ProperPropertyComputationResult]): Results = new Results {
-        def foreach(f: ProperPropertyComputationResult => Unit): Unit = results.foreach(f)
+    def apply(results: IterableOnce[ProperPropertyComputationResult]): Results = new Results {
+        def foreach(f: ProperPropertyComputationResult => Unit): Unit = results.iterator.foreach(f)
     }
 
     def apply(
         result:  ProperPropertyComputationResult,
-        results: TraversableOnce[ProperPropertyComputationResult]
+        results: IterableOnce[ProperPropertyComputationResult]
     ): Results = new Results {
         def foreach(f: ProperPropertyComputationResult => Unit): Unit = {
             f(result)
-            results.foreach(f)
+            results.iterator.foreach(f)
         }
     }
 
     def apply(
-        results: TraversableOnce[ProperPropertyComputationResult],
+        results: IterableOnce[ProperPropertyComputationResult],
         result:  ProperPropertyComputationResult
     ): Results = new Results {
         def foreach(f: ProperPropertyComputationResult => Unit): Unit = {
-            results.foreach(f)
+            results.iterator.foreach(f)
             f(result)
         }
     }
 
     def apply(
         resultOption: Option[ProperPropertyComputationResult],
-        results:      TraversableOnce[ProperPropertyComputationResult]
+        results:      IterableOnce[ProperPropertyComputationResult]
     ): PropertyComputationResult = {
-        if (resultOption.isEmpty && results.isEmpty)
+        val it = results.iterator
+        if (resultOption.isEmpty && it.isEmpty)
             NoResult
         else
             new Results {
                 def foreach(f: ProperPropertyComputationResult => Unit): Unit = {
                     resultOption.foreach(r => f(r))
-                    results.foreach(f)
+                    it.foreach(f)
                 }
             }
     }
@@ -388,7 +389,7 @@ object PartialResult { private[fpcf] final val id = 6 }
  * of all instantiated types will use an `InterimPartialResult` to commit those results.
  */
 case class InterimPartialResult[SE >: Null <: Property](
-        us:        Traversable[SomePartialResult], // can be empty!
+        us:        Iterable[SomePartialResult], // can be empty!
         dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
         c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {

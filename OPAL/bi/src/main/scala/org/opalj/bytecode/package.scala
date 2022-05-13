@@ -181,7 +181,7 @@ package object bytecode {
      */
     def JVMInstructions: List[(Int, String)] = {
         process(getClass.getClassLoader.getResourceAsStream("JVMInstructionsList.txt")) { stream =>
-            val is = Source.fromInputStream(stream).getLines.toList.map(_.split(" ").map(_.trim))
+            val is = Source.fromInputStream(stream).getLines().toList.map(_.split(" ").map(_.trim))
             is.map { i =>
                 val opcode = i(0)
                 val mnemonic = i(1)

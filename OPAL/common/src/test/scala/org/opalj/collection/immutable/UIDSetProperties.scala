@@ -32,7 +32,7 @@ object UIDSetProperties extends Properties("UIDSet") {
     val EmptyUIDSet: SUIDSet = UIDSet.empty[SUID]
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
-    implicit def toSUIDSet(l: Traversable[Int]): UIDSet[SUID] = {
+    implicit def toSUIDSet(l: Iterable[Int]): UIDSet[SUID] = {
         EmptyUIDSet ++ l.map(i => SUID(i))
     }
 
@@ -42,13 +42,13 @@ object UIDSetProperties extends Properties("UIDSet") {
     val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
 
     val veryLargeListGen = for {
-        i ← Gen.choose(30000, 100000)
-        s ← Gen.containerOfN[List, Int](i, Arbitrary.arbitrary[Int])
+        i <- Gen.choose(30000, 100000)
+        s <- Gen.containerOfN[List, Int](i, Arbitrary.arbitrary[Int])
     } yield (s, i)
 
     val largeSetGen = for {
-        i ← Gen.choose(20, 100)
-        s ← Gen.containerOfN[Set, Int](i, Arbitrary.arbitrary[Int])
+        i <- Gen.choose(20, 100)
+        s <- Gen.containerOfN[Set, Int](i, Arbitrary.arbitrary[Int])
     } yield (s, i)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ object UIDSetProperties extends Properties("UIDSet") {
     property("create singleton set") = forAll { i: Int =>
         val s = SUID(i)
         val fl1 = UIDSet[SUID](i)
-        val fl2 = (UIDSet.newBuilder[SUID] += i).result
+        val fl2 = (UIDSet.newBuilder[SUID] += i).result()
         val fl3 = UIDSet.empty[SUID] + s
         (fl1.head == s) :| "apply" && (fl2.head == s) :| "builder" && (fl3.head == s) :| "+"
     }
@@ -141,10 +141,10 @@ object UIDSetProperties extends Properties("UIDSet") {
     property("equals") = forAll { l: Set[Int] =>
         l.size >= 3 ==> {
             val p = l.toList.permutations
-            val us1 = UIDSet.empty[SUID] ++ p.next.map(SUID.apply)
-            val us2 = UIDSet.empty[SUID] ++ p.next.map(SUID.apply)
-            val us3 = UIDSet.empty[SUID] ++ p.next.map(SUID.apply)
-            val us4 = UIDSet.empty[SUID] ++ p.next.map(SUID.apply)
+            val us1 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
+            val us2 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
+            val us3 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
+            val us4 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
             (us1 == us2) && (us1 == us3) && (us1 == us4)
         }
     }
@@ -268,7 +268,7 @@ object UIDSetProperties extends Properties("UIDSet") {
         def f(s: SUID): SUID = SUID(s.id % 5)
 
         val s = orig.map(SUID(_)).map(f)
-        val us: SUIDSet = toSUIDSet(orig).map(f)
+        val us: SUIDSet = toSUIDSet(orig).mapUIDSet(f)
         (s.forall(us.contains) && us.forall(s.contains)) :| s"content $s vs. $us" &&
             classOf[UIDSet[_]].isInstance(us) :| "unexpected type"
     }
@@ -278,14 +278,14 @@ object UIDSetProperties extends Properties("UIDSet") {
         val us = toSUIDSet(orig)
         val usTransformed: UIDSet[SUID] =
             (us.
-                map[SUID, UIDSet[SUID]] { e => SUID(e.id % i) }.
+                mapUIDSet[SUID] { e => SUID(e.id % i) }.
                 filter(_.id < i / 2).
                 +(SUID(i)) + SUID(-i) + SUID(i + 100))
 
         val s = (Set.empty[SUID] ++ orig.map(SUID(_)))
         val sTransformed: Set[SUID] =
             (s.
-                map[SUID, Set[SUID]] { e => SUID(e.id % i) }.
+                map[SUID] { e => SUID(e.id % i) }.
                 filter(_.id < i / 2).
                 +(SUID(i)) + SUID(-i) + SUID(i + 100))
 
@@ -303,7 +303,7 @@ object UIDSetProperties extends Properties("UIDSet") {
         val s1 = /*org.opalj.util.PerformanceEvaluation.time*/ {
             val s1b = UIDSet.newBuilder[SUID]
             base.foreach(s1b.+=)
-            s1b.result
+            s1b.result()
         } //{ t => println("Builder +!: "+t.toSeconds) }
 
         var s2 = UIDSet.empty[SUID]
@@ -320,7 +320,7 @@ object UIDSetProperties extends Properties("UIDSet") {
         val usTransformed = {
             val us = UIDSet.empty[SUID] ++ base
             (us.
-                map[SUID, UIDSet[SUID]] { e => SUID(e.id % i) }.
+                map[SUID] { e => SUID(e.id % i) }.
                 filter(_.id < i / 2).
                 +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
         }
@@ -328,7 +328,7 @@ object UIDSetProperties extends Properties("UIDSet") {
         val sTransformed = {
             val s = Set.empty[SUID] ++ base
             (s.
-                map[SUID, Set[SUID]] { e => SUID(e.id % i) }.
+                map[SUID] { e => SUID(e.id % i) }.
                 filter(_.id < i / 2).
                 +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
         }
@@ -375,9 +375,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
 
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
-                for { i ← 1 to 100000 } {
+                for { i <- 1 to 100000 } {
                     var s = UIDSet.empty[SUID]
-                    for { j ← 1 to 500 } {
+                    for { j <- 1 to 500 } {
                         s += SUID(rngGen.nextInt())
                     }
 
@@ -397,9 +397,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
 
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
-                for { i ← 1 to 100000 } {
+                for { i <- 1 to 100000 } {
                     var s = Set.empty[SUID]
-                    for { j ← 1 to 500 } {
+                    for { j <- 1 to 500 } {
                         s += SUID(rngGen.nextInt())
                     }
 
@@ -421,9 +421,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var lastOpalS = UIDSet.empty[SUID]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var opalS = UIDSet.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
                         }
@@ -440,9 +440,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var lastScalaS = Set.empty[SUID]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             scalaS += SUID(v)
                         }
@@ -454,9 +454,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
             }
 
             var opalTotal = 0L
-            for { v ← opalS } { opalTotal += v.id }
+            for { v <- opalS } { opalTotal += v.id }
             var scalaTotal = 0L
-            for { v ← scalaS } { scalaTotal += v.id }
+            for { v <- scalaS } { scalaTotal += v.id }
             assert(opalTotal == scalaTotal)
         }
 
@@ -466,9 +466,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var allSets = List.empty[UIDSet[SUID]]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var opalS = UIDSet.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
                         }
@@ -483,9 +483,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var allSets = List.empty[Set[SUID]]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             scalaS += SUID(v)
                         }

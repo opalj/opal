@@ -74,6 +74,6 @@ trait NestMembers_attributeReader extends AttributeReader {
         }
     }: NestMembers_attribute
 
-    registerAttributeReader(NestMembersAttribute.Name → parserFactory())
+    registerAttributeReader(NestMembersAttribute.Name -> parserFactory())
 
 }

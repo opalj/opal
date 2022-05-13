@@ -20,7 +20,7 @@ import org.opalj.br.ByteType
 import org.opalj.br.Code
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.cfg.CFG
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
@@ -30,9 +30,9 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.mutable.RefAppendChain
 
 import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -222,7 +222,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // Basically a mapping from a UseSite(PC) to a DefSite.
-        val obsoleteUseSites = new RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]]
+        val obsoleteUseSites = new mutable.ArrayDeque[PCAndAnyRef[IntTrieSet /*DefSites*/ ]]
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             if (valuesCount == 0)

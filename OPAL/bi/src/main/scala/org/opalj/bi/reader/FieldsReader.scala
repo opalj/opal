@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 trait FieldsReader extends Constant_PoolAbstractions {
 
@@ -15,6 +16,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
     //
 
     type Field_Info <: AnyRef
+    implicit val fieldInfoType: ClassTag[Field_Info] // TODO: Replace in Scala 3 by `type Field_Info : ClassTag`
     type Fields = ArraySeq[Field_Info]
 
     type Attributes

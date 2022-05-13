@@ -68,5 +68,5 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
 
     }
 
-    registerAttributeReader(LineNumberTableAttribute.Name → parserFactory())
+    registerAttributeReader(LineNumberTableAttribute.Name -> parserFactory())
 }

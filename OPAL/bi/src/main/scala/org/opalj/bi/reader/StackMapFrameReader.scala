@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 trait StackMapFrameReader extends Constant_PoolAbstractions {
 
@@ -15,8 +16,10 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     //
 
     type StackMapFrame <: AnyRef
+    implicit val stackMapFrameType: ClassTag[StackMapFrame] // TODO: Replace in Scala 3 by `type StackMapFrame : ClassTag`
 
     type VerificationTypeInfo <: AnyRef
+    implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] // TODO: Replace in Scala 3 by `type VerificationTypeInfo : ClassTag`
     type VerificationTypeInfoLocals = ArraySeq[VerificationTypeInfo]
     type VerificationTypeInfoStack = ArraySeq[VerificationTypeInfo]
 

@@ -67,5 +67,5 @@ trait Exceptions_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(ExceptionsAttribute.Name → parserFactory())
+    registerAttributeReader(ExceptionsAttribute.Name -> parserFactory())
 }

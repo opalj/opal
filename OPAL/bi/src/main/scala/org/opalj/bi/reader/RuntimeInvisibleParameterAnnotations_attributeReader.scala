@@ -15,7 +15,7 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
     //
 
     type ParameterAnnotations
-    type ParametersAnnotations <: Traversable[ParameterAnnotations]
+    type ParametersAnnotations <: Iterable[ParameterAnnotations]
     /**
      * Method that delegates to another reader to parse the annotations of the parameters.
      */
@@ -75,6 +75,6 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
         }
     }
 
-    registerAttributeReader(RuntimeInvisibleParameterAnnotationsAttribute.Name → parserFactory())
+    registerAttributeReader(RuntimeInvisibleParameterAnnotationsAttribute.Name -> parserFactory())
 
 }

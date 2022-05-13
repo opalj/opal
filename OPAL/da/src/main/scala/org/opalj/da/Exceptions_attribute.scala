@@ -44,7 +44,7 @@ case class Exceptions_attribute(
             <summary class="attribute_name">Exceptions [size: { exception_index_table.size } item(s)]</summary>
             <ol>
                 {
-                    exception_index_table.map[Node, Seq[Node]] { cpIndex =>
+                    exception_index_table.map[Node] { cpIndex =>
                         <li>{ cp(cpIndex).asInstructionParameter }</li>
                     }
                 }

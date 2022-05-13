@@ -78,7 +78,7 @@ final class PKESequentialPropertyStore protected (
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
 
-    private[this] val dependees: Array[AnyRefMap[Entity, Traversable[SomeEOptionP]]] = {
+    private[this] val dependees: Array[AnyRefMap[Entity, Iterable[SomeEOptionP]]] = {
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
 
@@ -96,7 +96,7 @@ final class PKESequentialPropertyStore protected (
         }
     }
 
-    private[seq] def dependees(eOptionP: SomeEOptionP): Traversable[SomeEOptionP] = {
+    private[seq] def dependees(eOptionP: SomeEOptionP): Iterable[SomeEOptionP] = {
         dependees(eOptionP.pk.id).getOrElse(eOptionP.e, Nil)
     }
 
@@ -107,7 +107,7 @@ final class PKESequentialPropertyStore protected (
         }
     }
 
-    private[seq] def dependers(eOptionP: SomeEOptionP): Traversable[SomeEPK] = {
+    private[seq] def dependers(eOptionP: SomeEOptionP): Iterable[SomeEPK] = {
         dependers(eOptionP.pk.id).get(eOptionP.e) match {
             case Some(dependers) => dependers.keys
             case _               => Nil
@@ -300,7 +300,7 @@ final class PKESequentialPropertyStore protected (
         pc: PropertyComputation[E]
     ): Unit = {
         val triggeredEntities = mutable.HashSet.empty[Entity]
-        triggeredComputations(pk.id) += (pc, triggeredEntities)
+        triggeredComputations(pk.id).addOne(pc, triggeredEntities)
     }
 
     private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
@@ -357,7 +357,7 @@ final class PKESequentialPropertyStore protected (
         eps: SomeEPS,
         // RECALL, IF THE EPS IS THE RESULT OF A PARTIAL RESULT UPDATE COMPUTATION, THEN
         // NEW DEPENDEES WILL ALWAYS BE EMPTY!
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit = {
         val pkId = eps.pk.id
         val e = eps.e
@@ -450,17 +450,17 @@ final class PKESequentialPropertyStore protected (
         newEPSOption foreach { newEPS => update(newEPS, Nil /*<= w.r.t. the "newEPS"!*/ ) }
     }
 
-    @inline private[this] def handlePartialResults(prs: Traversable[SomePartialResult]): Unit = {
+    @inline private[this] def handlePartialResults(prs: Iterable[SomePartialResult]): Unit = {
         // It is ok if prs is empty!
         prs foreach { pr => handlePartialResult(pr.e, pr.pk, pr.u) }
     }
 
     /* Returns `true` if no dependee was updated in the meantime. */
     private[this] def processDependeesOfInterimPartialResult(
-        partialResults:     Traversable[SomePartialResult],
-        processedDependees: Traversable[SomeEOptionP],
+        partialResults:     Iterable[SomePartialResult],
+        processedDependees: Iterable[SomeEOptionP],
         c:                  OnUpdateContinuation
-    ): (Traversable[SomeEOptionP], OnUpdateContinuation) = {
+    ): (Iterable[SomeEOptionP], OnUpdateContinuation) = {
         var nextPartialResults = partialResults
         var nextProcessedDependees = processedDependees
         var nextC = c
@@ -536,9 +536,9 @@ final class PKESequentialPropertyStore protected (
 
     private[this] def processDependeesOfInterimResult(
         initialEPS:       SomeEPS,
-        initialDependees: Traversable[SomeEOptionP],
+        initialDependees: Iterable[SomeEOptionP],
         initialC:         OnUpdateContinuation
-    ): (SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation) = {
+    ): (SomeEPS, Iterable[SomeEOptionP], OnUpdateContinuation) = {
         // The idea is to stack/aggregate all changes in dependees.
         val e = initialEPS.e
         val pk = initialEPS.pk
@@ -611,7 +611,7 @@ final class PKESequentialPropertyStore protected (
 
             case MultiResult.id =>
                 val MultiResult(results) = r
-                results foreach { finalEP => update(finalEP, newDependees = Nil) }
+                results.iterator.foreach { finalEP => update(finalEP, newDependees = Nil) }
 
             //
             // Methods which actually store results...

@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for an annotation's element-value pairs.
@@ -18,9 +19,11 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     //
 
     type ElementValue <: AnyRef
+    implicit val elementValueType: ClassTag[ElementValue] // TODO: Replace in Scala 3 by `type ElementValue : ClassTag`
     type ElementValues = ArraySeq[ElementValue]
 
     type ElementValuePair <: AnyRef
+    implicit val elementValuePairType: ClassTag[ElementValuePair] // TODO: Replace in Scala 3 by `type ExceptionValuePair : ClassTag`
     type ElementValuePairs = ArraySeq[ElementValuePair]
 
     def ElementValuePair(

@@ -7,12 +7,13 @@ import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Text
 import scala.xml.Unparsed
-
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.reader.Constant_PoolAbstractions
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * @author Michael Eichberg
@@ -49,7 +50,7 @@ case class ClassFile(
             2 + // constant_pool_count
             {
                 val cpIt = constant_pool.iterator
-                cpIt.next // the first entry is always empty in the class file
+                cpIt.next() // the first entry is always empty in the class file
                 cpIt.
                     filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).
                     map(_.size).
@@ -108,7 +109,7 @@ case class ClassFile(
     def cpToXHTML: Node = {
         val cpEntries =
             for {
-                cpIndex ← 1 until constant_pool.length
+                cpIndex <- 1 until constant_pool.length
                 cpNode = cp(cpIndex)
                 if cpNode != null /* <= need for constant_double/_long entries */
             } yield {
@@ -212,9 +213,11 @@ case class ClassFile(
     private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
 
         val (sourceFileAttributes, attributes0) =
-            attributes.partitionByType(classOf[SourceFile_attribute])
+            attributes.partition(classOf[SourceFile_attribute].isInstance(_))
+                      .asInstanceOf[(ArraySeq[SourceFile_attribute], ArraySeq[Attribute])]
         val (signatureAttributes, attributes1) =
-            attributes0.partitionByType(classOf[Signature_attribute])
+            attributes0.partition(classOf[Signature_attribute].isInstance(_))
+                       .asInstanceOf[(ArraySeq[Signature_attribute], ArraySeq[Attribute])]
 
         <div class="class_file">
             { if (source.isDefined) <div id="source">{ source.get }</div> }

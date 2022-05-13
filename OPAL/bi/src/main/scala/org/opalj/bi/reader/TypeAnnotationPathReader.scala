@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the `type_path` field of type annotations. This
@@ -29,6 +30,7 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
     def TypeAnnotationDirectlyOnType: TypeAnnotationPath
 
     type TypeAnnotationPathElement <: AnyRef
+    implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] // TODO: Replace in Scala 3 by `type TypeAnnotationPathElement : ClassTag`
     type TypeAnnotationPathElementsTable = ArraySeq[TypeAnnotationPathElement]
 
     def TypeAnnotationPath(path: TypeAnnotationPathElementsTable): TypeAnnotationPath

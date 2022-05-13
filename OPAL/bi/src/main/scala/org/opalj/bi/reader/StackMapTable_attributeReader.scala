@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Implementation of a template method to read in the StackMapTable attribute.
@@ -22,6 +23,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
     type StackMapTable_attribute >: Null <: Attribute
 
     type StackMapFrame <: AnyRef
+    implicit val stackMapFrameType: ClassTag[StackMapFrame] // TODO: Replace in Scala 3 by `type StackMapFrame : ClassTag`
     type StackMapFrames = ArraySeq[StackMapFrame]
 
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame
@@ -68,5 +70,5 @@ trait StackMapTable_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(StackMapTableAttribute.Name → parserFactory())
+    registerAttributeReader(StackMapTableAttribute.Name -> parserFactory())
 }

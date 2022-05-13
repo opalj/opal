@@ -26,7 +26,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     val r = new Random()
 
-    val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
+    val smallListsGen = for { m <- Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
 
     val frequencies = List(
         (1, Gen.choose(1, 31)),
@@ -71,7 +71,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     property("BitArraySet.apply(value)") = forAll { s: IntArraySet =>
         s.nonEmpty ==> {
             val sIt = s.iterator
-            val firstI = sIt.next
+            val firstI = sIt.next()
             classify(firstI < 32, "first value <= 31") {
                 classify(firstI >= 32 && firstI < 64, "31 < first value < 64") {
                     val bas = sIt.foldLeft(BitArraySet(firstI))(_ + _)
@@ -124,7 +124,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
         val bas = s.foldLeft(BitArraySet.empty)(_ + _)
         val basIt = bas.iterator
         val basIntIt = bas.iterator
-        basIt.forall(v => basIntIt.next == v) :| "the scala iterator iterates over the same values" &&
+        basIt.forall(v => basIntIt.next() == v) :| "the scala iterator iterates over the same values" &&
             basIntIt.isEmpty :| "the scala iterator does not miss any values"
     }
 
@@ -138,7 +138,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     property("- (in reverse order)") = forAll { (s: IntArraySet, other: IntArraySet) =>
         var bas = s.foldLeft(BitArraySet.empty)(_ + _)
         other.forall({ v => bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
-            s.toChain.reverse.forall({ v =>
+            s.toList.reverse.forall({ v =>
                 bas -= v
                 !bas.contains(v)
             }) :| "we successively delete the initial values in reverse order" &&

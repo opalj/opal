@@ -24,7 +24,7 @@ case class MethodParameters_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute method_paramaters">
             <summary class="attribute_name">Method Parameters</summary>
-            <ol>{ parameters.map[Node, Seq[Node]] { p => <li>{ p.toXHTML(cp) }</li> } }</ol>
+            <ol>{ parameters.map[Node] { p => <li>{ p.toXHTML(cp) }</li> } }</ol>
         </details>
     }
 

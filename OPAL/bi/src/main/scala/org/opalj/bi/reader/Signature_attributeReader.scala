@@ -99,5 +99,5 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
         }
     }
 
-    registerAttributeReader(SignatureAttribute.Name → parser)
+    registerAttributeReader(SignatureAttribute.Name -> parser)
 }

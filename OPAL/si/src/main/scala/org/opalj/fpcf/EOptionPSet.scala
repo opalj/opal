@@ -18,7 +18,7 @@ import scala.collection.mutable
  *
  * @author Michael Eichberg
  */
-sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOptionP[E, P]] {
+sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E, P]] {
 
     // The number of times a dependency was added or removed. That is, this number always
     // increases and is used by the property store to detect if an EOptionPSet was actually
@@ -146,7 +146,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
                     case _ =>
                         val eOptionP: EOptionP[NewE, NewP] = ps(e, pk)
                         if (eOptionP.isRefinable) {
-                            eEOptionPs += (eOptionP.e → eOptionP)
+                            eEOptionPs += (eOptionP.e -> eOptionP)
                             epkUpdatesCount += 1
                         }
                         eOptionP
@@ -154,7 +154,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
             case _ =>
                 val eOptionP: EOptionP[NewE, NewP] = ps(e, pk)
                 if (eOptionP.isRefinable) {
-                    data = data + (pkId → mutable.Map(eOptionP.e → eOptionP))
+                    data = data + (pkId -> mutable.Map(eOptionP.e -> eOptionP))
                     epkUpdatesCount += 1
                 }
                 eOptionP
@@ -207,12 +207,12 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def updateAll()(implicit ps: PropertyStore): Unit = {
         data.valuesIterator.foreach { eEOptionPs =>
             eEOptionPs
-                .transform((_, eOptionP) =>
+                .mapValuesInPlace((_, eOptionP) =>
                     if (eOptionP.isEPK)
                         ps(eOptionP.asEPK)
                     else
                         ps(eOptionP.toEPK))
-                .retain((_, eOptionP) =>
+                .filterInPlace((_, eOptionP) =>
                     eOptionP.isRefinable)
         }
         data = data.filter(_._2.nonEmpty)
@@ -225,6 +225,8 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         foreach(e => s += s"\n\t$e")
         s+"\n)"
     }
+
+    override def iterator: Iterator[EOptionP[E, P]] = data.valuesIterator.flatMap(vals => vals.valuesIterator)
 }
 
 object EOptionPSet {
@@ -234,7 +236,7 @@ object EOptionPSet {
     // IMPROVE Provide specialized implementations for sets consisting only of e/p pairs belonging to the same PK
     def apply[E <: Entity, P <: Property](eOptionP: EOptionP[E, P]): EOptionPSet[E, P] = {
         if (eOptionP.isRefinable) {
-            new MultiEOptionPSet(IntMap(eOptionP.pk.id → mutable.Map(eOptionP.e → eOptionP)))
+            new MultiEOptionPSet(IntMap(eOptionP.pk.id -> mutable.Map(eOptionP.e -> eOptionP)))
         } else {
             empty
         }

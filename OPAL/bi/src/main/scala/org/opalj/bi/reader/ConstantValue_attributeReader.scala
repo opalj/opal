@@ -59,5 +59,5 @@ trait ConstantValue_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(ConstantValueAttribute.Name → parserFactory())
+    registerAttributeReader(ConstantValueAttribute.Name -> parserFactory())
 }

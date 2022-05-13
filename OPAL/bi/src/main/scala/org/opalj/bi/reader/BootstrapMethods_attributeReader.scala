@@ -106,5 +106,5 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(BootstrapMethodsAttribute.Name → parserFactory())
+    registerAttributeReader(BootstrapMethodsAttribute.Name -> parserFactory())
 }

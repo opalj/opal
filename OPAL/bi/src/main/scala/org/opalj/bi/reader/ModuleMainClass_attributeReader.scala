@@ -58,5 +58,5 @@ trait ModuleMainClass_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(ModuleMainClassAttribute.Name → parserFactory())
+    registerAttributeReader(ModuleMainClassAttribute.Name -> parserFactory())
 }

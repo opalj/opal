@@ -4,9 +4,9 @@ package org.opalj
 import scala.reflect.ClassTag
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.mutable.RefArrayBuffer
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -203,7 +203,7 @@ package object graphs {
         val PathSegmentSeparator: Null = null
 
         val workstack = new mutable.Stack[N](initialSize = 8)
-        val path = RefArrayBuffer.withInitialSize[N](16)
+        val path = new ArrayBuffer[N](initialSize = 16)
 
         var cSCCs = List.empty[Iterable[N]]
 
@@ -213,14 +213,14 @@ package object graphs {
 
             var initialDFSNum: Int = nextDFSNum
 
-            path._UNSAFE_resetSize()
+            path.clear()
 
             workstack.clear()
             workstack.push(initialN)
 
             def markPathAsProcessed(): Unit = {
                 path.foreach(n => setDFSNum(n, ProcessedNodeNum))
-                path._UNSAFE_resetSize()
+                path.clear()
             }
             def addToPath(n: N): Unit = {
                 if (path.isEmpty) {
@@ -251,7 +251,7 @@ package object graphs {
                             // This is the trivial case... obviously the end of the path is a
                             // closed SCC.
                             // ALTERNATIVE: val cSCC = path.dropWhile(n => dfsNum(n) != cSCCDFSNum)
-                            val cSCC = path.slice(from = cSCCDFSNum - initialDFSNum)
+                            val cSCC = path.slice(from = cSCCDFSNum - initialDFSNum, until = path.length)
                             cSCCs ::= cSCC
                             markPathAsProcessed()
                         } else {
@@ -260,13 +260,13 @@ package object graphs {
                             // ALTERNATIVE CHECK:
                             //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
-                                path.iterator(from = cSCCDFSNum - initialDFSNum).forall(n =>
+                                path.iterator.slice(from = cSCCDFSNum - initialDFSNum, until = path.length).forall(n =>
                                     // ... for all cSCCandidates
                                     es(n).forall(succN =>
                                         hasDFSNum(succN) &&
                                             dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications
                                     ))) {
-                                cSCCs ::= path.slice(from = cSCCDFSNum - initialDFSNum)
+                                cSCCs ::= path.slice(from = cSCCDFSNum - initialDFSNum, until = path.length)
                                 markPathAsProcessed()
                             }
                         }

@@ -1,5 +1,17 @@
 # Changes
 
+Scala 2.13 changes
+- Replace unicode arrows (⇒,→,←) by ascii arrows (=>,->,<-)
+- Replace Traversable by scala.collection.Iterable
+- Replace TraversableOnce by scala.collection.IterableOnce
+- Changes to OPAL's custom data structures:
+  - Replace RefIterator by scala.collection.iterator
+  - Replace Chain by scala.collection.immutable.List
+  - Replace RefArray and IntArray by scala.collection.immutable.ArraySeq
+  - Replace RefArrayStack by scala.collection.immutable.Stack
+  - Replace RefAppendChain by scala.collection.mutable.ArrayDeque
+  - Replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+
 ## 4.0.0 - Released May 7th 2021
 
 - *we are now using Scala 2.12.13*

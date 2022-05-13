@@ -129,7 +129,7 @@ package object fpcf {
     /**
      * The result of a computation if the computation derives multiple properties at the same time.
      */
-    final type ComputationResults = TraversableOnce[SomeFinalEP]
+    final type ComputationResults = IterableOnce[SomeFinalEP]
 
     private[fpcf] final val AnalysisKeyName = "<internal>opalj.PartialResultUpdateComputation"
 

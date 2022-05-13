@@ -27,7 +27,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     val r = new java.util.Random()
 
-    val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
+    val smallListsGen = for { m <- Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
 
     implicit val arbIntArraySet: Arbitrary[IntArraySet] = Arbitrary {
         Gen.sized { l =>
@@ -201,7 +201,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     }
 
     property("transform") = forAll { s: IntTrieSet =>
-        val its = s.transform(_ * 2, Chain.newBuilder[Int]).toIterator.toList.sorted
+        val its = s.transform(_ * 2, List.newBuilder[Int]).iterator.toList.sorted
         its == s.map(_ * 2).iterator.toList.sorted
     }
 
@@ -226,18 +226,18 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("toChain") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
-        its.toChain.toIterator.toList.sorted == s.iterator.toList.sorted
+        its.toList.iterator.toList.sorted == s.iterator.toList.sorted
     }
 
     property("headAndTail") = forAll { s: IntArraySet =>
         var its = EmptyIntTrieSet ++ s.iterator
-        var removed = Chain.empty[Int]
+        var removed = List.empty[Int]
         while (its.nonEmpty) {
             val IntRefPair(v, newIts) = its.headAndTail
-            removed :&:= v
+            removed ::= v
             its = newIts
         }
-        (removed.toIterator.toSet.size == s.size) :| "no value is returned more than once" &&
+        (removed.iterator.toSet.size == s.size) :| "no value is returned more than once" &&
             (removed.size == s.size) :| "all values are returned"
     }
 
@@ -711,10 +711,10 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
 
     describe("map using array") {
         it("should be able to map IntTrieSets where the values are shifted (partial overlap)") {
-            for (length ← 0 to 50) {
+            for (length <- 0 to 50) {
                 val isb = new IntTrieSetBuilder
                 val a = new Array[Int](length + 5)
-                for (index ← 0 until length) {
+                for (index <- 0 until length) {
                     a(index) = index + 5
                     isb += index
                 }
@@ -736,10 +736,10 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to map IntTrieSets to the same values (identity mapping)") {
-            for (length ← 0 to 50) {
+            for (length <- 0 to 50) {
                 val isb = new IntTrieSetBuilder
                 val a = new Array[Int](length + 5)
-                for (index ← 0 to length) {
+                for (index <- 0 to length) {
                     a(index) = index
                     isb += index
                 }
@@ -751,10 +751,10 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to map IntTrieSets to new values ") {
-            for (length ← 0 to 15) {
+            for (length <- 0 to 15) {
                 val isb = new IntTrieSetBuilder
                 val a = new Array[Int](length + 50)
-                for (index ← 0 until length) {
+                for (index <- 0 until length) {
                     a(index) = index + 20
                     isb += index
                 }
@@ -783,7 +783,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var opalS = org.opalj.collection.immutable.IntTrieSet.empty
-                    for { i ← 0 to 1000000 } {
+                    for { i <- 0 to 1000000 } {
                         val v = rngGen.nextInt()
                         opalS += v
                     }
@@ -796,7 +796,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var scalaS = Set.empty[Int]
-                    for { i ← 0 to 1000000 } {
+                    for { i <- 0 to 1000000 } {
                         val v = rngGen.nextInt()
                         scalaS += v
                     }
@@ -806,12 +806,12 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
 
             var opalTotal = 0L
             PerformanceEvaluation.time {
-                for { v ← opalS } { opalTotal += v }
+                for { v <- opalS } { opalTotal += v }
             } { t => info(s"OPAL ${t.toSeconds} for foreach") }
 
             var scalaTotal = 0L
             PerformanceEvaluation.time {
-                for { v ← scalaS } { scalaTotal += v }
+                for { v <- scalaS } { scalaTotal += v }
             } { t => info(s"Scala ${t.toSeconds} for foreach") }
 
             assert(opalTotal == scalaTotal)
@@ -824,15 +824,15 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3 } rngGen.nextInt();
-            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
-            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
+            for { i <- 1 to 3 } rngGen.nextInt();
+            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
+            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000000 } {
+                for { runs <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to rngGen.nextInt(8) } {
+                    for { i <- 0 to rngGen.nextInt(8) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -849,15 +849,15 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3 } rngGen.nextInt();
-            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
-            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
+            for { i <- 1 to 3 } rngGen.nextInt();
+            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
+            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000000 } {
+                for { runs <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to 8 + rngGen.nextInt(8) } {
+                    for { i <- 0 to 8 + rngGen.nextInt(8) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -874,15 +874,15 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 16 } rngGen.nextInt();
-            val setValues = (for { i ← 1 to 10000 } yield Math.abs(rngGen.nextInt())).toArray
-            val queryValues = (for { i ← 1 to 10000 } yield Math.abs(rngQuery.nextInt())).toArray
+            for { i <- 1 to 16 } rngGen.nextInt();
+            val setValues = (for { i <- 1 to 10000 } yield Math.abs(rngGen.nextInt())).toArray
+            val queryValues = (for { i <- 1 to 10000 } yield Math.abs(rngQuery.nextInt())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 1000000 } {
+                for { runs <- 0 until 1000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to 16 + rngGen.nextInt(16) } {
+                    for { i <- 0 to 16 + rngGen.nextInt(16) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -897,17 +897,17 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3333 } rngGen.nextInt();
-            val setValues = (for { i ← 1 to 10000 } yield rngGen.nextInt()).toArray
-            val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextInt()).toArray
+            for { i <- 1 to 3333 } rngGen.nextInt();
+            val setValues = (for { i <- 1 to 10000 } yield rngGen.nextInt()).toArray
+            val queryValues = (for { i <- 1 to 10000 } yield rngQuery.nextInt()).toArray
 
             var sizeOfAllSets: Int = 0
             var largestSet: Int = 0
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000 } {
+                for { runs <- 0 until 10000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
                     var hits = 0
-                    for { i ← 1 to runs } {
+                    for { i <- 1 to runs } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -923,10 +923,10 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
 
             val allSets = PerformanceEvaluation.memory {
                 for {
-                    set ← 0 until 2500
+                    set <- 0 until 2500
                 } yield {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
-                    for { i ← 0 to 10000 } {
+                    for { i <- 0 to 10000 } {
                         s += rngGen.nextInt()
                     }
                     s
@@ -935,7 +935,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
 
             var total = 0L
             PerformanceEvaluation.time {
-                for { set ← allSets; v ← set } {
+                for { set <- allSets; v <- set } {
                     total += v
                 }
             } { t => info(s"${t.toSeconds} for foreach") }

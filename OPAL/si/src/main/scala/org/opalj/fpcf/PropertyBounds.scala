@@ -42,10 +42,10 @@ object PropertyBounds {
 
     def apply(pbt: PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
         pbt match {
-            case LBProperties    => lbs(pks: _*)
-            case UBProperties    => ubs(pks: _*)
-            case LUBProperties   => lubs(pks: _*)
-            case FinalProperties => finalPs(pks: _*)
+            case LBProperties    => lbs(pks)
+            case UBProperties    => ubs(pks)
+            case LUBProperties   => lubs(pks)
+            case FinalProperties => finalPs(pks)
         }
     }
 
@@ -65,7 +65,7 @@ object PropertyBounds {
         }
     }
 
-    def finalPs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(finalP).toSet
+    def finalPs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(finalP).toSet
 
     def lub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -74,7 +74,7 @@ object PropertyBounds {
         }
     }
 
-    def lubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lub).toSet
+    def lubs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(lub).toSet
 
     def lb(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -83,7 +83,7 @@ object PropertyBounds {
         }
     }
 
-    def lbs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lb).toSet
+    def lbs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(lb).toSet
 
     def ub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -92,6 +92,6 @@ object PropertyBounds {
         }
     }
 
-    def ubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(ub).toSet
+    def ubs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(ub).toSet
 
 }

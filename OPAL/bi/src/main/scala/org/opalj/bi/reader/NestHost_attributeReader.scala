@@ -62,5 +62,5 @@ trait NestHost_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(NestHostAttribute.Name → parserFactory())
+    registerAttributeReader(NestHostAttribute.Name -> parserFactory())
 }

@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
@@ -20,6 +21,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     type LineNumberTable_attribute >: Null <: Attribute
 
     type LineNumberTableEntry <: AnyRef
+    implicit val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] // TODO: Replace in Scala 3 by `type LineNumberTableEntry : ClassTag`
     type LineNumbers = ArraySeq[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
@@ -72,5 +74,5 @@ trait LineNumberTable_attributeReader extends AttributeReader {
             null
     }
 
-    registerAttributeReader(LineNumberTableAttribute.Name → parserFactory())
+    registerAttributeReader(LineNumberTableAttribute.Name -> parserFactory())
 }

@@ -47,5 +47,5 @@ trait Synthetic_attributeReader extends AttributeReader {
         Synthetic_attribute(cp, ap_name_index, ap_descriptor_index, attribute_name_index)
     }
 
-    registerAttributeReader(SyntheticAttribute.Name → parserFactory())
+    registerAttributeReader(SyntheticAttribute.Name -> parserFactory())
 }

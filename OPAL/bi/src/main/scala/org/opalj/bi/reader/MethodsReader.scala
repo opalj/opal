@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Defines a template method to read in a class file's Method_info structure.
@@ -18,6 +19,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
     //
 
     type Method_Info <: AnyRef
+    implicit val methodInfoType: ClassTag[Method_Info] // TODO: Replace in Scala 3 by `type Method_Info : ClassTag`
     type Methods = ArraySeq[Method_Info]
 
     type Attributes

@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for type annotations. This reader is intended to be used in conjunction with the
@@ -21,6 +22,7 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
     //
 
     type TypeAnnotation <: AnyRef
+    implicit val typeAnnotationType: ClassTag[TypeAnnotation] // TODO: Replace in Scala 3 by `type TypeAnnotation : ClassTag`
     type TypeAnnotations = ArraySeq[TypeAnnotation]
 
     type TypeAnnotationTarget <: AnyRef
