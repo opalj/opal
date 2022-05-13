@@ -3,7 +3,6 @@ package org.opalj
 package br
 package instructions
 
-
 trait AlwaysSucceedingStackBasedBinaryArithmeticInstruction
     extends StackBasedBinaryArithmeticInstruction {
 

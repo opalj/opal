@@ -27,7 +27,7 @@ trait NestMembers_attributeBinding
         classes_array:        ClassesArray // CONSTANT_Class_info[]
     ): NestMembers_attribute = {
         new NestMembers(
-          ArraySeq.from(classes_array).map{ p => cp(p).asObjectType(cp) }
+            ArraySeq.from(classes_array).map { p => cp(p).asObjectType(cp) }
         )
     }
 

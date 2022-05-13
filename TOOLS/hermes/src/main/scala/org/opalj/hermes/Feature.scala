@@ -33,7 +33,7 @@ object Feature {
 
     def apply[S](
         id:         String,
-        count:      Int                = 0,
+        count:      Int               = 0,
         extensions: List[Location[S]] = List.empty
     )(
         implicit

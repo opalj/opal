@@ -65,7 +65,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
         if (nextInstruction == jumpInstruction)
             List(nextInstruction)
         else
-            List(nextInstruction,jumpInstruction)
+            List(nextInstruction, jumpInstruction)
     }
 
     override def toString(currentPC: Int): String = {

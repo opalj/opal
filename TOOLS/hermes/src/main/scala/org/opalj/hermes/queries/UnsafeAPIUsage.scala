@@ -26,19 +26,19 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
         val Unsafe = ObjectType("sun/misc/Unsafe")
 
-      List(
+        List(
 
             StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "allocateInstance")
                 ),
                 "Unsafe - Alloc"
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "arrayIndexScale"),
                     InstanceAPIMethod(Unsafe, "arrayBaseOffset")
                 ),
@@ -46,7 +46,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "compareAndSwapObject"),
                     InstanceAPIMethod(Unsafe, "compareAndSwapInt"),
                     InstanceAPIMethod(Unsafe, "compareAndSwapLong")
@@ -55,7 +55,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "shouldBeInitialized"),
                     InstanceAPIMethod(Unsafe, "defineAnonymousClass"),
                     InstanceAPIMethod(Unsafe, "ensureClassInitialized"),
@@ -65,7 +65,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "loadFence"),
                     InstanceAPIMethod(Unsafe, "storeFence"),
                     InstanceAPIMethod(Unsafe, "fullFence")
@@ -74,7 +74,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "getAndSetObject"),
                     InstanceAPIMethod(Unsafe, "getAndSetLong"),
                     InstanceAPIMethod(Unsafe, "getAndSetInt"),
@@ -85,7 +85,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "setMemory"),
                     InstanceAPIMethod(Unsafe, "copyMemory")
                 ),
@@ -93,7 +93,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "getByte"),
                     InstanceAPIMethod(Unsafe, "getShort"),
                     InstanceAPIMethod(Unsafe, "getChar"),
@@ -108,7 +108,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "putByte"),
                     InstanceAPIMethod(Unsafe, "putShort"),
                     InstanceAPIMethod(Unsafe, "putChar"),
@@ -125,7 +125,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             APIFeatureGroup(List(InstanceAPIMethod(Unsafe, "getLoadAverage")), "Misc"),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "tryMonitorEnter"),
                     InstanceAPIMethod(Unsafe, "monitorExit"),
                     InstanceAPIMethod(Unsafe, "monitorEnter")
@@ -134,7 +134,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "setMemory"),
                     InstanceAPIMethod(Unsafe, "reallocateMemory"),
                     InstanceAPIMethod(Unsafe, "putAddress"),
@@ -148,7 +148,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "fieldOffset"),
                     InstanceAPIMethod(Unsafe, "staticFieldOffset"),
                     InstanceAPIMethod(Unsafe, "staticFieldBase"),
@@ -158,7 +158,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "putOrderedObject"),
                     InstanceAPIMethod(Unsafe, "putOrderedLong"),
                     InstanceAPIMethod(Unsafe, "putOrderedInt")
@@ -167,7 +167,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "park"),
                     InstanceAPIMethod(Unsafe, "unpark")
                 ),
@@ -177,7 +177,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             APIFeatureGroup(List(InstanceAPIMethod(Unsafe, "throwException")), "Unsafe - Throw"),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "getByteVolatile"),
                     InstanceAPIMethod(Unsafe, "getShortVolatile"),
                     InstanceAPIMethod(Unsafe, "getCharVolatile"),
@@ -192,7 +192,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Unsafe, "putByteVolatile"),
                     InstanceAPIMethod(Unsafe, "putShortVolatile"),
                     InstanceAPIMethod(Unsafe, "putCharVolatile"),

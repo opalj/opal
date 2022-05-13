@@ -24,7 +24,7 @@ class ModernReflection(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: List[APIFeature] = {
 
-      List(
+        List(
             InstanceAPIMethod(
                 Lookup, "findStatic", featureID = "TMR1.1"
             ),

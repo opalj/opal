@@ -116,7 +116,7 @@ package object br {
     val FieldTypes: ArraySeq.type = ArraySeq
     final def NoFieldTypes: FieldTypes = ArraySeq.empty
     final def newFieldTypesBuilder(): Builder[FieldType, ArraySeq[FieldType]] = {
-      ArraySeq.newBuilder[FieldType]
+        ArraySeq.newBuilder[FieldType]
     }
 
     type Packages = ArraySeq[String]

@@ -23,12 +23,12 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
         val constructor = "<init>"
 
-      List(
+        List(
 
             // PROCESS
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Object, "notify"),
                     InstanceAPIMethod(Object, "notifyAll"),
                     InstanceAPIMethod(Object, "wait")
@@ -37,7 +37,7 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Thread, constructor),
                     InstanceAPIMethod(Thread, "interrupt"),
                     InstanceAPIMethod(Thread, "join"),
@@ -54,7 +54,7 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(ThreadGroup, constructor),
                     InstanceAPIMethod(ThreadGroup, "destroy"),
                     InstanceAPIMethod(ThreadGroup, "interrupt"),

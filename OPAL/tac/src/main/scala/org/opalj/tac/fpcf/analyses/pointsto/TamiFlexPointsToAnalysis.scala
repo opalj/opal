@@ -109,7 +109,7 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
                     ObjectType.Array, "", ObjectType.Array,
                     "newInstance",
                     MethodDescriptor(
-                      ArraySeq(ObjectType.Class, ArrayType(IntegerType)), ObjectType.Object
+                        ArraySeq(ObjectType.Class, ArrayType(IntegerType)), ObjectType.Object
                     )
                 ),
                 "Array.newInstance"

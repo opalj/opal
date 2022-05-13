@@ -52,7 +52,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     ObjectType.Method,
                     "invoke",
                     MethodDescriptor.apply(
-                      ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
+                        ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
                     )
                 ),
                 "Method.invoke"

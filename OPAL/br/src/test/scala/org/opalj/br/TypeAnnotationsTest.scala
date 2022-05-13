@@ -32,7 +32,7 @@ class TypeAnnotationsTest extends AnyFlatSpec with Matchers {
                 TAOfSupertype(1),
                 TADirectlyOnType,
                 aTA,
-              ArraySeq(ElementValuePair("value", StringValue("superinterface")))
+                ArraySeq(ElementValuePair("value", StringValue("superinterface")))
             )
         )
     }
@@ -44,7 +44,7 @@ class TypeAnnotationsTest extends AnyFlatSpec with Matchers {
                 TAOfSupertype(0),
                 TAOnNestedType(ArraySeq(TAOnTypeArgument(0))),
                 aTA,
-              ArraySeq.empty
+                ArraySeq.empty
             )
         )
     }

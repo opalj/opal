@@ -305,7 +305,7 @@ object CodeAttributeBuilder {
                 var operands = r.operandsArray(pc)
                 var operandIndex = operands.size
                 if (operandIndex == 0) {
-                  ArraySeq.empty // an empty stack is a VERY common case...
+                    ArraySeq.empty // an empty stack is a VERY common case...
                 } else {
                     val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
@@ -314,7 +314,7 @@ object CodeAttributeBuilder {
                         operands = operands.tail
                         operandIndex -= 1
                     } while (operandIndex >= 0)
-                  ArraySeq.unsafeWrapArray[VerificationTypeInfo](os)
+                    ArraySeq.unsafeWrapArray[VerificationTypeInfo](os)
                 }
             }
 

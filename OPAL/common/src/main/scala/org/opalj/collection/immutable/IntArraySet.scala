@@ -205,7 +205,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(z, i1), i2)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2)
 
-    override def toList: List[Int] = List(i1,i2)
+    override def toList: List[Int] = List(i1, i2)
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -322,7 +322,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(f(z, i1), i2), i3)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2) && f(i3)
 
-    override def toList: List[Int] = List(i1,i2, i3)
+    override def toList: List[Int] = List(i1, i2, i3)
 
     override def equals(other: Any): Boolean = {
         other match {

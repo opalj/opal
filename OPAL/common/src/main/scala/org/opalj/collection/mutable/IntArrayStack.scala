@@ -41,7 +41,6 @@ final class IntArrayStack private (
     override def fromSpecific(coll: IterableOnce[Int]): IntArrayStack = IntArrayStack.fromSpecific(coll)
     override protected def newSpecificBuilder: mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
 
-
     override def update(index: Int, v: Int): Unit = data(size0 - 1 - index) = v
 
     override def reverse: IntArrayStack = {
@@ -205,8 +204,6 @@ final class IntArrayStack private (
     }
 }
 
-
-
 /**
  * Factory to create [[IntArrayStack]]s.
  */
@@ -224,11 +221,11 @@ object IntArrayStack extends SpecificIterableFactory[Int, IntArrayStack] {
     override def empty: IntArrayStack = new IntArrayStack
 
     override def fromSpecific(it: IterableOnce[Int]): IntArrayStack = {
-      val builder = newBuilder
-      val iterator = it.iterator
-      while (iterator.hasNext)
-        builder.addOne(iterator.next())
-      builder.result()
+        val builder = newBuilder
+        val iterator = it.iterator
+        while (iterator.hasNext)
+            builder.addOne(iterator.next())
+        builder.result()
     }
 
     override def newBuilder =

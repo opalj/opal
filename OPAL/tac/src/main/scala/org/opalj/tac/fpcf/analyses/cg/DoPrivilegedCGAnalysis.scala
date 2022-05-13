@@ -200,7 +200,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-              ArraySeq(privilegedActionType, accessControlContextType),
+                ArraySeq(privilegedActionType, accessControlContextType),
                 ObjectType.Object
             )
         )
@@ -213,7 +213,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-              ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )

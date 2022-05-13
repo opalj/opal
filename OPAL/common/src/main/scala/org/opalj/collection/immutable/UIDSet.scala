@@ -1070,7 +1070,6 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
 
 }
 
-
 object UIDSet {
 
     class UIDSetBuilder[T <: UID](var set: UIDSet[T]) extends Builder[T, UIDSet[T]] {
@@ -1087,11 +1086,11 @@ object UIDSet {
     def empty[T <: UID]: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
 
     def fromSpecific[T <: UID](it: IterableOnce[T]): UIDSet[T] = {
-      val builder = newBuilder[T]
-      val iterator = it.iterator
-      while (iterator.hasNext)
-        builder.addOne(iterator.next())
-      return builder.result()
+        val builder = newBuilder[T]
+        val iterator = it.iterator
+        while (iterator.hasNext)
+            builder.addOne(iterator.next())
+        return builder.result()
     }
 
     def apply[T <: UID](vs: T*): UIDSet[T] = {

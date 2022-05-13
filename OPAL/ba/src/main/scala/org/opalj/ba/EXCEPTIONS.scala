@@ -19,7 +19,7 @@ case class EXCEPTIONS(exceptionTypes: String*) extends br.MethodAttributeBuilder
         descriptor:  br.MethodDescriptor
     ): br.ExceptionTable = {
         br.ExceptionTable(
-          ArraySeq.from(exceptionTypes.toArray[String]).map(ObjectType.apply)
+            ArraySeq.from(exceptionTypes.toArray[String]).map(ObjectType.apply)
         )
     }
 

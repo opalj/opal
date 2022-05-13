@@ -270,7 +270,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                 oldDefOps:     List[ValueOrigins],
                 lDefOps:       List[ValueOrigins],
                 rDefOps:       List[ValueOrigins],
-                oldIsSuperset: Boolean                    = true,
+                oldIsSuperset: Boolean                                           = true,
                 joinedDefOps:  mutable.Builder[ValueOrigins, List[ValueOrigins]] = List.newBuilder[ValueOrigins]
             ): List[ValueOrigins] = {
                 if (lDefOps.isEmpty) {
@@ -541,7 +541,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
         operandsArray: OperandsArray
     ): Boolean = {
         val currentDefOps = defOps(currentPC)
-        currentDefOps.take(usedValues).map{ op => updateUsageInformation(op, currentPC) }
+        currentDefOps.take(usedValues).map { op => updateUsageInformation(op, currentPC) }
 
         val newDefOps: List[ValueOrigins] =
             if (isExceptionalControlFlow) {

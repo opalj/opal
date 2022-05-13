@@ -29,7 +29,7 @@ class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             InstanceAPIMethod(Connection, "rollback"),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Connection, "createStatement"),
                     InstanceAPIMethod(Statement, "execute"),
                     InstanceAPIMethod(Statement, "executeQuery"),
@@ -39,7 +39,7 @@ class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Connection, "prepareStatement"),
                     InstanceAPIMethod(PreparedStatement, "execute"),
                     InstanceAPIMethod(PreparedStatement, "executeQuery"),
@@ -49,7 +49,7 @@ class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Connection, "prepareCall"),
                     InstanceAPIMethod(CallableStatement, "execute"),
                     InstanceAPIMethod(CallableStatement, "executeQuery"),

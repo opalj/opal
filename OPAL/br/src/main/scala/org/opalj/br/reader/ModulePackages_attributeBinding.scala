@@ -27,7 +27,7 @@ trait ModulePackages_attributeBinding
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
         new ModulePackages(
-          ArraySeq.from(package_index_table).map{ p => cp(p).asPackageIdentifier(cp) }
+            ArraySeq.from(package_index_table).map { p => cp(p).asPackageIdentifier(cp) }
         )
     }
 

@@ -24,7 +24,7 @@ class Unsafe(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
         val Unsafe = ObjectType("sun/misc/Unsafe")
 
-      List(
+        List(
             InstanceAPIMethod(Unsafe, "compareAndSwapObject", featureID = "Unsafe1"),
             InstanceAPIMethod(Unsafe, "putObject", featureID = "Unsafe2"),
             InstanceAPIMethod(Unsafe, "getObject", featureID = "Unsafe3"),

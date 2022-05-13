@@ -56,11 +56,11 @@ class PackageTest extends AnyFlatSpec with Matchers {
     it should ("be able to map a list with three different operands") in {
         import SimpleCoordinatingTypeLevelDomain._
         val operands: List[DomainValue] =
-          List(
-            IntegerValue(valueOrigin = -1),
-              FloatValue(valueOrigin = -2),
-              DoubleValue(valueOrigin = -3)
-          )
+            List(
+                IntegerValue(valueOrigin = -1),
+                FloatValue(valueOrigin = -2),
+                DoubleValue(valueOrigin = -3)
+            )
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result(0) should be(IntegerValue(valueOrigin = -1))
@@ -72,12 +72,11 @@ class PackageTest extends AnyFlatSpec with Matchers {
         import SimpleCoordinatingTypeLevelDomain._
         val firstOperand = IntegerValue(valueOrigin = -1)
         val operands: List[DomainValue] =
-          List(
-            firstOperand,
-            firstOperand,
-            DoubleValue(valueOrigin = -3)
-          )
-
+            List(
+                firstOperand,
+                firstOperand,
+                DoubleValue(valueOrigin = -3)
+            )
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result(0) should be(IntegerValue(valueOrigin = -1))
@@ -91,9 +90,9 @@ class PackageTest extends AnyFlatSpec with Matchers {
         val lastOperand = IntegerValue(valueOrigin = -2)
         val operands: List[DomainValue] =
             List(
-              DoubleValue(valueOrigin = -1),
-              lastOperand,
-              lastOperand,
+                DoubleValue(valueOrigin = -1),
+                lastOperand,
+                lastOperand,
             )
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)

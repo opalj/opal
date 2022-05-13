@@ -75,10 +75,10 @@ package object graphs {
      */
     def toDot(
         rootNodes: Iterable[_ <: Node],
-        dir:       String                 = "forward",
-        ranksep:   String                 = "0.8",
-        fontname:  String                 = "Helvetica",
-        rankdir:   String                 = "TB"
+        dir:       String              = "forward",
+        ranksep:   String              = "0.8",
+        fontname:  String              = "Helvetica",
+        rankdir:   String              = "TB"
     ): String = {
         var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]

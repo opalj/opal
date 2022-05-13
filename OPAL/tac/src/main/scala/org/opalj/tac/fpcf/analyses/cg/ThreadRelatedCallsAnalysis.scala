@@ -612,7 +612,7 @@ object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSchedul
 
     private[cg] val uncaughtExceptionDescriptor = {
         MethodDescriptor(
-          ArraySeq(ObjectType.Thread, ObjectType.Throwable), VoidType
+            ArraySeq(ObjectType.Thread, ObjectType.Throwable), VoidType
         )
     }
 }

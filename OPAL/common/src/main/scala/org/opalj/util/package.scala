@@ -32,7 +32,7 @@ package object util {
     }
 
     def avg(ts: IterableOnce[Nanoseconds]): Nanoseconds = {
-      val iterator = ts.iterator
+        val iterator = ts.iterator
         if (iterator.isEmpty)
             return Nanoseconds.None;
 

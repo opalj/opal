@@ -18,7 +18,7 @@ class DynamicProxy(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: List[APIFeature] = {
 
-      List(
+        List(
             StaticAPIMethod(
                 ObjectType("java/lang/reflect/Proxy"), "newProxyInstance", featureID = "DP1"
             )

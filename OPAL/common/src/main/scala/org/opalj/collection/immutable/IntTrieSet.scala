@@ -389,7 +389,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(z, i1), i2)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2)
 
-    override def toList: List[Int] = List(i1,i2)
+    override def toList: List[Int] = List(i1, i2)
 
     override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
         other.size match {
@@ -501,7 +501,7 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     override def exists(p: Int => Boolean): Boolean = p(i1) || p(i2) || p(i3)
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(f(z, i1), i2), i3)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2) && f(i3)
-    override def toList: List[Int] = List(i1,i2,i3)
+    override def toList: List[Int] = List(i1, i2, i3)
 
     override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
         other.size match {

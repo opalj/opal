@@ -84,7 +84,7 @@ object SpecialMethodsHandling {
 
     final val SystemArraycopyDescriptor = {
         MethodDescriptor(
-          ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+            ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     }

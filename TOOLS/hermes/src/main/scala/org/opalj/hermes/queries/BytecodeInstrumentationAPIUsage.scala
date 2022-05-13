@@ -19,9 +19,9 @@ class BytecodeInstrumentationAPIUsage(implicit hermes: HermesConfig) extends API
     override def apiFeatures: List[APIFeature] = {
         val Instrumentation = ObjectType("java/lang/instrument/Instrumentation")
 
-      List(
+        List(
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Instrumentation, "retransformClasses"),
                     InstanceAPIMethod(Instrumentation, "addTransformer"),
                     InstanceAPIMethod(Instrumentation, "isModifiableClass"),
@@ -32,21 +32,21 @@ class BytecodeInstrumentationAPIUsage(implicit hermes: HermesConfig) extends API
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Instrumentation, "setNativeMethodPrefix"),
                     InstanceAPIMethod(Instrumentation, "isNativeMethodPrefixSupported")
                 ), "instrumenting native methods"
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Instrumentation, "appendToBootstrapClassLoaderSearch"),
                     InstanceAPIMethod(Instrumentation, "appendToSystemClassLoaderSearch")
                 ), "appending class loader search"
             ),
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Instrumentation, "getAllLoadedClasses"),
                     InstanceAPIMethod(Instrumentation, "getInitiatedClasses"),
                     InstanceAPIMethod(Instrumentation, "getObjectSize")

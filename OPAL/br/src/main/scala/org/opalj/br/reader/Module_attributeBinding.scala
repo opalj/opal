@@ -54,7 +54,7 @@ trait Module_attributeBinding
             requires,
             exports,
             opens,
-          ArraySeq.from(uses).map(cp(_).asObjectType(cp)),
+            ArraySeq.from(uses).map(cp(_).asObjectType(cp)),
             provides
         )
     }

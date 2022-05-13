@@ -486,7 +486,7 @@ final class ClassFile private (
                             ))
                     .map[ObjectType](_.innerClassType)
             }.getOrElse {
-              ArraySeq.empty
+                ArraySeq.empty
             }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED

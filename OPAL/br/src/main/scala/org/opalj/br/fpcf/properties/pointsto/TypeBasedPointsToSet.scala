@@ -71,7 +71,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.take(other.numElements - seenElements).map{ t =>
+        other.orderedTypes.take(other.numElements - seenElements).map { t =>
             if (!types.contains(t)) {
                 newOrderedTypes ::= t
                 typesUnion += t
@@ -110,7 +110,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.take(other.numElements - seenElements).map{ t =>
+        other.orderedTypes.take(other.numElements - seenElements).map { t =>
             if (typeFilter(t) && !types.contains(t)) {
                 newOrderedTypes ::= t
                 typesUnion += t

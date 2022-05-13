@@ -48,12 +48,12 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
         val System = ObjectType("java/lang/System")
         val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
 
-      List(
+        List(
 
             // PROCESS
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Runtime, "exec"),
                     InstanceAPIMethod(ProcessBuilder, "start")
                 ),
@@ -63,7 +63,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // JVM EXIT
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Runtime, "exit"),
                     InstanceAPIMethod(Runtime, "halt"),
                     StaticAPIMethod(System, "exit")
@@ -74,7 +74,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // NATIVE LIBRARIES
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Runtime, "load"),
                     InstanceAPIMethod(Runtime, "loadLibrary"),
                     StaticAPIMethod(System, "load"),
@@ -91,7 +91,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // ENV
 
             APIFeatureGroup(
-              List(
+                List(
                     StaticAPIMethod(System, "getenv")
                 ),
                 "Environment"
@@ -100,7 +100,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // SOUND
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Sound.Clip, "start"),
                     InstanceAPIMethod(Sound.DataLine, "start"),
                     InstanceAPIMethod(Sound.TargetDataLine, "start"),
@@ -112,7 +112,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // NETWORK
 
             APIFeatureGroup(
-              List(
+                List(
                     InstanceAPIMethod(Network.Socket, constructor),
                     InstanceAPIMethod(Network.ServerSocket, constructor),
                     InstanceAPIMethod(Network.DatagramSocket, constructor),

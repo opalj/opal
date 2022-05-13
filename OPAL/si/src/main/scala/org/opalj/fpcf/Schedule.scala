@@ -30,7 +30,7 @@ case class Schedule[A](
      */
     def apply(
         ps:                   PropertyStore,
-        trace:                Boolean                                    = false,
+        trace:                Boolean                                   = false,
         afterPhaseSetup:      PropertyKindsConfiguration => Unit = _ => (),
         afterPhaseScheduling: List[ComputationSpecification[A]] => Unit = _ => ()
     ): List[(ComputationSpecification[A], A)] = {

@@ -20,9 +20,9 @@ class LineNumberTableBuilder {
 
     def result(): ArraySeq[br.UnpackedLineNumberTable] = {
         if (lineNumbers.nonEmpty) {
-          ArraySeq(br.UnpackedLineNumberTable(lineNumbers))
+            ArraySeq(br.UnpackedLineNumberTable(lineNumbers))
         } else {
-          ArraySeq.empty
+            ArraySeq.empty
         }
     }
 }

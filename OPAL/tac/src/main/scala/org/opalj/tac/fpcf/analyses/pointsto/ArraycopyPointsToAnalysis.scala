@@ -46,7 +46,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
         ObjectType.System, "", ObjectType.System,
         "arraycopy",
         MethodDescriptor(
-          ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+            ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     )
