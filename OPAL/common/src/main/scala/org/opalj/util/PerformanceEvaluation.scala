@@ -276,10 +276,12 @@ object PerformanceEvaluation {
         r: (Nanoseconds, Seq[Nanoseconds]) => Unit
     ): T = {
 
+      try {
         require(minimalNumberOfRelevantRuns >= 3)
+
         require(
-            consideredRunsEpsilon > epsilon,
-            s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
+          consideredRunsEpsilon > epsilon,
+          s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
         )
 
         var result: T = 0.asInstanceOf[T]
@@ -291,45 +293,52 @@ object PerformanceEvaluation {
         var times = List.empty[Nanoseconds]
         if (runGC) gc()
         time { result = f } { t =>
-            times = t :: times
-            if (t.timeSpan <= 999 /*ns*/ ) {
-                r(t, times)
-                OPALLogger.warn(
-                    "common",
-                    s"the time required by the function (${t.toString}) "+
-                        "is too small to get meaningful measurements."
-                )(GlobalLogContext)
+          times = t :: times
+          if (t.timeSpan <= 999 /*ns*/ ) {
+            r(t, times)
+            OPALLogger.warn(
+              "common",
+              s"the time required by the function (${t.toString}) "+
+                "is too small to get meaningful measurements."
+            )(GlobalLogContext)
 
-                return result;
-            }
+            // Non local-returns will be deprecated in Scala 3
+            // Replace this by scala.util.control.NonLocalReturns in Scala 3
+            throw Return[T](result)
+          }
         }
         var avg: Double = times.head.timeSpan.toDouble
         do {
-            if (runGC) gc()
-            time {
-                result = f
-            } { t =>
-                if (t.timeSpan <= avg * filterE) {
-                    // let's throw away all runs that are significantly slower than the last run
-                    times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
-                    avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
-                    runsSinceLastUpdate = 0
-                } else {
-                    runsSinceLastUpdate += 1
-                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
-                        // for whatever reason the current average seems to be "too" slow
-                        // let's add the last run to rise the average
-                        times = t :: times
-                        avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
-                        runsSinceLastUpdate = 0
-                    }
-                }
-                r(t, times)
+          if (runGC) gc()
+          time {
+            result = f
+          } { t =>
+            if (t.timeSpan <= avg * filterE) {
+              // let's throw away all runs that are significantly slower than the last run
+              times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
+              avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
+              runsSinceLastUpdate = 0
+            } else {
+              runsSinceLastUpdate += 1
+              if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
+                // for whatever reason the current average seems to be "too" slow
+                // let's add the last run to rise the average
+                times = t :: times
+                avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
+                runsSinceLastUpdate = 0
+              }
             }
+            r(t, times)
+          }
         } while (times.size < minimalNumberOfRelevantRuns ||
-            Math.abs(avg - times.head.timeSpan) > avg * e)
+          Math.abs(avg - times.head.timeSpan) > avg * e)
 
         result
+
+        }
+      catch {
+        case Return(result) => result.asInstanceOf[T]
+      }
     }
 
     /**

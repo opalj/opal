@@ -45,6 +45,7 @@ final class RefAccumulator[A <: AnyRef] private (
             case v: A @unchecked =>
                 data = data.tail
                 v
+            case _ => throw new Exception("Unrecognized type")
         }
     }
 

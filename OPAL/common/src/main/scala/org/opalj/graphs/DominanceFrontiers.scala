@@ -8,6 +8,8 @@ import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Representation of the dominance frontiers.
  *
@@ -45,7 +47,7 @@ final class DominanceFrontiers private (
         transitiveDF
     }
 
-    def dominanceFrontiers: IndexedSeq[IntArraySet] = dfs
+    def dominanceFrontiers: IndexedSeq[IntArraySet] = ArraySeq.unsafeWrapArray(dfs)
 
     def xIsDirectlyControlDependentOn(x: Int): IntArraySet = df(x)
 

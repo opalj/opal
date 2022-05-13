@@ -2,7 +2,7 @@
 package org.opalj
 package graphs
 
-import scala.collection.Map
+import scala.collection.immutable
 
 /**
  * Represents a node of some graph.
@@ -21,7 +21,7 @@ trait Node {
      */
     def toHRR: Option[String]
 
-    def visualProperties: Map[String, String] = Map.empty[String, String]
+    def visualProperties: immutable.Map[String, String] = immutable.Map.empty[String, String]
 
     /**
      * An identifier that uniquely identifies this node in the graph to which this

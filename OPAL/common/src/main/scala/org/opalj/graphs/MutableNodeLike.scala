@@ -2,7 +2,7 @@
 package org.opalj
 package graphs
 
-import scala.collection.Map
+import scala.collection.immutable
 
 /**
  * Represents a mutable node of a directed graph.
@@ -29,15 +29,15 @@ import scala.collection.Map
 class MutableNodeLike[I, N <: Node](
         private[this] var theIdentifier:       I,
         val identifierToString:                I => String,
-        private[this] var theVisualProperties: Map[String, String],
+        private[this] var theVisualProperties: immutable.Map[String, String],
         private[this] var theChildren:         List[N]
 ) extends MutableNode[I, N] {
 
     def identifier: I = this.synchronized(theIdentifier)
 
-    override def visualProperties: Map[String, String] = this.synchronized(theVisualProperties)
+    override def visualProperties: immutable.Map[String, String] = this.synchronized(theVisualProperties)
 
-    def mergeVisualProperties(other: Map[String, String]): Unit = {
+    def mergeVisualProperties(other: immutable.Map[String, String]): Unit = {
         theVisualProperties ++= other
     }
 

@@ -11,11 +11,11 @@
 -unchecked
 -Xlint
 // -Xfuture deprecated in Scala 2.13. Replaced by -Xsource
--Xsource
+-Xsource:3
 -Xfatal-warnings
 -Wnumeric-widen
 -Xlint:nullary-unit
--Xlint:nullary-override
+// -Xlint:nullary-override
 -Wunused:imports,privates,locals,implicits
 // Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
 -Xlint:infer-any

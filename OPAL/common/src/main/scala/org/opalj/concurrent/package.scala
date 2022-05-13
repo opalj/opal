@@ -8,15 +8,15 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicLong
-
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.util.control.ControlThrowable
 import scala.concurrent.ExecutionContext
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.warn
 import org.opalj.log.OPALLogger.info
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -209,7 +209,7 @@ package object concurrent {
     )(
         f: Function[T, U]
     ): Unit = {
-        parForeachSeqElement(data, parallelizationLevel, isInterrupted)(f)
+        parForeachSeqElement(ArraySeq.unsafeWrapArray(data), parallelizationLevel, isInterrupted)(f)
     }
 
     /**

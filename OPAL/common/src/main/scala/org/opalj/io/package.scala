@@ -115,7 +115,7 @@ package object io {
     }
 
     def write(
-        data:           TraversableOnce[String],
+        data:           IterableOnce[String],
         filenamePrefix: String,
         filenameSuffix: String
     ): Path = {
@@ -124,7 +124,7 @@ package object io {
             sanitizeFileName(filenamePrefix),
             sanitizeFileName(filenameSuffix)
         )
-        write(data.map(_.getBytes("UTF-8")), path)
+        write(data.iterator.map(_.getBytes("UTF-8")), path)
         path
     }
 
@@ -138,7 +138,7 @@ package object io {
     }
 
     def writeGZip(
-        data:           TraversableOnce[String],
+        data:           IterableOnce[String],
         filenamePrefix: String,
         filenameSuffix: String
     ): Path = {
@@ -147,7 +147,7 @@ package object io {
             sanitizeFileName(filenamePrefix),
             sanitizeFileName(filenameSuffix)
         )
-        writeGZip(data.map(_.getBytes("UTF-8")), path)
+        writeGZip(data.iterator.map(_.getBytes("UTF-8")), path)
         path
     }
 
@@ -156,10 +156,10 @@ package object io {
      */
     def write(data: Array[Byte], path: Path): Unit = Files.write(path, data)
 
-    def write(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+    def write(data: IterableOnce[Array[Byte]], path: Path): Unit = {
         val out = new FileOutputStream(path.toFile)
         try {
-            data.foreach(out.write)
+            data.iterator.foreach(out.write)
         } finally {
             out.close()
         }
@@ -169,10 +169,10 @@ package object io {
         writeGZip(Seq(data), path)
     }
 
-    def writeGZip(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+    def writeGZip(data: IterableOnce[Array[Byte]], path: Path): Unit = {
         val out = new GZIPOutputStream(new FileOutputStream(path.toFile))
         try {
-            data.foreach(out.write)
+            data.iterator.foreach(out.write)
         } finally {
             out.close()
         }

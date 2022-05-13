@@ -72,7 +72,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
         this
     }
 
-    def --=(vs: IterableOnce[N]): this.type = { vs foreach { v => this removeVertice v }; this }
+    def --=(vs: IterableOnce[N]): this.type = { vs.iterator.foreach { v => this removeVertice v }; this }
 
     /**
      * All nodes which only have incoming dependencies/which have no successors.
@@ -97,8 +97,8 @@ class Graph[@specialized(Int) N: ClassTag] private (
             }
         }
 
-        org.opalj.graphs.sccs(size, es, filterSingletons).toIterator.map { scc =>
-            scc.toIterator.map(indexToN)
+        org.opalj.graphs.sccs(size, es, filterSingletons).iterator.map { scc =>
+            scc.iterator.map(indexToN)
         }
     }
 }
@@ -121,7 +121,7 @@ object Graph {
         edges foreach { e =>
             val (s, ts) = e
             ts foreach { t =>
-                g addEdge (s → t)
+                g addEdge (s -> t)
             }
         }
         g

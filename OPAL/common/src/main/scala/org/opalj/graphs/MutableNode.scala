@@ -2,7 +2,7 @@
 package org.opalj
 package graphs
 
-import scala.collection.Map
+import scala.collection.immutable
 
 /**
  * Common interface of all mutable nodes of a directed graph.
@@ -24,7 +24,7 @@ trait MutableNode[I, N <: Node] extends Node {
 
     def identifierToString: I => String
 
-    def mergeVisualProperties(other: Map[String, String]): Unit
+    def mergeVisualProperties(other: immutable.Map[String, String]): Unit
 
     def children: List[N]
 

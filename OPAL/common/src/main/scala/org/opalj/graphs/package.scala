@@ -98,7 +98,7 @@ package object graphs {
             if (nextNode.toHRR.isDefined) {
                 var visualProperties = nextNode.visualProperties
                 visualProperties += (
-                    "label" → nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
+                    "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
                 )
                 s +=
                     "\t"+nextNode.nodeId +
@@ -189,8 +189,8 @@ package object graphs {
      *         of the graph.
      */
     def closedSCCs[N >: Null <: AnyRef: ClassTag](
-        ns: Traversable[N],
-        es: N => Traversable[N] // TODO Improve(?) N => Iterator[N]
+        ns: Iterable[N],
+        es: N => Iterable[N] // TODO Improve(?) N => Iterator[N]
     ): List[Iterable[N]] = {
 
         val nDFSNums = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[N]()
