@@ -155,7 +155,7 @@ package object bi {
 
     val MissingLibraryWarning: String = {
         process(this.getClass.getResourceAsStream("MissingLibraryWarning.txt")) { in =>
-            Source.fromInputStream(in).getLines.mkString("\n")
+            Source.fromInputStream(in).getLines().mkString("\n")
         }
     }
 

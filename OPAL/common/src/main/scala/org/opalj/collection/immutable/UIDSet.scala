@@ -55,7 +55,7 @@ sealed abstract class UIDSet[T <: UID]
         def foreach[U](f: T => U): Unit = set.foreach(f)
     }
 
-    override def iterator: RefIterator[T]
+    override def iterator: Iterator[T]
     // Note that, "super.toIterator" guarantees to call "iterator"
 
     def idSet: IntTrieSet
@@ -112,7 +112,7 @@ object UIDSet0 extends UIDSet[UID] {
     override def exists(p: UID => Boolean): Boolean = false
     override def forall(p: UID => Boolean): Boolean = true
     override def foreach[U](f: UID => U): Unit = {}
-    override def iterator: RefIterator[Nothing] = RefIterator.empty
+    override def iterator: Iterator[Nothing] = Iterator.empty
     override def head: UID = throw new NoSuchElementException
     override def last: UID = throw new NoSuchElementException
     override def headOption: Option[UID] = None
@@ -157,7 +157,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     override def head: T = value
     override def last: T = value
     override def tail: UIDSet[T] = empty
-    override def iterator: RefIterator[T] = RefIterator(value)
+    override def iterator: Iterator[T] = Iterator(value)
     override def filter(p: T => Boolean): UIDSet[T] = if (p(value)) this else empty
     override def filterNot(p: T => Boolean): UIDSet[T] = if (p(value)) empty else this
     override def incl(e: T): UIDSet[T] = if (value.id == e.id) this else new UIDSet2(value, e)
@@ -212,7 +212,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def exists(p: T => Boolean): Boolean = p(value1) || p(value2)
     override def forall(p: T => Boolean): Boolean = p(value1) && p(value2)
     override def foreach[U](f: T => U): Unit = { f(value1); f(value2) }
-    override def iterator: RefIterator[T] = RefIterator(value1, value2)
+    override def iterator: Iterator[T] = Iterator(value1, value2)
     override def head: T = value1
     override def last: T = value2
     override def tail: UIDSet[T] = new UIDSet1(value2)
@@ -330,7 +330,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     override def exists(p: T => Boolean): Boolean = p(value1) || p(value2) || p(value3)
     override def forall(p: T => Boolean): Boolean = p(value1) && p(value2) && p(value3)
     override def foreach[U](f: T => U): Unit = { f(value1); f(value2); f(value3) }
-    override def iterator: RefIterator[T] = RefIterator(value1, value2, value3)
+    override def iterator: Iterator[T] = Iterator(value1, value2, value3)
     override def head: T = value1
     override def last: T = value3
     override def tail: UIDSet[T] = new UIDSet2(value2, value3)
@@ -523,7 +523,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
 */
     }
 
-    override def iterator: RefIterator[T] = new RefIterator[T] {
+    override def iterator: Iterator[T] = new Iterator[T] {
         private[this] val nextNodes = mutable.Stack[UIDSetNodeLike[T]](self)
         def hasNext: Boolean = nextNodes.nonEmpty
         def next(): T = {
@@ -934,7 +934,7 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
     override def exists(p: T => Boolean): Boolean = p(value)
     override def forall(p: T => Boolean): Boolean = p(value)
     override def foreach[U](f: T => U): Unit = f(value)
-    override def iterator: RefIterator[T] = RefIterator(value)
+    override def iterator: Iterator[T] = Iterator(value)
     override def find(p: T => Boolean): Option[T] = if (p(value)) Some(value) else None
     override def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
 

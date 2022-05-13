@@ -8,7 +8,6 @@ package xta
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.opalj.collection.RefIterator
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEP

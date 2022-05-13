@@ -3,7 +3,6 @@ package org.opalj.collection.mutable
 
 import scala.reflect.ClassTag
 import java.util.{Arrays => JArrays}
-import org.opalj.collection.RefIterator
 
 import scala.collection.immutable.ArraySeq
 
@@ -172,7 +171,7 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
      *
      * @param startIndex index of the first element that will be returned (inclusive)
      */
-    def iteratorFrom(startIndex: Int): RefIterator[N] = new RefIterator[N] {
+    def iteratorFrom(startIndex: Int): Iterator[N] = new Iterator[N] {
         private[this] var index = startIndex
         override def hasNext: Boolean = index < size0
         override def next(): N = {
@@ -192,9 +191,9 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
      * @param from index of the first element that will be returned (inclusive)
      * @param until index of the last element (exclusive)
      */
-    def iterator(from: Int = 0, until: Int = buffer.size0): RefIterator[N] = {
+    def iterator(from: Int = 0, until: Int = buffer.size0): Iterator[N] = {
         val lastIndex = Math.min(until, buffer.size0)
-        new RefIterator[N] {
+        new Iterator[N] {
             private[this] var index = from
             def hasNext: Boolean = index < lastIndex
             def next(): N = {

@@ -86,7 +86,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
         def next(): Long = f(self.next())
     }
 
-    override def map[T](f: Int => T): RefIterator[T] = new RefIterator[T] {
+    override def map[T](f: Int => T): Iterator[T] = new Iterator[T] {
         def hasNext: Boolean = self.hasNext
         def next(): T = f(self.next())
     }
@@ -110,8 +110,8 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
         def next(): Int = { val e = it.next(); advanceIterator(); e }
     }
 
-    def flatMap[T](f: Int => RefIterator[T]): RefIterator[T] = new RefIterator[T] {
-        private[this] var it: RefIterator[T] = RefIterator.empty
+    def flatMap[T](f: Int => Iterator[T]): Iterator[T] = new Iterator[T] {
+        private[this] var it: Iterator[T] = Iterator.empty
         private[this] def advanceIterator(): Unit = {
             while (!it.hasNext) {
                 if (self.hasNext) {

@@ -18,7 +18,6 @@ import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.VisibilityModifier
-import org.opalj.collection.RefIterator
 
 import scala.collection.immutable.ArraySeq
 
@@ -293,9 +292,9 @@ final class ClassFile private (
         )
     }
 
-    def methodsWithBody: RefIterator[Method] = methods.iterator.filter(_.body.isDefined)
+    def methodsWithBody: Iterator[Method] = methods.iterator.filter(_.body.isDefined)
 
-    def methodBodies: RefIterator[Code] = methods.iterator.flatMapOptions(_.body)
+    def methodBodies: Iterator[Code] = methods.iterator.flatMap(_.body)
 
     import ClassFile._
 
@@ -632,7 +631,7 @@ final class ClassFile private (
      *
      * (This does not include the static initializer.)
      */
-    def constructors: RefIterator[Method] = new RefIterator[Method] {
+    def constructors: Iterator[Method] = new Iterator[Method] {
         private[this] var i = -1
 
         private[this] def gotoNextConstructor(): Unit = {
@@ -668,7 +667,7 @@ final class ClassFile private (
      * All defined instance methods. I.e., all methods that are not static,
      * constructors, or static initializers.
      */
-    def instanceMethods: RefIterator[Method] = {
+    def instanceMethods: Iterator[Method] = {
         methods.iterator.filterNot { m => m.isStatic || m.isConstructor || m.isStaticInitializer }
     }
 

@@ -18,7 +18,7 @@ class AccessFlagsIterator private (
 
     override def hasNext: Boolean = flags != 0
 
-    override def next: AccessFlag = {
+    override def next(): AccessFlag = {
         while ((index + 1) < potentialAccessFlags.size) {
             index += 1
             if ((flags & potentialAccessFlags(index).mask) != 0) {

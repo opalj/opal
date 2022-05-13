@@ -28,7 +28,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.concurrent.OPALUnboundedExecutionContext
-import org.opalj.collection.RefIterator
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.Chain.CompleteEmptyChain
 import org.opalj.collection.immutable.Chain.IncompleteEmptyChain
@@ -176,7 +175,6 @@ class ClassHierarchy private (
      *          to Eclipse classes which are not part of the JDK.
      */
     def rootClassTypesIterator: Iterator[ObjectType] = {
-        // TODO Use RefIterator.fromNonNullValues(....)
         knownTypesMap.iterator filter { objectType =>
             (objectType ne null) && {
                 val oid = objectType.id
@@ -543,13 +541,13 @@ class ClassHierarchy private (
             subtypeInformationMap(oid).allTypes
     }
 
-    def allSubtypesIterator(objectType: ObjectType, reflexive: Boolean): RefIterator[ObjectType] = {
+    def allSubtypesIterator(objectType: ObjectType, reflexive: Boolean): Iterator[ObjectType] = {
         val oid = objectType.id
         if (isUnknown(oid))
-            return if (reflexive) RefIterator.single(objectType) else RefIterator.empty;
+            return if (reflexive) Iterator(objectType) else Iterator.empty;
 
         if (reflexive)
-            subtypeInformationMap(oid).iterator ++ RefIterator.single(objectType)
+            subtypeInformationMap(oid).iterator ++ Iterator(objectType)
         else
             subtypeInformationMap(oid).iterator
     }

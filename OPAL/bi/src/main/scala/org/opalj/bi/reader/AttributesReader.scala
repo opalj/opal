@@ -4,8 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
-
 import org.opalj.control.fillArraySeq
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Trait that implements a template method to read in the attributes of
@@ -142,7 +143,7 @@ trait AttributesReader
         val attributes: Attributes =
             fillArraySeq(in.readUnsignedShort) {
                 Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
-            }.filterNonNull // lets remove the attributes we don't need or understand
+            }.filter( attr => attr != null ) // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) => p(a))
     }

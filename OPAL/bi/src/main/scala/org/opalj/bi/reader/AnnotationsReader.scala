@@ -41,7 +41,7 @@ trait AnnotationsReader extends AnnotationsAbstractions {
      * </pre>
      */
     def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
-        fillArraySeq(in.readUnsignedShort) {
+        fillArraySeq[Annotation](in.readUnsignedShort) {
             Annotation(cp, in)
         }
     }

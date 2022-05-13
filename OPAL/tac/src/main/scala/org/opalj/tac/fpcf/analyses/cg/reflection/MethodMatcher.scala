@@ -108,7 +108,7 @@ class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends Method
         // however require to change it in `Call` in TACAI.
         m.descriptor.parametersCount == actualParams.size &&
             // IMPROVE: m.descriptor.parameterTypes.iterator.zip...
-            // therefor, we need to actualParams.map(...) as RefIterator
+            // therefor, we need to actualParams.map(...) as Iterator
             m.descriptor.parameterTypes.zip(actualParams.map(_.value)).forall {
                 // the actual type is null and the declared type is a ref type
                 case (_: ReferenceType, _: IsNullValue) =>

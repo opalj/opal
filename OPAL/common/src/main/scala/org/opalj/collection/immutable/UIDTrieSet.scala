@@ -35,7 +35,7 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
     final def foreachIterator: ForeachRefIterator[T] = new ForeachRefIterator[T] {
         override def foreach[U](f: T => U): Unit = set.foreach(f)
     }
-    def iterator: RefIterator[T]
+    def iterator: Iterator[T]
     def add(value: T): UIDTrieSet[T]
     def head: T
 
@@ -120,7 +120,7 @@ case object UIDTrieSet0 extends UIDTrieSetLeaf[UID] {
     override def exists(p: UID => Boolean): Boolean = false
     override def foldLeft[B](z: B)(op: (B, UID) => B): B = z
     override def add(i: UID): UIDTrieSet1[UID] = new UIDTrieSet1(i)
-    override def iterator: RefIterator[UID] = RefIterator.empty
+    override def iterator: Iterator[UID] = Iterator.empty
     override def containsId(id: Int): Boolean = false
     override def head: UID = throw new NoSuchElementException
 
@@ -151,7 +151,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
         val v = this.i
         if (v.id == value.id) this else new UIDTrieSet2(v, value)
     }
-    override def iterator: RefIterator[T] = RefIterator(i)
+    override def iterator: Iterator[T] = Iterator(i)
     override def containsId(id: Int): Boolean = id == i.id
     override def head: T = i
 
@@ -187,7 +187,7 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
     override def nonEmpty: Boolean = true
     override def isSingletonSet: Boolean = false
     override def size: Int = 2
-    override def iterator: RefIterator[T] = RefIterator(i1, i2)
+    override def iterator: Iterator[T] = Iterator(i1, i2)
     override def foreach[U](f: T => U): Unit = { f(i1); f(i2) }
     override def forall(p: T => Boolean): Boolean = { p(i1) && p(i2) }
     override def exists(p: T => Boolean): Boolean = { p(i1) || p(i2) }
@@ -250,7 +250,7 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
     override def isSingletonSet: Boolean = false
     override def containsId(id: Int): Boolean = id == i1.id || id == i2.id || id == i3.id
     override def head: T = i1
-    override def iterator: RefIterator[T] = RefIterator(i1, i2, i3)
+    override def iterator: Iterator[T] = Iterator(i1, i2, i3)
     override def foreach[U](f: T => U): Unit = { f(i1); f(i2); f(i3) }
     override def forall(p: T => Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
     override def exists(p: T => Boolean): Boolean = { p(i1) || p(i2) || p(i3) }
@@ -437,7 +437,7 @@ private[immutable] final class UIDTrieSetN[T <: UID](
     override def exists(p: T => Boolean): Boolean = root.exists(p)
     override def foldLeft[B](z: B)(op: (B, T) => B): B = root.foldLeft(z)(op)
 
-    override def iterator: RefIterator[T] = new RefIterator[T] {
+    override def iterator: Iterator[T] = new Iterator[T] {
         private[this] var currentNode = root
         private[this] var index = 0
         private[this] val furtherNodes = mutable.Stack.empty[UIDTrieSetNode[T]]

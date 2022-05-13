@@ -41,7 +41,7 @@ sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self =>
      *         the other specialized methods to avoid the overhead incurred by the generation of
      *         the iterator.
      */
-    def iterator: RefIterator[T]
+    def iterator: Iterator[T]
 
     /** Prepends the given value to this list. E.g., `l = "x" +: l`. */
     def +:[X >: T <: AnyRef](v: X): Ref2List[X]
@@ -89,7 +89,7 @@ private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
     override def foreach[U](f: Nothing => U): Unit = {}
     /** Iterates over the first N values. */
     override def forFirstN[U](n: Int)(f: Nothing => U): Unit = {}
-    override def iterator: RefIterator[Nothing] = RefIterator.empty
+    override def iterator: Iterator[Nothing] = Iterator.empty
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     override def +:[X <: AnyRef](v: X): Ref2List[X] = {
         new Ref2ListNode[AnyRef](null, v, this).asInstanceOf[Ref2List[X]]
@@ -150,8 +150,8 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
         }
     }
 
-    override def iterator: RefIterator[T] = {
-        new RefIterator[T] {
+    override def iterator: Iterator[T] = {
+        new Iterator[T] {
             private[this] var currentList: Ref2List[T] = list
             private[this] var head: Boolean = list.h != null
             def hasNext: Boolean = currentList ne Ref2ListEnd

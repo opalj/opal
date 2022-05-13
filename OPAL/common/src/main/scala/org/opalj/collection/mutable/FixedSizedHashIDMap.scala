@@ -3,6 +3,7 @@ package org.opalj
 package collection
 package mutable
 
+import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
 
 /**
@@ -73,9 +74,9 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         }
     }
 
-    def keys: RefIterator[K] = RefIterator.fromNonNullValues(theKeys)
+    def keys: Iterator[K] = ArraySeq.unsafeWrapArray(theKeys).iterator.filter(key => key != null)
 
-    def entries: RefIterator[(K, V)] = new RefIterator[(K, V)] {
+    def entries: Iterator[(K, V)] = new Iterator[(K, V)] {
         private[this] def getNextIndex(lastIndex: Int): Int = {
             val keys = self.theKeys
             val max = keys.length

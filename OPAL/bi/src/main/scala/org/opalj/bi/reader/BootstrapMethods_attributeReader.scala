@@ -7,6 +7,7 @@ import java.io.DataInputStream
 import org.opalj.control.fillArraySeq
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Template method to read the (Java 7) ''BootstrapMethods'' attribute.
@@ -25,9 +26,11 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapMethods_attribute >: Null <: Attribute
 
     type BootstrapMethod <: AnyRef
+    implicit val bootstrapMethodType: ClassTag[BootstrapMethod] // TODO: Replace in Scala 3 with `type BootstrapMethod: ClassTag`
     type BootstrapMethods = ArraySeq[BootstrapMethod]
 
     type BootstrapArgument <: AnyRef
+    implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] // TODO: Replace in Scala 3 with `type BootstrapArgument: ClassTag`
     type BootstrapArguments = ArraySeq[BootstrapArgument]
 
     def BootstrapMethods_attribute(

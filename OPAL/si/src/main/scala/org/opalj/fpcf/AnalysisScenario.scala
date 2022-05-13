@@ -265,7 +265,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         // TODO ....
 
         Schedule(
-            if (allCS.isEmpty) Naught else Chain(computePhase(propertyStore)),
+            if (allCS.isEmpty) List.empty else List(computePhase(propertyStore)),
             initializationData
         )
     }
@@ -286,7 +286,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         }
 
         // 3. create the batch
-        val batchBuilder = Chain.newBuilder[ComputationSpecification[A]]
+        val batchBuilder = List.newBuilder[ComputationSpecification[A]]
         batchBuilder ++= lazyCS
         batchBuilder ++= transformersCS
         batchBuilder ++= triggeredCS

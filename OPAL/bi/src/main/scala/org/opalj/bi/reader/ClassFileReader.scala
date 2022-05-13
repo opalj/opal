@@ -21,27 +21,25 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.jar.JarInputStream
 import java.util.jar.JarEntry
-
 import scala.util.control.ControlThrowable
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-
 import org.apache.commons.text.similarity.LevenshteinDistance
-
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
-
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.concurrent.BoundedExecutionContext
 import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.concurrent.Tasks
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -650,7 +648,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             // 2.1 load - in parallel - all ".class" files
             if (classFiles.nonEmpty) {
                 val theClassFiles = new ConcurrentLinkedQueue[(ClassFile, URL)]
-                parForeachSeqElement(classFiles, NumberOfThreadsForIOBoundTasks) { classFile =>
+                parForeachSeqElement(classFiles.toIndexedSeq, NumberOfThreadsForIOBoundTasks) { classFile =>
                     theClassFiles.addAll(processClassFile(classFile, exceptionHandler).asJava)
                 }
                 allClassFiles ++= theClassFiles.asScala
