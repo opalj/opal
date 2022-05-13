@@ -11,7 +11,7 @@ trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
 
     def vertices: IterableOnce[N]
 
-    def nonEmpty: Boolean = vertices.nonEmpty
+    def nonEmpty: Boolean = vertices.iterator.nonEmpty
 
     /** Returns a given node's successor nodes. */
     def apply(s: N): IterableOnce[N]
@@ -50,10 +50,10 @@ trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
      * }}}
      */
     def rootNodes(ignoreSelfRecursiveDependencies: Boolean = true): Set[N] = {
-        var rootNodes = vertices.toSet
+        var rootNodes = vertices.iterator.toSet
         for {
-            v <- vertices
-            t <- this(v)
+            v <- vertices.iterator
+            t <- this(v).iterator
             if ignoreSelfRecursiveDependencies || (t != v)
         } {
             rootNodes -= t
