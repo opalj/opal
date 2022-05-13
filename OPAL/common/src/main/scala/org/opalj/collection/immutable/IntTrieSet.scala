@@ -124,7 +124,7 @@ final class FilteredIntTrieSet(
     override def exists(p: Int => Boolean): Boolean = s.exists(i => this.p(i) && p(i))
     override def forall(f: Int => Boolean): Boolean = s.forall(i => !this.p(i) || f(i))
     override def contains(value: Int): Boolean = p(value) && s.contains(value)
-    override def toChain: Chain[Int] = iterator.toChain
+    override def toList: List[Int] = iterator.toList
 
     private[this] lazy val filtered: IntTrieSet = s.filter(p)
 
@@ -192,7 +192,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = z
     override def forall(f: Int => Boolean): Boolean = true
     override def flatMap(f: Int => IntTrieSet): IntTrieSet = this
-    override def toChain: Chain[Int] = Naught
+    override def toList: List[Int] = List.empty
 
     override def equals(other: IntTrieSet): Boolean = other eq this
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
@@ -239,7 +239,7 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def exists(p: Int => Boolean): Boolean = p(i)
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(z, i)
     override def forall(f: Int => Boolean): Boolean = f(i)
-    override def toChain: Chain[Int] = new :&:[Int](i)
+    override def toList: List[Int] = List(i)
 
     override def equals(other: IntTrieSet): Boolean = {
         (other eq this) || (other match {
@@ -389,7 +389,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(z, i1), i2)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2)
 
-    override def toChain: Chain[Int] = i1 :&: i2 :&: Naught
+    override def toList: List[Int] = List(i1,i2)
 
     override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
         other.size match {
@@ -501,7 +501,7 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     override def exists(p: Int => Boolean): Boolean = p(i1) || p(i2) || p(i3)
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(f(z, i1), i2), i3)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2) && f(i3)
-    override def toChain: Chain[Int] = i1 :&: i2 :&: i3 :&: Naught
+    override def toList: List[Int] = List(i1,i2,i3)
 
     override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
         other.size match {
@@ -564,8 +564,8 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
 
     final override def withFilter(p: Int => Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
 
-    final override def toChain: Chain[Int] = {
-        val cb = new Chain.ChainBuilder[Int]()
+    final override def toList: List[Int] = {
+        val cb = List.newBuilder[Int]
         foreach((i: Int) => cb += i)
         cb.result()
     }

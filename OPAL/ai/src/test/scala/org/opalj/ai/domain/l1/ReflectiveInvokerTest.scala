@@ -9,8 +9,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
 import br._
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 import scala.collection.immutable.ArraySeq
 

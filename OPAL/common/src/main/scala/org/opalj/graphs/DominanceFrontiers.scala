@@ -2,7 +2,6 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntRefPair
@@ -201,14 +200,14 @@ object DominanceFrontiers {
         }
 
         val inDFSOrder = new IntArrayStack(Math.max(max - 2, 2))
-        var nodes: Chain[Int] = Chain.singleton[Int](startNode)
+        var nodes: List[Int] = List(startNode)
         while (nodes.nonEmpty) {
             val n = nodes.head
             nodes = nodes.tail
             val nChildren = children(n)
             if (nChildren ne null) {
                 inDFSOrder.push(n)
-                nChildren.foreach { nodes :&:= _ }
+                nChildren.foreach { nodes ::= _ }
             } else {
                 // we immediately compute the dfs_local information
                 dfs(n) = dfLocal(n)

@@ -2,7 +2,6 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.IntIterator
 
 /**
@@ -37,14 +36,14 @@ class VirtualUnidirectionalGraph(
 
     override def nonEmpty: Boolean = verticesCount > 0
 
-    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s)
+    override def apply(s: Int): IterableOnce[Int] = theSuccessors(s)
 
     /**
      * Returns a node's successors.
      */
     def theSuccessors(s: Int): IntIterator = successors(s)
 
-    def sccs(filterSingletons: Boolean = false): Chain[Chain[Int]] = {
+    def sccs(filterSingletons: Boolean = false): List[List[Int]] = {
         org.opalj.graphs.sccs(verticesCount, successors, filterSingletons)
     }
 }

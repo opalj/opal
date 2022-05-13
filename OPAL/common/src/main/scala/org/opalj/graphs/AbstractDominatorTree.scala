@@ -3,7 +3,6 @@ package org.opalj
 package graphs
 
 import scala.annotation.tailrec
-import org.opalj.collection.immutable.Chain
 
 import scala.collection.immutable.ArraySeq
 
@@ -114,7 +113,7 @@ abstract class AbstractDominatorTree {
      * this method has a complexity of O(2n). Hence, if the leaves are required more than
      * once, storing/caching them should be considered.
      */
-    def leaves(isIndexValid: Int => Boolean = _ => true): Chain[Int] = {
+    def leaves(isIndexValid: Int => Boolean = _ => true): List[Int] = {
         // A leaf is a node which does not dominate another node.
         var i = 0
         val max = idom.length
@@ -128,11 +127,11 @@ abstract class AbstractDominatorTree {
             i += 1
         }
         // second loop - collect leaves
-        var theLeaves = Chain.empty[Int]
+        var theLeaves = List.empty[Int]
         i = 0
         while (i < max) {
             if (isIndexValid(i) && !dominates(i)) {
-                theLeaves :&:= i
+                theLeaves ::= i
             }
             i += 1
         }

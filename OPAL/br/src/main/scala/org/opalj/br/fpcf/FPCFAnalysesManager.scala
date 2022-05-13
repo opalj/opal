@@ -9,7 +9,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.AnalysisScenario
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyKey
@@ -47,7 +46,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     final def runAll(
         analyses:             Iterable[ComputationSpecification[FPCFAnalysis]],
-        afterPhaseScheduling: Chain[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
+        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
         val scenario = AnalysisScenario(analyses, propertyStore)

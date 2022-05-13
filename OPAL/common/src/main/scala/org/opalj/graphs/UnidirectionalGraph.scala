@@ -3,7 +3,6 @@ package org.opalj
 package graphs
 
 import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -32,7 +31,7 @@ class UnidirectionalGraph(
 
     override def nonEmpty: Boolean = verticesCount > 0
 
-    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s).iterator
+    override def apply(s: Int): IterableOnce[Int] = theSuccessors(s).iterator
 
     /**
      * Returns a node's successors.
@@ -57,7 +56,7 @@ class UnidirectionalGraph(
         this
     }
 
-    def sccs(filterSingletons: Boolean = false): Chain[Chain[Int]] = {
+    def sccs(filterSingletons: Boolean = false): List[List[Int]] = {
         org.opalj.graphs.sccs(verticesCount, edges, filterSingletons)
     }
 }

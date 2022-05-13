@@ -4,7 +4,6 @@ package fpcf
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.collection.immutable.Chain
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -17,9 +16,9 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 case class Schedule[A](
-        batches:            Chain[PhaseConfiguration[A]],
+        batches:            List[PhaseConfiguration[A]],
         initializationData: Map[ComputationSpecification[A], Any]
-) extends ((PropertyStore, Boolean, PropertyKindsConfiguration => Unit, Chain[ComputationSpecification[A]] => Unit) => List[(ComputationSpecification[A], A)]) {
+) extends ((PropertyStore, Boolean, PropertyKindsConfiguration => Unit, List[ComputationSpecification[A]] => Unit) => List[(ComputationSpecification[A], A)]) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
@@ -33,13 +32,13 @@ case class Schedule[A](
         ps:                   PropertyStore,
         trace:                Boolean                                    = false,
         afterPhaseSetup:      PropertyKindsConfiguration => Unit = _ => (),
-        afterPhaseScheduling: Chain[ComputationSpecification[A]] => Unit = _ => ()
+        afterPhaseScheduling: List[ComputationSpecification[A]] => Unit = _ => ()
     ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
 
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
-        batches.toIterator.zipWithIndex foreach { batchId =>
+        batches.iterator.zipWithIndex foreach { batchId =>
             val (PhaseConfiguration(configuration, css), id) = batchId
 
             if (trace) {

@@ -3,8 +3,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.{Chain => List}
-import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.collection.mutable.IntArrayStack
 
 /**

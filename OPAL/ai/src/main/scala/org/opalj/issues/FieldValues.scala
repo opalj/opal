@@ -7,7 +7,6 @@ import scala.xml.Group
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.instructions.FieldReadAccess
@@ -30,8 +29,8 @@ class FieldValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectReadFieldValues: Chain[PCAndAnyRef[String]] = {
-        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) =>
+    def collectReadFieldValues: List[PCAndAnyRef[String]] = {
+        code.foldLeft(List.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) =>
             instruction match {
                 case fra @ FieldReadAccess(_ /*decl.ClassType*/ , _ /* name*/ , fieldType) if {
                     val nextPC = fra.indexOfNextInstruction(pc)
@@ -42,7 +41,7 @@ class FieldValues(
                     PCAndAnyRef(
                         pc,
                         s"${operandsArray(fra.indexOfNextInstruction(pc)).head} ← $fra"
-                    ) :&: readFields
+                    ) :: readFields
                 case _ =>
                     readFields
             }

@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * Common superclass of all instructions which are in their final form.
  *
@@ -42,7 +40,7 @@ trait Instruction extends InstructionLike {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[Int /*PC*/ ]
+    ): List[Int /*PC*/ ]
 
     /**
      * Checks for structural equality of two instructions.
@@ -157,10 +155,10 @@ object Instruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[Int /*PC*/ ] = {
-        var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
+    ): List[Int /*PC*/ ] = {
+        var pcs = List(instruction.indexOfNextInstruction(currentPC))
         exceptions foreach { exception =>
-            pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++!: pcs
+            pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++: pcs
         }
         pcs
     }
@@ -173,9 +171,9 @@ object Instruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[Int /*PC*/ ] = {
+    ): List[Int /*PC*/ ] = {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
-        nextInstruction :&: (code.handlersForException(currentPC, exception).map(_.handlerPC))
+        nextInstruction :: (code.handlersForException(currentPC, exception).map(_.handlerPC))
     }
 
     final val justNullPointerException: List[org.opalj.br.ObjectType] = {

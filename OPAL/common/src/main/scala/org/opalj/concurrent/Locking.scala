@@ -6,8 +6,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data structure.
@@ -63,14 +61,14 @@ object Locking {
     )(
         f: => T
     ): T = {
-        var acquiredRWLocks: Chain[WriteLock] = Naught
+        var acquiredRWLocks: List[WriteLock] = List.empty
         var error: Throwable = null
         val allLocked =
             rwLocks.iterator.forall { rwLock =>
                 try {
                     val l = rwLock.writeLock
                     l.lock
-                    acquiredRWLocks :&:= l
+                    acquiredRWLocks ::= l
                     true
                 } catch {
                     case t: Throwable =>

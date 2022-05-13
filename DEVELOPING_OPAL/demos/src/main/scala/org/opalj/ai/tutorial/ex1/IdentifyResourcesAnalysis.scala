@@ -3,13 +3,11 @@ package org.opalj.ai.tutorial.ex1
 
 import java.net.URL
 
-import org.opalj.collection.immutable.:&:
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
 import org.opalj.ai._
-import org.opalj.collection.immutable.Chain
 
 /**
  * @author Michael Eichberg
@@ -57,14 +55,14 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                 m ← cf.methodsWithBody
             } yield {
                 val pcs =
-                    m.body.get.foldLeft(Chain.empty[Int /*PC*/ ]) { (pcs, pc, instruction) =>
+                    m.body.get.foldLeft(List.empty[Int /*PC*/ ]) { (pcs, pc, instruction) =>
                         instruction match {
                             case INVOKESPECIAL(
                                 ObjectType("java/io/File"), false /* = isInterface*/ ,
                                 "<init>",
                                 SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
                                 ) =>
-                                pc :&: pcs
+                                pc :: pcs
                             case _ =>
                                 pcs
                         }

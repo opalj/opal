@@ -37,8 +37,6 @@ import org.opalj.collection.IntIterator
 import org.opalj.collection.StrictSubset
 import org.opalj.collection.StrictSuperset
 import org.opalj.collection.UncomparableSets
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.CompleteCollection
@@ -898,7 +896,7 @@ class ClassHierarchy private (
      */
     def allSuperclassTypesInInitializationOrder(
         objectType: ObjectType
-    ): QualifiedCollection[Chain[ObjectType]] = {
+    ): QualifiedCollection[List[ObjectType]] = {
         val oid = objectType.id
 
         if (oid == ObjectType.ObjectId)
@@ -907,12 +905,12 @@ class ClassHierarchy private (
         if (isUnknown(oid))
             return IncompleteEmptyChain;
 
-        var allTypes: Chain[ObjectType] = Naught
+        var allTypes: List[ObjectType] = List.empty
 
         val superclassTypeMap = this.superclassTypeMap
         var superclassType = superclassTypeMap(oid)
         while (superclassType ne null) {
-            allTypes :&:= superclassType
+            allTypes ::= superclassType
             superclassType = superclassTypeMap(superclassType.id)
         }
         if (allTypes.head eq ObjectType.Object)

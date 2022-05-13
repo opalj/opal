@@ -3,7 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.ObjectType.OutOfMemoryError
 
 /**
@@ -50,9 +49,9 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         if (regularSuccessorsOnly)
-            Chain.singleton(indexOfNextInstruction(currentPC))
+            List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(this, currentPC, OutOfMemoryError)
     }

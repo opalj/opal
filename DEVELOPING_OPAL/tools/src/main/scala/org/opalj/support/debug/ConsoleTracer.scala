@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.support.debug
 
-import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.Code

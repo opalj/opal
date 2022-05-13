@@ -12,7 +12,6 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.AIResult
 import org.opalj.br.PCAndAnyRef
-import org.opalj.collection.immutable.Chain
 
 class MethodReturnValues(
         val method: Method,
@@ -25,8 +24,8 @@ class MethodReturnValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectMethodReturnValues: Chain[PCAndAnyRef[String]] = {
-        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) =>
+    def collectMethodReturnValues: List[PCAndAnyRef[String]] = {
+        code.foldLeft(List.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) =>
             instruction match {
                 case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor) if !descriptor.returnType.isVoidType && {
                     val nextPC = instr.indexOfNextInstruction(pc)
@@ -40,7 +39,7 @@ class MethodReturnValues(
                     PCAndAnyRef(
                         pc,
                         s"$nextPCOperandHead ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
-                    ) :&: returnValues
+                    ) :: returnValues
 
                 case _ => returnValues
             }

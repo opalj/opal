@@ -2,7 +2,6 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.IntArrayStack
 

@@ -5,7 +5,6 @@ package fpcf
 package properties
 package pointsto
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongTrieSetWithList
@@ -44,7 +43,7 @@ sealed trait AllocationSitePointsToSet
         }
     }
 
-    protected[this] def orderedTypes: Chain[ReferenceType]
+    protected[this] def orderedTypes: List[ReferenceType]
     override def types: UIDSet[ReferenceType]
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
@@ -128,7 +127,7 @@ sealed trait AllocationSitePointsToSet
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
             }
         }
@@ -144,7 +143,7 @@ sealed trait AllocationSitePointsToSet
             return this;
 
         var newTypes = UIDSet.empty[ReferenceType]
-        var newOrderedTypes = Chain.empty[ReferenceType]
+        var newOrderedTypes = List.empty[ReferenceType]
 
         val newAllocationSites =
             elements.foldLeft(LongTrieSetWithList.empty) { (r, allocationSite) =>
@@ -155,7 +154,7 @@ sealed trait AllocationSitePointsToSet
                         val oldTypes = newTypes
                         newTypes += tpe
                         if (newTypes ne oldTypes)
-                            newOrderedTypes :&:= tpe
+                            newOrderedTypes ::= tpe
                     }
                     newAllocationSites
                 } else {
@@ -207,7 +206,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
     }
 
     def apply(
-        elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
+        elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: List[ReferenceType]
     ): AllocationSitePointsToSet = {
 
         if (elements.isEmpty) {
@@ -235,14 +234,14 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 case class AllocationSitePointsToSetN private[pointsto] (
         override val elements:                     LongLinkedSet,
         override val types:                        UIDSet[ReferenceType],
-        override protected[this] val orderedTypes: Chain[ReferenceType]
+        override protected[this] val orderedTypes: List[ReferenceType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
     override def numElements: Int = elements.size
 
     override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
-        orderedTypes.forFirstN(n)(f)
+        orderedTypes.take(n).map(f)
     }
 
     override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
@@ -295,7 +294,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def types: UIDSet[ReferenceType] = UIDSet.empty
 
-    override protected[this] def orderedTypes: Chain[ReferenceType] = Chain.empty
+    override protected[this] def orderedTypes: List[ReferenceType] = List.empty
 
     override def numElements: Int = 0
 
@@ -320,7 +319,7 @@ case class AllocationSitePointsToSet1(
 
     override def types: UIDSet[ReferenceType] = UIDSet(allocatedType)
 
-    override protected[this] def orderedTypes: Chain[ReferenceType] = Chain(allocatedType)
+    override protected[this] def orderedTypes: List[ReferenceType] = List(allocatedType)
 
     override def numElements: Int = 1
 

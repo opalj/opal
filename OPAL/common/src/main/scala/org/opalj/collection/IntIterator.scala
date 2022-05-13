@@ -2,7 +2,6 @@
 package org.opalj
 package collection
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -208,8 +207,8 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
         as
     }
 
-    def toChain: Chain[Int] = {
-        val b = Chain.newBuilder[Int]
+    override def toList: List[Int] = {
+        val b = List.newBuilder[Int]
         while (hasNext) b += next()
         b.result()
     }

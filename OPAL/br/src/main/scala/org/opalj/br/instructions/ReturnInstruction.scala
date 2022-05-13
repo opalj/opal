@@ -4,8 +4,6 @@ package br
 package instructions
 
 import scala.annotation.switch
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -53,9 +51,9 @@ abstract class ReturnInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         if (regularSuccessorsOnly)
-            Naught
+            List.empty
         else {
             val ehs = code.handlersForException(currentPC, ReturnInstruction.jvmExceptions.head)
             ehs.map(_.handlerPC)

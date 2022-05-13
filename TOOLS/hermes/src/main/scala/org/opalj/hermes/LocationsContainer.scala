@@ -4,9 +4,6 @@ package hermes
 
 import scala.language.implicitConversions
 
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
-
 /**
  * A collection of up to [[org.opalj.hermes.HermesConfig.MaxLocations]] locations where a specific
  * feature was found.
@@ -20,12 +17,12 @@ import org.opalj.collection.immutable.Chain
 class LocationsContainer[S](implicit hermes: HermesConfig) {
 
     private var theLocationsCount = 0
-    private var theLocations: Chain[Location[S]] = Naught
+    private var theLocations: List[Location[S]] = List()
 
     def +=(location: => Location[S]): Unit = {
         theLocationsCount += 1
         if (theLocationsCount <= hermes.MaxLocations) {
-            theLocations :&:= location
+            theLocations = location :: theLocations
         }
     }
 
@@ -36,12 +33,12 @@ class LocationsContainer[S](implicit hermes: HermesConfig) {
      * The locations that were memorized; this depends on the global settings regarding the
      * precision and amount of location information that is kept.
      */
-    def locations: Chain[Location[S]] = theLocations
+    def locations: List[Location[S]] = theLocations
 }
 
 object LocationsContainer {
 
-    implicit def toLocationsChain[S](lc: LocationsContainer[S]): Chain[Location[S]] = {
+    implicit def toLocationsChain[S](lc: LocationsContainer[S]): List[Location[S]] = {
         lc.locations
     }
 }

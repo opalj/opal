@@ -3,9 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
-
 /**
  * Common superclass of all instructions that perform a conditional jump.
  *
@@ -62,13 +59,13 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         val nextInstruction = indexOfNextInstruction(currentPC)
         val jumpInstruction = currentPC + branchoffset
         if (nextInstruction == jumpInstruction)
-            Chain.singleton(nextInstruction)
+            List(nextInstruction)
         else
-            nextInstruction :&: jumpInstruction :&: Naught
+            List(nextInstruction,jumpInstruction)
     }
 
     override def toString(currentPC: Int): String = {

@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * Extend local variable index by additional bytes.
  *
@@ -47,8 +45,8 @@ case object WIDE extends Instruction with ConstantLengthInstruction with NoLabel
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
     final def expressionResult: NoExpression.type = NoExpression

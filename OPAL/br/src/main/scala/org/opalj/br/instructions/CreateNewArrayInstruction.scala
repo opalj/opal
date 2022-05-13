@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction to create a new array.
  *
@@ -35,9 +33,9 @@ abstract class CreateNewArrayInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         if (regularSuccessorsOnly)
-            Chain.singleton(indexOfNextInstruction(currentPC))
+            List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandlers(
                 this, currentPC, CreateNewArrayInstruction.jvmExceptionsAndErrors

@@ -3,7 +3,6 @@ package org.opalj.support.debug
 
 import scala.xml.Node
 
-import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.io.writeAndOpen
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
@@ -47,14 +46,14 @@ trait XHTMLTracer extends AITracer {
 
     private[this] var flow: List[List[FlowEntity]] = List(List.empty)
     private[this] def newBranch(): List[List[FlowEntity]] = {
-        flow = List.empty[FlowEntity] :&: flow
+        flow = List[FlowEntity](flow)
         flow
     }
     private[this] def addFlowEntity(flowEntity: FlowEntity): Unit = {
         if (flow.head.exists(_.pc == flowEntity.pc))
             newBranch()
 
-        flow = (flowEntity :&: flow.head) :&: flow.tail
+        flow = (flowEntity :: flow.head) :: flow.tail
     }
 
     private def instructionToNode(
@@ -118,7 +117,7 @@ trait XHTMLTracer extends AITracer {
                 entity ← path
             } yield {
                 xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")
-            }).toIterable
+            })
         val dialogs: Iterable[Node] =
             (for {
                 (path, index) ← inOrderFlow.zipWithIndex
@@ -131,7 +130,7 @@ trait XHTMLTracer extends AITracer {
                     <b>Locals</b><br/>
                     { dumpLocals(flowEntity.locals)(Some(idsLookup)) }
                 </div>
-            }).toIterable
+            })
         def row(pc: Int) =
             (for (path ← inOrderFlow) yield {
                 val flowEntity = path.find(_.pc == pc)
@@ -142,7 +141,7 @@ trait XHTMLTracer extends AITracer {
                             getOrElse(xml.Text(" "))
                     }
                 </td>
-            }).toIterable
+            })
         val cfJoins = code.cfJoins
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {

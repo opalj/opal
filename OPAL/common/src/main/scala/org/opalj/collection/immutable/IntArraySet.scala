@@ -60,7 +60,7 @@ case object EmptyIntArraySet extends IntArraySet {
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = z
     override def forall(f: Int => Boolean): Boolean = true
 
-    override def toChain: Chain[Int] = Naught
+    override def toList: List[Int] = List.empty
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -119,7 +119,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(z, i)
     override def forall(f: Int => Boolean): Boolean = f(i)
 
-    override def toChain: Chain[Int] = new :&:[Int](i)
+    override def toList: List[Int] = List(i)
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -205,7 +205,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(z, i1), i2)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2)
 
-    override def toChain: Chain[Int] = i1 :&: i2 :&: Naught
+    override def toList: List[Int] = List(i1,i2)
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -322,7 +322,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(f(z, i1), i2), i3)
     override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2) && f(i3)
 
-    override def toChain: Chain[Int] = i1 :&: i2 :&: i3 :&: Naught
+    override def toList: List[Int] = List(i1,i2, i3)
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -491,8 +491,8 @@ case class IntArraySetN private[immutable] (
         def next(): Int = { val i = this.i; this.i = i - 1; is(i) }
     }
 
-    override def toChain: Chain[Int] = {
-        val cb = new Chain.ChainBuilder[Int]()
+    override def toList: List[Int] = {
+        val cb = List.newBuilder[Int]
         foreach((i: Int) => cb += i)
         cb.result()
     }
@@ -609,7 +609,7 @@ private[immutable] class FilteredIntArraySet(
     override def flatMap(f: Int => IntArraySet): IntArraySet = getFiltered.flatMap(f)
     override def -(i: Int): IntArraySet = getFiltered - i
     override def +(i: Int): IntArraySet = getFiltered + 1
-    override def toChain: Chain[Int] = iterator.toChain
+    override def toList: List[Int] = iterator.toList
     override def equals(other: Any): Boolean = getFiltered.equals(other)
     override def hashCode: Int = getFiltered.hashCode
 }
@@ -690,7 +690,7 @@ object IntArraySetBuilder {
         isb
     }
 
-    def apply(c: Chain[Int]): IntArraySetBuilder = {
+    def apply(c: List[Int]): IntArraySetBuilder = {
         val isb = new IntArraySetBuilder(new Array[Int](4), 0)
         c.foreach(isb.+=)
         isb

@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that loads a local variable and puts it on top of the stack.
  *
@@ -38,8 +36,8 @@ abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
     final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0

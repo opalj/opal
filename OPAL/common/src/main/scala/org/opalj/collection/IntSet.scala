@@ -3,7 +3,6 @@ package org.opalj
 package collection
 
 import scala.collection.mutable.Builder
-import org.opalj.collection.immutable.Chain
 
 /**
  * A set of integer values.
@@ -69,7 +68,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
 
     def iterator: IntIterator
 
-    def toChain: Chain[Int]
+    def toList: List[Int]
 
     final def transform[B, To](f: Int => B, b: Builder[B, To]): To = {
         foreach(i => b += f(i))

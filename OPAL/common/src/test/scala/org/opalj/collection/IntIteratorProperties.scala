@@ -15,8 +15,6 @@ import org.scalatest.matchers.should.Matchers
 import java.util.{Arrays => JArrays}
 
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 /**
  * Tests IntIterator.
@@ -55,22 +53,22 @@ object IntIteratorProperties extends Properties("IntIterator") {
     }
 
     property("map") = forAll { is: IntArraySet =>
-        is.iterator.map(_ + 1).toChain == is.map(_ + 1).toChain
+        is.iterator.map(_ + 1).toList == is.map(_ + 1).toChain
     }
 
     property("foreach") = forAll { is: IntArraySet =>
-        var c: Chain[Int] = Naught
-        is.iterator.foreach { i => c = i :&: c }
+        var c: List[Int] = List.empty
+        is.iterator.foreach { i => c = i :: c }
         c.reverse == is.toChain
     }
 
     property("filter") = forAll { (is: IntArraySet, values: IntArraySet) =>
         (is.iterator.filter(values.contains).forall(values.contains) :| "filter => forall") &&
-            is.iterator.filter(values.contains).toChain == is.withFilter(values.contains).toChain
+            is.iterator.filter(values.contains).toList == is.withFilter(values.contains).toChain
     }
 
     property("withFilter") = forAll { (is: IntArraySet, values: IntArraySet) =>
-        is.iterator.withFilter(values.contains).toChain == is.withFilter(values.contains).toChain
+        is.iterator.withFilter(values.contains).toList == is.withFilter(values.contains).toChain
     }
 
     property("map[AnyRef]") = forAll { is: IntArraySet =>
@@ -122,7 +120,7 @@ object IntIteratorProperties extends Properties("IntIterator") {
     }
 
     property("toChain") = forAll { is: IntArraySet =>
-        is.iterator.toChain == is.toChain
+        is.iterator.toList == is.toChain
     }
 
     property("mkString") = forAll { is: IntArraySet =>

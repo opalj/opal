@@ -3,7 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
 
 trait AlwaysSucceedingStackBasedBinaryArithmeticInstruction
     extends StackBasedBinaryArithmeticInstruction {
@@ -15,8 +14,8 @@ trait AlwaysSucceedingStackBasedBinaryArithmeticInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
 }

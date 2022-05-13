@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that stores the top-most stack value in a local variable.
  *
@@ -31,8 +29,8 @@ abstract class StoreLocalVariableInstruction extends Instruction with NoLabels {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
     final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1

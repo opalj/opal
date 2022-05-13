@@ -9,8 +9,6 @@ import scala.collection.mutable.Set
 import scala.collection.mutable.HashMap
 import scala.collection.{Map => AMap}
 import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 /**
  * Represents a mutable (multi-)graph with ordered edges.
@@ -22,13 +20,13 @@ import org.opalj.collection.immutable.Naught
  */
 class Graph[@specialized(Int) N: ClassTag] private (
         val vertices:     Set[N],
-        val successors:   LinkedHashMap[N, Chain[N]],
-        val predecessors: LinkedHashMap[N, Chain[N]]
+        val successors:   LinkedHashMap[N, List[N]],
+        val predecessors: LinkedHashMap[N, List[N]]
 ) extends AbstractGraph[N] {
 
-    def apply(s: N): Chain[N] = successors.getOrElse(s, Naught)
+    def apply(s: N): List[N] = successors.getOrElse(s, List.empty)
 
-    def asTraversable: N => Traversable[N] = (n: N) => { this(n).toTraversable }
+    def asIterable: N => Iterable[N] = (n: N) => { this(n) }
 
     /**
      * Adds a new vertice.
@@ -55,8 +53,8 @@ class Graph[@specialized(Int) N: ClassTag] private (
      */
     def addEdge(s: N, t: N): this.type = {
         vertices += s += t
-        successors += ((s, t :&: successors.getOrElse(s, Naught)))
-        predecessors += ((t, s :&: predecessors.getOrElse(t, Naught)))
+        successors += ((s, t :: successors.getOrElse(s, List.empty)))
+        predecessors += ((t, s :: predecessors.getOrElse(t, List.empty)))
         this
     }
 
@@ -74,7 +72,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
         this
     }
 
-    def --=(vs: TraversableOnce[N]): this.type = { vs foreach { v => this removeVertice v }; this }
+    def --=(vs: IterableOnce[N]): this.type = { vs foreach { v => this removeVertice v }; this }
 
     /**
      * All nodes which only have incoming dependencies/which have no successors.
@@ -94,7 +92,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
         }
         val es: Int => IntIterator = (index: Int) => {
             successors.get(indexToN(index)) match {
-                case Some(successors) => successors.mapToIntIterator(nToIndex)
+                case Some(successors) => ??? // successors.mapToIntIterator(nToIndex)
                 case None             => IntIterator.empty
             }
         }

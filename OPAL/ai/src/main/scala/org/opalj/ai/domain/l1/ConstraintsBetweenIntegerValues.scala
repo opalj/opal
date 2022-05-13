@@ -9,7 +9,6 @@ import java.util.{IdentityHashMap => IDMap}
 import scala.collection.JavaConverters._
 
 import org.opalj.constraints.NumericConstraints
-import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables

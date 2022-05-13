@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.support.debug
 
-import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.AITracer

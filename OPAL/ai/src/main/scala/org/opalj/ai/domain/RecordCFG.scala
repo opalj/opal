@@ -12,8 +12,6 @@ import scala.collection.JavaConverters._
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.immutable.{Chain => List}
-import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.IntRefPair

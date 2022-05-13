@@ -2,8 +2,6 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{Chain => List}
-import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.collection.mutable.IntArrayStack
@@ -425,13 +423,13 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                     if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
                         if (subroutinesToTerminate > 0) {
-                            header :&:= pc
+                            header ::= pc
                             true
                         } else {
                             false
                         }
                     } else {
-                        header :&:= pc
+                        header ::= pc
                         true
                     }
                 }.tail /* drop SUBROUTINE MARKER */
@@ -439,13 +437,13 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)) {
                 worklist
             } else {
-                header.reverse :&:: (SUBROUTINE :&: successorPC :&: relevantWorklist)
+                header.reverse ::: (SUBROUTINE :: successorPC :: relevantWorklist)
             }
         } else {
             if (containsInPrefix(worklist, successorPC, SUBROUTINE_START)) {
                 worklist
             } else {
-                successorPC :&: worklist
+                successorPC :: worklist
             }
         }
     }

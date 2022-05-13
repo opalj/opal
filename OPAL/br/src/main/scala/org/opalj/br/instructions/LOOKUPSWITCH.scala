@@ -6,7 +6,6 @@ package instructions
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.ForeachRefIterator
 
@@ -67,9 +66,9 @@ case class LOOKUPSWITCH(
 
     def jumpOffsets: Iterable[Int] = npairs.view.map(_._2)
 
-    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
+    def caseValueOfJumpOffset(jumpOffset: Int): (List[Int], Boolean) = {
         (
-            npairs.view.filter(_._2 == jumpOffset).map(_._1)(Chain.GenericSpecializedCBF),
+            npairs.view.filter(_._2 == jumpOffset).map(_._1).toList,
             jumpOffset == defaultOffset
         )
     }
@@ -83,16 +82,16 @@ case class LOOKUPSWITCH(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         val defaultTarget = currentPC + defaultOffset
-        var pcs = Chain.singleton(defaultTarget)
+        var pcs = List(defaultTarget)
         var seen: IntArraySet = new IntArraySet1(defaultTarget)
         npairs foreach { npair =>
             val offset = npair.value
             val nextTarget = currentPC + offset
             if (!seen.contains(nextTarget)) {
                 seen += nextTarget
-                pcs :&:= nextTarget
+                pcs ::= nextTarget
             }
         }
         pcs

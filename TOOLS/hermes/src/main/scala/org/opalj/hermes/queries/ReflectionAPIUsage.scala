@@ -6,7 +6,6 @@ package queries
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.APIFeatureGroup
@@ -20,7 +19,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override val apiFeatures: Chain[APIFeature] = {
+    override val apiFeatures: List[APIFeature] = {
 
         val Class = ObjectType.Class
         val Field = ObjectType("java/lang/reflect/Field")
@@ -32,13 +31,13 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
         // TODO val MethodHandles_Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
         val Proxy = ObjectType("java/lang/reflect/Proxy")
 
-        Chain(
+      List(
 
             StaticAPIMethod(Class, "forName"),
 
             // reflective instance creation
             APIFeatureGroup(
-                Chain(
+              List(
                     InstanceAPIMethod(Class, "newInstance", JustReturnsObject),
                     InstanceAPIMethod(Constructor, "newInstance", "([Ljava/lang/Object;)Ljava/lang/Object;")
                 ),
@@ -47,7 +46,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
             // reflective field write api
             APIFeatureGroup(
-                Chain(
+              List(
                     InstanceAPIMethod(Field, "set", "(Ljava/lang/Object;Ljava/lang/Object;)V"),
                     InstanceAPIMethod(Field, "setBoolean", "(Ljava/lang/Object;Z)V"),
                     InstanceAPIMethod(Field, "setByte", "(Ljava/lang/Object;B)V"),
@@ -63,7 +62,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
             // reflective field read api
             APIFeatureGroup(
-                Chain(
+              List(
                     InstanceAPIMethod(Field, "get"),
                     InstanceAPIMethod(Field, "getBoolean"),
                     InstanceAPIMethod(Field, "getByte"),
@@ -79,7 +78,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
             // making fields accessible using "setAccessible"
             APIFeatureGroup(
-                Chain(
+              List(
                     InstanceAPIMethod(
                         Field, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
                     ),
@@ -90,7 +89,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
             // setting methods or constructors accessible
             APIFeatureGroup(
-                Chain(
+              List(
                     InstanceAPIMethod(
                         Method, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
                     ),
@@ -105,7 +104,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
             // set an AccessibleObject accessible
             APIFeatureGroup(
-                Chain(
+              List(
                     InstanceAPIMethod(
                         AccessibleObject, "setAccessible", s"([${AccessibleObject.toJVMTypeName}Z)V"
                     ),
@@ -129,7 +128,7 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
             StaticAPIMethod(MethodHandles, "publicLookup"),
 
             APIFeatureGroup(
-                Chain(
+              List(
                     InstanceAPIMethod(MethodHandle, "invokeExact"),
                     InstanceAPIMethod(MethodHandle, "invoke"),
                     InstanceAPIMethod(MethodHandle, "invokeWithArguments")

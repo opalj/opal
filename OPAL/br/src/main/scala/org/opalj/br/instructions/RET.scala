@@ -5,8 +5,6 @@ package instructions
 
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 /**
  * Return from subroutine.
@@ -37,7 +35,7 @@ case class RET(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[Int /*PC*/ ] = {
+    ): List[Int /*PC*/ ] = {
         nextInstructions(currentPC, () => CFGFactory(code, classHierarchy))
     }
 
@@ -56,17 +54,17 @@ case class RET(
     )(
         implicit
         code: Code
-    ): Chain[Int /*PC*/ ] = {
+    ): List[Int /*PC*/ ] = {
 
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
-        var jumpTargetPCs: Chain[Int] = Naught
+        var jumpTargetPCs: List[Int] = List.empty
         code.iterate { (pc, instruction) =>
             if (pc != currentPC) { // filter this ret!
                 instruction.opcode match {
 
                     case JSR.opcode | JSR_W.opcode =>
-                        jumpTargetPCs :&:= (instruction.indexOfNextInstruction(pc))
+                        jumpTargetPCs ::= (instruction.indexOfNextInstruction(pc))
 
                     case RET.opcode =>
                         // we have found another RET ... hence, we have at least two subroutines

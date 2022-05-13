@@ -5,8 +5,6 @@ package queries
 package util
 
 import scala.collection.mutable
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -42,12 +40,12 @@ import org.opalj.da.ClassFile
  */
 abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    def apiFeatures: Chain[APIFeature]
+    def apiFeatures: List[APIFeature]
 
     /**
      * The unique ids of the computed features.
      */
-    override lazy val featureIDs: Seq[String] = apiFeatures.map(_.featureID).toSeq
+    override lazy val featureIDs: Seq[String] = apiFeatures.map(_.featureID)
 
     /**
      * Returns the set of all relevant receiver types.
@@ -66,7 +64,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+    ): IterableOnce[Feature[S]] = {
 
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
@@ -82,7 +80,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
         )
 
         // TODO Use LocationsContainer
-        val locations = mutable.Map.empty[String, Chain[Location[S]]]
+        val locations = mutable.Map.empty[String, List[Location[S]]]
 
         for {
             classFeature ← apiFeatures.collect { case ce: ClassExtension => ce }
@@ -101,7 +99,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             } {
                 locations += ((
                     featureID,
-                    classFileLocation :&: locations.getOrElse(featureID, Naught)
+                    classFileLocation :: locations.getOrElse(featureID, Naught)
                 ))
             }
         }
@@ -125,7 +123,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             if APIMethod.matches(mii)
         } {
             val l = InstructionLocation(source, m, pc)
-            locations += ((featureID, l :&: locations.getOrElse(featureID, Naught)))
+            locations += ((featureID, l :: locations.getOrElse(featureID, Naught)))
             val count = occurrencesCount(featureID) + 1
             occurrencesCount = occurrencesCount + ((featureID, count))
         }

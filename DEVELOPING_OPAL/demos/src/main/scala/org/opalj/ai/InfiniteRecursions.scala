@@ -8,7 +8,6 @@ import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
 import scala.language.existentials
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -84,7 +83,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
         maxRecursionDepth: Int,
         project:           SomeProject,
         method:            Method,
-        pcs:               Chain[Int /*PC*/ ]
+        pcs:               List[Int /*PC*/ ]
     ): Option[InfiniteRecursion] = {
 
         assert(maxRecursionDepth > 1)
@@ -208,7 +207,7 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     with domain.TheProject
     with domain.TheMethod
 
-case class InfiniteRecursion(method: Method, operands: Chain[_ <: AnyRef]) {
+case class InfiniteRecursion(method: Method, operands: List[_ <: AnyRef]) {
 
     override def toString: String = {
         val declaringClassOfMethod = method.classFile.thisType.toJava

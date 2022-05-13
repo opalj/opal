@@ -22,8 +22,6 @@ import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.BitArraySet
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.mutable.IntQueue
@@ -792,9 +790,9 @@ final class Code private (
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def handlersFor(pc: Int, justExceptions: Boolean = false): Chain[ExceptionHandler] = {
+    def handlersFor(pc: Int, justExceptions: Boolean = false): List[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
-        val ehs = Chain.newBuilder[ExceptionHandler]
+        val ehs = List.newBuilder[ExceptionHandler]
         exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -830,7 +828,7 @@ final class Code private (
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): Chain[ExceptionHandler] = {
+    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = {
         handlersFor(pc, justExceptions = true)
     }
 
@@ -846,12 +844,12 @@ final class Code private (
     )(
         implicit
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[ExceptionHandler] = {
+    ): List[ExceptionHandler] = {
         import classHierarchy.isASubtypeOf
 
         var handledExceptions = Set.empty[ObjectType]
 
-        val ehs = Chain.newBuilder[ExceptionHandler]
+        val ehs = List.newBuilder[ExceptionHandler]
         exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -892,10 +890,10 @@ final class Code private (
      * If different exceptions are handled by the same handler, the corresponding pc is returned
      * multiple times.
      */
-    def handlerInstructionsFor(pc: Int): Chain[Int] /*Chain[PC]*/ = {
+    def handlerInstructionsFor(pc: Int): List[Int] /*Chain[PC]*/ = {
         var handledExceptions = Set.empty[ObjectType]
 
-        val pcs = Chain.newBuilder[Int] /*PC*/
+        val pcs = List.newBuilder[Int] /*PC*/
         exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -1399,15 +1397,15 @@ final class Code private (
      *  } yield (classFile, method, pc)
      * }}}
      */
-    def matchPair(f: (Instruction, Instruction) => Boolean): Chain[Int /*PC*/ ] = {
+    def matchPair(f: (Instruction, Instruction) => Boolean): List[Int /*PC*/ ] = {
         val max_pc = instructions.length
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
 
-        var result: Chain[Int /*PC*/ ] = Naught
+        var result: List[Int /*PC*/ ] = List.empty
         while (pc2 < max_pc) {
             if (f(instructions(pc1), instructions(pc2))) {
-                result = pc1 :&: result
+                result = pc1 :: result
             }
 
             pc1 = pc2
@@ -1419,7 +1417,7 @@ final class Code private (
     /**
      * Finds all sequences of three consecutive instructions that are matched by `f`.
      */
-    def matchTriple(f: (Instruction, Instruction, Instruction) => Boolean): Chain[Int /*PC*/ ] = {
+    def matchTriple(f: (Instruction, Instruction, Instruction) => Boolean): List[Int /*PC*/ ] = {
         matchTriple(Int.MaxValue, f)
     }
 
@@ -1434,20 +1432,20 @@ final class Code private (
     def matchTriple(
         matchMaxTriples: Int                                                = Int.MaxValue,
         f:               (Instruction, Instruction, Instruction) => Boolean
-    ): Chain[Int /*PC*/ ] = {
+    ): List[Int /*PC*/ ] = {
         val max_pc = instructions.length
         var matchedTriplesCount = 0
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
         if (pc2 >= max_pc)
-            return Naught;
+            return List.empty;
 
         var pc3 = pcOfNextInstruction(pc2)
 
-        var result: Chain[Int /*PC*/ ] = Naught
+        var result: List[Int /*PC*/ ] = List.empty
         while (pc3 < max_pc && matchedTriplesCount < matchMaxTriples) {
             if (f(instructions(pc1), instructions(pc2), instructions(pc3))) {
-                result = pc1 :&: result
+                result = pc1 :: result
             }
 
             matchedTriplesCount += 1
@@ -1589,11 +1587,11 @@ final class Code private (
      */
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def stackDepthAt(atPC: Int, cfg: CFG[Instruction, Code]): Int = {
-        var paths: Chain[( /*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = Naught
+        var paths: List[( /*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = List.empty
         val visitedPCs = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.
-        paths :&:= ((0, 0))
+        paths ::= ((0, 0))
         visitedPCs += 0
 
         // We have to make sure, that all exception handlers are evaluated for
@@ -1601,7 +1599,7 @@ final class Code private (
         // containing the exception itself.
         for (exceptionHandler ← exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
-            if (visitedPCs.add(handlerPC)) paths :&:= ((handlerPC, 1))
+            if (visitedPCs.add(handlerPC)) paths ::= ((handlerPC, 1))
         }
 
         while (paths.nonEmpty) {
@@ -1613,7 +1611,7 @@ final class Code private (
             val newStackDepth = initialStackDepth + instructions(pc).stackSlotsChange
             cfg.foreachSuccessor(pc) { succPC =>
                 if (visitedPCs.add(succPC)) {
-                    paths :&:= ((succPC, newStackDepth))
+                    paths ::= ((succPC, newStackDepth))
                 }
             }
         }
@@ -1695,7 +1693,7 @@ final class Code private (
      *  }) // .flatten should equal (Seq(...))
      * }}}
      */
-    def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): Chain[B] = {
+    def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): List[B] = {
         val max_pc = instructions.length
         var pc = 0
         val vs = Chain.newBuilder[B]
@@ -1945,11 +1943,11 @@ object Code {
         var maxStackDepth: Int = 0
 
         // IntIntPair:  /*PC*/ Int, Int /*stackdepth before executing the instruction*/
-        var paths: Chain[IntIntPair] = Naught
+        var paths: List[IntIntPair] = List()
         val visitedPCs = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.
-        paths :&:= IntIntPair(0, 0)
+        paths ::= IntIntPair(0, 0)
         visitedPCs += 0
 
         // We have to make sure, that all exception handlers are evaluated for
@@ -1957,7 +1955,7 @@ object Code {
         // containing the exception itself.
         for (exceptionHandler ← exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
-            if (visitedPCs.add(handlerPC)) paths :&:= IntIntPair(handlerPC, 1)
+            if (visitedPCs.add(handlerPC)) paths ::= IntIntPair(handlerPC, 1)
         }
 
         while (paths.nonEmpty) {
@@ -1969,7 +1967,7 @@ object Code {
             maxStackDepth = Math.max(maxStackDepth, stackDepth)
             cfg.foreachSuccessor(pc) { succPC =>
                 if (visitedPCs.add(succPC)) {
-                    paths :&:= IntIntPair(succPC, stackDepth)
+                    paths ::= IntIntPair(succPC, stackDepth)
                 }
             }
         }

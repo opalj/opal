@@ -4,8 +4,6 @@ package ai
 
 import scala.annotation.switch
 
-import org.opalj.collection.immutable.{Chain => List}
-import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.FixedSizeBitSet

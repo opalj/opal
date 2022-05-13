@@ -4,7 +4,6 @@ package ai
 package domain
 package l2
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 

@@ -8,8 +8,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * Tests the utility methods.
  *
@@ -20,8 +18,8 @@ class UtilTest extends AnyFlatSpec with Matchers {
 
     behavior of "the function removeFirstWhile"
 
-    val shortList = Chain(1, 5, 4)
-    val longList = Chain(1, 4, 5, 6, 4848, 34, 35, 35, 37)
+    val shortList = List(1, 5, 4)
+    val longList = List(1, 4, 5, 6, 4848, 34, 35, 35, 37)
 
     it should ("return the given list if no element matches") in {
         val newList = removeFirstUnless(longList, -1)(_ <= 0)
@@ -47,11 +45,11 @@ class UtilTest extends AnyFlatSpec with Matchers {
 
     it should ("return the list without it's second element if that element matches") in {
         val newList = removeFirstUnless(longList, 4)(_ >= 1000)
-        newList should be(longList.head :&: longList.tail.tail)
+        newList should be(longList.head :: longList.tail.tail)
     }
 
     it should ("return the list without it's last element if that element matches") in {
         val newList = removeFirstUnless(shortList, 4)(_ >= 1000)
-        newList should be(Chain(1, 5))
+        newList should be(List(1, 5))
     }
 }

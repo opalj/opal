@@ -14,7 +14,6 @@ import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
@@ -253,7 +252,7 @@ object Purity {
 
             manager.runAll(
                 analyses,
-                { css: Chain[ComputationSpecification[FPCFAnalysis]] =>
+                { css: List[ComputationSpecification[FPCFAnalysis]] =>
                     if (css.contains(analysis)) {
                         analyzedMethods.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
                     }

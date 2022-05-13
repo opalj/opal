@@ -5,7 +5,6 @@ package queries
 package jcg
 
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.InstanceAPIMethod
@@ -23,9 +22,9 @@ class ModernReflection(implicit hermes: HermesConfig) extends APIFeatureQuery {
     val Lookup = ObjectType.MethodHandles$Lookup
     val MethodHandle = ObjectType.MethodHandle
 
-    override val apiFeatures: Chain[APIFeature] = {
+    override val apiFeatures: List[APIFeature] = {
 
-        Chain(
+      List(
             InstanceAPIMethod(
                 Lookup, "findStatic", featureID = "TMR1.1"
             ),

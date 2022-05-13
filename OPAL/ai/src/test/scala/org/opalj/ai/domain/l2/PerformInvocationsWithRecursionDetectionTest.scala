@@ -11,7 +11,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.biProject

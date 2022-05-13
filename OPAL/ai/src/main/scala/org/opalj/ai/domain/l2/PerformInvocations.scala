@@ -7,8 +7,6 @@ package l2
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.Error
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.VoidType
 import org.opalj.br.ObjectType
@@ -52,7 +50,7 @@ trait PerformInvocations extends MethodCallsHandling {
     )(
         parameters: calledMethodDomain.Locals
     ): AIResult { val domain: calledMethodDomain.type } = {
-        val noOperands: Chain[calledMethodDomain.DomainValue] = Naught
+        val noOperands: List[calledMethodDomain.DomainValue] = List.empty
         val code = method.body.get
         calledMethodAI.performInterpretation(code, calledMethodDomain)(noOperands, parameters)
     }

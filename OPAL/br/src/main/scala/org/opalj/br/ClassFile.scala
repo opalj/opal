@@ -4,8 +4,6 @@ package br
 
 import scala.annotation.tailrec
 import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
@@ -710,24 +708,24 @@ final class ClassFile private (
      *
      * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
-    def findField(name: String): Chain[Field] = {
-        @tailrec @inline def findField(low: Int, high: Int): Chain[Field] = {
+    def findField(name: String): List[Field] = {
+        @tailrec @inline def findField(low: Int, high: Int): List[Field] = {
             if (high < low)
-                return Naught;
+                return List.empty;
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
             val field = fields(mid)
             val fieldNameComparison = field.name.compareTo(name)
             if (fieldNameComparison == 0) {
-                var theFields = Chain(field)
+                var theFields = List(field)
                 var d = mid - 1
                 while (low <= d && fields(d).name.equals(name)) {
-                    theFields :&:= fields(d)
+                    theFields ::= fields(d)
                     d -= 1
                 }
                 var u = mid + 1
                 while (u <= high && fields(u).name.equals(name)) {
-                    theFields :&:= fields(u)
+                    theFields ::= fields(u)
                     u += 1
                 }
                 theFields
@@ -754,25 +752,25 @@ final class ClassFile private (
      *
      * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
-    def findMethod(name: String): Chain[Method] = {
-        @tailrec @inline def findMethod(low: Int, high: Int): Chain[Method] = {
+    def findMethod(name: String): List[Method] = {
+        @tailrec @inline def findMethod(low: Int, high: Int): List[Method] = {
             if (high < low)
-                return Naught;
+                return List.empty;
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
             val method = methods(mid)
             val methodName = method.name
             val methodNameComparison = methodName.compareTo(name)
             if (methodNameComparison == 0) {
-                var theMethods = Chain(method)
+                var theMethods = List(method)
                 var d = mid - 1
                 while (low <= d && methods(d).name.equals(name)) {
-                    theMethods :&:= methods(d)
+                    theMethods ::= methods(d)
                     d -= 1
                 }
                 var u = mid + 1
                 while (u <= high && methods(u).name.equals(name)) {
-                    theMethods :&:= methods(u)
+                    theMethods ::= methods(u)
                     u += 1
                 }
                 theMethods

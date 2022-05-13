@@ -6,9 +6,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.graphs.Graph
 
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
-
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
  * a schedule to execute a set of analyses.

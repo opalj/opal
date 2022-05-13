@@ -6,6 +6,7 @@ import scala.language.existentials
 import scala.annotation.switch
 
 import scala.util.control.ControlThrowable
+import scala.collection.immutable.List
 
 import org.opalj.control.foreachNonNullValue
 
@@ -13,13 +14,8 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.collection.immutable.{Chain => List}
-import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.:&:
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.{Locals => Registers}
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.bytecode.BytecodeProcessingFailedException
@@ -3104,7 +3100,7 @@ private object AI {
      * The list of program counters (`List(0)`) that is used when we analysis a method
      * right from the beginning.
      */
-    final val initialWorkList: List[Int /*PC*/ ] = Chain.singleton(0)
+    final val initialWorkList: List[Int /*PC*/ ] = List(0)
 
     final val RefIsNullTestId = 10001
     final val RefIsNonNullTestId = 10002

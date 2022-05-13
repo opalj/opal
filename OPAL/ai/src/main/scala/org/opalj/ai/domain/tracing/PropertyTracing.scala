@@ -4,7 +4,6 @@ package ai
 package domain
 package tracing
 
-import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
 

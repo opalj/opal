@@ -11,7 +11,6 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
@@ -362,7 +361,7 @@ package object ai {
         origin
     }
 
-    final type Operands[T >: Null <: ValuesDomain#DomainValue] = Chain[T]
+    final type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
     final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
     final type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
 

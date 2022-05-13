@@ -2,12 +2,9 @@
 package org.opalj
 
 import scala.reflect.ClassTag
-import scala.collection.mutable.ArrayStack
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.mutable.RefArrayBuffer
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 import scala.collection.mutable
 
@@ -77,7 +74,7 @@ package object graphs {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        rootNodes: Traversable[_ <: Node],
+        rootNodes: Iterable[_ <: Node],
         dir:       String                 = "forward",
         ranksep:   String                 = "0.8",
         fontname:  String                 = "Helvetica",
@@ -170,7 +167,7 @@ package object graphs {
     // ---------------------------------------------------------------------------------------
 
     final def closedSCCs[N >: Null <: AnyRef: ClassTag](g: Graph[N]): List[Iterable[N]] = {
-        closedSCCs(g.vertices, g.asTraversable)
+        closedSCCs(g.vertices, g.asIterable)
     }
 
     /**
@@ -555,7 +552,7 @@ package object graphs {
         ns:               Int,
         es:               Int => IntIterator,
         filterSingletons: Boolean            = false
-    ): Chain[Chain[Int]] = {
+    ): List[List[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
         * (cannot handle very large, degenerated graphs due to non-tail recursion)
@@ -604,7 +601,7 @@ package object graphs {
         */
 
         // output data structure
-        var sccs: Chain[Chain[Int]] = Naught
+        var sccs: List[List[Int]] = List.empty
 
         val nIndex = new Array[Int](ns + 1)
         val nLowLink = new Array[Int](ns + 1)
@@ -661,7 +658,7 @@ package object graphs {
                 //              signal that the node was not yet processed.
 
                 val ws = IntArrayStack(n)
-                val wsSuccessors = ArrayStack[IntIterator](null)
+                val wsSuccessors = mutable.Stack[IntIterator](null)
                 // INVARIANT:
                 // If wsSuccessors(x) is not null then we have to pop the two values which identify
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of
@@ -703,17 +700,17 @@ package object graphs {
                     if (continue && !remainingSuccessors.hasNext) {
                         // ... there are no more successors
                         if (nLowLink(n) == nIndex(n)) {
-                            var nextSCC = Chain.empty[Int]
+                            var nextSCC = List.empty[Int]
                             var w: Int = -1
                             do {
                                 w = s.pop()
                                 nOnStack(w) = false
-                                nextSCC :&:= w
+                                nextSCC ::= w
                             } while (n != w)
                             if (!filterSingletons ||
                                 nextSCC.tail.nonEmpty ||
                                 es(n).exists(_ == n)) {
-                                sccs :&:= nextSCC
+                                sccs ::= nextSCC
                             }
                         }
                     }

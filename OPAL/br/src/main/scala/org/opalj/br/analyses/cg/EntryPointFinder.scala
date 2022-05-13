@@ -5,7 +5,6 @@ package analyses
 package cg
 
 import scala.collection.mutable.ArrayBuffer
-import org.opalj.collection.immutable.Chain
 import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus._
 
@@ -231,7 +230,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
             def findMethods(objectType: ObjectType, isSubtype: Boolean = false): Unit = {
                 project.classFile(objectType) match {
                     case Some(cf) =>
-                        var methods: Chain[Method] = cf.findMethod(name)
+                        var methods: List[Method] = cf.findMethod(name)
 
                         if (methods.size == 0)
                             OPALLogger.warn(

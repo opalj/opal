@@ -9,7 +9,6 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.JsNull
 
 import org.opalj.collection.mutable.Locals
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
@@ -20,7 +19,7 @@ import org.opalj.br.instructions.IINC
 class Operands(
         val code:           Code,
         val pc:             PC,
-        val operands:       Chain[_ <: AnyRef],
+        val operands:       List[_ <: AnyRef],
         val localVariables: Locals[_ <: AnyRef]
 ) extends IssueDetails with CodeComprehension {
 

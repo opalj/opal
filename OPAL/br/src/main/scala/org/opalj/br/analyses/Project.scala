@@ -30,8 +30,6 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogContext
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.concurrent.ConcurrentExceptions
@@ -1270,7 +1268,7 @@ object Project {
         //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
 
-        val methods: AnyRefMap[ObjectType, Chain[MethodDeclarationContext]] = {
+        val methods: AnyRefMap[ObjectType, List[MethodDeclarationContext]] = {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
@@ -1299,7 +1297,7 @@ object Project {
 
             val superclassType = classHierarchy.superclassType(objectType)
 
-            val inheritedClassMethods: Chain[MethodDeclarationContext] =
+            val inheritedClassMethods: List[MethodDeclarationContext] =
                 if (superclassType.isDefined) {
                     val theSuperclassType = superclassType.get
                     if (notYetAvailable(theSuperclassType)) {
@@ -1331,7 +1329,7 @@ object Project {
             //  -   we assume that the project is valid; i.e., there is
             //      always at most one maximally specific method and if not, then
             //      the subclass resolves the conflict by defining the method.
-            var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
+            var definedMethods: List[MethodDeclarationContext] = inheritedClassMethods
 
             // Note that we must NOT process interfaces again that were already implemented by the
             // supertype because the supertype can make a default method "abstract" again

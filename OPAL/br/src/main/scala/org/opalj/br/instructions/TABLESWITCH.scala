@@ -4,7 +4,6 @@ package br
 package instructions
 
 import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.ForeachRefIterator
@@ -56,12 +55,12 @@ case class TABLESWITCH(
         )
     }
 
-    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
-        var caseValues = Chain.empty[Int]
+    def caseValueOfJumpOffset(jumpOffset: Int): (List[Int], Boolean) = {
+        var caseValues = List.empty[Int]
         var i = jumpOffsets.length - 1
         while (i >= 0) {
             if (jumpOffsets(i) == jumpOffset)
-                caseValues = high - i :&: caseValues
+                caseValues = high - i :: caseValues
             i -= 1
         }
         (caseValues, jumpOffset == defaultOffset)
@@ -78,15 +77,15 @@ case class TABLESWITCH(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         val defaultTarget = currentPC + defaultOffset
-        var pcs = Chain.singleton(defaultTarget)
+        var pcs = List(defaultTarget)
         var seen: IntArraySet = IntArraySet1(defaultTarget)
         jumpOffsets foreach { offset =>
             val newPC = currentPC + offset
             if (!seen.contains(newPC)) {
                 seen += newPC
-                pcs :&:= newPC
+                pcs ::= newPC
             }
         }
         pcs
@@ -188,12 +187,12 @@ case class LabeledTABLESWITCH(
         jumpTargets.foreachIterator + defaultBranchTarget
     }
 
-    def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (Chain[Int], Boolean) = {
-        var caseValues = Chain.empty[Int]
+    def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (List[Int], Boolean) = {
+        var caseValues = List.empty
         var i = jumpTargets.length - 1
         while (i >= 0) {
             if (jumpTargets(i) == jumpTarget)
-                caseValues :&:= high - i
+                caseValues ::= high - i
             i -= 1
         }
         (caseValues, jumpTarget == defaultBranchTarget)

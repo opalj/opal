@@ -6,7 +6,6 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.JsNull
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable.Locals
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
@@ -120,7 +119,7 @@ object IDLTestsFixtures {
     val methodReturnIntOneParameter = classFile.methods(1)
     val methodReturnIntTwoParameters = classFile.methods(2)
 
-    val simpleOperands = new Operands(code, 0, Chain("foo"), null)
+    val simpleOperands = new Operands(code, 0, List("foo"), null)
 
     val simpleOperandsIDL: JsObject = Json.obj(
         "type" → "SimpleConditionalBranchInstruction",

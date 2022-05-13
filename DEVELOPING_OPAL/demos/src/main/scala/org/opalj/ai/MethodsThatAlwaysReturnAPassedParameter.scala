@@ -53,7 +53,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
             // collect the origin information
             val origins =
                 result.domain.allReturnedValues.values.
-                    map(result.domain.originsIterator(_).toChain).flatten.toSet
+                    map(result.domain.originsIterator(_).toList).flatten.toSet
 
             method.toJava + (
                 if (origins.nonEmpty)
