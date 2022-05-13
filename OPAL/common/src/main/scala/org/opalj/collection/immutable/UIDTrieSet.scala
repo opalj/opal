@@ -3,7 +3,7 @@
 package org.opalj.collection
 package immutable
 
-import org.opalj.collection.mutable.RefArrayStack
+import scala.collection.mutable
 
 /**
  * A set of objects of type UID. This set is defined over the ids of the objects and
@@ -440,7 +440,7 @@ private[immutable] final class UIDTrieSetN[T <: UID](
     override def iterator: RefIterator[T] = new RefIterator[T] {
         private[this] var currentNode = root
         private[this] var index = 0
-        private[this] val furtherNodes = RefArrayStack.empty[UIDTrieSetNode[T]]
+        private[this] val furtherNodes = mutable.Stack.empty[UIDTrieSetNode[T]]
         def hasNext: Boolean = currentNode ne null
         def next(): T = {
             (this.currentNode: @unchecked) match {

@@ -24,12 +24,12 @@ final class RefAccumulator[A <: AnyRef] private (
         data ::= i
     }
 
-    def ++=(is: TraversableOnce[A]): Unit = {
+    def ++=(is: IterableOnce[A]): Unit = {
         is match {
             case it: Iterator[A] =>
                 if (it.hasNext) data ::= it
             case is /*not a traversable once...*/ =>
-                if (is.nonEmpty) data ::= is.toIterator
+                if (is.iterator.nonEmpty) data ::= is.iterator
         }
     }
 

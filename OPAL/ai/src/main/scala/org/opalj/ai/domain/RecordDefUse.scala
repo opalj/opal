@@ -5,12 +5,9 @@ package domain
 
 import scala.annotation.switch
 import scala.annotation.tailrec
-
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
-
 import scala.xml.Node
-
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.control.foreachNonNullValue
 import org.opalj.collection.immutable.IntArraySet
@@ -22,7 +19,6 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.{Locals => Registers}
-import org.opalj.collection.mutable.RefArrayStack
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
@@ -31,6 +27,8 @@ import org.opalj.br.PC
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.instructions._
 import org.opalj.ai.util.XHTML
+
+import scala.collection.mutable
 
 /**
  * Collects the definition/use information based on the abstract interpretation time cfg.
@@ -605,8 +603,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
 
         // THE RefArrayStacks are required to model "at which subroutine level" we are currently
         // operating.
-        val nextPCs: RefArrayStack[IntTrieSet] = new RefArrayStack(IntTrieSet1(0), 3)
-        val nextJoinPCs: RefArrayStack[IntTrieSet] = new RefArrayStack(IntTrieSet.empty, 3)
+        val nextPCs: mutable.Stack[IntTrieSet] = new mutable.Stack[IntTrieSet](initialSize = 3) += IntTrieSet1(0)
+        val nextJoinPCs: mutable.Stack[IntTrieSet] = new mutable.Stack[IntTrieSet](initialSize = 3) += IntTrieSet.empty
         // General idea related to JSR/RET:
         // We jump to a subroutine once all regular paths to a specific JSR have been evaluated.
         // Then we evaluate the subroutine; collect the def/use information related to the JSR
@@ -614,11 +612,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
         // related to the JSRs.
         // Due to the possibility of nested subroutine calls, we have to track the level at
         // which a subroutine level happens - the main level has the id "0".
-        val jsrPCs: RefArrayStack[IntTrieSet] = new RefArrayStack(IntTrieSet.empty, 3)
+        val jsrPCs: mutable.Stack[IntTrieSet] = new mutable.Stack[IntTrieSet](initialSize = 3) += IntTrieSet.empty
         // Recall that we need to ret in reverse order; i.e. last subroutine first!
         var retTargetPCs: Chain[IntTrieSet] = Naught
         var retPCs: Chain[Int] = Naught
-        val currentSubroutinePCs: RefArrayStack[IntTrieSet] = RefArrayStack.empty // the instructions belonging to the subroutine
+        val currentSubroutinePCs: mutable.Stack[IntTrieSet] = mutable.Stack.empty // the instructions belonging to the subroutine
         var currentSubroutineLevel: Int = 0
         var subroutineIDs: Chain[Int] = Naught // basically the stack of the pc of the first instructions of the subroutines that are currently executed
         var subroutineDefOps: Array[Chain[ValueOrigins]] = null

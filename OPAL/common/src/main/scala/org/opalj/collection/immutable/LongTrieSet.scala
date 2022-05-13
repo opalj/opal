@@ -5,7 +5,6 @@ package immutable
 import scala.annotation.tailrec
 
 import org.opalj.collection.LongIterator
-import org.opalj.collection.mutable.RefArrayStack
 import java.lang.Long.{hashCode => lHashCode}
 
 sealed abstract class LongTrieSet extends LongSet { intSet =>
@@ -459,7 +458,7 @@ private[immutable] final class LongTrieSetN(
     override def iterator: LongIterator = new LongIterator {
         private[this] var leafNode: LongTrieSetLeaf = null
         private[this] var index = 0
-        private[this] val nodes = new RefArrayStack(root, Math.min(16, size / 2))
+        private[this] val nodes = new scala.collection.mutable.Stack(initialSize = Math.min(16, size / 2)) += root
         @tailrec private[this] def moveToNextLeafNode(): Unit = {
             if (nodes.isEmpty) {
                 leafNode = null

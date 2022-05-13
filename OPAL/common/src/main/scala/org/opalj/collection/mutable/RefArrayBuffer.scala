@@ -87,13 +87,11 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
         if (until > size0)
             throw new IndexOutOfBoundsException(s"$until > $size0(size of buffer)")
 
-        ArraySeq[N](JArrays.copyOfRange(data, from, until, classOf[Array[AnyRef]]))
+        ArraySeq.unsafeWrapArray(JArrays.copyOfRange(data, from, until, classOf[Array[N]]))
     }
 
-    def ++=(is: Traversable[N]): this.type = {
-        is.foreach(+=)
-        this
-    }
+    def ++=(is: IterableOnce[N]): this.type =
+        ++=(is.iterator)
 
     def ++=(is: Iterator[N]): this.type = {
         is.foreach(+=)

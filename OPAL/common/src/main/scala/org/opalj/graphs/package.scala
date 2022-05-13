@@ -2,15 +2,14 @@
 package org.opalj
 
 import scala.reflect.ClassTag
-
 import scala.collection.mutable.ArrayStack
-
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.mutable.RefArrayStack
 import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+
+import scala.collection.mutable
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -206,7 +205,7 @@ package object graphs {
         val ProcessedNodeNum: Int = -1
         val PathSegmentSeparator: Null = null
 
-        val workstack = new RefArrayStack[N](8) //mutable.ArrayStack.empty[N]
+        val workstack = new mutable.Stack[N](initialSize = 8)
         val path = RefArrayBuffer.withInitialSize[N](16)
 
         var cSCCs = List.empty[Iterable[N]]
@@ -219,7 +218,7 @@ package object graphs {
 
             path._UNSAFE_resetSize()
 
-            workstack.resetSize()
+            workstack.clear()
             workstack.push(initialN)
 
             def markPathAsProcessed(): Unit = {

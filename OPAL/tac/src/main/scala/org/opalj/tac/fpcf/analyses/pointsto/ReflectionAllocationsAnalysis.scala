@@ -58,7 +58,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                     ObjectType.Class,
                     "forName",
                     MethodDescriptor(
-                      ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+                        ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
                         ObjectType.Class
                     )
                 )
@@ -71,7 +71,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                     ObjectType.Class,
                     "forName",
                     MethodDescriptor(
-                      ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
+                        ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
                         ObjectType.Class
                     )
                 )

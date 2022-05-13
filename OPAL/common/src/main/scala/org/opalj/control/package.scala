@@ -4,8 +4,8 @@ package org.opalj
 import scala.language.experimental.macros
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox.Context
-
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Defines common control abstractions.
@@ -75,7 +75,7 @@ package object control {
         times: Int
     )(
         f: => T
-    ): ArraySeq[T] = ArraySeq.fill(times)(f)
+    )(implicit classTag: ClassTag[T]): ArraySeq[T] = ArraySeq.fill(times)(f)
 
     // macro ControlAbstractionsImplementation.fillRefArray[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
@@ -270,7 +270,7 @@ package control {
             }
         }
 
-        def fillRefArray[T <: AnyRef: c.WeakTypeTag](
+        def fillRefArray[T <: AnyRef: ClassTag](
             c: Context
         )(
             times: c.Expr[Int]
@@ -282,7 +282,7 @@ package control {
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                  ArraySeq.empty[T]
+                    ArraySeq.empty[T]
                 } else {
                     val array = new Array[AnyRef](size)
                     var i = 0
@@ -291,7 +291,7 @@ package control {
                         array(i) = value
                         i += 1
                     }
-                  ArraySeq.unsafeWrapArray[T](array.asInstanceOf[Array[T]])
+                    ArraySeq.unsafeWrapArray[T](array.asInstanceOf[Array[T]])
                 }
             }
         }
@@ -302,7 +302,7 @@ package control {
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    ArraySeq.empty
+                    ArraySeq.empty[Int]
                 } else {
                     val array = new Array[Int](size)
                     var i = 0

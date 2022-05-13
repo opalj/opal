@@ -626,7 +626,7 @@ class IntArraySetBuilder private[immutable] (
 
     def this(initialSize: Int) = this(new Array[Int](Math.max(initialSize, 4)), 0)
 
-    override def +=(elem: Int): this.type = {
+    override def addOne(elem: Int): this.type = {
         import System.arraycopy
         val index = JArrays.binarySearch(is, 0, size, elem)
         if (index < 0) {

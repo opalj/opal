@@ -38,13 +38,13 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
         ACC_PUBLIC.mask,
         "simple_method",
         MethodDescriptor.JustReturnsBoolean,
-      ArraySeq(simpleCode, Deprecated)
+        ArraySeq(simpleCode, Deprecated)
     )
     def simpleMethod2 = Method(
         ACC_STATIC.mask | ACC_PRIVATE.mask,
         "simple_method_2",
         MethodDescriptor.NoArgsAndReturnVoid,
-      ArraySeq(Code(0, 0, Array()))
+        ArraySeq(Code(0, 0, Array()))
     )
     def simpleMethods = ArraySeq(simpleMethod, simpleMethod2)
     def simpleClass = ClassFile(

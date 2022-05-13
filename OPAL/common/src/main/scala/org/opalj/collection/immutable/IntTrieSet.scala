@@ -1103,7 +1103,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
 
 class IntTrieSetBuilder extends scala.collection.mutable.Builder[Int, IntTrieSet] {
     private[this] var s: IntTrieSet = EmptyIntTrieSet
-    def +=(i: Int): this.type = { s +!= i; this }
+    override def addOne(i: Int): this.type = { s +!= i; this }
     def clear(): Unit = s = EmptyIntTrieSet
     def result(): IntTrieSet = s
 }

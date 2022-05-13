@@ -4,7 +4,6 @@ package collection
 
 import scala.reflect.ClassTag
 import scala.collection.AbstractIterator
-import scala.collection.GenTraversableOnce
 
 /**
  * Iterator over a collection of `AnyRef` values. (RefIterator[Char] would be an iterator over
@@ -16,8 +15,8 @@ import scala.collection.GenTraversableOnce
  */
 abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
 
-    def ++[X >: T <: AnyRef](other: GenTraversableOnce[X]): RefIterator[X] = {
-        val that = other.toIterator
+    def ++[X >: T <: AnyRef](other: IterableOnce[X]): RefIterator[X] = {
+        val that = other.iterator
         new RefIterator[X] {
             def hasNext: Boolean = self.hasNext || that.hasNext
             def next(): X = if (self.hasNext) self.next() else that.next()
@@ -114,13 +113,13 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
         }
     }
 
-    def flatMap[X](f: T => TraversableOnce[X]): RefIterator[X] = {
+    override def flatMap[X](f: T => IterableOnce[X]): RefIterator[X] = {
         new RefIterator[X] {
             private[this] var it: Iterator[X] = Iterator.empty
             private[this] def advanceIterator(): Unit = {
                 while (!it.hasNext) {
                     if (self.hasNext) {
-                        it = f(self.next()).toIterator
+                        it = f(self.next()).iterator
                     } else {
                         it = null
                         return ;

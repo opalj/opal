@@ -59,14 +59,14 @@ object Locking {
      * Afterwards all locks are released in reverse order.
      */
     @inline final def withWriteLocks[T](
-        rwLocks: TraversableOnce[ReentrantReadWriteLock]
+        rwLocks: IterableOnce[ReentrantReadWriteLock]
     )(
         f: => T
     ): T = {
         var acquiredRWLocks: Chain[WriteLock] = Naught
         var error: Throwable = null
         val allLocked =
-            rwLocks.forall { rwLock =>
+            rwLocks.iterator.forall { rwLock =>
                 try {
                     val l = rwLock.writeLock
                     l.lock

@@ -84,7 +84,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
     def sccs(filterSingletons: Boolean = false): Iterator[Iterator[N]] = {
         val size = vertices.size
         val indexToN = new Array[N](size)
-        val nToIndex = new HashMap[N, Int] { override def initialSize = size }
+        val nToIndex = new HashMap[N, Int](size, HashMap.defaultLoadFactor)
         for {
             e <- vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
         } {

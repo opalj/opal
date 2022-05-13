@@ -45,9 +45,9 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
     def -(i: Int): T
     def +(i: Int): T
 
-    final def --(is: TraversableOnce[Int]): T = {
+    final def --(is: IterableOnce[Int]): T = {
         var r = this
-        is.foreach { i => r -= i }
+        is.iterator.foreach { i => r -= i }
         r
     }
     final def --(is: IntSet[_]): T = {
@@ -63,7 +63,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T =>
             this.foldLeft(that)(_ + _) // we expand `that`
     }
 
-    final def ++(that: TraversableOnce[Int]): T = that.foldLeft(this)(_ + _)
+    final def ++(that: IterableOnce[Int]): T = that.iterator.foldLeft(this)(_ + _)
 
     final def ++(that: IntIterator): T = that.foldLeft(this)(_ + _)
 

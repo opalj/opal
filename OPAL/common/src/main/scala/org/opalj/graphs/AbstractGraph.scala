@@ -7,14 +7,14 @@ package graphs
  *
  * @author Michael Eichberg
  */
-trait AbstractGraph[@specialized(Int) N] extends (N => TraversableOnce[N]) {
+trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
 
-    def vertices: Traversable[N]
+    def vertices: IterableOnce[N]
 
     def nonEmpty: Boolean = vertices.nonEmpty
 
     /** Returns a given node's successor nodes. */
-    def apply(s: N): TraversableOnce[N]
+    def apply(s: N): IterableOnce[N]
 
     /**
      * Returns the set of nodes with no incoming dependencies; self-dependencies are optionally
@@ -66,19 +66,19 @@ trait AbstractGraph[@specialized(Int) N] extends (N => TraversableOnce[N]) {
     //
 
     override def toString: String = {
-        val vertices = this.vertices map { v => this(v).mkString(v.toString()+" => {", ",", "}") }
+        val vertices = this.vertices.iterator.map { v => this(v).iterator.mkString(v.toString()+" => {", ",", "}") }
         vertices.mkString("Graph{\n\t", "\n\t", "\n}")
     }
 
     def toNodes: Iterable[Node] = {
 
         val nodesMap: Map[N, DefaultMutableNode[String]] = {
-            vertices.map(v => (v, new DefaultMutableNode(v.toString()))).toMap
+            vertices.iterator.map(v => (v, new DefaultMutableNode(v.toString()))).toMap
         }
 
-        vertices.foreach { v =>
+        vertices.iterator.foreach { v =>
             val node = nodesMap(v)
-            val successors = this(v).map(v => nodesMap(v)).toList
+            val successors = this(v).iterator.map(v => nodesMap(v)).toList
             node.addChildren(successors)
         }
 
