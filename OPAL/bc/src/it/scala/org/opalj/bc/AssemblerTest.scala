@@ -39,7 +39,7 @@ class AssemberTest extends AnyFlatSpec with Matchers {
     val jmodsFile =
         locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
-        file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
+        file <- JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
         if file.isFile
         if file.canRead
         if file.length() > 0

@@ -26,8 +26,8 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
         // Find all methods that create "java.io.File(<String>)" objects.
         val callSites =
             (for {
-                cf ← theProject.allProjectClassFiles.par
-                m ← cf.methodsWithBody
+                cf <- theProject.allProjectClassFiles.par
+                m <- cf.methodsWithBody
             } yield {
                 val pcs =
                     m.body.get.collectWithIndex {
@@ -68,9 +68,9 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
 
         val callSitesWithConstantStringParameter =
             for {
-                (m, pcs) ← callSites
+                (m, pcs) <- callSites
                 result = BaseAI(m, new AnalysisDomain(theProject, m))
-                (pc, value) ← pcs.map(pc => (pc, result.operandsArray(pc))).collect {
+                (pc, value) <- pcs.map(pc => (pc, result.operandsArray(pc))).collect {
                     case (pc, result.domain.StringValue(value) :&: _) => (pc, value)
                 }
             } yield (m, pc, value)

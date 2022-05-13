@@ -90,7 +90,7 @@ class PKECPropertyStore(
 
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
-            val properties = for (pkId ← 0 to PropertyKey.maxId) yield {
+            val properties = for (pkId <- 0 to PropertyKey.maxId) yield {
                 var entities: List[String] = List.empty
                 ps(pkId).forEachValue(Long.MaxValue, { state: EPKState =>
                     entities ::= state.eOptP.toString.replace("\n", "\n\t")
@@ -548,8 +548,8 @@ class PKECPropertyStore(
 
         val cSCCs = graphs.closedSCCs(theInterimStates, theSuccessors)
 
-        for (cSCC ← cSCCs) {
-            for (interimEPKState ← cSCC) {
+        for (cSCC <- cSCCs) {
+            for (interimEPKState <- cSCC) {
                 interimEPKState.dependees = null
                 scheduleTask(new SetTask(interimEPKState.eOptP.toFinalEP))
             }

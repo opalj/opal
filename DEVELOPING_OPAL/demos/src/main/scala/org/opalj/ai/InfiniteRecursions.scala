@@ -45,9 +45,9 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
         val result =
             // for every method that calls itself ...
             for {
-                classFile ← project.allClassFiles.par
-                method ← classFile.methods
-                body ← method.body.toSeq
+                classFile <- project.allClassFiles.par
+                method <- classFile.methods
+                body <- method.body.toSeq
                 descriptor = method.descriptor
                 if descriptor.parameterTypes.forall { t =>
                     // we don't have (as of Jan 1st 2015) a domain that enables a meaningful
@@ -66,7 +66,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                     }
                 }
                 if pcs.nonEmpty
-                result ← inifiniteRecursions(maxRecursionDepth, project, method, pcs)
+                result <- inifiniteRecursions(maxRecursionDepth, project, method, pcs)
             } yield { result }
 
         BasicReport(result.map(_.toString).mkString("\n"))
@@ -103,7 +103,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
         def reduceCallOperands(operandsArray: domain.OperandsArray): Seq[Operands] = {
             var callOperandsList: List[Operands] = List.empty
             for {
-                pc ← pcs
+                pc <- pcs
                 if operandsArray(pc) ne null
                 nextCallOperands: domain.Operands = operandsArray(pc).take(parametersCount)
             } {

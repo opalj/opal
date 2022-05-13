@@ -41,7 +41,7 @@ sealed trait AccessFlagsMatcher { left =>
      * Creates a new matcher that matches `accessFlags` that do not have (all of) the
      * accessFlags specified by the given matcher.
      */
-    def unary_!(): AccessFlagsMatcher =
+    def unary_! : AccessFlagsMatcher =
         new AccessFlagsMatcher {
 
             override def unapply(accessFlags: Int): Boolean = !left.unapply(accessFlags)
@@ -69,7 +69,7 @@ trait PrimitiveAccessFlagsMatcher extends AccessFlagsMatcher { left =>
         }
     }
 
-    override def unary_!(): AccessFlagsMatcher =
+    override def unary_! : AccessFlagsMatcher =
         new AccessFlagsMatcher { // <= it is no longer a primitive matcher
             val mask = left.mask
             override def unapply(accessFlags: Int): Boolean = (accessFlags & mask) != mask

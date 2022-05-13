@@ -108,8 +108,8 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
     ): BasicReport = {
         val methodsWithRefinedReturnTypes = time {
             for {
-                classFile ← theProject.allClassFiles.par
-                method ← classFile.methods
+                classFile <- theProject.allClassFiles.par
+                method <- classFile.methods
                 if method.body.isDefined
                 originalType = method.returnType
                 if method.returnType.isReferenceType

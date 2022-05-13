@@ -244,10 +244,10 @@ object CallGraph extends ProjectAnalysisApplication {
 
         implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
-        for (m ← allMethods) {
+        for (m <- allMethods) {
             val mSig = m.descriptor.toJava(m.name)
 
-            for (methodSignature ← calleesSigs) {
+            for (methodSignature <- calleesSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callees of ${m.toJava}:")
                     val calleesProperty = ps(m, Callees.key).ub
@@ -258,7 +258,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     })
                 }
             }
-            for (methodSignature ← callersSigs) {
+            for (methodSignature <- callersSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
                     println(ps(m, Callers.key).ub.callers(m).map {

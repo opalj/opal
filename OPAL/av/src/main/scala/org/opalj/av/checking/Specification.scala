@@ -229,9 +229,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 sourceEnsembles.foldLeft(Set[VirtualSourceElement]())(_ ++ ensembles(_)._2)
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
             for {
-                targetEnsembleElement ← targetEnsembleElements
+                targetEnsembleElement <- targetEnsembleElements
                 if incomingDependencies.contains(targetEnsembleElement)
-                (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement)
+                (incomingElement, dependencyType) <- incomingDependencies(targetEnsembleElement)
                 if !(
                     sourceEnsembleElements.contains(incomingElement) ||
                     targetEnsembleElements.contains(incomingElement)
@@ -288,11 +288,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 targetEnsembles.foldLeft(Set.empty[VirtualSourceElement])(_ ++ ensembles(_)._2)
 
             for {
-                sourceElement ← sourceEnsembleElements
+                sourceElement <- sourceEnsembleElements
                 targets = outgoingDependencies.get(sourceElement)
                 if targets.isDefined
-                (targetElement, currentDependencyTypes) ← targets.get
-                currentDependencyType ← currentDependencyTypes
+                (targetElement, currentDependencyTypes) <- targets.get
+                currentDependencyType <- currentDependencyTypes
                 if ((notAllowedTargetSourceElements contains targetElement) &&
                     ((dependencyTypes equals USE) || (dependencyTypes contains currentDependencyType)))
             } yield {
@@ -357,11 +357,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 targetEnsembles.foldLeft(sourceEnsembleElements)(_ ++ ensembles(_)._2)
 
             for {
-                sourceElement ← sourceEnsembleElements
+                sourceElement <- sourceEnsembleElements
                 targets = outgoingDependencies.get(sourceElement)
                 if targets.isDefined
-                (targetElement, currentDependencyTypes) ← targets.get
-                currentDependencyType ← currentDependencyTypes
+                (targetElement, currentDependencyTypes) <- targets.get
+                currentDependencyType <- currentDependencyTypes
                 if (!(allAllowedLocalTargetSourceElements contains targetElement) &&
                     ((dependencyTypes equals USE) || (dependencyTypes contains currentDependencyType)))
                 // references to unmatched source elements are ignored
@@ -431,8 +431,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
 
             for {
-                sourceElement ← sourceEnsembleElements
-                classFile ← project.classFile(sourceElement.classType.asObjectType)
+                sourceElement <- sourceEnsembleElements
+                classFile <- project.classFile(sourceElement.classType.asObjectType)
                 annotations = sourceElement match {
                     case _: VirtualClass => classFile.annotations
 

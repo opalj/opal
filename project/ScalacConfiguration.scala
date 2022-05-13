@@ -74,7 +74,7 @@ object ScalacConfiguration {
   }
 
   val globalScalacOptions: Def.SettingsDefinition = {
-    scalacOptions in ThisBuild ++= {
+    ThisBuild / scalacOptions ++= {
       val logger: ManagedLogger = streams.value.log
       val baseDir = baseDirectory.value
       val defaultFile = scalacDefaultsFile(baseDir)
