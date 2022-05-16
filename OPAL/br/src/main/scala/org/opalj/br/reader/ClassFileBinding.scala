@@ -3,11 +3,12 @@ package org.opalj
 package br
 package reader
 
-import net.ceedubs.ficus.Ficus._
-
+import net.ceedubs.ficus.Ficus.*
 import org.opalj.log.OPALLogger
 import org.opalj.bi.reader.ClassFileReader
-import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
+import org.opalj.br.reader.ClassFileReaderConfiguration as BRClassFileReaderConfiguration
+
+import scala.collection.immutable.ArraySeq
 
 /**
  *
@@ -70,7 +71,7 @@ trait ClassFileBinding extends ClassFileReader {
                 else
                     Some(cp(super_class_index).asObjectType(cp))
             },
-            ArraySeq.mapFrom(interfaces)(cp(_).asObjectType(cp)),
+            ArraySeq.from(interfaces).map(cp(_).asObjectType(cp)),
             fields,
             methods,
             attributes

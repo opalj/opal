@@ -1100,11 +1100,11 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 val nodeEntitiesPermutations = nodeEntities.toList.permutations
                 for {
                     nodeEntitiesPermutations <- List(
-                        nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
-                        nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
-                        nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
-                        nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
-                        nodeEntitiesPermutations.drop(dropCount).take(1000).toList
+                        nodeEntitiesPermutations.slice(dropCount, dropCount + 1000).toList,
+                        nodeEntitiesPermutations.slice(dropCount, dropCount + 1000).toList,
+                        nodeEntitiesPermutations.slice(dropCount, dropCount + 1000).toList,
+                        nodeEntitiesPermutations.slice(dropCount, dropCount + 1000).toList,
+                        nodeEntitiesPermutations.slice(dropCount, dropCount + 1000).toList
                     )
                     nodeEntitiesPermutation <- nodeEntitiesPermutations
                 } {

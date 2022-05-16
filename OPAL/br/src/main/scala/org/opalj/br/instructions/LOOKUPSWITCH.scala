@@ -3,11 +3,9 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.ForeachRefIterator
 
 import scala.collection.immutable.ArraySeq
 
@@ -73,7 +71,7 @@ case class LOOKUPSWITCH(
         )
     }
 
-    override def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultOffset).map(_._1)
+    override def caseValues: Iterator[Int] = npairs.iterator.filter(_._2 != defaultOffset).map(_._1)
 
     def nextInstructions(
         currentPC:             PC,
@@ -167,10 +165,10 @@ case class LabeledLOOKUPSWITCH(
 
     override def tableSize: Int = npairs.size
 
-    def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
+    def caseValues: Iterator[Int] = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: ForeachRefIterator[InstructionLabel] = {
-        npairs.foreachIterator.map[InstructionLabel](_._2) + defaultBranchTarget
+    override def branchTargets: Iterator[InstructionLabel] = {
+        npairs.iterator.map[InstructionLabel](_._2) ++ Iterator(defaultBranchTarget)
     }
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")

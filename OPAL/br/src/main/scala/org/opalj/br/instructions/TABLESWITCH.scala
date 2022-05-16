@@ -6,7 +6,6 @@ package instructions
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.collection.ForeachRefIterator
 
 import scala.collection.immutable.ArraySeq
 
@@ -183,8 +182,8 @@ case class LabeledTABLESWITCH(
         )
     }
 
-    override def branchTargets: ForeachRefIterator[InstructionLabel] = {
-        jumpTargets.foreachIterator + defaultBranchTarget
+    override def branchTargets: Iterator[InstructionLabel] = {
+        jumpTargets.iterator ++ Iterator(defaultBranchTarget)
     }
 
     def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (List[Int], Boolean) = {

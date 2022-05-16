@@ -50,7 +50,7 @@ object MethodFilter {
                         !matches
                 }
                 val filteredCF = cf.copy(methods = filteredMethods)
-                val path = new File(cf.thisType+".class").toPath
+                val path = new File(s"${cf.thisType}.class").toPath
                 write(Assembler(filteredCF), path)
                 OPALLogger.info("info", s"created new class file: $path")
             }

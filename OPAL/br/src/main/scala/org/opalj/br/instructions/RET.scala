@@ -68,7 +68,7 @@ case class RET(
 
                     case RET.opcode =>
                         // we have found another RET ... hence, we have at least two subroutines
-                        return cfg().successors(currentPC).toChain;
+                        return cfg().successors(currentPC).toList;
 
                     case _ =>
                     // we don't care

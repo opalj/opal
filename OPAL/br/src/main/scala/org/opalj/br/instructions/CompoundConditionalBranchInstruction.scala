@@ -18,7 +18,7 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
     /**
      * Returns all case values that are '''not related to the default branch'''.
      */
-    def caseValues: IntIterator
+    def caseValues: Iterator[Int]
 
 }
 

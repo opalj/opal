@@ -109,7 +109,7 @@ object TestResources {
             return Nil;
 
         for {
-            file <- f.listFiles()
+            file <- ArraySeq.unsafeWrapArray(f.listFiles())
             if file.isDirectory
             if file.canRead
         } yield {

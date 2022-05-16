@@ -261,7 +261,7 @@ object ClassFileFactory {
             factoryMethodName
         )
 
-        bridgeMethodDescriptors.foreachWithIndex { (bridgeMethodDescriptor, i) =>
+        bridgeMethodDescriptors.iterator.zipWithIndex.foreach { case (bridgeMethodDescriptor, i) =>
             methods(3 + i) = createBridgeMethod(
                 methodName,
                 bridgeMethodDescriptor,
@@ -297,7 +297,7 @@ object ClassFileFactory {
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toArraySeq,
             fields,
-            ArraySeq.unsafeWrapArray(methods),
+            ArraySeq.unsafeWrapArray(methods).asInstanceOf[MethodTemplates],
             ArraySeq(VirtualTypeFlag)
         )
     }
@@ -635,7 +635,7 @@ object ClassFileFactory {
                 else
                     1
             )
-        val maxLocals = 1 + fields.iterator.sum(_.fieldType.computationalType.operandSize)
+        val maxLocals = 1 + fields.iterator.map(_.fieldType.computationalType.operandSize).sum
 
         Method(
             bi.ACC_PUBLIC.mask,
@@ -737,7 +737,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.sum(_.computationalType.operandSize.toInt)
+        val maxLocals = fieldTypes.iterator.map(_.computationalType.operandSize.toInt).sum
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0

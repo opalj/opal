@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -23,10 +22,8 @@ import org.opalj.fpcf.SomeInterimEP
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.AllocationFreeMethod
-import org.opalj.br.fpcf.properties.AllocationFreeness
-import org.opalj.br.fpcf.properties.MethodWithAllocations
-import org.opalj.br.instructions._
+import org.opalj.br.fpcf.properties.{AllocationFreeMethod, AllocationFreeness, MethodWithAllocations}
+import org.opalj.br.instructions.*
 
 /**
  * A simple analysis that identifies methods that never allocate any objects/arrays.
