@@ -2,18 +2,15 @@
 package org.opalj.fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
-
-import scala.collection.{Set => SomeSet}
-
+import scala.collection.immutable
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.fpcf.fixtures._
+import org.opalj.fpcf.fixtures.*
 
 /**
  * Tests a property store implementation. All of the following tests should be passed by
@@ -802,7 +799,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         (_: PropertyStore, reason: FallbackReason, e: Node) => AllNodes
                     )
             }
-            case class ReachableNodes(nodes: scala.collection.Set[Node]) extends OrderedProperty {
+            case class ReachableNodes(nodes: immutable.Set[Node]) extends OrderedProperty {
                 type Self = ReachableNodes
 
                 def key: PropertyKey[ReachableNodes] = ReachableNodes.Key
@@ -889,10 +886,10 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     return Result(n, NoReachableNodes);
 
                 var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
-                    ps(nTargets - n /* ignore self-dependency */ , ReachableNodes.Key)
+                    ps(nTargets -= n /* ignore self-dependency */ , ReachableNodes.Key)
                         .filter { dependeeP => dependeeP.isRefinable }.toSet
 
-                def createPartialResult(currentNodes: SomeSet[Node]): SomePartialResult = {
+                def createPartialResult(currentNodes: immutable.Set[Node]): SomePartialResult = {
                     PartialResult(
                         n,
                         ReachableNodes.Key,
@@ -925,7 +922,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 }
 
                 val allNodes =
-                    ps(nTargets, ReachableNodes.Key).foldLeft(SomeSet.empty[Node]) { (c, n) =>
+                    ps(nTargets, ReachableNodes.Key).foldLeft(immutable.Set.empty[Node]) { (c, n) =>
                         n match {
                             case epk: EPK[Node, _] => c + epk.e
                             case InterimEUBP(n, p) => c ++ p.nodes + n

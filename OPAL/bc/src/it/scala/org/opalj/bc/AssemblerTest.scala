@@ -3,7 +3,6 @@ package org.opalj
 package bc
 
 import org.junit.runner.RunWith
-
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -15,14 +14,14 @@ import java.io.ByteArrayInputStream
 import java.io.DataOutputStream
 import java.util.zip.ZipFile
 import java.util.concurrent.atomic.AtomicInteger
-
-import scala.collection.JavaConverters._
-
+import scala.collection.JavaConverters.*
 import org.opalj.io.FailAfterByteArrayOutputStream
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
+import org.opalj.da.ClassFileReader.ClassFile as LoadClassFile
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Tests the assembler by loading and writing a large number of class files and by
@@ -50,7 +49,7 @@ class AssemberTest extends AnyFlatSpec with Matchers {
             val entriesCount = new AtomicInteger(0)
 
             val Lock = new Object
-            var exceptions: List[Throwable] = Nil
+            val exceptions: List[Throwable] = Nil
 
             val zipFile = new ZipFile(file)
             zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze =>
@@ -115,7 +114,7 @@ class AssemberTest extends AnyFlatSpec with Matchers {
                     case e: Exception =>
                         Lock.synchronized {
                             val details = e.getMessage + e.getClass.getSimpleName
-                            val message = s"failed: $ze(${classFile.thisType}); message:"+details
+                            val message = s"failed: $ze(${classFile.thisType}); message:$details"
                             val newException = new RuntimeException(message, e)
                             exceptions ::= newException
                         }

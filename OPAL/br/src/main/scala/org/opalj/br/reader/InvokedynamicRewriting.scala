@@ -347,7 +347,7 @@ trait InvokedynamicRewriting
                 case recipe: ConstantString =>
                     (
                         Some(recipe),
-                        args.slicedView(from = 1).asInstanceOf[RefIndexedView[ConstantValue[_]]]
+                        args.view.slice(from = 1, until = args.length).asInstanceOf[RefIndexedView[ConstantValue[_]]]
                     )
                 case _ =>
                     if (logUnknownInvokeDynamics) {
