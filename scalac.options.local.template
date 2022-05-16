@@ -22,6 +22,6 @@
 -Wdead-code
 -Xlint:inaccessible
 -Xlint:adapted-args
--Xdisable-assertions
+// (Should be turned-off during development; i.e., assertions are enabled at development time) -Xdisable-assertions
 -Ybackend-parallelism 8
 -Wconf:cat=unused-nowarn:s
