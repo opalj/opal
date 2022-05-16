@@ -188,7 +188,7 @@ case class LabeledTABLESWITCH(
     }
 
     def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (List[Int], Boolean) = {
-        var caseValues = List.empty
+        var caseValues = List.empty[Int]
         var i = jumpTargets.length - 1
         while (i >= 0) {
             if (jumpTargets(i) == jumpTarget)
