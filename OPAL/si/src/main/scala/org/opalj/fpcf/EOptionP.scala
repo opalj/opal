@@ -223,7 +223,7 @@ object EPS {
             InterimELUBP(e, lb, ub)
     }
 
-    def unapply[E <: Entity](eps: EPS[E, _]): Some[E] = Some(eps.e)
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
 }
 
 /**
@@ -246,7 +246,7 @@ object LBPS {
      * @note Using LBPS to extract a property for which no lower bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, Boolean)] = {
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = {
         Some((eps.lb, eps.isFinal))
     }
 
@@ -260,7 +260,7 @@ object UBPS {
      * @note Using UBPS to extract a property for which no upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, Boolean)] = {
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = {
         Some((eps.ub, eps.isFinal))
     }
 }
@@ -273,7 +273,7 @@ object LUBPS {
      * @note Using LUBPS to extract a property for which no lower or upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, P, Boolean)] = {
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, P, Boolean)] = {
         Some((eps.lb, eps.ub, eps.isFinal))
     }
 
@@ -467,7 +467,7 @@ object FinalP {
 
 object FinalE {
 
-    def unapply[E <: Entity](eps: FinalEP[E, _]): Some[E] = Some(eps.e)
+    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Some[E] = Some(eps.e)
 
 }
 
@@ -522,7 +522,7 @@ object InterimE {
      * @note When we just have an InterimP object, we don't know which properties (ub, lb or both)
      *       are available.
      */
-    def unapply[E <: Entity](interimP: InterimEP[E, _]): Some[E] = Some(interimP.e)
+    def unapply[E <: Entity, P <: Property](interimP: InterimEP[E, P]): Some[E] = Some(interimP.e)
 
 }
 
@@ -655,7 +655,7 @@ object InterimEUBP {
  */
 object InterimEUB {
 
-    def unapply[E <: Entity](eps: InterimEP[E, _]): Some[E] = {
+    def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[E] = {
         if (!eps.hasUBP)
             throw new IllegalArgumentException(s"$eps does not define an upper bound property");
 
@@ -706,7 +706,7 @@ object NoUBP {
 
 object InterimUBP {
 
-    def unapply[P <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
+    def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -766,7 +766,7 @@ object InterimELBP {
 
 object InterimLBP {
 
-    def unapply[P >: Null <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
 
 }
 
