@@ -3,9 +3,10 @@ package org.opalj
 package bi
 
 import java.io.File
-
 import org.opalj.io.JARsFileFilter
 import org.opalj.util.ScalaMajorVersion
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Common functionality to find resources required by many tests.
@@ -19,7 +20,7 @@ object TestResources {
 
     private def pathPrefixCandidates(
         subProjectFolder: String
-    ): Array[String => Option[String]] = Array(
+    ): ArraySeq[String => Option[String]] = ArraySeq(
         // if the current path is set to OPAL's root folder
         resourceFile => { Some("OPAL/"+resourceFile) },
         // if the current path is set to "<SUB-PROJECT>/<BIN>"
@@ -76,14 +77,14 @@ object TestResources {
      */
     def allManagedBITestJARs(): Seq[File] = {
         for {
-            pathFunction ← pathPrefixCandidates("bi")
+            pathFunction <- pathPrefixCandidates("bi")
             fCandidate = pathFunction(s"bi/$managedResourcesFolder")
             if fCandidate.isDefined
             f = new File(fCandidate.get)
             if f.exists
             if f.canRead
             if f.isDirectory
-            jarFile ← f.listFiles(JARsFileFilter)
+            jarFile <- f.listFiles(JARsFileFilter)
         } yield {
             jarFile
         }
@@ -108,7 +109,7 @@ object TestResources {
             return Nil;
 
         for {
-            file ← f.listFiles()
+            file <- f.listFiles()
             if file.isDirectory
             if file.canRead
         } yield {
@@ -121,6 +122,6 @@ object TestResources {
      *
      * @note This set never includes the JRE.
      */
-    def allBITestJARs(): Seq[File] = allManagedBITestJARs() ++ allUnmanagedBITestJARs
+    def allBITestJARs(): Seq[File] = allManagedBITestJARs() ++ allUnmanagedBITestJARs()
 
 }

@@ -396,7 +396,7 @@ class BasicIFDSTaintAnalysis private (
         if (m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object || m.descriptor.returnType == ObjectType.Class)
         index ← m.descriptor.parameterTypes.zipWithIndex.collect { case (pType, index) if pType == ObjectType.String => index }
     } //yield (declaredMethods(m), null)
-    yield declaredMethods(m) → Variable(-2 - index)).toMap
+    yield declaredMethods(m) -> Variable(-2 - index)).toMap
 
 }
 

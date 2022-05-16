@@ -169,7 +169,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             callee ← tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee.method, Callers.key).asFinal
-            assert(callersProperty.callers(dm).map(caller => (caller._1, caller._2)).toSet.contains(dm → pc))
+            assert(callersProperty.callers(dm).map(caller => (caller._1, caller._2)).toSet.contains(dm -> pc))
         }
 
         for {

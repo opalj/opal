@@ -525,7 +525,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
                             val p2s = ps(entity, pointsToPropertyKey)
                             if (p2s.isRefinable) {
-                                newDependees += (p2s.toEPK → ((p2s, typeFilter)))
+                                newDependees += (p2s.toEPK -> ((p2s, typeFilter)))
                             }
                             newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
                         }

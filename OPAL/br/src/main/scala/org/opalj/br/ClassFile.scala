@@ -132,8 +132,8 @@ final class ClassFile private (
         val thisFieldIt = thisFields.iterator
         val otherFieldIt = otherFields.iterator
         while (thisFieldIt.hasNext) {
-            val thisField = thisFieldIt.next
-            val otherField = otherFieldIt.next
+            val thisField = thisFieldIt.next()
+            val otherField = otherFieldIt.next()
             if (!thisField.similar(otherField, config)) {
                 return Some(("the fields are different", thisField, otherField));
             }
@@ -148,8 +148,8 @@ final class ClassFile private (
         val thisMethodIt = thisMethods.iterator
         val otherMethodIt = otherMethods.iterator
         while (thisMethodIt.hasNext) {
-            val thisMethod = thisMethodIt.next
-            val otherMethod = otherMethodIt.next
+            val thisMethod = thisMethodIt.next()
+            val otherMethod = otherMethodIt.next()
             if (!thisMethod.similar(otherMethod, config)) {
                 return Some(("the methods are different", thisMethod, otherMethod));
             }
@@ -241,10 +241,11 @@ final class ClassFile private (
         assert(oldMethod.name == newMethod.name)
         assert(oldMethod.descriptor == newMethod.descriptor)
 
-        val index = this.methods.binarySearch[JVMMethod](oldMethod)
-        val newPreparedMethod = newMethod.prepareClassFileAttachement()
+        val index = this.methods.indexOf[JVMMethod](oldMethod)
+        val newPreparedMethod: Method = newMethod.prepareClassFileAttachement()
         newPreparedMethod.declaringClassFile = this
-        this.methods._UNSAFE_replaced(index, newPreparedMethod)
+        val methods = this.methods.unsafeArray.asInstanceOf[Array[Method]]
+        methods(index) = newPreparedMethod
 
         oldMethod.detach(); // TO BE SURE THAT THE OLD METHOD NO LONGER REFERENCES THIS CLASS FILE
 
@@ -263,11 +264,11 @@ final class ClassFile private (
      * @note This method is primarily intended to be used to perform load-time transformations!
      */
     def _UNSAFE_addMethod(methodTemplate: MethodTemplate): ClassFile = {
-        val newMethod = methodTemplate.prepareClassFileAttachement
+        val newMethod = methodTemplate.prepareClassFileAttachement()
 
         assert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
 
-        val index = this.methods.binarySearch[JVMMethod](newMethod)
+        val index = this.methods.indexOf[JVMMethod](newMethod)
         if (index >= 0)
             throw new IllegalArgumentException(
                 s"$this: a method with the given name and descriptor already exists: $newMethod"
@@ -275,7 +276,7 @@ final class ClassFile private (
         val insertionPoint = -index - 1
         var newMethods = this.methods
         newMethods.foreach(m => m.detach())
-        newMethods = newMethods.insertedAt(insertionPoint, newMethod)
+        newMethods = newMethods.updated(insertionPoint, newMethod)
 
         val newFields = this.fields
         newFields.foreach(f => f.detach())
@@ -650,7 +651,7 @@ final class ClassFile private (
         gotoNextConstructor()
 
         def hasNext: Boolean = i >= 0
-        def next(): Method = { val m = methods(i); gotoNextConstructor; m }
+        def next(): Method = { val m = methods(i); gotoNextConstructor(); m }
     }
 
     /**

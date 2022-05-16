@@ -17,9 +17,8 @@ import scala.collection.mutable.ArrayBuffer
  */
 class InstructionsBuilder private (private val buffer: ArrayBuffer[Instruction]) {
 
-    def this(initialSize: Int) {
+    def this(initialSize: Int) =
         this(new ArrayBuffer[Instruction](initialSize = initialSize))
-    }
 
     /**
      * Adds the given instruction to the buffer and adds the appropriate number of `null`

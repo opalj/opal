@@ -74,7 +74,7 @@ class FieldBuilderTest extends AnyFlatSpec {
     val rawClassFile = Assembler(daClassFile)
     val javaClassName = binaryClassName.replace('/', '.')
     val loader = new InMemoryClassLoader(
-        Map(javaClassName → rawClassFile),
+        Map(javaClassName -> rawClassFile),
         this.getClass.getClassLoader
     )
 

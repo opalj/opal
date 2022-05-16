@@ -24,8 +24,8 @@ trait ParametersAnnotations_attribute extends Attribute {
     def parametersAnnotationstoXHTML(implicit cp: Constant_Pool): Node = {
         val ans = {
             for { // TODO This doesn't make sense: it is no longer possible to distinguish parameters
-                (perParameterAnnotations, parameterIndex) ← parameters_annotations.zipWithIndex
-                annotation ← perParameterAnnotations
+                (perParameterAnnotations, parameterIndex) <- parameters_annotations.zipWithIndex
+                annotation <- perParameterAnnotations
             } yield annotation.toXHTML(cp)
         }
 

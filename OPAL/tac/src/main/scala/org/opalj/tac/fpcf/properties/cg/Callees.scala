@@ -410,11 +410,11 @@ object ConcreteCallees {
     ): ConcreteCallees = {
         val cId = callerContext.id
         new ConcreteCallees(
-            IntMap(cId → directCallees),
-            IntMap(cId → indirectCallees),
-            IntMap(cId → incompleteCallSites),
-            IntMap(cId → indirectCallReceivers),
-            IntMap(cId → indirectCallParameters)
+            IntMap(cId -> directCallees),
+            IntMap(cId -> indirectCallees),
+            IntMap(cId -> incompleteCallSites),
+            IntMap(cId -> indirectCallReceivers),
+            IntMap(cId -> indirectCallParameters)
         )
     }
 

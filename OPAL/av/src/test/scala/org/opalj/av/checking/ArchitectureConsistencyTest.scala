@@ -309,7 +309,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                         AnnotatedWith("entity.annotation.Id"),
                         AnnotatedWith(
                             "entity.annotation.Column",
-                            "name" → StringValue("id"), "nullable" → BooleanValue(false)
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(false)
                         )
                     )
                 )
@@ -333,7 +333,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                         AnnotatedWith("entity.annotation.Id"),
                         AnnotatedWith(
                             "entity.annotation.Column",
-                            "name" → StringValue("id"), "nullable" → BooleanValue(true)
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(true)
                         )
                     )
                 )

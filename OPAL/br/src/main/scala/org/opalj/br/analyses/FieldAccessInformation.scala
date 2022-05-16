@@ -75,9 +75,9 @@ class FieldAccessInformation(
      */
     def statistics: Map[String, Int] = {
         Map(
-            "field reads" → allReadAccesses.values.map(_.map(_._2.size).sum).sum,
-            "field writes" → allWriteAccesses.values.map(_.map(_._2.size).sum).sum,
-            "unresolved field accesses" → unresolved.map(_._2.size).sum
+            "field reads" -> allReadAccesses.values.map(_.map(_._2.size).sum).sum,
+            "field writes" -> allWriteAccesses.values.map(_.map(_._2.size).sum).sum,
+            "unresolved field accesses" -> unresolved.map(_._2.size).sum
         )
     }
 

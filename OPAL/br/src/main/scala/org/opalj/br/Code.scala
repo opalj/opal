@@ -5,16 +5,10 @@ package br
 import scala.annotation.tailrec
 import scala.annotation.switch
 import scala.reflect.ClassTag
-
 import java.util.Arrays.fill
-
-import scala.collection.AbstractIterator
-import scala.collection.mutable
+import scala.collection.{AbstractIterator, mutable}
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.Queue
-import scala.collection.generic.FilterMonadic
-import scala.collection.generic.CanBuildFrom
-
 import org.opalj.util.AnyToAnyThis
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
@@ -29,7 +23,7 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
 import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -59,8 +53,7 @@ final class Code private (
 ) extends Attribute
     with CommonAttributes
     with InstructionsContainer
-    with CodeSequence[Instruction]
-    with FilterMonadic[PCAndInstruction, Nothing] {
+    with CodeSequence[Instruction] {
     code =>
 
     def copy(
@@ -112,79 +105,82 @@ final class Code private (
 
     @inline final def codeSize: Int = instructions.length
 
-    /**
-     * Represents some filtered code. Primarily, implicitly used when a for-comprehension
-     * is used to process the code.
-     */
-    class FilteredCode( final val p: PCAndInstruction => Boolean)
-        extends FilterMonadic[PCAndInstruction, Nothing] {
-
-        def map[B, That](
-            f: PCAndInstruction => B
-        )(
-            implicit
-            bf: CanBuildFrom[Nothing, B, That]
-        ): That = {
-            val that = bf()
-            code foreach { instructionLocation =>
-                if (p(instructionLocation)) that += f(instructionLocation)
-            }
-            that.result
-        }
-
-        def flatMap[B, That](
-            f: PCAndInstruction => scala.collection.GenTraversableOnce[B]
-        )(
-            implicit
-            bf: CanBuildFrom[Nothing, B, That]
-        ): That = {
-            val that = bf()
-            code foreach { instructionLocation: PCAndInstruction =>
-                if (p(instructionLocation)) {
-                    f(instructionLocation) foreach { v => that += v }
-                }
-            }
-            that.result
-        }
-
-        def foreach[U](f: PCAndInstruction => U): Unit = {
-            code foreach { instructionLocation: PCAndInstruction =>
-                if (p(instructionLocation)) f(instructionLocation)
-            }
-        }
-
-        def withFilter(p: PCAndInstruction => Boolean): FilteredCode = {
-            new FilteredCode(
-                (instructionLocation: PCAndInstruction) => {
-                    this.p(instructionLocation) && p(instructionLocation)
-                }
-            )
-        }
-    }
-
-    def map[B, That](
-        f: PCAndInstruction => B
-    )(
-        implicit
-        bf: CanBuildFrom[Nothing, B, That]
-    ): That = {
-        val that = bf()
-        code.foreach(that += f(_))
-        that.result
-    }
-
-    def flatMap[B, That](
-        f: (PCAndInstruction) => scala.collection.GenTraversableOnce[B]
-    )(
-        implicit
-        bf: CanBuildFrom[Nothing, B, That]
-    ): That = {
-        val that = bf()
-        code foreach { instructionLocation => f(instructionLocation).foreach(that += _) }
-        that.result
-    }
-
-    def withFilter(p: (PCAndInstruction) => Boolean): FilteredCode = new FilteredCode(p)
+// TODO: Overload map operations (https://www.scala-lang.org/blog/2018/06/13/scala-213-collections.html)
+//
+//    /**
+//     * Represents some filtered code. Primarily, implicitly used when a for-comprehension
+//     * is used to process the code.
+//     */
+//    class FilteredCode( final val p: PCAndInstruction => Boolean)
+//        extends WithFilter[PCAndInstruction, Nothing] {
+//
+//        def map[B, That](
+//            f: PCAndInstruction => B
+//        )(
+//            implicit
+//            bf: BuildFrom[Nothing, B, That]
+//        ): That = {
+//            val that = bf.newBuilder()
+//            code foreach { instructionLocation =>
+//                if (p(instructionLocation)) that += f(instructionLocation)
+//            }
+//            that.result
+//        }
+//
+//        def flatMap[B, That](
+//            f: PCAndInstruction => IterableOnce[B]
+//        )(
+//            implicit
+//            bf: BuildFrom[Nothing, B, That]
+//        ): That = {
+//            val that = bf.newBuilder()
+//            code foreach { instructionLocation: PCAndInstruction =>
+//                if (p(instructionLocation)) {
+//                    f(instructionLocation).iterator.foreach { v => that += v }
+//                }
+//            }
+//            that.result
+//        }
+//
+//        def foreach[U](f: PCAndInstruction => U): Unit = {
+//            code foreach { instructionLocation: PCAndInstruction =>
+//                if (p(instructionLocation)) f(instructionLocation)
+//            }
+//        }
+//
+//        def withFilter(p: PCAndInstruction => Boolean): FilteredCode = {
+//            new FilteredCode(
+//                (instructionLocation: PCAndInstruction) => {
+//                    this.p(instructionLocation) && p(instructionLocation)
+//                }
+//            )
+//        }
+//    }
+//
+//    def withFilter(p: (PCAndInstruction) => Boolean): FilteredCode = new FilteredCode(p)
+//
+//
+//    def map[B, That](
+//        f: PCAndInstruction => B
+//    )(
+//        implicit
+//        bf: BuildFrom[Nothing, B, That]
+//    ): That = {
+//        val that = bf.newBuilder()
+//        code.foreach(that += f(_))
+//        that.result
+//    }
+//
+//    def flatMap[B, That](
+//        f: (PCAndInstruction) => IterableOnce[B]
+//    )(
+//        implicit
+//        bf: BuildFrom[Nothing, B, That]
+//    ): That = {
+//        val that = bf.newBuilder()
+//        code foreach { instructionLocation => f(instructionLocation).iterator.foreach(that += _) }
+//        that.result
+//    }
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
@@ -679,7 +675,7 @@ final class Code private (
                 case _ =>
                     val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
                     nextInstructions.foreach(runtimeSuccessor)
-                    if (nextInstructions.hasMultipleElements) {
+                    if (nextInstructions.length > 1) {
                         cfForks +!= pc
                         cfForkTargets += ((pc, nextInstructions.foldLeft(IntTrieSet.empty)(_ +! _)))
                     }
@@ -1597,7 +1593,7 @@ final class Code private (
         // We have to make sure, that all exception handlers are evaluated for
         // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
-        for (exceptionHandler ← exceptionHandlers) {
+        for (exceptionHandler <- exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
             if (visitedPCs.add(handlerPC)) paths ::= ((handlerPC, 1))
         }
@@ -1630,7 +1626,7 @@ final class Code private (
      */
     override def toString: String = {
         s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, "+
-            instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).deep.toString +
+            instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).toString +
             exceptionHandlers.toString+","+
             attributes.toString+
             ")"
@@ -1696,7 +1692,7 @@ final class Code private (
     def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): List[B] = {
         val max_pc = instructions.length
         var pc = 0
-        val vs = Chain.newBuilder[B]
+        val vs = List.newBuilder[B]
         while (pc < max_pc) {
             val r: Any = f.applyOrElse(PCAndInstruction(pc, instructions(pc)), AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
@@ -1810,7 +1806,7 @@ object Code {
             new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
         } else {
             val (localVariableTables, otherAttributes1) =
-                attributes partitionByType classOf[LocalVariableTable]
+                partitionByType(attributes, classOf[LocalVariableTable])
             val newAttributes1 =
                 if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
                     val theLVT = localVariableTables.flatMap[LocalVariable](_.localVariables)
@@ -1820,12 +1816,12 @@ object Code {
                 }
 
             val (lineNumberTables, otherAttributes2) =
-                newAttributes1 partitionByType classOf[UnpackedLineNumberTable]
+                partitionByType(newAttributes1, classOf[UnpackedLineNumberTable])
             val newAttributes2 =
                 if (lineNumberTables.nonEmpty && lineNumberTables.size > 1) {
                     val mergedTables = lineNumberTables.flatMap[LineNumber](_.lineNumbers)
-                    val sortedTable = mergedTables.sortWith[LineNumber]((ltA, ltB) => ltA.startPC < ltB.startPC)
-                    otherAttributes2 :+ new UnpackedLineNumberTable(sortedTable)
+                    val sortedTable = mergedTables.sortWith((ltA, ltB) => ltA.startPC < ltB.startPC)
+                    otherAttributes2 :+ UnpackedLineNumberTable(sortedTable)
                 } else {
                     newAttributes1
                 }
@@ -1953,7 +1949,7 @@ object Code {
         // We have to make sure, that all exception handlers are evaluated for
         // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
-        for (exceptionHandler ← exceptionHandlers) {
+        for (exceptionHandler <- exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
             if (visitedPCs.add(handlerPC)) paths ::= IntIntPair(handlerPC, 1)
         }

@@ -113,11 +113,11 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ InterimLUBP(lb, ub) =>
                     joinedImmutability = lb.correspondingTypeImmutability
                     maxImmutability = ub.correspondingTypeImmutability
-                    dependencies += (t → eps)
+                    dependencies += (t -> eps)
 
                 case eOptP =>
                     joinedImmutability = MutableType
-                    dependencies += (t → eOptP)
+                    dependencies += (t -> eOptP)
             }
 
             directSubtypes foreach { subtype =>

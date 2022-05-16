@@ -1037,40 +1037,40 @@ trait RecordCFG
             Nil,
             (n) => "Exit",
             Map(
-                "shape" → "doubleoctagon",
-                "fillcolor" → "black",
-                "color" → "white",
-                "labelloc" → "l"
+                "shape" -> "doubleoctagon",
+                "fillcolor" -> "black",
+                "color" -> "white",
+                "labelloc" -> "l"
             ),
             ScalaList.empty[DefaultMutableNode[List[Int /*PC*/ ]]]
         )
         for (pc ← code.programCounters) {
             nodes(pc) = {
-                var visualProperties = Map("shape" → "box", "labelloc" → "l")
+                var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
 
                 if (instructions(pc).isReturnInstruction) {
-                    visualProperties += "fillcolor" → "green"
-                    visualProperties += "style" → "filled"
+                    visualProperties += "fillcolor" -> "green"
+                    visualProperties += "style" -> "filled"
                 } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
                     if (abnormalExitPCs.contains(pc)) {
-                        visualProperties += "fillcolor" → "red"
-                        visualProperties += "style" → "filled"
+                        visualProperties += "fillcolor" -> "red"
+                        visualProperties += "style" -> "filled"
                     } else {
-                        visualProperties += "fillcolor" → "yellow"
-                        visualProperties += "style" → "filled"
+                        visualProperties += "fillcolor" -> "yellow"
+                        visualProperties += "style" -> "filled"
                     }
                 } else if (allSuccessorsOf(pc).isEmpty && !isExitPC(pc)) {
-                    visualProperties += "fillcolor" → "red"
-                    visualProperties += "style" → "filled"
-                    visualProperties += "shape" → "octagon"
+                    visualProperties += "fillcolor" -> "red"
+                    visualProperties += "style" -> "filled"
+                    visualProperties += "shape" -> "octagon"
                 }
 
                 if (code.exceptionHandlersFor(pc).nonEmpty) {
-                    visualProperties += "color" → "orange"
+                    visualProperties += "color" -> "orange"
                 }
 
                 if (code.exceptionHandlers.exists { eh => eh.handlerPC == pc }) {
-                    visualProperties += "peripheries" → "2"
+                    visualProperties += "peripheries" -> "2"
                 }
 
                 def pcsToString(pcs: List[Int /*PC*/ ]): String = {

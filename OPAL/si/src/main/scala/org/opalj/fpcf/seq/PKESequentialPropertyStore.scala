@@ -405,7 +405,7 @@ final class PKESequentialPropertyStore protected (
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
-                        trace("analysis progress", s"suppressed notification: $eps → $dependerEPK")
+                        trace("analysis progress", s"suppressed notification: $eps -> $dependerEPK")
                     }
                 }
             }

@@ -39,7 +39,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType =>
         implicit
         isClassExtensible: ObjectType => Answer
     ): ArrayMap[Answer] = {
-        val objectType = typesToProcess.dequeue
+        val objectType = typesToProcess.dequeue()
         val oid = objectType.id
 
         val thisSubtypeExtensibility = {

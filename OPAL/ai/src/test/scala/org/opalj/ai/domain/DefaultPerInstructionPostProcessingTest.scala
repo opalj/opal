@@ -69,7 +69,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
         evaluateMethod("alwaysThrows") { domain =>
             import domain._
             allThrownExceptions should be(
-                Map((8 → Set(ObjectValue(0, No, true, ObjectType.RuntimeException))))
+                Map((8 -> Set(ObjectValue(0, No, true, ObjectType.RuntimeException))))
             )
         }
     }
@@ -86,8 +86,8 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
             import domain._
             allThrownExceptions should be(
                 Map(
-                    (19 → Set(ObjectValue(12, No, true, ObjectType("java/lang/IllegalArgumentException")))), // <= finally
-                    (11 → Set(ObjectValue(4, No, true, ObjectType.NullPointerException)))
+                    (19 -> Set(ObjectValue(12, No, true, ObjectType("java/lang/IllegalArgumentException")))), // <= finally
+                    (11 -> Set(ObjectValue(4, No, true, ObjectType.NullPointerException)))
                 ) // <= if t is null
             )
         }

@@ -73,21 +73,21 @@ class ProjectIndex private (
         val mostOftenUsedMethodName = getMostOftenUsed(methodsWithSharedName)
 
         Map(
-            "number of field names that are used more than once" →
+            "number of field names that are used more than once" ->
                 fieldsWithSharedName.size,
-            "number of fields that share the same name and type" →
+            "number of fields that share the same name and type" ->
                 fieldsWithSharedName.count(_._2.size > 2),
-            "number of usages of the most often used field name" →
+            "number of usages of the most often used field name" ->
                 mostOftenUsedFieldName._1,
-            "the most often used field name" →
+            "the most often used field name" ->
                 mostOftenUsedFieldName._2.mkString(", "),
-            "number of method names that are used more than once (initializers are filtered)" →
+            "number of method names that are used more than once (initializers are filtered)" ->
                 methodsWithSharedName.size,
-            "number of methods that share the same signature (initializers are filtered)" →
+            "number of methods that share the same signature (initializers are filtered)" ->
                 methodsWithSharedName.count(_._2.size > 2),
-            "number of usages of the most often used method name (initializers are filtered)" →
+            "number of usages of the most often used method name (initializers are filtered)" ->
                 mostOftenUsedMethodName._1,
-            "the most often used method name (initializers are filtered)" →
+            "the most often used method name (initializers are filtered)" ->
                 mostOftenUsedMethodName._2.mkString(", ")
         )
     }
@@ -111,7 +111,7 @@ object ProjectIndex {
         val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
             val estimatedFieldsCount = project.fieldsCount
             val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
-            for (field ← project.allFields) {
+            for (field <- project.allFields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
                 fields.get(fieldName) match {
@@ -136,7 +136,7 @@ object ProjectIndex {
         val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
             val estimatedMethodsCount = project.methodsCount
             val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
-            for (method ← project.allMethods) {
+            for (method <- project.allMethods) {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {

@@ -2,9 +2,8 @@
 package org.opalj
 package br
 
-import scala.collection.{Map => SomeMap}
+import scala.collection.Map as SomeMap
 import scala.math.Ordered
-
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.ACC_NATIVE
@@ -21,6 +20,8 @@ import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Represents a single method.
@@ -596,7 +597,7 @@ object Method {
         attributes:  Attributes
     ): MethodTemplate = {
 
-        val (bodies, remainingAttributes) = attributes partitionByType classOf[Code]
+        val (bodies, remainingAttributes) = partitionByType(attributes, classOf[Code])
         val body = bodies.headOption
 
         new MethodTemplate(
@@ -616,7 +617,7 @@ object Method {
         attributes:  Attributes
     ): Method = {
 
-        val (bodies, remainingAttributes) = attributes partitionByType classOf[Code]
+        val (bodies, remainingAttributes) = partitionByType(attributes, classOf[Code])
         val body = bodies.headOption
 
         new Method(

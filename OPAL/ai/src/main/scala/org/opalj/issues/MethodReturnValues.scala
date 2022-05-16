@@ -78,17 +78,17 @@ class MethodReturnValues(
         import PCLineComprehension.line
 
         Json.obj(
-            "type" → "MethodReturnValues",
-            "values" → collectMethodReturnValues.map { methodData =>
+            "type" -> "MethodReturnValues",
+            "values" -> collectMethodReturnValues.map { methodData =>
                 val pc = methodData.pc
                 val details = methodData.value
 
                 Json.obj(
-                    "classFileFQN" → classFileFQN,
-                    "methodJVMSignature" → methodJVMSignature,
-                    "pc" → pc,
-                    "line" → line(pc),
-                    "details" → details
+                    "classFileFQN" -> classFileFQN,
+                    "methodJVMSignature" -> methodJVMSignature,
+                    "pc" -> pc,
+                    "line" -> line(pc),
+                    "details" -> details
                 )
             }.toIterable
         )

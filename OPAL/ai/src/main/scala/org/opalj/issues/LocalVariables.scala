@@ -66,8 +66,8 @@ class LocalVariables(
             val (index, localVariable) = e
             val localValue = localVariables(index)
             Json.obj(
-                "name" → localVariable.name,
-                "value" → {
+                "name" -> localVariable.name,
+                "value" -> {
                     if (localValue == null)
                         JsNull
                     else
@@ -75,6 +75,6 @@ class LocalVariables(
                 }
             )
         }
-        Json.obj("type" → "LocalVariables", "values" → lvValues)
+        Json.obj("type" -> "LocalVariables", "values" -> lvValues)
     }
 }

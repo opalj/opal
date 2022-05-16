@@ -1095,11 +1095,11 @@ object TACAI {
         //
         // Seemingly useless if-gotos; e.g., (taken from "java.lang.String replace(char,char)")
         // 20: if({a} != {param1}) goto 22
-        //       // 20 →
+        //       // 20 ->
         // 21:/*pc=102:*/ goto 23
-        //       // 20 →
+        //       // 20 ->
         // 22:/*pc=105:*/ ;
-        //       // 21, 22 →
+        //       // 21, 22 ->
         // 23:/*pc=107:*/ {lvb}[{lv18, lv5}] = {param2, lv13}
         //       // ⚡️ <uncaught exception => abnormal return>
         // THIS CODE CANNOT BE OPTIMIZED BECAUSE THE CONTROL-FLOW IS RELEVANT TO DETERMINE

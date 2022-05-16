@@ -105,7 +105,7 @@ trait Module_attributeBinding
     ): ProvidesEntry = {
         br.Provides(
             cp(provides_index).asObjectType(cp),
-            ArraySeq.mapFrom(provides_with_index_table)(cp(_).asObjectType(cp))
+            ArraySeq.from(provides_with_index_table).map(cp(_).asObjectType(cp))
         )
     }
 

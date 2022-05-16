@@ -49,8 +49,8 @@ case class Method_Info(
         val jvmDescriptor = this.descriptor
         val index = methodIndex.toString
 
-        val (exceptionsAttributes, attributes0) = attributes.partitionByType(classOf[Exceptions_attribute])
-        val (methodParametersAttributes, attributes1) = attributes0.partitionByType(classOf[MethodParameters_attribute])
+        val (exceptionsAttributes, attributes0) = partitionByType(attributes, classOf[Exceptions_attribute])
+        val (methodParametersAttributes, attributes1) = partitionByType(attributes0, classOf[MethodParameters_attribute])
         val declarationNode =
             <span class="method_declaration">
                 { accessFlags }{
@@ -64,8 +64,8 @@ case class Method_Info(
                 }
             </span>
 
-        val (codeAttributes, attributes2) = attributes1.partitionByType(classOf[Code_attribute])
-        val (signatureAttributes, attributes3) = attributes2.partitionByType(classOf[Signature_attribute])
+        val (codeAttributes, attributes2) = partitionByType(attributes1, classOf[Code_attribute])
+        val (signatureAttributes, attributes3) = partitionByType(attributes2, classOf[Signature_attribute])
         val signatureNode =
             if (signatureAttributes.nonEmpty) {
                 val signatureAttribute = signatureAttributes.head
@@ -79,7 +79,7 @@ case class Method_Info(
             val codeSize = code.instructions.length
             val maxStack = codeAttribute.max_stack
             val maxLocals = codeAttribute.max_locals
-            val (lntAttributes, otherAttributes) = codeAttribute.attributes.partitionByType(classOf[LineNumberTable_attribute])
+            val (lntAttributes, otherAttributes) = partitionByType(codeAttribute.attributes, classOf[LineNumberTable_attribute])
             val methodBodyHeader =
                 s"[size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals]"
             <details open="" class="method" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>

@@ -275,7 +275,7 @@ object ToTxt {
                         }.toList.sorted.mkString(
                             indention+"// "+(if (index == 0) "<start>, " else ""),
                             ", ",
-                            " →"
+                            " ->"
                         )
                 }
             }
@@ -286,7 +286,7 @@ object ToTxt {
                 val successors =
                     bb.successors.collect {
                         case cn: CatchNode =>
-                            s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
+                            s"⚡️ ${catchTypeToString(cn.catchType)} -> ${cn.handlerPC}"
                         case ExitNode(false) =>
                             "⚡️ <uncaught exception => abnormal return>"
                     }

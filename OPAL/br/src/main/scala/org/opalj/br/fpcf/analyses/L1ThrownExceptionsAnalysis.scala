@@ -69,8 +69,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.ThrownExceptions
-import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 
 /**
  * Analysis of thrown exceptions; computes the [[org.opalj.br.fpcf.properties.ThrownExceptions]]

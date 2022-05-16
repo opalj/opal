@@ -398,7 +398,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 if (state.callees.isDefined) {
                     checkFreshnessOfReturn(stmt.pc, data, state.callees.get)
                 } else {
-                    state.rvfCallSites += stmt.pc → data
+                    state.rvfCallSites += stmt.pc -> data
                     reducePurityLB(otherwise)
                 }
                 true

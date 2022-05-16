@@ -1336,7 +1336,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     ps.setupPhase(
                         Set(ReachableNodes.Key, ReachableNodesCount.Key),
                         Set.empty,
-                        Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
+                        Map(ReachableNodesCount.Key -> Set(ReachableNodes.Key))
                     )
                     ps.registerLazyPropertyComputation(
                         ReachableNodes.Key, reachableNodesAnalysis(ps)
@@ -1400,7 +1400,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     ps.setupPhase(
                         Set(ReachableNodes.Key, ReachableNodesCount.Key),
                         Set.empty,
-                        Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
+                        Map(ReachableNodesCount.Key -> Set(ReachableNodes.Key))
                     )
                     ps.registerLazyPropertyComputation(
                         ReachableNodes.Key, reachableNodesAnalysis(ps)
@@ -1438,8 +1438,8 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         Set(ReachableNodes.Key, ReachableNodesCount.Key, Marker.Key),
                         Set.empty,
                         Map(
-                            ReachableNodesCount.Key → Set(ReachableNodes.Key),
-                            Marker.Key → Set(ReachableNodes.Key)
+                            ReachableNodesCount.Key -> Set(ReachableNodes.Key),
+                            Marker.Key -> Set(ReachableNodes.Key)
                         )
                     )
                     ps.registerLazyPropertyComputation(
@@ -1490,8 +1490,8 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         Set(ReachableNodes.Key, ReachableNodesCount.Key, Marker.Key),
                         Set.empty,
                         Map(
-                            ReachableNodesCount.Key → Set(ReachableNodes.Key),
-                            Marker.Key → Set(ReachableNodesCount.Key)
+                            ReachableNodesCount.Key -> Set(ReachableNodes.Key),
+                            Marker.Key -> Set(ReachableNodesCount.Key)
                         )
                     )
                     ps.registerLazyPropertyComputation(
@@ -1532,8 +1532,8 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         Set(ReachableNodes.Key, ReachableNodesCount.Key, Marker.Key),
                         Set.empty,
                         Map(
-                            ReachableNodesCount.Key → Set(ReachableNodes.Key),
-                            Marker.Key → Set(ReachableNodesCount.Key)
+                            ReachableNodesCount.Key -> Set(ReachableNodes.Key),
+                            Marker.Key -> Set(ReachableNodesCount.Key)
                         )
                     )
                     ps.registerTransformer(RNKey, RNCKey) { (e: Entity, p) =>

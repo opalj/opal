@@ -605,23 +605,25 @@ abstract class ProjectLike extends ClassFileRepository { project =>
 
                 if (isPotentiallySignaturePolymorphicCall) {
                     val methods = classFile.findMethod(name)
-                    if (methods.isSingletonList) {
-                        val method = methods.head
-                        if (method.isNativeAndVarargs &&
-                            (method.descriptor == SignaturePolymorphicMethodObject ||
+                    methods match {
+                        case List(method) =>
+                            if (method.isNativeAndVarargs &&
+                              (method.descriptor == SignaturePolymorphicMethodObject ||
                                 method.descriptor == SignaturePolymorphicMethodVoid ||
                                 method.descriptor == SignaturePolymorphicMethodBoolean))
-                            Success(method) // the resolved method is signature polymorphic
-                        else if (method.descriptor == descriptor)
-                            Success(method) // "normal" resolution of a method
-                        else
-                            resolveSuperclassMethodReference()
-                    } else {
-                        methods.find(m => m.descriptor == descriptor) match {
+                              Success(method) // the resolved method is signature polymorphic
+                            else if (method.descriptor == descriptor)
+                              Success(method) // "normal" resolution of a method
+                            else
+                              resolveSuperclassMethodReference()
+                        case _ =>
+                          methods.find(m => m.descriptor == descriptor) match {
                             case None                 => resolveSuperclassMethodReference()
                             case Some(resolvedMethod) => Success(resolvedMethod)
-                        }
+                          }
                     }
+
+
                 } else {
                     classFile.findMethod(name, descriptor) match {
                         case None                 => resolveSuperclassMethodReference()

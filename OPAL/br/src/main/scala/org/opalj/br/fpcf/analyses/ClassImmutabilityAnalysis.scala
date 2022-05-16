@@ -178,7 +178,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
 
         if (!superClassMutabilityIsFinal) {
-            dependees += (SuperClassKey → superClassInformation)
+            dependees += (SuperClassKey -> superClassInformation)
         }
 
         // Collect all fields for which we need to determine the effective mutability!
@@ -275,7 +275,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     eOptP.hasUBP && eOptP.ub == ImmutableType && eOptP.isFinal
                 }
             fieldTypesWithUndecidedMutability.foreach { eOptP =>
-                dependees += (eOptP.e → eOptP)
+                dependees += (eOptP.e -> eOptP)
             }
         }
 
@@ -345,7 +345,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
             if (someEPS.isRefinable) {
                 val entity = if (someEPS.pk == ClassImmutability.key) SuperClassKey else someEPS.e
-                dependees += (entity → someEPS)
+                dependees += (entity -> someEPS)
             }
 
             /*[DEBUG]
@@ -410,12 +410,12 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     final override def uses: Set[PropertyBounds] =
         PropertyBounds.lubs(ClassImmutability, TypeImmutability, FieldMutability)
 
-    override type InitializationData = TraversableOnce[ClassFile]
+    override type InitializationData = IterableOnce[ClassFile]
 
     private[this] def setResultsAndComputeEntities(
         project:       SomeProject,
         propertyStore: PropertyStore
-    ): TraversableOnce[ClassFile] = {
+    ): IterableOnce[ClassFile] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
         import classHierarchy.rootClassTypesIterator

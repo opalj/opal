@@ -97,17 +97,17 @@ class ReturnValueFreshnessState(val context: Context) {
 
     def addMethodDependee(epOrEpk: EOptionP[Context, ReturnValueFreshness]): Unit = {
         assert(!returnValueDependees.contains(epOrEpk.e))
-        returnValueDependees += epOrEpk.e → epOrEpk
+        returnValueDependees += epOrEpk.e -> epOrEpk
     }
 
     def addFieldDependee(epOrEpk: EOptionP[Field, FieldLocality]): Unit = {
         assert(!fieldDependees.contains(epOrEpk.e))
-        fieldDependees += epOrEpk.e → epOrEpk
+        fieldDependees += epOrEpk.e -> epOrEpk
     }
 
     def addDefSiteDependee(epOrEpk: EOptionP[(Context, DefinitionSite), EscapeProperty]): Unit = {
         assert(!defSiteDependees.contains(epOrEpk.e))
-        defSiteDependees += epOrEpk.e → epOrEpk
+        defSiteDependees += epOrEpk.e -> epOrEpk
     }
 
     def containsMethodDependee(epOrEpk: EOptionP[Context, ReturnValueFreshness]): Boolean = {

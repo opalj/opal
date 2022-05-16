@@ -153,7 +153,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         if (_dependerToDependees.contains(depender)) {
             _dependerToDependees(depender) += ((dependee, typeFilter))
         } else {
-            _dependerToDependees += (depender → mutable.Set((dependee, typeFilter)))
+            _dependerToDependees += (depender -> mutable.Set((dependee, typeFilter)))
         }
 
         if (!_dependees.contains(dependeeEPK))

@@ -1008,8 +1008,8 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
 
         // Recall that the runtime type of this value can still be a subtype of supertype
         // even if this upperTypeBound is not a subtype of supertype.
-        val values = baseValues.toIterator.filter(_.isNull.isNoOrUnknown)
-        var answer: Answer = values.next.isValueASubtypeOf(supertype)
+        val values = baseValues.iterator.filter(_.isNull.isNoOrUnknown)
+        var answer: Answer = values.next().isValueASubtypeOf(supertype)
         values foreach { value => /* the first value is already removed */
             if (answer eq Unknown)
                 return answer; //isSubtype

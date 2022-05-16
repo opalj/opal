@@ -181,7 +181,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     final override def updated(
         calleeContext: Context, callerContext: Context, pc: Int, isDirect: Boolean
     ): Callers = {
-        val map = IntMap(calleeContext.id → LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect)))
+        val map = IntMap(calleeContext.id -> LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect)))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
             new CallersOnlyWithConcreteCallers(map, 1)
@@ -325,12 +325,12 @@ class CallersOnlyWithConcreteCallers(
                 this
             else
                 new CallersOnlyWithConcreteCallers(
-                    encodedCallers + (calleeContextId → newSet),
+                    encodedCallers + (calleeContextId -> newSet),
                     size + 1
                 )
         } else {
             new CallersOnlyWithConcreteCallers(
-                encodedCallers + (calleeContextId → LongLinkedTrieSet(encodedCaller)), size + 1
+                encodedCallers + (calleeContextId -> LongLinkedTrieSet(encodedCaller)), size + 1
             )
         }
     }
@@ -377,13 +377,13 @@ class CallersImplWithOtherCalls(
                 this
             else
                 new CallersImplWithOtherCalls(
-                    encodedCallers + (calleeContextId → newSet),
+                    encodedCallers + (calleeContextId -> newSet),
                     size + 1,
                     specialCallSitesFlags
                 )
         } else {
             new CallersImplWithOtherCalls(
-                encodedCallers + (calleeContextId → LongLinkedTrieSet(encodedCaller)),
+                encodedCallers + (calleeContextId -> LongLinkedTrieSet(encodedCaller)),
                 size + 1,
                 specialCallSitesFlags
             )

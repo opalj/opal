@@ -167,7 +167,7 @@ trait ArrayValues extends l1.ReferenceValues {
 
     /**
      * The lengths per dimension are found in the following order:
-     * `..., count1, [count2, ...] →`
+     * `..., count1, [count2, ...] ->`
      */
     override def NewArray(
         pc:        Int,

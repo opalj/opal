@@ -8,7 +8,6 @@ package pointsto
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongTrieSetWithList
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -65,7 +64,7 @@ sealed trait AllocationSitePointsToSet
                 val oldTypes = newTypes
                 newTypes += tpe
                 if (newTypes ne oldTypes)
-                    newOrderedTypes :&:= tpe
+                    newOrderedTypes ::= tpe
             }
         }
 
@@ -92,7 +91,7 @@ sealed trait AllocationSitePointsToSet
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
                 newAllocationSites
             } else {
@@ -199,9 +198,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
             LongTrieSetWithList(allocationSiteNew, allocationSiteOld),
             UIDSet(allocatedTypeOld, allocatedTypeNew),
             if (allocatedTypeNew != allocatedTypeOld)
-                allocatedTypeNew :&: allocatedTypeOld :&: Naught
+                List(allocatedTypeNew, allocatedTypeOld)
             else
-                allocatedTypeNew :&: Naught
+                List(allocatedTypeNew)
         )
     }
 
@@ -347,8 +346,8 @@ case class AllocationSitePointsToSet1(
                     }
                 }
 
-                val newOrderedTypes = otherOrderedTypes.foldLeft(allocatedType :&: Naught) { (l, at) =>
-                    if (at != allocatedType) at :&: l else l
+                val newOrderedTypes = otherOrderedTypes.foldLeft(List(allocatedType)) { (l, at) =>
+                    if (at != allocatedType) at :: l else l
                 }
 
                 new AllocationSitePointsToSetN(
@@ -387,7 +386,7 @@ case class AllocationSitePointsToSet1(
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
                 newAllocationSites
             } else {
@@ -422,7 +421,7 @@ case class AllocationSitePointsToSet1(
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
             }
         }

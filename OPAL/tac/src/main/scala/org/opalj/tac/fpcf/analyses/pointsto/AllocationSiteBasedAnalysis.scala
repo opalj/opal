@@ -86,7 +86,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
                         ptsO.get
                     else {
                         val newPts = mergedPointsToSetForType(allocatedType)
-                        exceptionPointsToSets += allocatedType.id → newPts
+                        exceptionPointsToSets += allocatedType.id -> newPts
                         newPts
                     }
                 } else

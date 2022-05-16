@@ -19,7 +19,7 @@ package fpcf
  *         ps.setupPhase(
  *           Set(ReachableNodes.Key, ReachableNodesCount.Key),
  *           Set.empty,
- *           Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
+ *           Map(ReachableNodesCount.Key -> Set(ReachableNodes.Key))
  *         )
  *         }}}
  *         will suppress notifications about interim updates from `ReachableNodes` to

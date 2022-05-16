@@ -33,9 +33,8 @@ final class CatchNode(
      * @param index The unique index in the exception handler table; this enables us to assign
      *              unique nodeids to catch nodes.
      */
-    def this(handler: ExceptionHandler, index: Int) {
+    def this(handler: ExceptionHandler, index: Int) =
         this(index, handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
-    }
 
     final override def nodeId: Int = {
         // OLD: the offset is required to ensure that catch node ids do not collide with basic
@@ -72,11 +71,11 @@ final class CatchNode(
     )
 
     override def visualProperties: Map[String, String] = Map(
-        "shape" → "box",
-        "labelloc" → "l",
-        "fillcolor" → "orange",
-        "style" → "filled",
-        "shape" → "rectangle"
+        "shape" -> "box",
+        "labelloc" -> "l",
+        "fillcolor" -> "orange",
+        "style" -> "filled",
+        "shape" -> "rectangle"
     )
 
     override def toString: String = {

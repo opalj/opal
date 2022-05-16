@@ -228,13 +228,13 @@ trait AnalysisApplication {
 
     protected def handleParsingExceptions(
         project:    SomeProject,
-        exceptions: Traversable[Throwable]
+        exceptions: Iterable[Throwable]
     ): Unit = {
         if (exceptions.isEmpty)
             return ;
 
         implicit val logContext: LogContext = project.logContext
-        for (exception ← exceptions) {
+        for (exception <- exceptions) {
             error("creating project", "ignoring invalid class file", exception)
         }
     }

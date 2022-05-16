@@ -200,7 +200,7 @@ final class IntArrayStack private (
     override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
 
     override def toString: String = {
-        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
+        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "->")})"
     }
 }
 

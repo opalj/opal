@@ -63,7 +63,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         evaluateMethod("byteArrays", domain => {
             import domain._
             domain.allReturnedValues should be(
-                Map((15 → AByteValue))
+                Map((15 -> AByteValue))
             )
         })
     }
@@ -72,7 +72,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         evaluateMethod("booleanArrays", domain => {
             import domain._
             domain.allReturnedValues should be(
-                Map((14 → ABooleanValue))
+                Map((14 -> ABooleanValue))
             )
         })
     }

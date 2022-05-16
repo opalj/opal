@@ -488,7 +488,7 @@ object CODE {
                         // let's store the mapping to make it possible to remap the other attributes..
                         pcMapping += (label.pc, nextPC)
                     }
-                    labels += (label → nextPC)
+                    labels += (label -> nextPC)
 
                 case e: ExceptionHandlerElement => exceptionHandlerTableBuilder.add(e, nextPC)
 

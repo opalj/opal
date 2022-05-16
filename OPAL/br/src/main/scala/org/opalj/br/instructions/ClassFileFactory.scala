@@ -6,7 +6,7 @@ package instructions
 import scala.annotation.switch
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-ArraySeqimport org.opalj.bi.ACC_BRIDGE
+import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.MethodDescriptor.DefaultConstructorDescriptor
@@ -1255,7 +1255,7 @@ object ClassFileFactory {
                             instructions(currentIndex) = boxInstruction
                             currentIndex = boxInstruction.indexOfNextInstruction(currentIndex, false)
                         } else {
-                            throw new UnknownError("Should not occur: "+ft+" → "+rt)
+                            throw new UnknownError("Should not occur: "+ft+" -> "+rt)
                         }
                     }
                 }

@@ -39,12 +39,12 @@ class EOptionPSetTest extends AnyFunSuite {
         val fe2Pal = FinalEP(e2, Palindromes.Palindrome)
 
         implicit val ps = new InitializedPropertyStore(IntMap(
-            Marker.Key.id → Map(
-                e1 → mutable.Queue(ie1Marker, fep1Marker, fep1Marker),
-                e2 → mutable.Queue(ie2Marker, fep2Marker)
+            Marker.Key.id -> Map(
+                e1 -> mutable.Queue(ie1Marker, fep1Marker, fep1Marker),
+                e2 -> mutable.Queue(ie2Marker, fep2Marker)
             ),
-            Palindromes.PalindromeKey.id → Map(
-                e2 → mutable.Queue(ie2Pal, fe2Pal)
+            Palindromes.PalindromeKey.id -> Map(
+                e2 -> mutable.Queue(ie2Pal, fe2Pal)
             )
         ))
 
@@ -73,12 +73,12 @@ class EOptionPSetTest extends AnyFunSuite {
         val fe2Pal = FinalEP(e2, Palindromes.Palindrome)
 
         implicit val ps = new InitializedPropertyStore(IntMap(
-            Marker.Key.id → Map(
-                e1 → mutable.Queue(ie1Marker, fep1Marker),
-                e2 → mutable.Queue(ie2Marker)
+            Marker.Key.id -> Map(
+                e1 -> mutable.Queue(ie1Marker, fep1Marker),
+                e2 -> mutable.Queue(ie2Marker)
             ),
-            Palindromes.PalindromeKey.id → Map(
-                e2 → mutable.Queue(ie2Pal, fe2Pal)
+            Palindromes.PalindromeKey.id -> Map(
+                e2 -> mutable.Queue(ie2Pal, fe2Pal)
             )
         ))
 
@@ -102,10 +102,10 @@ class EOptionPSetTest extends AnyFunSuite {
         val ieupb1 = InterimEUBP(e1, Marker.NotMarked)
         val ieupb2 = InterimEUBP(e2, Marker.NotMarked)
         implicit val ps = new InitializedPropertyStore(IntMap(
-            Marker.Key.id →
+            Marker.Key.id ->
                 Map(
-                    e1 → mutable.Queue(ieupb1),
-                    e2 → mutable.Queue(ieupb2)
+                    e1 -> mutable.Queue(ieupb1),
+                    e2 -> mutable.Queue(ieupb2)
                 )
         ))
 
@@ -145,12 +145,12 @@ class EOptionPSetTest extends AnyFunSuite {
         val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
 
         implicit val ps = new InitializedPropertyStore(IntMap(
-            Marker.Key.id → Map(
-                e1 → mutable.Queue(ie1Marker),
-                e2 → mutable.Queue(ie2Marker)
+            Marker.Key.id -> Map(
+                e1 -> mutable.Queue(ie1Marker),
+                e2 -> mutable.Queue(ie2Marker)
             ),
-            Palindromes.PalindromeKey.id → Map(
-                e2 → mutable.Queue(ie2Pal)
+            Palindromes.PalindromeKey.id -> Map(
+                e2 -> mutable.Queue(ie2Pal)
             )
         ))
 
@@ -175,12 +175,12 @@ class EOptionPSetTest extends AnyFunSuite {
         val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
 
         implicit val ps = new InitializedPropertyStore(IntMap(
-            Marker.Key.id → Map(
-                e1 → mutable.Queue(ie1Marker),
-                e2 → mutable.Queue(ie2Marker)
+            Marker.Key.id -> Map(
+                e1 -> mutable.Queue(ie1Marker),
+                e2 -> mutable.Queue(ie2Marker)
             ),
-            Palindromes.PalindromeKey.id → Map(
-                e2 → mutable.Queue(ie2Pal)
+            Palindromes.PalindromeKey.id -> Map(
+                e2 -> mutable.Queue(ie2Pal)
             )
         ))
 
@@ -206,12 +206,12 @@ class EOptionPSetTest extends AnyFunSuite {
         val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
 
         implicit val ps = new InitializedPropertyStore(IntMap(
-            Marker.Key.id → Map(
-                e1 → mutable.Queue(ie1Marker),
-                e2 → mutable.Queue(ie2Marker)
+            Marker.Key.id -> Map(
+                e1 -> mutable.Queue(ie1Marker),
+                e2 -> mutable.Queue(ie2Marker)
             ),
-            Palindromes.PalindromeKey.id → Map(
-                e2 → mutable.Queue(ie2Pal)
+            Palindromes.PalindromeKey.id -> Map(
+                e2 -> mutable.Queue(ie2Pal)
             )
         ))
         val set = EOptionPSet.empty[Entity, Property]

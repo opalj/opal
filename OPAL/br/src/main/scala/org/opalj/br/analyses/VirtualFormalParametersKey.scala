@@ -3,9 +3,8 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.mutable.OpenHashMap
-
 import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -57,10 +56,10 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      */
     override def compute(p: SomeProject): VirtualFormalParameters = {
 
-        val sites = new OpenHashMap[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
+        val sites = mutable.HashMap.empty[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
 
         for {
-            dm ← p.get(DeclaredMethodsKey).declaredMethods
+            dm <- p.get(DeclaredMethodsKey).declaredMethods
             if (dm.hasSingleDefinedMethod)
         } {
             val md = dm.descriptor
@@ -74,7 +73,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
                 formalParameters(p) = new VirtualFormalParameter(dm, -p - 1)
                 p += 1
             }
-            sites += (dm → ConstArray(formalParameters))
+            sites += (dm -> ArraySeq.unsafeWrapArray(formalParameters))
         }
 
         new VirtualFormalParameters(sites)
@@ -85,7 +84,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
     // PROPERTYSTORE AND TO ENSURE THAT VIRTUAL FORMAL PARAMETERS AND THE PROPERTYSTORE CONTAIN THE SAME
     // OBJECTS!
     //
-    final val entityDerivationFunction: (SomeProject) => (Traversable[AnyRef], VirtualFormalParameters) = {
+    final val entityDerivationFunction: (SomeProject) => (Iterable[AnyRef], VirtualFormalParameters) = {
         (p: SomeProject) =>
             {
                 // this will collect the formal parameters of the project if not yet collected...

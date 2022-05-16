@@ -39,7 +39,7 @@ class ConfiguredPurity(
 
     private val methods: Map[DeclaredMethod, Purity] = (
         for {
-            PurityValue(className, methodName, descriptor, property, conditions) ← toSet.toSet
+            PurityValue(className, methodName, descriptor, property, conditions) <- toSet.toSet
 
             po = Purity(property)
             if po.isDefined
@@ -65,15 +65,15 @@ class ConfiguredPurity(
                         declaredMethods(classType, classType.packageName, classType, methodName, md)
                     )
                     case None => project.classFile(classType).map { cf =>
-                        cf.findMethod(methodName).map(declaredMethods(_)).toIterable
+                        cf.findMethod(methodName).map(declaredMethods(_))
                     }.getOrElse(Seq.empty)
 
                 }
             }
 
-            dm ← ms
+            dm <- ms
         } yield {
-            dm → po.get
+            dm -> po.get
         }
     ).toMap
 

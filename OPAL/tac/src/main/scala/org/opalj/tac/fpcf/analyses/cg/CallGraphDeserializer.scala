@@ -47,7 +47,7 @@ case class ReachableMethodsDescription(reachableMethods: List[ReachableMethodDes
      * Converts the set of reachable methods into a mapping from method to the set of call sites.
      */
     lazy val toMap: Map[MethodDesc, List[CallSiteDescription]] = {
-        reachableMethods.groupBy(_.method).map { case (k, v) => k → v.flatMap(_.callSites) }
+        reachableMethods.groupBy(_.method).map { case (k, v) => k -> v.flatMap(_.callSites) }
     }
 }
 

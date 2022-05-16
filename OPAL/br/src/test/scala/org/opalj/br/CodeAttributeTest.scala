@@ -182,7 +182,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
     it should "return the local variables defined at the respective pc" in {
         val lvs = codeOfPut.localVariablesAt(32).map(e => (e._1, e._2.name))
-        lvs should be(Map(0 → "this", 1 → "item"))
+        lvs should be(Map(0 -> "this", 1 -> "item"))
     }
 
     behavior of "the \"Code\" attribute's localVariable method"

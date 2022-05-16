@@ -29,17 +29,17 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     }
 
     "a graph with a single path of three elements" should "not contain any cSCCs" in {
-        val g = Graph.empty[String] addEdge ("a" → "b") addEdge ("b" → "c")
+        val g = Graph.empty[String] addEdge ("a" -> "b") addEdge ("b" -> "c")
         closedSCCs(g) should be(List.empty)
     }
 
     "a graph with a single path of 5 elements" should "not contain any cSCCs" in {
-        val g = Graph.empty[String] addEdge ("a" → "b") addEdge ("b" → "c") addEdge ("c" → "d") addEdge ("d" → "e")
+        val g = Graph.empty[String] addEdge ("a" -> "b") addEdge ("b" -> "c") addEdge ("c" -> "d") addEdge ("d" -> "e")
         closedSCCs(g) should be(List.empty)
     }
 
     "a graph with a single path of 5 elements, specified in mixed order" should "not contain any cSCCs" in {
-        val g = Graph.empty[String] addEdge ("d" → "e") addEdge ("a" → "b") addEdge ("c" → "d") addEdge ("b" → "c")
+        val g = Graph.empty[String] addEdge ("d" -> "e") addEdge ("a" -> "b") addEdge ("c" -> "d") addEdge ("b" -> "c")
         closedSCCs(g) should be(List.empty)
     }
 
@@ -62,38 +62,38 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with four nodes with two nodes with a self dependency" should
         "contain two cSCCs with the respective nodes" in {
-            val g = Graph.empty[String] addEdge ("a", "a") addVertice ("b") addEdge ("c" → "c") addVertice ("d")
+            val g = Graph.empty[String] addEdge ("a", "a") addVertice ("b") addEdge ("c" -> "c") addVertice ("d")
             closedSCCs(g).map(_.toList.sorted).toSet should be(Set(List("a"), List("c")))
         }
 
     "a graph with two nodes which form a cSCCs" should "contain the cSCCs" in {
-        val g = Graph.empty[String] addEdge ("a" → "b") addEdge ("b" → "a")
+        val g = Graph.empty[String] addEdge ("a" -> "b") addEdge ("b" -> "a")
         closedSCCs(g).map(_.toList.sorted) should be(List(List("a", "b")))
     }
 
     "a graph with four nodes which form a cSCCs" should "contain the cSCCs" in {
-        val g = Graph.empty[String] addEdge ("a" → "b") addEdge ("b" → "c") addEdge ("c" → "d") addEdge ("d" → "a")
+        val g = Graph.empty[String] addEdge ("a" -> "b") addEdge ("b" -> "c") addEdge ("c" -> "d") addEdge ("d" -> "a")
         closedSCCs(g).map(_.toList.sorted) should be(List(List("a", "b", "c", "d")))
     }
 
     "a graph with four nodes which form a cSCCs with multiple edges between pairs of nodes" should
         "contain the cSCCs" in {
             val g = Graph.empty[String] addEdge
-                ("a" → "b") addEdge ("b" → "c") addEdge ("c" → "d") addEdge ("d" → "a") addEdge
-                ("a" → "b") addEdge ("b" → "c") addEdge ("c" → "d") addEdge ("d" → "a")
+                ("a" -> "b") addEdge ("b" -> "c") addEdge ("c" -> "d") addEdge ("d" -> "a") addEdge
+                ("a" -> "b") addEdge ("b" -> "c") addEdge ("c" -> "d") addEdge ("d" -> "a")
             assert(g.successors("a").size == 2)
             closedSCCs(g).map(_.toList.sorted) should be(List(List("a", "b", "c", "d")))
         }
 
     "a large tree-like graph " should "not contain a cSCC" in {
         val g = Graph.empty[String] addEdge
-            ("a", "b") addEdge ("a" → "c") addEdge ("a" → "d") addEdge
-            ("c" → "e") addEdge ("d" → "e") addEdge ("e" → "f")
+            ("a", "b") addEdge ("a" -> "c") addEdge ("a" -> "d") addEdge
+            ("c" -> "e") addEdge ("d" -> "e") addEdge ("e" -> "f")
         closedSCCs(g) should be(List.empty)
     }
 
     "a graph with three nodes with a cSCC and an incoming dependency" should "contain one cSCC" in {
-        val g = Graph.empty[String] addEdge ("a" → "b") addEdge ("b" → "a") addEdge ("c" → "a")
+        val g = Graph.empty[String] addEdge ("a" -> "b") addEdge ("b" -> "a") addEdge ("c" -> "a")
         g.successors.size should be(3)
         val cSCCs = closedSCCs(g).map(_.toList.sorted)
         val expected = List(List("a", "b"))
@@ -104,7 +104,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with three nodes with a connected component but an outgoing dependency" should
         "not contain a cSCC" in {
-            val g = Graph.empty[String] addEdge ("a" → "b") addEdge ("b" → "a") addEdge ("b" → "c")
+            val g = Graph.empty[String] addEdge ("a" -> "b") addEdge ("b" -> "a") addEdge ("b" -> "c")
             g("a").size should be(1)
             g("b").size should be(2)
             val cSCCs = closedSCCs(g)
@@ -116,11 +116,11 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with five nodes with two cSCCs and an incoming dependency" should
         "contain two cSCCs" in {
             val data = List(
-                ("a" → "b"),
-                ("b" → "a"),
-                ("c" → "a"), ("c" → "d"),
-                ("d" → "e"),
-                ("e" → "d")
+                ("a" -> "b"),
+                ("b" -> "a"),
+                ("c" -> "a"), ("c" -> "d"),
+                ("d" -> "e"),
+                ("e" -> "d")
             )
             var permutationCount = 0
             data.permutations.foreach { aPermutation =>
@@ -142,8 +142,8 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with one SCC and once cSCCs" should "contain one cSCCs" in {
         val g = Graph.empty[String] addEdge
-            ("a" → "b") addEdge ("f" → "b") addEdge ("f" → "a") addEdge ("b" → "f") addEdge
-            ("a" → "e") addEdge ("e" → "d") addEdge ("d" → "c") addEdge ("c" → "e")
+            ("a" -> "b") addEdge ("f" -> "b") addEdge ("f" -> "a") addEdge ("b" -> "f") addEdge
+            ("a" -> "e") addEdge ("e" -> "d") addEdge ("d" -> "c") addEdge ("c" -> "e")
         g.vertices.size should be(6)
         g.successors.map(_._2.size).sum should be(8)
         val cSCCs = closedSCCs(g).map(_.toList.sorted)
@@ -155,11 +155,11 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a large totally connected graph" should "contain one cSCCs" in {
         val g = Graph.empty[String] addEdge
-            ("a" → "b") addEdge ("a" → "c") addEdge ("a" → "d") addEdge ("a" → "e") addEdge
-            ("b" → "a") addEdge ("b" → "c") addEdge ("b" → "d") addEdge ("b" → "e") addEdge
-            ("c" → "b") addEdge ("c" → "a") addEdge ("c" → "d") addEdge ("c" → "e") addEdge
-            ("d" → "a") addEdge ("d" → "b") addEdge ("d" → "c") addEdge ("d" → "e") addEdge
-            ("e" → "a") addEdge ("e" → "b") addEdge ("e" → "c") addEdge ("e" → "d")
+            ("a" -> "b") addEdge ("a" -> "c") addEdge ("a" -> "d") addEdge ("a" -> "e") addEdge
+            ("b" -> "a") addEdge ("b" -> "c") addEdge ("b" -> "d") addEdge ("b" -> "e") addEdge
+            ("c" -> "b") addEdge ("c" -> "a") addEdge ("c" -> "d") addEdge ("c" -> "e") addEdge
+            ("d" -> "a") addEdge ("d" -> "b") addEdge ("d" -> "c") addEdge ("d" -> "e") addEdge
+            ("e" -> "a") addEdge ("e" -> "b") addEdge ("e" -> "c") addEdge ("e" -> "d")
         g.vertices.size should be(5)
         g.successors.map(_._2.size).sum should be(20)
         val cSCCs = closedSCCs(g).map(_.toList.sorted)
@@ -171,11 +171,11 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a large totally connected graph with self dependencies" should "contain one cSCCs" in {
         val g = Graph.empty[String] addEdge
-            ("a" → "a") addEdge ("a" → "b") addEdge ("a" → "c") addEdge ("a" → "d") addEdge ("a" → "e") addEdge
-            ("b" → "a") addEdge ("b" → "b") addEdge ("b" → "c") addEdge ("b" → "d") addEdge ("b" → "e") addEdge
-            ("c" → "b") addEdge ("c" → "a") addEdge ("c" → "c") addEdge ("c" → "d") addEdge ("c" → "e") addEdge
-            ("d" → "a") addEdge ("d" → "b") addEdge ("d" → "c") addEdge ("d" → "d") addEdge ("d" → "e") addEdge
-            ("e" → "a") addEdge ("e" → "b") addEdge ("e" → "c") addEdge ("e" → "d") addEdge ("e" → "e")
+            ("a" -> "a") addEdge ("a" -> "b") addEdge ("a" -> "c") addEdge ("a" -> "d") addEdge ("a" -> "e") addEdge
+            ("b" -> "a") addEdge ("b" -> "b") addEdge ("b" -> "c") addEdge ("b" -> "d") addEdge ("b" -> "e") addEdge
+            ("c" -> "b") addEdge ("c" -> "a") addEdge ("c" -> "c") addEdge ("c" -> "d") addEdge ("c" -> "e") addEdge
+            ("d" -> "a") addEdge ("d" -> "b") addEdge ("d" -> "c") addEdge ("d" -> "d") addEdge ("d" -> "e") addEdge
+            ("e" -> "a") addEdge ("e" -> "b") addEdge ("e" -> "c") addEdge ("e" -> "d") addEdge ("e" -> "e")
         g.vertices.size should be(5)
         g.successors.map(_._2.size).sum should be(25)
         val cSCCs = closedSCCs(g).map(_.toList.sorted)
@@ -187,8 +187,8 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a complex graph with six nodes which creates one cSCC" should "contain one cSCCs" in {
         val data = List(
-            ("a" → "b"), ("f" → "b"), ("f" → "a"), ("b" → "f"), ("a" → "e"),
-            ("e" → "d"), ("d" → "c"), ("c" → "e"), ("c" → "b")
+            ("a" -> "b"), ("f" -> "b"), ("f" -> "a"), ("b" -> "f"), ("a" -> "e"),
+            ("e" -> "d"), ("d" -> "c"), ("c" -> "e"), ("c" -> "b")
         )
         var permutationCount = 0
         var testedCount = 0
@@ -214,10 +214,10 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a complex graph with several cSCCs and connected components" should "contain all cSCCs" in {
         val data = List(
-            ("a" → "b"), ("b" → "c"), ("c" → "a"),
-            ("g" → "f"),
-            ("b" → "d"),
-            ("a" → "h"), ("h" → "j"), ("j" → "i"), ("i" → "j"), ("i" → "k"), ("k" → "h")
+            ("a" -> "b"), ("b" -> "c"), ("c" -> "a"),
+            ("g" -> "f"),
+            ("b" -> "d"),
+            ("a" -> "h"), ("h" -> "j"), ("j" -> "i"), ("i" -> "j"), ("i" -> "k"), ("k" -> "h")
         )
         var permutationCount = 0
         var testedCount = 0
@@ -226,7 +226,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             permutationCount += 1
             if (random.nextInt(250000) == 1) {
                 val data = List(
-                    ("f" → "c"), ("f" → "g"), ("d" → "e"), ("e" → "d"), ("l" → "m"), ("m" → "l")
+                    ("f" -> "c"), ("f" -> "g"), ("d" -> "e"), ("e" -> "d"), ("l" -> "m"), ("m" -> "l")
                 ) ::: aPermutation
                 testedCount += 1
                 val g = data.foldLeft(Graph.empty[String])(_ addEdge _)
@@ -245,7 +245,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with four nodes with a path which has a connection to one cSCCs" should
         "contain one cSCCs" in {
-            val data = List(("a" → "b"), ("b" → "c"), ("c" → "a"), ("b" → "d"), ("d" → "d"))
+            val data = List(("a" -> "b"), ("b" -> "c"), ("c" -> "a"), ("b" -> "d"), ("d" -> "d"))
             data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ addEdge _)
                 g.vertices.size should be(4)
@@ -373,7 +373,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with a long path leading to a simple cSCC consisting of two nodes" should
         "contain one cSCC" in {
-            val data = List(("a" → "b"), ("b" → "c"), ("c" → "d"), ("d" → "c"), ("d" -> "d"))
+            val data = List(("a" -> "b"), ("b" -> "c"), ("c" -> "d"), ("d" -> "c"), ("d" -> "d"))
             data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ addEdge _)
                 g.vertices.size should be(4)
@@ -389,7 +389,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with multiple paths leading to a simple cSCC" should
         "contain one cSCC" in {
-            val data = List(("a" → "c"), ("b" → "c"), ("c" → "c"))
+            val data = List(("a" -> "c"), ("b" -> "c"), ("c" -> "c"))
             data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ addEdge _)
                 g.vertices.size should be(3)
@@ -405,7 +405,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with a long path leading to two simple cSCCs" should
         "contain two cSCCs" in {
-            val data = List(("a" → "b"), ("b" → "c"), ("b" → "d"), ("c" -> "c"), ("d" -> "d"))
+            val data = List(("a" -> "b"), ("b" -> "c"), ("b" -> "d"), ("c" -> "c"), ("d" -> "d"))
             data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ addEdge _)
                 g.vertices.size should be(4)
@@ -421,7 +421,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with one node with multiple outgoing edges leading to a complex cSCCs" should
         "contain one cSCC" in {
-            val data = List(("a" → "b"), ("a" → "c"), ("a" → "d"), ("b" -> "c"), ("c" -> "d"), ("d" -> "b"))
+            val data = List(("a" -> "b"), ("a" -> "c"), ("a" -> "d"), ("b" -> "c"), ("c" -> "d"), ("d" -> "b"))
             data.permutations.foreach { aPermutation =>
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ addEdge _)
                 g.vertices.size should be(4)
@@ -437,7 +437,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with two SCCs and two cSCCs" should "contain two cSCCs" in {
         val data = List(
-            ("a" → "c"), ("b" → "c"), ("c" → "d"), ("d" -> "e"), ("c" -> "f"), ("f" -> "g"),
+            ("a" -> "c"), ("b" -> "c"), ("c" -> "d"), ("d" -> "e"), ("c" -> "f"), ("f" -> "g"),
             ("d" -> "d"), ("e" -> "e"), ("f" -> "f"), ("g" -> "g")
         )
         var permutationCounter = 1
@@ -472,12 +472,12 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             val j = "n"+lis(8)
             val r = "n"+lis(9)
             val data = List(
-                a → f, f → h, f → j, f → i,
-                h → j, j → h, i → j, j → i,
-                a → g, g → h,
-                a → h,
-                a → b,
-                b → d, d → d, d → e, e → r, r → b
+                a -> f, f -> h, f -> j, f -> i,
+                h -> j, j -> h, i -> j, j -> i,
+                a -> g, g -> h,
+                a -> h,
+                a -> b,
+                b -> d, d -> d, d -> e, e -> r, r -> b
             )
             var permutationCounter = 1
             PerformanceEvaluation.time {
@@ -504,7 +504,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
             val a = "n"+lis(0)
             val b = "n"+lis(1)
             val c = "n"+lis(2)
-            val data = List(a → b, a → c, b → a, b -> c, c -> a)
+            val data = List(a -> b, a -> c, b -> a, b -> c, c -> a)
             var permutationCounter = 1
             PerformanceEvaluation.time {
                 data.permutations.foreach { aPermutation =>

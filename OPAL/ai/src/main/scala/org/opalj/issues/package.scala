@@ -99,15 +99,15 @@ package object issues {
 
     def typeToIDL(t: Type): JsValue = {
         t match {
-            case bt: BaseType => Json.obj("bt" → bt.toJava)
-            case CTIntType    => Json.obj("bt" → "<Computational Type Int>")
+            case bt: BaseType => Json.obj("bt" -> bt.toJava)
+            case CTIntType    => Json.obj("bt" -> "<Computational Type Int>")
 
             case ot: ObjectType =>
-                Json.obj("ot" → ot.toJava, "simpleName" → ot.simpleName)
+                Json.obj("ot" -> ot.toJava, "simpleName" -> ot.simpleName)
             case at: ArrayType =>
-                Json.obj("at" → typeToIDL(at.elementType), "dimensions" → at.dimensions)
+                Json.obj("at" -> typeToIDL(at.elementType), "dimensions" -> at.dimensions)
 
-            case VoidType => Json.obj("vt" → "void")
+            case VoidType => Json.obj("vt" -> "void")
 
         }
     }
@@ -118,10 +118,10 @@ package object issues {
         descriptor:  MethodDescriptor
     ): JsObject = {
         Json.obj(
-            "accessFlags" → methodAccessFlagsToString(accessFlags),
-            "name" → name,
-            "returnType" → typeToIDL(descriptor.returnType),
-            "parameters" → descriptor.parameterTypes.map[JsValue](typeToIDL)
+            "accessFlags" -> methodAccessFlagsToString(accessFlags),
+            "name" -> name,
+            "returnType" -> typeToIDL(descriptor.returnType),
+            "parameters" -> descriptor.parameterTypes.map[JsValue](typeToIDL)
         )
     }
 

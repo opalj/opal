@@ -57,7 +57,7 @@ object DependencyMatrix {
                     ): Unit = {
                         dependencyMatrix.get(source) match {
                             case Some(s) => s += ((target, dType))
-                            case None    => dependencyMatrix += (source → Set((target, dType)))
+                            case None    => dependencyMatrix += (source -> Set((target, dType)))
                         }
                         // [Scala 2.9.X Compiler crashes on:] dependencyMatrix.getOrElseUpdate(sourceID, emptySet)  + ((targetID, dType))
                     }

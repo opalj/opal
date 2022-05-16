@@ -5,13 +5,15 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.{Function => JFunction}
-
+import java.util.function.Function as JFunction
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
+
+import scala.collection.immutable.ArraySeq
+import scala.jdk.CollectionConverters._
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -125,7 +127,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             for {
                 // all methods present in the current class file, excluding methods derived
                 // from any supertype that are not overridden by this type.
-                m ← cf.methods
+                m <- cf.methods
                 if m.isStatic || m.isAbstract || m.isInitializer
             } {
                 if (m.isAbstract) {
@@ -149,7 +151,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                             id => new DefinedMethod(subtype, interfaceMethod, id)
                                         )
                                     case _ =>
-                                        val methods = ConstArray(interfaceMethods.toSeq: _*)
+                                        val methods = ArraySeq.from(interfaceMethods)
                                         insertDeclaredMethod(
                                             subtypeDms,
                                             new MethodContext(m.name, m.descriptor),
@@ -211,7 +213,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             for {
                 // all non-abstract instance methods present in the current class file,
                 // including methods derived from any supertype that are not overridden by this type
-                mc ← p.instanceMethods(classType)
+                mc <- p.instanceMethods(classType)
             } {
                 val context = MethodContext(p, classType, mc.method)
                 insertDeclaredMethod(dms, context, id => new DefinedMethod(classType, mc.method, id))
@@ -221,7 +223,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         // Special handling for signature-polymorphic methods
         if (p.MethodHandleClassFile.isEmpty) {
             val dms = result.computeIfAbsent(MethodHandle, _ => new ConcurrentHashMap)
-            for (name ← methodHandleSignaturePolymorphicMethods) {
+            for (name <- methodHandleSignaturePolymorphicMethods) {
                 val context = new MethodContext(name, SignaturePolymorphicMethodObject)
                 insertDeclaredMethod(dms, context, id => new VirtualDeclaredMethod(
                     MethodHandle, name, SignaturePolymorphicMethodObject, id
@@ -230,7 +232,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         }
         if (p.VarHandleClassFile.isEmpty) {
             val dms = result.computeIfAbsent(VarHandle, _ => new ConcurrentHashMap)
-            for (name ← varHandleSignaturePolymorphicMethods) {
+            for (name <- varHandleSignaturePolymorphicMethods) {
                 val descriptor = if (name == "compareAndSet" || name.startsWith("weak"))
                     SignaturePolymorphicMethodBoolean
                 else if (name.startsWith("set"))
@@ -250,10 +252,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
 
         val id2method = new Array[DeclaredMethod](idCounter.get() + 1000)
 
-        import scala.collection.JavaConverters._
         for {
-            context2Method ← result.elements().asScala
-            dm ← context2Method.elements().asScala
+            context2Method <- result.elements().asScala
+            dm <- context2Method.elements().asScala
         } {
             id2method(dm.id) = dm
         }

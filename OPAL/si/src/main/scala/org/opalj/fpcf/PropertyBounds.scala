@@ -2,12 +2,13 @@
 package org.opalj
 package fpcf
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Encapsulate the information about the property bounds used or derived by an analysis.
  *
  * @note Equality is only based on the `PropertyKind` and not on the information about
  *       the concrete bounds.
- *
  * @author Michael Eichberg
  */
 sealed abstract class PropertyBounds(val pk: PropertyKind) {
@@ -42,10 +43,10 @@ object PropertyBounds {
 
     def apply(pbt: PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
         pbt match {
-            case LBProperties    => lbs(pks)
-            case UBProperties    => ubs(pks)
-            case LUBProperties   => lubs(pks)
-            case FinalProperties => finalPs(pks)
+            case LBProperties    => lbs(ArraySeq.unsafeWrapArray(pks)*)
+            case UBProperties    => ubs(ArraySeq.unsafeWrapArray(pks)*)
+            case LUBProperties   => lubs(ArraySeq.unsafeWrapArray(pks)*)
+            case FinalProperties => finalPs(ArraySeq.unsafeWrapArray(pks)*)
         }
     }
 
@@ -65,7 +66,7 @@ object PropertyBounds {
         }
     }
 
-    def finalPs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(finalP).toSet
+    def finalPs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(finalP).toSet
 
     def lub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -74,7 +75,7 @@ object PropertyBounds {
         }
     }
 
-    def lubs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(lub).toSet
+    def lubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lub).toSet
 
     def lb(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -83,7 +84,7 @@ object PropertyBounds {
         }
     }
 
-    def lbs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(lb).toSet
+    def lbs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lb).toSet
 
     def ub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -92,6 +93,6 @@ object PropertyBounds {
         }
     }
 
-    def ubs(pks: Iterable[PropertyKind]): Set[PropertyBounds] = pks.map(ub).toSet
+    def ubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(ub).toSet
 
 }

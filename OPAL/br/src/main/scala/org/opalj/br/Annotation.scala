@@ -60,8 +60,7 @@ object Annotation {
     ): Annotation = {
         new Annotation(
             annotationType,
-            ArraySeq.from[(String, ElementValue)](elementValuePairs.toArray)
-                .map[ElementValuePair](e => ElementValuePair(e))
+            ArraySeq.from(elementValuePairs.map(ElementValuePair(_)))
         )
     }
 

@@ -190,7 +190,7 @@ object EagerInterProceduralEscapeAnalysis
         assert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map {
-            v => v.e → v.ub
+            v => v.e -> v.ub
         }.toMap
 
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.collect {

@@ -367,7 +367,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = newEP.e
                 val pcs = state.tacPCs(method)
-                state.tacDependees += method → newEP
+                state.tacDependees += method -> newEP
                 val callersProperty = state.callerDependees(declaredMethods(method))
                 if (callersProperty.hasUBP)
                     methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, pcs)
@@ -376,7 +376,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]]
                 val method = newEP.e.definedMethod
                 val pcs = state.tacPCs(method)
-                state.callerDependees += newEP.e → newEP
+                state.callerDependees += newEP.e -> newEP
                 val tacProperty = state.tacDependees(method)
                 if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined)
                     methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, pcs)
@@ -634,8 +634,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     )(implicit state: State): Option[(TACode[TACMethodParameter, V], Callers)] = {
         val tacEOptP = propertyStore(method, TACAI.key)
         val tac = if (tacEOptP.hasUBP) tacEOptP.ub.tac else None
-        state.tacDependees += method → tacEOptP
-        state.tacPCs += method → pcs
+        state.tacDependees += method -> tacEOptP
+        state.tacPCs += method -> pcs
 
         val declaredMethod: DeclaredMethod = declaredMethods(method)
         val callersEOptP = propertyStore(declaredMethod, Callers.key)

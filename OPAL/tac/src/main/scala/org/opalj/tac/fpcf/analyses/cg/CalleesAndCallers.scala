@@ -129,7 +129,7 @@ trait Calls extends CalleesAndCallers {
                 val set = LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect))
                 Some(InterimEUBP(
                     calleeContext.method,
-                    new CallersOnlyWithConcreteCallers(IntMap(calleeContext.id → set), 1)
+                    new CallersOnlyWithConcreteCallers(IntMap(calleeContext.id -> set), 1)
                 ))
 
             case r =>

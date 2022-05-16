@@ -73,7 +73,7 @@ class JumpLabelsTest extends AnyFlatSpec {
     val brJava8ClassFile = ClassFileReader(() => new ByteArrayInputStream(rawJava8ClassFile)).head
 
     "the method returnInt" should "execute as expected" in {
-        val classes = Map("TestJumpJava5" → rawJava5ClassFile, "TestJumpJava8" → rawJava8ClassFile)
+        val classes = Map("TestJumpJava5" -> rawJava5ClassFile, "TestJumpJava8" -> rawJava8ClassFile)
         val loader = new InMemoryClassLoader(classes, this.getClass.getClassLoader)
         def testClass(clazz: Class[_]): Unit = {
             val testJumpInstance = clazz.getDeclaredConstructor().newInstance()

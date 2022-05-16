@@ -324,7 +324,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         val epk = eps.toEPK
         val typeFilter = oldDependees(epk)._2
         if (eps.isRefinable) {
-            oldDependees + (epk → ((eps, typeFilter)))
+            oldDependees + (epk -> ((eps, typeFilter)))
         } else {
             oldDependees - epk
         }
@@ -478,7 +478,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 var results: Seq[ProperPropertyComputationResult] = createPartialResults(
                     defSiteObject,
                     newPointsTo,
-                    nextDependees.iterator.map(d => d.toEPK → ((d, filter))).toMap,
+                    nextDependees.iterator.map(d => d.toEPK -> ((d, filter))).toMap,
                     { _.included(newPointsTo, filter) }
                 )(state)
 
@@ -523,7 +523,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     createPartialResults(
                         defSiteObject,
                         newPointsTo,
-                        nextDependees.iterator.map(d => d.toEPK → ((d, filter))).toMap,
+                        nextDependees.iterator.map(d => d.toEPK -> ((d, filter))).toMap,
                         { _.included(newPointsTo, filter) }
                     )(state)
 
@@ -657,7 +657,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         val defSiteEntity = toEntity(ds)(state)
                         val rhsPTS = ps(defSiteEntity, pointsToPropertyKey)
                         knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                        rhsPTS.toEPK → rhsPTS
+                        rhsPTS.toEPK -> rhsPTS
                     }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
@@ -695,7 +695,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         val defSiteEntity = toEntity(ds)(state)
                         val rhsPTS = ps(defSiteEntity, pointsToPropertyKey)
                         knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                        rhsPTS.toEPK → rhsPTS
+                        rhsPTS.toEPK -> rhsPTS
                     }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)

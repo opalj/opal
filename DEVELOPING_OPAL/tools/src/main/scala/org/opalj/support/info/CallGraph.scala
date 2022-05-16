@@ -253,7 +253,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     val calleesProperty = ps(m, Callees.key).ub
                     println(calleesProperty.callerContexts.flatMap { context =>
                         calleesProperty.callSites(context).map {
-                            case (pc, callees) => pc → callees.map(_.method.toJava).mkString(", ")
+                            case (pc, callees) => pc -> callees.map(_.method.toJava).mkString(", ")
                         }.toSet.mkString("\t", "\n\t", "\n")
                     })
                 }
@@ -432,8 +432,8 @@ object CallGraph extends ProjectAnalysisApplication {
             val key = s"${InitialEntryPointsKey.ConfigKeyPrefix}entryPoints"
             val currentValues = newConfig.getList(key).unwrapped()
             val configValue = Map(
-                "declaringClass" → mainClass.get.replace('.', '/'),
-                "name" → "main"
+                "declaringClass" -> mainClass.get.replace('.', '/'),
+                "name" -> "main"
             ).asJava
             currentValues.add(ConfigValueFactory.fromMap(configValue))
             newConfig = newConfig.withValue(key, ConfigValueFactory.fromIterable(currentValues))

@@ -226,7 +226,7 @@ class CallersTest extends AnyFlatSpec with Matchers {
 
     it should "behave correctly" in {
         val encodedCallers = IntMap(
-            otherMethod.id →
+            otherMethod.id ->
                 LongLinkedTrieSet(Callers.toLong(declaredMethod.id, pc = 0, isDirect = true))
         )
         val withVM = CallersImplWithOtherCalls(

@@ -5,9 +5,7 @@ package analyses
 package cg
 
 import scala.collection.mutable
-
-import net.ceedubs.ficus.Ficus._
-
+import net.ceedubs.ficus.Ficus.*
 import org.opalj.collection.mutable.ArrayMap
 
 /**
@@ -77,9 +75,9 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
-        val configuredTypes = mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
+        val configuredTypes: mutable.LongMap[Answer] = mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
             val (ot, answer) = e
-            (ot.id, answer)
+            (ot.id.toLong, answer)
         }
 
         val allClassFiles = project.allClassFiles

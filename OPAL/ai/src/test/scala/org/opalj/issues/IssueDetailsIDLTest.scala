@@ -48,11 +48,11 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val localVariables = new LocalVariables(code, 0, Locals(IndexedSeq(ClassTag.Int)))
 
         localVariables.toIDL should be(Json.obj(
-            "type" → "LocalVariables",
-            "values" → Json.arr(
+            "type" -> "LocalVariables",
+            "values" -> Json.arr(
                 Json.obj(
-                    "name" → "foo",
-                    "value" → "Int"
+                    "name" -> "foo",
+                    "value" -> "Int"
                 )
             )
         ))
@@ -66,14 +66,14 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val localVariables = new LocalVariables(code, 0, Locals(IndexedSeq(ClassTag.Int, ClassTag.Double)))
 
         localVariables.toIDL should be(Json.obj(
-            "type" → "LocalVariables",
-            "values" → Json.arr(
+            "type" -> "LocalVariables",
+            "values" -> Json.arr(
                 Json.obj(
-                    "name" → "foo",
-                    "value" → "Int"
+                    "name" -> "foo",
+                    "value" -> "Int"
                 ), Json.obj(
-                    "name" → "bar",
-                    "value" → "Double"
+                    "name" -> "bar",
+                    "value" -> "Double"
                 )
             )
         ))
@@ -89,10 +89,10 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("1", "2"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → "SimpleConditionalBranchInstruction",
-            "operator" → "==",
-            "value" → "2",
-            "value2" → "1"
+            "type" -> "SimpleConditionalBranchInstruction",
+            "operator" -> "==",
+            "value" -> "2",
+            "value2" -> "1"
         ))
     }
 
@@ -102,9 +102,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("foo"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → "CompoundConditionalBranchInstruction",
-            "value" → "foo",
-            "caseValues" → "0"
+            "type" -> "CompoundConditionalBranchInstruction",
+            "value" -> "foo",
+            "caseValues" -> "0"
         ))
     }
 
@@ -114,9 +114,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("foo", "bar"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → "CompoundConditionalBranchInstruction",
-            "value" → "foo",
-            "caseValues" → "0, 2"
+            "type" -> "CompoundConditionalBranchInstruction",
+            "value" -> "foo",
+            "caseValues" -> "0, 2"
         ))
     }
 
@@ -126,9 +126,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("foo"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → "StackManagementInstruction",
-            "mnemonic" → DUP.mnemonic,
-            "values" → Json.arr("foo")
+            "type" -> "StackManagementInstruction",
+            "mnemonic" -> DUP.mnemonic,
+            "values" -> Json.arr("foo")
         ))
     }
 
@@ -138,9 +138,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("foo", "bar"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → "StackManagementInstruction",
-            "mnemonic" → DUP2.mnemonic,
-            "values" → Json.arr("foo", "bar")
+            "type" -> "StackManagementInstruction",
+            "mnemonic" -> DUP2.mnemonic,
+            "values" -> Json.arr("foo", "bar")
         ))
     }
 
@@ -150,9 +150,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, null, Locals(IndexedSeq(ClassTag.Int)))
 
         operands.toIDL should be(Json.obj(
-            "type" → "IINC",
-            "value" → ClassTag.Int.toString,
-            "constValue" → 1
+            "type" -> "IINC",
+            "value" -> ClassTag.Int.toString,
+            "constValue" -> 1
         ))
     }
 
@@ -162,9 +162,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, null, Locals(IndexedSeq(ClassTag.Short, ClassTag.Int)))
 
         operands.toIDL should be(Json.obj(
-            "type" → "IINC",
-            "value" → ClassTag.Int.toString,
-            "constValue" → 0
+            "type" -> "IINC",
+            "value" -> ClassTag.Int.toString,
+            "constValue" -> 0
         ))
     }
 
@@ -173,9 +173,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("foo"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → NOP.getClass.getSimpleName,
-            "mnemonic" → NOP.mnemonic,
-            "parameters" → Json.arr()
+            "type" -> NOP.getClass.getSimpleName,
+            "mnemonic" -> NOP.mnemonic,
+            "parameters" -> Json.arr()
         ))
     }
 
@@ -185,9 +185,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("foo", "bar"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → ATHROW.getClass.getSimpleName,
-            "mnemonic" → ATHROW.mnemonic,
-            "parameters" → Json.arr("foo")
+            "type" -> ATHROW.getClass.getSimpleName,
+            "mnemonic" -> ATHROW.mnemonic,
+            "parameters" -> Json.arr("foo")
         ))
     }
 
@@ -197,9 +197,9 @@ class IssueDetailsIDLTest extends AnyFlatSpec with Matchers {
         val operands = new Operands(code, 0, List("foo", "bar", "baz"), null)
 
         operands.toIDL should be(Json.obj(
-            "type" → DADD.getClass.getSimpleName,
-            "mnemonic" → DADD.mnemonic,
-            "parameters" → Json.arr("bar", "foo")
+            "type" -> DADD.getClass.getSimpleName,
+            "mnemonic" -> DADD.mnemonic,
+            "parameters" -> Json.arr("bar", "foo")
         ))
     }
 

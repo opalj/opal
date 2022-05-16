@@ -28,8 +28,8 @@ trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
      * @example
      * {{{
      * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] +=
-     *          ("a" → "b") += ("b" → "c") += ("b" → "d") +=
-     *          ("a" → "e") += ("f" -> "e") += ("y" -> "y") +=
+     *          ("a" -> "b") += ("b" -> "c") += ("b" -> "d") +=
+     *          ("a" -> "e") += ("f" -> "e") += ("y" -> "y") +=
      *          ("a" -> "f")
      * g: org.opalj.graphs.Graph[AnyRef] =
      * Graph{

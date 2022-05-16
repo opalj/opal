@@ -91,15 +91,15 @@ class Operands(
         instruction match {
             case cbi: SimpleConditionalBranchInstruction[_] =>
                 Json.obj(
-                    "type" → "SimpleConditionalBranchInstruction",
-                    "operator" → cbi.operator,
-                    "value" → {
+                    "type" -> "SimpleConditionalBranchInstruction",
+                    "operator" -> cbi.operator,
+                    "value" -> {
                         cbi.operandCount match {
                             case 1 => operands.head.toString
                             case _ => operands.tail.head.toString
                         }
                     },
-                    "value2" → {
+                    "value2" -> {
                         cbi.operandCount match {
                             case 1 => JsNull
                             case _ => operands.head.toString
@@ -108,21 +108,21 @@ class Operands(
                 )
             case cbi: CompoundConditionalBranchInstruction =>
                 Json.obj(
-                    "type" → "CompoundConditionalBranchInstruction",
-                    "value" → operands.head.toString,
-                    "caseValues" → cbi.caseValues.mkString(", ")
+                    "type" -> "CompoundConditionalBranchInstruction",
+                    "value" -> operands.head.toString,
+                    "caseValues" -> cbi.caseValues.mkString(", ")
                 )
             case smi: StackManagementInstruction =>
                 Json.obj(
-                    "type" → "StackManagementInstruction",
-                    "mnemonic" → smi.mnemonic,
-                    "values" → operands.map(_.toString).toList
+                    "type" -> "StackManagementInstruction",
+                    "mnemonic" -> smi.mnemonic,
+                    "values" -> operands.map(_.toString).toList
                 )
             case IINC(lvIndex, constValue) =>
                 Json.obj(
-                    "type" → "IINC",
-                    "value" → localVariables(lvIndex).toString,
-                    "constValue" → constValue
+                    "type" -> "IINC",
+                    "value" -> localVariables(lvIndex).toString,
+                    "constValue" -> constValue
                 )
 
             case instruction =>
@@ -132,9 +132,9 @@ class Operands(
                         throw new UnknownError(message)
                     }
                 Json.obj(
-                    "type" → instruction.getClass.getSimpleName,
-                    "mnemonic" → instruction.mnemonic,
-                    "parameters" → operands.take(operandsCount).reverse.map(_.toString).toList
+                    "type" -> instruction.getClass.getSimpleName,
+                    "mnemonic" -> instruction.mnemonic,
+                    "parameters" -> operands.take(operandsCount).reverse.map(_.toString).toList
                 )
         }
     }

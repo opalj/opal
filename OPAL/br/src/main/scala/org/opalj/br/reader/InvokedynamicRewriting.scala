@@ -4,10 +4,8 @@ package br
 package reader
 
 import java.lang.invoke.LambdaMetafactory
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
@@ -24,9 +22,11 @@ import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.collection.mutable.InstructionsBuilder
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that

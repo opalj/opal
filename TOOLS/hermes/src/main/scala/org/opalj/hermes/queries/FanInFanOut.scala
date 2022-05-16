@@ -251,7 +251,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             val fanOutIndex = fanoutFeature.featureIndex(fanOut)
             features(fanOutIndex) += location
 
-            fanOutMap += (objectTypeId → fanOut)
+            fanOutMap += (objectTypeId -> fanOut)
 
             referencedTypes.foreach { otId =>
                 if (otId != objectTypeId) {

@@ -182,7 +182,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         workList.push(0)
 
         while (workList.nonEmpty) {
-            val pc = workList.pop
+            val pc = workList.pop()
             val instruction = instructions(pc)
             val facts = entryFacts(pc)
 
@@ -346,7 +346,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         }
 
         while (workList.nonEmpty) {
-            val pc = workList.pop
+            val pc = workList.pop()
             foreachPredecessor(pc) { predPC => handleTransition(pc, predPC) }
             if (pc == 0) handleTransition(pc, -1)
         }
@@ -384,7 +384,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
             def hasNext: Boolean = currentBBPC < basicBlocks.length
 
-            def next: BasicBlock = {
+            def next(): BasicBlock = {
                 val basicBlocks = cfg.basicBlocks
                 val current = basicBlocks(currentBBPC)
                 currentBBPC = current.endPC + 1
@@ -757,7 +757,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             } else {
                 bb.successors.
                     map(succBB => "BB_"+bbIds(succBB).toHexString).
-                    mkString(s"BB_${id.toHexString}: $bb → {", ",", "}")
+                    mkString(s"BB_${id.toHexString}: $bb -> {", ",", "}")
             }
         }.toList.sorted.mkString("CFG(\n\t", "\n\t", "\n)")
     }
@@ -778,16 +778,16 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         // 1. create a node foreach cfg node
         val bbsIterator = allBBs
         val startBB = bbsIterator.next()
-        val startNodeVisualProperties = Map("fillcolor" → "green", "style" → "filled", "shape" → "box")
+        val startNodeVisualProperties = Map("fillcolor" -> "green", "style" -> "filled", "shape" -> "box")
         val startBBNode = new DefaultMutableNode(
             f(startBB),
             theVisualProperties = startNodeVisualProperties
         )
-        var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] = Map(startBB → startBBNode)
+        var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] = Map(startBB -> startBBNode)
         cfgNodeToGNodes ++= bbsIterator.map(bb => (bb, new DefaultMutableNode(f(bb))))
         cfgNodeToGNodes ++= catchNodes.map(cn => (cn, new DefaultMutableNode(cn.toString)))
         cfgNodeToGNodes += (
-            abnormalReturnNode → {
+            abnormalReturnNode -> {
                 if (includeAbnormalReturns)
                     new DefaultMutableNode(
                         "abnormal return", theVisualProperties = abnormalReturnNode.visualProperties
@@ -797,7 +797,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             }
         )
         cfgNodeToGNodes += (
-            normalReturnNode →
+            normalReturnNode ->
             new DefaultMutableNode(
                 "return", theVisualProperties = normalReturnNode.visualProperties
             )

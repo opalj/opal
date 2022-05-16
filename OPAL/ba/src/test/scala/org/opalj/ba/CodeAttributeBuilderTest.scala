@@ -208,7 +208,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
-            Map("TheClass" → rawClassFile), this.getClass.getClassLoader
+            Map("TheClass" -> rawClassFile), this.getClass.getClassLoader
         )
         val clazz = loader.loadClass("TheClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
@@ -346,7 +346,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
-            Map("CodeAttributeBuilderTestClass" → rawClassFile), this.getClass.getClassLoader
+            Map("CodeAttributeBuilderTestClass" -> rawClassFile), this.getClass.getClassLoader
         )
         val clazz = loader.loadClass("CodeAttributeBuilderTestClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
@@ -430,7 +430,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
-            Map(thisName → rawClassFile), this.getClass.getClassLoader
+            Map(thisName -> rawClassFile), this.getClass.getClassLoader
         )
         val clazz = loader.loadClass(thisName)
         testEvaluation(codeElements, brClassFile, brMethod) {

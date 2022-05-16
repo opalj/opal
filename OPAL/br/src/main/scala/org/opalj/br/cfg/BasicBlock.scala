@@ -19,7 +19,7 @@ final class BasicBlock(
         private[cfg] var _endPC: Int = Int.MinValue
 ) extends CFGNode {
 
-    def this(startPC: Int, successors: Set[CFGNode]) {
+    def this(startPC: Int, successors: Set[CFGNode]) = {
         this(startPC, Int.MinValue)
         this.setSuccessors(successors)
     }
@@ -130,17 +130,17 @@ final class BasicBlock(
     override def toHRR: Option[String] = Some(s"[$startPC,$endPC]#=${endPC - startPC + 1}")
 
     override def visualProperties: Map[String, String] = {
-        var visualProperties = Map("shape" → "box", "labelloc" → "l")
+        var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
 
         if (startPC == 0) {
-            visualProperties += "fillcolor" → "green"
-            visualProperties += "style" → "filled"
+            visualProperties += "fillcolor" -> "green"
+            visualProperties += "style" -> "filled"
         }
 
         if (!hasSuccessors) { // in this case something is very broken (internally)...
-            visualProperties += "shape" → "octagon"
-            visualProperties += "fillcolor" → "gray"
-            visualProperties += "style" → "filled"
+            visualProperties += "shape" -> "octagon"
+            visualProperties += "fillcolor" -> "gray"
+            visualProperties += "style" -> "filled"
         }
 
         visualProperties

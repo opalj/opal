@@ -133,15 +133,15 @@ class ClassFileBuilderTest extends AnyFlatSpec {
 
     val loader = new InMemoryClassLoader(
         Map(
-            "MarkerInterface1" → Assembler(markerInterface1),
-            "MarkerInterface2" → Assembler(markerInterface2),
-            "org.opalj.bc.AbstractClass" → abstractAsm,
-            "ConcreteClass" → concreteAsm,
-            "NestedClassOuter" → nestedClassOuterAsm,
-            "NestedClassInner" → nestedClassInnerAsm,
-            "RecordClass" → recordAsm,
-            "SealedClass" → sealedClassAsm,
-            "SealedClassSubclass" → sealedClassSubclassAsm
+            "MarkerInterface1" -> Assembler(markerInterface1),
+            "MarkerInterface2" -> Assembler(markerInterface2),
+            "org.opalj.bc.AbstractClass" -> abstractAsm,
+            "ConcreteClass" -> concreteAsm,
+            "NestedClassOuter" -> nestedClassOuterAsm,
+            "NestedClassInner" -> nestedClassInnerAsm,
+            "RecordClass" -> recordAsm,
+            "SealedClass" -> sealedClassAsm,
+            "SealedClassSubclass" -> sealedClassSubclassAsm
         ),
         this.getClass.getClassLoader
     )

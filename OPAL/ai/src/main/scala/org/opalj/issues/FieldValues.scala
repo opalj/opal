@@ -79,17 +79,17 @@ class FieldValues(
         import PCLineComprehension.line
 
         Json.obj(
-            "type" → "FieldValues",
-            "values" → collectReadFieldValues.map { fieldData =>
+            "type" -> "FieldValues",
+            "values" -> collectReadFieldValues.map { fieldData =>
                 val pc = fieldData.pc
                 val details = fieldData.value
 
                 Json.obj(
-                    "classFileFQN" → classFileFQN,
-                    "methodJVMSignature" → methodJVMSignature,
-                    "pc" → pc,
-                    "line" → line(pc),
-                    "details" → details
+                    "classFileFQN" -> classFileFQN,
+                    "methodJVMSignature" -> methodJVMSignature,
+                    "pc" -> pc,
+                    "line" -> line(pc),
+                    "details" -> details
                 )
             }.toIterable
         )

@@ -151,7 +151,7 @@ object UIDSetProperties extends Properties("UIDSet") {
 
     property("seq") = forAll { l: List[Int] =>
         val fl = toSUIDSet(l)
-        (fl.seq eq fl)
+        (fl.toSeq eq fl)
     }
 
     property("contains") = forAll { (s: Set[Int], i: Int) =>

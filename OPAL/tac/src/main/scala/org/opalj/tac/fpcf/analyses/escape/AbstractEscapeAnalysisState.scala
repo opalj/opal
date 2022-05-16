@@ -58,7 +58,7 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         assert(!_dependees.contains(eOptionP.e))
-        _dependees += eOptionP.e → eOptionP
+        _dependees += eOptionP.e -> eOptionP
         _dependeesSet += eOptionP
     }
 

@@ -20,7 +20,7 @@ import org.scalacheck.Prop.propBoolean
 object UIDTrieSetProperties extends Properties("UIDTrieSet") {
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
-    implicit def toSUIDSet(l: Traversable[Int]): UIDTrieSet[SUID] = {
+    implicit def toSUIDSet(l: Iterable[Int]): UIDTrieSet[SUID] = {
         l.foldLeft(UIDTrieSet.empty[SUID])(_ add SUID(_))
     }
 

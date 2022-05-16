@@ -78,7 +78,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    7  ireturn
             import domain._
             domain.allReturnedValues should be(
-                Map((5 → AnIntegerValue), (7 → AnIntegerValue))
+                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue))
             )
 
             domain.allConstraints exists { constraint =>
@@ -107,7 +107,7 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    7  ireturn
             import domain._
             domain.allReturnedValues should be(
-                Map((5 → AnIntegerValue), (7 → AnIntegerValue))
+                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue))
             )
 
             domain.allConstraints exists { constraint =>
@@ -143,9 +143,9 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             //    18  ireturn
             import domain._
             allReturnedValues should be(Map(
-                (14 → AnIntegerValue),
-                (16 → AnIntegerValue),
-                (18 → AnIntegerValue)
+                (14 -> AnIntegerValue),
+                (16 -> AnIntegerValue),
+                (18 -> AnIntegerValue)
             ))
         }
     }

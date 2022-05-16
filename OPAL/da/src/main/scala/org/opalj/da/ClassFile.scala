@@ -13,8 +13,6 @@ import org.opalj.bi.reader.Constant_PoolAbstractions
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 
-import scala.collection.immutable.ArraySeq
-
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
@@ -212,12 +210,8 @@ case class ClassFile(
     // (i.e. with the fields for the filter, but without the necessary logic)
     private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
 
-        val (sourceFileAttributes, attributes0) =
-            attributes.partition(classOf[SourceFile_attribute].isInstance(_))
-                      .asInstanceOf[(ArraySeq[SourceFile_attribute], ArraySeq[Attribute])]
-        val (signatureAttributes, attributes1) =
-            attributes0.partition(classOf[Signature_attribute].isInstance(_))
-                       .asInstanceOf[(ArraySeq[Signature_attribute], ArraySeq[Attribute])]
+        val (sourceFileAttributes, attributes0) = partitionByType(attributes, classOf[SourceFile_attribute])
+        val (signatureAttributes, attributes1) = partitionByType(attributes0, classOf[Signature_attribute])
 
         <div class="class_file">
             { if (source.isDefined) <div id="source">{ source.get }</div> }

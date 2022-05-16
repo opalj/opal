@@ -112,15 +112,15 @@ class PackageLocation(
         ))
     }
 
-    def locationAsIDL: JsObject = Json.obj("package" → thePackage.replace('/', '.'))
+    def locationAsIDL: JsObject = Json.obj("package" -> thePackage.replace('/', '.'))
 
     def detailsAsIDL: JsValue = Json.toJson(details)
 
     final override def toIDL: JsValue = {
         Json.obj(
-            "description" → description,
-            "location" → locationAsIDL,
-            "details" → detailsAsIDL
+            "description" -> description,
+            "location" -> locationAsIDL,
+            "details" -> detailsAsIDL
         )
     }
 }
@@ -156,9 +156,9 @@ class ClassLocation(
             (
                 "class",
                 Json.obj(
-                    "fqn" → classFile.fqn,
-                    "type" → typeToIDL(classFile.thisType),
-                    "accessFlags" → {
+                    "fqn" -> classFile.fqn,
+                    "type" -> typeToIDL(classFile.thisType),
+                    "accessFlags" -> {
                         classFile.accessFlags match {
                             case 0 => JsNull
                             case _ => classAccessFlagsToString(classFile.accessFlags)
@@ -203,10 +203,10 @@ class MethodLocation(
 
     override def locationAsIDL: JsObject = {
         super.locationAsIDL + (
-            "method" → (
+            "method" -> (
                 methodToIDL(method.accessFlags, method.name, method.descriptor) +
-                ("signature" → JsString(methodJVMSignature)) +
-                ("firstLine" → Json.toJson(firstLineOfMethod))
+                ("signature" -> JsString(methodJVMSignature)) +
+                ("firstLine" -> Json.toJson(firstLineOfMethod))
             )
         )
     }
@@ -231,7 +231,7 @@ class InstructionLocation(
     }
 
     override def locationAsIDL: JsObject = {
-        var instructionLocation = Json.obj("pc" → pc)
+        var instructionLocation = Json.obj("pc" -> pc)
         if (line.isDefined) instructionLocation += (("line", JsNumber(line.get)))
 
         super.locationAsIDL + (("instruction", instructionLocation))

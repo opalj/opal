@@ -180,7 +180,7 @@ class LBFieldValuesAnalysis private[analyses] (
             dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
         ) {
             this(classFile, dependees)
-            fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ → None).toMap
+            fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ -> None).toMap
         }
 
         final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
@@ -233,12 +233,12 @@ class LBFieldValuesAnalysis private[analyses] (
                                 previousValue.join(Int.MinValue, value) match {
                                     case SomeUpdate(newValue) =>
                                         // IMPROVE Remove "irrelevant fields" to check if we can stop the overall process...
-                                        fieldInformation += (field → Some(newValue))
+                                        fieldInformation += (field -> Some(newValue))
                                     case NoUpdate => /*nothing to do*/
                                 }
                             }
                         case None =>
-                            fieldInformation += (field → Some(value))
+                            fieldInformation += (field -> Some(value))
                     }
                 }
             }
@@ -419,10 +419,10 @@ object FieldValuesAnalysis {
      */
     // IMPROVE Move to configuration file.
     final val ignoredFields: Map[ObjectType, Set[String]] = Map(
-        ObjectType.System → Set("in", "out", "err"),
-        ObjectType("java/net/InterfaceAddress") → Set("address"),
-        ObjectType("java/util/concurrent/FutureTask") → Set("runner"),
-        ObjectType("java/nio/channels/SelectionKey") → Set("attachment")
+        ObjectType.System -> Set("in", "out", "err"),
+        ObjectType("java/net/InterfaceAddress") -> Set("address"),
+        ObjectType("java/util/concurrent/FutureTask") -> Set("runner"),
+        ObjectType("java/nio/channels/SelectionKey") -> Set("attachment")
     )
 
 }

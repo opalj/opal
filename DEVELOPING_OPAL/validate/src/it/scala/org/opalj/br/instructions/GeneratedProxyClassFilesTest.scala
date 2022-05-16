@@ -143,7 +143,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                 }
 
             }
-            proxy → testProject.source(t).get
+            proxy -> testProject.source(t).get
         }.toSeq
 
         describe("the project should be extendable with the generated proxies") {

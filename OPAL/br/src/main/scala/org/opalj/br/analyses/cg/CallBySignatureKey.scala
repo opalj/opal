@@ -9,8 +9,8 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 
 import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.OpenHashMap
 
 /**
  * The ''key'' object to get the interface methods for which call-by-signature resolution
@@ -34,13 +34,13 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
     )
 
     override def compute(p: SomeProject): CallBySignatureTargets = {
-        val cbsTargets = new OpenHashMap[Method, ArraySeq[ObjectType]]
+        val cbsTargets = mutable.HashMap.empty[Method, ArraySeq[ObjectType]]
         val index = p.get(ProjectIndexKey)
         val isOverridableMethod = p.get(IsOverridableMethodKey)
 
         for {
-            classFile ← p.allClassFiles if classFile.isInterfaceDeclaration
-            method ← classFile.methods
+            classFile <- p.allClassFiles if classFile.isInterfaceDeclaration
+            method <- classFile.methods
             if !method.isPrivate &&
                 !method.isStatic &&
                 (classFile.isPublic || isOverridableMethod(method).isYesOrUnknown)

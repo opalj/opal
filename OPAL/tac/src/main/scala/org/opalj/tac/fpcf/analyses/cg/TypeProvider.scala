@@ -1121,7 +1121,7 @@ class AllocationSitesPointsToTypeProvider(project: SomeProject)
                         ptsO.get
                     else {
                         val newPts = mergedPointsToSetForType(allocatedType)
-                        exceptionPointsToSets += allocatedType.id → newPts
+                        exceptionPointsToSets += allocatedType.id -> newPts
                         newPts
                     }
                 } else
@@ -1268,7 +1268,7 @@ class CFA_k_l_TypeProvider(project: SomeProject, val k: Int, val l: Int)
                         ptsO.get
                     else {
                         val newPts = mergedPointsToSetForType(allocatedType)
-                        exceptionPointsToSets += allocatedType.id → newPts
+                        exceptionPointsToSets += allocatedType.id -> newPts
                         newPts
                     }
                 } else

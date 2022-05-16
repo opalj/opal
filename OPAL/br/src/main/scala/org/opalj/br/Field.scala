@@ -9,6 +9,8 @@ import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Represents a single field declaration/definition.
  *

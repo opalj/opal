@@ -61,9 +61,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      */
     def analyze(p: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
-            case FinalP(loadedClasses)                          => None → Some(loadedClasses)
-            case eps @ InterimUBP(loadedClasses: LoadedClasses) => Some(eps) → Some(loadedClasses)
-            case epk                                            => Some(epk) → None
+            case FinalP(loadedClasses)                          => None -> Some(loadedClasses)
+            case eps @ InterimUBP(loadedClasses: LoadedClasses) => Some(eps) -> Some(loadedClasses)
+            case epk                                            => Some(epk) -> None
         }
 
         implicit val state: LCState = LCState(

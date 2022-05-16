@@ -49,7 +49,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     "the generated method 'SimpleMethodClass.testMethod'" should "execute correctly" in {
         val loader = new InMemoryClassLoader(
-            Map("SimpleMethodClass" → rawClassFile),
+            Map("SimpleMethodClass" -> rawClassFile),
             this.getClass.getClassLoader
         )
 
@@ -160,7 +160,7 @@ class MethodBuilderTest extends AnyFlatSpec {
     }.get
 
     val loader = new InMemoryClassLoader(
-        Map("AttributeMethodClass" → rawAttributeCF),
+        Map("AttributeMethodClass" -> rawAttributeCF),
         this.getClass.getClassLoader
     )
 

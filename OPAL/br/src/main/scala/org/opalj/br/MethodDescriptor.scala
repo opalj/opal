@@ -3,8 +3,8 @@ package org.opalj
 package br
 
 import scala.annotation.switch
-
 import scala.collection.Seq
+import scala.collection.immutable.ArraySeq
 import scala.math.Ordered
 
 /**
