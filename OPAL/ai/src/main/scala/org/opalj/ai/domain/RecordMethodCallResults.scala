@@ -159,9 +159,9 @@ trait RecordMethodCallResults
             }
 
             for {
-                exceptionValuesPerInstruction ← allThrownExceptions.values
-                exceptionValues ← exceptionValuesPerInstruction
-                exceptionValue ← exceptionValues.allValues
+                exceptionValuesPerInstruction <- allThrownExceptions.values
+                exceptionValues <- exceptionValuesPerInstruction
+                exceptionValue <- exceptionValues.allValues
             } {
                 handleExceptionValue(exceptionValue)
             }

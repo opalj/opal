@@ -141,11 +141,11 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             }
             val allCalleesMPCG = morePreciseCG.calleesOf(method).toSet
             for {
-                (pc, calleesMPCG) ← allCalleesMPCG
+                (pc, calleesMPCG) <- allCalleesMPCG
                 calleesLPCG = lessPreciseCG.calleesPropertyOf(method)
                 if !calleesLPCG.isIncompleteCallSite(context, pc)(lessPreciseCGPS)
                 allCalleesLPCG = calleesLPCG.callees(context, pc)(lessPreciseCGPS, lessPreciseTypeProvider).toSet
-                calleeMPCG ← calleesMPCG
+                calleeMPCG <- calleesMPCG
                 if !allCalleesLPCG(calleeMPCG)
             } {
                 unexpectedCalls ::= UnexpectedCallTarget(method, calleeMPCG.method, pc)
@@ -163,18 +163,18 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     )(implicit typeProvider: TypeProvider): Unit = {
         implicit val ps: PropertyStore = propertyStore
         for {
-            FinalEP(dm: DeclaredMethod, callees) ← propertyStore.entities(Callees.key).map(_.asFinal)
-            context ← callees.callerContexts
-            (pc, tgts) ← callees.callSites(context)
-            callee ← tgts
+            FinalEP(dm: DeclaredMethod, callees) <- propertyStore.entities(Callees.key).map(_.asFinal)
+            context <- callees.callerContexts
+            (pc, tgts) <- callees.callSites(context)
+            callee <- tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee.method, Callers.key).asFinal
             assert(callersProperty.callers(dm).map(caller => (caller._1, caller._2)).toSet.contains(dm -> pc))
         }
 
         for {
-            FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(Callers.key).map(_.asFinal)
-            (callee, caller, pc, _) ← callers.callContexts(dm)
+            FinalEP(dm: DeclaredMethod, callers) <- propertyStore.entities(Callers.key).map(_.asFinal)
+            (callee, caller, pc, _) <- callers.callContexts(dm)
             if caller.hasContext
         } {
             val FinalP(calleesProperty) = propertyStore(caller.method, Callees.key).asFinal

@@ -53,19 +53,19 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
 
     var annotated: Set[DeclaredMethod] = Set.empty
 
-    for (cf ← FixtureProject.allProjectClassFiles) {
+    for (cf <- FixtureProject.allProjectClassFiles) {
         val classType = cf.thisType
         it(classType.simpleName) {
             val annotations = cf.runtimeInvisibleAnnotations
             if (annotations.nonEmpty)
                 for {
-                    annotation ← annotations
+                    annotation <- annotations
                     annotationType = annotation.annotationType
                 } {
                     if (annotationType == singleAnnotationType)
                         checkDeclaredMethod(classType, annotation)
                     else if (annotationType == multiAnnotationType) {
-                        for (value ← getValue(annotation, "value").asArrayValue.values) {
+                        for (value <- getValue(annotation, "value").asArrayValue.values) {
                             val annotation = value.asAnnotationValue.annotation
                             checkDeclaredMethod(classType, annotation)
                         }

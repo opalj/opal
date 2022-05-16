@@ -102,15 +102,15 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
         describe("should be able to proxify methods") {
             val instanceMethods = getMethods(InstanceMethods, testProject)
-            instanceMethods should not be ('empty)
+            instanceMethods should not be (Symbol("Empty"))
             val constructors = getMethods(Constructors, testProject)
-            constructors should not be ('empty)
+            constructors should not be (Symbol("Empty"))
             val privateInstanceMethods = getMethods(PrivateInstanceMethods, testProject)
-            privateInstanceMethods should not be ('empty)
+            privateInstanceMethods should not be (Symbol("Empty"))
             val interfaceMethods = getMethods(InterfaceMethods, testProject)
-            interfaceMethods should not be ('empty)
+            interfaceMethods should not be (Symbol("Empty"))
             val staticMethods = getMethods(StaticMethods, testProject)
-            staticMethods should not be ('empty)
+            staticMethods should not be (Symbol("Empty"))
             val methods: Iterable[(ObjectType, Method)] = instanceMethods ++
                 constructors ++ privateInstanceMethods ++ interfaceMethods ++
                 staticMethods
@@ -445,7 +445,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
             it("and creates fields for additional static parameters") {
                 for {
-                    (theType, method) ← methods
+                    (theType, method) <- methods
                 } {
                     val (invocationInstruction, methodHandle: MethodCallMethodHandle) =
                         if (testProject.classFile(theType).get.isInterfaceDeclaration) {
@@ -540,7 +540,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
             it("and correctly forwards those static parameters") {
                 for {
-                    (theType, method) ← methods
+                    (theType, method) <- methods
                 } {
                     val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
                         if (testProject.classFile(theType).get.isInterfaceDeclaration) {
@@ -664,7 +664,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     })
                 }
                 for {
-                    (theType, method) ← methods if method.returnType != VoidType
+                    (theType, method) <- methods if method.returnType != VoidType
                 } {
                     val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
                         if (testProject.classFile(theType).get.isInterfaceDeclaration) {
@@ -778,8 +778,8 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 it("they are not constructor references") {
                     for {
-                        MethodWithBody(body) ← lambdas.methods
-                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC => i }
+                        MethodWithBody(body) <- lambdas.methods
+                        invokedynamic <- body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -796,8 +796,8 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
                 it("nor are they virtual method calls") {
                     for {
-                        MethodWithBody(body) ← lambdas.methods
-                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC => i }
+                        MethodWithBody(body) <- lambdas.methods
+                        invokedynamic <- body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -1628,7 +1628,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         test: (ClassFile, (ObjectType, Method)) => Unit
     ): Unit = {
         for (
-            (calleeType, calleeMethod) ← methods
+            (calleeType, calleeMethod) <- methods
         ) {
             testMethod(calleeType, calleeMethod, repository)(test)
         }

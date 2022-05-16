@@ -135,7 +135,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
-        for (PointsToRelation(lhs, rhs) ← data) {
+        for (PointsToRelation(lhs, rhs) <- data) {
             val nextPC = handleGet(rhs, pc, pc - 1)
             pc = handlePut(lhs, pc, nextPC)
         }

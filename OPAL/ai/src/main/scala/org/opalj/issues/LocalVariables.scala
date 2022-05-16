@@ -33,7 +33,7 @@ class LocalVariables(
 
         val sortedLVDefs = localVariableDefinitions.toSeq.sortWith((a, b) => a._1 < b._1)
         val lvsAsXHTML =
-            for ((index, theLV) ← sortedLVDefs) yield {
+            for ((index, theLV) <- sortedLVDefs) yield {
                 val localValue = localVariables(index)
                 val localValueAsXHTML =
                     if (localValue == null)

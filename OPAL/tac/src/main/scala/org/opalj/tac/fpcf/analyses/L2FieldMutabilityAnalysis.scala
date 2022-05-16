@@ -215,8 +215,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         // }
 
         for {
-            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            (taCode, callers) ← getTACAIAndCallers(method, pcs)
+            (method, pcs) <- fieldAccessInformation.writeAccesses(field)
+            (taCode, callers) <- getTACAIAndCallers(method, pcs)
         } {
             if (methodUpdatesField(method, taCode, callers, pcs))
                 return Result(field, NonFinalFieldByAnalysis);
@@ -320,7 +320,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             }
         }
 
-        for (constructor ← constructors) {
+        for (constructor <- constructors) {
             // TODO iterate all statements
             val NonVirtualMethodCall(_, declClass, _, name, _, rcvr, _) = stmt
             // Consider calls to other constructors as initializations as either
@@ -553,7 +553,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
-        for (pc ← pcs) {
+        for (pc <- pcs) {
             val index = taCode.properStmtIndexForPC(pc)
             if (index >= 0) {
                 val stmt = stmts(index)

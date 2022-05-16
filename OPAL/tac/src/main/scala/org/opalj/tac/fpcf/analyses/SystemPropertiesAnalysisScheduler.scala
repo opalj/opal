@@ -45,7 +45,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
 
         var propertyMap: Map[String, Set[String]] = Map.empty
 
-        for (stmt ← stmts) stmt match {
+        for (stmt <- stmts) stmt match {
             case VirtualFunctionCallStatement(call) if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) =>
                 propertyMap = computeProperties(propertyMap, call.params, stmts)
             case StaticMethodCall(_, ObjectType.System, _, "setProperty", _, params) =>
@@ -73,7 +73,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
                 if (noNewProperty) {
                     None
                 } else {
-                    for ((key, values) ← propertyMap) {
+                    for ((key, values) <- propertyMap) {
                         val oldValues = oldProperties.getOrElse(key, Set.empty)
                         oldProperties = oldProperties.updated(key, oldValues ++ values)
                     }
@@ -112,7 +112,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
         val possibleKeys = getPossibleStrings(params.head, stmts)
         val possibleValues = getPossibleStrings(params(1), stmts)
 
-        for (key ← possibleKeys) {
+        for (key <- possibleKeys) {
             val values = res.getOrElse(key, Set.empty)
             res = res.updated(key, values ++ possibleValues)
         }

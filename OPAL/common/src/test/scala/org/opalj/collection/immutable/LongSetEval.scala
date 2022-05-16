@@ -106,7 +106,7 @@ abstract class LongSetEval {
 
                 var opalS = org.opalj.collection.immutable.LongTrieSet.empty
                 var scalaS = Set.empty[Long]
-                for { i ← 0 to 1000000 } {
+                for { i <- 0 to 1000000 } {
                     val v = rngGen.nextLong()
                     opalS += v
                     scalaS += v
@@ -114,12 +114,12 @@ abstract class LongSetEval {
 
                 var opalTotal = 0L
                 PerformanceEvaluation.time {
-                    for { v ← opalS } { opalTotal += v }
+                    for { v <- opalS } { opalTotal += v }
                 } { t => info(s"OPAL ${t.toSeconds} for foreach") }
 
                 var scalaTotal = 0L
                 PerformanceEvaluation.time {
-                    for { v ← scalaS } { scalaTotal += v }
+                    for { v <- scalaS } { scalaTotal += v }
                 } { t => info(s"Scala ${t.toSeconds} for foreach") }
 
                 assert(opalTotal == scalaTotal, s"$opalS vs. $scalaS")
@@ -133,15 +133,15 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
-            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
+            for { i <- 1 to 3 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000000 } {
+                for { runs <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to rngGen.nextInt(8) } {
+                    for { i <- 0 to rngGen.nextInt(8) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -158,15 +158,15 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
-            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
+            for { i <- 1 to 3 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000000 } {
+                for { runs <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to 8 + rngGen.nextInt(8) } {
+                    for { i <- 0 to 8 + rngGen.nextInt(8) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -183,15 +183,15 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 16 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 10000 } yield Math.abs(rngGen.nextLong())).toArray
-            val queryValues = (for { i ← 1 to 10000 } yield Math.abs(rngQuery.nextLong())).toArray
+            for { i <- 1 to 16 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 10000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i <- 1 to 10000 } yield Math.abs(rngQuery.nextLong())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 1000000 } {
+                for { runs <- 0 until 1000000 } {
                     var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to 16 + rngGen.nextInt(16) } {
+                    for { i <- 0 to 16 + rngGen.nextInt(16) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -208,15 +208,15 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3333 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 10000 } yield rngGen.nextLong()).toArray
-            val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextLong()).toArray
+            for { i <- 1 to 3333 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 10000 } yield rngGen.nextLong()).toArray
+            val queryValues = (for { i <- 1 to 10000 } yield rngQuery.nextLong()).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000 } {
+                for { runs <- 0 until 10000 } {
                     var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
-                    for { i ← 1 to runs } {
+                    for { i <- 1 to runs } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -232,10 +232,10 @@ abstract class LongSetEval {
 
             val allSets = PerformanceEvaluation.memory {
                 for {
-                    set ← 0 until 2500
+                    set <- 0 until 2500
                 } yield {
                     var s = org.opalj.collection.immutable.LongTrieSet.empty
-                    for { i ← 0 to 10000 } {
+                    for { i <- 0 to 10000 } {
                         s += rngGen.nextLong()
                     }
                     s
@@ -244,7 +244,7 @@ abstract class LongSetEval {
 
             var total = 0L
             PerformanceEvaluation.time {
-                for { set ← allSets; v ← set } {
+                for { set <- allSets; v <- set } {
                     total += v
                 }
             } { t => info(s"${t.toSeconds} for foreach") }
@@ -266,7 +266,7 @@ abstract class LongSetEval {
                         val seed = 123456789L
                         val rngGen = new java.util.Random(seed)
                         var opalS = LongTrieSet.empty
-                        for { i ← 0 to 1000000 } {
+                        for { i <- 0 to 1000000 } {
                             val v = rngGen.nextLong()
                             opalS += v
                         }
@@ -279,7 +279,7 @@ abstract class LongSetEval {
                         val seed = 123456789L
                         val rngGen = new java.util.Random(seed)
                         var scalaS = Set.empty[Long]
-                        for { i ← 0 to 1000000 } {
+                        for { i <- 0 to 1000000 } {
                             val v = rngGen.nextLong()
                             scalaS += v
                         }
@@ -289,12 +289,12 @@ abstract class LongSetEval {
 
                 var opalTotal = 0L
                 PerformanceEvaluation.time {
-                    for { v ← opalS } { opalTotal += v }
+                    for { v <- opalS } { opalTotal += v }
                 } { t => info(s"OPAL ${t.toSeconds} for foreach") }
 
                 var scalaTotal = 0L
                 PerformanceEvaluation.time {
-                    for { v ← scalaS } { scalaTotal += v }
+                    for { v <- scalaS } { scalaTotal += v }
                 } { t => info(s"Scala ${t.toSeconds} for foreach") }
 
                 assert(opalTotal == scalaTotal)
@@ -308,15 +308,15 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
-            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
+            for { i <- 1 to 3 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000000 } {
+                for { runs <- 0 until 10000000 } {
                     var s = LongTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to rngGen.nextInt(8) } {
+                    for { i <- 0 to rngGen.nextInt(8) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -333,15 +333,15 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
-            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
+            for { i <- 1 to 3 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000000 } {
+                for { runs <- 0 until 10000000 } {
                     var s = LongTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to 8 + rngGen.nextInt(8) } {
+                    for { i <- 0 to 8 + rngGen.nextInt(8) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -358,15 +358,15 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 16 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 10000 } yield Math.abs(rngGen.nextLong())).toArray
-            val queryValues = (for { i ← 1 to 10000 } yield Math.abs(rngQuery.nextLong())).toArray
+            for { i <- 1 to 16 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 10000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i <- 1 to 10000 } yield Math.abs(rngQuery.nextLong())).toArray
 
             PerformanceEvaluation.time {
-                for { runs ← 0 until 1000000 } {
+                for { runs <- 0 until 1000000 } {
                     var s = LongTrieSet.empty
                     var hits = 0
-                    for { i ← 0 to 16 + rngGen.nextInt(16) } {
+                    for { i <- 0 to 16 + rngGen.nextInt(16) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -381,17 +381,17 @@ abstract class LongSetEval {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i ← 1 to 3333 } rngGen.nextLong();
-            val setValues = (for { i ← 1 to 10000 } yield rngGen.nextLong()).toArray
-            val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextLong()).toArray
+            for { i <- 1 to 3333 } rngGen.nextLong();
+            val setValues = (for { i <- 1 to 10000 } yield rngGen.nextLong()).toArray
+            val queryValues = (for { i <- 1 to 10000 } yield rngQuery.nextLong()).toArray
 
             var sizeOfAllSets: Int = 0
             var largestSet: Int = 0
             PerformanceEvaluation.time {
-                for { runs ← 0 until 10000 } {
+                for { runs <- 0 until 10000 } {
                     var s = LongTrieSet.empty
                     var hits = 0
-                    for { i ← 1 to runs } {
+                    for { i <- 1 to runs } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -407,10 +407,10 @@ abstract class LongSetEval {
 
             val allSets = PerformanceEvaluation.memory {
                 for {
-                    set ← 0 until 2500
+                    set <- 0 until 2500
                 } yield {
                     var s = LongTrieSet.empty
-                    for { i ← 0 to 10000 } {
+                    for { i <- 0 to 10000 } {
                         s += rngGen.nextLong()
                     }
                     s
@@ -419,7 +419,7 @@ abstract class LongSetEval {
 
             var total = 0L
             PerformanceEvaluation.time {
-                for { set ← allSets; v ← set } {
+                for { set <- allSets; v <- set } {
                     total += v
                 }
             } { t => info(s"${t.toSeconds} for foreach") }

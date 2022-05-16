@@ -2743,9 +2743,10 @@ object ClassHierarchy {
                             Option(superclassType).map(ObjectType(_)),
                             Option(superinterfaceTypes).map { superinterfaceTypes =>
                                 UIDSet.fromSpecific[ObjectType](
-                                  superinterfaceTypes.
-                                      split(',').
-                                      map(t => ObjectType(t.trim)))
+                                    superinterfaceTypes.
+                                        split(',').
+                                        map(t => ObjectType(t.trim))
+                                )
                             }.getOrElse(UIDSet.empty)
                         )
                     }.

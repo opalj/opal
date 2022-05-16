@@ -665,7 +665,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
     def AllClassFiles(
         files:            Iterable[File],
-        exceptionHandler: ExceptionHandler  = defaultExceptionHandler
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler
     ): Iterable[(ClassFile, URL)] = {
         files.flatMap(file => ClassFiles(file, exceptionHandler))
     }

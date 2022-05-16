@@ -1,7 +1,7 @@
 # Changes
 
 Scala 2.13 changes
-- Replace unicode arrows (⇒,->,←) by ascii arrows (=>,->,<-)
+- Replace unicode arrows (⇒,->,<-) by ascii arrows (=>,->,<-)
 - Replace Traversable by scala.collection.Iterable
 - Replace TraversableOnce by scala.collection.IterableOnce
 - Changes to OPAL's custom data structures:

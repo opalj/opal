@@ -142,7 +142,6 @@ object UIDSet0 extends UIDSet[UID] {
     }
     override def mapUIDSet[B <: UID](f: UID => B): UIDSet[B] = UIDSet.empty
 
-
 }
 
 sealed abstract class NonEmptyUIDSet[T <: UID] extends UIDSet[T] {
@@ -210,7 +209,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     }
 
     override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
-      UIDSet1(f(value))
+        UIDSet1(f(value))
 }
 
 final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
@@ -322,7 +321,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     }
 
     override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
-      UIDSet2(f(value1), f(value2))
+        UIDSet2(f(value1), f(value2))
 }
 final object UIDSet2 {
     def apply[T <: UID](value1: T, value2: T): UIDSet2[T] = new UIDSet2[T](value1, value2)
@@ -458,7 +457,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     }
 
     override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
-      new UIDSet3(f(value1), f(value2), f(value3))
+        new UIDSet3(f(value1), f(value2), f(value3))
 }
 
 // remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-
@@ -976,7 +975,7 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
     protected[immutable] def growIdSet(set: IntTrieSet): IntTrieSet = set + value.id
 
     override def mapUIDSet[B <: UID](f: T => B): UIDSetNodeLike[B] =
-      new UIDSetLeaf[B](f(value))
+        new UIDSetLeaf[B](f(value))
 }
 
 // we wan't to be able to adapt the case class...
@@ -1085,10 +1084,11 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
 
     override def mapUIDSet[B <: UID](f: T => B): UIDSetNodeLike[B] =
         new UIDSetInnerNode(
-          this.theSize,
-          f(this.value),
-          this.left.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]],
-          this.right.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]])
+            this.theSize,
+            f(this.value),
+            this.left.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]],
+            this.right.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]]
+        )
 }
 
 object UIDSet {

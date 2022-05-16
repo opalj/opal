@@ -111,7 +111,7 @@ class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
             if (callers.hasCallersWithUnknownContext || callers.hasVMLevelCallers)
                 return result()
 
-            for ((caller, _, isDirect) ← callers.callers) {
+            for ((caller, _, isDirect) <- callers.callers) {
                 if (!isDirect)
                     return result()
 

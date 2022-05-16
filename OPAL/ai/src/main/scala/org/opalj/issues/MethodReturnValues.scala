@@ -38,7 +38,7 @@ class MethodReturnValues(
 
                     PCAndAnyRef(
                         pc,
-                        s"$nextPCOperandHead ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
+                        s"$nextPCOperandHead <- ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
                     ) :: returnValues
 
                 case _ => returnValues

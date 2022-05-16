@@ -49,9 +49,9 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
         // sequences, where the INVOKESTATIC is a call to
         // java.lang.Double.longBitsToDouble().
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
-            pc ← body.matchPair {
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
+            pc <- body.matchPair {
                 case (
                     I2L,
                     INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`)

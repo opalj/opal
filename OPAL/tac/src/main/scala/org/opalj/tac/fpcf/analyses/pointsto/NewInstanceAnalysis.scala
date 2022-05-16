@@ -181,7 +181,7 @@ abstract class NewInstanceMethodAnalysis(
 
     def handleCallees(callees: Callees, callerContext: ContextType, pc: Int, defSite: Entity): PointsToSet = {
         var pointsToSet = emptyPointsToSet
-        for (callee ← callees.indirectCallees(callerContext, pc) if callee.method.name == "<init>") {
+        for (callee <- callees.indirectCallees(callerContext, pc) if callee.method.name == "<init>") {
             pointsToSet = pointsToSet.included(
                 createPointsToSet(
                     pc,

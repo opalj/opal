@@ -38,7 +38,7 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
         val operandsArray = result.operandsArray
         val evaluatedInstructions = result.evaluatedInstructions
         for {
-            PCAndInstruction(pc, instruction) ← result.code
+            PCAndInstruction(pc, instruction) <- result.code
             if evaluatedInstructions.contains(pc)
             operands = operandsArray(pc)
         } {

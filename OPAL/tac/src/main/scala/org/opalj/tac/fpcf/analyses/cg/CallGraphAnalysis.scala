@@ -80,7 +80,7 @@ class CallGraphAnalysis private[cg] (
                 // ensures, that we only add new calls
                 val calls = new DirectCalls()
 
-                for (cs ← relevantCallSites) {
+                for (cs <- relevantCallSites) {
                     val (receiver, cbsTargets) = state.callSiteData(cs)
                     typeProvider.continuation(
                         receiver, eps.asInstanceOf[EPS[Entity, PropertyType]], cbsTargets
@@ -404,7 +404,7 @@ class CallGraphAnalysis private[cg] (
         calleesAndCallers: DirectCalls
     )(implicit state: CGState[ContextType]): Unit = {
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
-        for (rv ← rvs) rv match {
+        for (rv <- rvs) rv match {
             case _: IsSArrayValue =>
                 handlePreciseCall(ObjectType.Object, callContext, call, pc, calleesAndCallers)
 

@@ -44,7 +44,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
         val code = method.body.get
         val instructions = code.instructions
 
-        classFile.bootstrapMethodTable should be('empty)
+        classFile.bootstrapMethodTable should be(Symbol("Empty"))
         classFile.attributes.count(_.kindId == SynthesizedClassFiles.KindId) should be <= 1
 
         val domain = domainFactory(testProject, method)
@@ -54,7 +54,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             result should not be 'wasAborted
             // the layout of the instructions array is correct
             for {
-                pc ← instructions.indices
+                pc <- instructions.indices
                 if instructions(pc) != null
             } {
                 val modifiedByWide = pc != 0 && instructions(pc) == WIDE
@@ -83,8 +83,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
     def testProject(project: SomeProject, domainFactory: (SomeProject, Method) => Domain): Int = {
         val verifiedMethodsCounter = new AtomicInteger(0)
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
             instructions = body.instructions
             if instructions.exists {
                 case i: INVOKESTATIC =>

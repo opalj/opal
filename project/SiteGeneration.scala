@@ -70,14 +70,14 @@ object SiteGeneration {
       val config = ConfigFactory.parseFile(sourceFolder / "site.conf")
 
       // 2.1 copy folders
-      for { folder ← config.getStringList("folders").asScala } {
+      for { folder <- config.getStringList("folders").asScala } {
         IO.copyDirectory(
           sourceFolder / folder,
           targetFolder / folder
         )
       }
 
-      for { resource ← config.getStringList("resources").asScala } {
+      for { resource <- config.getStringList("resources").asScala } {
         IO.copyFile(
           sourceFolder / resource,
           targetFolder / resource
@@ -88,7 +88,7 @@ object SiteGeneration {
       val mdParserOptions = new MutableDataSet().set[java.lang.Boolean](HtmlRenderer.RENDER_HEADER_ID, true).set[java.lang.Boolean](HtmlRenderer.GENERATE_HEADER_ID, true)
       val mdParser = Parser.builder(mdParserOptions).build()
       val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build()
-      val pages = for (page ← config.getAnyRefList("pages").asScala) yield {
+      val pages = for (page <- config.getAnyRefList("pages").asScala) yield {
         page match {
           case pageConfig: java.util.Map[_, _] =>
             val sourceFileName = pageConfig.get("source").toString
@@ -117,7 +117,7 @@ object SiteGeneration {
             // 2.3.2 copy page specific page resources (optional):
             pageConfig.get("resources") match {
               case resources: java.util.List[_] =>
-                for { resource ← resources.asScala } {
+                for { resource <- resources.asScala } {
                   IO.copyFile(
                     sourceFolder / resource.toString,
                     targetFolder / resource.toString
@@ -169,7 +169,7 @@ object SiteGeneration {
         additionalImports = TwirlCompiler.DefaultImports
       )
       for {
-        (baseFileName, sourceFile, title, html, useBanner, _) ← pages
+        (baseFileName, sourceFile, title, html, useBanner, _) <- pages
         if baseFileName ne null
       } {
         val htmlFile = targetFolder / (baseFileName + ".html")

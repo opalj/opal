@@ -40,7 +40,7 @@ class FieldValues(
                 } =>
                     PCAndAnyRef(
                         pc,
-                        s"${operandsArray(fra.indexOfNextInstruction(pc)).head} ← $fra"
+                        s"${operandsArray(fra.indexOfNextInstruction(pc)).head} <- $fra"
                     ) :: readFields
                 case _ =>
                     readFields

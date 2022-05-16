@@ -113,7 +113,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         var results: Iterator[PartialResult[_, _ >: Null <: Property]] = Iterator.empty
         callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
             val directCalls = new DirectCalls()
-            for (tgt ← tgts) {
+            for (tgt <- tgts) {
                 val tgtMethod = tgt.method(declaredMethods)
                 directCalls.addCall(
                     calleeContext, 0, typeProvider.expandContext(calleeContext, tgtMethod, 0)

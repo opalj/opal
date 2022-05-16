@@ -175,15 +175,15 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
         var reports: Set[SourceLocationBasedReport[Source]] = Set.empty
 
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
             if !method.isStatic &&
                 !method.isConstructor &&
                 methodOverridesAnything(classFile, method)
-            GETFIELD(declaringClass, fieldName, fieldType) ← body.instructions
-            constructor ← classFile.constructors
+            GETFIELD(declaringClass, fieldName, fieldType) <- body.instructions
+            constructor <- classFile.constructors
             if declaresField(classFile, fieldName, fieldType)
-            superConstructor ← findCalledSuperConstructor(classFile, constructor)
+            superConstructor <- findCalledSuperConstructor(classFile, constructor)
             superClass = project.classFile(superConstructor)
             if superConstructor.body.isDefined &&
                 calls(superConstructor, superClass.thisType, method)

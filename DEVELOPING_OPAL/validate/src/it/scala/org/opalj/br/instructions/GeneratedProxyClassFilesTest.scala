@@ -116,7 +116,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
 
                     // the layout of the instructions array is correct
                     for {
-                        pc ← instructions.indices
+                        pc <- instructions.indices
                         if instructions(pc) != null
                     } {
                         val nextPc = instructions(pc).indexOfNextInstruction(pc, false)

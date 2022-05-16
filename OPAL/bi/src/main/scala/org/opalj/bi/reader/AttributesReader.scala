@@ -143,7 +143,7 @@ trait AttributesReader
         val attributes: Attributes =
             fillArraySeq(in.readUnsignedShort) {
                 Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
-            }.filter( attr => attr != null ) // lets remove the attributes we don't need or understand
+            }.filter(attr => attr != null) // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) => p(a))
     }

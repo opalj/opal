@@ -41,9 +41,9 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
         import fieldAccessInformation.allAccesses
 
         for {
-            cf ← project.allProjectClassFiles
+            cf <- project.allProjectClassFiles
             classFileLocation = ClassFileLocation(project, cf)
-            field ← cf.fields
+            field <- cf.fields
             fieldType = field.fieldType
             if !fieldType.isBaseType ||
                 (field.fieldType ne ObjectType.String) ||

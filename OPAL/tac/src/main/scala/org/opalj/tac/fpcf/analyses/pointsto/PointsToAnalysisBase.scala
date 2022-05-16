@@ -190,7 +190,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
                         else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                    for (fieldEntity ← fieldEntities)
+                    for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSet(
                             defSiteObject,
                             // IMPROVE: Use LongRefPair to avoid boxing
@@ -256,7 +256,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
                         else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                    for (fieldEntity ← fieldEntities)
+                    for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSets(
                             fieldEntity,
                             currentPointsToOfDefSites(fieldEntity, rhsDefSites, filter),
@@ -381,7 +381,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
                             else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                        for (fieldEntity ← fieldEntities)
+                        for (fieldEntity <- fieldEntities)
                             results ++= createPartialResults(
                                 fieldEntity,
                                 knownPointsTo,
@@ -466,7 +466,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
                             else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
-                        for (fieldEntity ← fieldEntities) {
+                        for (fieldEntity <- fieldEntities) {
                             val fieldEntries = ps(fieldEntity, pointsToPropertyKey)
                             newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
                             if (fieldEntries.isRefinable)
@@ -620,11 +620,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     ): ArrayBuffer[ProperPropertyComputationResult] = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
 
-        for ((e, pointsToSet) ← state.allocationSitePointsToSetsIterator) {
+        for ((e, pointsToSet) <- state.allocationSitePointsToSetsIterator) {
             results += Result(e, pointsToSet)
         }
 
-        for ((e, pointsToSet) ← state.sharedPointsToSetsIterator) {
+        for ((e, pointsToSet) <- state.sharedPointsToSetsIterator) {
             results ++= createPartialResults(
                 e,
                 pointsToSet,
@@ -633,7 +633,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             )
         }
 
-        for (fakeEntity ← state.getFieldsIterator) {
+        for (fakeEntity <- state.getFieldsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSite, fieldOpt, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
@@ -646,7 +646,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             }
         }
 
-        for (fakeEntity ← state.putFieldsIterator) {
+        for (fakeEntity <- state.putFieldsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, fieldOpt) = fakeEntity
                 val defSitesWithoutExceptions =
@@ -671,7 +671,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             }
         }
 
-        for (fakeEntity ← state.arrayLoadsIterator) {
+        for (fakeEntity <- state.arrayLoadsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSite, arrayType, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
@@ -684,7 +684,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             }
         }
 
-        for (fakeEntity ← state.arrayStoresIterator) {
+        for (fakeEntity <- state.arrayStoresIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, arrayType) = fakeEntity
                 val defSitesWithoutExceptions =

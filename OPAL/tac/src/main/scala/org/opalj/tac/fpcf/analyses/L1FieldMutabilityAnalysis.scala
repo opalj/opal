@@ -162,8 +162,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         implicit val state: State = new State(field)
 
         for {
-            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            (taCode, callers) ← getTACAIAndCallers(method, pcs)
+            (method, pcs) <- fieldAccessInformation.writeAccesses(field)
+            (taCode, callers) <- getTACAIAndCallers(method, pcs)
         } {
             if (methodUpdatesField(method, taCode, callers, pcs))
                 return Result(field, NonFinalFieldByAnalysis);
@@ -186,7 +186,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         state: State
     ): Boolean = {
         val stmts = taCode.stmts
-        for (pc ← pcs) {
+        for (pc <- pcs) {
             val index = taCode.properStmtIndexForPC(pc)
             if (index >= 0) {
                 val stmtCandidate = stmts(index)

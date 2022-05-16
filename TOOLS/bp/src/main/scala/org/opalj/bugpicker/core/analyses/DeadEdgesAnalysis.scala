@@ -148,7 +148,7 @@ object DeadEdgesAnalysis {
 
         var issues = List.empty[Issue]
         for {
-            pc ← body.programCounters.iterator
+            pc <- body.programCounters.iterator
             if evaluatedInstructions.contains(pc)
             instruction = instructions(pc)
             opcode = instruction.opcode
@@ -162,7 +162,7 @@ object DeadEdgesAnalysis {
             if opcode != ATHROW.opcode
 
             // Let's check if a path is never taken:
-            nextPC ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).toIterator
+            nextPC <- instruction.nextInstructions(pc, regularSuccessorsOnly = true).toIterator
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information

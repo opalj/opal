@@ -42,7 +42,7 @@ sealed class LoadedClasses private[properties] (
     def updated(newClasses: TraversableOnce[ObjectType]): LoadedClasses = {
         var updatedOrderedClasses = orderedClasses
         var updatedClasses = classes
-        for { c ← newClasses } {
+        for { c <- newClasses } {
             val nextUpdatedClasses = updatedClasses + c
             if (nextUpdatedClasses ne updatedClasses /* <= used as a contains check */ ) {
                 updatedOrderedClasses ::= c

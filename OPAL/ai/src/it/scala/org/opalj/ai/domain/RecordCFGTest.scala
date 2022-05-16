@@ -184,7 +184,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
         }
 
         if (failures.size > 0) {
-            val failureMessages = for { (failure, exception) ← failures.asScala } yield {
+            val failureMessages = for { (failure, exception) <- failures.asScala } yield {
                 var root: Throwable = exception
                 while (root.getCause != null) root = root.getCause
                 val location =

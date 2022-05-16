@@ -403,7 +403,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     // Analyses of the methods
                     // ---------------------------------------------------------------------------
 
-                    for (method ← classFile.methods; body ← method.body) {
+                    for (method <- classFile.methods; body <- method.body) {
                         try {
                             analyzeMethod(method, body)
                         } catch {
@@ -522,7 +522,7 @@ object BugPickerAnalysis {
                         }
                     }
             val result =
-                (for { (pkg, mdc) ← groupedMessages } yield {
+                (for { (pkg, mdc) <- groupedMessages } yield {
                     <details class="package_summary">
                         <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
                         { mdc.toSeq.sorted(IssueOrdering).map(_.toXHTML(basicInfoOnly)) }

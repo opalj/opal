@@ -147,7 +147,6 @@ package object opalj {
      */
     final val NotRequired: Any => Nothing = (a: Any) => { notRequired() }
 
-
     def partitionByType[T <: AnyRef, X <: AnyRef](data: ArraySeq[T], clazz: Class[X]): (ArraySeq[X], ArraySeq[T]) =
         data.partition(clazz.isInstance(_)).asInstanceOf[(ArraySeq[X], ArraySeq[T])]
 }

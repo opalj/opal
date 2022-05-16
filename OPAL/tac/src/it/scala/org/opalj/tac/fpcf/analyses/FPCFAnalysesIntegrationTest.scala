@@ -61,7 +61,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
     ) foreach { biProject =>
             val (projectName, projectFactory) = biProject
 
-            for ((name, analyses, properties) ← analysisConfigurations) {
+            for ((name, analyses, properties) <- analysisConfigurations) {
                 describe(s"the analysis configuration $name for project $projectName") {
 
                     it("should execute without exceptions") {
@@ -187,7 +187,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
         var configurations: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] =
             List.empty
 
-        for (line ← configLines) {
+        for (line <- configLines) {
             if (line.startsWith(" ")) {
                 if (readProperties)
                     curConfig = (curConfig._1, curConfig._2, curConfig._3 :+ getProperty(line))

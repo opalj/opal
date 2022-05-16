@@ -82,7 +82,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         val ehs = code.exceptionHandlers
 
         for {
-            (ops, pc) ← r.operandsArray.iterator.zipWithIndex
+            (ops, pc) <- r.operandsArray.iterator.zipWithIndex
             if ops ne null // let's filter only the executed instructions
             instruction = instructions(pc)
             if !instruction.isStackManagementInstruction
@@ -136,7 +136,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
             // Tests if the def/use information for reference values corresponds to the
             // def/use information (implicitly) collected by the corresponding domain.
             //
-            for { (op, opIndex) ← ops.toIterator.zipWithIndex } {
+            for { (op, opIndex) <- ops.toIterator.zipWithIndex } {
                 val defUseOrigins =
                     try {
                         d.operandOrigin(pc, opIndex)
@@ -241,7 +241,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
 
         val baseMessage = s"origin information of ${identicalOrigins.get} values is identical"
         if (failures.size > 0) {
-            val failureMessages = for { (m, exception) ← failures.asScala } yield {
+            val failureMessages = for { (m, exception) <- failures.asScala } yield {
                 var root: Throwable = exception
                 var location: String = ""
                 do {

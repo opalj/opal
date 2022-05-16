@@ -104,7 +104,7 @@ object UnusedFields {
             }
         }
 
-        for (unusedField ← unusedAndUnusableFields) yield {
+        for (unusedField <- unusedAndUnusableFields) yield {
             Issue(
                 "UnusedField",
                 Relevance.DefaultRelevance,

@@ -28,7 +28,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
     def testEnsemblesAreNonEmpty(specification: Specification): Unit = {
         specification.ensembles.foreach { e =>
             val (ensembleID, (matcher, extent)) = e
-            if (ensembleID != 'empty && extent.isEmpty)
+            if (ensembleID != Symbol("Empty") && extent.isEmpty)
                 fail(ensembleID+" didn't match any elements ("+matcher+")")
         }
     }

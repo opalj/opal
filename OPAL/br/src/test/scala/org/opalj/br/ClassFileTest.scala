@@ -80,11 +80,11 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
 
-        boundedBuffer.findField("buffer") should not be ('empty)
-        boundedBuffer.findField("first") should not be ('empty)
-        boundedBuffer.findField("last") should not be ('empty)
-        boundedBuffer.findField("size") should not be ('empty)
-        boundedBuffer.findField("numberInBuffer") should not be ('empty)
+        boundedBuffer.findField("buffer") should not be (Symbol("Empty"))
+        boundedBuffer.findField("first") should not be (Symbol("Empty"))
+        boundedBuffer.findField("last") should not be (Symbol("Empty"))
+        boundedBuffer.findField("size") should not be (Symbol("Empty"))
+        boundedBuffer.findField("numberInBuffer") should not be (Symbol("Empty"))
     }
 
     test("that findField does not find non-existing fields") {
@@ -149,7 +149,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         val project = analyses.Project(jarFile)
         var innerClassesCount = 0
         var failures: List[String] = List.empty
-        val nestedTypes = for (classFile ← project.allClassFiles) yield {
+        val nestedTypes = for (classFile <- project.allClassFiles) yield {
             try {
                 // should not time out or crash...
                 classFile.nestedClasses(project)
@@ -184,8 +184,8 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         val o$1 = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1")
         val o$1$q = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1$Query")
         nestedTypeInformation(o) should contain(o$1)
-        nestedTypeInformation(o$1) should be('empty) // the jar contains inconsistent code...
-        nestedTypeInformation(o$1$q) should be('empty)
+        nestedTypeInformation(o$1) should be(Symbol("Empty")) // the jar contains inconsistent code...
+        nestedTypeInformation(o$1$q) should be(Symbol("Empty"))
     }
 
     test("that it is possible to get the inner classes information for batik-DOMViewer 1.7.jar") {
@@ -196,7 +196,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         val D$3 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
         nestedTypeInformation(D$Panel) should contain(D$2)
         nestedTypeInformation(D$2) should contain(D$3)
-        nestedTypeInformation(D$3) should be('empty)
+        nestedTypeInformation(D$3) should be(Symbol("Empty"))
     }
 
     test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {

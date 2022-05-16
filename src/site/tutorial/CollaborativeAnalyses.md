@@ -172,7 +172,7 @@ The `callers` method implicitly requires the `DeclaredMethods`, which is why we 
 def checkCallers(callersProperty: EOptionP[DeclaredMethod, Callers]): PropertyComputationResult = {
     [...]
 
-    for((caller, _, isDirect) ← callers.callers) {
+    for((caller, _, isDirect) <- callers.callers) {
         if (!isDirect)
             return result()
 
@@ -192,7 +192,7 @@ If it isn't, again the constructor must have been called explicitly.
 
 If the caller is a constructor, we now check whether it belongs to a direct subclass:
 ```scala
-for((caller, _, isDirect) ← callers.callers){
+for((caller, _, isDirect) <- callers.callers){
     [...]
 
     val callerClass = project.classFile(caller.declaringClassType)
@@ -209,7 +209,7 @@ The same is true if we know the class, but it has no superclass (this mainly con
 If we didn't return a result yet, we have established that the caller is a constructor of a direct subclass.  
 However, it may still have an explicit call to the analyzed constructor, thus we have to look for such call in its instructions:
 ```scala
-for((caller, _, isDirect) ← callers.callers){
+for((caller, _, isDirect) <- callers.callers){
     [...]
 
     val body = caller.definedMethod.body.get
@@ -224,7 +224,7 @@ Finally, they also can't be abstract or implemented by a native method, thus the
 
 Now we can look for explicit instantiations of the analyzed constructor's class:
 ```scala
-for((caller, _, isDirect) ← callers.callers){
+for((caller, _, isDirect) <- callers.callers){
     [...]
 
     if(body.exists((_, instruction) => instruction == NEW(instantiatedType)))

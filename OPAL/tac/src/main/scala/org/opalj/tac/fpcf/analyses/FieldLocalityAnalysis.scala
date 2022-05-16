@@ -174,9 +174,9 @@ class FieldLocalityAnalysis private[analyses] (
      */
     private[this] def step3()(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
         for {
-            (method, pcs) ← fieldAccessInformation.allAccesses(state.field)
-            (tacai, callees) ← getTACAIAndCallers(method, Some(pcs))
-            pc ← pcs
+            (method, pcs) <- fieldAccessInformation.allAccesses(state.field)
+            (tacai, callees) <- getTACAIAndCallers(method, Some(pcs))
+            pc <- pcs
         } {
             var isLocal = true
             callees.forNewCalleeContexts(null, declaredMethods(method)) {
@@ -194,8 +194,8 @@ class FieldLocalityAnalysis private[analyses] (
         state.potentialCloneCallers = potentialCloneCallers
 
         for {
-            method ← potentialCloneCallers
-            (tacai, callees) ← getTACAIAndCallers(method, None)
+            method <- potentialCloneCallers
+            (tacai, callees) <- getTACAIAndCallers(method, None)
         } {
             var isLocal = true
             callees.forNewCalleeContexts(null, declaredMethods(method)) {
@@ -525,7 +525,7 @@ class FieldLocalityAnalysis private[analyses] (
             var foundPut = false
             currentBB match {
                 case currentBB: BasicBlock =>
-                    for (index ← currentBB.startPC to currentBB.endPC) {
+                    for (index <- currentBB.startPC to currentBB.endPC) {
                         tacai.stmts(index) match {
                             case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, _) =>
                                 if (objRef.asVar.definedBy == IntTrieSet(defSite)) {

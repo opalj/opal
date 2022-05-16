@@ -263,7 +263,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             val allOut = mergeMaps(oldOut, nextOut)
             state.outgoingFacts = state.outgoingFacts.updated(basicBlock, allOut)
 
-            for (successor ← basicBlock.successors) {
+            for (successor <- basicBlock.successors) {
                 if (successor.isExitNode) {
                     // Re-analyze recursive call sites with the same input fact.
                     val nextOutSuccessors = nextOut.get(successor)
@@ -466,7 +466,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         var result: Map[CFGNode, Set[IFDSFact]] =
             if (calleesO.isEmpty) {
                 var result: Map[CFGNode, Set[IFDSFact]] = Map.empty
-                for (node ← basicBlock.successors) {
+                for (node <- basicBlock.successors) {
                     result += node -> normalFlow(statement, firstStatement(node), flows)
                 }
                 result
@@ -570,7 +570,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     def reAnalyzebasicBlocks(basicBlocks: Set[BasicBlock])(implicit state: State): Unit = {
         val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Context], Option[IFDSFact])] = mutable.Queue.empty
-        for (bb ← basicBlocks)
+        for (bb <- basicBlocks)
             queue.enqueue((bb, state.incomingFacts(bb), None, None, None))
         process(queue)
     }
@@ -589,7 +589,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     )(implicit state: State): Unit = {
         val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Context], Option[IFDSFact])] =
             mutable.Queue.empty
-        for ((block, index) ← callSites)
+        for ((block, index) <- callSites)
             queue.enqueue(
                 (
                     block,
@@ -628,15 +628,15 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 
         // If calleeWithUpdateFact is present, this means that the basic block already has been analyzed with the `in` facts.
         if (calleeWithUpdateFact.isEmpty)
-            for (successor ← successors) {
+            for (successor <- successors) {
                 summaryEdges += successor -> propagateNullFact(in, callToReturnFlow(call, successor, in))
             }
 
-        for (callee ← callees) {
+        for (callee <- callees) {
             if (callee.method.definedMethod.isNative) {
                 // We cannot analyze native methods. Let the concrete analysis decide what to do.
                 for {
-                    successor ← successors
+                    successor <- successors
                 } {
                     summaryEdges += successor -> (summaryEdges(successor) ++ nativeCall(call, callee, successor, in))
                 }
@@ -646,7 +646,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     else propagateNullFact(in, callFlow(call, callee, in))
                 var allNewExitFacts: Map[Statement, Set[IFDSFact]] = Map.empty
                 // Collect exit facts for each input fact separately
-                for (fact ← callToStart) {
+                for (fact <- callToStart) {
                     /*
                     * If this is a recursive call with the same input facts, we assume that the call only produces the facts that are already known.
                     * The call site is added to `pendingIfdsCallSites`, so that it will be re-evaluated if new output facts become known for the input fact.
@@ -706,9 +706,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 
                 //Create exit to return facts. At first for normal returns, then for abnormal returns.
                 for {
-                    successor ← successors
+                    successor <- successors
                     if successor.node.isBasicBlock || successor.node.isNormalReturnExitNode
-                    exitStatement ← allNewExitFacts.keys
+                    exitStatement <- allNewExitFacts.keys
                     if exitStatement.stmt.astID == Return.ASTID || exitStatement.stmt.astID == ReturnValue.ASTID
                 } {
                     // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
@@ -716,9 +716,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                         returnFlow(call, callee, exitStatement, successor, allNewExitFacts.getOrElse(exitStatement, Set.empty)))
                 }
                 for {
-                    successor ← successors
+                    successor <- successors
                     if successor.node.isCatchNode || successor.node.isAbnormalReturnExitNode
-                    exitStatement ← allNewExitFacts.keys
+                    exitStatement <- allNewExitFacts.keys
                     if exitStatement.stmt.astID != Return.ASTID && exitStatement.stmt.astID != ReturnValue.ASTID
                 } {
                     // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
@@ -746,7 +746,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     ): Set[Statement] = {
         val index = statement.index
         if (index == basicBlock.endPC) {
-            for (successorBlock ← basicBlock.successors) yield firstStatement(successorBlock)
+            for (successorBlock <- basicBlock.successors) yield firstStatement(successorBlock)
         } else {
             val nextIndex = index + 1
             Set(Statement(statement.context, basicBlock, statement.code(nextIndex), nextIndex, statement.code, statement.cfg))
@@ -797,7 +797,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     def mergeMaps[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
         var result = map1
-        for ((key, values) ← map2) {
+        for ((key, values) <- map2) {
             result.get(key) match {
                 case Some(resultValues) =>
                     if (resultValues.size > values.size)
@@ -821,7 +821,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     def mapDifference[S, T](minuend: Map[S, Set[T]], subtrahend: Map[S, Set[T]]): Map[S, Set[T]] = {
         var result = minuend
-        for ((key, values) ← subtrahend) {
+        for ((key, values) <- subtrahend) {
             result = result.updated(key, result(key) -- values)
         }
         result
@@ -930,7 +930,7 @@ abstract class IFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalys
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
         val ifdsAnalysis = analysis.asInstanceOf[AbstractIFDSAnalysis[IFDSFact]]
-        for (e ← ifdsAnalysis.entryPoints) { ps.force(e, ifdsAnalysis.propertyKey.key) }
+        for (e <- ifdsAnalysis.entryPoints) { ps.force(e, ifdsAnalysis.propertyKey.key) }
     }
 
     override def afterPhaseCompletion(

@@ -105,82 +105,82 @@ final class Code private (
 
     @inline final def codeSize: Int = instructions.length
 
-// TODO: Overload map operations (https://www.scala-lang.org/blog/2018/06/13/scala-213-collections.html)
-//
-//    /**
-//     * Represents some filtered code. Primarily, implicitly used when a for-comprehension
-//     * is used to process the code.
-//     */
-//    class FilteredCode( final val p: PCAndInstruction => Boolean)
-//        extends WithFilter[PCAndInstruction, Nothing] {
-//
-//        def map[B, That](
-//            f: PCAndInstruction => B
-//        )(
-//            implicit
-//            bf: BuildFrom[Nothing, B, That]
-//        ): That = {
-//            val that = bf.newBuilder()
-//            code foreach { instructionLocation =>
-//                if (p(instructionLocation)) that += f(instructionLocation)
-//            }
-//            that.result
-//        }
-//
-//        def flatMap[B, That](
-//            f: PCAndInstruction => IterableOnce[B]
-//        )(
-//            implicit
-//            bf: BuildFrom[Nothing, B, That]
-//        ): That = {
-//            val that = bf.newBuilder()
-//            code foreach { instructionLocation: PCAndInstruction =>
-//                if (p(instructionLocation)) {
-//                    f(instructionLocation).iterator.foreach { v => that += v }
-//                }
-//            }
-//            that.result
-//        }
-//
-//        def foreach[U](f: PCAndInstruction => U): Unit = {
-//            code foreach { instructionLocation: PCAndInstruction =>
-//                if (p(instructionLocation)) f(instructionLocation)
-//            }
-//        }
-//
-//        def withFilter(p: PCAndInstruction => Boolean): FilteredCode = {
-//            new FilteredCode(
-//                (instructionLocation: PCAndInstruction) => {
-//                    this.p(instructionLocation) && p(instructionLocation)
-//                }
-//            )
-//        }
-//    }
-//
-//    def withFilter(p: (PCAndInstruction) => Boolean): FilteredCode = new FilteredCode(p)
-//
-//
-//    def map[B, That](
-//        f: PCAndInstruction => B
-//    )(
-//        implicit
-//        bf: BuildFrom[Nothing, B, That]
-//    ): That = {
-//        val that = bf.newBuilder()
-//        code.foreach(that += f(_))
-//        that.result
-//    }
-//
-//    def flatMap[B, That](
-//        f: (PCAndInstruction) => IterableOnce[B]
-//    )(
-//        implicit
-//        bf: BuildFrom[Nothing, B, That]
-//    ): That = {
-//        val that = bf.newBuilder()
-//        code foreach { instructionLocation => f(instructionLocation).iterator.foreach(that += _) }
-//        that.result
-//    }
+    // TODO: Overload map operations (https://www.scala-lang.org/blog/2018/06/13/scala-213-collections.html)
+    //
+    //    /**
+    //     * Represents some filtered code. Primarily, implicitly used when a for-comprehension
+    //     * is used to process the code.
+    //     */
+    //    class FilteredCode( final val p: PCAndInstruction => Boolean)
+    //        extends WithFilter[PCAndInstruction, Nothing] {
+    //
+    //        def map[B, That](
+    //            f: PCAndInstruction => B
+    //        )(
+    //            implicit
+    //            bf: BuildFrom[Nothing, B, That]
+    //        ): That = {
+    //            val that = bf.newBuilder()
+    //            code foreach { instructionLocation =>
+    //                if (p(instructionLocation)) that += f(instructionLocation)
+    //            }
+    //            that.result
+    //        }
+    //
+    //        def flatMap[B, That](
+    //            f: PCAndInstruction => IterableOnce[B]
+    //        )(
+    //            implicit
+    //            bf: BuildFrom[Nothing, B, That]
+    //        ): That = {
+    //            val that = bf.newBuilder()
+    //            code foreach { instructionLocation: PCAndInstruction =>
+    //                if (p(instructionLocation)) {
+    //                    f(instructionLocation).iterator.foreach { v => that += v }
+    //                }
+    //            }
+    //            that.result
+    //        }
+    //
+    //        def foreach[U](f: PCAndInstruction => U): Unit = {
+    //            code foreach { instructionLocation: PCAndInstruction =>
+    //                if (p(instructionLocation)) f(instructionLocation)
+    //            }
+    //        }
+    //
+    //        def withFilter(p: PCAndInstruction => Boolean): FilteredCode = {
+    //            new FilteredCode(
+    //                (instructionLocation: PCAndInstruction) => {
+    //                    this.p(instructionLocation) && p(instructionLocation)
+    //                }
+    //            )
+    //        }
+    //    }
+    //
+    //    def withFilter(p: (PCAndInstruction) => Boolean): FilteredCode = new FilteredCode(p)
+    //
+    //
+    //    def map[B, That](
+    //        f: PCAndInstruction => B
+    //    )(
+    //        implicit
+    //        bf: BuildFrom[Nothing, B, That]
+    //    ): That = {
+    //        val that = bf.newBuilder()
+    //        code.foreach(that += f(_))
+    //        that.result
+    //    }
+    //
+    //    def flatMap[B, That](
+    //        f: (PCAndInstruction) => IterableOnce[B]
+    //    )(
+    //        implicit
+    //        bf: BuildFrom[Nothing, B, That]
+    //    ): That = {
+    //        val that = bf.newBuilder()
+    //        code foreach { instructionLocation => f(instructionLocation).iterator.foreach(that += _) }
+    //        that.result
+    //    }
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
@@ -1287,7 +1287,7 @@ final class Code private (
      *
      * ==Example Usage==
      * {{{
-     * (pc, _) ← body.findPair {
+     * (pc, _) <- body.findPair {
      *      case (
      *          INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
      *          INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
@@ -1381,9 +1381,9 @@ final class Code private (
      * ==Example Usage==
      * {{{
      * for {
-     *  classFile ← project.view.map(_._1).par
-     *  method @ MethodWithBody(body) ← classFile.methods
-     *  pc ← body.matchPair({
+     *  classFile <- project.view.map(_._1).par
+     *  method @ MethodWithBody(body) <- classFile.methods
+     *  pc <- body.matchPair({
      *      case (
      *          INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
      *          INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))

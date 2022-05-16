@@ -301,15 +301,15 @@ class OISReadObjectAnalysis private[analyses] (
         var foundCast = false
         val parameterList = Seq(inputStream.flatMap(is => persistentUVar(is.asVar)))
         for {
-            use ← targetVar.usedBy
+            use <- targetVar.usedBy
         } stmts(use) match {
             case Checkcast(_, value, ElementReferenceType(castType)) =>
                 foundCast = true
 
                 // for each subtype of the cast type we add calls to the relevant methods
                 for {
-                    t ← ch.allSubtypes(castType, reflexive = true)
-                    cf ← project.classFile(t) // we ignore cases were no class file exists
+                    t <- ch.allSubtypes(castType, reflexive = true)
+                    cf <- project.classFile(t) // we ignore cases were no class file exists
                     if !cf.isInterfaceDeclaration
                     if ch.isSubtypeOf(castType, ObjectType.Serializable)
                 } {

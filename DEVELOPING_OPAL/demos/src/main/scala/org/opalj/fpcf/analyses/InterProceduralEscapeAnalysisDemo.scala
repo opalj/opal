@@ -73,10 +73,10 @@ object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
             manager.runAll(EagerInterProceduralEscapeAnalysis)
         } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
 
-        /*for (e ← propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {
+        /*for (e <- propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {
             println(s"$e : AtMostEscapeViaAbnormalReturn")
         }
-        for (e ← propertyStore.finalEntities(AtMost(EscapeInCallee))) {
+        for (e <- propertyStore.finalEntities(AtMost(EscapeInCallee))) {
             println(s"$e : AtMostEscapeInCallee")
         }*/
 

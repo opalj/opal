@@ -47,7 +47,7 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
         val Lock = new Object
         var exceptions: List[Throwable] = Nil
 
-        for { (brClassFile1, url) ← ClassFileReader.ClassFiles(file).par } {
+        for { (brClassFile1, url) <- ClassFileReader.ClassFiles(file).par } {
 
             try {
                 // PART 1... just serialize the file...
@@ -96,7 +96,7 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
 
     val jmodsFile = locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
-        file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
+        file <- JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
         if file.isFile
         if file.canRead
         if file.length() > 0

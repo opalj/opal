@@ -131,13 +131,13 @@ private class CallGraphDeserializer private[analyses] (
     def analyze(p: SomeProject): PropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
         for (
-            (methodDesc, callSites) ← data
+            (methodDesc, callSites) <- data
         ) {
             val calls = new DirectCalls()
             val method = methodDesc.toDeclaredMethod
             for (
-                x ← callSites.groupBy(cs => (cs.declaredTarget, cs.line)).values;
-                (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) ← x.zipWithIndex
+                x <- callSites.groupBy(cs => (cs.declaredTarget, cs.line)).values;
+                (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) <- x.zipWithIndex
             ) {
 
                 val pc = if (pcOpt.isDefined)
@@ -147,7 +147,7 @@ private class CallGraphDeserializer private[analyses] (
 
                 val context = simpleContexts(method)
 
-                for (tgtDesc ← tgts) {
+                for (tgtDesc <- tgts) {
                     calls.addCall(context, pc, simpleContexts(tgtDesc.toDeclaredMethod))
                 }
                 results ++= calls.partialResults(context)

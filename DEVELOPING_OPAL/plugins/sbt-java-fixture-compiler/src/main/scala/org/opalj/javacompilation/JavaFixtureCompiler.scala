@@ -124,7 +124,7 @@ object JavaFixtureCompiler extends AutoPlugin {
       val err = new PrintWriter(new LogWriter((s: String) => log.error(s)))
 
       val results = (
-        for (fixtureTask ← tasks.par) yield {
+        for (fixtureTask <- tasks.par) yield {
           fixtureTask.compiler.compile(fixtureTask, std, err, log)
         }
       ).seq
@@ -150,7 +150,7 @@ object JavaFixtureCompiler extends AutoPlugin {
         streams: TaskStreams
     ): Seq[JavaFixturePackagingResult] = {
       import streams.log
-      val results = (for (compilationResult ← compilationResults.par) yield {
+      val results = (for (compilationResult <- compilationResults.par) yield {
         packageRoutine(
           compilationResult,
           new File(compilationResult.task.targetFolder + ".jar"),

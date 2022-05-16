@@ -108,8 +108,8 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                         // Check whether the outer class of the inner class attribute
                         // is equal to the currently processed class. If this is the case,
                         // a dependency from inner class to this class will be added.
-                        innerClassesEntry ← innerClasses
-                        outerClassType ← innerClassesEntry.outerClassType
+                        innerClassesEntry <- innerClasses
+                        outerClassType <- innerClassesEntry.outerClassType
                         if outerClassType == thisType
                     } {
                         processDependency(
@@ -266,7 +266,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
 
             // add dependencies from the method to all throwables that are used in catch statements
             for {
-                exceptionHandler ← code.exceptionHandlers
+                exceptionHandler <- code.exceptionHandlers
                 if exceptionHandler.catchType.isDefined
             } {
                 processDependency(vm, exceptionHandler.catchType.get, CATCHES)
@@ -405,7 +405,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         def processFormalTypeParameters(
             formalTypeParameters: List[FormalTypeParameter]
         ): Unit = {
-            for (ftp ← formalTypeParameters) {
+            for (ftp <- formalTypeParameters) {
                 val classBound = ftp.classBound
                 if (classBound.isDefined)
                     processSignature(declaringElement, classBound.get, true)

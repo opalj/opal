@@ -80,7 +80,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     ): ProperPropertyComputationResult = {
         assert(state.tacai.isDefined)
         // for every use-site, check its escape state
-        for (use ← state.uses) {
+        for (use <- state.uses) {
             checkStmtForEscape(state.tacai.get.stmts(use))
         }
         returnResult

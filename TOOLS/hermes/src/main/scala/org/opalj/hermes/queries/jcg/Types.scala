@@ -52,9 +52,9 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction ← body
+            pcAndInstruction <- body
         } {
             val instruction = pcAndInstruction.instruction
             val pc = pcAndInstruction.pc

@@ -61,7 +61,7 @@ object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
         val allocationSites = project.get(DefinitionSitesKey).getAllocationSites
         val objects = time {
             for {
-                as ← allocationSites
+                as <- allocationSites
                 method = as.method
                 FinalP(escape) = propertyStore(as, EscapeProperty.key)
                 if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape

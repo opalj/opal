@@ -26,7 +26,7 @@ class InstructionsBuilder private (private val buffer: ArrayBuffer[Instruction])
      * specified by `slots`. Hence, `slotes` has to be >= 1.
      */
     def ++=(value: Instruction, slots: Int): Unit = {
-//        if (slots > 1) buffer.ensureAdditionalCapacity(slots)
+        //        if (slots > 1) buffer.ensureAdditionalCapacity(slots)
         buffer += value
         var i = 1
         while (i < slots) {

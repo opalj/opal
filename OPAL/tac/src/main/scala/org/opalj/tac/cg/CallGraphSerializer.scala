@@ -35,7 +35,7 @@ object CallGraphSerializer {
         writer.write(s"""{"reachableMethods":[""")
         var firstRM = true
         for {
-            rm ← cg.reachableMethods()
+            rm <- cg.reachableMethods()
             callees = cg.calleesOf(rm.method)
         } {
             if (firstRM) {
@@ -63,10 +63,10 @@ object CallGraphSerializer {
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         val bodyO = if (method.hasSingleDefinedMethod) method.definedMethod.body else None
         var first = true
-        for ((pc, targets) ← callees) {
+        for ((pc, targets) <- callees) {
             bodyO match {
                 case None =>
-                    for (tgt ← targets) {
+                    for (tgt <- targets) {
                         if (first) first = false
                         else out.write(",")
                         writeCallSite(tgt.method, -1, pc, Iterator(tgt), out)
@@ -97,7 +97,7 @@ object CallGraphSerializer {
                                 callee.method.descriptor.parametersCount == desc.parametersCount
                         }
 
-                        for (tgt ← indirectCallees) {
+                        for (tgt <- indirectCallees) {
                             if (first) first = false
                             else out.write(",")
                             writeCallSite(tgt.method, line, pc, Iterator(tgt), out)
@@ -109,7 +109,7 @@ object CallGraphSerializer {
                         }
 
                     } else {
-                        for (tgt ← targets) {
+                        for (tgt <- targets) {
                             if (first) first = false
                             else out.write(",")
                             writeCallSite(tgt.method, line, pc, Iterator(tgt), out)
@@ -134,7 +134,7 @@ object CallGraphSerializer {
         out.write(pc.toString)
         out.write(",\"targets\":[")
         var first = true
-        for (tgt ← targets) {
+        for (tgt <- targets) {
             if (first) first = false
             else out.write(",")
             writeMethodObject(tgt.method, out)

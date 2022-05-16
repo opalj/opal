@@ -278,7 +278,7 @@ abstract class AI[D <: Domain](
                 locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
-            for (parameterType ← method.descriptor.parameterTypes) {
+            for (parameterType <- method.descriptor.parameterTypes) {
                 val ct = parameterType.computationalType
                 locals.set(
                     localVariableIndex,
@@ -2084,7 +2084,7 @@ abstract class AI[D <: Domain](
                             val npairs = switch.npairs
                             val firstKey = npairs(0)._1
                             var previousKey = firstKey
-                            for (IntIntPair(key, offset) ← npairs) {
+                            for (IntIntPair(key, offset) <- npairs) {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
                                     // there is a hole in the switch table...
                                     val nonCaseValue =

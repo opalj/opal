@@ -23,7 +23,7 @@ class LoadClassFilesInParallelTest extends AnyFlatSpec with Matchers {
     }
 
     for {
-        file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
+        file <- Iterator(JRELibraryFolder) ++ allBITestJARs()
         if file.isFile && file.canRead && file.getName.endsWith(".jar")
         path = file.getPath
     } {

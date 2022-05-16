@@ -73,7 +73,7 @@ object GuardedAndUnguardedAccessAnalysis {
         // TODO We should also log those that are assertions related!
 
         for {
-            (pc, instr: IFXNullInstruction[_]) ← code
+            (pc, instr: IFXNullInstruction[_]) <- code
             if operandsArray(pc) ne null
         } {
 
@@ -107,7 +107,7 @@ object GuardedAndUnguardedAccessAnalysis {
 
         val unguardedAccesses =
             for {
-                (pc, domain.AReferenceValue(receiver)) ← code.collectWithIndex {
+                (pc, domain.AReferenceValue(receiver)) <- code.collectWithIndex {
                     case (pc, ARRAYLENGTH | MONITORENTER) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc).head)
 
@@ -153,7 +153,7 @@ object GuardedAndUnguardedAccessAnalysis {
 
         val unguardedAccessesIssues =
             for {
-                (guardPC, unguardedAccesses) ← unguardedAccesses.groupBy(f => f._1 /*by guard*/ )
+                (guardPC, unguardedAccesses) <- unguardedAccesses.groupBy(f => f._1 /*by guard*/ )
             } yield {
                 val relevance = unguardedAccesses.toIterator.map(_._2.value).max
 

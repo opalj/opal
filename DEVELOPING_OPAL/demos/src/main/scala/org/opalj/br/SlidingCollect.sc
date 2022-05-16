@@ -41,10 +41,10 @@ object SlidingCollect {
     def pcsBeforePullRequest =
         time(1, 3, 5, {
             for {
-                classFile ← project.map(_._1)
-                method @ MethodWithBody(body) ← classFile.methods
+                classFile <- project.map(_._1)
+                method @ MethodWithBody(body) <- classFile.methods
                 Seq((_, INVOKESPECIAL(receiver1, _, MethodDescriptor(Seq(paramType), _))),
-                    (pc, INVOKEVIRTUAL(receiver2, name, MethodDescriptor(Seq(), returnType)))) ← body.associateWithIndex.sliding(2)
+                    (pc, INVOKEVIRTUAL(receiver2, name, MethodDescriptor(Seq(), returnType)))) <- body.associateWithIndex.sliding(2)
                 if (!paramType.isReferenceType &&
                     receiver1.asObjectType.fqn.startsWith("java/lang") &&
                     receiver1 == receiver2 &&
@@ -62,9 +62,9 @@ object SlidingCollect {
     def pcsAfterPullRequest =
         time(1, 3, 5, {
             for {
-                classFile ← project.view.map(_._1).par
-                method @ MethodWithBody(body) ← classFile.methods
-                pc ← body.slidingCollect(2)({
+                classFile <- project.view.map(_._1).par
+                method @ MethodWithBody(body) <- classFile.methods
+                pc <- body.slidingCollect(2)({
                     case (pc,
                         Seq(INVOKESPECIAL(receiver1, _, MethodDescriptor(Seq(paramType), _)),
                             INVOKEVIRTUAL(receiver2, name, MethodDescriptor(Seq(), returnType)))) if (
@@ -85,9 +85,9 @@ object SlidingCollect {
     def pcsWithNewMethodDescriptorMatcher =
         time(1, 3, 5, {
             for {
-                classFile ← project.view.map(_._1).par
-                method @ MethodWithBody(body) ← classFile.methods
-                pc ← body.slidingCollect(2) {
+                classFile <- project.view.map(_._1).par
+                method @ MethodWithBody(body) <- classFile.methods
+                pc <- body.slidingCollect(2) {
                     case (
                         pc,
                         Seq(INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
@@ -128,9 +128,9 @@ object SlidingCollect {
                 "floatValue",
                 "doubleValue")
             for {
-                classFile ← project.view.map(_._1).par
-                method @ MethodWithBody(body) ← classFile.methods
-                pc ← body.slidingCollect(2) {
+                classFile <- project.view.map(_._1).par
+                method @ MethodWithBody(body) <- classFile.methods
+                pc <- body.slidingCollect(2) {
                     case (
                         pc,
                         Seq(INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType, _))),
@@ -170,9 +170,9 @@ object SlidingCollect {
                 "floatValue",
                 "doubleValue")
             for {
-                classFile ← project.view.map(_._1).par
-                method @ MethodWithBody(body) ← classFile.methods
-                (pc, _) ← body.findSequence(2) {
+                classFile <- project.view.map(_._1).par
+                method @ MethodWithBody(body) <- classFile.methods
+                (pc, _) <- body.findSequence(2) {
                     case (
                         Seq(
                             INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
@@ -212,9 +212,9 @@ object SlidingCollect {
                 "floatValue",
                 "doubleValue")
             for {
-                classFile ← project.view.map(_._1).par
-                method @ MethodWithBody(body) ← classFile.methods
-                (pc, _) ← body.collectPair {
+                classFile <- project.view.map(_._1).par
+                method @ MethodWithBody(body) <- classFile.methods
+                (pc, _) <- body.collectPair {
                     case (
                         INVOKESPECIAL(receiver1, _, TheArgument(paramType: BaseType)),
                         INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
@@ -244,9 +244,9 @@ object SlidingCollect {
                 "doubleValue")
 
             for {
-                classFile ← project.par.map(_._1)
-                method @ MethodWithBody(body) ← classFile.methods
-                pc ← body.matchPair({
+                classFile <- project.par.map(_._1)
+                method @ MethodWithBody(body) <- classFile.methods
+                pc <- body.matchPair({
                     case (
                         INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
                         INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
@@ -288,9 +288,9 @@ object SlidingCollect {
                 "doubleValue")
 
             for {
-                classFile ← project.view.map(_._1).par
-                method @ MethodWithBody(body) ← classFile.methods
-                pc ← body.matchPair { (i1, i2) =>
+                classFile <- project.view.map(_._1).par
+                method @ MethodWithBody(body) <- classFile.methods
+                pc <- body.matchPair { (i1, i2) =>
                     if (i1.opcode == INVOKESPECIAL.opcode && i2.opcode == INVOKEVIRTUAL.opcode) {
                         val ispecial = i1.asInstanceOf[INVOKESPECIAL]
                         val ivirtual = i2.asInstanceOf[INVOKEVIRTUAL]
@@ -346,8 +346,8 @@ object SlidingCollect {
 
             var result: List[(String, String, org.opalj.UShort)] = List.empty
             for {
-                classFile ← project.par.map(_._1)
-                method @ MethodWithBody(body) ← classFile.methods
+                classFile <- project.par.map(_._1)
+                method @ MethodWithBody(body) <- classFile.methods
             } {
                 val instructions = body.instructions
                 val max_pc = body.instructions.length
@@ -402,9 +402,9 @@ val theMethods = Set(
 	"intValue","longValue","floatValue","doubleValue")
 
 for {
-    classFile ← project.par.map(_._1)
-    method @ MethodWithBody(body) ← classFile.methods
-    pc ← body.matchPair({
+    classFile <- project.par.map(_._1)
+    method @ MethodWithBody(body) <- classFile.methods
+    pc <- body.matchPair({
         case (
             INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
             INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))

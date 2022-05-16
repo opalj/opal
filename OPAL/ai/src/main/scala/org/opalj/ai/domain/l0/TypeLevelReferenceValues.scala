@@ -790,7 +790,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Size: '''Count'''
-     *  - Content: '''Empty''' (i.e., default values w.r.t. to the array's component type)
+     *  - Content: ''Symbol("Empty")''' (i.e., default values w.r.t. to the array's component type)
      */
     def NewArray(pc: Int, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
@@ -810,7 +810,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Size: '''Depending on the values in `counts`'''
-     *  - Content: '''Empty''' (i.e., default values w.r.t. to the array's component type)
+     *  - Content: ''Symbol("Empty")''' (i.e., default values w.r.t. to the array's component type)
      */
     def NewArray(pc: Int, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)

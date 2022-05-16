@@ -50,8 +50,8 @@ object ManualGarbageCollection {
             return Seq.empty;
 
         for {
-            method @ MethodWithBody(body) ← classFile.methods
-            (pc, gcCall) ← body.collectWithIndex {
+            method @ MethodWithBody(body) <- classFile.methods
+            (pc, gcCall) <- body.collectWithIndex {
                 case (pc, INVOKESTATIC(ObjectType.System, false, "gc", NoArgsAndReturnVoid)) =>
                     (pc, "System.gc()")
                 case (pc, INVOKEVIRTUAL(Runtime, "gc", NoArgsAndReturnVoid)) =>

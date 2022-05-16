@@ -91,7 +91,7 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
         proxyFactoryCalls: Iterable[INVOKESTATIC]
     ): Unit = {
         val missingProxyClassFiles = for {
-            proxyFactoryCall ← proxyFactoryCalls
+            proxyFactoryCall <- proxyFactoryCalls
             proxy = project.classFile(proxyFactoryCall.declaringClass)
             if proxy.isEmpty
         } yield {

@@ -393,7 +393,7 @@ class CHATypeProvider(project: SomeProject)
     )(handleType: ReferenceType => Unit): Unit = {
         additionalTypes.foreach(handleType)
         val rvs = use.value.asReferenceValue.allValues
-        for (rv ← rvs) rv match {
+        for (rv <- rvs) rv match {
             case sv: IsSReferenceValue[_] =>
                 if (sv.isPrecise) {
                     handleType(sv.theUpperTypeBound)

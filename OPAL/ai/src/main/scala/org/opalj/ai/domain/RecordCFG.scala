@@ -1044,7 +1044,7 @@ trait RecordCFG
             ),
             ScalaList.empty[DefaultMutableNode[List[Int /*PC*/ ]]]
         )
-        for (pc ← code.programCounters) {
+        for (pc <- code.programCounters) {
             nodes(pc) = {
                 var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
 
@@ -1090,8 +1090,8 @@ trait RecordCFG
             }
         }
         // 2. create edges
-        for (pc ← code.programCounters) {
-            for (succPC ← allSuccessorsOf(pc)) {
+        for (pc <- code.programCounters) {
+            for (succPC <- allSuccessorsOf(pc)) {
                 nodes(pc).addChild(nodes(succPC))
                 nodePredecessorsCount(succPC) += 1
             }
@@ -1106,7 +1106,7 @@ trait RecordCFG
         // _effective_ basic blocks; an _effective_ basic block is a block where we do
         // _not observe_ any jumps in and out unless we are at the beginning or end of
         // the block
-        for (pc ← code.programCounters) {
+        for (pc <- code.programCounters) {
             val currentNode = nodes(pc)
             if (currentNode.hasOneChild) {
                 val successorNode = currentNode.firstChild

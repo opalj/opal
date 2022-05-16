@@ -381,11 +381,11 @@ package object ai {
         // THIS METHOD IS NOT PERFORMANCE SENSITIVE!
         val operandsAndLocals =
             for {
-                ((operands, locals), pc) ← operandsArray.zip(localsArray).zipWithIndex
+                ((operands, locals), pc) <- operandsArray.zip(localsArray).zipWithIndex
                 if operands != null /*|| locals != null*/
             } yield {
                 val localsWithIndex =
-                    for { (l, idx) ← locals.zipWithIndex if l ne null } yield { s"($idx:$l)" }
+                    for { (l, idx) <- locals.zipWithIndex if l ne null } yield { s"($idx:$l)" }
 
                 operands.mkString(s"PC: $pc\n\tOperands: ", " <- ", "") +
                     localsWithIndex.mkString("\n\tLocals: [", ",", "]")

@@ -260,7 +260,7 @@ abstract class TamiFlexPointsToArrayGetAnalysis(
 
             val line = callerContext.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
             val arrays = tamiFlexLogData.classes(callerContext.method, "Array.get*", line)
-            for (array ← arrays) {
+            for (array <- arrays) {
                 handleArrayLoad(array.asArrayType, pc, theArray.get.asVar.definedBy)
             }
 
@@ -306,7 +306,7 @@ abstract class TamiFlexPointsToArraySetAnalysis(
 
             val line = callerContext.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
             val arrays = tamiFlexLogData.classes(callerContext.method, "Array.set*", line)
-            for (array ← arrays) {
+            for (array <- arrays) {
                 handleArrayStore(
                     array.asArrayType, theArray.get.asVar.definedBy, storeVal.get.asVar.definedBy
                 )
@@ -339,7 +339,7 @@ abstract class TamiFlexPointsToNewInstanceAnalysis(
         val line = callerContext.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
         val allocatedTypes = tamiFlexLogData.classes(callerContext.method, key, line)
         val defSite = getDefSite(pc)
-        for (allocatedType ← allocatedTypes)
+        for (allocatedType <- allocatedTypes)
             state.includeSharedPointsToSet(
                 defSite,
                 createPointsToSet(pc, callerContext, allocatedType, isConstant = false)
@@ -471,7 +471,7 @@ abstract class TamiFlexPointsToFieldGetAnalysis(
 
         val line = callerContext.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
         val fields = tamiFlexLogData.fields(callerContext.method, "Field.get*", line)
-        for (field ← fields) {
+        for (field <- fields) {
             if (field.isStatic) {
                 handleGetStatic(field, pc)
             } else if (theObject.isDefined) {
@@ -518,7 +518,7 @@ abstract class TamiFlexPointsToFieldSetAnalysis(
 
             val line = callerContext.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
             val fields = tamiFlexLogData.fields(callerContext.method, "Field.set*", line)
-            for (field ← fields) {
+            for (field <- fields) {
                 if (field.isStatic) {
                     handlePutStatic(field, storeVal.get.asVar.definedBy)
                 } else if (theObject.isDefined) {

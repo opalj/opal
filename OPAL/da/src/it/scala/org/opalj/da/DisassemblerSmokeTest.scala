@@ -31,7 +31,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
         )
         val jreLibraryFolder = bytecode.JRELibraryFolder
         val specialResources = Traversable(jmodsZip, jreLibraryFolder)
-        for { file ← bi.TestResources.allBITestJARs ++ specialResources } {
+        for { file <- bi.TestResources.allBITestJARs ++ specialResources } {
 
             describe(s"(when processing $file)") {
 
@@ -80,13 +80,13 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                     info(s"identified ${classFilesGroupedByPackage.size} packages")
 
                     val exceptions: Iterable[(URL, Exception)] =
-                        (for { (packageName, classFiles) ← classFilesGroupedByPackage } yield {
+                        (for { (packageName, classFiles) <- classFilesGroupedByPackage } yield {
                             val transformationCounter = new AtomicInteger(0)
                             val parClassFiles = classFiles.par
                             parClassFiles.tasksupport = OPALHTBoundedExecutionContextTaskSupport
                             PerformanceEvaluation.time {
                                 (
-                                    for { (classFile, url) ← parClassFiles } yield {
+                                    for { (classFile, url) <- parClassFiles } yield {
                                         var result: Option[(URL, Exception)] = None
                                         try {
                                             classFile.toXHTML(None).label should be("html")

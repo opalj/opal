@@ -275,7 +275,7 @@ sealed class ConcreteCallees(
     ): IntMap[Iterator[Context]] = {
         var res = IntMap(directCallSites(callerContext).toStream: _*)
 
-        for ((pc, indirect) ← indirectCallSites(callerContext)) {
+        for ((pc, indirect) <- indirectCallSites(callerContext)) {
             res = res.updateWith(pc, indirect, (direct, indirect) => direct ++ indirect)
         }
 

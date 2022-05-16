@@ -50,7 +50,7 @@ class TypesSetTest extends AnyFlatSpec with Matchers {
     behavior of "the TypesSet"
 
     it should "be empty empty upon creation" in {
-        new TypesSet(jlsCH) should be('empty)
+        new TypesSet(jlsCH) should be(Symbol("Empty"))
     }
 
     behavior of "the add type method +="

@@ -115,7 +115,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             }
         }
 
-        for (stmt ← tac.stmts) stmt match {
+        for (stmt <- tac.stmts) stmt match {
             case Assignment(pc, _, New(_, tpe)) =>
                 handleAllocation(pc, tpe)
 
@@ -351,17 +351,17 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         val tac = state.tac
         val callees: Callees = state.callees(ps)
 
-        for (target ← callees.directCallees(state.callContext, pc)) {
+        for (target <- callees.directCallees(state.callContext, pc)) {
             handleDirectCall(call, pc, target)
         }
 
-        for (target ← callees.indirectCallees(state.callContext, pc)) {
+        for (target <- callees.indirectCallees(state.callContext, pc)) {
             handleIndirectCall(pc, target, callees, tac)
         }
 
         val callExceptions = getCallExceptions(pc)
         val filter = { t: ReferenceType => classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
-        for (target ← callees.callees(state.callContext, pc)) {
+        for (target <- callees.callees(state.callContext, pc)) {
             val targetExceptions = MethodExceptions(target)
             state.includeSharedPointsToSet(
                 callExceptions,
@@ -398,7 +398,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             // in case of signature polymorphic methods, we give up
             if (call.params.size == descriptor.parametersCount) {
                 // handle params
-                for (i ← 0 until descriptor.parametersCount) {
+                for (i <- 0 until descriptor.parametersCount) {
                     handleCallParameter(call.params(i).asVar.definedBy, i, target)
                 }
             } else {
@@ -451,7 +451,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     // TODO distinguish between static methods and unavailable info
                 }
 
-                for (i ← indirectParams.indices) {
+                for (i <- indirectParams.indices) {
                     val paramType = descriptor.parameterType(i)
                     if (paramType.isReferenceType) {
                         val indirectParam = indirectParams(i)
@@ -557,8 +557,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val tac = state.tac
                 val oldCallees = if (oldCalleeEOptP.hasUBP) oldCalleeEOptP.ub else NoCallees
                 for {
-                    (pc, targets) ← newCallees.directCallSites(state.callContext)
-                    target ← targets
+                    (pc, targets) <- newCallees.directCallSites(state.callContext)
+                    target <- targets
                 } {
                     if (!oldCallees.containsDirectCall(state.callContext, pc, target)) {
                         val call = tac.stmts(tac.properStmtIndexForPC(pc)) match {
@@ -575,8 +575,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     }
                 }
                 for {
-                    (pc, targets) ← newCallees.indirectCallSites(state.callContext)
-                    target ← targets
+                    (pc, targets) <- newCallees.indirectCallSites(state.callContext)
+                    target <- targets
                 } {
                     if (!oldCallees.containsIndirectCall(state.callContext, pc, target)) {
                         handleIndirectCall(pc, target, newCallees, tac)(state)

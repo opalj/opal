@@ -58,7 +58,7 @@ trait TypeProviderState extends AnalysisState {
 
         // for every depender we have to remove the dependee of the set of dependees
         val dependers = _dependeeToDependers(dependee)
-        for (depender ← dependers) {
+        for (depender <- dependers) {
             val dependees = _dependerToDependees(depender)
             if (!dependees.remove(dependee))
                 throw new RuntimeException(s"failed to remove dependee: $dependee")
@@ -77,7 +77,7 @@ trait TypeProviderState extends AnalysisState {
     final def removeDepender(depender: Entity): Unit = {
         // for every dependee of the given depender:
         // we have to remove the depender from the set of their dependers
-        for (dependee ← _dependerToDependees(depender)) {
+        for (dependee <- _dependerToDependees(depender)) {
             if (!_dependeeToDependers(dependee).remove(depender)) {
                 throw new RuntimeException(s"failed to remove depender: $depender")
             }

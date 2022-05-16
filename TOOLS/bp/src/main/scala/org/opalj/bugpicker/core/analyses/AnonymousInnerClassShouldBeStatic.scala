@@ -92,7 +92,7 @@ object AnonymousInnerClassShouldBeStatic {
      * when checking the outer class reference field of an anonymous inner class.
      */
     private def hasMethodsReadingField(classFile: ClassFile, field: Field): Boolean = {
-        for (MethodWithBody(body) ← classFile.methods) {
+        for (MethodWithBody(body) <- classFile.methods) {
             if (body.instructions.exists {
                 case FieldReadAccess(classFile.thisType, field.name, field.fieldType) => true
                 case _ => false
@@ -107,7 +107,7 @@ object AnonymousInnerClassShouldBeStatic {
      * Checks whether a class has any constructors with multiple ALOAD_1 instructions.
      */
     private def hasConstructorsWithMultipleALOAD_1s(classFile: ClassFile): Boolean = {
-        for (method ← classFile.constructors; body ← method.body) {
+        for (method <- classFile.constructors; body <- method.body) {
             var count = 0
             body.instructions.foreach {
                 case ALOAD_1 =>

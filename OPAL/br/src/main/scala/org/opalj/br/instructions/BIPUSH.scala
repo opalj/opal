@@ -47,7 +47,7 @@ object BIPUSH extends InstructionMetaInformation {
 
     private[this] val bipushes = {
         val bipushes = new Array[BIPUSH](256)
-        for (i ← -128 to 127) { bipushes(i + 128) = new BIPUSH(i) }
+        for (i <- -128 to 127) { bipushes(i + 128) = new BIPUSH(i) }
         bipushes
     }
 

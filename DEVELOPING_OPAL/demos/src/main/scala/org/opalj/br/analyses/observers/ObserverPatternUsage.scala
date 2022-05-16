@@ -106,9 +106,9 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         val observerFields = {
             var observerFields = Set.empty[(ClassFile, Field)]
             for {
-                appType ← appTypes
-                classFile ← project.classFile(appType) //.toSeq
-                field ← classFile.fields
+                appType <- appTypes
+                classFile <- project.classFile(appType) //.toSeq
+                field <- classFile.fields
                 if field.fieldType.isReferenceType
             } {
                 field.fieldType match {
@@ -141,10 +141,10 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // I.e., methods which access a field that stores observers
         var observerNotificationMethods: Set[(ClassFile, Method)] = Set.empty
         for {
-            observable ← observables
+            observable <- observables
             observableType = observable.thisType
             omFieldNames = observerFields.filter(_._1 == observable).map(_._2.name)
-            method ← observable.methods
+            method <- observable.methods
         } {
             val hasMethodObserverParameter =
                 method.parameterTypes exists { pt =>

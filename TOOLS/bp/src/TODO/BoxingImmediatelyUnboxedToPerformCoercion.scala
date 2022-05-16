@@ -64,10 +64,10 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
 
         var result: List[LineAndColumnBasedReport[Source]] = List.empty
         for {
-            classFile ← project.allProjectClassFiles
+            classFile <- project.allProjectClassFiles
             if classFile.majorVersion >= 49
             if !project.isLibraryType(classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
         } {
             val instructions = body.instructions
             val max_pc = body.instructions.length

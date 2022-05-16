@@ -608,21 +608,20 @@ abstract class ProjectLike extends ClassFileRepository { project =>
                     methods match {
                         case List(method) =>
                             if (method.isNativeAndVarargs &&
-                              (method.descriptor == SignaturePolymorphicMethodObject ||
-                                method.descriptor == SignaturePolymorphicMethodVoid ||
-                                method.descriptor == SignaturePolymorphicMethodBoolean))
-                              Success(method) // the resolved method is signature polymorphic
+                                (method.descriptor == SignaturePolymorphicMethodObject ||
+                                    method.descriptor == SignaturePolymorphicMethodVoid ||
+                                    method.descriptor == SignaturePolymorphicMethodBoolean))
+                                Success(method) // the resolved method is signature polymorphic
                             else if (method.descriptor == descriptor)
-                              Success(method) // "normal" resolution of a method
+                                Success(method) // "normal" resolution of a method
                             else
-                              resolveSuperclassMethodReference()
+                                resolveSuperclassMethodReference()
                         case _ =>
-                          methods.find(m => m.descriptor == descriptor) match {
-                            case None                 => resolveSuperclassMethodReference()
-                            case Some(resolvedMethod) => Success(resolvedMethod)
-                          }
+                            methods.find(m => m.descriptor == descriptor) match {
+                                case None                 => resolveSuperclassMethodReference()
+                                case Some(resolvedMethod) => Success(resolvedMethod)
+                            }
                     }
-
 
                 } else {
                     classFile.findMethod(name, descriptor) match {

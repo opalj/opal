@@ -36,10 +36,10 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
         val mutex = new Object
         var reports = List[ClassBasedReport[Source]]()
 
-        for (classFile ← project.allProjectClassFiles) {
+        for (classFile <- project.allProjectClassFiles) {
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
-            for (method ← classFile.methods) method match {
+            for (method <- classFile.methods) method match {
                 case Method(_, "equals", MethodDescriptor(Seq(ObjectType.Object),
                     BooleanType)) =>
                     definesEqualsMethod = true

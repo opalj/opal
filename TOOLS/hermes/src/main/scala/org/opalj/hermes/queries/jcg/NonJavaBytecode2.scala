@@ -60,7 +60,7 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
         } {

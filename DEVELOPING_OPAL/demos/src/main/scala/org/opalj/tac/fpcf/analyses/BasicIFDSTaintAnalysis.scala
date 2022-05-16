@@ -392,9 +392,9 @@ class BasicIFDSTaintAnalysis private (
     }
 
     val entryPoints: Map[DeclaredMethod, Fact] = (for {
-        m ← p.allMethodsWithBody
+        m <- p.allMethodsWithBody
         if (m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object || m.descriptor.returnType == ObjectType.Class)
-        index ← m.descriptor.parameterTypes.zipWithIndex.collect { case (pType, index) if pType == ObjectType.String => index }
+        index <- m.descriptor.parameterTypes.zipWithIndex.collect { case (pType, index) if pType == ObjectType.String => index }
     } //yield (declaredMethods(m), null)
     yield declaredMethods(m) -> Variable(-2 - index)).toMap
 
@@ -492,9 +492,9 @@ object BasicIFDSTaintAnalysisRunner {
             val entryPoints =
                 analyses.collect { case (_, a: BasicIFDSTaintAnalysis) => a.entryPoints }.head
             for {
-                e ← entryPoints
+                e <- entryPoints
                 flows = ps(e, BasicIFDSTaintAnalysis.property.key)
-                fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+                fact <- flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
             } {
                 fact match {
                     case FlowFact(flow) =>
@@ -532,8 +532,8 @@ object BasicIFDSTaintAnalysisRunner {
 
         if (args.contains("-evalSchedulingStrategies")) {
             val results = for {
-                i ← 1 to 2
-                strategy ← PKESequentialPropertyStore.Strategies
+                i <- 1 to 2
+                strategy <- PKESequentialPropertyStore.Strategies
             } yield {
                 println(s"Round: $i - $strategy")
                 val strategyValue = ConfigValueFactory.fromAnyRef(strategy)

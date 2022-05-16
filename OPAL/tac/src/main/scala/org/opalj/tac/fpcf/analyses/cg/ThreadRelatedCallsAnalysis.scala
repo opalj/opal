@@ -95,7 +95,7 @@ class ThreadStartAnalysis private[cg] (
         eps.ub match {
             case _: TACAI =>
                 for {
-                    (allocationPC, (callPC, allocationContext)) ← state.dependersOf(epk).asInstanceOf[Set[(Int, (Int, ContextType))]]
+                    (allocationPC, (callPC, allocationContext)) <- state.dependersOf(epk).asInstanceOf[Set[(Int, (Int, ContextType))]]
                 } {
                     AllocationsUtil.handleAllocation(
                         allocationContext, allocationPC, allocationContext,
@@ -274,7 +274,7 @@ class ThreadStartAnalysis private[cg] (
     ): Unit = stmts(threadDefSite) match {
         case Assignment(_, thread, New(_, _)) =>
             for {
-                NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, threadDefSite, stmts)
+                NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <- getConstructorCalls(thread, threadDefSite, stmts)
             } {
                 val indexOfRunnableParameter = descriptor.parameterTypes.indexWhere {
                     _ == ObjectType.Runnable
@@ -283,7 +283,7 @@ class ThreadStartAnalysis private[cg] (
                 // if there is no runnable passed as parameter, we are sound
                 if (indexOfRunnableParameter != -1) {
                     val theReceiver = params(indexOfRunnableParameter).asVar
-                    for (runnableValue ← theReceiver.value.asReferenceValue.allValues) {
+                    for (runnableValue <- theReceiver.value.asReferenceValue.allValues) {
                         if (runnableValue.isPrecise) {
                             addMethod(
                                 callContext,

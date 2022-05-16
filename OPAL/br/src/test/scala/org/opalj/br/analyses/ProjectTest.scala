@@ -92,7 +92,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     }
 
     it should "not find a method that does not exist" in {
-        resolveMethodReference(SuperType, "doesNotExist", MethodDescriptor("()V")) should be('Empty)
+        resolveMethodReference(SuperType, "doesNotExist", MethodDescriptor("()V")) should be(Symbol("Empty"))
     }
 
     it should "find a method with default visibility" in {
@@ -118,7 +118,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     it should "not find Object's toString method, because we only have a partial view of the project" in {
         resolveMethodReference(
             DirectSub, "toString", MethodDescriptor("()Ljava/lang/String;")
-        ) should be('Empty)
+        ) should be(Symbol("Empty"))
     }
 
     it should "find a method declared by a directly implemented interface" in {
@@ -195,13 +195,13 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to store a large amount of information" in {
-        val piks = for (i ← (0 until 100)) yield {
+        val piks = for (i <- (0 until 100)) yield {
             val pik = new TestProjectInformationKey
             project.get(pik)
             pik.uniqueId should be >= i
             pik
         }
-        for (pik ← piks) {
+        for (pik <- piks) {
             project.availableProjectInformation should contain(pik.theResult)
         }
     }
@@ -257,8 +257,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         it should s"allMethodsWithBodyWithContext should return ALL concrete methods for $name" in {
             var allConcreteMethods = project.allMethodsWithBodyWithContext.map(_.method).toSet
             val missedMethods: Iterable[Method] = (for {
-                c ← project.allClassFiles
-                m ← c.methods
+                c <- project.allClassFiles
+                m <- c.methods
                 if m.body.isDefined
             } yield {
                 if (allConcreteMethods.contains(m)) {
@@ -268,7 +268,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
                     Some(m)
                 }
             }).flatten
-            missedMethods should be('empty)
+            missedMethods should be(Symbol("Empty"))
         }
     }
     testAllMethodsWithBodyWithContext(project, "Methods.jar")
@@ -282,8 +282,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             var methods = List.empty[Method]
             project.parForeachMethodWithBody()(mi => mutex.synchronized { methods ::= mi.method })
             val missedMethods = for {
-                c ← project.allClassFiles
-                m ← c.methods
+                c <- project.allClassFiles
+                m <- c.methods
                 if m.body.isDefined
                 if !methods.contains(m)
             } yield {

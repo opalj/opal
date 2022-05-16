@@ -46,13 +46,13 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
         // objects from inside public static main() or methods containing "benchmark" in
         // their name.
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
             if (method.isPublic &&
                 method.isStatic &&
                 method.name == "main") ||
                 (classFile.thisType.fqn.toLowerCase.indexOf("benchmark") >= 0)
-            (idx, INVOKEVIRTUAL(targetType, name, desc)) ← body.associateWithIndex
+            (idx, INVOKEVIRTUAL(targetType, name, desc)) <- body.associateWithIndex
             if targetType.isObjectType &&
                 targetType.asObjectType.fqn.startsWith("javax/swing/")
             if ((name, desc) match {

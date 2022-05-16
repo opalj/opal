@@ -33,15 +33,15 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val mutex = new Object
         for {
-            file ← folder.listFiles()
+            file <- folder.listFiles()
             if !Thread.currentThread().isInterrupted
             if file.isFile && file.canRead && file.getName.endsWith(".jar")
             project = Project(file)
             ch = project.classHierarchy
-            cf ← project.allProjectClassFiles.par
+            cf <- project.allProjectClassFiles.par
             if !Thread.currentThread().isInterrupted
-            m ← cf.methods
-            body ← m.body
+            m <- cf.methods
+            body <- m.body
         } {
             try {
                 // without using AIResults

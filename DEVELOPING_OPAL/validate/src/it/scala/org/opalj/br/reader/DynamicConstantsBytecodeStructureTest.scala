@@ -40,7 +40,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
             result should not be 'wasAborted
             // the layout of the instructions array is correct
             for {
-                pc ← instructions.indices
+                pc <- instructions.indices
                 if instructions(pc) != null
             } {
                 val modifiedByWide = pc != 0 && instructions(pc) == WIDE

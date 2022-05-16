@@ -75,9 +75,9 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
         // In all method bodies, look for calls to "toArray()" with "new ...[0]" argument,
         // on objects derived from the Collection classes.
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
-            pc ← body.matchTriple {
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
+            pc <- body.matchTriple {
                 case (ICONST_0,
                     _: ANEWARRAY,
                     VirtualMethodInvocationInstruction(targetType, "toArray", `toArrayDescriptor`)

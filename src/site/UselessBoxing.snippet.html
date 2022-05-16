@@ -24,9 +24,9 @@ val theMethods = Set(
 	"booleanValue","byteValue","charValue","shortValue",
 	"intValue","longValue","floatValue","doubleValue")
 for {
-    (classFile,_) ← project.par // for all classes (let's do it in parallel)
-    method @ MethodWithBody(body) ← classFile.methods // for all non-abstract, non-native methods
-    pc ← body.matchPair { // find a sequence of two instructions where...
+    (classFile,_) <- project.par // for all classes (let's do it in parallel)
+    method @ MethodWithBody(body) <- classFile.methods // for all non-abstract, non-native methods
+    pc <- body.matchPair { // find a sequence of two instructions where...
         case (
             INVOKESPECIAL(receiver1, _, _, TheArgument(parameterType: BaseType)),
             INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))

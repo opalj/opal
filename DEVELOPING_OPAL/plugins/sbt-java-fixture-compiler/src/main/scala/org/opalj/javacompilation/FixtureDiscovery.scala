@@ -30,11 +30,11 @@ object FixtureDiscovery {
     /** Finds and returns all test fixtures in the project. */
     def discoverFixtureTasks(): Seq[JavaFixtureCompilationTask] = {
       for {
-        sourceFolder ← projectsDir.listFiles
+        sourceFolder <- projectsDir.listFiles
         if sourceFolder.isDirectory
         configFile = sourceFolder.getAbsoluteFile / "compiler.config"
         (supportLibraries, defaultConfigurationOptions) = parseConfigFile(configFile)
-        configurationOptions ← defaultConfigurationOptions
+        configurationOptions <- defaultConfigurationOptions
       } yield {
 
         val fixture = TestFixture(sourceFolder)

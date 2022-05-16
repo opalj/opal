@@ -584,7 +584,7 @@ trait ConstraintsBetweenIntegerValues
         val cs = (constraints(pc).asScala.map { e =>
             val (v1, v2c) = e
             val jv2c = v2c.asScala
-            for ((v2, c) ← jv2c)
+            for ((v2, c) <- jv2c)
                 yield s"${valueToString(v1)} $c ${valueToString(v2)}"
         }).flatten
         cs.mkString("Constraints:\n\t", "\n\t", "")

@@ -64,7 +64,7 @@ object ThrowsExceptionAnalysis {
 
         val exceptionIssues: Chain[Issue] = {
 
-            for { (pc, instruction) ← exceptionThrowingInstructions } yield {
+            for { (pc, instruction) <- exceptionThrowingInstructions } yield {
                 val operands = operandsArray(pc)
                 val exceptions = {
                     var allExceptions: Set[domain.DomainSingleOriginReferenceValue] = {

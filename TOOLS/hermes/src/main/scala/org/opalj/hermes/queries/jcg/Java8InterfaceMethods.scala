@@ -47,13 +47,13 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation ← body collect {
+            pcAndInvocation <- body collect {
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   => iv
                 case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) => ii
                 case is: INVOKESTATIC if is.isInterface                                 => is

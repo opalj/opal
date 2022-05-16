@@ -119,7 +119,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
         //
         if (collectedExceptions.nonEmpty) {
             val body =
-                for ((exResource, exInstances) ← collectedExceptions.groupBy(e => e._1)) yield {
+                for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
                     val exDetails =
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex

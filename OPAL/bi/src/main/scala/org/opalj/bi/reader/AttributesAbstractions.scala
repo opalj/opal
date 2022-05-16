@@ -19,7 +19,6 @@ trait AttributesAbstractions {
     type Attribute >: Null <: AnyRef
     implicit val attributeType: ClassTag[Attribute] // TODO: Replace in Scala 3 with `type Attribute: ClassTag`
 
-
     type Attributes = ArraySeq[Attribute]
 
 }

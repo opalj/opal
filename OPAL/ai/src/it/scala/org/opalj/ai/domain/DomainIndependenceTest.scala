@@ -153,9 +153,9 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
         val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         for {
-            (classFile, source) ← org.opalj.br.reader.readJREClassFiles().par
-            method ← classFile.methods
-            body ← method.body
+            (classFile, source) <- org.opalj.br.reader.readJREClassFiles().par
+            method <- classFile.methods
+            body <- method.body
         } {
             def TheAI() = new InstructionCountBoundedAI[Domain](body)
 

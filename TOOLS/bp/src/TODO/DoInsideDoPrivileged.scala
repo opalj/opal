@@ -49,12 +49,12 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
         // privilegedExceptionAction, look for methods that call setAccessible() on
         // java/lang/reflect/{Field|Method}.
         for {
-            classFile ← project.allProjectClassFiles
+            classFile <- project.allProjectClassFiles
             if !classFile.interfaceTypes.contains(PriviledgedActionType) &&
                 !classFile.interfaceTypes.contains(PriviledgedExceptionActionType)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             (_, INVOKEVIRTUAL(ReflectFieldType | ReflectMethodType,
-                "setAccessible", _)) ← body.associateWithIndex
+                "setAccessible", _)) <- body.associateWithIndex
         } yield {
             MethodBasedReport(
                 project.source(classFile.thisType),
