@@ -17,7 +17,7 @@ import scala.collection.immutable.ArraySeq
 class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
     behavior of "LabeledInstructionsTest"
 
-    val label = InstructionLabel('TestLabel)
+    val label = InstructionLabel(Symbol("TestLabel"))
     val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, InstructionLabel => LabeledSimpleConditionalBranchInstruction)] = {
         List(
             IFEQ(label) -> LabeledIFEQ,
@@ -85,12 +85,12 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
             assert(JSR_W(label).resolveJumpTargets(2, Map(label -> 44)).branchoffset == 42)
         }
 
-    val table = ArraySeq(InstructionLabel('two), InstructionLabel('three))
+    val table = ArraySeq(InstructionLabel(Symbol("two")), InstructionLabel(Symbol("three")))
     val lookupTable = ArraySeq.from[(Int, InstructionLabel)]((2 to 3).iterator zip table.iterator).take(2)
     val labelsMap = Map[InstructionLabel, Int](
         label -> 43,
-        InstructionLabel('two) -> 44,
-        InstructionLabel('three) -> 45
+        InstructionLabel(Symbol("two")) -> 44,
+        InstructionLabel(Symbol("three")) -> 45
     )
 
     "the convenience factories of CompoundConditionalBranchInstruction" should

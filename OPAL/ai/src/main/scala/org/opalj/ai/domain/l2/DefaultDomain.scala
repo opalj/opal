@@ -20,9 +20,8 @@ class DefaultDomain[Source](
 
     type CalledMethodDomain = ChildDefaultDomain[Source]
 
-    def this(project: Project[Source], method: Method) {
+    def this(project: Project[Source], method: Method) =
         this(project, method, 256, 2)
-    }
 
     final val coordinatingDomain = new CoordinatingValuesDomain(project)
 
@@ -42,8 +41,8 @@ class DefaultDomain[Source](
     // hence, before the first usage of the CalledMethodsStore by the AI)
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
-            localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) =>
-                if (n ne null) n :&: l else l)
+            localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
+                if (n ne null) n :: l else l)
         CalledMethodsStore(
             coordinatingDomain, callingDomain.frequentEvaluationWarningLevel
         )(

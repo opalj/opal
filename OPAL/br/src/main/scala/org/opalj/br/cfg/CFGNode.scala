@@ -35,7 +35,7 @@ trait CFGNode extends Node {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors += predecessor
     }
-    def addPredecessors(predecessor: TraversableOnce[CFGNode]): Unit = {
+    def addPredecessors(predecessor: IterableOnce[CFGNode]): Unit = {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors ++= predecessor
     }

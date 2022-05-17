@@ -3,8 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.{Map => SomeMap}
-import scala.collection.{Set => SomeSet}
+import scala.collection.{mutable, Map as SomeMap, Set as SomeSet}
 import com.typesafe.config.Config
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -1013,7 +1012,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
         // of the set of methods (vs. using a very generic approach)!
 
         val declaringClassType = declaringType.asObjectType
-        var methods = SomeSet.empty[Method]
+        var methods = mutable.Set.empty[Method]
 
         val initialMethodsOption = instanceMethods.get(declaringClassType)
         if (initialMethodsOption.isEmpty)
@@ -1105,7 +1104,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
             mdcOption match {
                 case Some(mdc) if !mdc.method.isPrivate =>
                     if (methods.isEmpty) {
-                        methods = overriddenBy(mdc.method)
+                        methods = mutable.Set.from(overriddenBy(mdc.method))
                     } else {
                         methods ++= overriddenBy(mdc.method)
                     }
@@ -1160,11 +1159,11 @@ object ProjectLike {
                         "finding the maximally specific superinterface methods failed: "+
                             s"${superinterfaceType.toJava} is not an interface and ignored"
                     )
-                    (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
+                    (analyzedSuperinterfaceTypes unionUIDSet superinterfaceTypes + superinterfaceType, Set.empty)
                 } else {
                     classFile.findMethod(name, descriptor) match {
                         case Some(method) if !method.isPrivate && !method.isStatic =>
-                            val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
+                            val analyzedTypes = newAnalyzedSuperinterfaceTypes unionUIDSet superinterfaceTypes
                             (analyzedTypes, Set(method))
 
                         case _ /* None OR "the method was either private or static" */ =>
@@ -1187,7 +1186,7 @@ object ProjectLike {
                 }
 
             case None =>
-                (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
+                (analyzedSuperinterfaceTypes unionUIDSet superinterfaceTypes + superinterfaceType, Set.empty)
         }
     }
 

@@ -199,7 +199,8 @@ class CodePropertiesTest extends AnyFunSuite {
             BaseConfig
                 .withValue(logOptimizationsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE))
                 .withValue(optimizationConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
-        class Reader extends { override val config = theConfig } with Java9Framework {
+        class Reader extends Java9Framework {
+            override val config = theConfig
             override def loadsInterfacesOnly: Boolean = false
         }
         val reader = new Reader()

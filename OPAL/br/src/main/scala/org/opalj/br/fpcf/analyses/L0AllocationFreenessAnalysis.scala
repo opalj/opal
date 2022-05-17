@@ -266,7 +266,7 @@ object EagerL0AllocationFreenessAnalysis
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(p)
-        val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods.toIterator.collect {
+        val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods.iterator.collect {
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined => dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineAllocationFreeness)

@@ -5,6 +5,8 @@ package reader
 
 import org.opalj.bi.reader.LocalVariableTable_attributeReader
 
+import scala.reflect.{ClassTag, classTag}
+
 /**
  * The factory methods to create local variable tables and their entries.
  *
@@ -17,6 +19,7 @@ trait LocalVariableTable_attributeBinding
 
     type LocalVariableTable_attribute = br.LocalVariableTable
     type LocalVariableTableEntry = br.LocalVariable
+    override implicit val localVariableTableEntryType: ClassTag[LocalVariable] = classTag[LocalVariableTableEntry]
 
     override def LocalVariableTableEntry(
         cp:               Constant_Pool,

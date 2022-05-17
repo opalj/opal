@@ -176,11 +176,11 @@ class LBFieldValuesAnalysis private[analyses] (
 
         def this(
             classFile:      ClassFile,
-            relevantFields: TraversableOnce[Field],
+            relevantFields: IterableOnce[Field],
             dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
-        ) {
+        ) = {
             this(classFile, dependees)
-            fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ -> None).toMap
+            fieldInformation = relevantFields.iterator.map[(Field, Option[DomainValue])](_ -> None).toMap
         }
 
         final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties

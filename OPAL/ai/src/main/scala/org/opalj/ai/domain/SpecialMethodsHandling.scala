@@ -3,7 +3,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.:&:
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
@@ -52,7 +51,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         // way. Hence, the exceptions are fresh, the type is precise and the value is properly
         // initialized in a well-defined(fixed) manner.
 
-        val length :&: destPos :&: dest :&: sourcePos :&: source :&: _ = operands
+        val length :: destPos :: dest :: sourcePos :: source :: _ = operands
         val sourceIsNull = refIsNull(pc, source)
         val destIsNull = refIsNull(pc, dest)
         if (sourceIsNull.isYes || destIsNull.isYes) {

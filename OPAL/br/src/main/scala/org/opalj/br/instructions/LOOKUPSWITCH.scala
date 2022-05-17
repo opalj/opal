@@ -122,9 +122,9 @@ case class LOOKUPSWITCH(
     override def toString(pc: Int): String = {
         "LOOKUPSWITCH("+
             npairs.iterator.
-            map[String](p => p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).
+            map[String](p => s"${p._1}=${pc + p._2}${if (p._2 >= 0) "↓" else "↑"}").
             mkString(",")+
-            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+
+            s"; ifNoMatch=${(defaultOffset + pc)}${if (defaultOffset >= 0) "↓" else "↑"}" +
             ")"
     }
 }
@@ -167,8 +167,8 @@ case class LabeledLOOKUPSWITCH(
 
     def caseValues: Iterator[Int] = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: Iterator[InstructionLabel] = {
-        npairs.iterator.map[InstructionLabel](_._2) ++ Iterator(defaultBranchTarget)
+    override def branchTargets: Iterable[InstructionLabel] = {
+        npairs.view.map[InstructionLabel](_._2) ++ Iterable(defaultBranchTarget)
     }
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
@@ -189,7 +189,7 @@ case class LabeledLOOKUPSWITCH(
 
     override def toString(pc: Int): String = {
         npairs.iterator.
-            map(p => p._1+"="+p._2).
+            map(p => s"${p._1}=${p._2}").
             mkString("LOOKUPSWITCH(", ",", s"; ifNoMatch=$defaultBranchTarget)")
     }
 }

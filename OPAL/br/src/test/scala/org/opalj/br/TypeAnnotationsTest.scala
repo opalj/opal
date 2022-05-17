@@ -59,7 +59,7 @@ private object TypeAnnotationsTest {
 
     val project = {
         val testResources = locateTestResources("type_annotations.jar", "bi")
-        Project(ClassFiles(testResources), Traversable.empty, true)
+        Project(ClassFiles(testResources), Iterable.empty, true)
     }
 
     //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/RITypeAnnotationUser.class

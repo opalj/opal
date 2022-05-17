@@ -6,8 +6,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import scala.util.control.ControlThrowable
-import org.opalj.collection.immutable.Naught
 import org.opalj.bi.TestResources.locateTestResources
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * @author Michael Eichberg
@@ -73,7 +74,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("that findField on a class without fields does not fail") {
         quicksort.fields should be(empty)
-        quicksort.findField("DoesNotExist") should be(Naught)
+        quicksort.findField("DoesNotExist") should be(List.empty)
     }
 
     test("that findField finds all fields") {
@@ -91,11 +92,11 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
 
-        boundedBuffer.findField("BUFFER") should be(Naught)
-        boundedBuffer.findField("firsT") should be(Naught)
-        boundedBuffer.findField("lAst") should be(Naught)
-        boundedBuffer.findField("Size") should be(Naught)
-        boundedBuffer.findField("AnumberInBuffers") should be(Naught)
+        boundedBuffer.findField("BUFFER") should be(List.empty)
+        boundedBuffer.findField("firsT") should be(List.empty)
+        boundedBuffer.findField("lAst") should be(List.empty)
+        boundedBuffer.findField("Size") should be(List.empty)
+        boundedBuffer.findField("AnumberInBuffers") should be(List.empty)
     }
 
     val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")

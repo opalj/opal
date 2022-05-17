@@ -4,10 +4,8 @@ package br
 package reader
 
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
-
+import scala.reflect.{ClassTag, classTag}
 import scala.collection.mutable
-
 import org.opalj.bi.reader.Constant_PoolReader
 
 /**
@@ -35,7 +33,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
     type Constant_Pool_Entry = cp.Constant_Pool_Entry
-    val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
+    override implicit val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = classTag[Constant_Pool_Entry]
 
     type CONSTANT_Class_info = cp.CONSTANT_Class_info
     type CONSTANT_Double_info = cp.CONSTANT_Double_info

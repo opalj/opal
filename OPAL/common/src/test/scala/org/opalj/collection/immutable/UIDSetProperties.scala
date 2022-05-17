@@ -82,7 +82,7 @@ object UIDSetProperties extends Properties("UIDSet") {
         val ab: Set[SUID] = a.map(SUID.apply) ++ b.map(SUID.apply)
         val usa: UIDSet[SUID] = EmptyUIDSet ++ a.map(SUID.apply)
         val usb: UIDSet[SUID] = EmptyUIDSet ++ b.map(SUID.apply)
-        val usab = usa ++ usb
+        val usab = usa unionUIDSet usb
         (ab.size == usab.size) :| "size" &&
             ab.forall(usab.contains) :| "created set contains all values" &&
             usab.forall(ab.contains) :| "created set only contains added values"
@@ -169,7 +169,7 @@ object UIDSetProperties extends Properties("UIDSet") {
     }
 
     property("findById") = forAll { (s: Set[Int], e: Set[Int]) =>
-        val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq: _*)
+        val us = toSUIDSet(s) unionUIDSet UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq: _*)
         classify(us.size > 0, "non-empty set") {
             e.forall(v => us.find(_.id == v) == us.findById(v))
         }

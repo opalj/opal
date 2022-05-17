@@ -81,6 +81,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 Result(t, thisUB)
                             else
                                 InterimResult(t, thisLB, thisUB, Set(eps), c)
+
+                        case _ => throw new MatchError(eps) // TODO: Pattern match not exhaustive
                     }
                 }
             }

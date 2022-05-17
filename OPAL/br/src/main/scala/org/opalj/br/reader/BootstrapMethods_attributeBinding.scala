@@ -5,6 +5,8 @@ package reader
 
 import org.opalj.bi.reader.BootstrapMethods_attributeReader
 
+import scala.reflect.classTag
+
 /**
  * Final bindings and factory methods for the ''BoostrapMethods'' attribute.
  *
@@ -18,8 +20,10 @@ trait BootstrapMethods_attributeBinding
     type BootstrapMethods_attribute = BootstrapMethodTable
 
     type BootstrapMethod = br.BootstrapMethod
+    override implicit val bootstrapMethodType = classTag[BootstrapMethod]
 
     type BootstrapArgument = br.BootstrapArgument
+    override implicit val bootstrapArgumentType = classTag[BootstrapArgument]
 
     def BootstrapMethods_attribute(
         cp:                  Constant_Pool,

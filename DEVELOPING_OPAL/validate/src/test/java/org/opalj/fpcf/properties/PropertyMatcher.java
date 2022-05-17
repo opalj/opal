@@ -2,7 +2,6 @@
 package org.opalj.fpcf.properties;
 
 import scala.Option;
-import scala.collection.Traversable;
 import scala.collection.immutable.Set;
 
 import org.opalj.fpcf.Property;
@@ -51,6 +50,6 @@ public interface PropertyMatcher {
      */
     Option<String> validateProperty(
             Project<?> p, Set<ObjectType> as,
-            Object entity, AnnotationLike a, Traversable<Property> properties);
+            Object entity, AnnotationLike a, Iterable<Property> properties);
 
 }

@@ -106,7 +106,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 }
             },
             basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).
-                map(bb => bb._1+":"+bb._2.toString+" predecessors: "+bb._2.predecessors.mkString(", ")).
+                map(bb => s"${bb._1}:${bb._2.toString} predecessors: ${bb._2.predecessors.mkString(", ")}").
                 mkString("unexpected predecessors:\n\t", "\n\t", s"\ncode:$code")
         )
 

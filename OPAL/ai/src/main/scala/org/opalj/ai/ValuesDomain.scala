@@ -2,7 +2,6 @@
 package org.opalj
 package ai
 
-import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 import org.opalj.value.IsIllegalValue

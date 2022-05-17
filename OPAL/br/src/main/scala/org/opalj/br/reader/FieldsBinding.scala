@@ -5,6 +5,8 @@ package reader
 
 import org.opalj.bi.reader.FieldsReader
 
+import scala.reflect.{ClassTag, classTag}
+
 /**
  *
  * @author Michael Eichberg
@@ -12,6 +14,7 @@ import org.opalj.bi.reader.FieldsReader
 trait FieldsBinding extends FieldsReader { this: ConstantPoolBinding with AttributeBinding =>
 
     type Field_Info = br.Field
+    override implicit val fieldInfoType: ClassTag[Field_Info] = classTag[Field_Info]
 
     def Field_Info(
         cp:               Constant_Pool,

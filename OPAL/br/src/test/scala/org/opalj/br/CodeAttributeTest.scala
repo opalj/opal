@@ -12,7 +12,6 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.collection.immutable.Naught
 
 /**
  * Tests some of the core methods of the Code attribute.
@@ -39,24 +38,24 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect { case DUP => DUP } should equal(Seq(PCAndAnyRef(31, DUP)))
+        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(31, DUP)))
 
-        codeOfPut collect {
+        codeOfPut collect ({
             case ICONST_1 => ICONST_1
-        } should equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
+        }: PartialFunction[Instruction, Instruction]) should equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
 
-        codeOfPut collect {
+        codeOfPut collect ({
             case GETFIELD(declaringClass, "last", _) => declaringClass
-        } should equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
+        }: PartialFunction[Instruction, ObjectType]) should equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
-        codeOfPut collect {
+        codeOfPut collect ({
             case RETURN => "The very last instruction."
-        } should equal(Seq(PCAndAnyRef(54, "The very last instruction.")))
+        }: PartialFunction[Instruction, String]) should equal(Seq(PCAndAnyRef(54, "The very last instruction.")))
 
     }
 
     it should "be able to correctly handle the case if no instruction is matched" in {
-        codeOfPut collect { case DUP2_X2 => DUP2_X2 } should equal(Seq())
+        codeOfPut collect ({ case DUP2_X2 => DUP2_X2 }: PartialFunction[Instruction, Instruction]) should equal(Seq())
     }
 
     import org.opalj.br.CodeAttributeTest._
@@ -74,7 +73,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     it should "be able to handle the case where no instruction is found" in {
         codeOfPut collectWithIndex {
             case i: PCAndInstruction if i.instruction == IMUL => i.pc
-        } should equal(Naught)
+        } should equal(List.empty)
     }
 
     behavior of "the \"Code\" attribute's collectFirstWithIndex method"
@@ -118,7 +117,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's associateWithIndex method"
 
     it should "be able to associate all instructions with the correct index" in {
-        val instructions: Seq[PCAndInstruction] = for { i <- codeOfGet } yield i
+        val instructions: Seq[PCAndInstruction] = codeOfGet.toSeq
         instructions should be(
             Seq(
                 PCAndInstruction(0, ALOAD_0),
@@ -175,7 +174,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's localVariableTable method"
 
     it should "return the local variable table" in {
-        codeOfPut.localVariableTable should be('defined)
+        codeOfPut.localVariableTable should be(Symbol("defined"))
     }
 
     behavior of "the \"Code\" attribute's localVariableAt method"
@@ -227,7 +226,7 @@ private object CodeAttributeTest {
         Project(
             ClassFiles(locateTestResources("code.jar", "bi")) ++
                 ClassFiles(locateTestResources("controlflow.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             true
         )
 

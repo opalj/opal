@@ -51,7 +51,7 @@ class Operands(
             case smi: StackManagementInstruction =>
                 val representation =
                     <span class="keyword">{ smi.mnemonic } </span> ::
-                        (operands.map(op => <span class="value">{ op } </span>).to[List])
+                        (operands.map(op => <span class="value">{ op } </span>))
                 representation
 
             case IINC(lvIndex, constValue) =>

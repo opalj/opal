@@ -4,8 +4,9 @@ package br
 package reader
 
 import org.scalatest.funsuite.AnyFunSuite
-
 import org.opalj.bi.TestResources.locateTestResources
+
+import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
 /**
  * Tests the parsing and reconstructing of signatures.

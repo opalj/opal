@@ -254,7 +254,7 @@ trait ConcreteArrayValues
                         // => This array and the other array have a corresponding
                         //    abstract representation (w.r.t. the next abstraction level!)
                         //    but we still need to drop the concrete information
-                        val abstractValue = ArrayValue(origin, No, true, theUpperTypeBound, nextRefId)
+                        val abstractValue = ArrayValue(origin, No, true, theUpperTypeBound, nextRefId())
                         StructuralUpdate(abstractValue)
                     } else {
                         answer

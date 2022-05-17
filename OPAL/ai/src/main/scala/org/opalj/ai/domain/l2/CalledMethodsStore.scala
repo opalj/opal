@@ -68,8 +68,8 @@ trait CalledMethodsStore { rootStore =>
                         val operandsIterator = adaptedOperands.iterator
                         var abstractsOver = true
                         while (previousOperandsIterator.hasNext && abstractsOver) {
-                            val previousOperand = previousOperandsIterator.next
-                            val operand = operandsIterator.next
+                            val previousOperand = previousOperandsIterator.next()
+                            val operand = operandsIterator.next()
                             abstractsOver = previousOperand.abstractsOver(operand)
                         }
                         if (abstractsOver)

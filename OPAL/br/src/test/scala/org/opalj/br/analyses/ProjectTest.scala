@@ -32,19 +32,19 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     import project.isLibraryType
 
     it should "find the class methods.a.Super" in {
-        classFile(SuperType) should be('Defined)
+        classFile(SuperType) shouldBe defined
     }
 
     it should "find the class methods.b.AbstractB" in {
-        classFile(AbstractB) should be('Defined)
+        classFile(AbstractB) shouldBe defined
     }
 
     it should "find the library class deprecated.DeprecatedByAnnotation" in {
-        classFile(DeprecatedByAnnotation) should be('Defined)
+        classFile(DeprecatedByAnnotation) shouldBe defined
     }
 
     it should "not find the class java.lang.Object" in {
-        classFile(ObjectType.Object) should not be ('Defined)
+        classFile(ObjectType.Object) should not be defined
     }
 
     it should "identify the class java.lang.Object as belonging to the library" in {
@@ -64,9 +64,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     behavior of "Project's extend method"
 
     it should "create a new Project that contains all class files" in {
-        overallProject.source(SuperType) should be('defined)
-        overallProject.source(DeprecatedByAnnotation) should be('defined)
-        overallProject.source(ObjectType("code/Quicksort")) should be('defined)
+        overallProject.source(SuperType) shouldBe defined
+        overallProject.source(DeprecatedByAnnotation) shouldBe defined
+        overallProject.source(ObjectType("code/Quicksort")) shouldBe defined
     }
 
     it should "create a Project with the correct classification for the class files" in {
@@ -82,13 +82,13 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     it should "find a public method" in {
         resolveMethodReference(
             SuperType, "publicMethod", MethodDescriptor("()V")
-        ) should be('Defined)
+        ) shouldBe defined
     }
 
     it should "find a private method" in {
         resolveMethodReference(
             SuperType, "privateMethod", MethodDescriptor("()V")
-        ) should be('Defined)
+        ) shouldBe defined
     }
 
     it should "not find a method that does not exist" in {
@@ -98,27 +98,27 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     it should "find a method with default visibility" in {
         resolveMethodReference(
             SuperType, "defaultVisibilityMethod", MethodDescriptor("()V")
-        ) should be('Defined)
+        ) shouldBe defined
     }
 
     it should "find the super class' static method staticDefaultVisibilityMethod" in {
         // let's make sure the method exists...
         resolveMethodReference(
             SuperType, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
-        ) should be('Defined)
+        ) shouldBe defined
         // let's make sure the class is a super class
         project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(true)
 
         // let's test the resolving
         resolveMethodReference(
             DirectSub, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
-        ) should be('Defined)
+        ) shouldBe defined
     }
 
     it should "not find Object's toString method, because we only have a partial view of the project" in {
         resolveMethodReference(
             DirectSub, "toString", MethodDescriptor("()Ljava/lang/String;")
-        ) should be(Symbol("Empty"))
+        ) shouldBe empty
     }
 
     it should "find a method declared by a directly implemented interface" in {
@@ -126,7 +126,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             AbstractB, "someSubMethod", MethodDescriptor("()V"),
             forceLookupInSuperinterfacesOnFailure = true
         )
-        r should be('Defined)
+        r shouldBe defined
         assert(r.get.classFile.thisType === ObjectType("methods/b/SubI"))
     }
 
@@ -135,7 +135,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             AbstractB, "someMethod", MethodDescriptor("()V"),
             forceLookupInSuperinterfacesOnFailure = true
         )
-        r should be('Defined)
+        r shouldBe defined
         assert(r.get.classFile.thisType === ObjectType("methods/b/SuperI"))
     }
 
@@ -321,7 +321,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     {
         val fieldsProject = {
             val classFiles = ClassFiles(locateTestResources("fields-g=none-5.jar", "bi"))
-            Project(classFiles, Traversable.empty, true)
+            Project(classFiles, Iterable.empty, true)
         }
         import fieldsProject.classFile
         import fieldsProject.resolveFieldReference
@@ -342,8 +342,6 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         //val SubSubClass = classFile(SubSubType).get
 
         behavior of "a Project's methods to resolve field references"
-
-        import fieldsProject.resolveFieldReference
 
         it should "correctly resolve a reference to a static field in a superclass" in {
             resolveFieldReference(SuperType, "x", IntegerType) should be(
@@ -402,7 +400,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         val methodsProject = {
             val classFiles = ClassFiles(ProjectTest.methodsArchive)
-            Project(classFiles, Traversable.empty, true)
+            Project(classFiles, Iterable.empty, true)
         }
 
         val superI = ObjectType("methods/b/SuperI")
@@ -426,9 +424,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
-                'name("publicMethod"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
-                'declaringClassFile(methodsProject.classFile(ObjectType("methods/b/DirectSub")).get)
+                Symbol("name")("publicMethod"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid),
+                Symbol("declaringClassFile")(methodsProject.classFile(ObjectType("methods/b/DirectSub")).get)
             )
         }
 
@@ -444,9 +442,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
-                'name("originallyPrivateMethod"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
-                'declaringClassFile(methodsProject.classFile(classType).get)
+                Symbol("name")("originallyPrivateMethod"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid),
+                Symbol("declaringClassFile")(methodsProject.classFile(classType).get)
             )
         }
 
@@ -462,9 +460,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
-                'name("originallyPrivateMethod"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
-                'declaringClassFile(methodsProject.classFile(classType).get)
+                Symbol("name")("originallyPrivateMethod"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid),
+                Symbol("declaringClassFile")(methodsProject.classFile(classType).get)
             )
         }
 
@@ -493,9 +491,9 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
-                'name("originallyPrivateMethod"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
-                'declaringClassFile(methodsProject.classFile(classType).get)
+                Symbol("name")("originallyPrivateMethod"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid),
+                Symbol("declaringClassFile")(methodsProject.classFile(classType).get)
             )
         }
     }
@@ -520,8 +518,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
-                'name("nestHostMethod"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+                Symbol("name")("nestHostMethod"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid)
             )
         }
 
@@ -536,8 +534,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
-                'name("nestMember1Method"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+                Symbol("name")("nestMember1Method"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid)
             )
         }
 
@@ -552,8 +550,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.hasValue should be(true)
             implementingMethods.value should have(
-                'name("nestMember1Method"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+                Symbol("name")("nestMember1Method"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid)
             )
         }
 
@@ -618,8 +616,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
-                'name("nestHostMethod"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+                Symbol("name")("nestHostMethod"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid)
             )
         }
 
@@ -634,8 +632,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
-                'name("nestMember1Method"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+                Symbol("name")("nestMember1Method"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid)
             )
         }
 
@@ -650,8 +648,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
-                'name("nestMember1Method"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+                Symbol("name")("nestMember1Method"),
+                Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid)
             )
         }
 
@@ -742,11 +740,11 @@ private object ProjectTest {
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty, true)
+    val opalProject = Project(ClassFiles(opal), Iterable.empty, true)
 
     val java11nestsArchive =
         locateTestResources("java11nests-g-11-parameters-genericsignature", "bi")
-    val java11nestsProject = Project(ClassFiles(java11nestsArchive), Traversable.empty, true)
+    val java11nestsProject = Project(ClassFiles(java11nestsArchive), Iterable.empty, true)
 
     //
     //

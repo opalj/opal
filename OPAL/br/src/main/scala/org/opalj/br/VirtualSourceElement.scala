@@ -47,7 +47,7 @@ sealed abstract class VirtualSourceElement
 object VirtualSourceElement {
 
     def asVirtualSourceElements(
-        classFiles:     Traversable[ClassFile],
+        classFiles:     Iterable[ClassFile],
         includeMethods: Boolean                = true,
         includeFields:  Boolean                = true
     ): Set[VirtualSourceElement] = {

@@ -96,7 +96,7 @@ package object reader {
         implicit
         reader:     ClassFileBinding = new Java11FrameworkWithCaching(cache),
         logContext: LogContext       = GlobalLogContext
-    ): Traversable[(ClassFile, URL)] = {
+    ): Iterable[(ClassFile, URL)] = {
         val classFiles = reader.ClassFiles(RTJar)
         if (classFiles.isEmpty) {
             OPALLogger.error("project setup", s"loading the JRE ($JRELibraryFolder) failed")

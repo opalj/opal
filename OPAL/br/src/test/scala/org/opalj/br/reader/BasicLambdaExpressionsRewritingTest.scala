@@ -46,7 +46,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         for {
             method <- classFile.findMethod(name)
             body <- method.body
-            factoryCall <- body.iterator.collect { case i: INVOKESTATIC => i }
+            factoryCall <- body.instructionIterator.collect { case i: INVOKESTATIC => i }
             if factoryCall.declaringClass.fqn.matches(InvokedynamicRewriting.LambdaNameRegEx)
         } {
             val annotations = method.runtimeVisibleAnnotations
@@ -316,17 +316,17 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
             withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).
             withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
-        object Framework extends {
-            override val config = testConfig
-        } with Java8FrameworkWithInvokedynamicSupportAndCaching(
+        object Framework extends Java8FrameworkWithInvokedynamicSupportAndCaching(
             new BytecodeInstructionsCache
-        )
+        ) {
+          override val config = testConfig
+        }
 
         val project = Project(
             Framework.ClassFiles(lambda18TestResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
             libraryClassFilesAreInterfacesOnly = true,
-            Traversable.empty,
+            Iterable.empty,
             Project.defaultHandlerForInconsistentProjects,
             testConfig,
             logContext

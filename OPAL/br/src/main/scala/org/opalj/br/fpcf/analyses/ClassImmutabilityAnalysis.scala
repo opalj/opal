@@ -269,7 +269,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         if (hasMutableOrConditionallyImmutableField) {
             maxLocalImmutability = ImmutableContainer
         } else {
-            val fieldTypesWithUndecidedMutability: Traversable[EOptionP[Entity, Property]] =
+            val fieldTypesWithUndecidedMutability: Iterable[EOptionP[Entity, Property]] =
                 // Recall: we don't have fields which are mutable or conditionally immutable
                 fieldTypesImmutability.filterNot { eOptP =>
                     eOptP.hasUBP && eOptP.ub == ImmutableType && eOptP.isFinal
@@ -341,6 +341,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 case UBP(_: FinalField) => // no information about field mutability
 
+                case _ => throw new MatchError(someEPS) // TODO: Pattern match not exhaustive
             }
 
             if (someEPS.isRefinable) {
@@ -450,7 +451,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         // 3.
         // Compute the initial set of classes for which we want to determine the mutability.
         var cfs: List[ClassFile] = Nil
-        classHierarchy.directSubclassesOf(ObjectType.Object).toIterator.
+        classHierarchy.directSubclassesOf(ObjectType.Object).iterator.
             map(ot => (ot, project.classFile(ot))).
             foreach {
                 case (_, Some(cf)) => cfs ::= cf

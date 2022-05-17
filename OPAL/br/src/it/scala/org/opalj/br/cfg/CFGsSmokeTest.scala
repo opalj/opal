@@ -115,7 +115,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
             // check the correspondence of "instruction.nextInstruction" and the information
             // contained in the cfg
             code.iterate { (pc, instruction) =>
-                val nextInstructions = instruction.nextInstructions(pc).toIntTrieSet
+                val nextInstructions = IntTrieSet(instruction.nextInstructions(pc))
                 if (nextInstructions.isEmpty) {
                     val successors = cfg.bb(pc).successors
                     if (successors.exists(succBB => succBB.isBasicBlock))
@@ -185,7 +185,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
     describe("using a method's code") {
 
         it(s"it should be possible to compute the CFG for all methods of the JDK ($JRELibraryFolder)") {
-            analyzeProject(TestSupport.createJREProject)
+            analyzeProject(TestSupport.createJREProject())
         }
 
         allBITestJARs() foreach { jarFile =>

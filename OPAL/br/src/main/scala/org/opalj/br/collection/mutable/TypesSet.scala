@@ -40,9 +40,9 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
         }
     }
 
-    def ++=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { += }
+    def ++=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { += }
 
-    def ++<:=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { +<:= }
+    def ++<:=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { +<:= }
 
     /**
      * Adds the given upper type bound to this `TypesSet` unless a supertype

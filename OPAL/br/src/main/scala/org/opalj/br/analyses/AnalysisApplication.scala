@@ -5,12 +5,9 @@ package analyses
 
 import java.net.URL
 import java.io.File
-
 import scala.util.control.ControlThrowable
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.info
@@ -18,6 +15,8 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.LogMessage
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -73,7 +72,7 @@ trait AnalysisApplication {
      * issues if it can't validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
-    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         if (parameters.isEmpty) Nil else parameters.map("unknown parameter: "+_)
     }
 
@@ -172,7 +171,7 @@ trait AnalysisApplication {
 
         def verifyFiles(filenames: IndexedSeq[String]): Seq[File] = filenames.flatMap(verifyFile)
 
-        if (cp.isEmpty) cp = Array(System.getProperty("user.dir"))
+        if (cp.isEmpty) cp = ArraySeq.unsafeWrapArray(Array(System.getProperty("user.dir")))
         info("project configuration", s"the classpath is ${cp.mkString}")
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
@@ -279,7 +278,7 @@ trait AnalysisApplication {
                 classFiles,
                 libraryClassFiles,
                 libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
-                Traversable.empty
+                Iterable.empty
             )(config = configuredConfig)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 

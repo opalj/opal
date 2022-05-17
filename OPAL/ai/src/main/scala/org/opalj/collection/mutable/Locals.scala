@@ -5,6 +5,7 @@ package mutable
 
 import scala.reflect.ClassTag
 import scala.collection.immutable.Vector
+import scala.collection.mutable
 
 /**
  * '''THIS DATASTRUCTURE IS ONLY INTENDED TO BE USED BY THE AI FRAMEWORK, DON'T USE IT OTHERWISE.'''
@@ -149,7 +150,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
         None
     }
 
-    def indexOf(other: Object): Option[Int]
+    def indexOf(other: T): Option[Int]
 
     /**
      * Counts the number of '''non-null''' values that do not match the given
@@ -218,7 +219,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
     def zipWithIndex: Iterator[(T, Int)] = new Iterator[(T, Int)] {
         var index = 0
         def hasNext = index < Locals.this.size
-        def next = {
+        def next() = {
             val currentValue = Locals.this.apply(index)
             val currentIndex = index
             index += 1
@@ -229,7 +230,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
     def zip(other: Locals[T]): Iterator[(T, T)] = new Iterator[(T, T)] {
         var index = 0
         def hasNext: Boolean = index < Locals.this.size
-        def next: (T, T) = {
+        def next(): (T, T) = {
             val thisValue = Locals.this.apply(index)
             val otherValue = other(index)
             index += 1
@@ -255,7 +256,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
     def iterator: Iterator[T] = new Iterator[T] {
         var index = 0
         def hasNext: Boolean = index < Locals.this.size
-        def next: T = {
+        def next(): T = {
             val currentValue = Locals.this.apply(index)
             index += 1
             currentValue
@@ -299,7 +300,7 @@ private[mutable] final object Locals0 extends Locals[Null] {
 
     final override val nonEmpty = false
 
-    override def indexOf(other: Object): Option[Int] = None
+    override def indexOf(other: Null): Option[Int] = None
 
     override def apply(index: Int): Nothing =
         throw new IndexOutOfBoundsException("there are no locals")
@@ -323,7 +324,7 @@ private[mutable] final object Locals0 extends Locals[Null] {
             this
         else
             // thrown to make the exception homogeneous
-            throw new ClassCastException(other+" cannot be cast to Locals0");
+            throw new ClassCastException(s"$other cannot be cast to Locals0");
     }
 
     override def foreach(f: Null => Unit): Unit = { /*nothing to do*/ }
@@ -395,7 +396,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         v
     }
 
-    override def indexOf(other: Object): Option[Int] = if (v eq other) Some(0) else None
+    override def indexOf(other: T): Option[Int] = if (v eq other) Some(0) else None
 
     override def set(index: Int, value: T): Unit = {
         // if (index != 0) throw new IndexOutOfBoundsException("invalid index("+index+")")
@@ -487,7 +488,7 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
         // }
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         if (v0 eq other) Some(0) else if (v1 eq other) Some(1) else None
 
     override def set(index: Int, value: T): Unit = {
@@ -604,7 +605,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
         }
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         if (v0 eq other) Some(0)
         else if (v1 eq other) Some(1)
         else if (v2 eq other) Some(2)
@@ -759,7 +760,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
         }
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         if (v0 eq other) Some(0)
         else if (v1 eq other) Some(1)
         else if (v2 eq other) Some(2)
@@ -923,7 +924,7 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
         if (index < 2) vs1(index) else vs2(index - 2)
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs1.indexOf(other).orElse(vs2.indexOf(other).map(_ + 2))
 
     override def set(index: Int, newValue: T): Unit = {
@@ -1039,7 +1040,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         if (index < 3) vs1(index) else vs2(index - 3)
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs1.indexOf(other).orElse(vs2.indexOf(other).map(_ + 3))
 
     override def set(index: Int, newValue: T): Unit = {
@@ -1153,7 +1154,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         if (index < 3) vs1(index) else vs2(index - 3)
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs1.indexOf(other).orElse(vs2.indexOf(other).map(_ + 3))
 
     override def set(index: Int, newValue: T): Unit = {
@@ -1274,7 +1275,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
         }
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs1.indexOf(other).
             orElse(vs2.indexOf(other).map(_ + 2)).
             orElse(vs3.indexOf(other).map(_ + 5))
@@ -1433,7 +1434,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         }
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs1.indexOf(other).
             orElse(vs2.indexOf(other).map(_ + 3)).
             orElse(vs3.indexOf(other).map(_ + 6))
@@ -1593,7 +1594,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
         }
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs1.indexOf(other).
             orElse(vs2.indexOf(other).map(_ + 4)).
             orElse(vs3.indexOf(other).map(_ + 7))
@@ -1751,7 +1752,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
         }
     }
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs1.indexOf(other).
             orElse(vs2.indexOf(other).map(_ + 4)).
             orElse(vs3.indexOf(other).map(_ + 7))
@@ -1900,12 +1901,11 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         final val vs12_N: Array[T]
 ) extends LocalsX[T] {
 
-    def this(size: Int) {
+    def this(size: Int) =
         this(
             new Locals11[T],
             new Array[T](size - 11)
         )
-    }
 
     final def size: Int = vs12_N.length + 11
 
@@ -1915,7 +1915,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         else
             vs12_N(index - 11)
 
-    override def indexOf(other: Object): Option[Int] =
+    override def indexOf(other: T): Option[Int] =
         vs11.indexOf(other).orElse {
             vs12_N.indexOf(other) match {
                 case -1 => None
@@ -1933,7 +1933,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
 
     override def update(f: (T) => T): Unit = {
         vs11.update(f)
-        vs12_N.transform(f)
+        new mutable.ArraySeq.ofRef(vs12_N).mapInPlace(f)
     }
 
     override def updated(index: Int, newValue: T): Locals12_N[T] = {

@@ -66,7 +66,7 @@ sealed abstract class UIDSet[T <: UID]
 
     def isSingletonSet: Boolean
 
-    def ++(es: UIDSet[T]): UIDSet[T]
+    def unionUIDSet(es: UIDSet[T]): UIDSet[T]
     def findById(id: Int): Option[T]
 
     /**
@@ -136,7 +136,7 @@ object UIDSet0 extends UIDSet[UID] {
     override def idSet: IntTrieSet = IntTrieSet.empty
     override def containsId(id: Int): Boolean = false
     override def isSingletonSet: Boolean = false
-    override def ++(es: UIDSet[UID]): UIDSet[UID] = es
+    override def unionUIDSet(es: UIDSet[UID]): UIDSet[UID] = es
     override def compare(that: UIDSet[UID]): SetRelation = {
         if (that.isEmpty) EqualSets else /* this is a */ StrictSubset
     }
@@ -186,7 +186,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     override def isSingletonSet: Boolean = true
     override def containsId(id: Int): Boolean = value.id == id
 
-    override def ++(es: UIDSet[T]): UIDSet[T] = {
+    override def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 
@@ -308,7 +308,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def isSingletonSet: Boolean = false
     override def containsId(id: Int): Boolean = value1.id == id || value2.id == id
 
-    def ++(es: UIDSet[T]): UIDSet[T] = {
+    def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 
@@ -444,7 +444,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     override def containsId(id: Int): Boolean = {
         value1.id == id || value2.id == id || value3.id == id
     }
-    override def ++(es: UIDSet[T]): UIDSet[T] = {
+    override def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 
@@ -721,7 +721,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
         None
     }
 
-    override def ++(es: UIDSet[T]): UIDSet[T] = {
+    override def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 

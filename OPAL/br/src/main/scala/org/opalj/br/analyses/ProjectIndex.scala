@@ -3,8 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.Set
-import scala.collection.Map
+import scala.collection.{Map, mutable}
 
 /**
  * An index that enables the efficient lookup of source elements (methods and fields)
@@ -53,13 +52,13 @@ class ProjectIndex private (
         def getMostOftenUsed(
             elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]
         ) = {
-            elementsWithSharedName.foldLeft((0, Set.empty[String])) { (c, n) =>
+            elementsWithSharedName.foldLeft((0, mutable.Set.empty[String])) { (c, n) =>
                 val nName = n._1
                 val nSize = n._2.size
                 if (c._1 < nSize)
-                    (nSize, Set(nName))
+                    (nSize, mutable.Set(nName))
                 else if (c._1 == nSize)
-                    (nSize, c._2 + n._1)
+                    (nSize, c._2.addOne(n._1))
                 else
                     c
             }

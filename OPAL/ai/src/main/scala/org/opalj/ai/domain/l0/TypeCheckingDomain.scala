@@ -46,9 +46,8 @@ final class TypeCheckingDomain(
     with DefaultExceptionsFactory
     with TheMethod {
 
-    def this(project: SomeProject, method: Method) {
+    def this(project: SomeProject, method: Method) =
         this(project.classHierarchy, method)
-    }
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue

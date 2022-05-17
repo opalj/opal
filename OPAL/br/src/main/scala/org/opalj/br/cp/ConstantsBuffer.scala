@@ -294,7 +294,7 @@ object ConstantsBuffer {
         val allLDC = for {
             method <- classFile.methods.iterator
             if method.body.isDefined
-            ldc <- method.body.get.iterator.collect { case ldc: LDC[_] => ldc }
+            ldc <- method.body.get.instructionIterator.collect { case ldc: LDC[_] => ldc }
         } yield {
             ldc
         }

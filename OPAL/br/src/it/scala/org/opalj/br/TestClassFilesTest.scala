@@ -5,16 +5,16 @@ package br
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.io.process
-import org.opalj.br.reader._
+import org.opalj.br.reader.*
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bytecode.JRELibraryFolder
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library

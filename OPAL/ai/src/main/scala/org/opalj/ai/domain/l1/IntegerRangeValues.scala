@@ -653,7 +653,7 @@ trait IntegerRangeValues
             // IMPROVE [IntegerRangeValues] handling of divisors that span values in the range[-X,+Y]
 
             case _ =>
-                genericResult
+                genericResult()
         }
     }
 

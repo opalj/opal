@@ -1115,6 +1115,9 @@ object IntTrieSet {
 
     def empty: IntTrieSet = EmptyIntTrieSet
 
+    def apply(data: IterableOnce[Int]): IntTrieSet =
+      data.iterator.foldLeft(empty)(_ + _)
+
     def apply(i1: Int): IntTrieSet = IntTrieSet1(i1)
 
     def apply(i1: Int, i2: Int): IntTrieSet = {

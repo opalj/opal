@@ -85,11 +85,11 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
     }
 
     def registerOnRegularControlFlowUpdater(f: DomainValue => DomainValue): Unit = {
-        onRegularControlFlow :&:= f
+        onRegularControlFlow ::= f
     }
 
     def registerOnExceptionalControlFlowUpdater(f: DomainValue => DomainValue): Unit = {
-        onExceptionalControlFlow :&:= f
+        onExceptionalControlFlow ::= f
     }
 
     /**

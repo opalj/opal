@@ -83,7 +83,7 @@ object SubtypeInformation {
         theInterfaceTypes: UIDSet[ObjectType],
         initialAllTypes:   UIDSet[ObjectType]
     ): SubtypeInformation = {
-        val theAllTypes = initialAllTypes ++ theClassTypes ++ theInterfaceTypes
+        val theAllTypes = initialAllTypes unionUIDSet theClassTypes unionUIDSet theInterfaceTypes
         new SubtypeInformation {
             final override val classTypes: UIDSet[ObjectType] = theClassTypes
             final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
@@ -139,7 +139,7 @@ object SubtypeInformation {
                 }
             }
         } else {
-            val theAllTypes = initialAllTypes ++ theClassTypes ++ theInterfaceTypes
+            val theAllTypes = initialAllTypes unionUIDSet theClassTypes unionUIDSet theInterfaceTypes
             new SubtypeInformation {
                 final override val classTypes: UIDSet[ObjectType] = theClassTypes
                 final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
@@ -259,7 +259,7 @@ object SupertypeInformation {
                     final override def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
                     final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
                     final override val allTypes: UIDSet[ObjectType] = {
-                        initialAllTypes + ObjectType.Object ++ theInterfaceTypes
+                        initialAllTypes + ObjectType.Object unionUIDSet theInterfaceTypes
                     }
                     final override def iterator: Iterator[ObjectType] = allTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {
@@ -279,7 +279,7 @@ object SupertypeInformation {
                     final override val classTypes: UIDSet[ObjectType] = theClassTypes
                     final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
                     final override val allTypes: UIDSet[ObjectType] = {
-                        initialAllTypes ++ classTypes ++ interfaceTypes
+                        initialAllTypes unionUIDSet classTypes unionUIDSet interfaceTypes
                     }
                     final override def iterator: Iterator[ObjectType] = allTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {

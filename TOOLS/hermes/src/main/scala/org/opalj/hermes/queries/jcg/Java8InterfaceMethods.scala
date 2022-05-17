@@ -161,7 +161,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
         val ch = project.classHierarchy
         var relevantInterfaces = ch.allSuperinterfacetypes(ot, true)
         ch.allSubclassTypes(ot, false).foreach { st =>
-            relevantInterfaces = relevantInterfaces ++ ch.allSuperinterfacetypes(st, false)
+            relevantInterfaces = relevantInterfaces unionUIDSet ch.allSuperinterfacetypes(st, false)
         }
 
         val isRelevant = relevantInterfaces.exists { si =>

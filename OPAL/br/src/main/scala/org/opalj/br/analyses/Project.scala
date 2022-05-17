@@ -11,12 +11,10 @@ import java.net.URL
 import java.util.Arrays.sort as sortArray
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
-import scala.collection.{Map, Set, SortedMap, immutable, mutable}
+import scala.collection.{Map, Set, immutable, mutable}
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
-import scala.collection.mutable.OpenHashMap
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.opalj.log.Error
@@ -44,6 +42,7 @@ import org.opalj.br.reader.Java17FrameworkWithDynamicRewritingAndCaching
 import org.opalj.br.reader.Java17LibraryFramework
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.{ClassTag, classTag}
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -282,7 +281,7 @@ class Project[Source] private (
 
         // our worklist/-set; it only contains those interface types for which
         // we have complete supertype information
-        val typesToProcess = classHierarchy.rootInterfaceTypes(ArrayStack.empty[ObjectType])
+        val typesToProcess = classHierarchy.rootInterfaceTypes(mutable.Stack.empty[ObjectType])
 
         // the given interface type is either not a functional interface or an interface
         // for which we have not enough information
@@ -674,7 +673,7 @@ class Project[Source] private (
     /**
      * The set of all method names of the given types.
      */
-    def methodNames(objectTypes: Traversable[ObjectType]): Set[String] = {
+    def methodNames(objectTypes: Iterable[ObjectType]): Set[String] = {
         objectTypes.flatMap(ot => classFile(ot)).flatMap(cf => cf.methods.map(m => m.name)).toSet
     }
 
@@ -699,7 +698,7 @@ class Project[Source] private (
      * @note This method's result is not cached.
      */
     def projectPackages: Set[String] = {
-        projectClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
+        projectClassFiles.foldLeft(mutable.Set.empty[String])(_ addOne _.thisType.packageName)
     }
 
     /**
@@ -712,7 +711,7 @@ class Project[Source] private (
      * @note This method's result is not cached.
      */
     def libraryPackages: Set[String] = {
-        libraryClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
+        libraryClassFiles.foldLeft(mutable.Set.empty[String])(_ addOne _.thisType.packageName)
     }
 
     /**
@@ -782,15 +781,15 @@ class Project[Source] private (
         else if (allPackages.tail.isEmpty)
             Map((allPackages.head, allPackages.head))
         else {
-            allPackages.tail.foldLeft(SortedMap((allPackages.head, allPackages.head))) {
+            allPackages.tail.foldLeft(mutable.SortedMap((allPackages.head, allPackages.head))) {
                 (rootPackages, nextPackage) =>
                     // java is not a root package of "javax"...
                     val (_, lastPackage) = rootPackages.last
                     if (nextPackage.startsWith(lastPackage) &&
                         nextPackage.charAt(lastPackage.size) == '/')
-                        rootPackages + ((nextPackage, lastPackage))
+                        rootPackages addOne ((nextPackage, lastPackage))
                     else
-                        rootPackages + ((nextPackage, nextPackage))
+                        rootPackages addOne ((nextPackage, nextPackage))
             }
         }
     }
@@ -879,11 +878,11 @@ class Project[Source] private (
      * are ignored.
      */
     def lookupClassFiles(
-        objectTypes: Traversable[ObjectType]
+        objectTypes: Iterable[ObjectType]
     )(
         classFileFilter: ClassFile => Boolean
-    ): Traversable[ClassFile] = {
-        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
+    ): Iterable[ClassFile] = {
+        objectTypes.view.flatMap(classFile) filter (classFileFilter)
     }
 
     def hasInstanceMethod(
@@ -980,11 +979,11 @@ class Project[Source] private (
      */
     def projectMethodsLengthDistribution: Map[Int, Set[Method]] = {
         val nonSyntheticMethodsWithBody = methodsWithBody.iterator.filterNot(_.isSynthetic)
-        val data = SortedMap.empty[Int, Set[Method]]
+        val data = mutable.SortedMap.empty[Int, mutable.Set[Method]]
         nonSyntheticMethodsWithBody.foldLeft(data) { (data, method) =>
             val methodLength = method.body.get.instructions.length
-            val methods = data.getOrElse(methodLength, Set.empty[Method])
-            data + ((methodLength, methods + method))
+            val methods = data.getOrElse(methodLength, mutable.Set.empty[Method])
+            data addOne ((methodLength, methods addOne method))
         }
     }
 
@@ -1016,10 +1015,10 @@ class Project[Source] private (
             data.update(key, data.getOrElse(key, 0) + count + 1 /*+1 for the inner class*/ )
         }
 
-        var result = SortedMap.empty[Int, (Int, Set[String])]
+        val result = mutable.SortedMap.empty[Int, (Int, mutable.Set[String])]
         for ((typeName, membersCount) <- data) {
-            val (count, typeNames) = result.getOrElse(membersCount, (0, Set.empty[String]))
-            result += ((membersCount, (count + 1, typeNames + typeName)))
+            val (count, typeNames) = result.getOrElse(membersCount, (0, mutable.Set.empty[String]))
+            result += ((membersCount, (count + 1, typeNames addOne typeName)))
         }
         result
     }
@@ -1091,10 +1090,32 @@ object Project {
         theConfig:     Config     = BaseConfig
     ): Java17FrameworkWithDynamicRewritingAndCaching = {
         // The following makes use of early initializers
-        class ConfiguredFramework extends {
+        class ConfiguredFramework extends Java17FrameworkWithDynamicRewritingAndCaching(cache) {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java17FrameworkWithDynamicRewritingAndCaching(cache)
+            override implicit val methodInfoType: ClassTag[Method] = classTag[Method]
+            override implicit val annotationType: ClassTag[Annotation] = classTag[Annotation]
+            override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = classTag[LocalvarTableEntry]
+            override implicit val methodParameterType: ClassTag[MethodParameter] = classTag[MethodParameter]
+            override implicit val attributeType: ClassTag[Attribute] = classTag[Attribute]
+            override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = classTag[TypeAnnotationPathElement]
+            override implicit val requiresEntryType: ClassTag[br.Requires] = classTag[br.Requires]
+            override implicit val exportsEntryType: ClassTag[br.Exports] = classTag[br.Exports]
+            override implicit val opensEntryType: ClassTag[br.Opens] = classTag[br.Opens]
+            override implicit val providesTypeEntry: ClassTag[br.Provides] = classTag[br.Provides]
+            override implicit val elementValueType: ClassTag[ElementValue] = classTag[ElementValue]
+            override implicit val elementValuePairType: ClassTag[ElementValuePair] = classTag[ElementValuePair]
+            override implicit val fieldInfoType: ClassTag[Field] = classTag[Field]
+            override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = classTag[TypeAnnotation]
+            override implicit val localVariableTableEntryType: ClassTag[LocalVariable] = classTag[LocalVariable]
+            override implicit val bootstrapMethodType: ClassTag[BootstrapMethod] = classTag[BootstrapMethod]
+            override implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] = classTag[BootstrapArgument]
+            override implicit val stackMapFrameType: ClassTag[StackMapFrame] = classTag[StackMapFrame]
+            override implicit val verificationTypeInfoType: ClassTag[UninitializedThisVariableInfo] = classTag[UninitializedThisVariableInfo]
+            override implicit val exceptionTableEntryType: ClassTag[ExceptionHandler] = classTag[ExceptionHandler]
+            override implicit val innerClassesEntryType: ClassTag[InnerClass] = classTag[InnerClass]
+            override implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableType] = classTag[LocalVariableType]
+        }
         new ConfiguredFramework
     }
 
@@ -1273,7 +1294,7 @@ object Project {
         // class...
         var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
-        var missingClassTypes = Set.empty[ObjectType]
+        val missingClassTypes = mutable.Set.empty[ObjectType]
 
         // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
@@ -1374,9 +1395,9 @@ object Project {
                 }
             }
 
-            var interfaceMethods: Set[MethodSignature] = Set.empty
-            var uniqueInterfaceMethods: Set[Method] = Set.empty
-            var uniqueInterfaceMethodSignatures: Set[MethodSignature] = Set.empty
+            val interfaceMethods: mutable.Set[MethodSignature] = mutable.Set.empty
+            var uniqueInterfaceMethods: mutable.Set[Method] = mutable.Set.empty
+            val uniqueInterfaceMethodSignatures: mutable.Set[MethodSignature] = mutable.Set.empty
             for {
                 superinterfaceType <- superinterfaceTypes
                 superinterfaceClassfile <- objectTypeToClassFile(superinterfaceType)
@@ -1589,7 +1610,7 @@ object Project {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
                         methods += ((declaredMethod, Set(declaredMethod)))
                     } else {
-                        var overridingMethods = Set.empty[Method]
+                        val overridingMethods = mutable.Set.empty[Method]
                         // let's join the results of all subtypes
                         classHierarchy.foreachSubtypeCF(objectType) { subtypeClassFile =>
                             subtypeClassFile.findDirectlyOverridingMethod(
@@ -1666,9 +1687,9 @@ object Project {
         val reader = JavaClassFileReader(logContext, config)
         this(
             projectClassFilesWithSources = reader.ClassFiles(file),
-            libraryClassFilesWithSources = Traversable.empty,
+            libraryClassFilesWithSources = Iterable.empty,
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty,
+            virtualClassFiles = Iterable.empty,
             handleInconsistentProject = defaultHandlerForInconsistentProjects,
             config = config,
             logContext
@@ -1685,7 +1706,7 @@ object Project {
             JavaClassFileReader(logContext, config).AllClassFiles(projectFiles),
             JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty,
+            virtualClassFiles = Iterable.empty,
             handleInconsistentProject = defaultHandlerForInconsistentProjects,
             config = config,
             logContext
@@ -1693,7 +1714,7 @@ object Project {
     }
 
     def apply[Source](
-        projectClassFilesWithSources: Traversable[(ClassFile, Source)]
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)]
     ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
@@ -1702,14 +1723,14 @@ object Project {
     }
 
     def apply[Source](
-        projectClassFilesWithSources: Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         projectLogger:                OPALLogger
     ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
-            Traversable.empty,
+            Iterable.empty,
             libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/ ,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(projectLogger = projectLogger)
     }
 
@@ -1718,10 +1739,10 @@ object Project {
         libraryFile: File
     ): Project[URL] = {
         implicit val logContext: LogContext = GlobalLogContext
-        val libraries: Traversable[(ClassFile, URL)] =
+        val libraries: Iterable[(ClassFile, URL)] =
             if (!libraryFile.exists) {
                 OPALLogger.error("project configuration", s"$libraryFile does not exist")
-                Traversable.empty
+              Iterable.empty
             } else {
                 val libraries = JavaLibraryClassFileReader.ClassFiles(libraryFile)
                 if (libraries.isEmpty)
@@ -1732,7 +1753,7 @@ object Project {
             JavaClassFileReader().ClassFiles(projectFile),
             libraries,
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 
@@ -1744,7 +1765,7 @@ object Project {
             JavaClassFileReader().AllClassFiles(projectFiles),
             JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 
@@ -1767,7 +1788,7 @@ object Project {
             // therefore, we do not support extending the set of library class files.
             project.libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(config = project.config, projectLogger = OPALLogger.logger(project.logContext.successor))
     }
 
@@ -1785,20 +1806,20 @@ object Project {
             project.projectClassFilesWithSources ++ projectClassFilesWithSources,
             project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(project.config, OPALLogger.logger(project.logContext.successor))
     }
 
     def apply[Source](
-        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean
     ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
             libraryClassFilesWithSources,
             libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 
@@ -1818,7 +1839,7 @@ object Project {
             project.projectClassFilesWithSources,
             project.libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(
                 if (useOldConfigAsFallback) config.withFallback(project.config) else config,
                 projectLogger = OPALLogger.logger(project.logContext.successor)
@@ -1857,11 +1878,11 @@ object Project {
      *      meaningful option for several advanced analyses.)
      */
     def apply[Source](
-        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean,
-        virtualClassFiles:                  Traversable[ClassFile]           = Traversable.empty,
-        handleInconsistentProject:          HandleInconsistentProject        = defaultHandlerForInconsistentProjects
+        virtualClassFiles:                  Iterable[ClassFile]           = Iterable.empty,
+        handleInconsistentProject:          HandleInconsistentProject     = defaultHandlerForInconsistentProjects
     )(
         implicit
         config:        Config     = BaseConfig,
@@ -1881,10 +1902,10 @@ object Project {
     }
 
     def apply[Source](
-        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean,
-        virtualClassFiles:                  Traversable[ClassFile],
+        virtualClassFiles:                  Iterable[ClassFile],
         handleInconsistentProject:          HandleInconsistentProject,
         config:                             Config,
         logContext:                         LogContext
@@ -1940,9 +1961,9 @@ object Project {
 
             var codeSize: Long = 0L
 
-            val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
-            val sources = OpenHashMap.empty[ObjectType, Source] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
-            val nests = OpenHashMap.empty[ObjectType, ObjectType] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
+            val objectTypeToClassFile = mutable.HashMap.empty[ObjectType, ClassFile] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
+            val sources = mutable.HashMap.empty[ObjectType, Source] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
+            val nests = mutable.HashMap.empty[ObjectType, ObjectType] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
 
             def processModule(
                 classFile:        ClassFile,
@@ -2107,8 +2128,8 @@ object Project {
             val allMethods: Iterable[Method] = {
                 new Iterable[Method] {
                     def iterator: Iterator[Method] = {
-                        projectClassFilesArray.toIterator.flatMap { cf => cf.methods } ++
-                            libraryClassFilesArray.toIterator.flatMap { cf => cf.methods }
+                        projectClassFilesArray.iterator.flatMap { cf => cf.methods } ++
+                            libraryClassFilesArray.iterator.flatMap { cf => cf.methods }
                     }
                 }
             }
@@ -2150,7 +2171,7 @@ object Project {
             val allClassFiles: Iterable[ClassFile] = {
                 new Iterable[ClassFile] {
                     def iterator: Iterator[ClassFile] = {
-                        projectClassFilesArray.toIterator ++ libraryClassFilesArray.toIterator
+                        projectClassFilesArray.iterator ++ libraryClassFilesArray.iterator
                     }
                 }
             }
@@ -2158,8 +2179,8 @@ object Project {
             val allFields: Iterable[Field] = {
                 new Iterable[Field] {
                     def iterator: Iterator[Field] = {
-                        projectClassFilesArray.toIterator.flatMap { cf => cf.fields } ++
-                            libraryClassFilesArray.toIterator.flatMap { cf => cf.fields }
+                        projectClassFilesArray.iterator.flatMap { cf => cf.fields } ++
+                            libraryClassFilesArray.iterator.flatMap { cf => cf.fields }
                     }
                 }
             }

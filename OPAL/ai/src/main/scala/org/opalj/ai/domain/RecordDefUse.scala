@@ -14,7 +14,6 @@ import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.{Locals => Registers}
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
@@ -663,7 +662,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
             def load(index: Int): Boolean = {
                 // there will never be an exceptional control flow ...
                 val currentLocals = defLocals(currentPC)
-                val newDefOps = currentLocals(index) :&: defOps(currentPC)
+                val newDefOps = currentLocals(index) :: defOps(currentPC)
                 propagate(newDefOps, currentLocals)
             }
 
@@ -871,7 +870,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     val oldDefOps = defOps(currentPC)
                     propagate(oldDefOps.head :: oldDefOps, defLocals(currentPC))
                 case 90 /*dup_x1*/ =>
-                    val v1 :&: v2 :&: rest = defOps(currentPC)
+                    val v1 :: v2 :: rest = defOps(currentPC)
                     propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
                 case 91 /*dup_x2*/ =>
                     operandsArray(currentPC) match {
@@ -894,28 +893,28 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                     }
                 case 93 /*dup2_x1*/ =>
                     operandsArray(currentPC) match {
-                        case (_@ CTC1()) :&: _ =>
-                            val v1 :&: v2 :&: v3 :&: rest = defOps(currentPC)
-                            propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
+                        case (_@ CTC1()) :: _ =>
+                            val v1 :: v2 :: v3 :: rest = defOps(currentPC)
+                            propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
                         case _ =>
-                            val v1 :&: v2 :&: rest = defOps(currentPC)
-                            propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
+                            val v1 :: v2 :: rest = defOps(currentPC)
+                            propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
                     }
                 case 94 /*dup2_x2*/ =>
                     operandsArray(currentPC) match {
-                        case (_@ CTC1()) :&: (_@ CTC1()) :&: (_@ CTC1()) :&: _ =>
-                            val v1 :&: v2 :&: v3 :&: v4 :&: rest = defOps(currentPC)
+                        case (_@ CTC1()) :: (_@ CTC1()) :: (_@ CTC1()) :: _ =>
+                            val v1 :: v2 :: v3 :: v4 :: rest = defOps(currentPC)
                             val currentLocals = defLocals(currentPC)
-                            propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, currentLocals)
-                        case (_@ CTC1()) :&: (_@ CTC1()) :&: _ =>
-                            val v1 :&: v2 :&: v3 :&: rest = defOps(currentPC)
-                            propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
-                        case _ /*v1 @ CTC2()*/ :&: (_@ CTC1()) :&: _ =>
-                            val v1 :&: v2 :&: v3 :&: rest = defOps(currentPC)
-                            propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
+                            propagate(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest, currentLocals)
+                        case (_@ CTC1()) :: (_@ CTC1()) :: _ =>
+                            val v1 :: v2 :: v3 :: rest = defOps(currentPC)
+                            propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
+                        case _ /*v1 @ CTC2()*/ :: (_@ CTC1()) :: _ =>
+                            val v1 :: v2 :: v3 :: rest = defOps(currentPC)
+                            propagate(v1 :: v2 :: v3 :: v1 :: rest, defLocals(currentPC))
                         case _ =>
-                            val v1 :&: v2 :&: rest = defOps(currentPC)
-                            propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
+                            val v1 :: v2 :: rest = defOps(currentPC)
+                            propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
                     }
 
                 case 87 /*pop*/ =>
@@ -927,8 +926,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                         propagate(defOps(currentPC).tail, defLocals(currentPC))
 
                 case 95 /*swap*/ =>
-                    val v1 :&: v2 :&: rest = defOps(currentPC)
-                    propagate(v2 :&: v1 :&: rest, defLocals(currentPC))
+                    val v1 :: v2 :: rest = defOps(currentPC)
+                    propagate(v2 :: v1 :: rest, defLocals(currentPC))
 
                 //
                 // VALUE CONVERSIONS
@@ -1013,17 +1012,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                 val successorPC = jsrPC + jsrInstruction.branchoffset
                 val retTargetPC = jsrInstruction.indexOfNextInstruction(jsrPC)(code)
 
-                retTargetPCs :&:= IntTrieSet1(retTargetPC)
+                retTargetPCs ::= IntTrieSet1(retTargetPC)
 
                 // The initial value is basically used to detect subroutines which never end
                 // by a RET. Additionally, we ensure that the size of the retPCs and retTargetPCs
                 // lists are always identical.
-                retPCs :&:= -1
+                retPCs ::= -1
 
                 // The new subroutine does not yet have any instructions!
                 currentSubroutinePCs.push(IntTrieSet.empty)
                 currentSubroutineLevel += 1
-                subroutineIDs :&:= successorPC
+                subroutineIDs ::= successorPC
                 // Increase the stack to collect nested JSRs
                 jsrPCs.push(IntTrieSet.empty)
 
@@ -1076,7 +1075,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
 
                 // 1. Let's safe and reset the state related to the last subroutine
                 if (subroutineDefOps eq null) { // initialize the data-structures on demand
-                    subroutineDefOps = new Array[Chain[ValueOrigins]](instructions.length)
+                    subroutineDefOps = new Array[List[ValueOrigins]](instructions.length)
                     subroutineDefLocals = new Array[Registers[ValueOrigins]](instructions.length)
                     subroutineUsed = new Array[ValueOrigins](instructions.length + parametersOffset)
                     subroutineUsedExternalExceptions = new Array[ValueOrigins](instructions.length)

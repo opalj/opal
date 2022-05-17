@@ -8,9 +8,8 @@ import scala.annotation.tailrec
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import scala.collection.generic.Growable
 import scala.collection.mutable
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Await.{result => await}
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration.Inf
@@ -190,7 +189,7 @@ class ClassHierarchy private (
      * types to the given `Growable` collection. I.e., iterates
      * over all interfaces which are at the top of the interface inheritance hierarchy.
      */
-    def rootInterfaceTypes(collection: Growable[ObjectType]): collection.type = {
+    def rootInterfaceTypes(collection: mutable.Growable[ObjectType]): collection.type = {
         superinterfaceTypesMap.iterator.zipWithIndex foreach { si =>
             val (superinterfaceTypes, id) = si
             if (superinterfaceTypes != null && superinterfaceTypes.isEmpty && isInterface(id)) {
@@ -2134,7 +2133,7 @@ class ClassHierarchy private (
         types foreach { t: ObjectType =>
             if (!allSupertypesOf.contains(t)) {
                 if (isKnown(t))
-                    allSupertypesOf ++= allSupertypes(t, reflexive)
+                    allSupertypesOf unionUIDSet allSupertypes(t, reflexive)
                 else if (reflexive)
                     // the project's class hierarchy is obviously not complete
                     // however, we do as much as we can...
@@ -2646,7 +2645,7 @@ class ClassHierarchy private (
                     f"$subtypesCount%17d / $frequency"
                 }.mkString("\n\t")
             s += "\n\t average number of subtypes: "
-            s += (overallDepth / (subtypeInformationMap.count(_ != null) - 1))+"\n\t"
+            s += s"${overallDepth / (subtypeInformationMap.count(_ != null) - 1)}\n\t"
         }
         // 2. compute supertype information
         {
@@ -2798,8 +2797,8 @@ object ClassHierarchy {
      * defines `java.util.List`.
      */
     def create(
-        classFiles:       Traversable[ClassFile],
-        typeDeclarations: Traversable[TypeDeclaration]
+        classFiles:       Iterable[ClassFile],
+        typeDeclarations: Iterable[TypeDeclaration]
     )(
         implicit
         logContext: LogContext
@@ -2915,7 +2914,7 @@ object ClassHierarchy {
 
         // Analyzes the given class files and extends the current class hierarchy.
         val processedClassType: Array[Boolean] = new Array[Boolean](objectTypesCount)
-        classFiles.seq foreach { classFile =>
+        classFiles foreach { classFile =>
             if (!classFile.isModuleDeclaration) {
                 // We always keep the FIRST class file which defines a type this is inline
                 // with the behavior of the class Project which prioritizes a project class file
@@ -2936,7 +2935,7 @@ object ClassHierarchy {
 
         val processedTypeDeclaration: Array[Boolean] = new Array[Boolean](objectTypesCount)
         var duplicateTypeDeclarations: Set[String] = Set.empty
-        typeDeclarations.seq foreach { typeDeclaration =>
+        typeDeclarations foreach { typeDeclaration =>
             val objectType = typeDeclaration.objectType
             val oid = objectType.id
             if (processedTypeDeclaration(oid)) {
@@ -3063,17 +3062,17 @@ object ClassHierarchy {
                 if (subtypes(tid) == null) {
                     var allSubinterfaceTypes = UIDSet.empty[ObjectType]
                     var allSubclassTypes = UIDSet.empty[ObjectType]
-                    var allSubtypes = UIDSet.empty[ObjectType]
+                    val allSubtypes = UIDSet.empty[ObjectType]
                     val done =
                         subinterfaceTypesMap(tid).forall { subtype =>
                             subtypes(subtype.id) match {
                                 case null =>
                                     false
                                 case subSubtypes =>
-                                    allSubinterfaceTypes ++= subSubtypes.interfaceTypes
-                                    allSubclassTypes ++= subSubtypes.classTypes
+                                    allSubinterfaceTypes unionUIDSet subSubtypes.interfaceTypes
+                                    allSubclassTypes unionUIDSet subSubtypes.classTypes
                                     allSubinterfaceTypes += subtype
-                                    allSubtypes ++= (subSubtypes.allTypes + subtype)
+                                    allSubtypes unionUIDSet (subSubtypes.allTypes + subtype)
                                     true
                             }
                         } && subclassTypesMap(tid).forall { subtype =>
@@ -3083,9 +3082,9 @@ object ClassHierarchy {
                                 case subSubtypes =>
                                     // There will be no sub interface types!
                                     // (java.lang.Object is not considered)
-                                    allSubclassTypes ++= subSubtypes.classTypes
+                                    allSubclassTypes unionUIDSet subSubtypes.classTypes
                                     allSubclassTypes += subtype
-                                    allSubtypes ++= (subSubtypes.allTypes + subtype)
+                                    allSubtypes unionUIDSet (subSubtypes.allTypes + subtype)
                                     true
                             }
                         }
@@ -3148,7 +3147,7 @@ object ClassHierarchy {
                         val allIssues =
                             for {
                                 dt <- deferredTypes
-                                subtype <- subinterfaceTypesMap(dt.id) ++ subclassTypesMap(dt.id)
+                                subtype <- subinterfaceTypesMap(dt.id) unionUIDSet subclassTypesMap(dt.id)
                                 if subtypes(subtype.id) != null
                                 if !deferredTypes.contains(subtype)
                             } yield {
@@ -3169,8 +3168,8 @@ object ClassHierarchy {
                 }
             }
             var allNoneObjectClassTypes = UIDSet.empty[ObjectType]
-            var allInterfaceType = UIDSet.empty[ObjectType]
-            var allNoneObjectTypes = UIDSet.empty[ObjectType]
+            val allInterfaceType = UIDSet.empty[ObjectType]
+            val allNoneObjectTypes = UIDSet.empty[ObjectType]
             for {
                 t <- knownTypesMap
                 if t ne null
@@ -3178,12 +3177,12 @@ object ClassHierarchy {
                 val tid = t.id
                 val theSubtypes = subtypes(tid)
                 if (isInterfaceTypeMap(tid)) {
-                    allInterfaceType ++= theSubtypes.interfaceTypes
-                    allNoneObjectTypes ++= theSubtypes.allTypes
+                    allInterfaceType unionUIDSet theSubtypes.interfaceTypes
+                    allNoneObjectTypes unionUIDSet theSubtypes.allTypes
                 } else if (t ne ObjectType.Object) {
-                    allNoneObjectClassTypes ++= theSubtypes.classTypes
+                    allNoneObjectClassTypes unionUIDSet theSubtypes.classTypes
                     allNoneObjectClassTypes += t
-                    allNoneObjectTypes ++= theSubtypes.allTypes
+                    allNoneObjectTypes unionUIDSet theSubtypes.allTypes
                 }
             }
             subtypes(ObjectType.ObjectId) =
@@ -3227,8 +3226,8 @@ object ClassHierarchy {
                 }
 
                 // let's check if we already have complete information about all supertypes
-                var allSuperSuperinterfaceTypes = UIDSet.empty[ObjectType]
-                var allSupertypes = UIDSet.empty[ObjectType]
+                val allSuperSuperinterfaceTypes = UIDSet.empty[ObjectType]
+                val allSupertypes = UIDSet.empty[ObjectType]
                 if (superinterfaceTypes.forall { supertype =>
                     val supertypeId = supertype.id
                     supertypes(supertypeId) match {
@@ -3241,8 +3240,8 @@ object ClassHierarchy {
                             superinterfaceTypesMap(supertypeId) == null ||
                                 classesWithBrokenInterfaceInheritance(t).containsId(supertypeId)
                         case supertypes =>
-                            allSuperSuperinterfaceTypes ++= supertypes.interfaceTypes
-                            allSupertypes ++= supertypes.allTypes
+                            allSuperSuperinterfaceTypes unionUIDSet supertypes.interfaceTypes
+                            allSupertypes unionUIDSet supertypes.allTypes
                             true
 
                     }
@@ -3252,8 +3251,8 @@ object ClassHierarchy {
                             isKnownTypeMap,
                             isInterfaceTypeMap,
                             ClassHierarchy.JustObject,
-                            allSuperSuperinterfaceTypes ++ superinterfaceTypes,
-                            allSupertypes ++ superinterfaceTypes
+                            allSuperSuperinterfaceTypes unionUIDSet superinterfaceTypes,
+                            allSupertypes unionUIDSet superinterfaceTypes
                         )
                     typesToProcess ++= subinterfaceTypesMap(t.id)
                 } else {
@@ -3287,7 +3286,7 @@ object ClassHierarchy {
                         ) { (allInterfaceTypes, nextSuperinterfacetype) =>
                                 (supertypes(nextSuperinterfacetype.id) match {
                                     case null       => allInterfaceTypes
-                                    case supertypes => allInterfaceTypes ++ supertypes.interfaceTypes
+                                    case supertypes => allInterfaceTypes unionUIDSet supertypes.interfaceTypes
                                 }) + nextSuperinterfacetype
                             }
                     supertypes(tid) =

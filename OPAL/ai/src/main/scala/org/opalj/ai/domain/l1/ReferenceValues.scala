@@ -144,7 +144,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     protected def effectiveUTB(utb: UIDSet[_ <: ReferenceType]): UIDSet[_ <: ReferenceType] = {
         val it = utb.iterator
         while (it.hasNext) {
-            val t: ReferenceType = it.next
+            val t: ReferenceType = it.next()
             if (t.isArrayType)
                 return utb;
 
@@ -1058,7 +1058,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         with MultipleOriginsValue {
         this: DomainMultipleReferenceValues =>
 
-        def this(values: UIDSet[DomainSingleOriginReferenceValue]) {
+        def this(values: UIDSet[DomainSingleOriginReferenceValue]) =
             this(
                 values,
                 values.idSet,
@@ -1067,7 +1067,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 domain.upperTypeBound(values),
                 nextRefId()
             )
-        }
 
         assert(values.size > 1, "a MultipleReferenceValue must have multiple values")
         assert(
@@ -1403,9 +1402,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     if (goalIsASubtype.isYes)
                         newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal)
                     else if (goalIsASubtype.isUnknown)
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal ++ newValueUTB)
+                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal unionUIDSet newValueUTB)
                     else if (!classHierarchy.isSubtypeOf(newValueUTB, upperTypeBoundGoal))
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal ++ newValueUTB)
+                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal unionUIDSet newValueUTB)
                 }
             }
 
@@ -1663,7 +1662,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     }
 
                     if (otherValues.nonEmpty) {
-                        newValues ++= otherValues
+                        newValues unionUIDSet otherValues
                         updateType = StructuralUpdateType
                     }
                     val thisUTB = this.upperTypeBound

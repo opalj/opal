@@ -719,7 +719,7 @@ trait RecordCFG
         // every potential loop header can be reached.
         val predecessors = this.predecessors
         var remainingPotentialInfiniteLoopHeaders = theJumpBackTargetPCs
-        var nodesToVisit = allExitPCs.toChain
+        var nodesToVisit = allExitPCs.toList
         val visitedNodes = new Array[Boolean](code.codeSize)
         while (nodesToVisit.nonEmpty) {
             val nextPC = nodesToVisit.head
@@ -733,7 +733,7 @@ trait RecordCFG
                         return IntTrieSet.empty;
                     }
                     if (!visitedNodes(predPC)) {
-                        nodesToVisit :&:= predPC
+                        nodesToVisit ::= predPC
                     }
                 }
             }
@@ -810,7 +810,7 @@ trait RecordCFG
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
         val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
-        code.exceptionHandlers foreachWithIndex { (exceptionHandler, index) =>
+        code.exceptionHandlers.iterator.zipWithIndex.foreach { case(exceptionHandler, index) =>
             val handlerPC = exceptionHandler.handlerPC
             if ( // 1.1.    Let's check if the handler was executed at all.
             unsafeWasExecuted(handlerPC) &&
@@ -1114,7 +1114,7 @@ trait RecordCFG
                     val successorNodePC = successorNode.identifier.head
                     if (nodePredecessorsCount(successorNodePC) == 1) {
                         currentNode.updateIdentifier(
-                            currentNode.identifier :&:: currentNode.firstChild.identifier
+                            currentNode.identifier ::: currentNode.firstChild.identifier
                         )
                         currentNode.mergeVisualProperties(successorNode.visualProperties)
                         currentNode.removeLastAddedChild() // the only child...

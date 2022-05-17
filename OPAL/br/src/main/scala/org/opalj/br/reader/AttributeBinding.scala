@@ -5,6 +5,8 @@ package reader
 
 import org.opalj.bi.reader.AttributesAbstractions
 
+import scala.reflect.{ClassTag, classTag}
+
 /**
  * Defines the common bindings for all "resolved" attributes.
  *
@@ -13,6 +15,6 @@ import org.opalj.bi.reader.AttributesAbstractions
 trait AttributeBinding extends AttributesAbstractions {
 
     type Attribute = org.opalj.br.Attribute
-
+    override implicit val attributeType: ClassTag[Attribute] = classTag[Attribute]
 }
 

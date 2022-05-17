@@ -8,7 +8,6 @@ import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Unparsed
 import scala.xml.Text
-import scala.xml.Unparsed
 
 import org.opalj.io.writeAndOpen
 import org.opalj.collection.immutable.IntTrieSet

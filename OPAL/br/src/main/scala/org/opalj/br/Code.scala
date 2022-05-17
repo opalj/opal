@@ -53,7 +53,8 @@ final class Code private (
 ) extends Attribute
     with CommonAttributes
     with InstructionsContainer
-    with CodeSequence[Instruction] {
+    with CodeSequence[Instruction]
+    with Iterable[PCAndInstruction] {
     code =>
 
     def copy(
@@ -105,82 +106,21 @@ final class Code private (
 
     @inline final def codeSize: Int = instructions.length
 
-    // TODO: Overload map operations (https://www.scala-lang.org/blog/2018/06/13/scala-213-collections.html)
-    //
-    //    /**
-    //     * Represents some filtered code. Primarily, implicitly used when a for-comprehension
-    //     * is used to process the code.
-    //     */
-    //    class FilteredCode( final val p: PCAndInstruction => Boolean)
-    //        extends WithFilter[PCAndInstruction, Nothing] {
-    //
-    //        def map[B, That](
-    //            f: PCAndInstruction => B
-    //        )(
-    //            implicit
-    //            bf: BuildFrom[Nothing, B, That]
-    //        ): That = {
-    //            val that = bf.newBuilder()
-    //            code foreach { instructionLocation =>
-    //                if (p(instructionLocation)) that += f(instructionLocation)
-    //            }
-    //            that.result
-    //        }
-    //
-    //        def flatMap[B, That](
-    //            f: PCAndInstruction => IterableOnce[B]
-    //        )(
-    //            implicit
-    //            bf: BuildFrom[Nothing, B, That]
-    //        ): That = {
-    //            val that = bf.newBuilder()
-    //            code foreach { instructionLocation: PCAndInstruction =>
-    //                if (p(instructionLocation)) {
-    //                    f(instructionLocation).iterator.foreach { v => that += v }
-    //                }
-    //            }
-    //            that.result
-    //        }
-    //
-    //        def foreach[U](f: PCAndInstruction => U): Unit = {
-    //            code foreach { instructionLocation: PCAndInstruction =>
-    //                if (p(instructionLocation)) f(instructionLocation)
-    //            }
-    //        }
-    //
-    //        def withFilter(p: PCAndInstruction => Boolean): FilteredCode = {
-    //            new FilteredCode(
-    //                (instructionLocation: PCAndInstruction) => {
-    //                    this.p(instructionLocation) && p(instructionLocation)
-    //                }
-    //            )
-    //        }
-    //    }
-    //
-    //    def withFilter(p: (PCAndInstruction) => Boolean): FilteredCode = new FilteredCode(p)
-    //
-    //
-    //    def map[B, That](
-    //        f: PCAndInstruction => B
-    //    )(
-    //        implicit
-    //        bf: BuildFrom[Nothing, B, That]
-    //    ): That = {
-    //        val that = bf.newBuilder()
-    //        code.foreach(that += f(_))
-    //        that.result
-    //    }
-    //
-    //    def flatMap[B, That](
-    //        f: (PCAndInstruction) => IterableOnce[B]
-    //    )(
-    //        implicit
-    //        bf: BuildFrom[Nothing, B, That]
-    //    ): That = {
-    //        val that = bf.newBuilder()
-    //        code foreach { instructionLocation => f(instructionLocation).iterator.foreach(that += _) }
-    //        that.result
-    //    }
+    override def iterator: Iterator[PCAndInstruction] = {
+      new AbstractIterator[PCAndInstruction] {
+        private[this] var pc = 0
+
+        def hasNext: Boolean = pc < instructions.length
+
+        def next(): PCAndInstruction = {
+          val inst = PCAndInstruction(pc, instructions(pc))
+          pc = inst.instruction.indexOfNextInstruction(pc)(code)
+          inst
+        }
+      }
+    }
+
+    def instructionIterator: Iterator[Instruction] = this.iterator.map(_.instruction)
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
@@ -1120,20 +1060,6 @@ final class Code private (
      */
     @inline def isModifiedByWide(pc: Int): Boolean = pc > 0 && instructions(pc - 1) == WIDE
 
-    def iterator: Iterator[Instruction] = {
-        new AbstractIterator[Instruction] {
-            private[this] var pc = 0
-
-            def hasNext: Boolean = pc < instructions.length
-
-            def next(): Instruction = {
-                val i = instructions(pc)
-                pc = i.indexOfNextInstruction(pc)(code)
-                i
-            }
-        }
-    }
-
     def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) => T): T = {
         val max_pc = instructions.length
         var pc = 0
@@ -1227,47 +1153,6 @@ final class Code private (
         result.reverse
     }
 
-    /**
-     * Tests if an instruction matches the given filter. If so, the index of the first
-     * matching instruction is returned.
-     */
-    def find(f: Instruction => Boolean): Option[PC] = { // IMPROVE [L3] Use IntOption
-        val max_pc = instructions.length
-        var pc = 0
-        while (pc < max_pc) {
-            if (f(instructions(pc)))
-                return Some(pc);
-
-            pc = pcOfNextInstruction(pc)
-        }
-
-        None
-    }
-
-    def foreach[U](f: PCAndInstruction => U): Unit = {
-        val instructionsLength = instructions.length
-        var pc = 0
-        while (pc < instructionsLength) {
-            val instruction = instructions(pc)
-            f(PCAndInstruction(pc, instruction))
-            pc = pcOfNextInstruction(pc)
-        }
-    }
-
-    def collectFirst[B](f: PartialFunction[Instruction, B]): Option[B] = {
-        val max_pc = instructions.length
-        var pc = 0
-        while (pc < max_pc) {
-            val params = instructions(pc)
-            val r: Any = f.applyOrElse(params, AnyToAnyThis)
-            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                return Some(r.asInstanceOf[B]);
-            }
-            pc = pcOfNextInstruction(pc)
-        }
-
-        None
-    }
 
     def filter[B](f: (PC, Instruction) => Boolean): IntArraySet = {
         val max_pc = instructions.length

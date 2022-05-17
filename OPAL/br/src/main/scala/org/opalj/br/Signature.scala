@@ -281,7 +281,7 @@ case class MethodTypeSignature(
         formalTypeParametersToJVMSignature(formalTypeParameters) +
             parametersTypeSignatures.map(_.toJVMSignature).mkString("(", "", ")") +
             returnTypeSignature.toJVMSignature +
-            throwsSignature.map('^' + _.toJVMSignature).mkString("")
+            throwsSignature.map(s => s"^${s.toJVMSignature}").mkString("")
 }
 object MethodTypeSignature {
 

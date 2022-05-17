@@ -114,7 +114,7 @@ case class TABLESWITCH(
 
     override def toString: String = {
         s"TABLESWITCH($low -> $high; "+
-            (low to high).zip(jumpOffsets).map(e => e._1+"⤼"+e._2).mkString(",")+
+            (low to high).zip(jumpOffsets).map(e => s"${e._1}⤼${e._2}").mkString(",")+
             ";default⤼"+defaultOffset+
             ")"
     }
@@ -123,9 +123,9 @@ case class TABLESWITCH(
         s"TABLESWITCH($low -> $high; "+
             (low to high).zip(jumpOffsets).map { keyOffset =>
                 val (key, offset) = keyOffset
-                key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
+                s"$key=${pc + offset}${if (offset >= 0) "↓" else "↑"}"
             }.mkString(", ")+
-            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
+            s"; ifNoMatch=${defaultOffset + pc}${if (defaultOffset >= 0) "↓" else "↑"})"
     }
 
 }
@@ -182,8 +182,8 @@ case class LabeledTABLESWITCH(
         )
     }
 
-    override def branchTargets: Iterator[InstructionLabel] = {
-        jumpTargets.iterator ++ Iterator(defaultBranchTarget)
+    override def branchTargets: Iterable[InstructionLabel] = {
+        jumpTargets.view ++ Iterable(defaultBranchTarget)
     }
 
     def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (List[Int], Boolean) = {
@@ -209,7 +209,7 @@ case class LabeledTABLESWITCH(
     override def toString(pc: Int): String = {
         (low to high).zip(jumpTargets).map { keyOffset =>
             val (key, target) = keyOffset
-            key+"="+target
+            s"$key=$target"
         }.mkString("TABLESWITCH(", ", ", "; ifNoMatch="+defaultBranchTarget+")")
     }
 }

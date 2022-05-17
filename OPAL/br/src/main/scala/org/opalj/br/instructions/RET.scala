@@ -46,7 +46,7 @@ case class RET(
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC] = {
-        nextInstructions(currentPC, false /*irrelevant*/ ).toIterator
+        nextInstructions(currentPC, false /*irrelevant*/ ).iterator
     }
 
     final def nextInstructions(

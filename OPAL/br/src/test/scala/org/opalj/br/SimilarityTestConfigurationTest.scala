@@ -188,7 +188,7 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
         // ignoring certain fields works both ways
         assert(
             simpleClass.similar(classWithLessFields, FieldsWithAccessFlagsEquals1),
-            simpleClass.attributes+" vs. "+classWithLessFields.attributes
+            s"${simpleClass.attributes} vs. ${classWithLessFields.attributes}"
         )
         assert(
             classWithLessFields.similar(simpleClass, FieldsWithAccessFlagsEquals1)

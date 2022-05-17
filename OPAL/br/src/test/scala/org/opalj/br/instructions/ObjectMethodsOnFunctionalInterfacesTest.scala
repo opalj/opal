@@ -46,15 +46,15 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
             val methodIdentifier = invokedMethod.get.signatureToJava(false)
             it(s"«$methodIdentifier» should resolve to Object's method") {
                 val declaringClass = invokevirtual.declaringClass
-                declaringClass should be('ObjectType)
+                declaringClass should be(Symbol("ObjectType"))
                 val declaringClassFile = project.classFile(declaringClass.asObjectType)
-                declaringClassFile should be('defined)
+                declaringClassFile shouldBe defined
                 val actualName = invokevirtual.name
                 val actualDescriptor = invokevirtual.methodDescriptor
                 val actualMethod = declaringClassFile.flatMap(
                     _.findMethod(actualName, actualDescriptor)
                 )
-                actualMethod should be('defined)
+                actualMethod shouldBe defined
                 actualMethod should be(invokedMethod)
             }
         }

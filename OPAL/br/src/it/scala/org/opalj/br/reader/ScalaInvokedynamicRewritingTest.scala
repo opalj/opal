@@ -2,7 +2,9 @@
 package org.opalj.br.reader
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.{INVOKEDYNAMIC, Instruction}
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * This test loads all classes found in the Scala 2.12.4 libraries and verifies that all
@@ -18,9 +20,9 @@ class ScalaInvokedynamicRewritingTest extends InvokedynamicRewritingTest {
         val project = load(locateTestResources("classfiles/scala-2.12.4", "bi"))
 
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method =>
-            method.body.get.collect {
+            method.body.get.collect ({
                 case i: INVOKEDYNAMIC => i
-            }
+            }: PartialFunction[Instruction, Instruction])
         }
 
         if (invokedynamics.nonEmpty) {
