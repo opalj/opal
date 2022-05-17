@@ -123,8 +123,8 @@ case class LOOKUPSWITCH(
         "LOOKUPSWITCH("+
             npairs.iterator.
             map[String](p => s"${p._1}=${pc + p._2}${if (p._2 >= 0) "↓" else "↑"}").
-            mkString(",")+
-            s"; ifNoMatch=${(defaultOffset + pc)}${if (defaultOffset >= 0) "↓" else "↑"}" +
+            mkString(",") +
+            s"; ifNoMatch=${(defaultOffset + pc)}${if (defaultOffset >= 0) "↓" else "↑"}"+
             ")"
     }
 }

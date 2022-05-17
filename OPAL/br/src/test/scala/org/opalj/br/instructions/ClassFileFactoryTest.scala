@@ -816,7 +816,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     val newValueMethod = MethodReferences.findMethod("newValue").head
                     val body = newValueMethod.body.get
                     val indy =
-                        body.instructionIterator.collectFirst ({
+                        body.instructionIterator.collectFirst({
                             case i: INVOKEDYNAMIC => i
                         }: PartialFunction[Instruction, INVOKEDYNAMIC]) match {
                             case Some(i) => i
@@ -1161,7 +1161,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 )
                 d =
                     MethodDescriptor(
-                      ArraySeq(DoubleType, ObjectType.String, ByteType,
+                        ArraySeq(DoubleType, ObjectType.String, ByteType,
                             LongType, DoubleType, FloatType),
                         VoidType
                     )
@@ -1184,12 +1184,12 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             it("should safely convert primitive values") {
                 val d1 =
                     MethodDescriptor(
-                      ArraySeq(ByteType, CharType, ShortType, IntegerType, FloatType, LongType),
+                        ArraySeq(ByteType, CharType, ShortType, IntegerType, FloatType, LongType),
                         VoidType
                     )
                 val d2 =
                     MethodDescriptor(
-                      ArraySeq(ShortType, ShortType, IntegerType,
+                        ArraySeq(ShortType, ShortType, IntegerType,
                             LongType, DoubleType, DoubleType),
                         VoidType
                     )
@@ -1220,12 +1220,12 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             it("should create boxing instructions for primitive types") {
                 val d1 =
                     MethodDescriptor(
-                      ArraySeq(ByteType, CharType, ShortType, IntegerType, FloatType, LongType),
+                        ArraySeq(ByteType, CharType, ShortType, IntegerType, FloatType, LongType),
                         VoidType
                     )
                 val d2 =
                     MethodDescriptor(
-                      ArraySeq(ObjectType.Byte, ObjectType.Character,
+                        ArraySeq(ObjectType.Byte, ObjectType.Character,
                             ObjectType.Short, ObjectType.Integer, ObjectType.Float, ObjectType.Long),
                         VoidType
                     )
@@ -1279,12 +1279,12 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             it("should cast arbitrary reference types") {
                 val d1 =
                     MethodDescriptor(
-                      ArraySeq(ObjectType.Object, ObjectType.Object),
+                        ArraySeq(ObjectType.Object, ObjectType.Object),
                         VoidType
                     )
                 val d2 =
                     MethodDescriptor(
-                      ArraySeq(ObjectType.String, ArrayType.ArrayOfObject),
+                        ArraySeq(ObjectType.String, ArrayType.ArrayOfObject),
                         VoidType
                     )
                 ClassFileFactory.parameterForwardingInstructions(
@@ -1304,7 +1304,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             it("should pack everything into an Object[] if necessary") {
                 val d1 =
                     MethodDescriptor(
-                      ArraySeq(
+                        ArraySeq(
                             IntegerType,
                             ObjectType.String,
                             ByteType,
@@ -1420,7 +1420,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             ).get
             val deserializedLambdaMethodDescriptor =
                 MethodDescriptor(
-                  ArraySeq(ObjectType.SerializedLambda),
+                    ArraySeq(ObjectType.SerializedLambda),
                     ObjectType.Object
                 )
             val implMethod = InvokeSpecialMethodHandle(
@@ -1450,7 +1450,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 implMethod,
                 INVOKESPECIAL.opcode,
                 samMethodType,
-              ArraySeq.empty[MethodDescriptor]
+                ArraySeq.empty[MethodDescriptor]
             )
 
             it("should add writeReplace and $deserializeLambda$ methods") {
@@ -1508,7 +1508,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         isInterface = false,
                         "<init>",
                         MethodDescriptor(
-                          ArraySeq(
+                            ArraySeq(
                                 ObjectType.Class,
                                 ObjectType.String,
                                 ObjectType.String,

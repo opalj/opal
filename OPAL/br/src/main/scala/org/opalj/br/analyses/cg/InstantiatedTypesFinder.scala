@@ -16,7 +16,7 @@ sealed trait InstantiatedTypesFinder {
 
     def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         // These types can be introduced via constants!
-      Iterable(ObjectType.String, ObjectType.Class)
+        Iterable(ObjectType.String, ObjectType.Class)
     }
 }
 

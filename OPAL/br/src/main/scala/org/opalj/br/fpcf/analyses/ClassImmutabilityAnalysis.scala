@@ -341,7 +341,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 case UBP(_: FinalField) => // no information about field mutability
 
-                case _ => throw new MatchError(someEPS) // TODO: Pattern match not exhaustive
+                case _                  => throw new MatchError(someEPS) // TODO: Pattern match not exhaustive
             }
 
             if (someEPS.isRefinable) {

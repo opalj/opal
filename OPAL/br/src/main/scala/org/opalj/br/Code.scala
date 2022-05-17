@@ -107,17 +107,17 @@ final class Code private (
     @inline final def codeSize: Int = instructions.length
 
     override def iterator: Iterator[PCAndInstruction] = {
-      new AbstractIterator[PCAndInstruction] {
-        private[this] var pc = 0
+        new AbstractIterator[PCAndInstruction] {
+            private[this] var pc = 0
 
-        def hasNext: Boolean = pc < instructions.length
+            def hasNext: Boolean = pc < instructions.length
 
-        def next(): PCAndInstruction = {
-          val inst = PCAndInstruction(pc, instructions(pc))
-          pc = inst.instruction.indexOfNextInstruction(pc)(code)
-          inst
+            def next(): PCAndInstruction = {
+                val inst = PCAndInstruction(pc, instructions(pc))
+                pc = inst.instruction.indexOfNextInstruction(pc)(code)
+                inst
+            }
         }
-      }
     }
 
     def instructionIterator: Iterator[Instruction] = this.iterator.map(_.instruction)
@@ -1152,7 +1152,6 @@ final class Code private (
         }
         result.reverse
     }
-
 
     def filter[B](f: (PC, Instruction) => Boolean): IntArraySet = {
         val max_pc = instructions.length

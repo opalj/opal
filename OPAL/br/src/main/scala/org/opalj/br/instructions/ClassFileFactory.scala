@@ -261,13 +261,14 @@ object ClassFileFactory {
             factoryMethodName
         )
 
-        bridgeMethodDescriptors.iterator.zipWithIndex.foreach { case (bridgeMethodDescriptor, i) =>
-            methods(3 + i) = createBridgeMethod(
-                methodName,
-                bridgeMethodDescriptor,
-                methodDescriptor,
-                definingType.objectType
-            )
+        bridgeMethodDescriptors.iterator.zipWithIndex.foreach {
+            case (bridgeMethodDescriptor, i) =>
+                methods(3 + i) = createBridgeMethod(
+                    methodName,
+                    bridgeMethodDescriptor,
+                    methodDescriptor,
+                    definingType.objectType
+                )
         }
 
         // Add a writeReplace and $deserializeLambda$ method if the class isSerializable

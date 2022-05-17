@@ -139,7 +139,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                         updatedOperand.value
                     }
                 }
-                thisOperands.zip(otherOperands).map{ case (o1,o2) => fuseOperands(o1,o2) }
+                thisOperands.zip(otherOperands).map { case (o1, o2) => fuseOperands(o1, o2) }
             }
 
         var localsUpdated: UpdateType = NoUpdateType

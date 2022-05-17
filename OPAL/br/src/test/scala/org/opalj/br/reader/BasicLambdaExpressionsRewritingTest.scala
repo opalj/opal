@@ -319,7 +319,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         object Framework extends Java8FrameworkWithInvokedynamicSupportAndCaching(
             new BytecodeInstructionsCache
         ) {
-          override val config = testConfig
+            override val config = testConfig
         }
 
         val project = Project(

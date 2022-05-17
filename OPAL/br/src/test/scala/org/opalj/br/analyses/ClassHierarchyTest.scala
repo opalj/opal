@@ -492,7 +492,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val typesProject =
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
-          Iterable.empty,
+            Iterable.empty,
             true
         )
 
@@ -745,7 +745,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     val apacheANTCH =
         ClassHierarchy(
-          Iterable.empty,
+            Iterable.empty,
             List(() => getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
         )(GlobalLogContext)
 

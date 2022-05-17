@@ -810,31 +810,32 @@ trait RecordCFG
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
         val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
-        code.exceptionHandlers.iterator.zipWithIndex.foreach { case(exceptionHandler, index) =>
-            val handlerPC = exceptionHandler.handlerPC
-            if ( // 1.1.    Let's check if the handler was executed at all.
-            unsafeWasExecuted(handlerPC) &&
-                // 1.2.    The handler may be shared by multiple try blocks, hence, we have
-                //         to ensure the we have at least one instruction in the try block
-                //         that jumps to the handler.
-                handlesException(exceptionHandler)) {
-                // OLD val catchNodeCandidate = new CatchNode(exceptionHandler, index)
-                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandidate)
-                var catchNode = exceptionHandlers.get(handlerPC)
-                if (catchNode == null) {
-                    catchNode = new CatchNode(exceptionHandler, index)
-                    exceptionHandlers.put(handlerPC, catchNode)
+        code.exceptionHandlers.iterator.zipWithIndex.foreach {
+            case (exceptionHandler, index) =>
+                val handlerPC = exceptionHandler.handlerPC
+                if ( // 1.1.    Let's check if the handler was executed at all.
+                unsafeWasExecuted(handlerPC) &&
+                    // 1.2.    The handler may be shared by multiple try blocks, hence, we have
+                    //         to ensure the we have at least one instruction in the try block
+                    //         that jumps to the handler.
+                    handlesException(exceptionHandler)) {
+                    // OLD val catchNodeCandidate = new CatchNode(exceptionHandler, index)
+                    // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandidate)
+                    var catchNode = exceptionHandlers.get(handlerPC)
+                    if (catchNode == null) {
+                        catchNode = new CatchNode(exceptionHandler, index)
+                        exceptionHandlers.put(handlerPC, catchNode)
+                    }
+                    var handlerBB = bbs(handlerPC)
+                    if (handlerBB eq null) {
+                        handlerBB = new BasicBlock(handlerPC)
+                        handlerBB.addPredecessor(catchNode)
+                        bbs(handlerPC) = handlerBB
+                    } else {
+                        handlerBB.addPredecessor(catchNode)
+                    }
+                    catchNode.addSuccessor(handlerBB)
                 }
-                var handlerBB = bbs(handlerPC)
-                if (handlerBB eq null) {
-                    handlerBB = new BasicBlock(handlerPC)
-                    handlerBB.addPredecessor(catchNode)
-                    bbs(handlerPC) = handlerBB
-                } else {
-                    handlerBB.addPredecessor(catchNode)
-                }
-                catchNode.addSuccessor(handlerBB)
-            }
         }
 
         // 2. iterate over the code to determine the basic block boundaries
