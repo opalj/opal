@@ -35,7 +35,7 @@ import org.opalj.br.Type
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
-    type AReferenceValue <: ReferenceValue with DomainReferenceValue
+    type AReferenceValue <: TheReferenceValue with DomainReferenceValue
     val AReferenceValueTag: ClassTag[AReferenceValue]
 
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with AReferenceValue
@@ -123,7 +123,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * values are definitively not reference equal unless they are type incompatible.
      */
     override def refAreEqual(pc: Int, v1: DomainValue, v2: DomainValue): Answer = {
-        assert(v1.isInstanceOf[ReferenceValue] && v2.isInstanceOf[ReferenceValue])
+        assert(v1.isInstanceOf[TheReferenceValue] && v2.isInstanceOf[TheReferenceValue])
         if (v1 eq v2)
             return Yes;
 
@@ -210,19 +210,19 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         values.tail foreach { value =>
             overallUTB = value match {
 
-                case SObjectValue(nextUTB) =>
+                case SObjectValueLike(nextUTB) =>
                     if (currentUTBisUTBForArrays)
                         classHierarchy.joinAnyArrayTypeWithObjectType(nextUTB)
                     else
                         classHierarchy.joinObjectTypes(nextUTB, asUTBForObjects, true)
 
-                case MObjectValue(nextUTB) =>
+                case MObjectValueLike(nextUTB) =>
                     if (currentUTBisUTBForArrays)
                         classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(nextUTB)
                     else
                         classHierarchy.joinUpperTypeBounds(asUTBForObjects, nextUTB, true)
 
-                case ArrayValue(nextUTB) =>
+                case AnArrayValue(nextUTB) =>
                     if (currentUTBisUTBForArrays)
                         classHierarchy.joinArrayTypes(asUTBForArrays, nextUTB) match {
                             case Left(arrayType)       => UIDSet(arrayType)
@@ -243,7 +243,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * This trait defines the additional methods needed for the refinement of the new
      * properties.
      */
-    trait ReferenceValue extends super.ReferenceValue { this: AReferenceValue =>
+    trait TheReferenceValue extends super.ReferenceValueLike { this: AReferenceValue =>
 
         /**
          * Returns the reference id of this object. I.e., an approximation of the object's
@@ -381,7 +381,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      *       standard sets - the UID trait is implemented.
      */
     trait SingleOriginReferenceValue
-        extends ReferenceValue
+        extends TheReferenceValue
         with SingleOriginValue
         with UID {
         this: DomainSingleOriginReferenceValue =>
@@ -544,7 +544,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     protected class NullValue(
             override val origin: ValueOrigin
-    ) extends super.NullValue with SingleOriginReferenceValue { this: DomainNullValue =>
+    ) extends super.ANullValue with SingleOriginReferenceValue { this: DomainNullValue =>
 
         final def refId: RefId = domain.nullRefId
 
@@ -682,7 +682,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     protected trait ArrayValue
-        extends super.ArrayValue
+        extends super.AnArrayValue
         with NonNullSingleOriginSReferenceValue[ArrayType] {
         this: DomainArrayValue =>
 
@@ -774,12 +774,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     }
 
-    trait ObjectValue extends super.ObjectValue with NonNullSingleOriginReferenceValue {
+    trait ObjectValue extends super.AnObjectValue with NonNullSingleOriginReferenceValue {
         this: DomainObjectValue =>
     }
 
     protected trait SObjectValue
-        extends super.SObjectValue
+        extends super.SObjectValueLike
         with NonNullSingleOriginSReferenceValue[ObjectType]
         with ObjectValue {
         this: DomainObjectValue =>
@@ -839,7 +839,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (this eq other)
                 return true;
 
-            def checkPrecisionAndNullness(that: ReferenceValue): Boolean = {
+            def checkPrecisionAndNullness(that: TheReferenceValue): Boolean = {
                 (!this.isPrecise || that.isPrecise) &&
                     (this.isNull.isUnknown || that.isNull.isNo)
             }
@@ -913,7 +913,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         override def toString: String = toString(theUpperTypeBound.toJava)
     }
 
-    protected trait MObjectValue extends super.MObjectValue with ObjectValue {
+    protected trait MObjectValue extends super.MObjectValueLike with ObjectValue {
         value: DomainObjectValue =>
 
         /**
@@ -1054,7 +1054,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val upperTypeBound:     UIDSet[_ <: ReferenceType],
             override val refId:     RefId
     ) extends IsMultipleReferenceValue
-        with ReferenceValue
+        with TheReferenceValue
         with MultipleOriginsValue {
         this: DomainMultipleReferenceValues =>
 

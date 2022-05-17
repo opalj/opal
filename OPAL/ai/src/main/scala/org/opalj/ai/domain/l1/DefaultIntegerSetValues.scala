@@ -22,7 +22,7 @@ import org.opalj.br.CTIntType
 trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with IntegerSetValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
 
-    class AnIntegerValue extends super.AnIntegerValue {
+    class AnIntegerValue extends super.AnIntegerValueLike {
 
         override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
             // - we are not joining the "same" value
@@ -49,7 +49,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     def AnIntegerValue(): AnIntegerValue = new AnIntegerValue()
 
-    class IntegerSet(val values: SortedSet[Int]) extends super.IntegerSet {
+    class IntegerSet(val values: SortedSet[Int]) extends super.IntegerSetLike {
 
         assert(values.nonEmpty)
 
@@ -66,7 +66,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
                     val newUB = max(thisUB, that.upperBound)
                     StructuralUpdate(approximateSet(pc, newLB, newUB))
 
-                case IntegerSet(thatValues) =>
+                case IntegerSetLike(thatValues) =>
                     val newValues = this.values ++ thatValues
 
                     if (newValues.size == 1) {
@@ -130,7 +130,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     // NOTE: IF WE HAVE TWO VALUES THAT ARE REFERENCE EQUAL, THEN THE
     // (UNKNOWN) UNDERLYING VALUE IS THE SAME!
-    trait BaseTypesBasedSet extends super.BaseTypesBasedSet { this: DomainValue =>
+    trait BaseTypesBasedSet extends super.BaseTypesBasedSetLike { this: DomainValue =>
 
         def name: String
 
@@ -148,7 +148,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
                     else
                         StructuralUpdate(approximateSet(pc, newLB, newUB))
 
-                case IntegerSet(thatValues) =>
+                case IntegerSetLike(thatValues) =>
                     val thisLB = this.lowerBound
                     val thisUB = this.upperBound
                     val thatLB = thatValues.firstKey
@@ -198,7 +198,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     def U7BitSet(): DomainTypedValue[CTIntType] = new U7BitSet
 
-    class U7BitSet extends super.U7BitSet with BaseTypesBasedSet { this: DomainValue =>
+    class U7BitSet extends super.U7BitSetLike with BaseTypesBasedSet { this: DomainValue =>
         override def name = "Unsigned7BitValue"
         override def newInstance = new U7BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
@@ -214,7 +214,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     def U15BitSet(): DomainTypedValue[CTIntType] = new U15BitSet()
 
-    class U15BitSet extends super.U15BitSet with BaseTypesBasedSet { this: DomainValue =>
+    class U15BitSet extends super.U15BitSetLike with BaseTypesBasedSet { this: DomainValue =>
         override def name = "Unsigned15BitValue"
         override def newInstance = new U15BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
@@ -228,7 +228,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
         override def constantValue: Option[Int] = None
     }
 
-    class ByteSet extends super.ByteSet with BaseTypesBasedSet {
+    class ByteSet extends super.ByteSetLike with BaseTypesBasedSet {
         override def name = "ByteValue"
         override def newInstance = new ByteSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
@@ -237,7 +237,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
         override def constantValue: Option[Int] = None
     }
 
-    class ShortSet extends super.ShortSet with BaseTypesBasedSet {
+    class ShortSet extends super.ShortSetLike with BaseTypesBasedSet {
         override def name = "ShortValue"
         override def newInstance = new ShortSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
@@ -246,7 +246,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
         override def constantValue: Option[Int] = None
     }
 
-    class CharSet extends super.CharSet with BaseTypesBasedSet {
+    class CharSet extends super.CharSetLike with BaseTypesBasedSet {
         override def name = "CharValue"
         override def newInstance = new CharSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {

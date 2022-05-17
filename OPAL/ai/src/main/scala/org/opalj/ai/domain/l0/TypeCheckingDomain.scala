@@ -49,16 +49,16 @@ final class TypeCheckingDomain(
     def this(project: SomeProject, method: Method) =
         this(project.classHierarchy, method)
 
-    type AReferenceValue = ReferenceValue
+    type AReferenceValue = ReferenceValueLike
     type DomainReferenceValue = AReferenceValue
 
     final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
-    type DomainNullValue = NullValue
-    type DomainObjectValue = ObjectValue
-    type DomainArrayValue = ArrayValue
+    type DomainNullValue = ANullValue
+    type DomainObjectValue = AnObjectValue
+    type DomainArrayValue = AnArrayValue
 
-    val TheNullValue: DomainNullValue = new NullValue()
+    val TheNullValue: DomainNullValue = new ANullValue()
 
     // -----------------------------------------------------------------------------------
     //
@@ -68,7 +68,7 @@ final class TypeCheckingDomain(
 
     protected case class InitializedObjectValue(
             override val theUpperTypeBound: ObjectType
-    ) extends SObjectValue with Value {
+    ) extends SObjectValueLike with Value {
         this: DomainObjectValue =>
 
         override def isNull: Answer = No
@@ -88,7 +88,7 @@ final class TypeCheckingDomain(
     protected case class UninitializedObjectValue(
             override val theUpperTypeBound: ObjectType,
             origin:                         ValueOrigin
-    ) extends SObjectValue {
+    ) extends SObjectValueLike {
         this: DomainObjectValue =>
 
         override def isPrecise: Boolean = {
@@ -162,13 +162,13 @@ final class TypeCheckingDomain(
 
     protected case class DefaultMObjectValue(
             upperTypeBound: UIDSet[ObjectType]
-    ) extends MObjectValue {
+    ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }
 
     protected case class DefaultArrayValue(
             theUpperTypeBound: ArrayType
-    ) extends ArrayValue {
+    ) extends AnArrayValue {
         override def isNull: Answer = Unknown
     }
 

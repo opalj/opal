@@ -56,33 +56,33 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
      *
      * Models the top value of this domain's lattice.
      */
-    trait ALongValue extends LongValue { this: DomainTypedValue[LongType] => }
+    trait ALongValueLike extends LongValue { this: DomainTypedValue[LongType] => }
 
     /**
      * Represents a set of long values.
      */
-    abstract class LongSet extends LongValue { this: DomainTypedValue[LongType] =>
+    abstract class LongSetLike extends LongValue { this: DomainTypedValue[LongType] =>
 
         val values: SortedSet[Long]
 
     }
 
     /**
-     * Factory method to create a new [[LongSet]] value containing just the given value.
+     * Factory method to create a new [[LongSetLike]] value containing just the given value.
      */
     def LongSet(value: Long): DomainTypedValue[LongType] = LongSet(SortedSet(value))
 
     /**
-     * Factory method to create a new [[LongSet]] value using the given set.
+     * Factory method to create a new [[LongSetLike]] value using the given set.
      */
     def LongSet(values: SortedSet[Long]): DomainTypedValue[LongType]
 
     /**
      * Extractor for `LongSet` values.
      */
-    object LongSet {
+    object LongSetLike {
 
-        def unapply(v: LongSet): Option[SortedSet[Long]] = Some(v.values)
+        def unapply(v: LongSetLike): Option[SortedSet[Long]] = Some(v.values)
 
     }
 
@@ -104,14 +104,14 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         orElse: => T
     ): T =
         value match {
-            case LongSet(values) if values.size == 1 => f(values.head)
-            case _                                   => orElse
+            case LongSetLike(values) if values.size == 1 => f(values.head)
+            case _                                       => orElse
         }
 
     @inline final override def longValueOption(value: DomainValue): Option[Long] =
         value match {
-            case LongSet(values) if values.size == 1 => Some(values.head)
-            case _                                   => None
+            case LongSetLike(values) if values.size == 1 => Some(values.head)
+            case _                                       => None
         }
 
     @inline protected final def withLongValuesOrElse[T](
@@ -139,8 +139,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     //
     /*override*/ def lneg(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case LongSet(values) => LongSet(values.map(v => -v))
-            case _               => LongValue(origin = pc)
+            case LongSetLike(values) => LongSet(values.map(v => -v))
+            case _                   => LongValue(origin = pc)
         }
 
     //
@@ -149,9 +149,9 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     /*override*/ def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         left match {
-            case (LongSet(leftValues)) =>
+            case (LongSetLike(leftValues)) =>
                 right match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         val lb =
                             if (leftValues.head < rightValues.last)
                                 -1
@@ -180,7 +180,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 }
             case _ =>
                 right match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         if (rightValues.size == 1) {
                             if (rightValues.head == Long.MinValue)
                                 IntegerRange(pc, 0, 1)
@@ -202,7 +202,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     /*override*/ def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (LongSet(leftValues), LongSet(rightValues)) =>
+            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 val results = for (l <- leftValues; r <- rightValues) yield l + r
                 if (results.size <= maxCardinalityOfLongSets)
                     LongSet(results)
@@ -215,7 +215,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     /*override*/ def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         (left, right) match {
-            case (LongSet(leftValues), LongSet(rightValues)) =>
+            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 val results = for (l <- leftValues; r <- rightValues) yield l - r
                 if (results.size <= maxCardinalityOfLongSets)
                     LongSet(results)
@@ -228,13 +228,13 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     /*override*/ def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
-            case (LongSet(leftValues)) =>
+            case (LongSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == 0L)
                     value1
                 else if (leftValues.size == 1 && leftValues.head == 1L)
                     value2
                 else value2 match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         val results = for (l <- leftValues; r <- rightValues) yield l * r
 
                         if (results.size <= maxCardinalityOfLongSets)
@@ -246,7 +246,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 }
             case _ =>
                 value2 match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         if (rightValues.size == 1 && rightValues.head == 0L)
                             value2
                         else if (rightValues.size == 1 && rightValues.head == 1L)
@@ -294,7 +294,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         denominator: DomainValue
     ): LongValueOrArithmeticException = {
         (numerator, denominator) match {
-            case (LongSet(leftValues), LongSet(rightValues)) =>
+            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 var results: SortedSet[Long] = SortedSet.empty
                 var exception: Boolean = false
                 for (l <- leftValues; r <- rightValues) {
@@ -305,7 +305,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 }
                 createLongValueOrArithmeticException(pc, exception, results)
 
-            case (_, LongSet(rightValues)) =>
+            case (_, LongSetLike(rightValues)) =>
                 if (rightValues contains (0L)) {
                     if (rightValues.size == 1)
                         ThrowsException(VMArithmeticException(pc))
@@ -335,7 +335,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     ): LongValueOrArithmeticException = {
 
         (left, right) match {
-            case (LongSet(leftValues), LongSet(rightValues)) =>
+            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 var results: SortedSet[Long] = SortedSet.empty
                 var exception: Boolean = false
                 for (leftValue <- leftValues; rightValue <- rightValues) {
@@ -346,7 +346,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 }
                 createLongValueOrArithmeticException(pc, exception, results)
 
-            case (_, LongSet(rightValues)) =>
+            case (_, LongSetLike(rightValues)) =>
                 if (rightValues contains (0L)) {
                     if (rightValues.size == 1)
                         ThrowsException(VMArithmeticException(pc))
@@ -371,13 +371,13 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     /*override*/ def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
-            case (LongSet(leftValues)) =>
+            case (LongSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == -1L)
                     value2
                 else if (leftValues.size == 1 && leftValues.head == 0L)
                     value1
                 else value2 match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         val results = for (l <- leftValues; r <- rightValues) yield l & r
                         if (results.size <= maxCardinalityOfLongSets)
                             LongSet(results)
@@ -388,7 +388,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 }
             case _ =>
                 value2 match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         if (rightValues.size == 1 && rightValues.head == -1L)
                             value1
                         else if (rightValues.size == 1 && rightValues.head == 0L)
@@ -403,13 +403,13 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     /*override*/ def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
-            case (LongSet(leftValues)) =>
+            case (LongSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == -1L)
                     value1
                 else if (leftValues.size == 1 && leftValues.head == 0L)
                     value2
                 else value2 match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         val results = for (l <- leftValues; r <- rightValues) yield l | r
                         if (results.size <= maxCardinalityOfLongSets)
                             LongSet(results)
@@ -420,7 +420,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 }
             case _ =>
                 value2 match {
-                    case (LongSet(rightValues)) =>
+                    case (LongSetLike(rightValues)) =>
                         if (rightValues.size == 1 && rightValues.head == -1L)
                             value2
                         else if (rightValues.size == 1 && rightValues.head == 0L)
@@ -435,7 +435,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
     /*override*/ def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (LongSet(leftValues), LongSet(rightValues)) =>
+            case (LongSetLike(leftValues), LongSetLike(rightValues)) =>
                 val results = for (l <- leftValues; r <- rightValues) yield l ^ r
                 if (results.size <= maxCardinalityOfLongSets)
                     LongSet(results)

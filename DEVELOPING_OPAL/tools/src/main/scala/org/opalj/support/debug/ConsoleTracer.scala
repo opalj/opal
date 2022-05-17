@@ -66,8 +66,8 @@ trait ConsoleTracer extends AITracer { tracer =>
                 case rv: IsReferenceValue if rv.allValues.size > 1 =>
                     val values = rv.allValues
                     val t =
-                        if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])
-                            s";refId=${rv.asInstanceOf[org.opalj.ai.domain.l1.ReferenceValues#ReferenceValue].refId}"
+                        if (rv.isInstanceOf[domain.l1.ReferenceValues#TheReferenceValue])
+                            s";refId=${rv.asInstanceOf[org.opalj.ai.domain.l1.ReferenceValues#TheReferenceValue].refId}"
                         else
                             ""
                     values.map(toStringWithOID(_)).mkString("OneOf["+values.size+"](", ",", ")") +

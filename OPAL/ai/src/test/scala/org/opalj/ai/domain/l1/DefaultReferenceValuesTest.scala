@@ -180,9 +180,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                             Chain(theObjectValue),
                             Locals(IndexedSeq(theFileValue, theObjectValue))
                         )
-                    updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
-                    updatedLocals(0).asInstanceOf[ReferenceValue].upperTypeBound.head should be(File)
-                    updatedLocals(1).asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
+                    updatedOperands.head.asInstanceOf[TheReferenceValue].upperTypeBound.head should be(Serializable)
+                    updatedLocals(0).asInstanceOf[TheReferenceValue].upperTypeBound.head should be(File)
+                    updatedLocals(1).asInstanceOf[TheReferenceValue].upperTypeBound.head should be(Serializable)
                 }
 
                 {

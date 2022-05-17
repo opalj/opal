@@ -27,7 +27,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
      *      constraint that some value (after some kind of check) has to have a special
      *      value may affect unrelated values!
      */
-    class AnIntegerValue extends super.AnIntegerValue {
+    class AnIntegerValue extends super.AnIntegerValueLike {
 
         override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
             // ...this method is only called if we are not joining the "same" value...
@@ -66,7 +66,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
     /**
      * Represents a specific integer value in the range [`lowerBound`,`upperBound`].
      */
-    class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRange {
+    class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRangeLike {
 
         assert(
             lowerBound <= upperBound,
@@ -89,7 +89,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
 
                 case _: AnIntegerValue => StructuralUpdate(AnIntegerValue())
 
-                case IntegerRange(otherLB, otherUB) =>
+                case IntegerRangeLike(otherLB, otherUB) =>
                     val thisLB = this.lowerBound
                     val thisUB = this.upperBound
                     val newLB = Math.min(thisLB, otherLB)
@@ -158,7 +158,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (
                 other match {
-                    case IntegerRange(thatLB, thatUB) =>
+                    case IntegerRangeLike(thatLB, thatUB) =>
                         this.lowerBound <= thatLB && this.upperBound >= thatUB
                     case _ => false
                 }

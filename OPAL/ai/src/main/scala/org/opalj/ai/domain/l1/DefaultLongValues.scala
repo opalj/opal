@@ -41,7 +41,7 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
     /**
      * Represents a concrete long value.
      */
-    class TheLongValue(override val value: Long) extends super.TheLongValue {
+    class ConcreteLongValue(override val value: Long) extends super.TheLongValue {
 
         override def constantValue: Option[Long] = Some(value)
 
@@ -72,8 +72,8 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: TheLongValue => that.value == this.value
-                case _                  => false
+                case that: ConcreteLongValue => that.value == this.value
+                case _                       => false
             }
         }
 
@@ -88,6 +88,6 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
 
     override def LongValue(origin: ValueOrigin): ALongValue.type = ALongValue
 
-    override def LongValue(origin: ValueOrigin, value: Long): TheLongValue = new TheLongValue(value)
+    override def LongValue(origin: ValueOrigin, value: Long): ConcreteLongValue = new ConcreteLongValue(value)
 
 }

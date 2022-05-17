@@ -20,7 +20,7 @@ trait DefaultLongSetValues
     with LongSetValues {
     domain: IntegerRangeValuesFactory with Configuration with ExceptionsFactory =>
 
-    class ALongValue() extends super.ALongValue {
+    class ALongValue() extends super.ALongValueLike {
 
         override def constantValue: Option[Long] = None
 
@@ -47,7 +47,7 @@ trait DefaultLongSetValues
         override def toString: String = "ALongValue"
     }
 
-    class LongSet(val values: SortedSet[Long]) extends super.LongSet {
+    class LongSet(val values: SortedSet[Long]) extends super.LongSetLike {
 
         assert(values.nonEmpty)
 
@@ -58,7 +58,7 @@ trait DefaultLongSetValues
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
                 case _: ALongValue => StructuralUpdate(LongValue(pc))
-                case LongSet(thatValues) =>
+                case LongSetLike(thatValues) =>
                     val thisValues = this.values
                     val newValues = thisValues ++ thatValues
                     val newValuesSize = newValues.size

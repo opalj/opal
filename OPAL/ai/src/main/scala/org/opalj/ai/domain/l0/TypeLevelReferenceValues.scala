@@ -201,13 +201,13 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     //
     // ---------------------------------------------------------------------------------------------
 
-    type AReferenceValue <: DomainReferenceValue with ReferenceValue
+    type AReferenceValue <: DomainReferenceValue with ReferenceValueLike
 
-    type DomainObjectValue <: ObjectValue with AReferenceValue
+    type DomainObjectValue <: ObjectValueLike with AReferenceValue
 
-    type DomainArrayValue <: ArrayValue with AReferenceValue
+    type DomainArrayValue <: ArrayValueLike with AReferenceValue
 
-    type DomainNullValue <: NullValue with AReferenceValue
+    type DomainNullValue <: NullValueLike with AReferenceValue
 
     trait ArrayAbstraction {
 
@@ -222,7 +222,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
-    trait ReferenceValue extends super.ReferenceValue with ArrayAbstraction {
+    trait ReferenceValueLike extends super.ReferenceValue with ArrayAbstraction {
         this: AReferenceValue =>
 
         final override def asDomainReferenceValue: DomainReferenceValue = this
@@ -233,7 +233,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * A reference value with a single (upper) type (bound).
      */
     protected[this] trait SReferenceValue[T <: ReferenceType]
-        extends ReferenceValue
+        extends ReferenceValueLike
         with IsSReferenceValue[T] {
         this: AReferenceValue =>
 
@@ -258,7 +258,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Depending on the precision of the domain `null` values may also be returned by
      * method calls or field reads.
      */
-    protected trait NullValue extends ReferenceValue with IsNullValue {
+    protected trait NullValueLike extends ReferenceValueLike with IsNullValue {
         value: DomainNullValue =>
 
         // IMPLEMENTATION OF THE ARRAY RELATED METHODS
@@ -290,7 +290,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Represents a class/interface value which may have a single class and/or
      * multiple interfaces as its upper type bound.
      */
-    protected[this] trait ObjectValue extends ReferenceValue {
+    protected[this] trait ObjectValueLike extends ReferenceValueLike {
         value: DomainObjectValue =>
 
     }
@@ -298,7 +298,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     /**
      * Represents an array value.
      */
-    protected[this] trait ArrayValue extends ReferenceValue with IsSArrayValue {
+    protected[this] trait ArrayValueLike extends ReferenceValueLike with IsSArrayValue {
         value: DomainArrayValue =>
 
         /**
@@ -824,8 +824,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
     abstract override def toJavaObject(pc: Int, value: DomainValue): Option[Object] = {
         value match {
-            case _: NullValue => Some(null)
-            case _            => super.toJavaObject(pc, value)
+            case _: NullValueLike => Some(null)
+            case _                => super.toJavaObject(pc, value)
         }
     }
 

@@ -46,7 +46,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val exs = domain.thrownExceptions(result.domain, -1)
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
-            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) => true
+            case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
             case _ => false
         } should be(true)
     }
@@ -60,7 +60,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val exs = domain.thrownExceptions(result.domain, -1)
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
-            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) => true
+            case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
             case _ => false
         } should be(true)
     }
@@ -106,16 +106,16 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
 
         exs forall { ex =>
             ex match {
-                case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) =>
+                case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) =>
                     foundUnsupportedOperationException = true
                     true
-                case domain.SObjectValue(ObjectType.NullPointerException) =>
+                case domain.SObjectValueLike(ObjectType.NullPointerException) =>
                     foundNullPointerException = true
                     true
-                case domain.SObjectValue(ObjectType("java/lang/UnknownError")) =>
+                case domain.SObjectValueLike(ObjectType("java/lang/UnknownError")) =>
                     foundUnknownError = true
                     true
-                case domain.SObjectValue(ObjectType("java/lang/IllegalArgumentException")) =>
+                case domain.SObjectValueLike(ObjectType("java/lang/IllegalArgumentException")) =>
                     foundIllegalArgumentException = true
                     true
                 case _ =>
