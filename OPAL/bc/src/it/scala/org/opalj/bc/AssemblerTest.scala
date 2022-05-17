@@ -49,7 +49,7 @@ class AssemberTest extends AnyFlatSpec with Matchers {
             val entriesCount = new AtomicInteger(0)
 
             val Lock = new Object
-            val exceptions: List[Throwable] = Nil
+            var exceptions: List[Throwable] = List.empty[Throwable]
 
             val zipFile = new ZipFile(file)
             zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze =>
