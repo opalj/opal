@@ -239,13 +239,13 @@ class InstructionLocation(
 
     override def toEclipseConsoleString: String = {
         val source = classFile.thisType.toJava.split('$').head
-        val line = this.line.map(":"+_).getOrElse("")
+        val line = this.line.map(line => s":$line").getOrElse("")
         "("+source+".java"+line+") "
     }
 
     override def toAnsiColoredString: String = {
         theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"+
-            line.map(_+": ").getOrElse(" ")
+            line.map(line => s"$line: ").getOrElse(" ")
     }
 
 }
