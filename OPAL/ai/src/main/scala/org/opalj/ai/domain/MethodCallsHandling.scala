@@ -3,8 +3,7 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.Set
-
+import scala.collection.{Set, mutable}
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
@@ -18,7 +17,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
 
     protected[this] def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
-        var exceptionTypes: Set[ObjectType] = Set.empty
+        val exceptionTypes: mutable.Set[ObjectType] = mutable.Set.empty
         var exceptionValues: List[ExceptionValue] = List.empty
 
         def add(exceptionType: ObjectType): Unit = {

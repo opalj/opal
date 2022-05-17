@@ -7,7 +7,7 @@ import java.lang.ref.{SoftReference => SRef}
 
 import scala.collection.BitSet
 import scala.collection.mutable
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
@@ -1076,7 +1076,7 @@ trait RecordCFG
                 def pcsToString(pcs: List[Int /*PC*/ ]): String = {
                     def pcToString(pc: Int): String = {
                         val ln = code.lineNumber(pc).map(ln => s"[ln=$ln]").getOrElse("")
-                        pc + ln+": "+cfgDomain.code.instructions(pc).toString(pc)
+                        s"$pc$ln: ${cfgDomain.code.instructions(pc).toString(pc)}"
                     }
                     pcs.map(pcToString).mkString("", "\\l\\l", "\\l")
                 }

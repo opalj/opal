@@ -3,7 +3,7 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.Set
+import scala.collection.immutable
 
 /**
  * Records '''all''' exceptions thrown by a method. I.e., for each instruction that
@@ -21,12 +21,12 @@ import scala.collection.Set
 trait RecordAllThrownExceptions extends RecordThrownExceptions {
     domain: ValuesDomain with Configuration with ExceptionsFactory =>
 
-    type ThrownException = Set[ExceptionValue]
+    type ThrownException = immutable.Set[ExceptionValue]
 
     override protected[this] def recordThrownException(
         pc:    Int,
         value: ExceptionValue
-    ): ThrownException = Set(value)
+    ): ThrownException = immutable.Set(value)
 
     override protected[this] def joinThrownExceptions(
         pc:                        Int,

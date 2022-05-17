@@ -3,8 +3,7 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.Set
-
+import scala.collection.{Set, immutable}
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ObjectType
@@ -126,7 +125,7 @@ trait RecordMethodCallResults
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
         } else {
-            var exceptionValuesPerType: Map[ObjectType, Set[ExceptionValue]] = Map.empty
+            var exceptionValuesPerType: Map[ObjectType, immutable.Set[ExceptionValue]] = Map.empty
 
             def handleExceptionValue(exceptionValue: ExceptionValue): Unit = {
                 exceptionValue.upperTypeBound match {
@@ -134,14 +133,14 @@ trait RecordMethodCallResults
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             ObjectType.Throwable,
                             exceptionValuesPerType.getOrElse(
-                                ObjectType.Throwable, Set.empty
+                                ObjectType.Throwable, immutable.Set.empty
                             ) + exceptionValue
                         )
                     case UIDSet1(exceptionType: ObjectType) =>
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
-                                exceptionType, Set.empty
+                                exceptionType, immutable.Set.empty
                             ) + exceptionValue
                         )
                     case utb =>
@@ -152,7 +151,7 @@ trait RecordMethodCallResults
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
-                                exceptionType, Set.empty
+                                exceptionType, immutable.Set.empty
                             ) + exceptionValue
                         )
                 }

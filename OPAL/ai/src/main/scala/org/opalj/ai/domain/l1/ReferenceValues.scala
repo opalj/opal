@@ -1388,23 +1388,24 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ): (Operands, Locals) = {
 
             var newValue = value
+            val upperBoundGoal = upperTypeBoundGoal.asInstanceOf[UIDSet[ReferenceType]]
 
             if (isNullGoal.isYesOrNo && newValue.isNull != isNullGoal) {
                 newValue = newValue.doRefineIsNull(isNullGoal)
             }
 
             if (newValue.isNull.isNoOrUnknown) {
-                val newValueUTB = newValue.upperTypeBound
-                if (upperTypeBoundGoal != newValueUTB) {
+                val newValueUTB = newValue.upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]
+                if (upperBoundGoal != newValueUTB) {
                     // ALSO have to handle the case where upperTypeBoundGoal and
                     // newValueUTB are NOT in an inheritance relationship!
-                    val goalIsASubtype = classHierarchy.isASubtypeOf(upperTypeBoundGoal, newValueUTB)
+                    val goalIsASubtype = classHierarchy.isASubtypeOf(upperBoundGoal, newValueUTB)
                     if (goalIsASubtype.isYes)
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal)
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal)
                     else if (goalIsASubtype.isUnknown)
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal unionUIDSet newValueUTB)
-                    else if (!classHierarchy.isSubtypeOf(newValueUTB, upperTypeBoundGoal))
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal unionUIDSet newValueUTB)
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal unionUIDSet newValueUTB)
+                    else if (!classHierarchy.isSubtypeOf(newValueUTB, upperBoundGoal))
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal unionUIDSet newValueUTB)
                 }
             }
 

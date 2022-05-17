@@ -415,9 +415,9 @@ trait ValuesDomain { domain =>
             }
         }
 
-        override def baseValues: Traversable[domain.DomainReferenceValue]
+        override def baseValues: Iterable[domain.DomainReferenceValue]
 
-        override def allValues: Traversable[domain.DomainReferenceValue]
+        override def allValues: Iterable[domain.DomainReferenceValue]
 
         /*
         /**

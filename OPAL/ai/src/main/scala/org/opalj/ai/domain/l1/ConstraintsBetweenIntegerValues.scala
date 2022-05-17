@@ -6,7 +6,7 @@ package l1
 
 import java.util.{IdentityHashMap => IDMap}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.opalj.constraints.NumericConstraints
 import org.opalj.collection.immutable.IntTrieSet
