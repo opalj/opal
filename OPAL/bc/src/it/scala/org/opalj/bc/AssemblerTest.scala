@@ -14,7 +14,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataOutputStream
 import java.util.zip.ZipFile
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.JavaConverters.*
+import scala.jdk.CollectionConverters.*
 import org.opalj.io.FailAfterByteArrayOutputStream
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
