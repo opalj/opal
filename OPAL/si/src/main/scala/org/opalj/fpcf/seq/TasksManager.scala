@@ -47,8 +47,8 @@ trait TasksManager {
  */
 private[seq] final class LIFOTasksManager extends TasksManager {
 
-    private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-    private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] val tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
     override def push(task: QualifiedTask): Unit = {
         this.initialTasks.addFirst(task)

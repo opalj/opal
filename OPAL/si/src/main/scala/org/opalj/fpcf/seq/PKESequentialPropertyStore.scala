@@ -122,7 +122,7 @@ final class PKESequentialPropertyStore protected (
     }
 
     // The registered triggered computations along with the set of entities for which the analysis was triggered
-    private[this] var triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
+    private[this] val triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 

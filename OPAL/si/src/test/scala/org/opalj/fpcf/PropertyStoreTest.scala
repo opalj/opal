@@ -1881,8 +1881,8 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
 
 abstract class PropertyStoreTestWithDebugging[PS <: PropertyStore] extends PropertyStoreTest[PS] {
 
-    private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
-    private[this] var oldPropertyStoreTraceFallbacksSetting = PropertyStore.TraceFallbacks
+    private[this] val oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    private[this] val oldPropertyStoreTraceFallbacksSetting = PropertyStore.TraceFallbacks
 
     override def beforeAll(): Unit = {
         PropertyStore.updateDebug(true)
@@ -2154,7 +2154,7 @@ abstract class PropertyStoreTestWithDebugging[PS <: PropertyStore] extends Prope
 
 abstract class PropertyStoreTestWithoutDebugging[PS <: PropertyStore] extends PropertyStoreTest[PS] {
 
-    private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    private[this] val oldPropertyStoreUpdateSetting = PropertyStore.Debug
     override def beforeAll(): Unit = PropertyStore.updateDebug(false)
     override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
 
