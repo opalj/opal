@@ -965,7 +965,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         if (receiverOption.isDefined) {
             val descriptorOpt = if (isDirect && apiMethod.name == "invokeExact") {
-                tac.stmts(tac.properStmtIndexForPC(callPC)) match {
+                (tac.stmts(tac.properStmtIndexForPC(callPC)): @unchecked) match {
                     case vmc: VirtualMethodCall[V]          => Some(vmc.descriptor)
                     case VirtualFunctionCallStatement(call) => Some(call.descriptor)
                 }

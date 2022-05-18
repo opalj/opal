@@ -675,6 +675,7 @@ object TACNaive {
                             schedule(pcOfNextInstruction(pc), rest)
                         case _ :: rest =>
                             schedule(pcOfNextInstruction(pc), rest)
+                        case _ => throw new MatchError(stack)
                     }
 
                 case INSTANCEOF.opcode =>
@@ -747,6 +748,7 @@ object TACNaive {
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
                         case v1 :: v2 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                        case _ => throw new MatchError(stack)
                     }
 
                 case DUP2.opcode =>
@@ -756,6 +758,7 @@ object TACNaive {
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: v2 :: rest)
                         case v1 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v1 :: rest)
+                        case _ => throw new MatchError(stack)
                     }
 
                 case DUP2_X1.opcode =>
@@ -765,6 +768,7 @@ object TACNaive {
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                         case v1 :: v2 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                        case _ => throw new MatchError(stack)
                     }
 
                 case DUP2_X2.opcode =>
@@ -779,6 +783,7 @@ object TACNaive {
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                         case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                        case _ => throw new MatchError(stack)
                     }
 
                 case D2F.opcode | I2F.opcode | L2F.opcode => primitiveCastOperation(FloatType)

@@ -288,7 +288,7 @@ object CodeAttributeBuilder {
                         c.instructions.
                             zipWithIndex.
                             filter(_._1 != null).
-                            map(e => e._2+": "+e._1)
+                            map(e => s"${e._2}: ${e._1}")
                     val instructionsAsString = instructions.mkString("\n\t\t", "\n\t\t", "\n")
                     val body =
                         s"; pc $pc is dead; unable to compute stack map table:"+

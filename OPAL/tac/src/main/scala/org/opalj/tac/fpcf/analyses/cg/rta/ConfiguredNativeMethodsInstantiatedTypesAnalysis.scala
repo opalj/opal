@@ -28,6 +28,8 @@ import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.ReferenceType
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
  *
@@ -87,7 +89,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
 
         val newInstantiatedTypes = UIDSet(
-            instantiatedTypes.filterNot(instantiatedTypesUB.contains): _*
+            ArraySeq.unsafeWrapArray(instantiatedTypes.filterNot(instantiatedTypesUB.contains))*
         )
 
         if (newInstantiatedTypes.isEmpty)

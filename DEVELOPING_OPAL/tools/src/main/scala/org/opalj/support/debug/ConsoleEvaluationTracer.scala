@@ -99,8 +99,8 @@ trait ConsoleEvaluationTracer extends AITracer {
     )(
         pc: Int, targetPC: Int, nestingLevel: Int
     ): Unit = {
-        println
-        printIndent
+        println()
+        printIndent()
         print(BOLD+"↳\t︎"+RESET)
         indent += 1
     }
@@ -115,7 +115,7 @@ trait ConsoleEvaluationTracer extends AITracer {
         indent -= 1
 
         println(BOLD+"✓"+"(Resetting: "+subroutinePCs.mkString(", ")+")"+RESET)
-        printIndent
+        printIndent()
     }
 
     def abruptSubroutineTermination(

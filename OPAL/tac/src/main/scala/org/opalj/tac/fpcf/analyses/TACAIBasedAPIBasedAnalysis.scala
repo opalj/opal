@@ -160,6 +160,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
         case NonVirtualFunctionCallStatement(call) => call
         case StaticFunctionCallStatement(call)     => call
         case call: MethodCall[V]                   => call
+        case _ => throw new MatchError(callStmt)
     }
 
     def processNewCaller(

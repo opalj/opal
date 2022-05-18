@@ -136,12 +136,12 @@ class LabeledCode(
             case InsertionPosition.Before =>
                 val insertionPCLabel = LabelElement(InstructionLabel(insertionPC))
                 val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
-                instructions.insert(insertionPCLabelIndex + 1, newInstructions: _*)
+                instructions.insertAll(insertionPCLabelIndex + 1, newInstructions)
 
             case InsertionPosition.At =>
                 val insertionPCLabel = LabelElement(InstructionLabel(insertionPC))
                 val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
-                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
+                instructions.insertAll(insertionPCLabelIndex, newInstructions)
 
             case InsertionPosition.After =>
                 val originalCode = this.originalCode
@@ -158,7 +158,7 @@ class LabeledCode(
                 while (instructions(insertionPCLabelIndex - 1).isExceptionHandlerElement) {
                     insertionPCLabelIndex -= 1
                 }
-                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
+                instructions.insertAll(insertionPCLabelIndex, newInstructions)
 
         }
     }
@@ -182,7 +182,7 @@ class LabeledCode(
             pcInstructionLikeIndex += 1
         }
         instructions.remove(pcInstructionLikeIndex)
-        instructions.insert(pcInstructionLikeIndex, newInstructions: _*)
+        instructions.insertAll(pcInstructionLikeIndex, newInstructions)
     }
 
     /**
@@ -223,6 +223,7 @@ class LabeledCode(
                                 index += 1
                             }
                             UnpackedLineNumberTable(ArraySeq.unsafeWrapArray[LineNumber](finalLNs))
+                        case Some(_) => throw new MatchError(explicitLNT)
                     }
 
                 case ca: CodeAttribute => ca.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)

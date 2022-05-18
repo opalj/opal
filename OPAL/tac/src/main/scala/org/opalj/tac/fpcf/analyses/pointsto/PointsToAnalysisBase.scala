@@ -363,7 +363,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
+        (eps: @unchecked) match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) =>
                 val newDependees = updatedDependees(eps, dependees)
                 var results: List[ProperPropertyComputationResult] = List.empty
@@ -411,7 +411,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
+        (eps: @unchecked) match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) =>
                 val newDependees = updatedDependees(eps, dependees)
                 var results: List[ProperPropertyComputationResult] = List.empty
