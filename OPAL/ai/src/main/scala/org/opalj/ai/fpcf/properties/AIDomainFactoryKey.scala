@@ -62,7 +62,7 @@ object AIDomainFactoryKey
 
     def compute(
         project:         SomeProject,
-        domainFactories: Traversable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]
+        domainFactories: Iterable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]
     ): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 

@@ -4,12 +4,12 @@ package ai
 package domain
 package l1
 
+import org.opalj.ai.domain.Origin.{MultipleOriginsValue, SingleOriginValue}
+
 import scala.language.existentials
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
-
 import java.util.IdentityHashMap
-
 import org.opalj.collection.IntIterator
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.IdentityPair
@@ -1127,9 +1127,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def baseValues: Traversable[DomainSingleOriginReferenceValue] = values
+        override def baseValues: Iterable[DomainSingleOriginReferenceValue] = values
 
-        override def allValues: Traversable[DomainSingleOriginReferenceValue] = values
+        override def allValues: Iterable[DomainSingleOriginReferenceValue] = values
 
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 
@@ -1614,6 +1614,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                 case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(joinedValue)) =>
                     update.updateValue(rejoinValue(thisValue, thatValue, joinedValue))
+
+                case MetaInformationUpdate(_) | StructuralUpdate(_) => throw new MatchError(joinResult)
             }
         }
 
@@ -1654,6 +1656,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                         case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(otherValue)) =>
                                             updateType = updateType &: update
                                             newValues += otherValue
+                                        case MetaInformationUpdate(_) | StructuralUpdate(_) => throw new MatchError(joinResult)
                                     }
                                 }
                             case None =>

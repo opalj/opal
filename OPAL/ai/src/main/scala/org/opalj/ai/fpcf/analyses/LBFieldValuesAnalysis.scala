@@ -344,6 +344,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                         methodsCalledByM.nonEmpty &&
                                             methodsCalledByM.get.contains(calledMethod)
                                     }
+                                case _ => throw new MatchError(eOptionP)
                             }
                         }
 

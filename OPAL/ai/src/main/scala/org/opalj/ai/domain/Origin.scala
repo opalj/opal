@@ -32,6 +32,7 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
  * @author Michael Eichberg
  */
 trait Origin { domain: ValuesDomain =>
+    import Origin.*
 
     /**
      * Implementers are expected to "override" this method and to call
@@ -43,35 +44,6 @@ trait Origin { domain: ValuesDomain =>
     implicit object SingleOriginValueOrdering extends Ordering[SingleOriginValue] {
         def compare(x: SingleOriginValue, y: SingleOriginValue): Int = x.origin - y.origin
     }
-
-    /**
-     *  Common supertrait of all domain values which provide comprehensive origin information.
-     */
-    trait ValueWithOriginInformation {
-        def originsIterator: ValueOriginsIterator
-        def origins: ValueOrigins
-    }
-
-    /**
-     * Should be mixed in by `DomainValue`s that have a single origin.
-     */
-    trait SingleOriginValue extends ValueWithOriginInformation {
-
-        /**
-         * The origin of the value (or the pseudo-origin (e.g., the index of
-         * the parameter) if the true origin is unknown.)
-         */
-        def origin: ValueOrigin
-
-        final def originsIterator: ValueOriginsIterator = IntIterator(origin)
-        final def origins: ValueOrigins = IntTrieSet1(origin)
-    }
-
-    /**
-     * Marker trait which should be mixed in by `DomainValue` classes that capture information
-     * about all (multiple) origins of a value.
-     */
-    trait MultipleOriginsValue extends ValueWithOriginInformation
 
     /**
      * Returns the origin(s) of the given value if the information is available.
@@ -113,19 +85,49 @@ trait Origin { domain: ValuesDomain =>
 
 }
 
-@deprecated("introduces unnecessary (un)boxing; use the domain's (foreach)origin", "OPAL 1.1.0")
 object Origin {
-    def unapply(value: Origin#SingleOriginValue): Some[Int] = Some(value.origin)
+
+    /**
+     *  Common supertrait of all domain values which provide comprehensive origin information.
+     */
+    trait ValueWithOriginInformation {
+      def originsIterator: ValueOriginsIterator
+      def origins: ValueOrigins
+    }
+
+    /**
+     * Should be mixed in by `DomainValue`s that have a single origin.
+     */
+    trait SingleOriginValue extends ValueWithOriginInformation {
+
+      /**
+       * The origin of the value (or the pseudo-origin (e.g., the index of
+       * the parameter) if the true origin is unknown.)
+       */
+      def origin: ValueOrigin
+
+      final def originsIterator: ValueOriginsIterator = IntIterator(origin)
+      final def origins: ValueOrigins = IntTrieSet1(origin)
+    }
+
+    /**
+     * Marker trait which should be mixed in by `DomainValue` classes that capture information
+     * about all (multiple) origins of a value.
+     */
+    trait MultipleOriginsValue extends ValueWithOriginInformation
+
+    @deprecated("introduces unnecessary (un)boxing; use the domain's (foreach)origin", "OPAL 1.1.0")
+    def unapply(value: SingleOriginValue): Some[Int] = Some(value.origin)
 }
 
 object OriginsIterator {
-    def unapply(value: Origin#ValueWithOriginInformation): Some[ValueOriginsIterator] = {
+    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOriginsIterator] = {
         Some(value.originsIterator)
     }
 }
 
 object Origins {
-    def unapply(value: Origin#ValueWithOriginInformation): Some[ValueOrigins] = {
+    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOrigins] = {
         Some(value.origins)
     }
 }

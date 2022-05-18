@@ -14,6 +14,7 @@ package domain
  */
 trait RefineDefUseUsingOrigins extends RecordDefUse {
     defUseDomain: Domain with TheCode with Origin =>
+    import Origin.*
 
     override protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = {
         domainValue match {

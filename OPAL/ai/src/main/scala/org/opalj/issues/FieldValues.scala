@@ -91,7 +91,7 @@ class FieldValues(
                     "line" -> line(pc),
                     "details" -> details
                 )
-            }.toIterable
+            }
         )
     }
 }

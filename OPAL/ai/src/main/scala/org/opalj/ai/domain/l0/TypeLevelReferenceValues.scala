@@ -92,6 +92,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                         ComputedValueOrException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) =>
                         ComputedValueOrException(r1, mergeMultipleExceptionValues(pc, e1, e2))
+                    case _ => throw new MatchError(c2)
                 }
 
             case ComputationWithResult(r1) =>
@@ -102,6 +103,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                         ComputedValue(mergeDomainValues(pc, r1, r2))
                     case ComputationWithException(e2) =>
                         ComputedValueOrException(r1, e2)
+                    case _ => throw new MatchError(c2)
+
                 }
 
             case ComputationWithException(e1) =>
@@ -112,7 +115,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                         ComputedValueOrException(r2, e1)
                     case ComputationWithException(e2) =>
                         ThrowsException(mergeMultipleExceptionValues(pc, e1, e2))
+                    case _ => throw new MatchError(c2)
                 }
+            case _ => throw new MatchError(c1)
         }
     }
 
@@ -166,6 +171,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                             r1,
                             mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
                         )
+                    case _ => throw new MatchError(c2)
                 }
 
             case ComputationWithResult(r1) =>
@@ -176,6 +182,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                         ComputedValue(mergeDomainValues(pc, r1, r2))
                     case ComputationWithException(e2) =>
                         ComputedValueOrException(r1, e2)
+                    case _ => throw new MatchError(c2)
                 }
 
             case ComputationWithException(e1) =>
@@ -191,7 +198,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                         ThrowsException(
                             mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
                         )
+                    case _ => throw new MatchError(c2)
                 }
+            case _ => throw new MatchError(c1)
         }
     }
 

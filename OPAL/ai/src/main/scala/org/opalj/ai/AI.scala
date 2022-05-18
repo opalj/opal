@@ -2887,6 +2887,7 @@ abstract class AI[D <: Domain](
                                 fallThrough(v1 :: v2 :: v3 :: v1 :: rest)
                             case (v1 /*@ CTC1()*/ ) :: v2 /* @ CTC2()*/ :: rest =>
                                 fallThrough(v1 :: v2 :: v1 :: rest)
+                            case _ => throw new MatchError(operands)
                         }
                     case 92 /*dup2*/ =>
                         operands match {
@@ -2894,6 +2895,7 @@ abstract class AI[D <: Domain](
                                 fallThrough(v1 :: v2 :: operands)
                             case (v /*CTC2!*/ ) :: _ =>
                                 fallThrough(v :: operands)
+                            case _ => throw new MatchError(operands)
                         }
                     case 93 /*dup2_x1*/ =>
                         operands match {
@@ -2901,6 +2903,7 @@ abstract class AI[D <: Domain](
                                 fallThrough(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                             case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest =>
                                 fallThrough(v1 :: v2 :: v1 :: rest)
+                            case _ => throw new MatchError(operands)
                         }
                     case 94 /*dup2_x2*/ => operands match {
                         case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: v4 :: rest =>
@@ -2911,6 +2914,7 @@ abstract class AI[D <: Domain](
                             fallThrough(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                         case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest =>
                             fallThrough(v1 :: v2 :: v1 :: rest)
+                        case _ => throw new MatchError(operands)
                     }
 
                     case 87 /*pop*/ =>
