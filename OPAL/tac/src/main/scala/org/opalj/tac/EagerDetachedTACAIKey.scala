@@ -57,7 +57,7 @@ object EagerDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse
             // well... the following cast safe is safe, because the underlying
             // data-structure is actually, conceptually immutable
             val taCode = code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
-            taCode.detach
+            taCode.detach()
             taCodes.add((m, taCode))
         }
 

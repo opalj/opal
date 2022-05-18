@@ -6,19 +6,21 @@ package checking
 import scala.language.implicitConversions
 import java.net.URL
 import scala.util.matching.Regex
-import scala.collection.{Map => AMap, Set => ASet}
-import scala.collection.mutable.{Map => MutableMap, HashSet}
+import scala.collection.{Map as AMap, Set as ASet}
+import scala.collection.mutable.{HashSet, Map as MutableMap}
 import scala.Console.{GREEN, RED, RESET}
 import scala.io.Source
-import org.opalj.util.PerformanceEvaluation.{time, run}
-import org.opalj.br._
+import org.opalj.util.PerformanceEvaluation.{run, time}
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
-import org.opalj.de._
+import org.opalj.de.*
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.processSource
 import org.opalj.de.DependencyTypes.toUsageDescription
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * A specification of a project's architectural constraints.
@@ -59,19 +61,18 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * Creates a new `Specification` for the given `Project`. Error messages will
      * not use ANSI colors.
      */
-    def this(project: Project[URL]) {
+    def this(project: Project[URL]) =
         this(project, useAnsiColors = false)
-    }
 
     def this(
-        classFiles:    Traversable[(ClassFile, URL)],
+        classFiles:    Iterable[(ClassFile, URL)],
         useAnsiColors: Boolean                       = false
-    ) {
+    ) =
         this(
             run {
                 Project(
                     projectClassFilesWithSources = classFiles,
-                    Traversable.empty,
+                    Iterable.empty,
                     libraryClassFilesAreInterfacesOnly = true /*actually not relevant*/ )
             } { (t, project) =>
                 import project.logContext
@@ -82,7 +83,6 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             },
             useAnsiColors
         )
-    }
 
     import project.logContext
 
@@ -90,18 +90,18 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         OPALLogger.progress(if (useAnsiColors) GREEN + logMessage + RESET else logMessage)
     }
 
-    private[this] def logWarn(logMessage: String): Unit = {
-        val message = if (useAnsiColors) RED + logMessage + RESET else logMessage
-        OPALLogger.warn("project warn", message)
-    }
+//    private[this] def logWarn(logMessage: String): Unit = {
+//        val message = if (useAnsiColors) RED + logMessage + RESET else logMessage
+//        OPALLogger.warn("project warn", message)
+//    }
 
     private[this] def logInfo(logMessage: String): Unit = {
         OPALLogger.info("project info", logMessage)
     }
 
     @volatile
-    private[this] var theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
-        scala.collection.mutable.OpenHashMap.empty
+    private[this] val theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
+        scala.collection.mutable.HashMap.empty
 
     /**
      * The set of defined ensembles. An ensemble is identified by a symbol, a query
@@ -112,8 +112,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theEnsembles
 
     // calculated after all class files have been loaded
-    private[this] var theOutgoingDependencies: MutableMap[VirtualSourceElement, AMap[VirtualSourceElement, DependencyTypesSet]] =
-        scala.collection.mutable.OpenHashMap.empty
+    private[this] val theOutgoingDependencies: MutableMap[VirtualSourceElement, AMap[VirtualSourceElement, DependencyTypesSet]] =
+        scala.collection.mutable.HashMap.empty
 
     /**
      * Mapping between a source element and those source elements it depends on/uses.
@@ -124,8 +124,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theOutgoingDependencies
 
     // calculated after all class files have been loaded
-    private[this] var theIncomingDependencies: MutableMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] = {
-        scala.collection.mutable.OpenHashMap.empty
+    private[this] val theIncomingDependencies: MutableMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] = {
+        scala.collection.mutable.HashMap.empty
     }
 
     /**
@@ -140,7 +140,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
     private[this] val allSourceElements: HashSet[VirtualSourceElement] = HashSet.empty
 
-    private[this] var unmatchedSourceElements: ASet[VirtualSourceElement] = _
+    private[this] val unmatchedSourceElements: ASet[VirtualSourceElement] = HashSet.empty
 
     /**
      * Adds a new ensemble definition to this architecture specification.
@@ -249,7 +249,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         }
 
         override def toString: String = {
-            targetEnsemble+" is_only_to_be_used_by ("+sourceEnsembles.mkString(",")+")"
+            s"$targetEnsemble is_only_to_be_used_by (${sourceEnsembles.mkString(",")})"
         }
     }
 
@@ -416,14 +416,13 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             sourceEnsemble:       Symbol,
             annotationPredicates: Seq[AnnotationPredicate],
             matchAny:             Boolean                  = false
-        ) {
+        ) =
             this(
                 sourceEnsemble,
                 annotationPredicates,
-                annotationPredicates.map(_.toDescription).mkString("(", " - ", ")"),
+                annotationPredicates.map(_.toDescription()).mkString("(", " - ", ")"),
                 matchAny
             )
-        }
 
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
@@ -504,7 +503,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     )
         extends PropertyChecker {
 
-        override def property: String = methodPredicate.toDescription
+        override def property: String = methodPredicate.toDescription()
 
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
@@ -697,8 +696,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      */
     def ensembleToString(ensembleSymbol: Symbol): String = {
         val (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
-        ensembleSymbol+"{"+
-            sourceElementsMatcher+"  "+
+        s"$ensembleSymbol{"+
+            s"$sourceElementsMatcher  "+
             {
                 if (extension.isEmpty)
                     "/* NO ELEMENTS */ "
@@ -789,7 +788,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             val result =
                 for { architectureChecker <- architectureCheckers.par } yield {
                     logProgress("   checking: "+architectureChecker)
-                    for (violation <- architectureChecker.violations) yield violation
+                    for (violation <- architectureChecker.violations()) yield violation
                 }
             Set.empty ++ (result.filter(_.nonEmpty).flatten)
         } { ns =>

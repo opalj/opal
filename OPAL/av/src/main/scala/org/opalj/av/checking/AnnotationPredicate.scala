@@ -15,7 +15,7 @@ trait AnnotationPredicate extends SourceElementPredicate[ConcreteSourceElement] 
 
     def apply(other: Annotation): Boolean
 
-    def toDescription: String
+    def toDescription(): String
 
 }
 
@@ -30,7 +30,7 @@ case object AnyAnnotation extends AnnotationPredicate {
 
     override def apply(other: ConcreteSourceElement): Boolean = true
 
-    override def toDescription: String = "/*any annotation*/";
+    override def toDescription(): String = "/*any annotation*/";
 
 }
 
@@ -61,7 +61,7 @@ case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate 
         sourceElement.annotations.exists(this(_))
     }
 
-    override def toDescription: String = "@"+annotationType.toJava
+    override def toDescription(): String = "@"+annotationType.toJava
 
 }
 /**
@@ -140,7 +140,7 @@ case class AnnotatedWith(
         sourceElement.annotations.exists(this(_))
     }
 
-    override def toDescription: String = {
+    override def toDescription(): String = {
         elementValuePairs.
             map(_.toJava).
             mkString("@"+annotationType.toJava+"(", ",", ")")

@@ -208,7 +208,7 @@ object ToTxt {
         }.mkString("\n")
     }
 
-    def apply[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): Seq[String] = {
+    def apply[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): scala.collection.Seq[String] = {
         apply(
             tac.params, tac.stmts, tac.cfg,
             skipParams = false, indented = true, includePC = false
@@ -227,7 +227,7 @@ object ToTxt {
         skipParams: Boolean,
         indented:   Boolean,
         includePC:  Boolean
-    ): Seq[String] = {
+    ): scala.collection.Seq[String] = {
         val indention = " " * (if (indented) 6 else 0)
         val max = stmts.length
         val javaLikeCode = new scala.collection.mutable.ArrayBuffer[String](stmts.length * 3)

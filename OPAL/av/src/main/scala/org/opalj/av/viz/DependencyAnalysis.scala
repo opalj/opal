@@ -21,12 +21,10 @@ import org.opalj.br.BaseType
 import org.opalj.br.ObjectType
 import org.opalj.br.VirtualClass
 import org.opalj.br.VirtualSourceElement
-import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.ProgressEvents
-import org.opalj.br.analyses.Project
 
 /**
  * @author Tobias Becker

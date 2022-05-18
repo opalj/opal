@@ -11,7 +11,6 @@ import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.{AppendFrame, Attributes, ChopFrame, ClassFile, ClassHierarchy, FullFrame, Method, Methods, ObjectType, SameFrame, SameFrameExtended, SameLocals1StackItemFrame, SameLocals1StackItemFrameExtended, StackMapFrame, StackMapTable, TopVariableInfo, VerificationTypeInfo}
 import org.opalj.br.instructions.Instruction
-import org.opalj.da.StackMapFrame
 
 import scala.collection.immutable.ArraySeq
 

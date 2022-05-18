@@ -79,14 +79,14 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
             val method = methodInfo.method
             try {
                 val domain = new RecordCFGDomain(method, project)
-                val evaluatedInstructions = dTime('AI) {
+                val evaluatedInstructions = dTime(Symbol("AI")) {
                     BaseAI(method, domain).evaluatedInstructions
                 }
 
-                val bbBRCFG = dTime('BasicBlocksBasedBRCFG) {
+                val bbBRCFG = dTime(Symbol("BasicBlocksBasedBRCFG")) {
                     CFGFactory(method.body.get, project.classHierarchy)
                 }
-                val bbAICFG = dTime('BasicBlocksBasedAICFG) { domain.bbCFG }
+                val bbAICFG = dTime(Symbol("BasicBlocksBasedAICFG")) { domain.bbCFG }
 
                 val pcs = new mutable.BitSet(method.body.size)
                 bbAICFG.allBBs.foreach { bbAI =>
@@ -141,13 +141,13 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     bb.endPC should be >= (pc)
                 }
 
-                val dt = dTime('Dominators) { domain.dominatorTree }
+                val dt = dTime(Symbol("Dominators")) { domain.dominatorTree }
 
-                val postDT = dTime('PostDominators) { domain.postDominatorTree }
+                val postDT = dTime(Symbol("PostDominators")) { domain.postDominatorTree }
 
                 val cdg =
-                    terminateAfter[ControlDependencies](1000l, { method.toJava }) {
-                        dTime('ControlDependencies) { domain.pdtBasedControlDependencies }
+                    terminateAfter[ControlDependencies](1000L, { method.toJava }) {
+                        dTime(Symbol("ControlDependencies")) { domain.pdtBasedControlDependencies }
                     }
 
                 evaluatedInstructions.iterator.foreach { pc =>
@@ -166,7 +166,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
                     }
                     try {
-                        dTime('QueryingControlDependencies) {
+                        dTime(Symbol("QueryingControlDependencies")) {
                             cdg.xIsControlDependentOn(pc)(x => { /* "somke test" */ })
                         }
                     } catch {
@@ -221,26 +221,26 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 } { t => info("the analysis took (real time):                            "+t.toSeconds) }
 
                 import DominatorsPerformanceEvaluation.getTime
-                info("performing AI took (CPU time):                            "+getTime('AI).toSeconds)
-                info("computing dominator information took (CPU time):          "+getTime('Dominators).toSeconds)
+                info("performing AI took (CPU time):                            "+getTime(Symbol("AI")).toSeconds)
+                info("computing dominator information took (CPU time):          "+getTime(Symbol("Dominators")).toSeconds)
 
-                val postDominatorsTime = getTime('PostDominators).toSeconds
+                val postDominatorsTime = getTime(Symbol("PostDominators")).toSeconds
                 info("computing post-dominator information took (CPU time):     "+postDominatorsTime)
 
-                val cdgTime = getTime('ControlDependencies).toSeconds
+                val cdgTime = getTime(Symbol("ControlDependencies")).toSeconds
                 info("computing control dependency information took (CPU time): "+cdgTime)
-                val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
+                val cdgQueryTime = getTime(Symbol("QueryingControlDependencies")).toSeconds
                 info("querying control dependency information took (CPU time):  "+cdgQueryTime)
 
-                val bbAICFGTime = getTime('BasicBlocksBasedAICFG).toSeconds
+                val bbAICFGTime = getTime(Symbol("BasicBlocksBasedAICFG")).toSeconds
                 info("constructing the AI based CFGs took (CPU time):           "+bbAICFGTime)
 
-                val bbBRCFGTime = getTime('BasicBlocksBasedBRCFG).toSeconds
+                val bbBRCFGTime = getTime(Symbol("BasicBlocksBasedBRCFG")).toSeconds
                 info("constructing the BR based CFGs took (CPU time):           "+bbBRCFGTime)
             }
         }
 
-        evaluateProject("the JDK", () => createJREProject)
+        evaluateProject("the JDK", () => createJREProject())
 
         var projectsCount = 0
         br.TestSupport.allBIProjects(reader, None) foreach { biProject =>

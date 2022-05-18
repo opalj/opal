@@ -824,7 +824,7 @@ object TACAI {
 
                 case MULTIANEWARRAY.opcode =>
                     val MULTIANEWARRAY(arrayType, dimensions) = instruction
-                    val counts = (0 until dimensions).map(d => operandUse(d))(Seq.canBuildFrom)
+                    val counts = (0 until dimensions).map(d => operandUse(d))
                     val newArray = NewArray(pc, counts, arrayType)
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
@@ -972,7 +972,7 @@ object TACAI {
         //  - every pc appears at most once in `obsoleteUseSites`
         //  - we do not have deeply nested expressions
         while (obsoleteUseSites.nonEmpty) {
-            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.take()
+            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.removeHead()
             val useSite = useDefMapping.pc
             val defSites = useDefMapping.value
             // Now... we need to go the def site - which has to be an assignment - and kill

@@ -4,11 +4,12 @@ package de
 
 import scala.collection.Map
 import scala.collection.Set
-
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.br._
+import org.opalj.br.*
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * Stores extracted dependencies.
@@ -27,7 +28,7 @@ class DependencyStore(
 object DependencyStore {
 
     def apply[Source](
-        classFiles:                Traversable[ClassFile],
+        classFiles:                Iterable[ClassFile],
         createDependencyExtractor: (DependencyProcessor) => DependencyExtractor
     )(
         implicit
@@ -51,7 +52,7 @@ object DependencyStore {
     }
 
     def apply[Source](
-        classFiles: Traversable[ClassFile]
+        classFiles: Iterable[ClassFile]
     )(
         implicit
         logContext: LogContext

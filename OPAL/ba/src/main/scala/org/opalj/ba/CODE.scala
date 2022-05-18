@@ -80,7 +80,7 @@ object CODE {
      * @note The code element has to be valid bytecode; i.e., a verification of the code using
      *       the old, pre Java 7 (type-inference based) bytecode verified would succeed!
      */
-    def removeDeadCode[T](codeElements: IndexedSeq[CodeElement[T]]): IndexedSeq[CodeElement[T]] = {
+    def removeDeadCode[T](codeElements: scala.collection.IndexedSeq[CodeElement[T]]): scala.collection.IndexedSeq[CodeElement[T]] = {
         val codeElementsSize = codeElements.size
         if (codeElementsSize == 0)
             return codeElements;
@@ -451,7 +451,7 @@ object CODE {
         this(codeElements.toIndexedSeq)
     }
 
-    def apply[T](initialCodeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
+    def apply[T](initialCodeElements: scala.collection.IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
         val codeElements = removeDeadCode(initialCodeElements)
         val codeElementsSize = codeElements.size
         val instructionLikes = new ArrayBuffer[LabeledInstruction](codeElementsSize)
@@ -559,7 +559,7 @@ object CODE {
                 }
             }
             // We had to rewrite the code; hence, we have to start all over again!
-            return this(newCodeElements);
+            return this(newCodeElements.toIndexedSeq);
         }
 
         new CodeAttributeBuilder(

@@ -34,7 +34,7 @@ object XHTML {
      * We generate dumps on errors only if the specified time has passed by to avoid that
      * we are drowned in dumps. Often, a single bug causes many dumps to be created.
      */
-    private[this] var _lastDump = new java.util.concurrent.atomic.AtomicLong(0L)
+    private[this] val _lastDump = new java.util.concurrent.atomic.AtomicLong(0L)
 
     private[this] def lastDump_=(currentTimeMillis: Long): Unit = {
         _lastDump.set(currentTimeMillis)

@@ -31,20 +31,22 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
         type TheAIResult = AIResult { val domain: Domain with TheMethod }
 
         it("should return a more precise result") {
-            val theProject = createJREProject
+            val theProject = createJREProject()
             // The following three domains are very basic domains that – given that the
             // same partial domains are used – should compute the same results.
 
             // We use this domain for the comparison of the values; it has a comparable
             // expressive power as the other domains.
-            object ValuesDomain extends { val project: Project[URL] = theProject } with ValuesCoordinatingDomain
+            object ValuesDomain extends ValuesCoordinatingDomain
                 with l1.DefaultLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
                 with l0.TypeLevelDynamicLoads
-                with TheProject
+                with TheProject {
+                override val project: Project[URL] = theProject
+            }
 
             class TypeLevelDomain(val method: Method, val project: Project[URL])
                 extends Domain

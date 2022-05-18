@@ -10,13 +10,12 @@ import java.util.Arrays.fill
  */
 class PCMapping(private[ba] var data: Array[Int]) extends (Int => Int) {
 
-    def this(initialSize: Int) {
+    def this(initialSize: Int) =
         this({
             val a = new Array[Int](Math.max(initialSize, 0))
             fill(a, Int.MaxValue)
             a
         })
-    }
 
     def apply(key: Int): Int = {
         if (key >= data.length)

@@ -81,7 +81,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
             val classFile = method.classFile
             val body = method.body.get
             try {
-                time('AI) {
+                time(Symbol("AI")) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
                     val result = ai(method, Domain(project, method))
                     if (result.wasAborted) {
@@ -105,13 +105,13 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
 
         // Interpret Methods
         //
-        val collectedExceptions = time('OVERALL) {
+        val collectedExceptions = time(Symbol("OVERALL")) {
             val exceptions = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { (m) =>
                 val MethodInfo(source, method) = m
                 analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
             }
-            import scala.collection.JavaConverters._
+            import scala.jdk.CollectionConverters._
             exceptions.asScala
         }
 
@@ -144,8 +144,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 projectName+": "+
                     "During the interpretation of "+
                     methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
-                    ", ai (∑CPU Times): "+getTime('AI).toSeconds+
+                    project.classFilesCount+" classes (real time: "+getTime(Symbol("OVERALL")).toSeconds+
+                    ", ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds+
                     ")"+collectedExceptions.size+
                     " exceptions occured (details: "+file.toString+")."
             )
@@ -153,8 +153,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
             info(
                 s"$projectName: no exceptions occured during the interpretation of "+
                     methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
-                    ", ai (∑CPU Times): "+getTime('AI).toSeconds+")"
+                    project.classFilesCount+" classes (real time: "+getTime(Symbol("OVERALL")).toSeconds+
+                    ", ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds+")"
             )
         }
     }
@@ -169,7 +169,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
     behavior of domainName
 
     it should ("be useable to perform an abstract interpretation of the JRE's classes") in {
-        val project = BRTestSupport.createJREProject
+        val project = BRTestSupport.createJREProject()
 
         analyzeProject("JDK", project, 4d)
     }
@@ -185,14 +185,14 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
         })
         info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
         opalJARs.size should not be (0)
-        val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
+        val project = Project(AllClassFiles(opalJARs), Iterable.empty, true)
 
         analyzeProject("OPAL-SNAPSHOT-08-14-2014", project, 1.5d)
     }
 
     it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
         val classFiles = TestResources.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-        val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
+        val project = Project(reader.ClassFiles(classFiles), Iterable.empty, true)
 
         analyzeProject("OPAL-0.3", project, 2.5d)
     }

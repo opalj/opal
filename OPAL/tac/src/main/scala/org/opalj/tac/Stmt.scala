@@ -294,7 +294,7 @@ case class Switch[+V <: Var[V]](
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
-        npairs._UNSAFE_mapped { x =>
+        npairs = npairs.map { x =>
             val newIndex = pcToIndex(x._2)
             // assert(newIndex >= 0)
             x.copy(_2 = newIndex)

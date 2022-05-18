@@ -7,10 +7,11 @@ import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.br.Code
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * This system test(suite) just loads a very large number of class files and performs

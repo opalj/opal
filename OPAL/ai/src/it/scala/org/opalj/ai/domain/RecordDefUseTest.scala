@@ -68,7 +68,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         refinedDefUseInformation: Boolean
     ): Unit = {
         val d: r.domain.type = r.domain
-        val dt = DominatorsPerformanceEvaluation.time('Dominators) { d.dominatorTree }
+        val dt = DominatorsPerformanceEvaluation.time(Symbol("Dominators")) { d.dominatorTree }
         val liveInstructions = r.evaluatedInstructions
         val code = m.body.get
         val codeSize = code.codeSize
@@ -260,7 +260,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                         location += "\n- next cause -\n"
                 } while (root != null)
                 val containsJSR =
-                    m.body.get.find(i => i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
+                    m.body.get.instructionIterator.find(i => i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
                 val details = exception.getMessage.replace("\n", "\n\t")
                 s"${m.toJava}[containsJSR=$containsJSR;\n\t"+
                     s"${exception.getClass.getSimpleName}:\n\t$details;\n\tlocation: $location]"
@@ -288,12 +288,12 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 time {
                     analyzeProject(projectName, project)
                 } { t => info("the analysis took (real time): "+t.toSeconds) }
-                val effort = DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds
+                val effort = DominatorsPerformanceEvaluation.getTime(Symbol("Dominators")).toSeconds
                 info(s"computing dominator information took (CPU time): $effort")
             }
         }
 
-        evaluateProject("the JDK", () => createJREProject)
+        evaluateProject("the JDK", () => createJREProject())
 
         var projectsCount = 0
         br.TestSupport.allBIProjects(reader, None) foreach { biProject =>

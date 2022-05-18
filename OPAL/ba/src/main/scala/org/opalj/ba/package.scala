@@ -849,7 +849,7 @@ package object ba { ba =>
                                     lntBuilder += da.LineNumberTableEntry(startPC, lineNumber)
                                     e += 1
                                 }
-                                lntBuilder.result
+                                lntBuilder.result()
 
                             case _ =>
                                 val attributeName = attribute.getClass.getName
