@@ -36,6 +36,8 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Models effects of `sun.misc.Unsafe` to points-to sets.
  *

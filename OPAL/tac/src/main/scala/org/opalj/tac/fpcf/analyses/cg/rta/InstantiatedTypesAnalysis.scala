@@ -7,7 +7,6 @@ package cg
 package rta
 
 import scala.language.existentials
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -139,9 +138,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 // there must either be a new of the `declaredType` or it is a super call.
                 // check if there is an explicit NEW that instantiates the type
                 val newInstr = NEW(declaredType)
-                val hasNew = body.exists {
-                    case (_, i) => i == newInstr
-                }
+                val hasNew = body.exists(pcInst => pcInst.instruction == newInstr)
                 if (hasNew)
                     return partialResult(declaredType);
         }

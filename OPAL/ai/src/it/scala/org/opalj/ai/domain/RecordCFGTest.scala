@@ -9,7 +9,7 @@ import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
 
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}

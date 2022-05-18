@@ -186,7 +186,7 @@ object EagerInterProceduralEscapeAnalysis
         implicit val typeProvider = p.get(TypeProviderKey)
 
         val methods = declaredMethods.declaredMethods
-        val callersProperties = ps(methods.toTraversable, Callers)
+        val callersProperties = ps(methods, Callers)
         assert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map {
@@ -195,13 +195,13 @@ object EagerInterProceduralEscapeAnalysis
 
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.collect {
             case fp if reachableMethods.contains(fp.method) =>
-                reachableMethods(fp.method).calleeContexts(fp.method).map((_, fp))
+                reachableMethods(fp.method).calleeContexts(fp.method).iterator.map((_, fp))
         }.flatten
 
         val ass = p.get(DefinitionSitesKey).getAllocationSites.collect {
             case as if reachableMethods.contains(declaredMethods(as.method)) =>
                 val dm = declaredMethods(as.method)
-                reachableMethods(dm).calleeContexts(dm).map((_, as))
+                reachableMethods(dm).calleeContexts(dm).iterator.map((_, as))
         }.flatten
 
         ps.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)

@@ -273,7 +273,7 @@ sealed class ConcreteCallees(
         propertyStore: PropertyStore,
         typeProvider:  TypeProvider
     ): IntMap[Iterator[Context]] = {
-        var res = IntMap(directCallSites(callerContext).toStream: _*)
+        var res = IntMap(directCallSites(callerContext).to(LazyList)*)
 
         for ((pc, indirect) <- indirectCallSites(callerContext)) {
             res = res.updateWith(pc, indirect, (direct, indirect) => direct ++ indirect)
@@ -288,9 +288,9 @@ sealed class ConcreteCallees(
         typeProvider:  TypeProvider
     ): Map[Int, Iterator[Context]] = {
         if (directCalleesIds.contains(callerContext.id))
-            directCalleesIds(callerContext.id).mapValues { calleeIds =>
+            directCalleesIds(callerContext.id).view.mapValues { calleeIds =>
                 calleeIds.iterator.map[Context](typeProvider.contextFromId)
-            }
+            }.toMap
         else Map.empty
     }
 
@@ -300,9 +300,9 @@ sealed class ConcreteCallees(
         typeProvider:  TypeProvider
     ): Map[Int, Iterator[Context]] = {
         if (indirectCalleesIds.contains(callerContext.id))
-            indirectCalleesIds(callerContext.id).mapValues { calleeIds =>
+            indirectCalleesIds(callerContext.id).view.mapValues { calleeIds =>
                 calleeIds.iterator.map[Context](typeProvider.contextFromId)
-            }
+            }.toMap
         else Map.empty
     }
 

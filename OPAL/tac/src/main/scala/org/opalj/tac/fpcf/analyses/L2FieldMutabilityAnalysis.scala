@@ -257,7 +257,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 state.fieldMutability = NonFinalFieldByAnalysis
                 true
             } else {
-                val targets = callees.callees(callerContext, pc).toTraversable
+                val targets = callees.callees(callerContext, pc)
                 if (targets.exists(target => isNonDeterministic(propertyStore(target, Purity.key)))) {
                     state.fieldMutability = NonFinalFieldByAnalysis
                     true

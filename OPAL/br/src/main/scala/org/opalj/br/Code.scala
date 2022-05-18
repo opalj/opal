@@ -698,23 +698,6 @@ final class Code private (
     }
 
     /**
-     * Iterates over all instructions until an instruction is found that matches
-     * the given predicate.
-     */
-    @inline final def exists(p: ( /*pc*/ Int, Instruction) => Boolean): Boolean = {
-        val instructionsLength = instructions.length
-        var pc = 0
-        while (pc < instructionsLength) {
-            val instruction = instructions(pc)
-            if (p(pc, instruction))
-                return true;
-
-            pc = pcOfNextInstruction(pc)
-        }
-        false
-    }
-
-    /**
      * Returns a view of all handlers (exception and finally handlers) for the
      * instruction with the given program counter (`pc`) that may catch an exception; as soon
      * as a finally handler is found no further handlers will be returned!

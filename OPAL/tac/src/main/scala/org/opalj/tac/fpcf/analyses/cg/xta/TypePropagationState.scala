@@ -21,7 +21,7 @@ import java.util.{HashSet => JHashSet}
 import java.util.{HashMap => JHashMap}
 import java.util.{Set => JSet}
 
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
@@ -64,7 +64,7 @@ final class TypePropagationState[ContextType <: Context](
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
+    def newInstantiatedTypes(seenTypes: Int): IterableOnce[ReferenceType] = {
         if (_ownInstantiatedTypesDependee.hasUBP) {
             _ownInstantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {
@@ -226,7 +226,7 @@ final class TypePropagationState[ContextType <: Context](
 
         // Note: The values are copied here. The "++" operator on List
         // forces immediate evaluation of the map values iterator.
-        dependees ++= _backwardPropagationDependees.values().iterator().asScala
+        dependees ++= _backwardPropagationDependees.values().iterator.asScala
 
         dependees
     }

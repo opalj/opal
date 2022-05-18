@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -161,7 +161,7 @@ case class AllocationSiteDescription(
         name:                String,
         desc:                String,
         instantiatedType:    String,
-        arrayComponentTypes: Seq[String]
+        arrayComponentTypes: scala.collection.Seq[String]
 ) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)

@@ -56,7 +56,7 @@ object DependencyAnalysis extends AnalysisApplication {
         }
     }
 
-    override def checkAnalysisSpecificParameters(args: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(args: Seq[String]): Iterable[String] = {
 
         val (mainPackage, parameters1) = readParameter("mp", args)
         this.mainPackage = mainPackage
@@ -71,7 +71,7 @@ object DependencyAnalysis extends AnalysisApplication {
         this.filter = filter
 
         if (parameters4.isEmpty)
-            Traversable.empty
+            Iterable.empty
         else
             parameters4.map("unknown parameter: "+_)
     }
@@ -208,7 +208,7 @@ object DependencyAnalysis extends AnalysisApplication {
             var data = ("["+packages.foldRight("")(
                 (p1, l1) => "["+
                     packages.foldRight("")(
-                        (p2, l2) => (dependencyProcessor.currentDependencyCount(p1, p2) / maxCount)+","+l2
+                        (p2, l2) => s"${dependencyProcessor.currentDependencyCount(p1, p2) / maxCount},$l2"
                     )+"],"+l1
             )+"]").replaceAll(",]", "]")
 

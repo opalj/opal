@@ -382,10 +382,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
                             else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
                         for (fieldEntity <- fieldEntities)
-                            results ++= createPartialResults(
+                            results = results ++ createPartialResults(
                                 fieldEntity,
                                 knownPointsTo,
-                                rhsDefSitesEPS.mapValues((_, typeFilter)),
+                                rhsDefSitesEPS.view.mapValues((_, typeFilter)).toMap,
                                 { _.included(knownPointsTo, typeFilter) }
                             )(state)
                     }
@@ -424,10 +424,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         val typeFilter = { t: ReferenceType =>
                             classHierarchy.isSubtypeOf(t, componentType)
                         }
-                        results ++= createPartialResults(
+                        results = results ++ createPartialResults(
                             ArrayEntity(as),
                             knownPointsTo,
-                            rhsDefSitesEPS.mapValues((_, typeFilter)),
+                            rhsDefSitesEPS.view.mapValues((_, typeFilter)).toMap,
                             { _.included(knownPointsTo, typeFilter) }
                         )(state)
                     }

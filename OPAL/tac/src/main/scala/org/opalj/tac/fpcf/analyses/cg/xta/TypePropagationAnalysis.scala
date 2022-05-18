@@ -6,7 +6,8 @@ package analyses
 package cg
 package xta
 
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters.*
+
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -81,7 +82,7 @@ final class TypePropagationAnalysis private[analyses] (
         processTACStatements
         processArrayTypes(state.ownInstantiatedTypes)
 
-        returnResults(partialResults.iterator())
+        returnResults(partialResults.iterator)
     }
 
     /**
@@ -164,7 +165,7 @@ final class TypePropagationAnalysis private[analyses] (
         state.updateCalleeDependee(eps)
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
         processCallees(eps.ub)
-        returnResults(partialResults.iterator())
+        returnResults(partialResults.iterator)
     }
 
     private def handleUpdateOfOwnTypeSet(
@@ -187,7 +188,7 @@ final class TypePropagationAnalysis private[analyses] (
 
         processArrayTypes(unseenTypes)
 
-        returnResults(partialResults.iterator())
+        returnResults(partialResults.iterator)
     }
 
     private def handleUpdateOfBackwardPropagationTypeSet(
@@ -449,7 +450,7 @@ final class TypePropagationAnalysis private[analyses] (
             val fitr = filters.iterator
             var canditateMatches = false
             while (!canditateMatches && fitr.hasNext) {
-                val tf = fitr.next
+                val tf = fitr.next()
                 if (candidateMatchesTypeFilter(nt, tf)) {
                     canditateMatches = true
                     builder += nt

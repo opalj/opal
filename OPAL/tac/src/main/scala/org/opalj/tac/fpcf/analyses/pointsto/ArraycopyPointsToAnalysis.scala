@@ -33,6 +33,8 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Handles the effect of `java.lang.System.arraycopy*` to points-to sets.
  *

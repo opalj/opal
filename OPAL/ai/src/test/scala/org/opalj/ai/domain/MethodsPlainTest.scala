@@ -7,12 +7,13 @@ import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l0._
+import org.opalj.ai.domain.l0.*
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Basic tests of the abstract interpreter.
@@ -1041,7 +1042,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         val locals = new Array[Value](1)
         val theObject = TypedValue(-1, t)
         locals(0) = theObject
-        BaseAI.perform(method, domain)(Some(locals))
+        BaseAI.perform(method, domain)(Some(ArraySeq.unsafeWrapArray(locals)))
         domain.returnedValue should be(Some(theObject))
     }
 

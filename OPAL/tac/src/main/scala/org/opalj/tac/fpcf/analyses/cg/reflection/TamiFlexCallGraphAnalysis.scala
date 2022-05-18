@@ -29,6 +29,8 @@ import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.properties.TACAI
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Adds the specified calls from the tamiflex.log to the call graph.
  * TODO: Merge with reflection analysis

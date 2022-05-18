@@ -34,6 +34,8 @@ import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * On calls to Thread.start(), it adds calls to the corresponding run method.
  * The run method is determined using points-to information.

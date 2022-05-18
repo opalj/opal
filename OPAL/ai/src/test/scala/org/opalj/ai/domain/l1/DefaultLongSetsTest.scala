@@ -120,7 +120,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val v1 = LongSet(SortedSet(-1L, 1L))
                 val v2 = LongSet(SortedSet(-1L, 1L))
 
-                v1.join(-1, v2) should be('isMetaInformationUpdate)
+                v1.join(-1, v2) should be(Symbol("isMetaInformationUpdate"))
             }
 
         }

@@ -3,7 +3,7 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.Set
+import scala.collection.immutable
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldType
 import org.opalj.br.Field
@@ -35,7 +35,7 @@ case class FieldMatcher(
             annotations(field.annotations)
     }
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
+    def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {
         val allMatchedFields = project.allClassFiles collect {
             case classFile if doesClassFileMatch(classFile) => {
                 classFile.fields collect {

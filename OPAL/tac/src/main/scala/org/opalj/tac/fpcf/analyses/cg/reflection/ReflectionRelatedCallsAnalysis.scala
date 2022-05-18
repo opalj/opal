@@ -88,7 +88,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
         callContext:    ContextType,
         callPC:         Int,
         actualReceiver: Method => Option[(ValueInformation, IntTrieSet)],
-        actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Traversable[MethodMatcher]
+        actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Iterable[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls): Unit = {
         MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m =>
             indirectCalls.addCall(
@@ -113,11 +113,11 @@ class ClassForNameAnalysis private[analyses] (
             loadedClassesUB: UIDSet[ObjectType],
             callContext:     ContextType
     ) extends CGState[ContextType](callContext, null) {
-        private[this] var _loadedClassesUB: UIDSet[ObjectType] = loadedClassesUB
+        private[this] val _loadedClassesUB: UIDSet[ObjectType] = loadedClassesUB
         private[this] var _newLoadedClasses: UIDSet[ObjectType] = UIDSet.empty
 
-        private[cg] def addNewLoadedClasses(loadedClasses: TraversableOnce[ObjectType]): Unit = {
-            _newLoadedClasses ++= loadedClasses.filter(!_loadedClassesUB.contains(_))
+        private[cg] def addNewLoadedClasses(loadedClasses: IterableOnce[ObjectType]): Unit = {
+            _newLoadedClasses ++= loadedClasses.iterator.filter(!_loadedClassesUB.contains(_))
         }
 
         def reset(): Unit = {
@@ -175,7 +175,7 @@ class ClassForNameAnalysis private[analyses] (
     private def returnResult(
         className: V, incompleteCallSites: IncompleteCallSites
     )(implicit state: State): ProperPropertyComputationResult = {
-        val iresults: TraversableOnce[ProperPropertyComputationResult] =
+        val iresults: IterableOnce[ProperPropertyComputationResult] =
             incompleteCallSites.partialResults(state.callContext)
         val results = if (state.hasNewLoadedClasses) {
             val r = Iterator(state.loadedClassesPartialResult) ++ iresults

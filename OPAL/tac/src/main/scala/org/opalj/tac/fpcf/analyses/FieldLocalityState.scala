@@ -32,7 +32,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     private[this] var definitionSitesDependees: Map[(Context, DefinitionSiteLike), (EOptionP[(Context, DefinitionSiteLike), EscapeProperty], Boolean)] = Map.empty
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
     private[this] var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
-    private[this] var calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
+    private[this] val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
 
     var tacFieldAccessPCs: Map[Method, PCs] = Map.empty
     var potentialCloneCallers: Set[Method] = Set.empty

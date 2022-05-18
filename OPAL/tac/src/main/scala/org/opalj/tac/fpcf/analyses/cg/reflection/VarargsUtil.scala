@@ -10,6 +10,7 @@ import org.opalj.br.FieldType
 import org.opalj.br.FieldTypes
 
 import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Utility class to retrieve types or expressions for varargs.
@@ -41,11 +42,11 @@ object VarargsUtil {
         getTFromVarArgs(expr, stmts, fillType)
     }
 
-    private[this] def getTFromVarArgs[T](
+    private[this] def getTFromVarArgs[T >: Null](
         expr:      Expr[V],
         stmts:     Array[Stmt[V]],
         fillEntry: (ArrayStore[V], Array[Stmt[V]], ArraySeq[T]) => Option[ArraySeq[T]]
-    ): Option[ArraySeq[T]] = {
+    )(implicit ct: ClassTag[T]): Option[ArraySeq[T]] = {
         val definitions = expr.asVar.definedBy
         if (!definitions.isSingletonSet || definitions.head < 0) {
             None
@@ -56,8 +57,8 @@ object VarargsUtil {
             } else if (definition.expr.astID != NewArray.ASTID) {
                 None
             } else {
-                val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                var params: ArraySeq[T] = ArraySeq.withSize(uses.size - 1)
+                val uses = IntArraySetBuilder(definition.targetVar.usedBy.toList).result()
+                var params: ArraySeq[T] = ArraySeq.unsafeWrapArray(new Array[T](uses.size - 1))
                 if (!uses.forall { useSite =>
                     val use = stmts(useSite)
                     if (useSite == uses.last)

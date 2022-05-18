@@ -314,7 +314,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
-            val candidate = ConstArray.find(project.instanceMethods(state.declClass)) { mdc =>
+            val candidate = org.opalj.control.find(project.instanceMethods(state.declClass)) { mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
                     MethodDescriptor.withNoArgs(ObjectType.Throwable)

@@ -112,8 +112,8 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
                 globallySeenTypes.put(ot, true)
                 project.classFile(ot).map { cf =>
                     cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic)
-                }.getOrElse(RefIterator.empty)
-            case _ => RefIterator.empty
+                }.getOrElse(Iterator.empty)
+            case _ => Iterator.empty
         }.map(declaredMethods(_))
     }
 

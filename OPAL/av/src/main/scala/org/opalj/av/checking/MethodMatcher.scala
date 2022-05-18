@@ -3,7 +3,7 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.Set
+import scala.collection.immutable
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -30,7 +30,7 @@ case class MethodMatcher(
             methodPredicate(method)
     }
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
+    def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {
         val allMatchedMethods = project.allClassFiles collect {
             case classFile if doesClassFileMatch(classFile) =>
                 classFile.methods collect {

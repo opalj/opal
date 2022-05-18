@@ -15,6 +15,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
+import org.opalj.tac.JSR
 
 /**
  * Converts the bytecode of a method into a three address representation using a very naive

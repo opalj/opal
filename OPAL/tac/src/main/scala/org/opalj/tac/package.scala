@@ -44,7 +44,7 @@ package object tac {
             val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1).zip(pcRange)
             val txtStmts = bbStmts.map { stmtPC =>
                 val (stmt, pc) = stmtPC
-                pc+": "+ToTxt.toTxtStmt[V](stmt, false)
+                s"$pc: ${ToTxt.toTxtStmt[V](stmt, false)}"
             }
             txtStmts.mkString("", "\\l\\l", "\\l")
         }

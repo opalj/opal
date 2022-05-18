@@ -19,6 +19,8 @@ import org.opalj.br.BaseType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ReferenceType
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Used to determine whether a certain method should be considered as a target for a reflective
  * call site. These call sites should be resolved by chaining matchers in

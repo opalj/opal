@@ -206,7 +206,7 @@ trait ExceptionRater extends DomainSpecificRater {
         val declClass = call.declaringClass
         if (declClass.isObjectType && call.name == "<init>" &&
             declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
-            !ConstArray.find(project.instanceMethods(declClass.asObjectType))(mdc =>
+            !org.opalj.control.find(project.instanceMethods(declClass.asObjectType))(mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
                     MethodDescriptor.withNoArgs(ObjectType.Throwable)

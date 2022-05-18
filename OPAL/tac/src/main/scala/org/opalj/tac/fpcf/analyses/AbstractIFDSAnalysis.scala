@@ -351,7 +351,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 new Iterable[SomeEOptionP] {
                     override def iterator: Iterator[SomeEOptionP] = {
                         // This method is actually not called by the property store...
-                        Iterator.single(state.cgDependency.get) ++ dependees.toIterator
+                        Iterator.single(state.cgDependency.get) ++ dependees.iterator
                     }
                     override def foreach[U](f: SomeEOptionP => U): Unit = {
                         f(state.cgDependency.get)
@@ -359,7 +359,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     }
                     override def size: Int = dependees.size + 1
                     override def isEmpty = false
-                    override def nonEmpty = true
                 }
             }
         }
@@ -385,7 +384,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         (eps: @unchecked) match {
             case FinalE(e: (Context, IFDSFact) @unchecked) => reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1, Some(e._2))
 
-            case interimEUBP @ InterimEUBP(e: (Context, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact]) =>
+            case interimEUBP @ InterimEUBP(e: (Context, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact @unchecked ]) =>
                 if (ub.flows.values.forall(_.isInstanceOf[AbstractIFDSNullFact])) {
                     // Do not re-analyze the caller if we only get the null fact.
                     // Update the pendingIfdsDependee entry to the new interim result.

@@ -114,7 +114,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
 
         if (callersEOptP.isFinal) {
-            Results(partialResults.iterator())
+            Results(partialResults.iterator)
         } else {
             val reRegistration =
                 InterimPartialResult(
@@ -122,7 +122,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                     continuation(declaredMethod, declaredType, callersUB)
                 )
 
-            Results(reRegistration, partialResults.iterator())
+            Results(reRegistration, partialResults.iterator)
         }
     }
 
@@ -207,9 +207,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // call if the class has another constructor that calls the super. In that case
         // there must either be a new of the `declaredType` or it is a super call.
         val newInstr = NEW(declaredType)
-        val hasNew = callerMethod.body.get.exists {
-            case (_, i) => i == newInstr
-        }
+        val hasNew = callerMethod.body.get.exists(pcInst => pcInst.instruction == newInstr)
         if (hasNew) {
             partialResults += partialResult(declaredType, caller)
         }
@@ -451,7 +449,7 @@ class InstantiatedTypesAnalysisScheduler(
             if (dim > 1) {
                 // Initialize multidimensional ArrayType. E.g., if at == A[][] and A is a supertype of A1,
                 // we need to assign A[] and A1[] to the type set of A[][].
-                val assignedArrayTypes: UIDSet[ArrayType] = subtypes.map(ArrayType(dim - 1, _))
+                val assignedArrayTypes: UIDSet[ArrayType] = UIDSet.fromSpecific(subtypes.map(ArrayType(dim - 1, _)))
                 initialize(at, assignedArrayTypes.asInstanceOf[UIDSet[ReferenceType]])
 
                 // After that, we also need to initialize the ArrayTypes which were just assigned. It is possible

@@ -3,7 +3,7 @@ package org.opalj.tac
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
 
 import org.opalj.value.ValueInformation

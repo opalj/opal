@@ -142,8 +142,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
             val operands =
                 mapOperands(
-                    localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) =>
-                        if (n ne null) n :&: l else l),
+                    localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
+                        if (n ne null) n :: l else l),
                     coordinatingDomain
                 )
 

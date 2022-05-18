@@ -5,7 +5,7 @@ package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -45,7 +45,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
      */
     protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler]
+    ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
         project.updateProjectInformationKeyInitializationData(TypeProviderKey) {
@@ -76,7 +76,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             registeredAnalyses(project).flatMap(_.requiredProjectInformation)
     }
 
-    protected[this] def registeredAnalyses(project: SomeProject): Seq[FPCFAnalysisScheduler] = {
+    protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
         implicit val logContext: LogContext = project.logContext
         val config = project.config
 

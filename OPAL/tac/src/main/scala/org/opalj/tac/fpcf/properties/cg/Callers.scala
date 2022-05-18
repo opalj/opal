@@ -47,8 +47,8 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
     def callers(method: DeclaredMethod)(
         implicit
         typeProvider: TypeProvider
-    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
-        callContexts(method).foldLeft(List[(DeclaredMethod, Int, Boolean)]()) {
+    ): IterableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
+        callContexts(method).iterator.foldLeft(List[(DeclaredMethod, Int, Boolean)]()) {
             (results, contextData) =>
                 val (_, callerContext, pc, isDirect) = contextData
                 callerContext match {
@@ -63,11 +63,11 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
     def callContexts(method: DeclaredMethod)(
         implicit
         typeProvider: TypeProvider
-    ): TraversableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )]
+    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )]
 
     def calleeContexts(
         method: DeclaredMethod
-    )(implicit typeProvider: TypeProvider): TraversableOnce[Context]
+    )(implicit typeProvider: TypeProvider): IterableOnce[Context]
 
     def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
         handleContext: Context /*Callee*/ => Unit
@@ -140,7 +140,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     override def callContexts(method: DeclaredMethod)(
         implicit
         typeProvider: TypeProvider
-    ): TraversableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
+    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
         if (hasCallersWithUnknownContext || hasVMLevelCallers)
             Iterator((typeProvider.newContext(method), NoContext, -1, true))
         else
@@ -149,7 +149,7 @@ sealed trait EmptyConcreteCallers extends Callers {
 
     override def calleeContexts(
         method: DeclaredMethod
-    )(implicit typeProvider: TypeProvider): TraversableOnce[Context] = {
+    )(implicit typeProvider: TypeProvider): IterableOnce[Context] = {
         if (hasCallersWithUnknownContext || hasVMLevelCallers)
             Iterator(typeProvider.newContext(method))
         else
@@ -226,7 +226,7 @@ sealed trait CallersImplementation extends Callers {
     final override def callContexts(method: DeclaredMethod)(
         implicit
         typeProvider: TypeProvider
-    ): TraversableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
+    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
         val contexts = encodedCallers.iterator.flatMap {
             case (calleeContextId, callers) =>
                 val calleeContext = typeProvider.contextFromId(calleeContextId)
@@ -244,7 +244,7 @@ sealed trait CallersImplementation extends Callers {
     final override def calleeContexts(method: DeclaredMethod)(
         implicit
         typeProvider: TypeProvider
-    ): TraversableOnce[Context] = {
+    ): IterableOnce[Context] = {
         val contexts = encodedCallers.keysIterator.map(typeProvider.contextFromId)
         if (hasCallersWithUnknownContext || hasVMLevelCallers) {
             val unknownContext = typeProvider.newContext(method)

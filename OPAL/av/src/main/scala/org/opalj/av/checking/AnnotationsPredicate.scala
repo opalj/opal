@@ -9,14 +9,14 @@ import org.opalj.br._
 /**
  * @author Marco Torsello
  */
-trait AnnotationsPredicate extends (Traversable[Annotation] => Boolean)
+trait AnnotationsPredicate extends (Iterable[Annotation] => Boolean)
 
 /**
  * @author Marco Torsello
  */
 case object NoAnnotations extends AnnotationsPredicate {
 
-    def apply(others: Traversable[Annotation]): Boolean = false
+    def apply(others: Iterable[Annotation]): Boolean = false
 
 }
 
@@ -25,7 +25,7 @@ case object NoAnnotations extends AnnotationsPredicate {
  */
 case object AnyAnnotations extends AnnotationsPredicate {
 
-    def apply(others: Traversable[Annotation]): Boolean = true
+    def apply(others: Iterable[Annotation]): Boolean = true
 
 }
 
@@ -36,7 +36,7 @@ case class HasAtLeastTheAnnotations(
         annotationPredicates: Set[_ <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
-    def apply(others: Traversable[Annotation]): Boolean = {
+    def apply(others: Iterable[Annotation]): Boolean = {
         annotationPredicates.forall(p => others.exists(a => p(a)))
     }
 }
@@ -54,7 +54,7 @@ case class HasTheAnnotations(
         annotationPredicates: Set[_ <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
-    def apply(others: Traversable[Annotation]): Boolean = {
+    def apply(others: Iterable[Annotation]): Boolean = {
         others.size == annotationPredicates.size &&
             annotationPredicates.forall(p => others.exists(a => p(a)))
     }
@@ -74,7 +74,7 @@ case class HasAtLeastOneAnnotation(
         annotationPredicates: Set[_ <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
-    def apply(annotations: Traversable[Annotation]): Boolean = {
+    def apply(annotations: Iterable[Annotation]): Boolean = {
         annotationPredicates.exists(p => annotations.exists(a => p(a)))
     }
 }

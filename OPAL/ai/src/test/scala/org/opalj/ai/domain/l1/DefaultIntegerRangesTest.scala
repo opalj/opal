@@ -98,7 +98,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)
                 val v2 = IntegerRange(lb = -10, ub = -1)
                 v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)))
-                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue()))
             }
 
             it("the rejoin of two ranges which exceed the max. card. should result in the same rane") {
@@ -147,7 +147,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(-1, 3)
                 val v2 = IntegerRange(0, 2)
 
-                v1.join(-1, v2) should be('isMetaInformationUpdate)
+                v1.join(-1, v2) should be(Symbol("isMetaInformationUpdate"))
             }
 
             it("(join of an IntegerRange value and an IntegerRange value that describes a sub-range) [0,2] join [-1,3] => \"StructuralUpdate\";  [0,2] join l @ [-1,3] => l'") {
@@ -281,7 +281,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 * [1,1] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(1, 1)
 
                 imul(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -289,7 +289,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of multiplying a specific (but unknown) value v1 by a \"point\" range != [1,1] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
 
                 imul(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -297,7 +297,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of multiplying a specific (but unknown) value v1 by [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
                 imul(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -327,14 +327,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("AnIntegerValue | [8,19] => AnIntegerRange") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(8, 19)
 
-                ior(-1, v, s) should be(AnIntegerValue)
+                ior(-1, v, s) should be(AnIntegerValue())
             }
 
             it("AnIntegerValue | [0,0] => AnIntegerRange") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
                 ior(-1, v, s) should be theSameInstanceAs (v)
@@ -673,7 +673,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 | [0,0] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
                 ior(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -681,7 +681,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the or of a specific (but unknown) value v1 and a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
 
                 ior(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -689,7 +689,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the or of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
                 ior(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -705,7 +705,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value | r@[-1,-1] should be r itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(-1, -1)
 
                 ior(-1, v1, v2) should be theSameInstanceAs (v2)
@@ -751,7 +751,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("-[Int.MinValue,3] => AnIntegerValue") {
                 val v1 = IntegerRange(Int.MinValue, 3)
 
-                ineg(-1, v1) should be(AnIntegerValue)
+                ineg(-1, v1) should be(AnIntegerValue())
             }
 
         }
@@ -1108,7 +1108,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 right-shifted by [0,0] should be v1 itself") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
                 ishr(-1, v, s) should be theSameInstanceAs (v)
@@ -1116,7 +1116,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[0,0] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(0, 0)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishr(-1, v, s) should be theSameInstanceAs (v)
             }
@@ -1137,7 +1137,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[-1,-1] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(-1, -1)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishr(-1, v, s) should be theSameInstanceAs (v)
             }
@@ -1158,14 +1158,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 right-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
                 ishr(-1, v, s) should not be theSameInstanceAs(v)
             }
 
             it("A specific (but unknown) value v1 right-shifted by [2,4] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 4)
 
                 ishr(-1, v, s) should not be theSameInstanceAs(v)
@@ -1205,8 +1205,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(0, 0)
                 val v2 = AnIntegerValue()
 
-                iadd(-1, v1, v2) should be(AnIntegerValue)
-                iadd(-1, v2, v1) should be(AnIntegerValue)
+                iadd(-1, v1, v2) should be(AnIntegerValue())
+                iadd(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("[Int.MinValue,3] + [2,3] => [Int.MinValue+2,6]") {
@@ -1226,12 +1226,12 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("[Int.MinValue,3] + [-3,2] => AnIntegerValue") {
                 val v1 = IntegerRange(Int.MinValue, 3)
                 val v2 = IntegerRange(-3, 2)
-                iadd(-1, v1, v2) should be(AnIntegerValue)
-                iadd(-1, v2, v1) should be(AnIntegerValue)
+                iadd(-1, v1, v2) should be(AnIntegerValue())
+                iadd(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("A specific (but unknown) value v1 + [0,0] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
                 iadd(-1, v1, v2) should be theSameInstanceAs (v1)
                 iadd(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -1245,14 +1245,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of adding a specific (but unknown) value v1 to a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
                 iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
                 iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
             }
 
             it("The result of adding a specific (but unknown) value v1 to a [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
                 iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
                 iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
@@ -1289,7 +1289,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(0, 0)
                 val v2 = AnIntegerValue()
 
-                isub(-1, v1, v2) should be(AnIntegerValue)
+                isub(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("AnIntegerValue - [0,0] => AnIntegerValue") {
@@ -1303,21 +1303,21 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(Int.MinValue, 3)
                 val v2 = IntegerRange(2, 3)
 
-                isub(-1, v1, v2) should be(AnIntegerValue)
+                isub(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("[2,3] - [Int.MinValue,3] => AnIntegerValue") {
                 val v2 = IntegerRange(2, 3)
                 val v1 = IntegerRange(Int.MinValue, 3)
 
-                isub(-1, v2, v1) should be(AnIntegerValue)
+                isub(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("[-3,-1] - [-3,Int.MaxValue] => AnIntegerValue") {
                 val v1 = IntegerRange(-3, -1)
                 val v2 = IntegerRange(-3, Int.MaxValue)
 
-                isub(-1, v1, v2) should be(AnIntegerValue)
+                isub(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("[-1,-1] - [-3,Int.MaxValue] => [Int.MinValue,2]") {
@@ -1328,13 +1328,13 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value - 'itself' => [0,0]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
 
                 isub(-1, v, v) should be(IntegerRange(0, 0))
             }
 
             it("A specific (but unknown) value v1 - [0,0] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
                 isub(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -1349,14 +1349,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("The result of subtracting a \"point\" range != [0,0] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
                 val v1 = IntegerRange(2, 2)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
                 isub(-1, v1, v2) should not be theSameInstanceAs(v2)
             }
 
             it("The result of subtracting [2,4] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
                 val v1 = IntegerRange(2, 4)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
                 isub(-1, v1, v2) should not be theSameInstanceAs(v2)
             }
@@ -1427,7 +1427,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("[-1,200] / AnIntegerValue => Value and ThrowsException") {
                 val v1 = IntegerRange(-1, 200)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
                 val result = idiv(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
@@ -1636,21 +1636,21 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("AnIntegerValue & [2,2] => [0,2]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
                 iand(-1, v, s) should be(IntegerRange(0, 2))
             }
 
             it("AnIntegerValue & [1,1] => [0,1]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(1, 1)
 
                 iand(-1, v, s) should be(IntegerRange(0, 1))
             }
 
             it("[1,1] & AnIntegerValue => [0,1]") {
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
                 val v = IntegerRange(1, 1)
 
                 iand(-1, v, s) should be(IntegerRange(0, 1))
@@ -1658,23 +1658,23 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("[2,2] & AnIntegerValue  => [0,2]") {
                 val v = IntegerRange(2, 2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 iand(-1, v, s) should be(IntegerRange(0, 2))
             }
 
             it("[-2,-2] & AnIntegerValue  => [0,2]") {
                 val v = IntegerRange(-2, -2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                iand(-1, v, s) should be(AnIntegerValue)
+                iand(-1, v, s) should be(AnIntegerValue())
             }
 
             it("[-2,-2] & AnIntegerValue  => AnIntegerValue") {
                 val v1 = IntegerRange(-2, -2)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
-                iand(-1, v1, v2) should be(AnIntegerValue)
+                iand(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("The result of the and of a range r and [1,1] should be r itself; [2,4] & [-1,-1] => [2,4]") {
@@ -1686,7 +1686,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 & [-1,-1] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(-1, -1)
 
                 iand(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -1694,7 +1694,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the and of a specific (but unknown) value v1 and a \"point\" != [-1,-1] range should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
 
                 iand(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -1702,7 +1702,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the and of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
                 iand(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -1718,7 +1718,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value & r@[0,0] should be r itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
                 iand(-1, v1, v2) should be theSameInstanceAs (v2)
@@ -2019,95 +2019,95 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(-10, -10)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[-10,-10] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(-10, -10)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[-22,-2] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(-22, -2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [-22,-2] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(-22, -2)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [2,22] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 22)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[2,22] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(2, 22)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[-12,12] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(-12, 12)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [-12,12]  => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(-12, 12)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ AnIntegerValue  => AnIntegerValue") {
-                val v = AnIntegerValue
-                val s = AnIntegerValue
+                val v = AnIntegerValue()
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[0,0] ^ AnIntegerValue  => AnIntegerValue") {
                 val v = IntegerRange(0, 0)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [0,0] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("x (AnIntegerValue) ^ x => [0,0]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = v
 
                 ixor(-1, v, s) match {
@@ -2843,17 +2843,17 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("AnIntegerValue << [2,2] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
-                ishl(-1, v, s) should be(AnIntegerValue)
+                ishl(-1, v, s) should be(AnIntegerValue())
             }
 
             it("[2,2] << AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(2, 2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ishl(-1, v, s) should be(AnIntegerValue)
+                ishl(-1, v, s) should be(AnIntegerValue())
             }
 
             it("[-1,1] << [2,2] => [-4, 4]") {
@@ -2961,7 +2961,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 left-shifted by [0,0] should be v1 itself") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
                 ishl(-1, v, s) should be theSameInstanceAs (v)
@@ -2969,7 +2969,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[0,0] left-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(0, 0)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishl(-1, v, s) should be theSameInstanceAs (v)
             }
@@ -2990,20 +2990,20 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[-1,-1] left-shifted by a specific (but unknown) IntegerValue should be [Int.MinValue, -1]") {
                 val v = IntegerRange(-1, -1)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishl(-1, v, s) should be(IntegerRange(Int.MinValue, -1))
             }
 
             it("A specific (but unknown) value v1 left-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
                 ishl(-1, v, s) should not be theSameInstanceAs(v)
             }
 
             it("A specific (but unknown) value v1 left-shifted by [2,4] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 4)
 
                 ishl(-1, v, s) should not be theSameInstanceAs(v)
@@ -3017,7 +3017,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("(byte)AnIntegerValue => [-128,+127]") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 i2b(-1, v1) should be(IntegerRange(-128, +127))
             }
 
@@ -3038,7 +3038,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("(short)AnIntegerValue => [-Short.MinValue,Short.MaxValue]") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 i2s(-1, v1) should be(IntegerRange(Short.MinValue, Short.MaxValue))
             }
 
@@ -3114,18 +3114,18 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (>=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsGreaterThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
             }
 
             describe("the behavior of the greater or equal than (<=) operator") {
                 it("a specific (but unknown) value compared (<=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsLessThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
                 it("comparison(<=) of anInt with IntMin") {
-                    val v1 = AnIntegerValue
+                    val v1 = AnIntegerValue()
                     val v2 = IntegerRange(Int.MinValue, Int.MinValue)
                     intIsLessThanOrEqualTo(IrrelevantPC, v1, v2) should be(Unknown)
                     intIsLessThanOrEqualTo(IrrelevantPC, v2, v1) should be(Yes)
@@ -3190,7 +3190,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (>) with itself should be No") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsGreaterThan(IrrelevantPC, p, p) should be(No)
                 }
             }
@@ -3198,7 +3198,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             describe("the behavior of the greater than (<) operator") {
 
                 it("a specific (but unknown) value compared (<) with itself should be No") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsLessThan(IrrelevantPC, p, p) should be(No)
                 }
             }
@@ -3242,7 +3242,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (==) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intAreEqual(IrrelevantPC, p, p) should be(Yes)
                 }
             }
@@ -3250,7 +3250,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             describe("the behavior of the not equals (!=) operator") {
 
                 it("a specific (but unknown) value compared (!=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intAreNotEqual(IrrelevantPC, p, p) should be(No)
                 }
 
@@ -3337,7 +3337,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 5))
             }
 
@@ -3348,7 +3348,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 6))
             }
 
@@ -3359,7 +3359,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(-1, Int.MaxValue))
             }
 
@@ -3370,7 +3370,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(0, Int.MaxValue))
             }
 
@@ -3391,7 +3391,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(5, 5))
             }
 
@@ -3504,7 +3504,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 if (result.operandsArray(37) != null) {
-                    result.operandsArray(37).head should be(domain.AnIntegerValue)
+                    result.operandsArray(37).head should be(domain.AnIntegerValue())
                     result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
                 } else {
                     // OK - the code is dead, however, we cannot identify this, but the
@@ -3518,7 +3518,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 if (result.operandsArray(37) != null) {
-                    result.operandsArray(37).head should be(domain.AnIntegerValue)
+                    result.operandsArray(37).head should be(domain.AnIntegerValue())
                     result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
                 } else {
                     // OK - the code is dead, however, we cannot identify this, but the
@@ -3532,7 +3532,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 if (result.operandsArray(38) != null) {
-                    result.operandsArray(38).head should be(domain.AnIntegerValue)
+                    result.operandsArray(38).head should be(domain.AnIntegerValue())
                     result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
                 } else {
                     // OK - the code is dead, however, we cannot identify this, but the
@@ -3544,7 +3544,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues2").head
                 val result = BaseAI(method, domain)
-                result.operandsArray(38).head should be(domain.AnIntegerValue)
+                result.operandsArray(38).head should be(domain.AnIntegerValue())
                 result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
             }
 
@@ -3552,7 +3552,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues3").head
                 val result = BaseAI(method, domain)
-                result.operandsArray(45).head should be(domain.AnIntegerValue)
+                result.operandsArray(45).head should be(domain.AnIntegerValue())
                 result.operandsArray(49).head should be(domain.IntegerRange(0, 0))
             }
 
@@ -3561,8 +3561,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val method = IntegerValues.findMethod("cfDependentValues4").head
                 val result = BaseAI(method, domain)
                 result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
-                result.operandsArray(50).head should be(domain.AnIntegerValue)
-                result.operandsArray(54).head should be(domain.AnIntegerValue)
+                result.operandsArray(50).head should be(domain.AnIntegerValue())
+                result.operandsArray(54).head should be(domain.AnIntegerValue())
                 if (result.operandsArray(50).head eq result.operandsArray(54).head)
                     fail("unequal values are made equal")
             }
@@ -3573,7 +3573,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
                 result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
                 result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
-                result.operandsArray(55).head should be(domain.AnIntegerValue)
+                result.operandsArray(55).head should be(domain.AnIntegerValue())
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
@@ -3582,17 +3582,17 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 result.operandsArray(77).head should be(domain.IntegerRange(0, 0))
-                result.operandsArray(81).head should be(domain.AnIntegerValue)
-                result.operandsArray(85).head should be(domain.AnIntegerValue)
+                result.operandsArray(81).head should be(domain.AnIntegerValue())
+                result.operandsArray(85).head should be(domain.AnIntegerValue())
                 result.operandsArray(89).head should be(domain.IntegerRange(0, 0))
 
-                result.operandsArray(97).head should be(domain.AnIntegerValue)
+                result.operandsArray(97).head should be(domain.AnIntegerValue())
                 result.operandsArray(101).head should be(domain.IntegerRange(0, 0))
-                result.operandsArray(105).head should be(domain.AnIntegerValue)
+                result.operandsArray(105).head should be(domain.AnIntegerValue())
                 result.operandsArray(109).head should be(domain.IntegerRange(0, 0))
 
-                result.operandsArray(117).head should be(domain.AnIntegerValue)
-                result.operandsArray(121).head should be(domain.AnIntegerValue)
+                result.operandsArray(117).head should be(domain.AnIntegerValue())
+                result.operandsArray(121).head should be(domain.AnIntegerValue())
                 result.operandsArray(125).head should be(domain.IntegerRange(0, 0))
                 result.operandsArray(129).head should be(domain.IntegerRange(0, 0))
             }
@@ -3621,7 +3621,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val method = IntegerValues.findMethod("moreComplexAliasing").head
                 val result = BaseAI(method, domain)
 
-                result.operandsArray(20).head should be(domain.AnIntegerValue)
+                result.operandsArray(20).head should be(domain.AnIntegerValue())
             }
         }
     }

@@ -39,7 +39,7 @@ import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
 sealed trait CalleesAndCallers {
     final def partialResults(
         callerContext: Context, enforceCalleesResult: Boolean = false
-    ): TraversableOnce[PartialResult[_, _ >: Null <: Property]] =
+    ): IterableOnce[PartialResult[_, _ >: Null <: Property]] =
         if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty) {
             if (enforceCalleesResult)
                 Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
@@ -97,7 +97,7 @@ sealed trait CalleesAndCallers {
         })
     }
 
-    protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = Iterator.empty
+    protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = Iterator.empty
 }
 
 trait IncompleteCallSites extends CalleesAndCallers {
@@ -162,7 +162,7 @@ trait Calls extends CalleesAndCallers {
         }
     }
 
-    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
+    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = {
         _partialResultsForCallers.iterator ++ super.partialResultsForCallers
     }
 }
@@ -248,7 +248,7 @@ trait VMReachableMethodsBase extends CalleesAndCallers {
     def addVMReachableMethod(declaredMethod: DeclaredMethod): Unit =
         vmReachableMethods += declaredMethod
 
-    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
+    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = {
         vmReachableMethods.iterator.map { m =>
             PartialResult[DeclaredMethod, Callers](m, Callers.key, {
                 case _: EPK[_, _] =>

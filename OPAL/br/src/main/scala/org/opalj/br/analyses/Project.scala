@@ -143,7 +143,7 @@ class Project[Source] private (
         final val virtualMethodsCount:                Int,
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ArraySeq[MethodDeclarationContext]],
-        final val overridingMethods:                  Map[Method, Set[Method]],
+        final val overridingMethods:                  Map[Method, immutable.Set[Method]],
         final val nests:                              Map[ObjectType, ObjectType],
         // Note that the referenced array will never shrink!
         @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
@@ -1563,7 +1563,7 @@ object Project {
     )(
         implicit
         theLogContext: LogContext
-    ): Map[Method, Set[Method]] = time {
+    ): Map[Method, immutable.Set[Method]] = time {
 
         implicit val classFileRepository = new ClassFileRepository {
             override implicit def logContext: LogContext = theLogContext
@@ -1594,7 +1594,7 @@ object Project {
             subtypesToProcessCounts(oid) = classHierarchy.directSubtypesCount(oid)
         }
 
-        val methods = new AnyRefMap[Method, Set[Method]](virtualMethodsCount)
+        val methods = new mutable.AnyRefMap[Method, immutable.Set[Method]](virtualMethodsCount)
 
         def computeOverridingMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             val declaredMethodPackageName = objectType.packageName
@@ -1608,9 +1608,9 @@ object Project {
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
-                        methods += ((declaredMethod, Set(declaredMethod)))
+                        methods += ((declaredMethod, immutable.Set(declaredMethod)))
                     } else {
-                        val overridingMethods = mutable.Set.empty[Method]
+                        var overridingMethods = immutable.Set.empty[Method]
                         // let's join the results of all subtypes
                         classHierarchy.foreachSubtypeCF(objectType) { subtypeClassFile =>
                             subtypeClassFile.findDirectlyOverridingMethod(

@@ -6,8 +6,8 @@ package checking
 import scala.language.implicitConversions
 import java.net.URL
 import scala.util.matching.Regex
-import scala.collection.{Map as AMap, Set as ASet}
-import scala.collection.mutable.{HashSet, Map as MutableMap}
+import scala.collection.{immutable, mutable, Map as AMap, Set as ASet}
+import scala.collection.mutable.{Map as MutableMap}
 import scala.Console.{GREEN, RED, RESET}
 import scala.io.Source
 import org.opalj.util.PerformanceEvaluation.{run, time}
@@ -90,17 +90,17 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         OPALLogger.progress(if (useAnsiColors) GREEN + logMessage + RESET else logMessage)
     }
 
-//    private[this] def logWarn(logMessage: String): Unit = {
-//        val message = if (useAnsiColors) RED + logMessage + RESET else logMessage
-//        OPALLogger.warn("project warn", message)
-//    }
+    private[this] def logWarn(logMessage: String): Unit = {
+        val message = if (useAnsiColors) RED + logMessage + RESET else logMessage
+        OPALLogger.warn("project warn", message)
+    }
 
     private[this] def logInfo(logMessage: String): Unit = {
         OPALLogger.info("project info", logMessage)
     }
 
     @volatile
-    private[this] val theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
+    private[this] var theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
         scala.collection.mutable.HashMap.empty
 
     /**
@@ -124,7 +124,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theOutgoingDependencies
 
     // calculated after all class files have been loaded
-    private[this] val theIncomingDependencies: MutableMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] = {
+    private[this] val theIncomingDependencies: mutable.Map[VirtualSourceElement, immutable.Set[(VirtualSourceElement, DependencyType)]] = {
         scala.collection.mutable.HashMap.empty
     }
 
@@ -136,11 +136,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     def incomingDependencies: AMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] = theIncomingDependencies
 
     // calculated after the extension of all ensembles is determined
-    private[this] val matchedSourceElements: HashSet[VirtualSourceElement] = HashSet.empty
+    private[this] val matchedSourceElements: mutable.HashSet[VirtualSourceElement] = mutable.HashSet.empty
 
-    private[this] val allSourceElements: HashSet[VirtualSourceElement] = HashSet.empty
+    private[this] val allSourceElements: mutable.HashSet[VirtualSourceElement] = mutable.HashSet.empty
 
-    private[this] val unmatchedSourceElements: ASet[VirtualSourceElement] = HashSet.empty
+    private[this] var unmatchedSourceElements: ASet[VirtualSourceElement] = mutable.HashSet.empty
 
     /**
      * Adds a new ensemble definition to this architecture specification.
@@ -712,14 +712,14 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * out the current configuration.
      */
     def ensembleExtentsToString: String = {
-        var s = ""
+        val s = new mutable.StringBuilder()
         for ((ensemble, (_, elements)) <- theEnsembles) {
-            s += ensemble+"\n"
+            s ++= s"$ensemble\n"
             for (element <- elements) {
-                s += "\t\t\t"+element.toJava+"\n"
+                s ++= s"\t\t\t${element.toJava}\n"
             }
         }
-        s
+        s.result()
     }
 
     def analyze(): Set[SpecificationViolation] = {
@@ -744,7 +744,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 for { dType <- dTypes } {
                     theIncomingDependencies.update(
                         target,
-                        theIncomingDependencies.getOrElse(target, Set.empty) +
+                        theIncomingDependencies.getOrElse(target, immutable.Set.empty) +
                             ((source, dType))
                     )
                 }
@@ -772,9 +772,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                         (ensembleSymbol, (sourceElementMatcher, extension))
                     }
                 }
-            theEnsembles = instantiatedEnsembles.seq
+            theEnsembles = mutable.Map.from(instantiatedEnsembles.seq)
 
-            unmatchedSourceElements = allSourceElements -- matchedSourceElements
+            unmatchedSourceElements = allSourceElements --= matchedSourceElements
 
             logInfo("   => Matched source elements: "+matchedSourceElements.size)
             logInfo("   => Other source elements: "+unmatchedSourceElements.size)

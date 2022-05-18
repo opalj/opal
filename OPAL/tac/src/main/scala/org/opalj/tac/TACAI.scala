@@ -30,6 +30,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.collection.immutable.IntIntPair
+import org.opalj.tac.JSR
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
