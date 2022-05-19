@@ -121,7 +121,7 @@ object UIDSet0 extends UIDSet[UID] {
     override def tail: UIDSet[UID] = throw new NoSuchElementException
     override def filter(p: UID => Boolean): UIDSet[UID] = this
     override def filterNot(p: UID => Boolean): UIDSet[UID] = this
-    override def incl(e: UID): UIDSet[UID] = new UIDSet1(e)
+    override def incl(e: UID): UIDSet[UID] = UIDSet1(e)
     override def excl(e: UID): UIDSet[UID] = this
     override def foldLeft[B](z: B)(op: (B, UID) => B): B = z
     override def drop(n: Int): UIDSet[UID] = this
@@ -855,7 +855,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                     // we can move the current value to the empty left branch...
                     return new UIDSetInnerNode(size + 1, e, new UIDSetLeaf(value), newRight);
                 } else {
-                    newRight.add(e, eId, newShiftedEId, level + 1)
+                    newRight = newRight.add(e, eId, newShiftedEId, level + 1)
                     if (newRight eq right)
                         return this;
                 }
@@ -871,7 +871,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
                     // we can move the current value to the empty right branch...
                     return new UIDSetInnerNode(size + 1, e, newLeft, new UIDSetLeaf(value));
                 } else {
-                    newLeft.add(e, eId, newShiftedEId, level + 1)
+                    newLeft = newLeft.add(e, eId, newShiftedEId, level + 1)
                     if (newLeft eq left)
                         return this;
                 }
@@ -1095,7 +1095,7 @@ object UIDSet {
 
     class UIDSetBuilder[T <: UID](var set: UIDSet[T]) extends Builder[T, UIDSet[T]] {
         override def addOne(elem: T): this.type = {
-            set.addMutate(elem)
+            set = set.addMutate(elem)
             this
         }
         override def clear(): Unit = set = empty

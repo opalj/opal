@@ -102,9 +102,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
                 for { i <- 1 to 100000 } {
-                    val s = UIDTrieSet.empty[SUID]
+                    var s = UIDTrieSet.empty[SUID]
                     for { j <- 1 to 500 } {
-                        s add SUID(rngGen.nextInt())
+                        s = s add SUID(rngGen.nextInt())
                     }
 
                     var sumForeach = 0
@@ -148,10 +148,10 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                     val rngGen = new java.util.Random(seed)
                     var lastOpalS = UIDTrieSet.empty[SUID]
                     for { j <- 0 to 1000000 } {
-                        val opalS = UIDTrieSet.empty[SUID]
+                        var opalS = UIDTrieSet.empty[SUID]
                         for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
-                            opalS add SUID(v)
+                            opalS = opalS add SUID(v)
                         }
                         totalSize += opalS.size
                         lastOpalS = opalS
@@ -193,10 +193,10 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                     val rngGen = new java.util.Random(seed)
                     var allSets = List.empty[UIDTrieSet[SUID]]
                     for { j <- 0 to 1000000 } {
-                        val opalS = UIDTrieSet.empty[SUID]
+                        var opalS = UIDTrieSet.empty[SUID]
                         for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
-                            opalS add SUID(v)
+                            opalS = opalS add SUID(v)
                         }
                         allSets ::= opalS
                     }
