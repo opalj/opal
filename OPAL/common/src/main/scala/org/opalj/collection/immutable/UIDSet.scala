@@ -44,7 +44,7 @@ sealed abstract class UIDSet[T <: UID]
     override def foldLeft[B](z: B)(op: (B, T) => B): B
     override def fromSpecific(coll: IterableOnce[T]): UIDSet[T] = UIDSet.fromSpecific(coll)
     override def newSpecificBuilder: mutable.Builder[T, UIDSet[T]] = UIDSet.newBuilder[T]
-    def mapUIDSet[B <: UID](f: T => B): UIDSet[B] = UIDSet.fromSpecific(this.map(f))
+    def mapUIDSet[B <: UID](f: T => B): UIDSet[B] = UIDSet.fromSpecific(this.iterator.map(f))
 
     //
     // METHODS DEFINED BY UIDSet
@@ -1077,7 +1077,7 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
 
 object UIDSet {
 
-    class UIDSetBuilder[T <: UID](var set: UIDSet[T]) extends Builder[T, UIDSet[T]] {
+    class UIDSetBuilder[T <: UID](var set: UIDSet[T] = empty[T]) extends Builder[T, UIDSet[T]] {
         override def addOne(elem: T): this.type = {
             set = set.addMutate(elem)
             this
@@ -1086,7 +1086,7 @@ object UIDSet {
         override def result(): UIDSet[T] = set
     }
 
-    def newBuilder[T <: UID]: UIDSetBuilder[T] = new UIDSetBuilder[T](empty)
+    def newBuilder[T <: UID]: UIDSetBuilder[T] = new UIDSetBuilder[T]
 
     def empty[T <: UID]: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
 

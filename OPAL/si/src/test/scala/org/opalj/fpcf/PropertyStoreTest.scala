@@ -2,7 +2,7 @@
 package org.opalj.fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.BeforeAndAfterAll
@@ -787,7 +787,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
             nodeD.targets += nodeE //           d -> e
             nodeE.targets += nodeR //                e -> r
             nodeR.targets += nodeB //       ↖︎------------↵︎
-            val nodeEntities = Set[Node](
+            val nodeEntities = mutable.Set[Node](
                 nodeA, nodeB, nodeC, nodeD, nodeE, nodeF, nodeG, nodeH, nodeI, nodeJ, nodeR
             )
             // val nodeEntitiesJustCycle = Set[Node](nodeB, nodeC, nodeD, nodeE, nodeR)
@@ -799,7 +799,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         (_: PropertyStore, reason: FallbackReason, e: Node) => AllNodes
                     )
             }
-            case class ReachableNodes(nodes: immutable.Set[Node]) extends OrderedProperty {
+            case class ReachableNodes(nodes: collection.Set[Node]) extends OrderedProperty {
                 type Self = ReachableNodes
 
                 def key: PropertyKey[ReachableNodes] = ReachableNodes.Key
@@ -812,7 +812,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     }
                 }
             }
-            object NoReachableNodes extends ReachableNodes(Set.empty) {
+            object NoReachableNodes extends ReachableNodes(mutable.Set.empty[Node]) {
                 override def toString: String = "NoReachableNodes"
             }
             object AllNodes extends ReachableNodes(nodeEntities) {
@@ -832,7 +832,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
 
-                var allDependees: Set[Node] = nTargets.toSet // may include self-dependency
+                var allDependees: immutable.Set[Node] = nTargets.toSet // may include self-dependency
                 var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
                     ps(allDependees - n /* ignore self-dependency */ , ReachableNodes.Key).toSet
 
@@ -885,11 +885,11 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
 
-                var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
-                    ps(nTargets -= n /* ignore self-dependency */ , ReachableNodes.Key)
+                var dependeePs: immutable.Set[EOptionP[Entity, _ <: ReachableNodes]] =
+                    ps(nTargets diff (Set(n)) /* ignore self-dependency */ , ReachableNodes.Key)
                         .filter { dependeeP => dependeeP.isRefinable }.toSet
 
-                def createPartialResult(currentNodes: immutable.Set[Node]): SomePartialResult = {
+                def createPartialResult(currentNodes: collection.Set[Node]): SomePartialResult = {
                     PartialResult(
                         n,
                         ReachableNodes.Key,
@@ -926,7 +926,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         n match {
                             case epk: EPK[Node, _] => c + epk.e
                             case InterimEUBP(n, p) => c ++ p.nodes + n
-                            case FinalEP(n, p)     => p.nodes + n
+                            case FinalEP(n, p)     => immutable.Set.from(p.nodes) + n
                         }
                     }
 
@@ -1237,7 +1237,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 ps.waitOnPhaseCompletion()
 
                 ps(nodeA, ReachableNodes.Key) should be(
-                    FinalEP(nodeA, ReachableNodes(nodeEntities - nodeA))
+                    FinalEP(nodeA, ReachableNodes(nodeEntities diff Set(nodeA)))
                 )
                 ps(nodeB, ReachableNodes.Key) should be(
                     FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
@@ -1355,7 +1355,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     val RNCKey = ReachableNodesCount.Key
 
                     ps(nodeA, RNKey) should be(
-                        FinalEP(nodeA, ReachableNodes(nodeEntities - nodeA))
+                        FinalEP(nodeA, ReachableNodes(nodeEntities diff Set(nodeA)))
                     )
                     ps(nodeB, RNKey) should be(
                         FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))

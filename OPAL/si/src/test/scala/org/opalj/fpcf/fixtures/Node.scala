@@ -2,7 +2,7 @@
 package org.opalj.fpcf
 package fixtures
 
-import scala.collection.mutable.Set
+import scala.collection.mutable
 
 /**
  * Models a simple mutable node of a fictitious graph.
@@ -11,7 +11,7 @@ import scala.collection.mutable.Set
  */
 final class Node(
         val name:    String,
-        val targets: Set[Node] = Set.empty
+        val targets: mutable.Set[Node] = mutable.Set.empty
 ) {
 
     override def hashCode: Int = name.hashCode()
