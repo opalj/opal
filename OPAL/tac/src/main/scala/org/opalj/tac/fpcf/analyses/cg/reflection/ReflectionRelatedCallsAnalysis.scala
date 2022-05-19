@@ -121,7 +121,7 @@ class ClassForNameAnalysis private[analyses] (
         }
 
         def reset(): Unit = {
-            _loadedClassesUB unionUIDSet _newLoadedClasses
+            _loadedClassesUB ++ _newLoadedClasses
             _newLoadedClasses = UIDSet.empty
         }
 
@@ -132,7 +132,7 @@ class ClassForNameAnalysis private[analyses] (
             val newLoadedClasses = _newLoadedClasses
             PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                 case InterimEUBP(p, ub) =>
-                    val newUb = ub.classes unionUIDSet newLoadedClasses
+                    val newUb = ub.classes ++ newLoadedClasses
                     // due to monotonicity:
                     // the size check sufficiently replaces the subset check
                     if (newUb.size > ub.classes.size)

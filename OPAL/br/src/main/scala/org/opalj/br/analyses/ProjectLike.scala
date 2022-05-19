@@ -1159,11 +1159,11 @@ object ProjectLike {
                         "finding the maximally specific superinterface methods failed: "+
                             s"${superinterfaceType.toJava} is not an interface and ignored"
                     )
-                    (analyzedSuperinterfaceTypes unionUIDSet superinterfaceTypes + superinterfaceType, Set.empty)
+                    (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
                 } else {
                     classFile.findMethod(name, descriptor) match {
                         case Some(method) if !method.isPrivate && !method.isStatic =>
-                            val analyzedTypes = newAnalyzedSuperinterfaceTypes unionUIDSet superinterfaceTypes
+                            val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
                             (analyzedTypes, Set(method))
 
                         case _ /* None OR "the method was either private or static" */ =>
@@ -1186,7 +1186,7 @@ object ProjectLike {
                 }
 
             case None =>
-                (analyzedSuperinterfaceTypes unionUIDSet superinterfaceTypes + superinterfaceType, Set.empty)
+                (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
         }
     }
 

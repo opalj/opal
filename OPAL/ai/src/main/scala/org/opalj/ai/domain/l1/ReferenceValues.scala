@@ -1403,9 +1403,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     if (goalIsASubtype.isYes)
                         newValue = newValue.doRefineUpperTypeBound(upperBoundGoal)
                     else if (goalIsASubtype.isUnknown)
-                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal unionUIDSet newValueUTB)
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal ++ newValueUTB)
                     else if (!classHierarchy.isSubtypeOf(newValueUTB, upperBoundGoal))
-                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal unionUIDSet newValueUTB)
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal ++ newValueUTB)
                 }
             }
 
@@ -1666,7 +1666,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     }
 
                     if (otherValues.nonEmpty) {
-                        newValues unionUIDSet otherValues
+                        newValues ++ otherValues
                         updateType = StructuralUpdateType
                     }
                     val thisUTB = this.upperTypeBound

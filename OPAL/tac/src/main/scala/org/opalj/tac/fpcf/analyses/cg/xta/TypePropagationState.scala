@@ -139,7 +139,7 @@ final class TypePropagationState[ContextType <: Context](
             true
         } else {
             val existingTypeFilters = _forwardPropagationFilters.get(typeSetEntity)
-            val newFilters = rootTypes(existingTypeFilters unionUIDSet typeFilters)
+            val newFilters = rootTypes(existingTypeFilters ++ typeFilters)
             _forwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }
@@ -185,7 +185,7 @@ final class TypePropagationState[ContextType <: Context](
             true
         } else {
             val existingTypeFilters = _backwardPropagationFilters.get(typeSetEntity)
-            val newFilters = rootTypes(existingTypeFilters unionUIDSet typeFilters)
+            val newFilters = rootTypes(existingTypeFilters ++ typeFilters)
             _backwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }

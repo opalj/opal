@@ -11,9 +11,9 @@ object Dependencies {
 
   object version {
     val junit = "4.13.2"
-    val scalatest = "3.2.6"
+    val scalatest = "3.2.12"
     val scalatestjunit = "3.2.5.0"
-    val scalacheck = "1.15.2"
+    val scalacheck = "3.2.12.0"
 
     val scalaxml = "1.3.0"
     val scalaparsercombinators = "1.1.2"
@@ -54,10 +54,10 @@ object Dependencies {
 
     // --- test related dependencies
 
-    val junit =          "junit"              % "junit"      % version.junit          % "test,it"
-    val scalatest =      "org.scalatest"     %% "scalatest"  % version.scalatest      % "test,it"
-    val scalatestjunit = "org.scalatestplus" %% "junit-4-13" % version.scalatestjunit % "test,it"
-    val scalacheck =     "org.scalacheck"    %% "scalacheck" % version.scalacheck     % "test,it"
+    val junit =          "junit"              % "junit"           % version.junit          % "test,it"
+    val scalatest =      "org.scalatest"     %% "scalatest"       % version.scalatest      % "test,it"
+    val scalatestjunit = "org.scalatestplus" %% "junit-4-13"      % version.scalatestjunit % "test,it"
+    val scalacheck =     "org.scalatestplus" %% "scalacheck-1-16" % version.scalacheck     % "test,it"
   }
 
   import library._

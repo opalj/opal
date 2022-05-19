@@ -251,7 +251,7 @@ package object graphs {
                             // This is the trivial case... obviously the end of the path is a
                             // closed SCC.
                             // ALTERNATIVE: val cSCC = path.dropWhile(n => dfsNum(n) != cSCCDFSNum)
-                            val cSCC = path.slice(from = cSCCDFSNum - initialDFSNum, until = path.length)
+                            val cSCC = path.drop(cSCCDFSNum - initialDFSNum)
                             cSCCs ::= cSCC
                             markPathAsProcessed()
                         } else {
@@ -260,13 +260,13 @@ package object graphs {
                             // ALTERNATIVE CHECK:
                             //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
-                                path.iterator.slice(from = cSCCDFSNum - initialDFSNum, until = path.length).forall(n =>
+                                path.iterator.drop(cSCCDFSNum - initialDFSNum).forall(n =>
                                     // ... for all cSCCandidates
                                     es(n).forall(succN =>
                                         hasDFSNum(succN) &&
                                             dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications
                                     ))) {
-                                cSCCs ::= path.slice(from = cSCCDFSNum - initialDFSNum, until = path.length)
+                                cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
                         }
@@ -302,7 +302,7 @@ package object graphs {
                     if (succNs.nonEmpty) {
                         workstack.push(n)
                         workstack.push(PathSegmentSeparator: N)
-                        workstack ++= succNs
+                        workstack prependAll succNs
                     } else {
                         // We have a path which leads to a node with no outgoing edge;
                         // hence, all nodes on the path cannot be part of a cSCC.

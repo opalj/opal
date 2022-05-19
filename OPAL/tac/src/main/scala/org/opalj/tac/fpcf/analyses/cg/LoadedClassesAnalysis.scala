@@ -159,7 +159,7 @@ class LoadedClassesAnalysis(
         eop: EOptionP[_, LoadedClasses]
     ): Option[InterimEP[SomeProject, LoadedClasses]] = eop match {
         case InterimUBP(ub: LoadedClasses) =>
-            val newUb = ub.classes unionUIDSet newLoadedClasses
+            val newUb = ub.classes ++ newLoadedClasses
             // due to monotonicity:
             // the size check sufficiently replaces the subset check
             if (newUb.size > ub.classes.size)
@@ -199,7 +199,7 @@ class LoadedClassesAnalysis(
         //TODO what about resolution A <- B <- C: C::foo() and foo is def. in A.
         if (isNewLoadedClass(declClassType)) {
             //TODO only for interfaces with default methods
-            newLoadedClasses unionUIDSet getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
+            newLoadedClasses ++ getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
         }
 
         for (stmt <- stmts) {

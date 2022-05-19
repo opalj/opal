@@ -44,7 +44,7 @@ sealed abstract class UIDSet[T <: UID]
     override def foldLeft[B](z: B)(op: (B, T) => B): B
     override def fromSpecific(coll: IterableOnce[T]): UIDSet[T] = UIDSet.fromSpecific(coll)
     override def newSpecificBuilder: mutable.Builder[T, UIDSet[T]] = UIDSet.newBuilder[T]
-    def mapUIDSet[B <: UID](f: T => B): UIDSet[B]
+    def mapUIDSet[B <: UID](f: T => B): UIDSet[B] = UIDSet.fromSpecific(this.map(f))
 
     //
     // METHODS DEFINED BY UIDSet
@@ -66,7 +66,7 @@ sealed abstract class UIDSet[T <: UID]
 
     def isSingletonSet: Boolean
 
-    def unionUIDSet(es: UIDSet[T]): UIDSet[T]
+    def ++(es: UIDSet[T]): UIDSet[T]
     def findById(id: Int): Option[T]
 
     /**
@@ -136,7 +136,7 @@ object UIDSet0 extends UIDSet[UID] {
     override def idSet: IntTrieSet = IntTrieSet.empty
     override def containsId(id: Int): Boolean = false
     override def isSingletonSet: Boolean = false
-    override def unionUIDSet(es: UIDSet[UID]): UIDSet[UID] = es
+    override def ++(es: UIDSet[UID]): UIDSet[UID] = es
     override def compare(that: UIDSet[UID]): SetRelation = {
         if (that.isEmpty) EqualSets else /* this is a */ StrictSubset
     }
@@ -186,7 +186,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     override def isSingletonSet: Boolean = true
     override def containsId(id: Int): Boolean = value.id == id
 
-    override def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
+    override def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 
@@ -308,7 +308,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def isSingletonSet: Boolean = false
     override def containsId(id: Int): Boolean = value1.id == id || value2.id == id
 
-    def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
+    def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 
@@ -319,9 +319,6 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
             case _ => this.foldLeft(es)(_ incl _) // es is larger... which should be less work
         }
     }
-
-    override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
-        UIDSet2(f(value1), f(value2))
 }
 final object UIDSet2 {
     def apply[T <: UID](value1: T, value2: T): UIDSet2[T] = new UIDSet2[T](value1, value2)
@@ -444,7 +441,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     override def containsId(id: Int): Boolean = {
         value1.id == id || value2.id == id || value3.id == id
     }
-    override def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
+    override def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 
@@ -455,9 +452,6 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             case _ => this.foldLeft(es)(_ incl _) // es is at least as large as this set
         }
     }
-
-    override def mapUIDSet[B <: UID](f: T => B): UIDSet[B] =
-        new UIDSet3(f(value1), f(value2), f(value3))
 }
 
 // remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-remove-
@@ -721,7 +715,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
         None
     }
 
-    override def unionUIDSet(es: UIDSet[T]): UIDSet[T] = {
+    override def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
 
@@ -974,8 +968,6 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
     override def containsId(id: Int): Boolean = id == value.id
     protected[immutable] def growIdSet(set: IntTrieSet): IntTrieSet = set + value.id
 
-    override def mapUIDSet[B <: UID](f: T => B): UIDSetNodeLike[B] =
-        new UIDSetLeaf[B](f(value))
 }
 
 // we wan't to be able to adapt the case class...
@@ -1081,14 +1073,6 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
         }
         newSet
     }
-
-    override def mapUIDSet[B <: UID](f: T => B): UIDSetNodeLike[B] =
-        new UIDSetInnerNode(
-            this.theSize,
-            f(this.value),
-            this.left.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]],
-            this.right.mapUIDSet(f).asInstanceOf[UIDSetNodeLike[B]]
-        )
 }
 
 object UIDSet {
@@ -1111,7 +1095,7 @@ object UIDSet {
         val iterator = it.iterator
         while (iterator.hasNext)
             builder.addOne(iterator.next())
-        return builder.result()
+        builder.result()
     }
 
     def apply[T <: UID](vs: T*): UIDSet[T] = {
