@@ -113,7 +113,7 @@ class ClassForNameAnalysis private[analyses] (
             loadedClassesUB: UIDSet[ObjectType],
             callContext:     ContextType
     ) extends CGState[ContextType](callContext, null) {
-        private[this] val _loadedClassesUB: UIDSet[ObjectType] = loadedClassesUB
+        private[this] var _loadedClassesUB: UIDSet[ObjectType] = loadedClassesUB
         private[this] var _newLoadedClasses: UIDSet[ObjectType] = UIDSet.empty
 
         private[cg] def addNewLoadedClasses(loadedClasses: IterableOnce[ObjectType]): Unit = {
@@ -121,7 +121,7 @@ class ClassForNameAnalysis private[analyses] (
         }
 
         def reset(): Unit = {
-            _loadedClassesUB ++ _newLoadedClasses
+            _loadedClassesUB ++= _newLoadedClasses
             _newLoadedClasses = UIDSet.empty
         }
 

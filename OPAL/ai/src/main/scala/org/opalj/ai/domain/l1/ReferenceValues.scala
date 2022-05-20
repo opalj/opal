@@ -1666,7 +1666,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     }
 
                     if (otherValues.nonEmpty) {
-                        newValues ++ otherValues
+                        newValues ++= otherValues
                         updateType = StructuralUpdateType
                     }
                     val thisUTB = this.upperTypeBound

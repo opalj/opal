@@ -199,7 +199,7 @@ class LoadedClassesAnalysis(
         //TODO what about resolution A <- B <- C: C::foo() and foo is def. in A.
         if (isNewLoadedClass(declClassType)) {
             //TODO only for interfaces with default methods
-            newLoadedClasses ++ getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
+            newLoadedClasses ++= getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
         }
 
         for (stmt <- stmts) {
