@@ -1102,7 +1102,7 @@ object Project {
             override implicit val requiresEntryType: ClassTag[br.Requires] = classTag[br.Requires]
             override implicit val exportsEntryType: ClassTag[br.Exports] = classTag[br.Exports]
             override implicit val opensEntryType: ClassTag[br.Opens] = classTag[br.Opens]
-            override implicit val providesTypeEntry: ClassTag[br.Provides] = classTag[br.Provides]
+            override implicit val providesEntryType: ClassTag[br.Provides] = classTag[br.Provides]
             override implicit val elementValueType: ClassTag[ElementValue] = classTag[ElementValue]
             override implicit val elementValuePairType: ClassTag[ElementValuePair] = classTag[ElementValuePair]
             override implicit val fieldInfoType: ClassTag[Field] = classTag[Field]
@@ -1395,9 +1395,9 @@ object Project {
                 }
             }
 
-            val interfaceMethods: mutable.Set[MethodSignature] = mutable.Set.empty
-            var uniqueInterfaceMethods: mutable.Set[Method] = mutable.Set.empty
-            val uniqueInterfaceMethodSignatures: mutable.Set[MethodSignature] = mutable.Set.empty
+            var interfaceMethods: immutable.Set[MethodSignature] = immutable.Set.empty
+            var uniqueInterfaceMethods: immutable.Set[Method] = immutable.Set.empty
+            var uniqueInterfaceMethodSignatures: immutable.Set[MethodSignature] = immutable.Set.empty
             for {
                 superinterfaceType <- superinterfaceTypes
                 superinterfaceClassfile <- objectTypeToClassFile(superinterfaceType)

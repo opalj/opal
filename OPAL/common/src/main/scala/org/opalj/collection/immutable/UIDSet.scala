@@ -25,7 +25,7 @@ import scala.reflect.ClassTag
  */
 sealed abstract class UIDSet[T <: UID]
     extends scala.collection.immutable.Set[T]
-    with scala.collection.immutable.SetOps[T, Set, UIDSet[T]] { set =>
+    with scala.collection.immutable.StrictOptimizedSetOps[T, Set, UIDSet[T]] { set =>
 
     final override def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
     final override def contains(e: T): Boolean = containsId(e.id)
@@ -58,7 +58,6 @@ sealed abstract class UIDSet[T <: UID]
     }
 
     override def iterator: Iterator[T]
-    // Note that, "super.toIterator" guarantees to call "iterator"
 
     def idSet: IntTrieSet
 

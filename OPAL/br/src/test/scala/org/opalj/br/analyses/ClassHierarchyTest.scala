@@ -292,7 +292,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "the default ClassHierarchy's leafTypes method"
 
     it should "return all leaf types" in {
-        jlsCH.leafTypes.toSet should be(Set(
+        jlsCH.leafTypes should be(UIDSet(
             ObjectType("java/lang/String"),
             ObjectType("java/lang/Class"),
             ObjectType("java/lang/Cloneable"),

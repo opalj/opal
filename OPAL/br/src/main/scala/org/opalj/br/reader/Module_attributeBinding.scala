@@ -35,7 +35,7 @@ trait Module_attributeBinding
     type UsesEntry = ObjectType
 
     type ProvidesEntry = br.Provides
-    override implicit val providesTypeEntry: ClassTag[ProvidesEntry] = classTag[ProvidesEntry]
+    override implicit val providesEntryType: ClassTag[ProvidesEntry] = classTag[ProvidesEntry]
 
     type ProvidesWithIndexEntry = ObjectType
 

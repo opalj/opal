@@ -8,7 +8,7 @@ import org.opalj.bi.reader.TypeAnnotationTargetReader
 import org.opalj.bi.reader.TypeAnnotationPathReader
 
 import scala.collection.immutable.ArraySeq
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
  * Factory methods to create representations of Java type annotations.
@@ -23,17 +23,17 @@ trait TypeAnnotationsBinding
     with AttributeBinding {
 
     type TypeAnnotation = br.TypeAnnotation
-    override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = classTag[TypeAnnotation]
+    override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[br.TypeAnnotation])
 
     type TypeAnnotationTarget = br.TypeAnnotationTarget
 
     type TypeAnnotationPath = br.TypeAnnotationPath
 
     type TypeAnnotationPathElement = br.TypeAnnotationPathElement
-    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = classTag[TypeAnnotationPathElement]
+    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = ClassTag(classOf[br.TypeAnnotationPathElement])
 
     type LocalvarTableEntry = br.LocalvarTableEntry
-    override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = classTag[LocalvarTableEntry]
+    override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[br.LocalvarTableEntry])
 
     //
     // TypeAnnotation

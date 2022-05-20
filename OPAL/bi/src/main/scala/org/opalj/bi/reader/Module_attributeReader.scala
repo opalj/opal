@@ -50,7 +50,7 @@ trait Module_attributeReader extends AttributeReader {
     type ProvidesWithIndexTable = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
 
     type ProvidesEntry <: AnyRef
-    implicit val providesTypeEntry: ClassTag[ProvidesEntry] // TODO: Replace in Scala 3 by `type ProvidesEntry : ClassTag`
+    implicit val providesEntryType: ClassTag[ProvidesEntry] // TODO: Replace in Scala 3 by `type ProvidesEntry : ClassTag`
     type Provides = ArraySeq[ProvidesEntry]
 
     //

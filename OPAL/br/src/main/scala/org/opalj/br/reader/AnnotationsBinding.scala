@@ -5,8 +5,7 @@ package reader
 
 import org.opalj.bi.reader.AnnotationsAbstractions
 import org.opalj.bi.reader.ElementValuePairsReader
-
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
  * Factory methods to create representations of Java annotations.
@@ -19,10 +18,10 @@ trait AnnotationsBinding
     with ConstantPoolBinding {
 
     type Annotation = br.Annotation
-    override implicit val annotationType: ClassTag[Annotation] = classTag[Annotation]
+    override implicit val annotationType: ClassTag[Annotation] = ClassTag(classOf[br.Annotation])
 
     type ElementValue = br.ElementValue
-    override implicit val elementValueType: ClassTag[ElementValue] = classTag[ElementValue]
+    override implicit val elementValueType: ClassTag[ElementValue] = ClassTag(classOf[br.ElementValue])
 
     type EnumValue = br.EnumValue
 
@@ -49,7 +48,7 @@ trait AnnotationsBinding
     type BooleanValue = br.BooleanValue
 
     type ElementValuePair = br.ElementValuePair
-    override implicit val elementValuePairType: ClassTag[ElementValuePair] = classTag[ElementValuePair]
+    override implicit val elementValuePairType: ClassTag[ElementValuePair] = ClassTag(classOf[br.ElementValuePair])
 
     def ElementValuePair(
         cp:                 Constant_Pool,
