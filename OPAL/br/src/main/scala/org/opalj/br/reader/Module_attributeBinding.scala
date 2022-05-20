@@ -6,7 +6,7 @@ package reader
 import org.opalj.bi.reader.Module_attributeReader
 
 import scala.collection.immutable.ArraySeq
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
  * The factory method to create the "class level" `Module` attribute (Java 9).
@@ -21,21 +21,21 @@ trait Module_attributeBinding
     type Module_attribute = br.Module
 
     type RequiresEntry = br.Requires
-    override implicit val requiresEntryType: ClassTag[RequiresEntry] = classTag[RequiresEntry]
+    override implicit val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[br.Requires])
 
     type ExportsEntry = br.Exports
-    override implicit val exportsEntryType: ClassTag[ExportsEntry] = classTag[ExportsEntry]
+    override implicit val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[br.Exports])
     type ExportsToIndexEntry = String
 
     type OpensEntry = br.Opens
-    override implicit val opensEntryType: ClassTag[OpensEntry] = classTag[OpensEntry]
+    override implicit val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[br.Opens])
 
     type OpensToIndexEntry = String // module name
 
     type UsesEntry = ObjectType
 
     type ProvidesEntry = br.Provides
-    override implicit val providesEntryType: ClassTag[ProvidesEntry] = classTag[ProvidesEntry]
+    override implicit val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[br.Provides])
 
     type ProvidesWithIndexEntry = ObjectType
 
