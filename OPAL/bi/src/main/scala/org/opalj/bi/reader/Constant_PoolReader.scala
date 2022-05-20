@@ -3,8 +3,6 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
@@ -18,9 +16,6 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     //
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
-
-    type Constant_Pool_Entry <: ConstantPoolEntry
-    implicit val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry]
 
     type CONSTANT_Class_info <: Constant_Pool_Entry
     type CONSTANT_Fieldref_info <: Constant_Pool_Entry

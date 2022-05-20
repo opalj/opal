@@ -91,8 +91,8 @@ object Origin {
      *  Common supertrait of all domain values which provide comprehensive origin information.
      */
     trait ValueWithOriginInformation {
-      def originsIterator: ValueOriginsIterator
-      def origins: ValueOrigins
+        def originsIterator: ValueOriginsIterator
+        def origins: ValueOrigins
     }
 
     /**
@@ -100,14 +100,14 @@ object Origin {
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
 
-      /**
-       * The origin of the value (or the pseudo-origin (e.g., the index of
-       * the parameter) if the true origin is unknown.)
-       */
-      def origin: ValueOrigin
+        /**
+         * The origin of the value (or the pseudo-origin (e.g., the index of
+         * the parameter) if the true origin is unknown.)
+         */
+        def origin: ValueOrigin
 
-      final def originsIterator: ValueOriginsIterator = IntIterator(origin)
-      final def origins: ValueOrigins = IntTrieSet1(origin)
+        final def originsIterator: ValueOriginsIterator = IntIterator(origin)
+        final def origins: ValueOrigins = IntTrieSet1(origin)
     }
 
     /**

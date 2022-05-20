@@ -4,6 +4,7 @@ package bi
 package reader
 
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 /**
  * Constant pool related type definitions.
@@ -15,6 +16,7 @@ trait Constant_PoolAbstractions {
     //
 
     type Constant_Pool_Entry <: ConstantPoolEntry
+    implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry]
 
     type CONSTANT_Utf8_info <: Constant_Pool_Entry
 

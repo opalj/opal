@@ -24,7 +24,7 @@ class ExtractDependenciesFromClassFilesTest extends AnyFlatSpec with Matchers {
 
     val dependencyExtractor = new DependencyExtractor(DependencyProcessorAdapter)
 
-    for (file <- allManagedBITestJARs) {
+    for (file <- allManagedBITestJARs()) {
         val zipfile = new ZipFile(file)
         val jarName = zipfile.getName
         val zipentries = (zipfile).entries
