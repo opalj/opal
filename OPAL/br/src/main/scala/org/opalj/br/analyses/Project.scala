@@ -42,7 +42,6 @@ import org.opalj.br.reader.Java17FrameworkWithDynamicRewritingAndCaching
 import org.opalj.br.reader.Java17LibraryFramework
 
 import scala.collection.immutable.ArraySeq
-import scala.reflect.{ClassTag, classTag}
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -781,15 +780,15 @@ class Project[Source] private (
         else if (allPackages.tail.isEmpty)
             Map((allPackages.head, allPackages.head))
         else {
-            allPackages.tail.foldLeft(mutable.SortedMap((allPackages.head, allPackages.head))) {
+            allPackages.tail.foldLeft(immutable.SortedMap((allPackages.head, allPackages.head))) {
                 (rootPackages, nextPackage) =>
                     // java is not a root package of "javax"...
                     val (_, lastPackage) = rootPackages.last
                     if (nextPackage.startsWith(lastPackage) &&
                         nextPackage.charAt(lastPackage.size) == '/')
-                        rootPackages addOne ((nextPackage, lastPackage))
+                        rootPackages + ((nextPackage, lastPackage))
                     else
-                        rootPackages addOne ((nextPackage, nextPackage))
+                        rootPackages + ((nextPackage, nextPackage))
             }
         }
     }
@@ -979,11 +978,11 @@ class Project[Source] private (
      */
     def projectMethodsLengthDistribution: Map[Int, Set[Method]] = {
         val nonSyntheticMethodsWithBody = methodsWithBody.iterator.filterNot(_.isSynthetic)
-        val data = mutable.SortedMap.empty[Int, mutable.Set[Method]]
+        val data = immutable.SortedMap.empty[Int, immutable.Set[Method]]
         nonSyntheticMethodsWithBody.foldLeft(data) { (data, method) =>
             val methodLength = method.body.get.instructions.length
-            val methods = data.getOrElse(methodLength, mutable.Set.empty[Method])
-            data addOne ((methodLength, methods addOne method))
+            val methods = data.getOrElse(methodLength, immutable.Set.empty[Method])
+            data + ((methodLength, methods + method))
         }
     }
 
@@ -1015,10 +1014,10 @@ class Project[Source] private (
             data.update(key, data.getOrElse(key, 0) + count + 1 /*+1 for the inner class*/ )
         }
 
-        val result = mutable.SortedMap.empty[Int, (Int, mutable.Set[String])]
+        var result = immutable.SortedMap.empty[Int, (Int, immutable.Set[String])]
         for ((typeName, membersCount) <- data) {
-            val (count, typeNames) = result.getOrElse(membersCount, (0, mutable.Set.empty[String]))
-            result += ((membersCount, (count + 1, typeNames addOne typeName)))
+            val (count, typeNames) = result.getOrElse(membersCount, (0, immutable.Set.empty[String]))
+            result += ((membersCount, (count + 1, typeNames + typeName)))
         }
         result
     }
@@ -1091,30 +1090,8 @@ object Project {
     ): Java17FrameworkWithDynamicRewritingAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends Java17FrameworkWithDynamicRewritingAndCaching(cache) {
-            override implicit val logContext: LogContext = theLogContext
-            override implicit val config: Config = theConfig
-            override implicit val methodInfoType: ClassTag[Method] = classTag[Method]
-            override implicit val annotationType: ClassTag[Annotation] = classTag[Annotation]
-            override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = classTag[LocalvarTableEntry]
-            override implicit val methodParameterType: ClassTag[MethodParameter] = classTag[MethodParameter]
-            override implicit val attributeType: ClassTag[Attribute] = classTag[Attribute]
-            override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = classTag[TypeAnnotationPathElement]
-            override implicit val requiresEntryType: ClassTag[br.Requires] = classTag[br.Requires]
-            override implicit val exportsEntryType: ClassTag[br.Exports] = classTag[br.Exports]
-            override implicit val opensEntryType: ClassTag[br.Opens] = classTag[br.Opens]
-            override implicit val providesEntryType: ClassTag[br.Provides] = classTag[br.Provides]
-            override implicit val elementValueType: ClassTag[ElementValue] = classTag[ElementValue]
-            override implicit val elementValuePairType: ClassTag[ElementValuePair] = classTag[ElementValuePair]
-            override implicit val fieldInfoType: ClassTag[Field] = classTag[Field]
-            override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = classTag[TypeAnnotation]
-            override implicit val localVariableTableEntryType: ClassTag[LocalVariable] = classTag[LocalVariable]
-            override implicit val bootstrapMethodType: ClassTag[BootstrapMethod] = classTag[BootstrapMethod]
-            override implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] = classTag[BootstrapArgument]
-            override implicit val stackMapFrameType: ClassTag[StackMapFrame] = classTag[StackMapFrame]
-            override implicit val verificationTypeInfoType: ClassTag[UninitializedThisVariableInfo] = classTag[UninitializedThisVariableInfo]
-            override implicit val exceptionTableEntryType: ClassTag[ExceptionHandler] = classTag[ExceptionHandler]
-            override implicit val innerClassesEntryType: ClassTag[InnerClass] = classTag[InnerClass]
-            override implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableType] = classTag[LocalVariableType]
+            override def defaultLogContext: LogContext = theLogContext
+            override def defaultConfig: Config = theConfig
         }
         new ConfiguredFramework
     }
@@ -1294,7 +1271,7 @@ object Project {
         // class...
         var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
-        val missingClassTypes = mutable.Set.empty[ObjectType]
+        var missingClassTypes = immutable.Set.empty[ObjectType]
 
         // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {

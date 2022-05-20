@@ -23,19 +23,22 @@ import org.opalj.log.LogContext
  */
 trait ClassFileReaderConfiguration {
 
+    def defaultLogContext: LogContext = GlobalLogContext
+    def defaultConfig: Config = BaseConfig
+
     /**
      * The [[org.opalj.log.LogContext]] that should be used to log rewritings.
      *
      * @note    The [[org.opalj.log.LogContext]] is typically either the
      *          [[org.opalj.log.GlobalLogContext]] or a project specific log context.
      */
-    implicit val logContext: LogContext = GlobalLogContext
+    implicit val logContext: LogContext = defaultLogContext
 
     /**
      * The `Config` object that will be used to read the configuration settings for
      * reading in class files.
      */
-    implicit val config: Config = BaseConfig
+    implicit val config: Config = defaultConfig
 
     /**
      * If `true` method bodies are never loaded.
