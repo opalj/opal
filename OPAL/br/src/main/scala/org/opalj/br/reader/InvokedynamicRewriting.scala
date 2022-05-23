@@ -12,7 +12,6 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogMessage
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.RefIndexedView
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
@@ -26,6 +25,7 @@ import org.opalj.br.instructions.*
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 
+import scala.collection.IndexedSeqView
 import scala.collection.immutable.ArraySeq
 
 /**
@@ -341,13 +341,13 @@ trait InvokedynamicRewriting
             if (args.isEmpty)
                 (
                     None,
-                    RefIndexedView.empty
+                    ArraySeq.empty[ConstantValue[_]].view
                 )
             else args.head match {
                 case recipe: ConstantString =>
                     (
                         Some(recipe),
-                        args.view.slice(from = 1, until = args.length).asInstanceOf[RefIndexedView[ConstantValue[_]]]
+                        args.view.slice(from = 1, until = args.length).asInstanceOf[IndexedSeqView[ConstantValue[_]]]
                     )
                 case _ =>
                     if (logUnknownInvokeDynamics) {
@@ -368,7 +368,7 @@ trait InvokedynamicRewriting
             name:       String,
             descriptor: MethodDescriptor,
             recipeO:    Option[ConstantString],
-            constants:  RefIndexedView[ConstantValue[_]]
+            constants:  IndexedSeqView[ConstantValue[_]]
         ): MethodTemplate = {
             // A guess on the number of append operations required, need not be precise
             val numEntries =

@@ -29,10 +29,10 @@
 package org.opalj.br
 
 import org.scalatest.funsuite.AnyFunSuite
-import java.util.concurrent.atomic.AtomicInteger
-import java.lang.{Boolean => JBoolean}
 
-import com.typesafe.config.ConfigValueFactory
+import java.util.concurrent.atomic.AtomicInteger
+import java.lang.Boolean as JBoolean
+import com.typesafe.config.{Config, ConfigValueFactory}
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.TestSupport.allBIProjects
@@ -200,7 +200,7 @@ class CodePropertiesTest extends AnyFunSuite {
                 .withValue(logOptimizationsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE))
                 .withValue(optimizationConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
         class Reader extends Java9Framework {
-            override val config = theConfig
+            override def defaultConfig: Config = theConfig
             override def loadsInterfacesOnly: Boolean = false
         }
         val reader = new Reader()
