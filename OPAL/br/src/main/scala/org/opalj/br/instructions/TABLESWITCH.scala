@@ -182,8 +182,8 @@ case class LabeledTABLESWITCH(
         )
     }
 
-    override def branchTargets: Iterable[InstructionLabel] = {
-        jumpTargets.view ++ Iterable(defaultBranchTarget)
+    override def branchTargets: Iterator[InstructionLabel] = {
+        jumpTargets.iterator ++ Iterator(defaultBranchTarget)
     }
 
     def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (List[Int], Boolean) = {

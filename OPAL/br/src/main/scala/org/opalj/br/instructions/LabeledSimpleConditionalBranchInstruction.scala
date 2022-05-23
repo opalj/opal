@@ -13,8 +13,8 @@ trait LabeledSimpleConditionalBranchInstruction
     extends LabeledInstruction
     with SimpleConditionalBranchInstructionLike {
 
-    final def branchTargets: Iterable[InstructionLabel] =
-        Iterable(branchTarget)
+    final def branchTargets: Iterator[InstructionLabel] =
+      Iterator(branchTarget)
 
     def branchTarget: InstructionLabel
 

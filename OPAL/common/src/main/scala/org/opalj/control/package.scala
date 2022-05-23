@@ -117,9 +117,9 @@ package object control {
         times: Int
     )(
         f: Int
-    ): ArraySeq[Int] = ArraySeq.fill(times)(f)
+    ): ArraySeq[Int] = macro ControlAbstractionsImplementation.fillIntArray
 
-    def fillArrayOfInt(
+  def fillArrayOfInt(
         times: Int
     )(
         f: Int

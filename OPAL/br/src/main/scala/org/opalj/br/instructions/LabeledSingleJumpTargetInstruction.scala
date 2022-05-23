@@ -13,8 +13,8 @@ package instructions
  */
 trait LabeledSingleJumpTargetInstruction extends LabeledInstruction {
 
-    final def branchTargets: Iterable[InstructionLabel] =
-        Iterable(branchTarget)
+    final def branchTargets: Iterator[InstructionLabel] =
+      Iterator(branchTarget)
 
     def branchTarget: InstructionLabel
 }

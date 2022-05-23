@@ -167,8 +167,8 @@ case class LabeledLOOKUPSWITCH(
 
     def caseValues: Iterator[Int] = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: Iterable[InstructionLabel] = {
-        npairs.view.map[InstructionLabel](_._2) ++ Iterable(defaultBranchTarget)
+    override def branchTargets: Iterator[InstructionLabel] = {
+        npairs.iterator.map[InstructionLabel](_._2) ++ Iterator(defaultBranchTarget)
     }
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")

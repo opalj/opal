@@ -15,7 +15,7 @@ package instructions
 trait LabeledInstruction extends InstructionLike {
 
     // TODO Rename to jumpTargets to clearly state that the "fall through case" is NOT covered!
-    def branchTargets: Iterable[InstructionLabel]
+    def branchTargets: Iterator[InstructionLabel]
 
     /**
      * If this instruction uses `Symbol`s to mark jump targets then the targets are replaced

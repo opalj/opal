@@ -18,6 +18,7 @@ import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.VisibilityModifier
+import org.opalj.collection.{binarySearch, insertedAt}
 
 import scala.collection.immutable.ArraySeq
 
@@ -241,10 +242,10 @@ final class ClassFile private (
         assert(oldMethod.name == newMethod.name)
         assert(oldMethod.descriptor == newMethod.descriptor)
 
-        val index = this.methods.indexOf[JVMMethod](oldMethod)
+        val index = binarySearch[Method, JVMMethod](this.methods, oldMethod)
         val newPreparedMethod: Method = newMethod.prepareClassFileAttachement()
         newPreparedMethod.declaringClassFile = this
-        val methods = this.methods.unsafeArray.asInstanceOf[Array[Method]]
+        val methods = this.methods.unsafeArray.asInstanceOf[Array[AnyRef]]
         methods(index) = newPreparedMethod
 
         oldMethod.detach(); // TO BE SURE THAT THE OLD METHOD NO LONGER REFERENCES THIS CLASS FILE
@@ -268,7 +269,7 @@ final class ClassFile private (
 
         assert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
 
-        val index = this.methods.indexOf[JVMMethod](newMethod)
+        val index = binarySearch[Method, JVMMethod](this.methods, newMethod)
         if (index >= 0)
             throw new IllegalArgumentException(
                 s"$this: a method with the given name and descriptor already exists: $newMethod"
@@ -276,7 +277,7 @@ final class ClassFile private (
         val insertionPoint = -index - 1
         var newMethods = this.methods
         newMethods.foreach(m => m.detach())
-        newMethods = newMethods.updated(insertionPoint, newMethod)
+        newMethods = insertedAt(newMethods, insertionPoint, newMethod)
 
         val newFields = this.fields
         newFields.foreach(f => f.detach())

@@ -899,7 +899,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                                 case InterimUBP(p) =>
                                     val oldReachableNodes = p.nodes
                                     val newReachableNodes = oldReachableNodes ++ currentNodes
-                                    if (oldReachableNodes ne newReachableNodes) {
+                                    if (oldReachableNodes != newReachableNodes) {
                                         Some(InterimEUBP(n, ReachableNodes(newReachableNodes)))
                                     } else {
                                         None

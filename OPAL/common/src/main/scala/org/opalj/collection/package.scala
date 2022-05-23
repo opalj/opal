@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
+import java.util.{Arrays => JArrays}
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.immutable.HashMap
+import scala.collection.immutable.{ArraySeq, HashMap}
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -90,4 +91,19 @@ package object collection {
             c + entry
         }
     }
+
+
+    def binarySearch[T, X >: T <: Comparable[X]](array: ArraySeq[T], key: X): Int = {
+      val data = array.unsafeArray.asInstanceOf[Array[Object]]
+      JArrays.binarySearch(data, 0, data.length, key.asInstanceOf[Object])
+    }
+
+    def insertedAt[T, X >: T <: AnyRef](array: ArraySeq[T], insertionPoint: Int, e: X): ArraySeq[X] = {
+      val data = array.unsafeArray.asInstanceOf[Array[Object]]
+      val newData = JArrays.copyOf(data, data.length + 1)
+      newData(insertionPoint) = e
+      System.arraycopy(data, insertionPoint, newData, insertionPoint + 1, data.length - insertionPoint)
+      ArraySeq.unsafeWrapArray(newData).asInstanceOf[ArraySeq[X]]
+    }
+
 }
