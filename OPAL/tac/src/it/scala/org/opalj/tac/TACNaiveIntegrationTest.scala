@@ -8,11 +8,12 @@ import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
-import java.io.File
 
-import org.opalj.bi.TestResources.locateTestResources
+import java.io.File
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.
@@ -71,7 +72,7 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
                         println(
                             body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
                         )
-                        errors ::= ((file+":"+methodSignature, e))
+                        errors = (s"$file:$methodSignature", e) :: errors
                     }
                 }
             }

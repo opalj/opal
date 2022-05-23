@@ -521,7 +521,6 @@ object ClassFileReader
         )
     }
 
-
     type StackMapFrame = da.StackMapFrame
     override implicit val stackMapFrameType: ClassTag[StackMapFrame] = ClassTag(classOf[da.StackMapFrame])
 

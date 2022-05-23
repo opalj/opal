@@ -122,7 +122,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                                     s"current results written to:\n"+writeActual(actual, fileName)
                             )
                         val expectedIt =
-                            Source.fromInputStream(new GZIPInputStream(expectedStream)).getLines
+                            Source.fromInputStream(new GZIPInputStream(expectedStream)).getLines()
 
                         while (actualIt.hasNext && expectedIt.hasNext) {
                             val actualLine = actualIt.next()

@@ -92,9 +92,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers =>
                                 Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
-                            case _: InterimEP[_, _] => None
+                            case _: InterimEP[_, _]  => None
 
-                            case _: EPK[_, _]       => Some(InterimEUBP(clInit, OnlyVMLevelCallers))
+                            case _: EPK[_, _]        => Some(InterimEUBP(clInit, OnlyVMLevelCallers))
                             case epk @ FinalEP(_, _) => throw new MatchError(epk)
 
                         }

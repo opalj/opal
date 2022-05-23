@@ -87,7 +87,7 @@ package object reader {
             OPALLogger.error("project setup", s"loading the JRE ($JRELibraryFolder) failed")
         }
 
-        classFiles.toSeq
+        classFiles
     }
 
     def readRTJarClassFiles(

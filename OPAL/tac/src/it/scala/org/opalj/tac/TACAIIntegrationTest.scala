@@ -43,13 +43,13 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
         project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val body = m.body.get
-            val aiResult = time('ai) { BaseAI(m, domainFactory(project, m)) }
+            val aiResult = time(Symbol("ai")) { BaseAI(m, domainFactory(project, m)) }
             try {
 
-                val TACode(params, tacAICode, _, cfg, _) = time('tacode) {
+                val TACode(params, tacAICode, _, cfg, _) = time(Symbol("tacode")) {
                     TACAI(m, ch, aiResult, false)(List.empty)
                 }
-                time('totxt) {
+                time(Symbol("totxt")) {
                     ToTxt(params, tacAICode, cfg, false, true, true)
                 }
 
@@ -84,7 +84,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
                     println(
                         body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
                     )
-                    errors ::= ((project.source(m.classFile)+":"+methodSignature, e))
+                    errors = (s"${project.source(m.classFile)}:$methodSignature", e) :: errors
                 }
             }
         }
@@ -128,9 +128,9 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
                 time {
                     checkProject(p, domainFactory, performanceEvaluation)
                 } { t =>
-                    val aiTime = performanceEvaluation.getTime('ai).toSeconds
-                    val tacodeTime = performanceEvaluation.getTime('tacode).toSeconds
-                    val totxtTime = performanceEvaluation.getTime('totxt).toSeconds
+                    val aiTime = performanceEvaluation.getTime(Symbol("ai")).toSeconds
+                    val tacodeTime = performanceEvaluation.getTime(Symbol("tacode")).toSeconds
+                    val totxtTime = performanceEvaluation.getTime(Symbol("totxt")).toSeconds
                     val details = s"(ai=$aiTime; taCode=$tacodeTime; toTxt=$totxtTime )"
                     info(s"using $domainName the conversion took ${t.toSeconds} – $details")
                 }

@@ -130,13 +130,17 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (thisOperands eq otherOperands) {
                 thisOperands
             } else {
-                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue) = {
-                    val updatedOperand = joinValues(pc, thisValue, otherValue)
-                    if (updatedOperand eq NoUpdate) {
+                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue): DomainValue = {
+                    if (thisValue eq otherValue)
                         thisValue
-                    } else {
-                        operandsUpdated &:= updatedOperand
-                        updatedOperand.value
+                    else {
+                        val updatedOperand = joinValues(pc, thisValue, otherValue)
+                        if (updatedOperand eq NoUpdate) {
+                            thisValue
+                        } else {
+                            operandsUpdated &:= updatedOperand
+                            updatedOperand.value
+                        }
                     }
                 }
                 thisOperands.zip(otherOperands).map { case (o1, o2) => fuseOperands(o1, o2) }
