@@ -5,7 +5,7 @@ package reader
 
 import org.opalj.bi.reader.Record_attributeReader
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
  * Implements the factory methods to create the `Record` attribute (Java 16).
@@ -20,7 +20,7 @@ trait Record_attributeBinding
     type Record_attribute = br.Record
 
     type RecordComponent = br.RecordComponent
-    override implicit val recordComponentType: ClassTag[RecordComponent] = classTag[RecordComponent]
+    override implicit val recordComponentType: ClassTag[RecordComponent] = ClassTag(classOf[br.RecordComponent])
 
     override def Record_attribute(
         cp:                   Constant_Pool,
