@@ -28,25 +28,25 @@ class JumpLabelsTest extends AnyFlatSpec {
 
     val methodTemplate =
         METHOD(PUBLIC, "returnInt", "(I)I", CODE(
-            GOTO('IsZero_?),
-            'Else,
+            GOTO(Symbol("IsZero_?")),
+            Symbol("Else"),
             ILOAD_1,
             IRETURN,
-            'IsTwo_?,
+            Symbol("IsTwo_?"),
             ILOAD_1,
             ICONST_2,
-            IF_ICMPNE('Else),
+            IF_ICMPNE(Symbol("Else")),
             ICONST_2,
             IRETURN,
-            'IsOne_?,
+            Symbol("IsOne_?"),
             ILOAD_1,
             ICONST_1,
-            IF_ICMPNE('IsTwo_?),
+            IF_ICMPNE(Symbol("IsTwo_?")),
             ICONST_1,
             IRETURN,
-            'IsZero_?,
+            Symbol("IsZero_?"),
             ILOAD_1,
-            IFNE('IsOne_?),
+            IFNE(Symbol("IsOne_?")),
             ICONST_0,
             IRETURN
         ))
