@@ -3,7 +3,7 @@
    param2: useSites={1} (origin=-3)
 */
 0:/*pc=4:*/ lv0 = {param1}/*java.lang.Object*/.hashCode()
-// ⚡️ java.lang.IllegalArgumentException -> 13, ⚡️ java.lang.NullPointerException -> 9, ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.ClassCastException -> 11, ⚡️ java.lang.ArithmeticException -> 15
+// ⚡️ java.lang.NullPointerException -> 9, ⚡️ java.lang.ClassCastException -> 11, ⚡️ java.lang.IllegalArgumentException -> 13, ⚡️ java.lang.ArithmeticException -> 15, ⚡️ <uncaught exception => abnormal return>
 
 // 0 ->
 1:/*pc=7:*/ lv1 = {param2} / {lv0}
@@ -16,7 +16,7 @@
 3:/*pc=11:*/ lv3 = new java.lang.UnknownError
 4:/*pc=15:*/ lv4 = "hashCode was 0"
 5:/*pc=17:*/ {lv3}/*(non-virtual) java.lang.UnknownError*/.<init>({lv4})
-// ⚡️ java.lang.IllegalArgumentException -> 13, ⚡️ java.lang.NullPointerException -> 9, ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.ClassCastException -> 11, ⚡️ java.lang.ArithmeticException -> 15
+// ⚡️ java.lang.NullPointerException -> 9, ⚡️ java.lang.ClassCastException -> 11, ⚡️ java.lang.IllegalArgumentException -> 13, ⚡️ java.lang.ArithmeticException -> 15, ⚡️ <uncaught exception => abnormal return>
 
 // 5 ->
 6:/*pc=20:*/ throw {lv3}
@@ -28,7 +28,7 @@
 
 // 7 ->
 8:/*pc=25:*/ throw {param1}
-// ⚡️ java.lang.IllegalArgumentException -> 13, ⚡️ java.lang.NullPointerException -> 9, ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.ClassCastException -> 11, ⚡️ java.lang.ArithmeticException -> 15
+// ⚡️ java.lang.NullPointerException -> 9, ⚡️ java.lang.ClassCastException -> 11, ⚡️ java.lang.IllegalArgumentException -> 13, ⚡️ java.lang.ArithmeticException -> 15, ⚡️ <uncaught exception => abnormal return>
 
 // java.lang.NullPointerException ->
 9:/*pc=26:*/ caught java.lang.NullPointerException /* <= {exception@0,exception[VM]@0,param1,exception@5}*/

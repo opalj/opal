@@ -284,7 +284,7 @@ object ToTxt {
 
             if (bb.endPC == index && bb.successors.exists(!_.isBasicBlock)) {
                 val successors =
-                    bb.successors.collect {
+                    bb.successors.toSeq.sorted.collect {
                         case cn: CatchNode =>
                             s"⚡️ ${catchTypeToString(cn.catchType)} -> ${cn.handlerPC}"
                         case ExitNode(false) =>

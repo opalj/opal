@@ -14,7 +14,7 @@
 6:/*pc=23:*/ lv6 = 0
 7:/*pc=25:*/ lv7 = new java.lang.Object
 8:/*pc=29:*/ {lv7}/*(non-virtual) java.lang.Object*/.<init>()
-// ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.Exception -> 12
+// ⚡️ java.lang.Exception -> 12, ⚡️ <uncaught exception => abnormal return>
 
 // 8 ->
 9:/*pc=32:*/ ;

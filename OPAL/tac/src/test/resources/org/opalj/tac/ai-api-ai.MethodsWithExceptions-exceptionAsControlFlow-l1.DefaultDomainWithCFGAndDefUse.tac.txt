@@ -7,7 +7,7 @@
 
 // 1 ->
 2:/*pc=4:*/ ai.MethodsWithExceptions.processIt({lv1})
-// ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.ArithmeticException -> 4
+// ⚡️ java.lang.ArithmeticException -> 4, ⚡️ <uncaught exception => abnormal return>
 
 // 2 ->
 3:/*pc=7:*/ goto 9

@@ -2,7 +2,7 @@
    param1: useSites={0,4,6,5,3} (origin=-2)
 */
 0:/*pc=1:*/ /*expression value is ignored:*/{param1}/*java.lang.Object*/.toString()
-// ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.NullPointerException -> 2
+// ⚡️ java.lang.NullPointerException -> 2, ⚡️ <uncaught exception => abnormal return>
 
 // 0 ->
 1:/*pc=5:*/ goto 5

@@ -13,7 +13,7 @@
 4:/*pc=14:*/ lv4 = new java.lang.RuntimeException
 5:/*pc=18:*/ lv5 = "unexpected value"
 6:/*pc=20:*/ {lv4}/*(non-virtual) java.lang.RuntimeException*/.<init>({lv5})
-// ⚡️ <uncaught exception => abnormal return>, ⚡️ java.lang.Exception -> 8
+// ⚡️ java.lang.Exception -> 8, ⚡️ <uncaught exception => abnormal return>
 
 // 6 ->
 7:/*pc=23:*/ throw {lv4}
