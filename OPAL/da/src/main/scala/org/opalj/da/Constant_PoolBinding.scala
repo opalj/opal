@@ -2,7 +2,7 @@
 package org.opalj
 package da
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 import scala.collection.mutable
 import org.opalj.bi.reader.{Constant_PoolAbstractions, Constant_PoolReader}
 
@@ -44,7 +44,7 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
     //
 
     type Constant_Pool_Entry = org.opalj.da.Constant_Pool_Entry
-    override implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry] = classTag[Constant_Pool_Entry]
+    override implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry] = ClassTag(classOf[org.opalj.da.Constant_Pool_Entry])
 
     type CONSTANT_Class_info = org.opalj.da.CONSTANT_Class_info
     def CONSTANT_Class_info(i: Int): CONSTANT_Class_info = da.CONSTANT_Class_info(i)
