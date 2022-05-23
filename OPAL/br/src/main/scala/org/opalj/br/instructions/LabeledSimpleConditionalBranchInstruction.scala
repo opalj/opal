@@ -14,7 +14,7 @@ trait LabeledSimpleConditionalBranchInstruction
     with SimpleConditionalBranchInstructionLike {
 
     final def branchTargets: Iterator[InstructionLabel] =
-      Iterator(branchTarget)
+        Iterator(branchTarget)
 
     def branchTarget: InstructionLabel
 
