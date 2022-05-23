@@ -9,11 +9,11 @@
 // If your CPU uses hyperthreading, it is recommended to specify the
 // number of physical cores and the number of hyperthreaded cores;
 // this will spead up the overall execution.
-javaOptions in ThisBuild ++= Seq(
+ThisBuild / javaOptions in  ++= Seq(
 	"-Dorg.opalj.threads.CPUBoundTasks=4", // Number of physical (not hyperthreaded) cores/CPUs
 	"-Dorg.opalj.threads.IOBoundTasks=12" // Number of (hyperthreaded) cores * 1,5
 )
 
 // You can change the JVM Heap Space using the next two lines
-// javaOptions in ThisBuild -= "-Xmx24G"
-// javaOptions in ThisBuild += "-Xmx14G" // Slightly less than available RAM
+// ThisBuild / javaOptions -= "-Xmx24G"
+// ThisBuild / javaOptions += "-Xmx14G" // Slightly less than available RAM
