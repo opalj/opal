@@ -46,7 +46,7 @@ trait XHTMLTracer extends AITracer {
 
     private[this] var flow: List[List[FlowEntity]] = List(List.empty)
     private[this] def newBranch(): List[List[FlowEntity]] = {
-        flow = List[FlowEntity](flow)
+        flow = List.empty[FlowEntity] :: flow
         flow
     }
     private[this] def addFlowEntity(flowEntity: FlowEntity): Unit = {
@@ -124,7 +124,7 @@ trait XHTMLTracer extends AITracer {
                 flowEntity <- path
             } yield {
                 val dialogId = "dialog"+flowEntity.flowId
-                <div id={ dialogId } title={ (index + 1)+" - "+flowEntity.pc+" ("+flowEntity.instruction.mnemonic+")" }>
+                <div id={ dialogId } title={ s"${(index + 1)} - ${flowEntity.pc} (${flowEntity.instruction.mnemonic})" }>
                     <b>Stack</b><br/>
                     { dumpStack(flowEntity.operands)(Some(idsLookup)) }
                     <b>Locals</b><br/>

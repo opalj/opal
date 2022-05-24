@@ -70,8 +70,8 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(org.opalj.da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(org.opalj.da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         implicit val theProject = project
 
         val fa = project.get(FieldAccessInformationKey)

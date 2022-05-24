@@ -8,7 +8,7 @@ import scala.collection.mutable
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.{Instruction, MethodInvocationInstruction}
 import org.opalj.da.ClassFile
 
 /**
@@ -63,7 +63,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IterableOnce[Feature[S]] = {
 
         val classHierarchy = project.classHierarchy
@@ -99,7 +99,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             } {
                 locations += ((
                     featureID,
-                    classFileLocation :: locations.getOrElse(featureID, Naught)
+                    classFileLocation :: locations.getOrElse(featureID, List.empty)
                 ))
             }
         }
@@ -111,7 +111,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             if !isInterrupted()
             source <- project.source(cf)
             m @ MethodWithBody(code) <- cf.methods
-            pcAndInvocation <- code collect { case mii: MethodInvocationInstruction => mii }
+            pcAndInvocation <- code collect ({ case mii: MethodInvocationInstruction => mii }: PartialFunction[Instruction, MethodInvocationInstruction])
             pc = pcAndInvocation.pc
             mii = pcAndInvocation.value
             declClass = mii.declaringClass
@@ -123,7 +123,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             if APIMethod.matches(mii)
         } {
             val l = InstructionLocation(source, m, pc)
-            locations += ((featureID, l :: locations.getOrElse(featureID, Naught)))
+            locations += ((featureID, l :: locations.getOrElse(featureID, List.empty)))
             val count = occurrencesCount(featureID) + 1
             occurrencesCount = occurrencesCount + ((featureID, count))
         }
@@ -133,7 +133,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             Feature(
                 featureID,
                 occurrencesCount(featureID),
-                locations.getOrElse(featureID, Naught)
+                locations.getOrElse(featureID, List.empty)
             )
         }
     }

@@ -8,9 +8,10 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.{INVOKEVIRTUAL, Instruction}
 import org.opalj.da.ClassFile
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -33,7 +34,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(2)(new LocationsContainer[S])
 
@@ -45,9 +46,9 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             callerPackage = callerType.packageName
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL => iv
-            }
+            }: PartialFunction[Instruction, INVOKEVIRTUAL])
         } {
             val pc = pcAndInvocation.pc
             val invoke = pcAndInvocation.value
@@ -94,7 +95,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             }
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 
     private def isMethodOverriddenInDiffPackage[S](

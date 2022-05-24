@@ -3,11 +3,12 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.INVOKESTATIC
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Counts the number of `Class.forName` calls.

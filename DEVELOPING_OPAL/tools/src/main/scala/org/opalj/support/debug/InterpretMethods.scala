@@ -36,26 +36,26 @@ object InterpretMethods extends AnalysisApplication {
         "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n"+
             "[-verbose={true,false} If true, extensive information is shown.]\n"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         def isDomainParameter(parameter: String) =
             parameter.startsWith("-domain=") && parameter.length() > 8
         def isVerbose(parameter: String) =
             parameter == "-verbose=true" || parameter == "-verbose=false"
 
         parameters match {
-            case Nil => Traversable.empty
+            case Nil => Iterable.empty
             case Seq(parameter) =>
                 if (isDomainParameter(parameter) || isVerbose(parameter))
-                    Traversable.empty
+                    Iterable.empty
                 else
-                    Traversable("unknown parameter: "+parameter)
+                    Iterable("unknown parameter: "+parameter)
             case Seq(parameter1, parameter2) =>
                 if (!isDomainParameter(parameter1))
                     Seq("the first parameter does not specify the domain: "+parameter1)
                 else if (!isVerbose(parameter2))
                     Seq("the second parameter has to be \"verbose\": "+parameter2)
                 else
-                    Traversable.empty
+                    Iterable.empty
 
         }
     }
@@ -81,7 +81,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
         parameters:             Seq[String]                 = List.empty,
         initProgressManagement: (Int) => ProgressManagement
     ): BasicReport = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val verbose = parameters.nonEmpty &&
             (parameters.head == "-verbose=true" ||
@@ -153,7 +153,7 @@ object InterpretMethodsAnalysis {
             try {
                 if (beVerbose) println(method.toJava(YELLOW+"[started]"+RESET))
 
-                val evaluatedCount = time('AI) {
+                val evaluatedCount = time(Symbol("AI")) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, true)
                     val domain = domainConstructor.newInstance(project, method)
                     val result = ai(method, domain)
@@ -177,7 +177,7 @@ object InterpretMethodsAnalysis {
                     instructionEvaluationsCount.addAndGet(evaluatedCount)
                     evaluatedCount
                 }
-                val naiveEvaluatedCount = time('NAIVE_AI) {
+                val naiveEvaluatedCount = time(Symbol("NAIVE_AI")) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, false)
                     val domain = domainConstructor.newInstance(project, method)
                     ai(method, domain)
@@ -206,12 +206,12 @@ object InterpretMethodsAnalysis {
             }
         }
 
-        val collectedExceptions = time('OVERALL) {
+        val collectedExceptions = time(Symbol("OVERALL")) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { m =>
                 analyzeMethod(m.source.toString, m.method).map(results.add)
             }
-            import scala.collection.JavaConverters._
+            import scala.jdk.CollectionConverters._
             results.asScala
         }
 
@@ -247,8 +247,8 @@ object InterpretMethodsAnalysis {
             (
                 "During the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
-                ", ai (∑CPU Times): "+getTime('AI).toSeconds+
+                project.classFilesCount+" classes (real time: "+getTime(Symbol("OVERALL")).toSeconds+
+                ", ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds+
                 ")"+collectedExceptions.size+" exceptions occured.",
                 Some(file)
             )
@@ -256,10 +256,10 @@ object InterpretMethodsAnalysis {
             (
                 "No exceptions occured during the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes\nreal time: "+getTime('OVERALL).toSeconds+"\n"+
-                "ai (∑CPU Times): "+getTime('AI).toSeconds +
+                project.classFilesCount+" classes\nreal time: "+getTime(Symbol("OVERALL")).toSeconds+"\n"+
+                "ai (∑CPU Times): "+getTime(Symbol("AI")).toSeconds +
                 s"; evaluated ${instructionEvaluationsCount.get} instructions\n"+
-                "naive ai (∑CPU Times): "+getTime('NAIVE_AI).toSeconds+"\n",
+                "naive ai (∑CPU Times): "+getTime(Symbol("NAIVE_AI")).toSeconds+"\n",
                 None
             )
         }

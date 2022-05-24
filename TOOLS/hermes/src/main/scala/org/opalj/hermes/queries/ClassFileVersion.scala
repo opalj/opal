@@ -4,7 +4,6 @@ package hermes
 package queries
 
 import org.opalj.collection.mutable.ArrayMap
-import org.opalj.collection.immutable.Naught
 import org.opalj.bi.LatestSupportedJavaMajorVersion
 import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
@@ -30,8 +29,8 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val data = ArrayMap[LocationsContainer[S]](LatestSupportedJavaMajorVersion)
 
@@ -53,7 +52,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
             val java1MajorVersionFeatureId = this.featureId(Java1MajorVersion)
             val extensions = data(Java1MajorVersion)
             if (data(Java1MajorVersion) eq null)
-                Feature[S](java1MajorVersionFeatureId, 0, Naught)
+                Feature[S](java1MajorVersionFeatureId, 0, List.empty)
             else
                 Feature[S](java1MajorVersionFeatureId, extensions.size, extensions)
         } +: (
@@ -63,7 +62,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
                 if (extensions ne null) {
                     Feature[S](featureId, extensions.size, extensions)
                 } else
-                    Feature[S](featureId, 0, Naught)
+                    Feature[S](featureId, 0, List.empty)
             }
         )
     }

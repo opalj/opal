@@ -5,12 +5,6 @@ package domain
 package l1
 
 import java.net.URL
-
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-import scala.Iterable
 import org.opalj.ai.domain
 import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.Method
@@ -24,6 +18,8 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * A shallow analysis that tries to refine the return types of methods.

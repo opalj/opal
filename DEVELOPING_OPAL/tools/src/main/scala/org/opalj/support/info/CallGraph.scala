@@ -9,7 +9,7 @@ import java.io.PrintWriter
 import java.net.URL
 import java.util.Calendar
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.ConfigValueFactory
 
@@ -110,7 +110,7 @@ object CallGraph extends ProjectAnalysisApplication {
     private val algorithmRegex =
         "-algorithm=(CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo|1-0-CFA|1-1-CFA)".r
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
             parameters.filter { p =>
                 !p.matches(algorithmRegex.regex) &&
@@ -165,7 +165,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
                 (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
-        }.toTraversable
+        }
 
         var propertyStoreTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
@@ -232,7 +232,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
         }
 
-        val reachableContexts = cg.reachableMethods().toTraversable
+        val reachableContexts = cg.reachableMethods()
         val reachableMethods = reachableContexts.map(_.method).toSet
 
         val numEdges = cg.numEdges
@@ -261,10 +261,10 @@ object CallGraph extends ProjectAnalysisApplication {
             for (methodSignature <- callersSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
-                    println(ps(m, Callers.key).ub.callers(m).map {
+                    println(ps(m, Callers.key).ub.callers(m).iterator.map {
                         case (caller, pc, isDirect) =>
                             s"${caller.toJava}, $pc${if (!isDirect) ", indirect" else ""}"
-                    }.mkString("\t", "\n\t", "\n"))
+                    }.iterator.mkString("\t", "\n\t", "\n"))
                 }
             }
         }

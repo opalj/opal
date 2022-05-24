@@ -78,11 +78,6 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         result.isEmpty should be(true)
     }
 
-    it should "return a empty ArraySeq when the number of times is 0" in {
-        val result = fillArraySeq(0) { "X" }
-        result.isEmpty should be(true)
-    }
-
     it should "return an ArraySeq with one entry when the number of times is 1" in {
         val result = fillIntArray(1) { 1 }
         result should be(ArraySeq(1))
@@ -90,23 +85,11 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         result.length should be(1)
     }
 
-    it should "return an ArraySeq with one entry when the number of times is 1" in {
-        val result = fillArraySeq(1) { "Hello" }
-        result(0) should be("Hello")
-    }
-
     it should "return an ArraySeq with five entries that are dynamically calculated when the number of times is 5" in {
         var index = 0
         val result = fillIntArray(5) { index += 1; index }
         result.length should be(5)
         result.toList should be(List(1, 2, 3, 4, 5))
-    }
-
-    it should "return an ArraySeq with five entries that are dynamically calculated when the number of times is 5" in {
-        var index = 0
-        val result = fillArraySeq(5) { index += 1; "value="+index }
-        result.length should be(5)
-        result.toList should be(List("value=1", "value=2", "value=3", "value=4", "value=5"))
     }
 
     it should "work when the number of times is calculated at runtime" in {

@@ -3,17 +3,14 @@ package org.opalj
 package hermes
 
 import scala.reflect.io.Directory
-
 import java.io.File
 import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
-
-import scala.collection.JavaConverters._
-
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import scala.jdk.CollectionConverters.*
+import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
 import javafx.collections.FXCollections
@@ -25,6 +22,8 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.LongProperty
 import javafx.beans.property.SimpleLongProperty
 import org.opalj.br.analyses.Project
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of
@@ -186,7 +185,7 @@ trait HermesCore extends HermesConfig {
                         )
                         corpusAnalysisTime.setValue(featureAnalysisEndTime - analysesStartTime)
                         // (implicitly) update the feature matrix
-                        features.foreach { f => featuresMap(f.id).setValue(f) }
+                        features.iterator.foreach { f => featuresMap(f.id).setValue(f) }
 
                         stepsDone.incrementAndGet() / totalSteps
                     }
@@ -345,7 +344,7 @@ trait HermesCore extends HermesConfig {
             inst:             String    = "",
             field:            String    = ""
         ): Unit = {
-            csvGenerator.writeString(source.getOrElse("").toString)
+            csvGenerator.writeString(source.map(_.toString).getOrElse(""))
             csvGenerator.writeString(pn)
             csvGenerator.writeString(cls)
             csvGenerator.writeString(methodName)

@@ -44,7 +44,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
             "[-suppressPerMethodReports]"
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
             parameters.filter { p =>
                 p != AnalysisLevelL0 && p != AnalysisLevelL1 && p != SuppressPerMethodReports
@@ -77,7 +77,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
             }
         } { t => executionTime = t }
 
-        val allMethods = ps.entities(ThrownExceptionsProperty.key).toIterable
+        val allMethods = ps.entities(ThrownExceptionsProperty.key).iterator.to(Iterable)
         val (epsNotThrowingExceptions, otherEPS) =
             allMethods.partition(_.ub.throwsNoExceptions)
         val epsThrowingExceptions = otherEPS.filter(eps => eps.lb.types != TypesSet.SomeException)

@@ -6,14 +6,13 @@ import java.net.URL
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 
 import org.opalj.log.LogContext
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig => invokedynamicRewritingConfig}
@@ -66,7 +65,7 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
             )
         }
         val result = invokedynamics.asScala.toSeq.sorted
-        BasicReport(result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n"))
+        BasicReport(result.mkString(s"${result.size} invokedynamic instructions found:\n", "\n", "\n"))
     }
 
 }

@@ -121,7 +121,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` => true
@@ -142,7 +142,7 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet =>
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 
@@ -237,7 +237,7 @@ class ImpureMatcher extends PurityMatcher(null) {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case _: ClassifiedImpure => true

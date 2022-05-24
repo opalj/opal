@@ -28,8 +28,8 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         import project.classHierarchy.getObjectType
 

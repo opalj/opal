@@ -9,7 +9,6 @@ import org.opalj.br.analyses.Project
 
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessorAdapter
 import org.opalj.de.DependencyType
@@ -56,6 +55,7 @@ object TransitiveUsage extends AnalysisApplication {
                         processType(declaringClassType)
                         processType(descriptor.returnType)
                         descriptor.parameterTypes.view foreach { processType(_) }
+                    case VirtualForwardingMethod(_, _, _, _) | _: VirtualMethod => throw new MatchError(vse)
                 }
             }
             process(source)

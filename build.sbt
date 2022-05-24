@@ -1,9 +1,8 @@
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import sbt.Test
 import scalariform.formatter.preferences._
-
 import sbtassembly.AssemblyPlugin.autoImport._
-
 import sbtunidoc.ScalaUnidocPlugin
 
 name := "OPAL Library"
@@ -128,9 +127,7 @@ lazy val buildSettings =
 lazy val scalariformSettings = scalariformItSettings ++
   Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
 
-def
-
-getScalariformPreferences(dir: File) = {
+def getScalariformPreferences(dir: File) = {
   val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
   PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
 }
@@ -206,6 +203,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
     name := "Bytecode Infrastructure",
     libraryDependencies ++= Dependencies.bi,
     Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+    Test / publishArtifact := true, // Needed to get access to class TestResources
     /*
       The following settings relate to the java-fixture-compiler plugin, which
       compiles the java fixture projects in the BytecodeInfrastructure project for testing.
@@ -238,8 +236,9 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
   .settings(
     name := "Bytecode Representation",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Representation"),
-    libraryDependencies ++= Dependencies.br
-  )
+    libraryDependencies ++= Dependencies.br,
+    Test / publishArtifact := true // Needed to get access to class TestResources and TestSupport
+   )
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -322,7 +321,8 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .settings(buildSettings: _*)
   .settings(
     name := "Architecture Validation",
-    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation")
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation"),
+    Test / publishArtifact := true
   )
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)

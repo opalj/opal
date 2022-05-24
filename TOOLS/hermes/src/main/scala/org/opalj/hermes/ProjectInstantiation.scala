@@ -14,5 +14,5 @@ import org.opalj.br.analyses.Project
  */
 case class ProjectInstantiation(
         project:       Project[URL],
-        rawClassFiles: Traversable[(da.ClassFile, URL)]
+        rawClassFiles: Iterable[(da.ClassFile, URL)]
 )

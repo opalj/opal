@@ -47,7 +47,7 @@ object TACAItoGraphs extends ProjectAnalysisApplication {
 
         val folder = new File(parameters.head.substring(3))
         folder.mkdirs()
-        val pathName = folder.getAbsoluteFile + File.separator
+        val pathName = s"${folder.getAbsoluteFile}${File.separator}"
 
         val aiResults = theProject.get(SimpleAIKey)
         val tacs = theProject.get(LazyTACUsingAIKey)

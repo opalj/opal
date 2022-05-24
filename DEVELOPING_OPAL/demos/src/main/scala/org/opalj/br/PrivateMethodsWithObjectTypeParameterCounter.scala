@@ -3,10 +3,11 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * Counts the number of private methods that have at least one parameter with

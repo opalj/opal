@@ -37,6 +37,7 @@ package jcg
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFile
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 /**
@@ -54,7 +55,7 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
@@ -80,6 +81,6 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
                 instructionsLocations(0) += classFileLocation
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 }

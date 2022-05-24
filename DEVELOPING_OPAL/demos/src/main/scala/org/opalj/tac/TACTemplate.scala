@@ -4,7 +4,6 @@ package tac
 
 import java.io.File
 import java.net.URL
-
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
 import org.opalj.br.Method
@@ -14,6 +13,8 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.common.SimpleAIKey
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * A template for implementing 3-address code based analyses.

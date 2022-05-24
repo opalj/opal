@@ -4,50 +4,18 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.ValueInformation
-import org.opalj.da.ClassFile
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodWithBody
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ArrayType
-import org.opalj.br.Method
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.MethodDescriptor.JustReturnsObject
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.LoadClass
-import org.opalj.br.instructions.LoadClass_W
 import org.opalj.ai.domain.l1.ArrayValues
-import org.opalj.tac.TACode
-import org.opalj.tac.LazyTACUsingAIKey
-import org.opalj.tac.Assignment
-import org.opalj.tac.Stmt
-import org.opalj.tac.DUVar
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.Expr
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.MonitorExit
-import org.opalj.tac.MonitorEnter
-import org.opalj.tac.If
-import org.opalj.tac.InstanceOf
-import org.opalj.tac.Compare
-import org.opalj.tac.PutField
-import org.opalj.tac.Checkcast
-import org.opalj.tac.GetField
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.StaticMethodCall
-import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.NonVirtualFunctionCall
-import org.opalj.tac.Call
-import org.opalj.tac.New
-import org.opalj.tac.TACMethodParameter
+import org.opalj.br.MethodDescriptor.JustReturnsObject
+import org.opalj.br.*
+import org.opalj.br.analyses.{Project, SomeProject}
+import org.opalj.br.instructions.{INVOKESTATIC, INVOKEVIRTUAL, Instruction, LoadClass, LoadClass_W}
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.da.ClassFile
+import org.opalj.log.{LogContext, OPALLogger}
+import org.opalj.tac.*
+import org.opalj.value.ValueInformation
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Groups features that use the java reflection API.
@@ -107,7 +75,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =
@@ -124,7 +92,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             classFileLocation = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction <- body collect {
+            pcAndInstruction <- body collect ({
                 case i: LoadClass => i
                 case i: LoadClass_W => i
                 case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke) => i
@@ -136,7 +104,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case i @ INVOKEVIRTUAL(ClassT, "getField", GetFieldMD) => i
                 case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD) => i
                 case i @ INVOKESTATIC(ClassT, false, "forName", ForName1MD | ForName3MD) => i
-            }
+            }: PartialFunction[Instruction, Instruction])
         } {
             val tac = try {
                 tacai(method)
@@ -202,7 +170,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
         }
 
-        locations;
+        ArraySeq.unsafeWrapArray(locations)
     }
 
     def handleInvoke[S](call: VirtualFunctionCall[V], l: Location[S])(
@@ -475,9 +443,9 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         tacai:   Method => TACode[TACMethodParameter, V]
     ): Boolean = {
         project.allMethodsWithBody.exists { method =>
-            val invokes = method.body.get.collect {
+            val invokes = method.body.get.collect({
                 case i @ INVOKEVIRTUAL(`declType`, `name`, _) => i
-            }
+            }: PartialFunction[Instruction, INVOKEVIRTUAL])
             if (invokes.isEmpty) {
                 false
             } else {

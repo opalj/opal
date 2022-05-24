@@ -4,7 +4,6 @@ package br
 package instructions
 
 import java.net.URL
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -13,6 +12,8 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -101,7 +102,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                     val result = BaseAI(method, domain)
 
                     // the abstract interpretation succeeded
-                    result should not be ('wasAborted)
+                    result should not be (Symbol("wasAborted"))
 
                     // the method was non-empty
                     val instructions = method.body.get.instructions
@@ -157,14 +158,14 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
 
             it("should have the right class files") {
                 testProject.allProjectClassFiles foreach { cf =>
-                    extendedProject.classFile(cf.thisType) should be('defined)
+                    extendedProject.classFile(cf.thisType) should be(Symbol("defined"))
                     if (testProject.source(cf.thisType).isDefined)
-                        extendedProject.source(cf.thisType) should be('defined)
+                        extendedProject.source(cf.thisType) should be(Symbol("defined"))
                 }
                 proxies foreach { p =>
                     val (proxy, _ /* source*/ ) = p
-                    extendedProject.classFile(proxy.thisType) should be('defined)
-                    extendedProject.source(proxy.thisType) should be('defined)
+                    extendedProject.classFile(proxy.thisType) should be(Symbol("defined"))
+                    extendedProject.source(proxy.thisType) should be(Symbol("defined"))
                 }
             }
         }

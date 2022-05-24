@@ -9,12 +9,14 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.{INVOKEVIRTUAL, Instruction}
 import org.opalj.da.ClassFile
 import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.TACode
 import org.opalj.tac.DUVar
 import org.opalj.value.KnownTypedValue
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Groups test case features that perform classloading.
@@ -43,7 +45,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =
@@ -69,9 +71,9 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             classFileLocation = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation <- body collect ({
                 case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
-            }
+            }: PartialFunction[Instruction, Instruction])
             TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {
             val pc = pcAndInvocation.pc
@@ -83,7 +85,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 locations(0) += l // standard java classloader
         }
 
-        locations;
+        ArraySeq.unsafeWrapArray(locations)
     }
 
     def isStandardClassLoader(receiverType: ReferenceType): Boolean = {

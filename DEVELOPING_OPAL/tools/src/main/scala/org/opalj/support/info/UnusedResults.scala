@@ -5,9 +5,7 @@ package info
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
-import scala.collection.JavaConverters._
-
+import scala.jdk.CollectionConverters.*
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
@@ -21,7 +19,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
+import org.opalj.br.fpcf.properties.Purity as PurityProperty
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VPure
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
@@ -46,6 +44,8 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
@@ -122,7 +122,7 @@ object UnusedResults extends ProjectAnalysisApplication {
                 handleVirtualCall(call, method)
         }
 
-        issues collect { case Some(issue) => issue }
+        ArraySeq.unsafeWrapArray(issues) collect { case Some(issue) => issue }
     }
 
     def handleCall(

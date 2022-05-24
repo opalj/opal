@@ -30,8 +30,8 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val classLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 

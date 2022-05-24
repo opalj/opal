@@ -2,12 +2,12 @@
 package org.opalj.ai.tutorial.base
 
 import java.net.URL
+import org.opalj.br.*
+import org.opalj.br.analyses.*
+import org.opalj.br.instructions.*
+import org.opalj.ai.*
 
-import org.opalj.collection.immutable.:&:
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.instructions._
-import org.opalj.ai._
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * @author Michael Eichberg
@@ -71,7 +71,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                 (m, pcs) <- callSites
                 result = BaseAI(m, new AnalysisDomain(theProject, m))
                 (pc, value) <- pcs.map(pc => (pc, result.operandsArray(pc))).collect {
-                    case (pc, result.domain.StringValue(value) :&: _) => (pc, value)
+                    case (pc, result.domain.StringValue(value) :: _) => (pc, value)
                 }
             } yield (m, pc, value)
 

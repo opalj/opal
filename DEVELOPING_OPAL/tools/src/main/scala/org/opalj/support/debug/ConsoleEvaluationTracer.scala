@@ -41,7 +41,7 @@ trait ConsoleEvaluationTracer extends AITracer {
         operands:    domain.Operands,
         locals:      domain.Locals
     ): Unit = {
-        print(pc+" ")
+        print(s"$pc ")
     }
 
     override def continuingInterpretation(

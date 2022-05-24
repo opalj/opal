@@ -106,7 +106,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      */
     private final val parameterNameForGranularity = "-granularity="
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
             parameters.filter { p =>
                 !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity)

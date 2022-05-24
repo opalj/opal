@@ -5,14 +5,12 @@ package queries
 package jcg
 
 import java.util.concurrent.ConcurrentHashMap
-
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, Instruction, MethodInvocationInstruction}
 import org.opalj.da.ClassFile
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Groups test case features that perform a method calls that are related to Java 8
@@ -42,7 +40,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -53,11 +51,11 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             callerType = classFile.thisType
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   => iv
                 case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) => ii
                 case is: INVOKESTATIC if is.isInterface                                 => is
-            }
+            }: PartialFunction[Instruction, Instruction])
         } {
             val pc = pcAndInvocation.pc
             val invokeKind = pcAndInvocation.value
@@ -137,7 +135,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             }
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 
     // This method determines whether the called interface method might be dispatched to a default method.

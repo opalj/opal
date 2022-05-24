@@ -16,6 +16,8 @@ import org.opalj.br.instructions.IF_ACMPEQ
 import org.opalj.br.instructions.IF_ACMPNE
 import org.opalj.da.ClassFile
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Groups features that somehow rely on Javas type cast API given by either jvm instructions or
  * ```java.lang.Class```.
@@ -43,7 +45,7 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
@@ -94,7 +96,7 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 
 }

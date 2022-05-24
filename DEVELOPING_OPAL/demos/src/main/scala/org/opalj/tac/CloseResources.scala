@@ -4,7 +4,7 @@ package tac
 
 import java.net.URL
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 // import org.opalj.log.OPALLogger.info
 //import org.opalj.br._

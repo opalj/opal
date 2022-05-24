@@ -287,7 +287,7 @@ object MoreCheckers {
         println(", " /*"\tViolations: "*/ +classesWithoutDefaultConstructor.size);
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
+        var unusedFields: List[(ClassFile, Iterable[String])] = Nil
         time {
             for (classFile <- classFiles if !classFile.isInterfaceDeclaration) {
                 val declaringClass = classFile.thisType

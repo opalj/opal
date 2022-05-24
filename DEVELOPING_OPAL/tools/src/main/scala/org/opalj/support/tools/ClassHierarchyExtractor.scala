@@ -18,7 +18,7 @@ import org.opalj.log.GlobalLogContext
 object ClassHierarchyExtractor {
 
     def deriveSpecification(
-        types: Traversable[ObjectType]
+        types: Iterable[ObjectType]
     )(
         implicit
         classHierarchy: ClassHierarchy

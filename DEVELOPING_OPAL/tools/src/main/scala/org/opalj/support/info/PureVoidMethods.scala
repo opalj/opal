@@ -70,7 +70,7 @@ object PureVoidMethods extends ProjectAnalysisApplication {
         }
 
         BasicReport(
-            voidReturn.toIterable map { mp =>
+            voidReturn.iterator.to(Iterable) map { mp =>
                 val (m, p) = mp
                 s"${m.toJava} has a void return type but it is $p"
             }

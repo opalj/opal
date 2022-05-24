@@ -26,7 +26,7 @@ object DependencyMatrix {
         if (args.length == 0 ||
             !args.forall(arg => arg.endsWith(".zip") ||
                 arg.endsWith(".jar"))) {
-            printUsage
+            printUsage()
             sys.exit(1)
         }
 

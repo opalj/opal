@@ -2,6 +2,7 @@
 package org.opalj.fpcf.properties;
 
 import scala.Option;
+import scala.collection.Iterable;
 import scala.collection.immutable.Set;
 
 import org.opalj.fpcf.Property;

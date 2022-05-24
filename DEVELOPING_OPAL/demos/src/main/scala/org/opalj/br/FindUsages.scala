@@ -27,8 +27,8 @@ object FindUsages {
                     {
                         case (cf, url) =>
                             c.incrementAndGet()
-                            if (cf.methodsWithBody.exists(_.body.get.exists((pc, i) => i.isMethodInvocationInstruction && i.asMethodInvocationInstruction.declaringClass.toJava.startsWith("org.bouncycastle"))))
-                                println(url+" "+cf.thisType.toJava)
+                            if (cf.methodsWithBody.exists(_.body.get.instructionIterator.exists(i => i.isMethodInvocationInstruction && i.asMethodInvocationInstruction.declaringClass.toJava.startsWith("org.bouncycastle"))))
+                                println(s"$url ${cf.thisType.toJava}")
                     },
                     SuppressExceptionHandler
                 )

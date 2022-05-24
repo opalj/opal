@@ -34,8 +34,8 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.isSupertypeInformationComplete
 

@@ -3,7 +3,6 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
@@ -18,6 +17,8 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NEW
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * An analysis that finds self-recursive calls with unchanged parameters.
@@ -56,12 +57,12 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                 }
                 classType = classFile.thisType
                 name = method.name
-                pcs = body.foldLeft(Chain.empty[Int /*PC*/ ]) { (invokes, pc, instruction) =>
+                pcs = body.foldLeft(List.empty[Int /*PC*/ ]) { (invokes, pc, instruction) =>
                     instruction match {
-                        case INVOKEVIRTUAL(`classType`, `name`, `descriptor`)    => pc :&: invokes
-                        case INVOKESTATIC(`classType`, _, `name`, `descriptor`)  => pc :&: invokes
-                        case INVOKESPECIAL(`classType`, _, `name`, `descriptor`) => pc :&: invokes
-                        case INVOKEINTERFACE(`classType`, `name`, `descriptor`)  => pc :&: invokes
+                        case INVOKEVIRTUAL(`classType`, `name`, `descriptor`)    => pc :: invokes
+                        case INVOKESTATIC(`classType`, _, `name`, `descriptor`)  => pc :: invokes
+                        case INVOKESPECIAL(`classType`, _, `name`, `descriptor`) => pc :: invokes
+                        case INVOKEINTERFACE(`classType`, `name`, `descriptor`)  => pc :: invokes
                         case _                                                   => invokes
                     }
                 }
@@ -123,7 +124,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                 return None;
 
             val parameters = mapOperandsToParameters(callOperands, method, domain)
-            val aiResult = BaseAI.performInterpretation(body, domain)(Chain.empty, parameters)
+            val aiResult = BaseAI.performInterpretation(body, domain)(List.empty, parameters)
             val operandsArray = aiResult.operandsArray
             val localsArray = aiResult.localsArray
             val callOperandsList =

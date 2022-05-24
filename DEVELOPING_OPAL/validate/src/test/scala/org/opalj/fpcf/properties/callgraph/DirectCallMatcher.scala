@@ -30,7 +30,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         // If the entity is annotated with a single annotation, we receive a DirectCall annotation.
         // If it is annotated with multiple DirectCall annotations, we receive a single DirectCalls
@@ -68,7 +68,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 
@@ -140,8 +140,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
             case _    => sys.error("Invalid annotation.")
         }
 
-        // TODO there HAS to be nicer way to get the ArraySeq for the MethodDescriptor
-        val parametersArray = ArraySeq.from(parameterTypes.asInstanceOf[Array[AnyRef]])
+        val parametersArray = ArraySeq.unsafeWrapArray(parameterTypes)
         val descriptor = MethodDescriptor(parametersArray, returnType)
 
         val minimumExpectedCalleesSet = resolvedTargets.map {

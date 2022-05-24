@@ -129,7 +129,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             val callersLPCG = lessPreciseCG.callersPropertyOf(method)
             val callersMPCG = morePreciseCG.callersPropertyOf(method)
             if ((callersLPCG eq NoCallers) &&
-                !callersMPCG.callers(method)(morePreciseTypeProvider).forall {
+                !callersMPCG.callers(method)(morePreciseTypeProvider).iterator.forall {
                     callSite =>
                         val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
                         !callSite._3 &&
@@ -169,12 +169,12 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             callee <- tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee.method, Callers.key).asFinal
-            assert(callersProperty.callers(dm).map(caller => (caller._1, caller._2)).toSet.contains(dm -> pc))
+            assert(callersProperty.callers(dm).iterator.map(caller => (caller._1, caller._2)).iterator.to(Set).contains(dm -> pc))
         }
 
         for {
             FinalEP(dm: DeclaredMethod, callers) <- propertyStore.entities(Callers.key).map(_.asFinal)
-            (callee, caller, pc, _) <- callers.callContexts(dm)
+            (callee, caller, pc, _) <- callers.callContexts(dm).iterator
             if caller.hasContext
         } {
             val FinalP(calleesProperty) = propertyStore(caller.method, Callees.key).asFinal

@@ -18,7 +18,7 @@ class AbstractTypeImmutabilityMatcher(
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` => true

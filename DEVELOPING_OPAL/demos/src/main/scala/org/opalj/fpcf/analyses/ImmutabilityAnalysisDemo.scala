@@ -37,7 +37,7 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     override def description: String = "determines the immutability of objects and types"
 
-    private[this] var setupTime = Nanoseconds.None
+    private[this] val setupTime = Nanoseconds.None
     private[this] var analysisTime = Nanoseconds.None
     private[this] var performanceData: Map[Nanoseconds, List[Nanoseconds]] = Map.empty
 

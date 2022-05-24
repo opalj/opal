@@ -3,7 +3,6 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
@@ -13,6 +12,8 @@ import org.opalj.br.instructions.IFNULL
 import org.opalj.br.instructions.IFNONNULL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * A shallow analysis that identifies useless computations.

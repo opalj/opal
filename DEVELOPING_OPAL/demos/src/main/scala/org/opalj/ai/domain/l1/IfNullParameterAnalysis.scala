@@ -5,12 +5,10 @@ package domain
 package l1
 
 import java.net.URL
-
 import scala.Console.BLUE
 import scala.Console.RESET
 import scala.collection.Set
 import scala.collection.immutable.LongMap
-
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
@@ -19,6 +17,8 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * A very basic analysis that determines the behavior of a method if a parameter

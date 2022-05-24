@@ -89,7 +89,7 @@ object UIDSetDemo extends App {
                     s += SUID(r.nextInt(addCount * 2))
                     i += 1
                 }
-                s.result
+                s.result()
                 runs += 1
             }
             println("Using +!:  "+NS(System.nanoTime - t).toSeconds)
@@ -112,7 +112,7 @@ object UIDSetDemo extends App {
             println("Using Set: "+NS(System.nanoTime - t).toSeconds)
         }
     }
-    (0 to 5).foreach(e => evalAdd)
+    (0 to 5).foreach(e => evalAdd())
 
     /////////////////////////////////// EXTENSIVE EVAL ///////////////////////////////////
 

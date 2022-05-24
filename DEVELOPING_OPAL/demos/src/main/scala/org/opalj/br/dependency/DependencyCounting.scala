@@ -3,8 +3,9 @@ package org.opalj
 package de
 
 import java.net.URL
+import org.opalj.br.analyses.*
 
-import org.opalj.br.analyses._
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * Counts the number of dependencies found in a project.
@@ -23,7 +24,7 @@ object DependencyCounting extends AnalysisApplication with OneStepAnalysis[URL, 
         isInterrupted: () => Boolean
     ): BasicReport = {
         println("Press enter to start the dependency collection.")
-        scala.io.StdIn.readLine
+        scala.io.StdIn.readLine()
 
         import org.opalj.util.PerformanceEvaluation._
         val counter = time {

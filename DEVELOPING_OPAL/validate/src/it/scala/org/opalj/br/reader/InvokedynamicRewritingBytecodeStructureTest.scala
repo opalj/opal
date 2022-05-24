@@ -51,7 +51,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
         try {
             val result = BaseAI(method, domain)
             // the abstract interpretation succeed
-            result should not be 'wasAborted
+            result should not be Symbol("wasAborted")
             // the layout of the instructions array is correct
             for {
                 pc <- instructions.indices

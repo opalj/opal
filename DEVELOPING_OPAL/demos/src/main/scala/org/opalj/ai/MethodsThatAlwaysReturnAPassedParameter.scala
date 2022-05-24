@@ -3,12 +3,13 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.ai.domain.Origins
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * A very small analysis that identifies those methods that always return a value

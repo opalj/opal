@@ -7,8 +7,8 @@ import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.av.checking.Specification
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Tests that the implemented architecture of the infrastructure project
@@ -24,21 +24,21 @@ class BIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
     it should "be consistent with the specified architecture" in {
         val expected =
             new Specification(
-                Specification.ProjectDirectory("OPAL/bi/target/scala-2.12/classes"),
+                Specification.ProjectDirectory(s"OPAL/bi/target/scala-$ScalaMajorVersion/classes"),
                 useAnsiColors = true
             ) {
 
-                ensemble('Bi) {
+                ensemble(Symbol("Bi")) {
                     "org.opalj.bi.*" except
                         classes("""org\.opalj\.bi\..+Test.*""".r)
                 }
 
-                ensemble('Reader) {
+                ensemble(Symbol("Reader")) {
                     "org.opalj.bi.reader.*" except
                         classes("""org\.opalj\.bi\.reader\..+Test.*""".r)
                 }
 
-                'Bi is_only_allowed_to (USE, empty)
+                Symbol("Bi") is_only_allowed_to (USE, empty)
 
                 // 'Reader is allowed to use everything
 

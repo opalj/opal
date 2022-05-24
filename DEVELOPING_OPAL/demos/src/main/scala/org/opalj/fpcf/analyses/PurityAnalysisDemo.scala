@@ -103,12 +103,12 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
                 effectivelyFinalEntities.map(ep => (ep.e.asInstanceOf[Field], ep.ub))
 
             val effectivelyFinalFieldsAsStrings =
-                effectivelyFinalFields.map(f => f._2+" >> "+f._1.toJava)
+                effectivelyFinalFields.map(f => s"${f._2} >> ${f._1.toJava}")
 
             val pureEntities: Iterator[EPS[Entity, Purity]] = propertyStore.entities(Purity.key)
             val pureMethods: Iterator[(DefinedMethod, Property)] =
                 pureEntities.map(eps => (eps.e.asInstanceOf[DefinedMethod], eps.ub))
-            val pureMethodsAsStrings = pureMethods.map(m => m._2+" >> "+m._1.toJava)
+            val pureMethodsAsStrings = pureMethods.map(m => s"${m._2} >> ${m._1.toJava}")
 
             val fieldInfo =
                 effectivelyFinalFieldsAsStrings.toList.sorted.mkString(

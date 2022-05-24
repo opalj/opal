@@ -35,7 +35,7 @@ trait ConsoleTracer extends AITracer { tracer =>
         else
             locals.zipWithIndex.map { vi =>
                 val (v, i) = vi
-                i+":"+(
+                s"$i:"+(
                     if (v == null)
                         correctIndent("-", false)
                     else
@@ -225,7 +225,7 @@ trait ConsoleTracer extends AITracer { tracer =>
                         zipWithIndex.map(v => (v._2, v._1._1, v._1._2, v._1._3)).
                         filterNot(v => (v._2 eq null) && (v._3 eq null)).
                         map(v =>
-                            v._1 + {
+                            s"${v._1}"+{
                                 if (v._2 == v._3)
                                     if (v._2 eq v._3)
                                         Console.GREEN+": ✓ "
@@ -259,8 +259,8 @@ trait ConsoleTracer extends AITracer { tracer =>
         newLocals:   domain.Locals
     ): Unit = {
         println(
-            pc + line(domain, pc)+":"+
-                YELLOW_B + BLUE+"Establishing Constraint w.r.t. "+
+            s"$pc${line(domain, pc)}:$YELLOW_B$BLUE"+
+                "Establishing Constraint w.r.t. "+
                 effectivePC + line(domain, effectivePC)+":"
         )
         val changedOperands = operands.zip(newOperands).filter(ops => ops._1 ne ops._2)
@@ -303,8 +303,8 @@ trait ConsoleTracer extends AITracer { tracer =>
     ): Unit = {
         import Console._
         println(
-            pc + line(domain, pc)+":"+YELLOW_B + BOLD+
-                "JUMP TO SUBROUTINE(Nesting level: "+nestingLevel+"): "+target +
+            s"$pc${line(domain, pc)}:$YELLOW_B$BOLD"+
+                s"JUMP TO SUBROUTINE(Nesting level: $nestingLevel): $target"+
                 RESET
         )
     }
@@ -317,9 +317,9 @@ trait ConsoleTracer extends AITracer { tracer =>
         subroutinePCs: List[Int /*PC*/ ]
     ): Unit = {
         println(
-            YELLOW_B + BOLD + pc + line(domain, pc)+
-                ":RETURN FROM SUBROUTINE: target="+returnAddress+
-                " : RESETTING : "+subroutinePCs.mkString(", ") +
+            s"$YELLOW_B$BOLD$pc${line(domain, pc)}"+
+                s":RETURN FROM SUBROUTINE: target=$returnAddress"+
+                s" : RESETTING : ${subroutinePCs.mkString(", ")}"+
                 RESET
         )
     }

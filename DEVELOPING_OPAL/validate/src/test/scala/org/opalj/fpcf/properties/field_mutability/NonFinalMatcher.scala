@@ -57,7 +57,7 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (properties.forall(p => p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
             None

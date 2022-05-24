@@ -6,9 +6,10 @@ package jcg
 
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKEVIRTUAL, Instruction, VirtualMethodInvocationInstruction}
 import org.opalj.da.ClassFile
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Groups test case features that perform a pre Java 8 polymorhpic method call.
@@ -31,7 +32,7 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -42,10 +43,10 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             callerType = classFile.thisType
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL   => iv
                 case ii: INVOKEINTERFACE => ii
-            }
+            }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
         } {
             val pc = pcAndInvocation.pc
             val invokeKind = pcAndInvocation.value
@@ -78,6 +79,6 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 }

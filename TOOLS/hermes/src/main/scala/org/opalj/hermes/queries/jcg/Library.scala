@@ -13,10 +13,10 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectIndex
 import org.opalj.br.analyses.ProjectIndexKey
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKEVIRTUAL, Instruction, VirtualMethodInvocationInstruction}
 import org.opalj.da.ClassFile
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 /**
@@ -42,7 +42,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -61,10 +61,10 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             paramTypes = method.parameterTypes.map(_.id).filter(_ >= 0)
             if (fieldTypes.nonEmpty || paramTypes.nonEmpty)
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL   => iv
                 case ii: INVOKEINTERFACE => ii
-            }
+            }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
         } {
             val pc = pcAndInvocation.pc
             val invokeKind = pcAndInvocation.value
@@ -131,7 +131,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         }
 
-        instructionLocations;
+        ArraySeq.unsafeWrapArray(instructionLocations)
 
     }
 
@@ -209,7 +209,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         var isUnknown = false
 
         while (itr.hasNext) {
-            val subtype = itr.next
+            val subtype = itr.next()
             project.classFile(subtype) match {
                 case Some(subclassFile) =>
                     if (subclassFile.findMethod(methodName, methodDescriptor).isEmpty

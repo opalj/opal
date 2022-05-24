@@ -62,7 +62,7 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTy
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)

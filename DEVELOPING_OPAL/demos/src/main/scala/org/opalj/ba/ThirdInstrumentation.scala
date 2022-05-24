@@ -6,7 +6,6 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 import java.util.Arrays
-
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.writeAndOpen
@@ -34,6 +33,8 @@ import org.opalj.br.instructions.IFGT
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.PCAndInstruction
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -79,7 +80,7 @@ object ThirdInstrumentation extends App {
                             InstructionElement(POP)
                         )
                         cleanStackAndReturn(stackDepth) = RETURN
-                        lCode.insert(pc, InsertionPosition.After, cleanStackAndReturn)
+                        lCode.insert(pc, InsertionPosition.After, ArraySeq.unsafeWrapArray(cleanStackAndReturn))
                     }
                     removeDeadCode = true
                 } else if (m.name == "killMe2") {
@@ -147,8 +148,8 @@ object ThirdInstrumentation extends App {
                 // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
                 // i.e., let's see how we add conditional logic.
                 for (PCAndInstruction(pc, IRETURN) <- code) {
-                    val gtTarget = Symbol(pc+":>")
-                    val printlnTarget = Symbol(pc+":println")
+                    val gtTarget = Symbol(s"$pc:>")
+                    val printlnTarget = Symbol(s"$pc:println")
                     lCode.insert(
                         pc, InsertionPosition.Before,
                         Seq(

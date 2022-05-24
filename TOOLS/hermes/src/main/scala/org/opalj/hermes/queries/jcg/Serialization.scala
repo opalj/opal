@@ -17,7 +17,7 @@ import org.opalj.br.MethodCallMethodHandle
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
-import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.{INVOKEVIRTUAL, Instruction}
 import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.tac.LazyTACUsingAIKey
@@ -28,6 +28,8 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.InvokedynamicFunctionCall
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Groups test case features that perform serialization.
@@ -76,7 +78,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =
@@ -101,11 +103,11 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             classFileLocation = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation <- body collect ({
                 case i @ INVOKEVIRTUAL(declClass, "writeObject", OOSwriteObject) if classHierarchy.isSubtypeOf(declClass, OOS)               => i
                 case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject) if classHierarchy.isSubtypeOf(declClass, OIS)             => i
                 case i @ INVOKEVIRTUAL(declClass, "registerValidation", OISregisterValidation) if classHierarchy.isSubtypeOf(declClass, OIS) => i
-            }
+            }: PartialFunction[Instruction, INVOKEVIRTUAL])
             tac = tacai(method)
         } {
             val pc = pcAndInvocation.pc
@@ -147,7 +149,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
         }
 
-        locations;
+        ArraySeq.unsafeWrapArray(locations)
     }
 
     def handleWriteObject[S](

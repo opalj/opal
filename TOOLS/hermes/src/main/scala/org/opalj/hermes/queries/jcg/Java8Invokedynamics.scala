@@ -17,15 +17,15 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.{AASTORE, ARETURN, INVOKEDYNAMIC, Instruction}
 import org.opalj.br.ObjectType.LambdaMetafactory
-import org.opalj.br.instructions.ARETURN
-import org.opalj.br.instructions.AASTORE
 import org.opalj.hermes.HermesConfig
 import org.opalj.hermes.InstructionLocation
 import org.opalj.hermes.ProjectConfiguration
 import org.opalj.hermes.LocationsContainer
 import org.opalj.hermes.DefaultFeatureQuery
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * This feature query corresponds to the Java8Invokedynamics.md test cases from the JCG call
@@ -56,7 +56,7 @@ class Java8Invokedynamics(
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         import org.opalj.br.reader.InvokedynamicRewriting._
 
@@ -64,9 +64,9 @@ class Java8Invokedynamics(
 
         for {
             m @ MethodWithBody(code) <- project.allMethodsWithBody
-            pcAndInvocation <- code collect {
+            pcAndInvocation <- code collect ({
                 case dynInv: INVOKEDYNAMIC => dynInv
-            }
+            }: PartialFunction[Instruction, Instruction])
         } {
 
             val pc = pcAndInvocation.pc
@@ -127,7 +127,7 @@ class Java8Invokedynamics(
             }
         }
 
-        locations
+        ArraySeq.unsafeWrapArray(locations)
     }
 
     private def handleJava8InvokeDynamic[S](m: Method, handle: MethodCallMethodHandle) = {

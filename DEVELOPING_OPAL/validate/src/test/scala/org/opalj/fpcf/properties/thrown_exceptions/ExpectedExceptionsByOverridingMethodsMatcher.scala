@@ -24,7 +24,7 @@ class ExpectedExceptionsByOverridingMethodsMatcher
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)

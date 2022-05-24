@@ -146,10 +146,10 @@ object Purity {
 
         val libFiles = libDir match {
             case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-            case None      => Traversable.empty
+            case None      => Iterable.empty
         }
 
-        val JDKFiles = if (withoutJDK) Traversable.empty
+        val JDKFiles = if (withoutJDK) Iterable.empty
         else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         val isJDK: Boolean = cp eq JRELibraryFolder
@@ -188,7 +188,7 @@ object Purity {
                 classFiles,
                 libFiles ++ JDKFiles,
                 libraryClassFilesAreInterfacesOnly = false,
-                Traversable.empty
+                Iterable.empty
             )
         } { t => projectTime = t.toSeconds }
 
@@ -221,7 +221,7 @@ object Purity {
 
         val declaredMethods = project.get(DeclaredMethodsKey)
 
-        val allMethods: Traversable[DefinedMethod] =
+        val allMethods: Iterable[DefinedMethod] =
             for (cf <- project.allProjectClassFiles; m <- cf.methodsWithBody)
                 yield declaredMethods(m)
 

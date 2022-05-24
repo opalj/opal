@@ -7,8 +7,9 @@ import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-import org.opalj.av.checking._
+import org.opalj.av.checking.*
 import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Tests that the implemented architecture of the dependency extraction
@@ -24,7 +25,7 @@ class DEArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
 
     it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
         val deTargetClasses = Specification
-            .ProjectDirectory("OPAL/de/target/scala-2.12/classes")
+            .ProjectDirectory(s"OPAL/de/target/scala-$ScalaMajorVersion/classes")
             .filterNot { cfSrc =>
                 // Ignore the rewritten lambda expressions
                 val (cf, _) = cfSrc
@@ -45,17 +46,17 @@ class DEArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 val DependencyProcessorElements: SourceElementsMatcher =
                     "org.opalj.de.DependencyProcessor*"
 
-                ensemble('DependencyExtractorCore) {
+                ensemble(Symbol("DependencyExtractorCore")) {
                     DependencyExtractorElements and
                         DependencyTypeElements and
                         DependencyProcessorElements
                 }
 
-                ensemble('DependencyExtractionSupport) {
+                ensemble(Symbol("DependencyExtractionSupport")) {
                     "org.opalj.de.*" except DependencyExtractorElements
                 }
 
-                'DependencyExtractorCore is_only_allowed_to (USE, empty)
+                Symbol("DependencyExtractorCore") is_only_allowed_to (USE, empty)
             }
 
         val result = expected.analyze()

@@ -20,6 +20,8 @@ import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.analyses.ProjectAnalysisApplication
 
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
+
 /**
  * Find methods that return an internal (private) array to callers of the class.
  *
