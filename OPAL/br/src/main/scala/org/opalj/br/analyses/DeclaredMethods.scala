@@ -146,10 +146,10 @@ class DeclaredMethods(
         }
     }
 
-    def declaredMethods: Iterable[DeclaredMethod] = {
+    def declaredMethods: Iterator[DeclaredMethod] = {
         import scala.jdk.CollectionConverters._
         // Thread-safe as .values() creates a view of the current state
-        data.values().asScala.flatMap { _.values().asScala }
+        data.values().asScala.iterator.flatMap { _.values().asScala }
     }
 }
 

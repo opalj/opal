@@ -186,7 +186,7 @@ object EagerInterProceduralEscapeAnalysis
         implicit val typeProvider = p.get(TypeProviderKey)
 
         val methods = declaredMethods.declaredMethods
-        val callersProperties = ps(methods, Callers)
+        val callersProperties = ps(methods.to(Iterable), Callers)
         assert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map {

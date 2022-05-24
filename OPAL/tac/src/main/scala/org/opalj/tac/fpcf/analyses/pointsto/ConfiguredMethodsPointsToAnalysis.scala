@@ -247,7 +247,9 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 val filter = { t: ReferenceType =>
                     classHierarchy.isSubtypeOf(t, returnType)
                 }
-                assert(method == state.callContext.method)
+                //assert(method == state.callContext.method)
+                if (method != state.callContext.method)
+                    print(md.method(declaredMethods))
                 val entity = state.callContext
                 state.includeSharedPointsToSet(
                     entity,
