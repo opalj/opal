@@ -135,7 +135,10 @@ package object bytecode {
             }
         } else {
             val javaJMods = System.getProperty("java.home")+"/jmods"
-            new File(javaJMods)
+            val folder = new File(javaJMods)
+            if (!folder.exists())
+              throw new RuntimeException("cannot locate the JRE libraries")
+            folder
         }
     }
 
@@ -166,7 +169,10 @@ package object bytecode {
             }
         } else {
             val javaBaseJMod = System.getProperty("java.home")+"/jmods/java.base.jmod" // ~ rt.jar
-            new File(javaBaseJMod)
+            val file = new File(javaBaseJMod)
+            if (!file.exists())
+              throw new RuntimeException("cannot locate the JRE libraries")
+            file
         }
     }
 
