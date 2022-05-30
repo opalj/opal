@@ -20,7 +20,10 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.CompileTimePure
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.properties.SimpleContexts
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
@@ -32,8 +35,10 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformati
  */
 class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val simpleContexts = project.get(SimpleContextsKey)
 
-    def determinePurity(dm: DefinedMethod): ProperPropertyComputationResult = {
+    def determinePurity(context: Context): ProperPropertyComputationResult = {
+        val dm = context.method
         if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
             return Result(dm, VImpureByLackOfInformation);
 
@@ -57,7 +62,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
             )
 
         for (method ← methods) {
-            propertyStore(declaredMethods(method), Purity.key) match {
+            propertyStore(simpleContexts(declaredMethods(method)), Purity.key) match {
                 case eps @ UBP(ub) ⇒
                     maxPurity = maxPurity meet ub
                     if (eps.isRefinable) dependees += eps
@@ -95,8 +100,8 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case m: DefinedMethod ⇒ determinePurity(m)
-            case _                ⇒ throw new IllegalArgumentException(s"$e ist not a DefinedMethod")
+            case c: Context ⇒ determinePurity(c)
+            case _          ⇒ throw new IllegalArgumentException(s"$e ist not a DefinedMethod")
         }
     }
 
@@ -120,10 +125,12 @@ object EagerVirtualMethodPurityAnalysis
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override type InitializationData = (DeclaredMethods, ConfiguredPurity)
+    override type InitializationData = (DeclaredMethods, SimpleContexts, ConfiguredPurity)
 
-    override def init(p: SomeProject, ps: PropertyStore): (DeclaredMethods, ConfiguredPurity) = {
-        (p.get(DeclaredMethodsKey), p.get(ConfiguredPurityKey))
+    override def init(
+        p: SomeProject, ps: PropertyStore
+    ): (DeclaredMethods, SimpleContexts, ConfiguredPurity) = {
+        (p.get(DeclaredMethodsKey), p.get(SimpleContextsKey), p.get(ConfiguredPurityKey))
     }
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
@@ -142,12 +149,15 @@ object EagerVirtualMethodPurityAnalysis
         data: InitializationData
     ): FPCFAnalysis = {
         val analysis = new VirtualMethodPurityAnalysis(p)
-        val (declaredMethods, configuredPurity) = data
-        ps.scheduleEagerComputationsForEntities(
-            declaredMethods.declaredMethods.filter { dm ⇒
-                !configuredPurity.wasSet(dm) && dm.isInstanceOf[DefinedMethod]
-            }.map(_.asInstanceOf[DefinedMethod])
-        )(analysis.determinePurity)
+        val (declaredMethods, simpleContexts, configuredPurity) = data
+
+        val dms = declaredMethods.declaredMethods
+        val methods = dms.collect {
+            case dm if dm.hasSingleDefinedMethod && !configuredPurity.wasSet(dm) ⇒
+                simpleContexts(dm)
+        }
+        ps.scheduleEagerComputationsForEntities(methods)(analysis.determinePurity)
+
         analysis
     }
 }

@@ -7,6 +7,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
@@ -14,33 +15,33 @@ import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
+import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeProvider
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
  * Palsberg's propagation-based algorithms.
  *
- * @see [[AbstractCallGraphKey]] for further details.
+ * @see [[CallGraphKey]] for further details.
  *
- * If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
- * the analysis will schedule
- * [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
+ *      If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
+ *      the analysis will schedule
+ *      [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
  *
- * Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
- * and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
- * hand.
- * Furthermore, you can configure the analysis mode (Library or Application) in the configuration
- * of these keys.
+ *      Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
+ *      and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
+ *      hand.
+ *      Furthermore, you can configure the analysis mode (Library or Application) in the configuration
+ *      of these keys.
  *
  * @author Andreas Bauer
  */
-trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
+trait PropagationBasedCallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        super.requirements(project) :+ InitialInstantiatedTypesKey
+        super.requirements(project) ++ Seq(InitialInstantiatedTypesKey, SimpleContextsKey)
     }
 
     def typeSetEntitySelector(): TypeSetEntitySelector
@@ -50,24 +51,20 @@ trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
     ): Traversable[FPCFAnalysisScheduler] = {
         val theTypeSetEntitySelector = typeSetEntitySelector()
 
-        val common = List(
-            new PropagationBasedCallGraphAnalysisScheduler(theTypeSetEntitySelector),
-            new InstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),
-            new ArrayInstantiationsAnalysisScheduler(theTypeSetEntitySelector),
-            new TypePropagationAnalysisScheduler(theTypeSetEntitySelector),
-            ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
-        )
-
         val isLibrary =
             project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
                 "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
 
-        if (isLibrary) {
-            LibraryInstantiatedTypesBasedEntryPointsAnalysis :: common
-        } else {
-            common
-        }
+        List(
+            new InstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),
+            new ArrayInstantiationsAnalysisScheduler(theTypeSetEntitySelector),
+            new TypePropagationAnalysisScheduler(theTypeSetEntitySelector),
+            ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
+        ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
+
+    override def getTypeProvider(project: SomeProject) =
+        new PropagationBasedTypeProvider(project, typeSetEntitySelector())
 }
 
 object XTACallGraphKey extends PropagationBasedCallGraphKey {

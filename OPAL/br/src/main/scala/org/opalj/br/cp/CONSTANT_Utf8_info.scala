@@ -41,7 +41,8 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
     override def asSignature(ap: AttributeParent): Signature = {
         // should be called at most once => caching doesn't make sense
         ap match {
-            case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(value)
+            case AttributesParent.Field | AttributesParent.RecordComponent ⇒
+                SignatureParser.parseFieldTypeSignature(value)
             case AttributesParent.ClassFile ⇒ SignatureParser.parseClassSignature(value)
             case AttributesParent.Method    ⇒ SignatureParser.parseMethodTypeSignature(value)
             case AttributesParent.Code ⇒

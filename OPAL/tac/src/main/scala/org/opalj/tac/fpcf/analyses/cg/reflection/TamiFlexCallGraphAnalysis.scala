@@ -18,14 +18,15 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -39,8 +40,8 @@ class TamiFlexCallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    val declaredMethods = project.get(DeclaredMethodsKey)
-    val ConstructorT = ObjectType("java/lang/reflect/Constructor")
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    val ConstructorT: ObjectType = ObjectType("java/lang/reflect/Constructor")
 
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses = List(
@@ -85,12 +86,16 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 }
 
 class TamiFlexMethodInvokeAnalysis private[analyses] (
-        final val project: SomeProject, override val apiMethod: DeclaredMethod, val key: String
-) extends TACAIBasedAPIBasedAnalysis {
+        final val project:      SomeProject,
+        override val apiMethod: DeclaredMethod,
+        val key:                String
+) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
+
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
-        caller:          DefinedMethod,
+        calleeContext:   ContextType,
+        callerContext:   ContextType,
         pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -101,22 +106,22 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
         if (receiverOption.isDefined)
-            handleMethodInvoke(caller, pc, receiverOption.get, params, tac)
+            handleMethodInvoke(callerContext, pc, receiverOption.get, params, tac)
         else
             indirectCalls.addIncompleteCallSite(pc)
 
-        Results(indirectCalls.partialResults(caller))
+        Results(indirectCalls.partialResults(callerContext))
     }
 
     private[this] def handleMethodInvoke(
-        caller:       DefinedMethod,
+        context:      ContextType,
         pc:           Int,
         receiver:     Expr[V],
         methodParams: Seq[Option[Expr[V]]],
         tac:          TACode[TACMethodParameter, V]
     )(implicit indirectCalls: IndirectCalls): Unit = {
-        val line = caller.definedMethod.body.flatMap(b ⇒ b.lineNumber(pc)).getOrElse(-1)
-        val targets = tamiFlexLogData.methods(caller, key, line)
+        val line = context.method.definedMethod.body.flatMap(b ⇒ b.lineNumber(pc)).getOrElse(-1)
+        val targets = tamiFlexLogData.methods(context.method, key, line)
         if (targets.isEmpty)
             return ;
 
@@ -126,12 +131,12 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
             // source line number
             (
                 methodParams.head.map(_.asVar),
-                methodParams(1).flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, tac.stmts, tac.cfg))
+                methodParams(1).flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, tac.stmts))
             )
         } else if (methodParams.size == 1) { // Constructor.newInstance
             (
                 None,
-                methodParams.head.flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, tac.stmts, tac.cfg))
+                methodParams.head.flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, tac.stmts))
             )
         } else { // Class.newInstance
             (None, Some(Seq.empty))
@@ -142,9 +147,9 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
 
         for (target ← targets) {
             indirectCalls.addCall(
-                caller,
-                target,
+                context,
                 pc,
+                typeProvider.expandContext(context, target, pc),
                 persistentMethodInvokeActualParams,
                 persistentMethodInvokeReceiver
             )
@@ -155,7 +160,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
 object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TamiFlexKey)
+        Seq(DeclaredMethodsKey, TamiFlexKey, TypeProviderKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

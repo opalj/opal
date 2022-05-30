@@ -5,14 +5,12 @@ package analyses
 
 import scala.annotation.switch
 import scala.annotation.tailrec
-
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
 import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
-
 import scala.collection.Map
 import scala.collection.Set
 import scala.collection.SortedMap
@@ -22,10 +20,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.OpenHashMap
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -51,8 +47,8 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java16FrameworkWithDynamicRewritingAndCaching
-import org.opalj.br.reader.Java16LibraryFramework
+import org.opalj.br.reader.Java17FrameworkWithDynamicRewritingAndCaching
+import org.opalj.br.reader.Java17LibraryFramework
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -1075,7 +1071,7 @@ class Project[Source] private (
  */
 object Project {
 
-    lazy val JavaLibraryClassFileReader: Java16LibraryFramework.type = Java16LibraryFramework
+    lazy val JavaLibraryClassFileReader: Java17LibraryFramework.type = Java17LibraryFramework
 
     @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
         new SoftReference(new BytecodeInstructionsCache)
@@ -1098,12 +1094,12 @@ object Project {
         implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
-    ): Java16FrameworkWithDynamicRewritingAndCaching = {
+    ): Java17FrameworkWithDynamicRewritingAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java16FrameworkWithDynamicRewritingAndCaching(cache)
+        } with Java17FrameworkWithDynamicRewritingAndCaching(cache)
         new ConfiguredFramework
     }
 

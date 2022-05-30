@@ -29,8 +29,10 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.SimpleContexts
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.instructions.Instruction
 
 /**
@@ -120,6 +122,7 @@ private class CallGraphDeserializer private[analyses] (
         final val project:      SomeProject
 ) extends FPCFAnalysis {
     private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
     private val data: Map[MethodDesc, List[CallSiteDescription]] = Json.parse(
         new FileInputStream(serializedCG)
@@ -142,10 +145,12 @@ private class CallGraphDeserializer private[analyses] (
                 else
                     getPCFromLineNumber(method, line, declaredTgtDesc.toDeclaredMethod, index)
 
+                val context = simpleContexts(method)
+
                 for (tgtDesc ← tgts) {
-                    calls.addCall(method, tgtDesc.toDeclaredMethod, pc)
+                    calls.addCall(context, pc, simpleContexts(tgtDesc.toDeclaredMethod))
                 }
-                results ++= calls.partialResults(method)
+                results ++= calls.partialResults(context)
             }
         }
 
@@ -196,7 +201,8 @@ private class CallGraphDeserializer private[analyses] (
 
 class CallGraphDeserializerScheduler(serializedCG: File) extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, SimpleContextsKey)
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new CallGraphDeserializer(serializedCG, p)
