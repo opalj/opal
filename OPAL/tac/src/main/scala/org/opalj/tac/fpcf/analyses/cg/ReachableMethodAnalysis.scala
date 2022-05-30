@@ -5,22 +5,23 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.DefinedMethod
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -29,7 +30,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-trait ReachableMethodAnalysis extends FPCFAnalysis {
+trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
     protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -51,7 +52,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
 
         // we only allow defined methods
         if (!declaredMethod.hasSingleDefinedMethod)
-            return NoResult;
+            return processMethodWithoutBody(callersEOptP);
 
         val method = declaredMethod.definedMethod
 
@@ -61,30 +62,71 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
 
         if (method.body.isEmpty)
             // happens in particular for native methods
-            return NoResult;
+            return processMethodWithoutBody(callersEOptP);
 
         val tacEP = propertyStore(method, TACAI.key)
 
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(declaredMethod.asDefinedMethod, tacEP.asEPS)
+            processMethod(callersEOptP, null, tacEP.asEPS)
         } else {
-            InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod.asDefinedMethod))
+            InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod))
         }
     }
 
+    protected val processesMethodsWithoutBody = false
+
+    protected def processMethodWithoutBody(
+        eOptP: EOptionP[DeclaredMethod, Callers]
+    ): PropertyComputationResult = {
+        if (processesMethodsWithoutBody) {
+            processMethod(eOptP, null, null)
+        } else
+            NoResult
+    }
+
+    private[this] def processMethod(
+        eOptP: EOptionP[DeclaredMethod, Callers], seen: Callers, tacEP: EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
+        var results: List[ProperPropertyComputationResult] = Nil
+        eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext ⇒
+            val theCalleeContext =
+                if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
+                else typeProvider.newContext(eOptP.e)
+            results ::= processMethod(theCalleeContext, tacEP)
+        }
+
+        Results(
+            InterimPartialResult(Set(eOptP), continuationForCallers(eOptP.ub, tacEP)),
+            results
+        )
+    }
+
     def processMethod(
-        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+        callContext: ContextType, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult
 
     protected def continuationForTAC(
-        definedMethod: DefinedMethod
+        declaredMethod: DeclaredMethod
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         someEPS match {
             case UBP(tac: TACAI) if tac.tac.isDefined ⇒
-                processMethod(definedMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
+                processMethod(
+                    propertyStore(declaredMethod, Callers.key),
+                    null,
+                    someEPS.asInstanceOf[EPS[Method, TACAI]]
+                )
             case _ ⇒
                 throw new IllegalArgumentException(s"unexpected eps $someEPS")
         }
+    }
+
+    private[this] def continuationForCallers(
+        oldCallers: Callers, tacEP: EPS[Method, TACAI]
+    )(
+        update: SomeEPS
+    ): ProperPropertyComputationResult = {
+        val newCallers = update.asInstanceOf[EPS[DeclaredMethod, Callers]]
+        processMethod(newCallers, oldCallers, tacEP)
     }
 
 }

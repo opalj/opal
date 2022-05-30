@@ -8,18 +8,23 @@ package xta
 
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.properties.TACAI
+import java.util.{HashSet ⇒ JHashSet}
+import java.util.{HashMap ⇒ JHashMap}
+import java.util.{Set ⇒ JSet}
 
-import scala.collection.mutable
+import scala.collection.JavaConverters.asScalaIteratorConverter
+
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 
 /**
  * Manages the state of each method analyzed by [[TypePropagationAnalysis]].
@@ -30,14 +35,14 @@ import scala.collection.mutable
  * @param _ownInstantiatedTypesDependee Dependee for the type set of the method.
  * @param _calleeDependee Dependee for the callee property of the method.
  */
-final class TypePropagationState(
-        override val method:                       DefinedMethod,
+final class TypePropagationState[ContextType <: Context](
+        override val callContext:                  ContextType,
         val typeSetEntity:                         TypeSetEntity,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
 
         private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
-        private[this] var _calleeDependee:               EOptionP[DefinedMethod, Callees]
-) extends TACAIBasedAnalysisState {
+        private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees]
+) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false
     var methodReadsArrays: Boolean = false
@@ -73,7 +78,7 @@ final class TypePropagationState(
     //                                         //
     /////////////////////////////////////////////
 
-    private[this] var _seenCallees: mutable.Set[(PC, DeclaredMethod)] = mutable.Set.empty
+    private[this] val _seenCallees: JSet[(PC, DeclaredMethod)] = new JHashSet()
 
     def isSeenCallee(pc: PC, callee: DeclaredMethod): Boolean = _seenCallees.contains((pc, callee))
 
@@ -82,7 +87,7 @@ final class TypePropagationState(
         _seenCallees.add((pc, callee))
     }
 
-    def calleeDependee: Option[EOptionP[DefinedMethod, Callees]] = {
+    def calleeDependee: Option[EOptionP[DeclaredMethod, Callees]] = {
         if (_calleeDependee.isRefinable) {
             Some(_calleeDependee)
         } else {
@@ -90,7 +95,7 @@ final class TypePropagationState(
         }
     }
 
-    def updateCalleeDependee(calleeDependee: EOptionP[DefinedMethod, Callees]): Unit = {
+    def updateCalleeDependee(calleeDependee: EOptionP[DeclaredMethod, Callees]): Unit = {
         _calleeDependee = calleeDependee
     }
 
@@ -100,12 +105,14 @@ final class TypePropagationState(
     //                                         //
     /////////////////////////////////////////////
 
-    private[this] var _forwardPropagationEntities: mutable.Set[TypeSetEntity] = mutable.Set.empty
-    private[this] var _forwardPropagationFilters: mutable.Map[TypeSetEntity, UIDSet[ReferenceType]] = mutable.Map.empty
+    private[this] val _forwardPropagationEntities: JSet[TypeSetEntity] = new JHashSet()
+    private[this] val _forwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] =
+        new JHashMap()
 
-    def forwardPropagationEntities: Traversable[TypeSetEntity] = _forwardPropagationEntities
+    def forwardPropagationEntities: JSet[TypeSetEntity] = _forwardPropagationEntities
 
-    def forwardPropagationFilters(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = _forwardPropagationFilters(typeSetEntity)
+    def forwardPropagationFilters(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] =
+        _forwardPropagationFilters.get(typeSetEntity)
 
     /**
      * Registers a new set entity to consider for forward propagation alongside a set of filters. If the
@@ -127,13 +134,13 @@ final class TypePropagationState(
         val alreadyExists = _forwardPropagationEntities.contains(typeSetEntity)
         if (!alreadyExists) {
             val compactedFilters = rootTypes(typeFilters)
-            _forwardPropagationEntities += typeSetEntity
-            _forwardPropagationFilters += typeSetEntity → compactedFilters
+            _forwardPropagationEntities.add(typeSetEntity)
+            _forwardPropagationFilters.put(typeSetEntity, compactedFilters)
             true
         } else {
-            val existingTypeFilters = _forwardPropagationFilters(typeSetEntity)
+            val existingTypeFilters = _forwardPropagationFilters.get(typeSetEntity)
             val newFilters = rootTypes(existingTypeFilters union typeFilters)
-            _forwardPropagationFilters.update(typeSetEntity, newFilters)
+            _forwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }
     }
@@ -144,12 +151,13 @@ final class TypePropagationState(
     //                                         //
     /////////////////////////////////////////////
 
-    private[this] var _backwardPropagationDependees: mutable.Map[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] =
-        mutable.Map.empty
-    private[this] var _backwardPropagationFilters: mutable.Map[TypeSetEntity, UIDSet[ReferenceType]] = mutable.Map.empty
+    private[this] val _backwardPropagationDependees: JHashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] =
+        new JHashMap()
+    private[this] val _backwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] =
+        new JHashMap()
 
     def backwardPropagationDependeeInstantiatedTypes(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = {
-        val dependee = _backwardPropagationDependees(typeSetEntity)
+        val dependee = _backwardPropagationDependees.get(typeSetEntity)
         if (dependee.hasUBP)
             dependee.ub.types
         else
@@ -157,10 +165,10 @@ final class TypePropagationState(
     }
 
     def backwardPropagationDependeeIsRegistered(typeSetEntity: TypeSetEntity): Boolean =
-        _backwardPropagationDependees.contains(typeSetEntity)
+        _backwardPropagationDependees.containsKey(typeSetEntity)
 
     def backwardPropagationFilters(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] =
-        _backwardPropagationFilters(typeSetEntity)
+        _backwardPropagationFilters.get(typeSetEntity)
 
     def updateBackwardPropagationFilters(
         typeSetEntity: TypeSetEntity,
@@ -170,25 +178,25 @@ final class TypePropagationState(
         classHierarchy: ClassHierarchy
     ): Boolean = {
         assert(typeFilters.nonEmpty)
-        val alreadyExists = _backwardPropagationFilters.contains(typeSetEntity)
+        val alreadyExists = _backwardPropagationFilters.containsKey(typeSetEntity)
         if (!alreadyExists) {
             val compactedFilters = rootTypes(typeFilters)
-            _backwardPropagationFilters += typeSetEntity → compactedFilters
+            _backwardPropagationFilters.put(typeSetEntity, compactedFilters)
             true
         } else {
-            val existingTypeFilters = _backwardPropagationFilters(typeSetEntity)
+            val existingTypeFilters = _backwardPropagationFilters.get(typeSetEntity)
             val newFilters = rootTypes(existingTypeFilters union typeFilters)
-            _backwardPropagationFilters.update(typeSetEntity, newFilters)
+            _backwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }
     }
 
     def updateBackwardPropagationDependee(eps: EOptionP[TypeSetEntity, InstantiatedTypes]): Unit = {
-        _backwardPropagationDependees.update(eps.e, eps)
+        _backwardPropagationDependees.put(eps.e, eps)
     }
 
     def seenTypes(typeSetEntity: TypeSetEntity): Int = {
-        val dependee = _backwardPropagationDependees(typeSetEntity)
+        val dependee = _backwardPropagationDependees.get(typeSetEntity)
         if (dependee.hasUBP)
             dependee.ub.numElements
         else
@@ -205,7 +213,7 @@ final class TypePropagationState(
         super.hasOpenDependencies ||
             _ownInstantiatedTypesDependee.isRefinable ||
             _calleeDependee.isRefinable ||
-            _backwardPropagationDependees.nonEmpty
+            !_backwardPropagationDependees.isEmpty
     }
 
     override def dependees: Set[SomeEOptionP] = {
@@ -218,7 +226,7 @@ final class TypePropagationState(
 
         // Note: The values are copied here. The "++" operator on List
         // forces immediate evaluation of the map values iterator.
-        dependees ++= _backwardPropagationDependees.valuesIterator
+        dependees ++= _backwardPropagationDependees.values().iterator().asScala
 
         dependees
     }

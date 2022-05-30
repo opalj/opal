@@ -7,14 +7,13 @@ package cg
 package xta
 
 import org.opalj.br.ArrayType
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CreateNewArrayInstruction
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EPS
@@ -26,6 +25,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TACAI
 import scala.collection.mutable
+
+import org.opalj.tac.cg.TypeProviderKey
 
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation
@@ -44,13 +45,15 @@ final class ArrayInstantiationsAnalysis(
         selectSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-    override def processMethod(
-        definedMethod: DefinedMethod,
-        tacEP:         EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        val code = definedMethod.definedMethod.body.get
+    override implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
-        val targetSetEntity = selectSetEntity(definedMethod)
+    override def processMethod(
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
+        val code = callContext.method.definedMethod.body.get
+
+        val targetSetEntity = selectSetEntity(callContext.method)
 
         // We only care about arrays of reference types.
         val instantiatedArrays = code.instructions.collect {
@@ -116,10 +119,11 @@ class ArrayInstantiationsAnalysisScheduler(
         selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = new ArrayInstantiationsAnalysis(project, selectSetEntity)
+        val analysis =
+            new ArrayInstantiationsAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }

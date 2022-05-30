@@ -11,6 +11,7 @@ import java.util.Calendar
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.collection.immutable.Chain
@@ -50,8 +51,8 @@ import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
@@ -61,7 +62,7 @@ import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
-import org.opalj.tac.cg.AbstractCallGraphKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -129,7 +130,7 @@ object Purity {
         configurationName:     Option[String],
         schedulingStrategy:    Option[String],
         rater:                 DomainSpecificRater,
-        callGraphKey:          AbstractCallGraphKey,
+        callGraphKey:          CallGraphKey,
         withoutJDK:            Boolean,
         individual:            Boolean,
         numThreads:            Int,
@@ -242,7 +243,7 @@ object Purity {
 
         val reachableMethods =
             ps.entities(Callers.key).collect {
-                case FinalEP(e: DeclaredMethod, c: Callers) if c ne NoCallers ⇒ e
+                case FinalEP(m: DeclaredMethod, c: Callers) if c ne NoCallers ⇒ m
             }.toSet
 
         val analyzedMethods = projMethods.filter(reachableMethods.contains)

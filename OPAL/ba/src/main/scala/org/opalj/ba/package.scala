@@ -1113,7 +1113,7 @@ package object ba { ba ⇒
                 val br.NestMembers(classes /*:IndexedSeq[ObjectType]*/ ) = attribute
                 val attributeNameIndex = CPEUtf8(bi.NestMembersAttribute.Name)
                 val classIndices = classes.map(CPEClass(_, false))
-                Some(da.ModulePackages_attribute(attributeNameIndex, classIndices))
+                Some(da.NestMembers_attribute(attributeNameIndex, classIndices))
 
             case br.Record.KindId ⇒
                 val br.Record(components) = attribute
@@ -1129,6 +1129,14 @@ package object ba { ba ⇒
                     }
                 ))
 
+            case br.PermittedSubclasses.KindId ⇒
+                val br.PermittedSubclasses(subclasses) = attribute
+                val attributeNameIndex = CPEUtf8(bi.PermittedSubclassesAttribute.Name)
+                val cpSubclassIndices = subclasses.map(CPEClass(_, false))
+                Some(da.PermittedSubclasses_attribute(
+                    attributeNameIndex,
+                    cpSubclassIndices
+                ))
             //
             // OPAL'S OWN ATTRIBUTES
             //

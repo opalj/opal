@@ -46,7 +46,7 @@
 	<p>
 	The analysis was written using the OPAL Bytecode toolkit and is shown next (5 lines of boilerplate and 12 lines for the analysis).
 
-	<pre><code>object InstructionStatistics extends AnalysisExecutor {
+	<pre><code>object InstructionStatistics extends AnalysisApplication {
 
   val analysis = new Analysis[URL, BasicReport] {
 
@@ -57,7 +57,7 @@
       // FQPN = FullyQualifiedPackageName
       val instructionsPerFQPN = HashMap.empty[String, Int]
       for {
-        classFile ← project.classFiles
+        classFile ← project.allClassFiles
         packageName = classFile.thisType.packageName
         MethodWithBody(body) ← classFile.methods
       } {

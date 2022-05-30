@@ -5,17 +5,18 @@ package fpcf
 package analyses
 
 import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 
 /**
  * A trait for analyses that model the result of the invocation of a specific
@@ -32,49 +33,54 @@ import org.opalj.br.fpcf.properties.cg.Callers
  *
  * @author Florian Kuebler
  */
-trait APIBasedAnalysis extends FPCFAnalysis {
+trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
     val apiMethod: DeclaredMethod
 
+    implicit val typeProvider: TypeProvider
     implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
     def handleNewCaller(
-        caller: DefinedMethod, pc: Int, isDirect: Boolean
+        calleeContext: ContextType, callerContext: ContextType, pc: Int, isDirect: Boolean
     ): ProperPropertyComputationResult
 
     final def registerAPIMethod(): ProperPropertyComputationResult = {
-        val seenCallers = Set.empty[(DeclaredMethod, Int, Boolean)]
         val callersEOptP = ps(apiMethod, Callers.key)
-        c(seenCallers)(callersEOptP)
+        c(null)(callersEOptP)
     }
 
     private[this] def c(
-        seenCallers: Set[(DeclaredMethod, Int, Boolean)]
+        oldCallers: Callers
     )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
         (callersEOptP: @unchecked) match {
-            case UBP(callersUB: Callers) ⇒
-                // IMPROVE: use better design in order to get new callers
-                var newSeenCallers = seenCallers
+            case EUBP(dm: DeclaredMethod, callersUB: Callers) ⇒
                 var results: List[ProperPropertyComputationResult] = Nil
                 if (callersUB.nonEmpty) {
-                    for ((caller, pc, isDirect) ← callersUB.callers) {
-                        // the call graph is only computed for virtual and single defined methods
-                        assert(caller.isVirtualOrHasSingleDefinedMethod)
+                    callersUB.forNewCallerContexts(oldCallers, dm) {
+                        (calleeContext, callerContext, pc, isDirect) ⇒
+                            if (callerContext.hasContext) {
+                                val caller = callerContext.method
 
-                        // we can not analyze virtual methods, as we do not have their bytecode
-                        if (!newSeenCallers.contains((caller, pc, isDirect)) &&
-                            caller.hasSingleDefinedMethod) {
-                            newSeenCallers += ((caller, pc, isDirect))
+                                // the call graph is only computed for virtual and single defined methods
+                                assert(caller.isVirtualOrHasSingleDefinedMethod)
 
-                            results ::= handleNewCaller(caller.asDefinedMethod, pc, isDirect)
-                        }
+                                // we can not analyze virtual methods, as we do not have their bytecode
+                                if (caller.hasSingleDefinedMethod) {
+                                    results ::= handleNewCaller(
+                                        calleeContext.asInstanceOf[ContextType],
+                                        callerContext.asInstanceOf[ContextType],
+                                        pc,
+                                        isDirect
+                                    )
+                                }
+                            }
                     }
                 }
 
                 if (callersEOptP.isRefinable)
-                    results ::= InterimPartialResult(Set(callersEOptP), c(newSeenCallers))
+                    results ::= InterimPartialResult(Set(callersEOptP), c(callersUB))
 
                 Results(results)
 
-            case _: EPK[_, _] ⇒ InterimPartialResult(Set(callersEOptP), c(seenCallers))
+            case _: EPK[_, _] ⇒ InterimPartialResult(Set(callersEOptP), c(null))
         }
 }

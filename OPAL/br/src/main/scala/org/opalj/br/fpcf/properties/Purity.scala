@@ -8,8 +8,13 @@ import scala.annotation.switch
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.br.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
 import org.opalj.br.fpcf.properties.Purity.ImpureFlags
@@ -186,7 +191,21 @@ object Purity extends PurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
      */
-    final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", ImpureByLackOfInformation)
+    final val key = PropertyKey.create[DeclaredMethod, Purity](
+        "Purity",
+        (ps: PropertyStore, _: FallbackReason, e: Entity) ⇒ {
+            e match {
+                case Context(dm) ⇒
+                    val conf = ps.context(classOf[SomeProject]).has(ConfiguredPurityKey)
+                    if (conf.isDefined && conf.get.wasSet(dm)) conf.get.purity(dm)
+                    else ImpureByLackOfInformation
+                case x ⇒
+                    val m = x.getClass.getSimpleName+
+                        " is not an org.opalj.br.fpcf.properties.Context"
+                    throw new IllegalArgumentException(m)
+            }
+        }
+    )
 
     final val NotCompileTimePure = 0x1
     final val IsNonDeterministic = 0x2

@@ -17,12 +17,6 @@ import org.opalj.ai.MethodExternalExceptionsOriginOffset
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.isImmediateVMException
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
-
-case class CallSite(
-        pc: Int, methodName: String, methodDescriptor: MethodDescriptor, receiver: ReferenceType
-)
 
 package object cg {
 
