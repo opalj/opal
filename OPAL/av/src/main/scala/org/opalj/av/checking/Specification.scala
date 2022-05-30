@@ -6,15 +6,15 @@ package checking
 import scala.language.implicitConversions
 import java.net.URL
 import scala.util.matching.Regex
-import scala.collection.{immutable, mutable, Map as AMap, Set as ASet}
-import scala.collection.mutable.{Map as MutableMap}
+import scala.collection.{immutable, mutable, Map => AMap, Set => ASet}
+import scala.collection.mutable.{Map => MutableMap}
 import scala.Console.{GREEN, RED, RESET}
 import scala.io.Source
 import org.opalj.util.PerformanceEvaluation.{run, time}
-import org.opalj.br.*
+import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
-import org.opalj.de.*
+import org.opalj.de._
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.processSource
@@ -66,7 +66,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
     def this(
         classFiles:    Iterable[(ClassFile, URL)],
-        useAnsiColors: Boolean                       = false
+        useAnsiColors: Boolean                    = false
     ) =
         this(
             run {

@@ -4,7 +4,7 @@ package org.opalj
 import java.util.{Arrays => JArrays}
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.{ArraySeq, HashMap}
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 /**
  * ==Design Goals==

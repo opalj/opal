@@ -6,7 +6,7 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.*
+import org.opalj.br._
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject

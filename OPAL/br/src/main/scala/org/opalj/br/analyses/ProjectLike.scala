@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.{mutable, Map as SomeMap, Set as SomeSet}
+import scala.collection.{mutable, Map => SomeMap, Set => SomeSet}
 import com.typesafe.config.Config
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger

@@ -10,7 +10,7 @@
 -feature
 -unchecked
 // -Xfuture deprecated in Scala 2.13. Replaced by -Xsource
--Xsource:3
+// -Xsource:3
 -Xfatal-warnings
 -Wnumeric-widen
 -Xlint:nullary-unit

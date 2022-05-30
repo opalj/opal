@@ -8,7 +8,7 @@ import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import org.opalj.bi.TestResources.locateTestResources
 

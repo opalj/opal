@@ -5,7 +5,7 @@ package analyses
 package cg
 
 import scala.collection.mutable
-import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.Ficus._
 import org.opalj.collection.mutable.ArrayMap
 
 /**

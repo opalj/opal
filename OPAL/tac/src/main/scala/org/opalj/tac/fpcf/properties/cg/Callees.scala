@@ -273,7 +273,7 @@ sealed class ConcreteCallees(
         propertyStore: PropertyStore,
         typeProvider:  TypeProvider
     ): IntMap[Iterator[Context]] = {
-        var res = IntMap(directCallSites(callerContext).to(LazyList)*)
+        var res = IntMap(directCallSites(callerContext).to(LazyList): _*)
 
         for ((pc, indirect) <- indirectCallSites(callerContext)) {
             res = res.updateWith(pc, indirect, (direct, indirect) => direct ++ indirect)

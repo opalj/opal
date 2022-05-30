@@ -3,7 +3,7 @@ package org.opalj
 package de
 
 import java.net.URL
-import org.opalj.br.analyses.*
+import org.opalj.br.analyses._
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 

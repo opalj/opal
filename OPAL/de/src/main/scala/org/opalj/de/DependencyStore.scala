@@ -7,7 +7,7 @@ import scala.collection.Set
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.br.*
+import org.opalj.br._
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 

@@ -3,10 +3,10 @@ package org.opalj
 package br
 package reader
 
-import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.Ficus._
 import org.opalj.log.OPALLogger
 import org.opalj.bi.reader.ClassFileReader
-import org.opalj.br.reader.ClassFileReaderConfiguration as BRClassFileReaderConfiguration
+import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
 
 import scala.collection.immutable.ArraySeq
 

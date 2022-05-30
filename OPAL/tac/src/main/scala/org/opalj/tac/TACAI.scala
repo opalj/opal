@@ -20,7 +20,7 @@ import org.opalj.br.ByteType
 import org.opalj.br.Code
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.instructions.*
+import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFG
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset

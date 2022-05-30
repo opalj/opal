@@ -21,7 +21,7 @@ import java.util.{HashSet => JHashSet}
 import java.util.{HashMap => JHashMap}
 import java.util.{Set => JSet}
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState

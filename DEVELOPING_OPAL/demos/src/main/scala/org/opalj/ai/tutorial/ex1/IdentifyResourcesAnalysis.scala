@@ -3,10 +3,10 @@ package org.opalj.ai.tutorial.ex1
 
 import java.net.URL
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.*
-import org.opalj.br.analyses.*
-import org.opalj.br.instructions.*
-import org.opalj.ai.*
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.instructions._
+import org.opalj.ai._
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 

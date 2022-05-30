@@ -10,7 +10,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.fpcf.fixtures.*
+import org.opalj.fpcf.fixtures._
 
 /**
  * Tests a property store implementation. All of the following tests should be passed by

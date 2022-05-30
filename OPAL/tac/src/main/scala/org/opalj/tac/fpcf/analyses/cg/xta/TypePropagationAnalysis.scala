@@ -6,7 +6,7 @@ package analyses
 package cg
 package xta
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod

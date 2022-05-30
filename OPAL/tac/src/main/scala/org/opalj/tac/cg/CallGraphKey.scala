@@ -5,7 +5,7 @@ package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger

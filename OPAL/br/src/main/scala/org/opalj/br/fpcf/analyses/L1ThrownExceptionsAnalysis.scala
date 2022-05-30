@@ -322,7 +322,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             }
         }
 
-        val areAllExceptionsCollected = code.forall(collectAllExceptions)
+        val areAllExceptionsCollected = code.forall(collectAllExceptions(_, _))
 
         if (!areAllExceptionsCollected) {
             assert(

@@ -3,7 +3,7 @@ package org.opalj
 package av
 package checking
 
-import org.opalj.br.*
+import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 
 import scala.collection.immutable

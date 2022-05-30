@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._

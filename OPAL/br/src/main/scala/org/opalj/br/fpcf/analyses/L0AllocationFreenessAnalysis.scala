@@ -23,7 +23,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.{AllocationFreeMethod, AllocationFreeness, MethodWithAllocations}
-import org.opalj.br.instructions.*
+import org.opalj.br.instructions._
 
 /**
  * A simple analysis that identifies methods that never allocate any objects/arrays.

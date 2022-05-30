@@ -2,7 +2,7 @@
 package org.opalj
 package br
 
-import scala.collection.Map as SomeMap
+import scala.collection.{Map => SomeMap}
 import scala.math.Ordered
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_STRICT

@@ -7,7 +7,7 @@ import java.lang.ref.{SoftReference => SRef}
 
 import scala.collection.BitSet
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 

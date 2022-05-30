@@ -43,10 +43,10 @@ object PropertyBounds {
 
     def apply(pbt: PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
         pbt match {
-            case LBProperties    => lbs(ArraySeq.unsafeWrapArray(pks)*)
-            case UBProperties    => ubs(ArraySeq.unsafeWrapArray(pks)*)
-            case LUBProperties   => lubs(ArraySeq.unsafeWrapArray(pks)*)
-            case FinalProperties => finalPs(ArraySeq.unsafeWrapArray(pks)*)
+            case LBProperties    => lbs(ArraySeq.unsafeWrapArray(pks): _*)
+            case UBProperties    => ubs(ArraySeq.unsafeWrapArray(pks): _*)
+            case LUBProperties   => lubs(ArraySeq.unsafeWrapArray(pks): _*)
+            case FinalProperties => finalPs(ArraySeq.unsafeWrapArray(pks): _*)
         }
     }
 

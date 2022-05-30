@@ -235,7 +235,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     true
             }
         }
-        val areAllExceptionsCollected = code.forall(collectAllExceptions)
+        val areAllExceptionsCollected = code.forall(collectAllExceptions(_, _))
         if (!areAllExceptionsCollected) {
             assert(result ne null)
             return result;

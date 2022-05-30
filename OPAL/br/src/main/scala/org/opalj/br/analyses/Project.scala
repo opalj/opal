@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
-import java.util.Arrays.sort as sortArray
+import java.util.Arrays.{sort => sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
 import scala.collection.{Map, Set, immutable, mutable}
@@ -255,7 +255,7 @@ class Project[Source] private (
                 })
             buffer += cf
         }
-        immutable.Map.from(classesPerPackage.iterator.map{case (key,cfs) => (key,cfs.toSet)})
+        immutable.Map.from(classesPerPackage.iterator.map { case (key, cfs) => (key, cfs.toSet) })
     }
 
     /**
@@ -1719,7 +1719,7 @@ object Project {
         val libraries: Iterable[(ClassFile, URL)] =
             if (!libraryFile.exists) {
                 OPALLogger.error("project configuration", s"$libraryFile does not exist")
-              Iterable.empty
+                Iterable.empty
             } else {
                 val libraries = JavaLibraryClassFileReader.ClassFiles(libraryFile)
                 if (libraries.isEmpty)

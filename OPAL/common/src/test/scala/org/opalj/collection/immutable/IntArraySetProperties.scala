@@ -116,7 +116,7 @@ object IntArraySetProperties extends Properties("IntArraySet") {
     }
 
     property("flatMap") = forAll { s: Seq[Set[Int]] =>
-        val fl1: IntArraySet = IntArraySetBuilder(s.flatten*).result()
+        val fl1: IntArraySet = IntArraySetBuilder(s.flatten: _*).result()
         val indicesSet = IntArraySetBuilder(s.toIndexedSeq.indices.toSet).result()
         val result = indicesSet.flatMap(i => IntArraySetBuilder(s(i)).result())
         (fl1 == result) :| "construction independent results" &&
@@ -134,7 +134,7 @@ object IntArraySetProperties extends Properties("IntArraySet") {
     }
 
     property("+ (based on list)") = forAll { (l: List[Int], v: Int) =>
-        val ias1 = IntArraySetBuilder(l*).result()
+        val ias1 = IntArraySetBuilder(l: _*).result()
         val s = l.toSet
         classify(s.size < l.size, "list with redundant values") {
             ias1.iterator.toList == s.toList.sorted
@@ -184,7 +184,7 @@ object IntArraySetProperties extends Properties("IntArraySet") {
     property("toList") = forAll { s1: Set[Int] =>
         val fl1 = IntArraySetBuilder(s1).result()
         val iasBasedChaing = fl1.toList
-        val sBasedChain = List(s1.toList.sorted*)
+        val sBasedChain = List(s1.toList.sorted: _*)
         (iasBasedChaing == sBasedChain) :| "equality of chains"
     }
 

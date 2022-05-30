@@ -5,7 +5,7 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.Function as JFunction
+import java.util.function.{Function => JFunction}
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean

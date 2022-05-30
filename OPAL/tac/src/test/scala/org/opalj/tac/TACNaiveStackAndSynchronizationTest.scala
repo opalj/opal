@@ -4,7 +4,7 @@ package tac
 
 import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
-import org.opalj.br.*
+import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
 
 import scala.collection.immutable.ArraySeq

@@ -13,12 +13,12 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.mutable.Locals as Registers
+import org.opalj.collection.mutable.{Locals => Registers}
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.bi.warnMissingLibrary
-import org.opalj.br.*
-import org.opalj.br.instructions.*
+import org.opalj.br._
+import org.opalj.br.instructions._
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
@@ -406,7 +406,7 @@ abstract class AI[D <: Domain](
         // (The order is part of the contract of AI.)
         theDomain match {
             case d: TheAI[D @unchecked] => d.setAI(this)
-            case _           => /*nothing to do*/
+            case _                      => /*nothing to do*/
         }
         theDomain match {
             case d: TheCodeStructure => d.setCodeStructure(instructions, cfJoins, liveVariables)

@@ -23,7 +23,7 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
 import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
-import org.opalj.br.instructions.*
+import org.opalj.br.instructions._
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
