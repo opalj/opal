@@ -69,7 +69,6 @@ ScalaUnidoc / unidoc / scalacOptions ++=
 ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.version(version.value)
 ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.title("The OPAL Framework")
 
-ThisBuild / fork := true
 ThisBuild / javaOptions ++= Seq(
   "-Xmx24G",
   "-Xms4096m",
@@ -274,6 +273,7 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
     name := "Abstract Interpretation Framework",
     Compile / doc / scalacOptions := (Opts.doc
       .title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
+    run / fork := true
   )
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -287,6 +287,7 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
       .title("OPAL - Three Address Code") ++ Seq("-groups", "-implicits")),
     assembly / assemblyJarName := "OPALTACDisassembler.jar",
     assembly / mainClass := Some("org.opalj.tac.TAC"),
+    run / fork := true
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -333,6 +334,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
   .settings(
     name := "Framework",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Framework"),
+    run / fork := true
   )
   .dependsOn(
     ba  % "it->it;it->test;test->test;compile->compile",
@@ -376,6 +378,8 @@ lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
     libraryDependencies ++= Dependencies.tools,
     assembly / assemblyJarName := "OPALInvokedynamicRectifier.jar",
     assembly / mainClass := Some("org.opalj.support.tools.ProjectSerializer"),
+    // Required by Java/ScalaFX
+    fork := true
   )
   .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -412,6 +416,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
     publishArtifact := false,
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Demos"),
     Compile / unmanagedSourceDirectories := (Compile / javaSource).value :: (Compile / scalaSource).value :: Nil,
+    run / fork := true
   )
   .dependsOn(framework)
   .configs(IntegrationTest)
