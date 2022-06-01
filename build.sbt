@@ -202,7 +202,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
     name := "Bytecode Infrastructure",
     libraryDependencies ++= Dependencies.bi,
     Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
-    Test / publishArtifact := true, // Needed to get access to class TestResources
+    // Test / publishArtifact := true, // Needed to get access to class TestResources
     /*
       The following settings relate to the java-fixture-compiler plugin, which
       compiles the java fixture projects in the BytecodeInfrastructure project for testing.
@@ -236,7 +236,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
     name := "Bytecode Representation",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Representation"),
     libraryDependencies ++= Dependencies.br,
-    Test / publishArtifact := true // Needed to get access to class TestResources and TestSupport
+    // Test / publishArtifact := true // Needed to get access to class TestResources and TestSupport
    )
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
@@ -323,7 +323,7 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .settings(
     name := "Architecture Validation",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation"),
-    Test / publishArtifact := true
+    // Test / publishArtifact := true
   )
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
