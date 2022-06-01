@@ -4,6 +4,8 @@ package graphs
 
 import org.opalj.collection.immutable.IntTrieSet
 
+import scala.collection.mutable.ListBuffer
+
 /**
  * A representation of a post-dominator tree (see [[PostDominatorTree$#apply*]]
  * for details regarding the properties).
@@ -34,6 +36,27 @@ final class PostDominatorTree private[graphs] (
      * artificial exit nodes are not augmented.
      */
     def isAugmented: Boolean = hasVirtualStartNode
+
+    /**
+     * Checks whether ''node1'' post-dominates ''node2''.
+     *
+     * @param node1 The index of the first node.
+     * @param node2 The index of the second node.
+     * @return Returns true if the node whose index corresponds to ''node1'' post-dominates the node
+     *         whose index corresponds to ''node2''. Otherwise false will be returned.
+     */
+    def doesPostDominate(node1: Int, node2: Int): Boolean = {
+        // Get all post-dominators of node2 (including node2)
+        val postDominators = ListBuffer[Int](node2)
+        var nextPostDom = idom(node2)
+        while (nextPostDom != idom(nextPostDom)) {
+            postDominators.append(nextPostDom)
+            nextPostDom = idom(nextPostDom)
+        }
+        postDominators.append(nextPostDom)
+
+        postDominators.contains(node1)
+    }
 
 }
 

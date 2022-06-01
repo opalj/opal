@@ -187,8 +187,10 @@ object EscapeProperty extends EscapePropertyMetaInformation {
 
     final val Name = "opalj.EscapeProperty"
 
-    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(Name, AtMost(NoEscape))
-
+    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(
+        Name,
+        AtMost(NoEscape)
+    )
 }
 
 /**

@@ -7,6 +7,8 @@ import scala.reflect.ClassTag
 
 import java.util.Arrays
 
+import org.opalj.collection.immutable.EmptyIntTrieSet
+
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
 
@@ -20,6 +22,10 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.Node
+import org.opalj.graphs.PostDominatorTree
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
  * Represents the control flow graph of a method.
@@ -726,6 +732,94 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
         CFG[NewI, NewC](
             newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks
+        )
+    }
+
+    // We use this variable for caching, as the loop information of a CFG are permanent and do not
+    // need to be recomputed (see findNaturalLoops for usage)
+    private var naturalLoops: Option[List[List[Int]]] = None
+
+    /**
+     * ''findNaturalLoops'' finds all natural loops in this dominator tree and returns them as a
+     * list of lists where each inner list represents one loop and the Int values correspond to the
+     * indices of the nodes.
+     *
+     * @return Returns all found loops. The structure of the inner lists is as follows: The first
+     *         element of each inner list, i.e., each loop, is the loop header and the very last
+     *         element is the one that has a back-edge to the loop header. In between, elements are
+     *         ordered according to their occurrences, i.e., if ''n1'' is executed before ''n2'',
+     *         the index of ''n1'' is less than the index of ''n2''.
+     * @note This function only focuses on natural loops, i.e., it may / will produce incorrect
+     *       results on irreducible loops. For further information, see
+     *       [[http://www.cs.princeton.edu/courses/archive/spring03/cs320/notes/loops.pdf]].
+     */
+    def findNaturalLoops(): List[List[Int]] = {
+        // Find loops only if that has not been done before
+        if (naturalLoops.isEmpty) {
+            val domTree = dominatorTree
+            // Execute a depth-first-search to find all back-edges
+            val start = startBlock.startPC
+            val seenNodes = ListBuffer[Int](start)
+            val toVisitStack = mutable.Stack[Int](successors(start).toArray: _*)
+            // backedges stores all back-edges in the form (from, to) (where to dominates from)
+            val backedges = ListBuffer[(Int, Int)]()
+            while (toVisitStack.nonEmpty) {
+                val from = toVisitStack.pop()
+                val to = successors(from).toArray
+                // Check for back-edges (exclude catch nodes here as this would detect loops where
+                // no actually are
+                to.filter { next ⇒
+                    val index = seenNodes.indexOf(next)
+                    val isCatchNode = catchNodes.exists(_.handlerPC == next)
+                    index > -1 && !isCatchNode && domTree.doesDominate(seenNodes(index), from)
+                }.foreach { destIndex ⇒
+                    // There are loops that have more than one edge leaving the loop; let x denote
+                    // the loop header and y1, y2 two edges that leave the loop with y1 happens
+                    // before y2; this method only saves one loop per loop header, thus y1 is
+                    // removed as it is still implicitly contained in the loop denoted by x to y2
+                    // (note that this does not apply for nested loops, they are kept)
+                    val hasDest = backedges.exists(_._2 == destIndex)
+                    var removedBackedge = false
+                    backedges.filter {
+                        case (oldTo: Int, oldFrom: Int) ⇒ oldFrom == destIndex && oldTo < from
+                    }.foreach { toRemove ⇒ removedBackedge = true; backedges -= toRemove }
+                    if (!hasDest || removedBackedge) {
+                        backedges.append((from, destIndex))
+                    }
+                }
+
+                seenNodes.append(from)
+                toVisitStack.pushAll(to.filter(!seenNodes.contains(_)))
+            }
+
+            // Finally, assemble the lists of loop elements
+            naturalLoops = Some(backedges.map { case (dest, root) ⇒ root.to(dest).toList }.toList)
+        }
+
+        naturalLoops.get
+    }
+
+    /**
+     * @return Returns the post dominator tree of this CFG.
+     *
+     * @see [[PostDominatorTree.apply]]
+     */
+    def postDominatorTree: PostDominatorTree = {
+        val exitNodes = basicBlocks.zipWithIndex.filter { next ⇒
+            next._1.successors.size == 1 && next._1.successors.head.isInstanceOf[ExitNode]
+        }.map(_._2)
+        PostDominatorTree(
+            if (exitNodes.length == 1) Some(exitNodes.head) else None,
+            i ⇒ exitNodes.contains(i),
+            // TODO: Pass an IntTrieSet if exitNodes contains more than one element
+            EmptyIntTrieSet,
+            // TODO: Correct function (just copied it from one of the tests)?
+            (f: Int ⇒ Unit) ⇒ exitNodes.foreach(e ⇒ f(e)),
+            foreachSuccessor,
+            foreachPredecessor,
+            basicBlocks.foldLeft(0) { (prevMaxNode: Int, next: BasicBlock) ⇒
+                math.max(prevMaxNode, next.endPC)
+            }
         )
     }
 

@@ -5,9 +5,9 @@ package cfg
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterAll
-
 import org.opalj.io.writeAndOpen
 import org.opalj.br.instructions.Instruction
+import org.opalj.graphs.DominatorTree
 
 /**
  * Helper methods to test the CFG related methods.
@@ -87,11 +87,15 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
         assert((code.cfJoins -- cfJoins).isEmpty)
     }
 
-    /** If the execution of `f` results in an exception the CFG is printed. */
+    /**
+     * If the execution of `f` results in an exception the CFG is printed.
+     * In case the dominator tree is to be printed as well, provide a defined dominator tree.
+     */
     def printCFGOnFailure(
-        method: Method,
-        code:   Code,
-        cfg:    CFG[Instruction, Code]
+        method:  Method,
+        code:    Code,
+        cfg:     CFG[Instruction, Code],
+        domTree: Option[DominatorTree]  = None
     )(
         f: ⇒ Unit
     )(
@@ -104,6 +108,9 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
         } catch {
             case t: Throwable ⇒
                 writeAndOpen(cfg.toDot, method.name+"-CFG", ".gv")
+                if (domTree.isDefined) {
+                    writeAndOpen(domTree.get.toDot(), method.name+"-DomTree", ".gv")
+                }
                 throw t
         }
     }
