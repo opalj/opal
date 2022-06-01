@@ -94,7 +94,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                         methodHandle,
                         invocationInstruction,
                         MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
-                      ArraySeq.empty
+                        ArraySeq.empty
                     )
 
                 def verifyMethod(method: Method): Unit = {

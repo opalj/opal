@@ -7,7 +7,7 @@ import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-import org.opalj.av.checking.*
+import org.opalj.av.checking._
 import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.util.ScalaMajorVersion
 

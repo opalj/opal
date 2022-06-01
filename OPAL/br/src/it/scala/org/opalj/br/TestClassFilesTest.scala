@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.opalj.io.process
-import org.opalj.br.reader.*
+import org.opalj.br.reader._
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bytecode.JRELibraryFolder
 

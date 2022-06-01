@@ -31,7 +31,7 @@ package org.opalj.br
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.util.concurrent.atomic.AtomicInteger
-import java.lang.Boolean as JBoolean
+import java.lang.{Boolean => JBoolean}
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder

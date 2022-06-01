@@ -24,7 +24,7 @@ class JREInvokedynamicRewritingTest extends InvokedynamicRewritingTest {
         val project = load(org.opalj.bytecode.JRELibraryFolder)
 
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method =>
-            method.body.get.collect ({
+            method.body.get.collect({
                 case i: INVOKEDYNAMIC => i
             }: PartialFunction[Instruction, Instruction])
         }

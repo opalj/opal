@@ -14,12 +14,12 @@ import java.io.ByteArrayInputStream
 import java.io.DataOutputStream
 import java.util.zip.ZipFile
 import java.util.concurrent.atomic.AtomicInteger
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 import org.opalj.io.FailAfterByteArrayOutputStream
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.da.ClassFileReader.ClassFile as LoadClassFile
+import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 

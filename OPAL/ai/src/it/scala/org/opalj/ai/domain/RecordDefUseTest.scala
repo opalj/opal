@@ -11,7 +11,7 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project

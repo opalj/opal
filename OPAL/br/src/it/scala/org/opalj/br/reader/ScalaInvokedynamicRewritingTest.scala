@@ -20,7 +20,7 @@ class ScalaInvokedynamicRewritingTest extends InvokedynamicRewritingTest {
         val project = load(locateTestResources("classfiles/scala-2.12.4", "bi"))
 
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method =>
-            method.body.get.collect ({
+            method.body.get.collect({
                 case i: INVOKEDYNAMIC => i
             }: PartialFunction[Instruction, Instruction])
         }
