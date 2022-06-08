@@ -1,1 +1,1 @@
-java -Djava.library.path=. NativeTest
+java -Djava.library.path=. TaintTest

@@ -1,24 +1,24 @@
-public class NativeTest {
-        private native int f1 (int a, int b);
-        private native int f2 ();
-        private native int f3 (int a);
-        private native int f4 (int a);
-        private native int f5 (int a, int b);
+public class TaintTest {
+        private native int sum (int a, int b);
+        private native int propagate_source ();
+        private native int propagate_sanitize (int a);
+        private native int propagate_sink (int a);
+        private native int sanitize_only_a_into_sink (int a, int b);
         static
         {
-            System.loadLibrary ("nativetest");   /* lowercase of classname! */
+            System.loadLibrary ("tainttest");
         }
         public static void main (String[] args)
         {
-            NativeTest demo = new NativeTest();
+            TaintTest demo = new TaintTest();
             demo.test_1_flow();
             demo.test_2_no_flow();
             demo.test_3_no_flow();
             demo.test_4_flow();
             demo.test_5_flow();
             demo.test_6_no_flow();
-            demo.test_7();
-            demo.test_8();
+            demo.test_7_flow();
+            demo.test_8_flow();
             System.out.println("done");
         }
 
@@ -40,29 +40,30 @@ public class NativeTest {
         public void test_4_flow() {
             int tainted = this.source();
             int untainted = 23;
-            int native_tainted = this.f1(tainted, untainted);
+            int native_tainted = this.sum(tainted, untainted);
             this.sink(native_tainted);
         }
 
         public void test_5_flow() {
-            int taint = this.f2();
-            this.f4(taint);
+            int taint = this.propagate_source();
+            this.propagate_sink(taint);
         }
 
         public void test_6_no_flow() {
-            this.f4(this.f3(this.f2()));
+            this.propagate_sink(this.propagate_sanitize(this.propagate_source()));
         }
 
-        public void test_7() {
+        public void test_7_flow() {
+            // has flow in case of abnormal return
             int tainted = this.source();
             int untainted = 23;
-            this.sink(this.f5(tainted, untainted));
+            this.sink(this.sanitize_only_a_into_sink(tainted, untainted));
         }
 
-        public void test_8() {
+        public void test_8_flow() {
             int tainted = this.source();
             int untainted = 23;
-            this.sink(this.f5(untainted, tainted));
+            this.sink(this.sanitize_only_a_into_sink(untainted, tainted));
         }
         
         private static int source()
