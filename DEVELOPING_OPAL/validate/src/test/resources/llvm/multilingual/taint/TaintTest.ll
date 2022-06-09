@@ -102,6 +102,55 @@ define dso_local i32 @Java_TaintTest_sanitize_1only_1a_1into_1sink(%struct.JNINa
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
+define dso_local void @Java_TaintTest_propagate_1identity_1to_1sink(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1, i32 noundef %2) #0 {
+  %4 = alloca %struct.JNINativeInterface_**, align 8
+  %5 = alloca %struct._jobject*, align 8
+  %6 = alloca i32, align 4
+  %7 = alloca i32, align 4
+  store %struct.JNINativeInterface_** %0, %struct.JNINativeInterface_*** %4, align 8
+  store %struct._jobject* %1, %struct._jobject** %5, align 8
+  store i32 %2, i32* %6, align 4
+  %8 = load i32, i32* %6, align 4
+  %9 = call i32 @identity(i32 noundef %8)
+  store i32 %9, i32* %7, align 4
+  %10 = load i32, i32* %7, align 4
+  call void @sink(i32 noundef %10)
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @identity(i32 noundef %0) #0 {
+  %2 = alloca i32, align 4
+  store i32 %0, i32* %2, align 4
+  %3 = load i32, i32* %2, align 4
+  ret i32 %3
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local void @Java_TaintTest_propagate_1zero_1to_1sink(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1, i32 noundef %2) #0 {
+  %4 = alloca %struct.JNINativeInterface_**, align 8
+  %5 = alloca %struct._jobject*, align 8
+  %6 = alloca i32, align 4
+  %7 = alloca i32, align 4
+  store %struct.JNINativeInterface_** %0, %struct.JNINativeInterface_*** %4, align 8
+  store %struct._jobject* %1, %struct._jobject** %5, align 8
+  store i32 %2, i32* %6, align 4
+  %8 = load i32, i32* %6, align 4
+  %9 = call i32 @zero(i32 noundef %8)
+  store i32 %9, i32* %7, align 4
+  %10 = load i32, i32* %7, align 4
+  call void @sink(i32 noundef %10)
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @zero(i32 noundef %0) #0 {
+  %2 = alloca i32, align 4
+  store i32 %0, i32* %2, align 4
+  ret i32 0
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @source() #0 {
   ret i32 42
 }

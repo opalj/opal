@@ -18,6 +18,14 @@ JNIEXPORT int JNICALL Java_TaintTest_propagate_1sink(JNIEnv *env, jobject obj, j
 
 JNIEXPORT int JNICALL Java_TaintTest_sanitize_1only_1a_1into_1sink(JNIEnv *env, jobject obj, jint a, jint b);
 
+JNIEXPORT void JNICALL Java_TaintTest_propagate_1identity_1to_1sink(JNIEnv *env, jobject obj, jint a);
+
+JNIEXPORT void JNICALL Java_TaintTest_propagate_1zero_1to_1sink(JNIEnv *env, jobject obj, jint a);
+
+int identity(int a);
+
+int zero(int a);
+
 int source();
 
 void sink(int num);

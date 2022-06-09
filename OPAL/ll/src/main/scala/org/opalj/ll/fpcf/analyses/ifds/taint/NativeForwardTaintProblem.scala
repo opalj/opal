@@ -70,9 +70,10 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         `successor` will be executed next.
      */
     override def returnFlow(exit: LLVMStatement, in: NativeFact, call: LLVMStatement, callFact: NativeFact, successor: LLVMStatement): Set[NativeFact] = {
-        var flows: Set[NativeFact] = in match {
+        val callee = exit.callable()
+        var flows: Set[NativeFact] = if (sanitizesReturnValue(callee)) Set.empty else in match {
             case NativeVariable(value) ⇒ exit.instruction match {
-                case ret: Ret if ret.value == value ⇒ Set(in)
+                case ret: Ret if ret.value == value ⇒ Set(NativeVariable(call.instruction))
                 case _: Ret                         ⇒ Set()
                 case _                              ⇒ Set()
             }
