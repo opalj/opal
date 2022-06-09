@@ -119,7 +119,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * If the sanitize method was called, nothing will be tainted.
      */
     override def returnFlow(exit: JavaStatement, in: Fact, call: JavaStatement, callFact: Fact, successor: JavaStatement): Set[Fact] = {
-        if(!isPossibleReturnFlow(exit, successor)) return Set.empty
+        if (!isPossibleReturnFlow(exit, successor)) return Set.empty
 
         val callee = exit.callable()
         /**
