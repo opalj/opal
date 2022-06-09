@@ -281,7 +281,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                 case None ⇒
                     for {
                         successor ← successors
-                        out ← concreteCallFlow(call, callee, in) // ifds line 17 (only summary edges)
+                        out ← concreteCallFlow(call, callee, in, successor) // ifds line 17 (only summary edges)
                     } {
                         propagate(successor, out, call) // ifds line 18
                     }
@@ -289,13 +289,13 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
         }
         for {
             successor ← successors
-            out ← callToReturnFlow(call, in) // ifds line 17 (without summary edge propagation)
+            out ← callToReturnFlow(call, in, successor) // ifds line 17 (without summary edge propagation)
         } {
             propagate(successor, out, call) // ifds line 18
         }
     }
 
-    private def concreteCallFlow(call: S, callee: C, in: IFDSFact)(implicit state: State, work: Work): Set[IFDSFact] = {
+    private def concreteCallFlow(call: S, callee: C, in: IFDSFact, successor: S)(implicit state: State, work: Work): Set[IFDSFact] = {
         var result = Set.empty[IFDSFact]
         val entryFacts = callFlow(call, callee, in)
         for (entryFact ← entryFacts) { // ifds line 14
@@ -320,7 +320,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                 (exitStatement, exitStatementFacts) ← exitFacts // ifds line 15.2
                 exitStatementFact ← exitStatementFacts // ifds line 15.3
             } {
-                result ++= returnFlow(exitStatement, exitStatementFact, call, in)
+                result ++= returnFlow(exitStatement, exitStatementFact, call, in, successor)
             }
         }
         result
@@ -386,9 +386,9 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
      * @param callFact d4
      * @return
      */
-    private def returnFlow(exit: S, in: IFDSFact, call: S, callFact: IFDSFact): Set[IFDSFact] = {
+    private def returnFlow(exit: S, in: IFDSFact, call: S, callFact: IFDSFact, successor: S): Set[IFDSFact] = {
         statistics.returnFlow += 1
-        addNullFactIfConfigured(in, ifdsProblem.returnFlow(exit, in, call, callFact))
+        addNullFactIfConfigured(in, ifdsProblem.returnFlow(exit, in, call, callFact, successor))
     }
 
     /**
@@ -397,9 +397,9 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
      * @param in d2
      * @return
      */
-    private def callToReturnFlow(call: S, in: IFDSFact): Set[IFDSFact] = {
+    private def callToReturnFlow(call: S, in: IFDSFact, successor: S): Set[IFDSFact] = {
         statistics.callToReturnFlow += 1
-        addNullFactIfConfigured(in, ifdsProblem.callToReturnFlow(call, in))
+        addNullFactIfConfigured(in, ifdsProblem.callToReturnFlow(call, in, successor))
     }
 
     private def addNullFactIfConfigured(in: IFDSFact, out: Set[IFDSFact]): Set[IFDSFact] = {

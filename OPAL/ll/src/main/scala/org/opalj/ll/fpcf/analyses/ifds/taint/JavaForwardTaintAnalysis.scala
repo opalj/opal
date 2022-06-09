@@ -86,7 +86,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
                     (exitStatement, exitStatementFacts) ← exitFacts // ifds line 15.2
                     exitStatementFact ← exitStatementFacts // ifds line 15.3
                 } {
-                    result ++= nativeReturnFlow(exitStatement, exitStatementFact, call, in, callee)
+                    result ++= nativeReturnFlow(exitStatement, exitStatementFact, call, in, callee, successor)
                 }
             }
             result
@@ -169,7 +169,8 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         in:           NativeFact,
         call:         JavaStatement,
         callFact:     Fact,
-        nativeCallee: Method
+        nativeCallee: Method,
+        successor:    JavaStatement
     ): Set[Fact] = {
         /**
          * Checks whether the callee's formal parameter is of a reference type.

@@ -69,7 +69,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         under the assumption that `in` held before the execution of `exit` and that
      *         `successor` will be executed next.
      */
-    override def returnFlow(exit: LLVMStatement, in: NativeFact, call: LLVMStatement, callFact: NativeFact): Set[NativeFact] = {
+    override def returnFlow(exit: LLVMStatement, in: NativeFact, call: LLVMStatement, callFact: NativeFact, successor: LLVMStatement): Set[NativeFact] = {
         var flows: Set[NativeFact] = in match {
             case NativeVariable(value) ⇒ exit.instruction match {
                 case ret: Ret if ret.value == value ⇒ Set(in)
@@ -100,7 +100,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return The facts, which hold after the call independently of what happens in the callee
      *         under the assumption that `in` held before `call`.
      */
-    override def callToReturnFlow(call: LLVMStatement, in: NativeFact): Set[NativeFact] = Set(in)
+    override def callToReturnFlow(call: LLVMStatement, in: NativeFact, successor: LLVMStatement): Set[NativeFact] = Set(in)
 
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
         case PHI(_) ⇒ true

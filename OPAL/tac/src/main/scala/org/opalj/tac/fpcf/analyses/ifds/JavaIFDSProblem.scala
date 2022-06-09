@@ -6,7 +6,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.{CFG, CFGNode}
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
-import org.opalj.tac.{Assignment, Call, DUVar, ExprStmt, Stmt, TACStmts}
+import org.opalj.tac.{Assignment, Call, DUVar, ExprStmt, Return, ReturnValue, Stmt, TACStmts}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.value.ValueInformation
 
@@ -58,6 +58,21 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
         case ExprStmt.ASTID   ⇒ call.asExprStmt.expr.asFunctionCall
         case _                ⇒ call.asMethodCall
     }
+
+  /**
+   * Checks if the return flow is actually possible from the given exit statement to the given successor.
+   * This is used to filter flows of exceptions into normal code without being caught
+   *
+   * @param exit the exit statement of the returning method
+   * @param successor the successor statement of the call within the callee function
+   * @return whether successor might actually be the next statement after the exit statement
+   */
+  protected def isPossibleReturnFlow(exit: JavaStatement, successor: JavaStatement): Boolean = {
+    (successor.node.isBasicBlock || successor.node.isNormalReturnExitNode) &&
+      (exit.stmt.astID == Return.ASTID || exit.stmt.astID == ReturnValue.ASTID) ||
+      (successor.node.isCatchNode || successor.node.isAbnormalReturnExitNode) &&
+        (exit.stmt.astID != Return.ASTID && exit.stmt.astID != ReturnValue.ASTID)
+  }
 
     override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact, Getter) ⇒ Set[Fact]] = callee.body.isDefined match {
         case true  ⇒ None

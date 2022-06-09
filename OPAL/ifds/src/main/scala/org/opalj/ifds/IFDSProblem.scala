@@ -73,10 +73,11 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
      *         `successor` will be executed next.
      */
     def returnFlow(
-        exit:     S,
-        in:       IFDSFact,
-        call:     S,
-        callFact: IFDSFact
+        exit:      S,
+        in:        IFDSFact,
+        call:      S,
+        callFact:  IFDSFact,
+        successor: S
     ): Set[IFDSFact]
 
     /**
@@ -88,8 +89,9 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
      *         under the assumption that `in` held before `call`.
      */
     def callToReturnFlow(
-        call: S,
-        in:   IFDSFact
+        call:      S,
+        in:        IFDSFact,
+        successor: S
     ): Set[IFDSFact]
 
     def needsPredecessor(statement: S): Boolean
