@@ -24,6 +24,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
         case _: Alloca ⇒ Set(in)
         case store: Store ⇒ in match {
             case NativeVariable(value) if value == store.src ⇒ Set(in, NativeVariable(store.dst))
+            case NativeVariable(value) if value == store.dst ⇒ Set()
             case _                                           ⇒ Set(in)
         }
         case load: Load ⇒ in match {

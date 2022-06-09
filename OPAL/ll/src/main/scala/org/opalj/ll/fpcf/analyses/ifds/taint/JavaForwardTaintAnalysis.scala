@@ -21,10 +21,9 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, Fact)] = (for {
+    override val entryPoints: Seq[(Method, Fact)] = for {
         m ← p.allMethodsWithBody
-        if (m.name == "test_7_no_flow")
-    } yield m -> NullFact)
+    } yield m -> NullFact
 
     /**
      * The sanitize method is a sanitizer.
@@ -61,12 +60,12 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         def handleNativeMethod(call: JavaStatement, successor: JavaStatement, in: Fact, dependeesGetter: Getter): Set[Fact] = {
             // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
-            val calleeName = callee.name.map( c => c match {
-              case c if isAlphaNumeric(c) => c
-              case '_' => "_1"
-              case ';' => "_2"
-              case '[' => "_3"
-              case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
+            val calleeName = callee.name.map(c ⇒ c match {
+                case c if isAlphaNumeric(c) ⇒ c
+                case '_'                    ⇒ "_1"
+                case ';'                    ⇒ "_2"
+                case '['                    ⇒ "_3"
+                case c                      ⇒ s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
             }).mkString
             val nativeFunctionName = "Java_"+callee.classFile.fqn+"_"+calleeName
             val function = llvmProject.function(nativeFunctionName).get

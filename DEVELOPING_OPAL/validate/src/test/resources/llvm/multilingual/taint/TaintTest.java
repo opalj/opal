@@ -17,7 +17,7 @@ public class TaintTest {
             demo.test_4_flow();
             demo.test_5_flow();
             demo.test_6_no_flow();
-            demo.test_7_flow();
+            demo.test_7_no_flow();
             demo.test_8_flow();
             System.out.println("done");
         }
@@ -53,8 +53,7 @@ public class TaintTest {
             this.propagate_sink(this.propagate_sanitize(this.propagate_source()));
         }
 
-        public void test_7_flow() {
-            // has flow in case of abnormal return
+        public void test_7_no_flow() {
             int tainted = this.source();
             int untainted = 23;
             this.sink(this.sanitize_only_a_into_sink(tainted, untainted));

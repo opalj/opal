@@ -25,30 +25,30 @@ class MultilingualForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers
         val manager = project.get(FPCFAnalysesManagerKey)
         val (ps, analyses) = manager.runAll(JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler)
         for (method ← project.allMethodsWithBody) {
-          val flows =
-            ps((method, NullFact), JavaForwardTaintAnalysisScheduler.property.key)
-          println("---METHOD: " + method.toJava + "  ---")
-          val flowFacts = flows.ub
-            .asInstanceOf[IFDSProperty[JavaStatement, Fact]]
-            .flows
-            .values
-            .flatten
-            .toSet[Fact]
-            .flatMap {
-              case FlowFact(flow) ⇒ Some(flow)
-              case _ ⇒ None
+            val flows =
+                ps((method, NullFact), JavaForwardTaintAnalysisScheduler.property.key)
+            println("---METHOD: "+method.toJava+"  ---")
+            val flowFacts = flows.ub
+                .asInstanceOf[IFDSProperty[JavaStatement, Fact]]
+                .flows
+                .values
+                .flatten
+                .toSet[Fact]
+                .flatMap {
+                    case FlowFact(flow) ⇒ Some(flow)
+                    case _              ⇒ None
+                }
+            for (flow ← flowFacts)
+                println(s"flow: "+flow.map(_.name).mkString(", "))
+            if (method.name.contains("no_flow")) {
+                it(s"${method.name} has no flow") {
+                    assert(flowFacts.isEmpty)
+                }
+            } else if (method.name.contains("flow")) {
+                it(s"${method.name} has some flow") {
+                    assert(!flowFacts.isEmpty)
+                }
             }
-          for (flow <- flowFacts)
-            println(s"flow: " + flow.map(_.name).mkString(", "))
-          if (method.name.contains("no_flow")) {
-              it(s"${method.name} has no flow") {
-                assert(flowFacts.isEmpty)
-              }
-          } else if (method.name.contains("flow")) {
-              it(s"${method.name} has some flow") {
-                assert(!flowFacts.isEmpty)
-              }
-          }
         }
     }
 }
