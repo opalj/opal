@@ -17,21 +17,20 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.MutableClass
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import java.io.IOException
-import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
@@ -65,12 +64,11 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         time {
             propertyStore = analysesManager
                 .runAll(
-                    LazyUnsoundPrematurelyReadFieldsAnalysis,
                     LazyL2PurityAnalysis,
                     LazyL3FieldAssignabilityAnalysis,
                     LazyL0FieldImmutabilityAnalysis,
-                    LazyL1TypeImmutabilityAnalysis,
-                    EagerL1ClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis,
+                    EagerClassImmutabilityAnalysis,
                     LazyStaticDataUsageAnalysis,
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyInterProceduralEscapeAnalysis,
@@ -100,7 +98,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             groupedResults(NonTransitivelyImmutableClass).toSeq.sortWith(order)
 
         val dependentImmutableClasses =
-            groupedResults(DependentImmutableClass).toSeq.sortWith(order)
+            groupedResults(DependentlyImmutableClass).toSeq.sortWith(order)
 
         val deepImmutables = groupedResults(TransitivelyImmutableClass).toSeq.sortWith(order)
 

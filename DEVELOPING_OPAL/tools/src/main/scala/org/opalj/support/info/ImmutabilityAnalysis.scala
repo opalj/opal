@@ -10,11 +10,13 @@ import org.opalj.util.Seconds
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldAssignabilityAnalysis
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -33,23 +35,22 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        import org.opalj.br.fpcf.properties.ClassImmutability
-        import org.opalj.br.fpcf.properties.TypeImmutability
         import project.get
 
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
         var t = Seconds.None
         val ps = time {
+
             val ps = get(PropertyStoreKey)
             val derivedPKs = Set.empty ++
                 EagerL0FieldAssignabilityAnalysis.derives.map(_.pk) ++
-                EagerL0ClassImmutabilityAnalysis.derives.map(_.pk) ++
-                EagerL0TypeImmutabilityAnalysis.derives.map(_.pk)
+                EagerClassImmutabilityAnalysis.derives.map(_.pk) ++
+                EagerTypeImmutabilityAnalysis.derives.map(_.pk)
             ps.setupPhase(derivedPKs)
             EagerL0FieldAssignabilityAnalysis.start(project, ps, null)
-            EagerL0ClassImmutabilityAnalysis.start(project, ps, null)
-            EagerL0TypeImmutabilityAnalysis.start(project, ps, null)
+            EagerClassImmutabilityAnalysis.start(project, ps, null)
+            EagerTypeImmutabilityAnalysis.start(project, ps, null)
             ps.waitOnPhaseCompletion()
             ps
         } { r ⇒ t = r.toSeconds }

@@ -21,44 +21,22 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.br.ObjectType
 import org.opalj.br.Field
-import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.DependentlyImmutableField
-import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
-import org.opalj.br.fpcf.properties.LazilyInitialized
-import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.Assignable
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.fpcf.Entity
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.DependentlyImmutableType
-import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.MutableType
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.log.LogContext
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.FieldAssignability
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.EPS
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -66,8 +44,24 @@ import org.opalj.fpcf.OrderedProperty
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.br.fpcf.properties.NonAssignable
 import org.opalj.tac.cg.XTACallGraphKey
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.MutableClass
+import org.opalj.br.fpcf.properties.immutability.MutableType
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 
 /**
  * Determines the assignability of fields and the immutability  of fields, classes and types and provides several
@@ -102,6 +96,11 @@ object Immutability {
         times:                             Int,
         callgraphKey:                      CallGraphKey
     ): BasicReport = {
+        import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+        import org.opalj.br.fpcf.properties.immutability.MutableField
+        import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
+        import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+        import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 
         val classFiles = projectDir match {
             case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -155,14 +154,13 @@ object Immutability {
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
-                LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL3FieldAssignabilityAnalysis,
                 LazyL0FieldImmutabilityAnalysis,
-                LazyL1ClassImmutabilityAnalysis,
-                LazyL1TypeImmutabilityAnalysis,
+                LazyClassImmutabilityAnalysis,
+                LazyTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis //LazyInterproceduraEscapeAnalysis PointsToCallgraph //CHA
+                LazySimpleEscapeAnalysis
             )
 
         project.get(callgraphKey)
@@ -204,41 +202,50 @@ object Immutability {
                 css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
                     analysis match {
                         case Assignability ⇒
+                            import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL3FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldAssignability.key)
+                                    f ⇒ propertyStore.force(f, immutability.FieldAssignability.key)
                                 )
                         case Fields ⇒
+                            import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
+                                    f ⇒ propertyStore.force(f, immutability.FieldImmutability.key)
                                 )
                         case Classes ⇒
-                            if (css.contains(LazyL1ClassImmutabilityAnalysis))
+
+                            import org.opalj.br.fpcf.properties.immutability
+                            if (css.contains(LazyClassImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c ⇒ propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
+                                    c ⇒ propertyStore.force(c, immutability.ClassImmutability.key)
                                 )
                         case Types ⇒
-                            if (css.contains(LazyL1TypeImmutabilityAnalysis))
+                            import org.opalj.br.fpcf.properties.immutability
+                            if (css.contains(LazyTypeImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c ⇒ propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
+                                    c ⇒ propertyStore.force(c, immutability.TypeImmutability.key)
                                 )
                         case All ⇒
+                            import org.opalj.br.fpcf.properties.immutability
+                            import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL3FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(f ⇒ {
-                                    propertyStore.force(f, br.fpcf.properties.FieldAssignability.key)
+                                    import org.opalj.br.fpcf.properties.immutability
+                                    propertyStore.force(f, immutability.FieldAssignability.key)
                                 })
                             if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
+                                    f ⇒ propertyStore.force(f, immutability.FieldImmutability.key)
                                 )
-                            if (css.contains(LazyL1ClassImmutabilityAnalysis))
+                            if (css.contains(LazyClassImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(c ⇒ {
-                                    propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
+                                    import org.opalj.br.fpcf.properties.immutability
+                                    propertyStore.force(c, immutability.ClassImmutability.key)
                                 })
-                            if (css.contains(LazyL1TypeImmutabilityAnalysis))
+                            if (css.contains(LazyTypeImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c ⇒ propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
+                                    c ⇒ propertyStore.force(c, immutability.TypeImmutability.key)
                                 )
                     }
             }
@@ -400,8 +407,8 @@ object Immutability {
             .toTraversable
             .groupBy {
                 _.asFinal.p match {
-                    case DependentImmutableClass(_) ⇒ DependentImmutableClass(Set.empty)
-                    case default                    ⇒ default
+                    case DependentlyImmutableClass(_) ⇒ DependentlyImmutableClass(Set.empty)
+                    case default                      ⇒ default
                 }
             }
 
@@ -427,7 +434,7 @@ object Immutability {
 
         val dependentlyImmutableClasses =
             classGroupedResults
-                .getOrElse(DependentImmutableClass(Set.empty), Iterator.empty)
+                .getOrElse(DependentlyImmutableClass(Set.empty), Iterator.empty)
                 .toSeq
                 .map(unpackClass)
                 .sortWith(_ < _)

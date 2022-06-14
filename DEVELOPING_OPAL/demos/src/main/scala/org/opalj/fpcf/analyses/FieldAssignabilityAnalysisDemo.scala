@@ -19,22 +19,21 @@ import org.opalj.util.Seconds
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.EagerL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.Field
-import org.opalj.br.fpcf.properties.Assignable
-import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.FieldAssignability
-import org.opalj.br.fpcf.properties.LazilyInitialized
-import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 
 /**
  * Runs the EagerL0FieldAssignabilityAnalysis including all analysis needed for improving the result.
@@ -43,10 +42,9 @@ import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
  */
 object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "determines the assignability of (static/instance) fields"
+    override def title: String = "determines the assignability of static and instce fields"
 
-    override def description: String =
-        "identifies non assignable fields"
+    override def description: String = "identifies non assignable fields"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -69,9 +67,8 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
                 .runAll(
                     EagerL3FieldAssignabilityAnalysis,
                     LazyL0FieldImmutabilityAnalysis,
-                    LazyL1ClassImmutabilityAnalysis,
-                    LazyL1TypeImmutabilityAnalysis,
-                    LazyUnsoundPrematurelyReadFieldsAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis,
                     LazyL2PurityAnalysis,
                     LazyInterProceduralEscapeAnalysis,
                     LazyStaticDataUsageAnalysis,
@@ -104,7 +101,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         val output =
             s"""
           | Assignable Field:
-          | ${assignableFields.mkString(" | Mutable Field Reference \n")}
+          | ${assignableFields.mkString(" | Assignable \n")}
           |
           |  Lazy Initialized Not Thread Safe Field:
           | ${notThreadSafeLazyInitializedFieldReferences.mkString(" | Not Thread Safe Lazy Initialization \n")}
@@ -147,6 +144,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         } finally {
             bw.close()
         }
+
         output
     }
 }

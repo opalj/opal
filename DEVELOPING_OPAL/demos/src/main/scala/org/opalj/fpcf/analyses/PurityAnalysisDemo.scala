@@ -16,9 +16,9 @@ import org.opalj.br.Field
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldAssignabilityAnalysis
-import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.
@@ -96,8 +96,8 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
         println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
 
         () ⇒ {
-            val effectivelyFinalEntities: Iterator[EPS[Entity, FieldMutability]] =
-                propertyStore.entities(FieldMutability.key)
+            val effectivelyFinalEntities: Iterator[EPS[Entity, FieldAssignability]] =
+                propertyStore.entities(FieldAssignability.key)
 
             val effectivelyFinalFields: Iterator[(Field, Property)] =
                 effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.ub))

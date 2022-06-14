@@ -13,12 +13,12 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldAssignabilityAnalysis
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -83,12 +83,12 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         time {
 
-            propertyStore.setupPhase(Set[PropertyKind](
-                FieldImmutability.key, ClassImmutability.key, TypeImmutability.key
+          propertyStore.setupPhase(Set[PropertyKind](
+                FieldAssignability.key, ClassImmutability.key, TypeImmutability.key
             ))
             LazyL0FieldAssignabilityAnalysis.register(project, propertyStore, null)
-            EagerL0ClassImmutabilityAnalysis.start(project, propertyStore, null)
-            EagerL0TypeImmutabilityAnalysis.start(project, propertyStore, null)
+            EagerClassImmutabilityAnalysis.start(project, propertyStore, null)
+            EagerTypeImmutabilityAnalysis.start(project, propertyStore, null)
 
             propertyStore.waitOnPhaseCompletion()
         } { r ⇒ analysisTime = r }
