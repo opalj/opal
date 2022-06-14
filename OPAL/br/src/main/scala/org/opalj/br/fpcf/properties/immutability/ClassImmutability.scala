@@ -1,8 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package br
-package fpcf
-package properties
+package org.opalj.br.fpcf.properties.immutability
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
@@ -23,7 +20,7 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * [[NonTransitivelyImmutableClass]] A class which transitive state is not immutable but the values or objects representing
  * this transitive state (are not / can not be) exchanged.
  *
- * [[DependentImmutableClass]] A class that is at least shallow immutable.
+ * [[DependentlyImmutableClass]] A class that is at least shallow immutable.
  * Whether it is shallow or deep immutable depends on generic parameters.
  *
  * [[TransitivelyImmutableClass]] A class with a transitive immutable state.
@@ -58,7 +55,8 @@ case object TransitivelyImmutableClass extends ClassImmutability {
     def meet(that: ClassImmutability): ClassImmutability = that
 }
 
-case class DependentImmutableClass(parameter: Set[String]) extends ClassImmutability {
+case class DependentlyImmutableClass(parameter: Set[String]) extends ClassImmutability {
+
     override def correspondingTypeImmutability: TypeImmutability = DependentlyImmutableType(parameter)
 
     override def isDependentlyImmutable: Boolean = true
@@ -87,7 +85,7 @@ case object NonTransitivelyImmutableClass extends ClassImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         other match {
-            case TransitivelyImmutableClass | DependentImmutableClass(_) ⇒
+            case TransitivelyImmutableClass | DependentlyImmutableClass(_) ⇒
                 throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
             case _ ⇒
         }

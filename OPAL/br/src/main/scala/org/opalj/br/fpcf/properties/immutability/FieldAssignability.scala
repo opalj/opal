@@ -3,6 +3,7 @@ package org.opalj
 package br
 package fpcf
 package properties
+package immutability
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
@@ -97,7 +98,7 @@ case object LazilyInitialized extends NonAssignableField {
 
 case object UnsafelyLazilyInitialized extends FieldAssignability {
 
-    def meet(other: FieldAssignability): properties.FieldAssignability = {
+    def meet(other: FieldAssignability): FieldAssignability = {
         if (other == Assignable) {
             other
         } else {

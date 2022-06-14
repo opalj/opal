@@ -3,13 +3,15 @@ package org.opalj
 package br
 package fpcf
 package properties
+package immutability
 
-import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
+
     final type Self = TypeImmutability
 }
 
@@ -38,8 +40,8 @@ sealed trait TypeImmutability
      */
     final def key = TypeImmutability.key
 
-    def isDeepImmutable: Boolean
-    def isShallowImmutable: Boolean
+    def isTransitivelyImmutable: Boolean
+    def isNonTransitivelyImmutable: Boolean
     def isDependentlyImmutable: Boolean = false
     def isMutable: Boolean = true
     def meet(other: TypeImmutability): TypeImmutability
@@ -62,8 +64,8 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
  */
 case object TransitivelyImmutableType extends TypeImmutability {
 
-    override def isDeepImmutable: Boolean = true
-    override def isShallowImmutable: Boolean = false
+    override def isTransitivelyImmutable: Boolean = true
+    override def isNonTransitivelyImmutable: Boolean = false
     override def isMutable: Boolean = false
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
@@ -72,8 +74,8 @@ case object TransitivelyImmutableType extends TypeImmutability {
 }
 
 case class DependentlyImmutableType(parameter: Set[String]) extends TypeImmutability {
-    override def isDeepImmutable: Boolean = false
-    override def isShallowImmutable: Boolean = false
+    override def isTransitivelyImmutable: Boolean = false
+    override def isNonTransitivelyImmutable: Boolean = false
     override def isMutable: Boolean = false
     override def isDependentlyImmutable: Boolean = true
 
@@ -92,8 +94,8 @@ case class DependentlyImmutableType(parameter: Set[String]) extends TypeImmutabi
 
 case object NonTransitivelyImmutableType extends TypeImmutability {
 
-    override def isDeepImmutable: Boolean = false
-    override def isShallowImmutable: Boolean = true
+    override def isTransitivelyImmutable: Boolean = false
+    override def isNonTransitivelyImmutable: Boolean = true
     override def isMutable: Boolean = false
 
     def meet(that: TypeImmutability): TypeImmutability =
@@ -113,8 +115,8 @@ case object NonTransitivelyImmutableType extends TypeImmutability {
 
 case object MutableType extends TypeImmutability {
 
-    override def isDeepImmutable: Boolean = false
-    override def isShallowImmutable: Boolean = false
+    override def isTransitivelyImmutable: Boolean = false
+    override def isNonTransitivelyImmutable: Boolean = false
     override def isMutable: Boolean = true
 
     def meet(other: TypeImmutability): TypeImmutability = this
