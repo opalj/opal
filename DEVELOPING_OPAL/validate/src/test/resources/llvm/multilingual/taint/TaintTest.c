@@ -42,6 +42,29 @@ Java_TaintTest_propagate_1zero_1to_1sink(JNIEnv *env, jobject obj, jint a) {
     sink(b);
 }
 
+JNIEXPORT void JNICALL
+Java_TaintTest_propagate_1to_1java_1sink(JNIEnv *env, jobject obj, jint a) {
+    jclass klass = (*env)->GetObjectClass(env, obj);
+    // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/types.html#type-signatures
+    // not documented, but "V" is "void"
+    jmethodID java_sink = (*env)->GetMethodID(env, klass, "indirect_sink", "(I)V");
+    (*env)->CallVoidMethod(env, obj, java_sink, a);
+}
+
+JNIEXPORT int JNICALL
+Java_TaintTest_propagate_1from_1java_1source(JNIEnv *env, jobject obj) {
+     jclass klass = (*env)->GetObjectClass(env, obj);
+     jmethodID java_source = (*env)->GetMethodID(env, klass, "indirect_source", "()I");
+     return (*env)->CallIntMethod(env, obj, java_source);
+}
+
+JNIEXPORT int JNICALL
+Java_TaintTest_propagate_1java_1sanitize(JNIEnv *env, jobject obj, jint a) {
+     jclass klass = (*env)->GetObjectClass(env, obj);
+     jmethodID java_sanitize = (*env)->GetMethodID(env, klass, "indirect_sanitize", "(I)I");
+     return (*env)->CallIntMethod(env, obj, java_sanitize, a);
+}
+
 int
 identity(int a) {
     return a;
@@ -58,10 +81,12 @@ source() {
 }
 
 void
-sink(int num) {}
+sink(int num) {
+    printf("native %d\n", num);
+}
 
 int
 sanitize(int num) {
-    return num;
+    return num - 19;
 }
 

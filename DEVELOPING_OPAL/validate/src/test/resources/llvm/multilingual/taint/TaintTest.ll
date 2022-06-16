@@ -12,6 +12,14 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.JNIInvokeInterface_ = type { i8*, i8*, i8*, i32 (%struct.JNIInvokeInterface_**)*, i32 (%struct.JNIInvokeInterface_**, i8**, i8*)*, i32 (%struct.JNIInvokeInterface_**)*, i32 (%struct.JNIInvokeInterface_**, i8**, i32)*, i32 (%struct.JNIInvokeInterface_**, i8**, i8*)* }
 %struct._jobject = type opaque
 
+@.str = private unnamed_addr constant [14 x i8] c"indirect_sink\00", align 1
+@.str.1 = private unnamed_addr constant [5 x i8] c"(I)V\00", align 1
+@.str.2 = private unnamed_addr constant [16 x i8] c"indirect_source\00", align 1
+@.str.3 = private unnamed_addr constant [4 x i8] c"()I\00", align 1
+@.str.4 = private unnamed_addr constant [18 x i8] c"indirect_sanitize\00", align 1
+@.str.5 = private unnamed_addr constant [5 x i8] c"(I)I\00", align 1
+@.str.6 = private unnamed_addr constant [11 x i8] c"native %d\0A\00", align 1
+
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @Java_TaintTest_sum(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1, i32 noundef %2, i32 noundef %3) #0 {
   %5 = alloca %struct.JNINativeInterface_**, align 8
@@ -57,7 +65,8 @@ define dso_local i32 @sanitize(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
-  ret i32 %3
+  %4 = sub nsw i32 %3, 19
+  ret i32 %4
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -77,6 +86,8 @@ define dso_local i32 @Java_TaintTest_propagate_1sink(%struct.JNINativeInterface_
 define dso_local void @sink(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
+  %3 = load i32, i32* %2, align 4
+  %4 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([11 x i8], [11 x i8]* @.str.6, i64 0, i64 0), i32 noundef %3)
   ret void
 }
 
@@ -151,11 +162,125 @@ define dso_local i32 @zero(i32 noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
+define dso_local void @Java_TaintTest_propagate_1to_1java_1sink(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1, i32 noundef %2) #0 {
+  %4 = alloca %struct.JNINativeInterface_**, align 8
+  %5 = alloca %struct._jobject*, align 8
+  %6 = alloca i32, align 4
+  %7 = alloca %struct._jobject*, align 8
+  %8 = alloca %struct._jmethodID*, align 8
+  store %struct.JNINativeInterface_** %0, %struct.JNINativeInterface_*** %4, align 8
+  store %struct._jobject* %1, %struct._jobject** %5, align 8
+  store i32 %2, i32* %6, align 4
+  %9 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %10 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %9, align 8
+  %11 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %10, i32 0, i32 31
+  %12 = load %struct._jobject* (%struct.JNINativeInterface_**, %struct._jobject*)*, %struct._jobject* (%struct.JNINativeInterface_**, %struct._jobject*)** %11, align 8
+  %13 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %14 = load %struct._jobject*, %struct._jobject** %5, align 8
+  %15 = call %struct._jobject* %12(%struct.JNINativeInterface_** noundef %13, %struct._jobject* noundef %14)
+  store %struct._jobject* %15, %struct._jobject** %7, align 8
+  %16 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %17 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %16, align 8
+  %18 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %17, i32 0, i32 33
+  %19 = load %struct._jmethodID* (%struct.JNINativeInterface_**, %struct._jobject*, i8*, i8*)*, %struct._jmethodID* (%struct.JNINativeInterface_**, %struct._jobject*, i8*, i8*)** %18, align 8
+  %20 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %21 = load %struct._jobject*, %struct._jobject** %7, align 8
+  %22 = call %struct._jmethodID* %19(%struct.JNINativeInterface_** noundef %20, %struct._jobject* noundef %21, i8* noundef getelementptr inbounds ([14 x i8], [14 x i8]* @.str, i64 0, i64 0), i8* noundef getelementptr inbounds ([5 x i8], [5 x i8]* @.str.1, i64 0, i64 0))
+  store %struct._jmethodID* %22, %struct._jmethodID** %8, align 8
+  %23 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %24 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %23, align 8
+  %25 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %24, i32 0, i32 61
+  %26 = load void (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...)*, void (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...)** %25, align 8
+  %27 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %28 = load %struct._jobject*, %struct._jobject** %5, align 8
+  %29 = load %struct._jmethodID*, %struct._jmethodID** %8, align 8
+  %30 = load i32, i32* %6, align 4
+  call void (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...) %26(%struct.JNINativeInterface_** noundef %27, %struct._jobject* noundef %28, %struct._jmethodID* noundef %29, i32 noundef %30)
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @Java_TaintTest_propagate_1from_1java_1source(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1) #0 {
+  %3 = alloca %struct.JNINativeInterface_**, align 8
+  %4 = alloca %struct._jobject*, align 8
+  %5 = alloca %struct._jobject*, align 8
+  %6 = alloca %struct._jmethodID*, align 8
+  store %struct.JNINativeInterface_** %0, %struct.JNINativeInterface_*** %3, align 8
+  store %struct._jobject* %1, %struct._jobject** %4, align 8
+  %7 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %3, align 8
+  %8 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %7, align 8
+  %9 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %8, i32 0, i32 31
+  %10 = load %struct._jobject* (%struct.JNINativeInterface_**, %struct._jobject*)*, %struct._jobject* (%struct.JNINativeInterface_**, %struct._jobject*)** %9, align 8
+  %11 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %3, align 8
+  %12 = load %struct._jobject*, %struct._jobject** %4, align 8
+  %13 = call %struct._jobject* %10(%struct.JNINativeInterface_** noundef %11, %struct._jobject* noundef %12)
+  store %struct._jobject* %13, %struct._jobject** %5, align 8
+  %14 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %3, align 8
+  %15 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %14, align 8
+  %16 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %15, i32 0, i32 33
+  %17 = load %struct._jmethodID* (%struct.JNINativeInterface_**, %struct._jobject*, i8*, i8*)*, %struct._jmethodID* (%struct.JNINativeInterface_**, %struct._jobject*, i8*, i8*)** %16, align 8
+  %18 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %3, align 8
+  %19 = load %struct._jobject*, %struct._jobject** %5, align 8
+  %20 = call %struct._jmethodID* %17(%struct.JNINativeInterface_** noundef %18, %struct._jobject* noundef %19, i8* noundef getelementptr inbounds ([16 x i8], [16 x i8]* @.str.2, i64 0, i64 0), i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.3, i64 0, i64 0))
+  store %struct._jmethodID* %20, %struct._jmethodID** %6, align 8
+  %21 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %3, align 8
+  %22 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %21, align 8
+  %23 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %22, i32 0, i32 49
+  %24 = load i32 (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...)*, i32 (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...)** %23, align 8
+  %25 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %3, align 8
+  %26 = load %struct._jobject*, %struct._jobject** %4, align 8
+  %27 = load %struct._jmethodID*, %struct._jmethodID** %6, align 8
+  %28 = call i32 (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...) %24(%struct.JNINativeInterface_** noundef %25, %struct._jobject* noundef %26, %struct._jmethodID* noundef %27)
+  ret i32 %28
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @Java_TaintTest_propagate_1java_1sanitize(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1, i32 noundef %2) #0 {
+  %4 = alloca %struct.JNINativeInterface_**, align 8
+  %5 = alloca %struct._jobject*, align 8
+  %6 = alloca i32, align 4
+  %7 = alloca %struct._jobject*, align 8
+  %8 = alloca %struct._jmethodID*, align 8
+  store %struct.JNINativeInterface_** %0, %struct.JNINativeInterface_*** %4, align 8
+  store %struct._jobject* %1, %struct._jobject** %5, align 8
+  store i32 %2, i32* %6, align 4
+  %9 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %10 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %9, align 8
+  %11 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %10, i32 0, i32 31
+  %12 = load %struct._jobject* (%struct.JNINativeInterface_**, %struct._jobject*)*, %struct._jobject* (%struct.JNINativeInterface_**, %struct._jobject*)** %11, align 8
+  %13 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %14 = load %struct._jobject*, %struct._jobject** %5, align 8
+  %15 = call %struct._jobject* %12(%struct.JNINativeInterface_** noundef %13, %struct._jobject* noundef %14)
+  store %struct._jobject* %15, %struct._jobject** %7, align 8
+  %16 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %17 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %16, align 8
+  %18 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %17, i32 0, i32 33
+  %19 = load %struct._jmethodID* (%struct.JNINativeInterface_**, %struct._jobject*, i8*, i8*)*, %struct._jmethodID* (%struct.JNINativeInterface_**, %struct._jobject*, i8*, i8*)** %18, align 8
+  %20 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %21 = load %struct._jobject*, %struct._jobject** %7, align 8
+  %22 = call %struct._jmethodID* %19(%struct.JNINativeInterface_** noundef %20, %struct._jobject* noundef %21, i8* noundef getelementptr inbounds ([18 x i8], [18 x i8]* @.str.4, i64 0, i64 0), i8* noundef getelementptr inbounds ([5 x i8], [5 x i8]* @.str.5, i64 0, i64 0))
+  store %struct._jmethodID* %22, %struct._jmethodID** %8, align 8
+  %23 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %24 = load %struct.JNINativeInterface_*, %struct.JNINativeInterface_** %23, align 8
+  %25 = getelementptr inbounds %struct.JNINativeInterface_, %struct.JNINativeInterface_* %24, i32 0, i32 49
+  %26 = load i32 (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...)*, i32 (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...)** %25, align 8
+  %27 = load %struct.JNINativeInterface_**, %struct.JNINativeInterface_*** %4, align 8
+  %28 = load %struct._jobject*, %struct._jobject** %5, align 8
+  %29 = load %struct._jmethodID*, %struct._jmethodID** %8, align 8
+  %30 = load i32, i32* %6, align 4
+  %31 = call i32 (%struct.JNINativeInterface_**, %struct._jobject*, %struct._jmethodID*, ...) %26(%struct.JNINativeInterface_** noundef %27, %struct._jobject* noundef %28, %struct._jmethodID* noundef %29, i32 noundef %30)
+  ret i32 %31
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @source() #0 {
   ret i32 42
 }
 
+declare i32 @printf(i8* noundef, ...) #1
+
 attributes #0 = { noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

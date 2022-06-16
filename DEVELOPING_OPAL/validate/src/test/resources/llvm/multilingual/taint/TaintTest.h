@@ -22,6 +22,12 @@ JNIEXPORT void JNICALL Java_TaintTest_propagate_1identity_1to_1sink(JNIEnv *env,
 
 JNIEXPORT void JNICALL Java_TaintTest_propagate_1zero_1to_1sink(JNIEnv *env, jobject obj, jint a);
 
+JNIEXPORT void JNICALL Java_TaintTest_propagate_1to_1java_1sink(JNIEnv *env, jobject obj, jint a);
+
+JNIEXPORT int JNICALL Java_TaintTest_propagate_1from_1java_1source(JNIEnv *env, jobject obj);
+
+JNIEXPORT int JNICALL Java_TaintTest_propagate_1java_1sanitize(JNIEnv *env, jobject obj, jint a);
+
 int identity(int a);
 
 int zero(int a);
