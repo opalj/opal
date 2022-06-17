@@ -3,7 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeIFDSProblem}
-import org.opalj.ll.llvm.value.{Add, Alloca, Call, Function, Load, PHI, Ret, Store}
+import org.opalj.ll.llvm.value.{Add, Alloca, Call, Function, GetElementPtr, Load, PHI, Ret, Store, Sub}
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
 abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
@@ -34,6 +34,14 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
         case add: Add ⇒ in match {
             case NativeVariable(value) if value == add.op1 || value == add.op2 ⇒ Set(in, NativeVariable(add))
             case _ ⇒ Set(in)
+        }
+        case sub: Sub ⇒ in match {
+            case NativeVariable(value) if value == sub.op1 || value == sub.op2 ⇒ Set(in, NativeVariable(sub))
+            case _ ⇒ Set(in)
+        }
+        case gep: GetElementPtr ⇒ in match {
+            case NativeVariable(value) ⇒ Set(in) // TODO
+            case _                     ⇒ Set(in)
         }
         case _ ⇒ Set(in)
     }

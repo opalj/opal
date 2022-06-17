@@ -14,6 +14,7 @@ object OptionalInstruction {
 
 object Instruction {
     def apply(ref: LLVMValueRef): Instruction = {
+        assert(ref != null && !ref.isNull(), "ref may not be null")
         assert(LLVMGetValueKind(ref) == LLVMInstructionValueKind, "ref has to be an instruction")
         LLVMGetInstructionOpcode(ref) match {
             case LLVMRet            ⇒ Ret(ref)
@@ -105,10 +106,6 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
     def function: Function = parent.parent
     def next: Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
 
-    /*def successors(): Seq[Instruction] = next match {
-        case Some(successor) ⇒ Seq(successor)
-        case None            ⇒ Seq()
-    }*/
     override def toString: String = {
         s"${this.getClass.getSimpleName}(${repr})"
     }
@@ -135,7 +132,10 @@ case class Add(ref: LLVMValueRef) extends Instruction(ref) {
     def op2: Value = operand(1)
 }
 case class FAdd(ref: LLVMValueRef) extends Instruction(ref)
-case class Sub(ref: LLVMValueRef) extends Instruction(ref)
+case class Sub(ref: LLVMValueRef) extends Instruction(ref) {
+    def op1: Value = operand(0)
+    def op2: Value = operand(1)
+}
 case class FSub(ref: LLVMValueRef) extends Instruction(ref)
 case class Mul(ref: LLVMValueRef) extends Instruction(ref)
 case class FMul(ref: LLVMValueRef) extends Instruction(ref)
@@ -179,7 +179,7 @@ case class ICmp(ref: LLVMValueRef) extends Instruction(ref)
 case class FCmp(ref: LLVMValueRef) extends Instruction(ref)
 case class PHI(ref: LLVMValueRef) extends Instruction(ref)
 case class Call(ref: LLVMValueRef) extends Instruction(ref) {
-    def calledValue: Function = Function(LLVMGetCalledValue(ref))
+    def calledValue: Value = Value(LLVMGetCalledValue(ref)).get
     def calledFunctionType: Type = Type(LLVMGetCalledFunctionType(ref))
     def indexOfArgument(argument: Value): Option[Int] = {
         for (i ← 0 to numOperands)

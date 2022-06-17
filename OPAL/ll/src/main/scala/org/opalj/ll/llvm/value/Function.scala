@@ -11,6 +11,7 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
     def basicBlocks: BasicBlockIterator = {
         new BasicBlockIterator(LLVMGetFirstBasicBlock(ref))
     }
+    def basicBlockCount: Int = LLVMCountBasicBlocks(ref)
 
     def arguments: ArgumentIterator = {
         new ArgumentIterator(LLVMGetFirstParam(ref))
@@ -21,7 +22,10 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
         Argument(LLVMGetParam(ref, index))
     }
 
-    def entryBlock: BasicBlock = BasicBlock(LLVMGetEntryBasicBlock(ref))
+    def entryBlock: BasicBlock = {
+        if (basicBlockCount == 0) throw new IllegalStateException("this function does not contain any basic block and may not be defined")
+        BasicBlock(LLVMGetEntryBasicBlock(ref))
+    }
 
     def viewCFG(): Unit = {
         val cfg_dot = org.opalj.graphs.toDot(Set(entryBlock))

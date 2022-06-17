@@ -12,6 +12,8 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @return The statements at which the analysis starts.
      */
     override def startStatements(callable: Function): Set[LLVMStatement] = {
+        if (callable.basicBlockCount == 0)
+            throw new IllegalArgumentException(s"${callable} does not contain any basic blocks and likely should not be in scope of the analysis")
         Set(LLVMStatement(callable.entryBlock.firstInstruction))
     }
 
@@ -33,9 +35,14 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Fun
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[Function]] = statement.instruction match {
-        case call: Call ⇒ Some(Set(call.calledValue))
-        case _          ⇒ None
+    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[Function]] = {
+        statement.instruction match {
+            case call: Call ⇒ call.calledValue match {
+                case function: Function ⇒ Some(Set(function))
+                case _                  ⇒ Some(Set()) // TODO
+            }
+            case _ ⇒ None
+        }
     }
 
     override def isExitStatement(statement: LLVMStatement): Boolean = statement.instruction match {

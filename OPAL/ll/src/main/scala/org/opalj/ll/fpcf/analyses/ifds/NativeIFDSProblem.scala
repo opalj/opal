@@ -4,6 +4,7 @@ package org.opalj.ll.fpcf.analyses.ifds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.value.Function
@@ -12,5 +13,10 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val llvmProject = project.get(LLVMProjectKey)
 
-    override def outsideAnalysisContext(callee: Function): Option[OutsideAnalysisContextHandler] = None
+    override def outsideAnalysisContext(callee: Function): Option[(LLVMStatement, LLVMStatement, Fact, Getter) ⇒ Set[Fact]] = {
+        callee.basicBlockCount match {
+            case 0 ⇒ Some((_: LLVMStatement, _: LLVMStatement, in: Fact, _: Getter) ⇒ Set(in))
+            case _ ⇒ None
+        }
+    }
 }
