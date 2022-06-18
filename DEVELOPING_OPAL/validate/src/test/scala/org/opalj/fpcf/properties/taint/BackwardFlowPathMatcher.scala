@@ -33,7 +33,7 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
                 case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method ⇒
                     (m, inputFact)
             }.flatMap(propertyStore(_, propertyKey) match {
-                case FinalEP(_, OldTaint(result)) ⇒
+                case FinalEP(_, OldTaint(result, _)) ⇒
                     result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).collect {
                         case FlowFact(methods) ⇒ methods.map(_.name)
                     }

@@ -161,7 +161,12 @@ case class Store(ref: LLVMValueRef) extends Instruction(ref) {
     def src: Value = operand(0)
     def dst: Value = operand(1)
 }
-case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref)
+case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref) {
+    def base: Value = operand(0)
+    def isConstant = (1 until numOperands).forall(operand(_).isInstanceOf[ConstantIntValue])
+    def constants = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+    def isZero = isConstant && constants.forall(_ == 0)
+}
 case class Trunc(ref: LLVMValueRef) extends Instruction(ref)
 case class ZExt(ref: LLVMValueRef) extends Instruction(ref)
 case class SExt(ref: LLVMValueRef) extends Instruction(ref)

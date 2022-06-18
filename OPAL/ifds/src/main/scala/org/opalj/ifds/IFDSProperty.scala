@@ -11,6 +11,7 @@ trait IFDSPropertyMetaInformation[S, IFDSFact] extends PropertyMetaInformation {
      * @return An IFDSProperty containing the `result`.
      */
     def create(result: Map[S, Set[IFDSFact]]): IFDSProperty[S, IFDSFact]
+    def create(result: Map[S, Set[IFDSFact]], debugData: Map[S, Set[IFDSFact]]): IFDSProperty[S, IFDSFact]
 }
 
 abstract class IFDSProperty[S, IFDSFact]
@@ -18,9 +19,14 @@ abstract class IFDSProperty[S, IFDSFact]
     with IFDSPropertyMetaInformation[S, IFDSFact] {
 
     /**
-     * Maps exit statements to the data flow facts, which hold after them.
+     * Maps exit statements to the data flow facts which hold before them.
      */
     def flows: Map[S, Set[IFDSFact]]
+
+    /**
+     * Maps all statements to the data flow facts which hold before them if debug setting is enabled.
+     */
+    def debugData: Map[S, Set[IFDSFact]]
 
     override def equals(other: Any): Boolean = other match {
         case that: IFDSProperty[S, IFDSFact] ⇒

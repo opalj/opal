@@ -43,6 +43,20 @@ Java_TaintTest_propagate_1zero_1to_1sink(JNIEnv *env, jobject obj, jint a) {
 }
 
 JNIEXPORT void JNICALL
+Java_TaintTest_native_1array_1tainted(JNIEnv *env, jobject obj) {
+    int a[2] = {0, 0};
+    a[1] = source();
+    sink(a[1]);
+}
+
+JNIEXPORT void JNICALL
+Java_TaintTest_native_1array_1untainted(JNIEnv *env, jobject obj) {
+    int a[2] = {0, 0};
+    a[0] = source();
+    sink(a[1]);
+}
+
+JNIEXPORT void JNICALL
 Java_TaintTest_propagate_1to_1java_1sink(JNIEnv *env, jobject obj, jint a) {
     jclass klass = (*env)->GetObjectClass(env, obj);
     // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/types.html#type-signatures

@@ -36,7 +36,7 @@ class ExpectedCalleeMatcher extends VTAMatcher {
                 case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method ⇒
                     (m, inputFact)
             }.flatMap(propertyStore(_, propertyKey) match {
-                case FinalEP(_, VTAResult(result)) ⇒
+                case FinalEP(_, VTAResult(result, _)) ⇒
                     result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).collect {
                         case CalleeType(index, t, upperBound) ⇒
                             Seq((

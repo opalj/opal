@@ -3,7 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeIFDSProblem}
-import org.opalj.ll.llvm.value.{Add, Alloca, Call, Function, GetElementPtr, Load, PHI, Ret, Store, Sub}
+import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, Function, GetElementPtr, Load, PHI, Ret, Store, Sub}
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
 abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
@@ -23,13 +23,21 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
     override def normalFlow(statement: LLVMStatement, in: NativeFact, predecessor: Option[LLVMStatement]): Set[NativeFact] = statement.instruction match {
         case _: Alloca ⇒ Set(in)
         case store: Store ⇒ in match {
-            case NativeVariable(value) if value == store.src ⇒ Set(in, NativeVariable(store.dst))
+            case NativeVariable(value) if value == store.src ⇒ store.dst match {
+                case dst: Alloca                          ⇒ Set(in, NativeVariable(dst))
+                case gep: GetElementPtr if gep.isConstant ⇒ Set(in, NativeArrayElement(gep.base, gep.constants))
+            }
+            case NativeArrayElement(base, indices) if store.src == base ⇒ Set(in, NativeArrayElement(store.dst, indices))
             case NativeVariable(value) if value == store.dst ⇒ Set()
-            case _                                           ⇒ Set(in)
+            case _ ⇒ Set(in)
         }
         case load: Load ⇒ in match {
             case NativeVariable(value) if value == load.src ⇒ Set(in, NativeVariable(load))
-            case _                                          ⇒ Set(in)
+            case NativeArrayElement(base, indices) ⇒ load.src match {
+                case gep: GetElementPtr if gep.isConstant && gep.base == base && gep.constants == indices ⇒ Set(in, NativeVariable(load))
+                case _ ⇒ Set(in, NativeArrayElement(load, indices))
+            }
+            case _ ⇒ Set(in)
         }
         case add: Add ⇒ in match {
             case NativeVariable(value) if value == add.op1 || value == add.op2 ⇒ Set(in, NativeVariable(add))
@@ -40,8 +48,13 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
             case _ ⇒ Set(in)
         }
         case gep: GetElementPtr ⇒ in match {
-            case NativeVariable(value) ⇒ Set(in) // TODO
-            case _                     ⇒ Set(in)
+            case NativeVariable(value) if value == gep.base ⇒ Set(in, NativeVariable(gep))
+            case NativeArrayElement(base, indices) if base == gep.base && gep.isZero ⇒ Set(in, NativeArrayElement(gep, indices))
+            case _ ⇒ Set(in)
+        }
+        case bitcast: BitCast ⇒ in match {
+            case NativeVariable(value) if value == bitcast.operand(0) ⇒ Set(in, NativeVariable(bitcast))
+            case _ ⇒ Set(in)
         }
         case _ ⇒ Set(in)
     }
@@ -63,7 +76,11 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
         }
         // TODO pass other java taints
         case NativeNullFact ⇒ Set(in)
-        case _              ⇒ Set() // Nothing to do
+        case NativeArrayElement(base, indices) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(base) match {
+            case Some(index) ⇒ Set(NativeArrayElement(callee.argument(index), indices))
+            case None        ⇒ Set()
+        }
+        case _ ⇒ Set() // Nothing to do
 
     }
 

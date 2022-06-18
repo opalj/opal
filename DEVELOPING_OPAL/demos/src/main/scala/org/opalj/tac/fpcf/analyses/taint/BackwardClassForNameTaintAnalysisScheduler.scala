@@ -112,7 +112,7 @@ class BackwardClassForNameTaintAnalysisRunner extends AbsractIFDSAnalysisRunner 
             case EPS((m: DefinedMethod, inputFact)) if canBeCalledFromOutside(m, ps) ⇒
                 (m, inputFact)
         }.flatMap(ps(_, propertyKey) match {
-            case FinalEP(_, OldTaint(result)) ⇒
+            case FinalEP(_, OldTaint(result, _)) ⇒
                 result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).filter {
                     case FlowFact(_) ⇒ true
                     case _           ⇒ false

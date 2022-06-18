@@ -24,7 +24,7 @@ case class NativeVariable(value: Value) extends NativeFact
  * @param element The index of the tainted element in the array.
  */
 case class JavaArrayElement(index: Int, element: Int) extends NativeFact
-case class NativeArrayElement(value: Value, element: Int) extends NativeFact
+case class NativeArrayElement(base: Value, indices: Iterable[Long]) extends NativeFact
 
 /**
  * A tainted static field.

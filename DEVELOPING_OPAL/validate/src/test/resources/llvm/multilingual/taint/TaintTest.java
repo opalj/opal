@@ -6,6 +6,8 @@ public class TaintTest {
         private native int sanitize_only_a_into_sink (int a, int b);
         private native void propagate_identity_to_sink(int a);
         private native void propagate_zero_to_sink(int a);
+        private native void native_array_tainted();
+        private native void native_array_untainted();
         private native void propagate_to_java_sink(int a);
         private native int propagate_from_java_source();
         private native int propagate_java_sanitize(int a);
@@ -26,9 +28,11 @@ public class TaintTest {
             demo.test_native_indirect_flow();
             demo.test_native_identity_flow();
             demo.test_native_zero_no_flow();
-            demo.test_native_call_java_sink_flow();
+            demo.test_native_array_tainted_flow();
+            demo.test_native_array_untainted_no_flow();
+            /*demo.test_native_call_java_sink_flow();
             demo.test_native_call_java_source_flow();
-            demo.test_native_call_java_sanitize_no_flow();
+            demo.test_native_call_java_sanitize_no_flow();*/
             System.out.println("done");
         }
 
@@ -93,7 +97,17 @@ public class TaintTest {
             this.propagate_zero_to_sink(source());
         }
 
-        public void test_native_call_java_sink_flow() {
+        public void test_native_array_tainted_flow() {
+            System.out.println("native array tainted");
+            this.native_array_tainted();
+        }
+
+        public void test_native_array_untainted_no_flow() {
+            System.out.println("native array untainted");
+            this.native_array_untainted();
+        }
+
+        /*public void test_native_call_java_sink_flow() {
             System.out.println("native call java sink");
             this.propagate_to_java_sink(source());
         }
@@ -106,7 +120,7 @@ public class TaintTest {
         public void test_native_call_java_sanitize_no_flow() {
             System.out.println("native call java sanitize");
             this.sink(this.propagate_java_sanitize(this.source()));
-        }
+        }*/
 
         public int indirect_source() {
             return source();

@@ -162,6 +162,45 @@ define dso_local i32 @zero(i32 noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
+define dso_local void @Java_TaintTest_native_1array_1tainted(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1) #0 {
+  %3 = alloca %struct.JNINativeInterface_**, align 8
+  %4 = alloca %struct._jobject*, align 8
+  %5 = alloca [2 x i32], align 4
+  store %struct.JNINativeInterface_** %0, %struct.JNINativeInterface_*** %3, align 8
+  store %struct._jobject* %1, %struct._jobject** %4, align 8
+  %6 = bitcast [2 x i32]* %5 to i8*
+  call void @llvm.memset.p0i8.i64(i8* align 4 %6, i8 0, i64 8, i1 false)
+  %7 = call i32 @source()
+  %8 = getelementptr inbounds [2 x i32], [2 x i32]* %5, i64 0, i64 1
+  store i32 %7, i32* %8, align 4
+  %9 = getelementptr inbounds [2 x i32], [2 x i32]* %5, i64 0, i64 1
+  %10 = load i32, i32* %9, align 4
+  call void @sink(i32 noundef %10)
+  ret void
+}
+
+; Function Attrs: argmemonly nofree nounwind willreturn writeonly
+declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1 immarg) #1
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local void @Java_TaintTest_native_1array_1untainted(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1) #0 {
+  %3 = alloca %struct.JNINativeInterface_**, align 8
+  %4 = alloca %struct._jobject*, align 8
+  %5 = alloca [2 x i32], align 4
+  store %struct.JNINativeInterface_** %0, %struct.JNINativeInterface_*** %3, align 8
+  store %struct._jobject* %1, %struct._jobject** %4, align 8
+  %6 = bitcast [2 x i32]* %5 to i8*
+  call void @llvm.memset.p0i8.i64(i8* align 4 %6, i8 0, i64 8, i1 false)
+  %7 = call i32 @source()
+  %8 = getelementptr inbounds [2 x i32], [2 x i32]* %5, i64 0, i64 0
+  store i32 %7, i32* %8, align 4
+  %9 = getelementptr inbounds [2 x i32], [2 x i32]* %5, i64 0, i64 1
+  %10 = load i32, i32* %9, align 4
+  call void @sink(i32 noundef %10)
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
 define dso_local void @Java_TaintTest_propagate_1to_1java_1sink(%struct.JNINativeInterface_** noundef %0, %struct._jobject* noundef %1, i32 noundef %2) #0 {
   %4 = alloca %struct.JNINativeInterface_**, align 8
   %5 = alloca %struct._jobject*, align 8
@@ -277,10 +316,11 @@ define dso_local i32 @source() #0 {
   ret i32 42
 }
 
-declare i32 @printf(i8* noundef, ...) #1
+declare i32 @printf(i8* noundef, ...) #2
 
 attributes #0 = { noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { argmemonly nofree nounwind willreturn writeonly }
+attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

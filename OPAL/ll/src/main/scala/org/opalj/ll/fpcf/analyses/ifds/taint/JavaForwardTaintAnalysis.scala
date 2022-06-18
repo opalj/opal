@@ -132,7 +132,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             case ArrayElement(index, taintedIndex) ⇒
                 allParamsWithIndices.flatMap {
                     case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
-                        Some(NativeArrayElement(callee.argument(paramIndex + 1), taintedIndex)) // offset JNIEnv
+                        Some(NativeVariable(callee.argument(paramIndex + 1))) // offset JNIEnv
                     case _ ⇒ None // Nothing to do
                 }.toSet
 

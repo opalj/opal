@@ -99,6 +99,14 @@ case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[C, _], C]() {
      * @return The edges reaching statement if any. In case the statement minds about predecessors it is a map with an entry for each predecessor
      */
     def get(statement: S): Option[Either[Set[IFDSFact], Map[S, Set[IFDSFact]]]] = edges.get(statement)
+
+    def debugData: Map[S, Set[IFDSFact]] = edges.foldLeft(Map.empty[S, Set[IFDSFact]])((result, elem) ⇒ {
+        val facts: Set[IFDSFact] = elem._2 match {
+            case Right(facts) ⇒ facts.foldLeft(Set.empty[IFDSFact])(_ ++ _._2)
+            case Left(facts)  ⇒ facts
+        }
+        result.updated(elem._1, result.getOrElse(elem._1, Set.empty) ++ facts)
+    })
 }
 
 /**
@@ -179,7 +187,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
      *
      */
     private def createResult()(implicit state: State): ProperPropertyComputationResult = {
-        val propertyValue = createPropertyValue(collectResult)
+        val propertyValue = createPropertyValue()
         val dependees = state.dependees.forResult
         if (dependees.isEmpty) Result(state.source, propertyValue)
         else InterimResult.forUB(state.source, propertyValue, dependees, propertyUpdate)
@@ -191,8 +199,11 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
      * @param result Maps each exit statement to the facts, which hold after the exit statement.
      * @return An IFDSProperty containing the `result`.
      */
-    private def createPropertyValue(result: Map[S, Set[IFDSFact]]): IFDSProperty[S, IFDSFact] =
-        propertyKey.create(result)
+    private def createPropertyValue()(implicit state: State): IFDSProperty[S, IFDSFact] =
+        if (project.config.getBoolean(ConfigKeyPrefix+"debug"))
+            propertyKey.create(collectResult, state.pathEdges.debugData)
+        else
+            propertyKey.create(collectResult)
 
     /**
      * Collects the facts valid at all exit nodes based on the current results.
@@ -200,14 +211,8 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
      * @return A map, mapping from each exit statement to the facts, which flow into exit statement.
      */
     private def collectResult(implicit state: State): Map[S, Set[IFDSFact]] = {
-        var result = Map.empty[S, Set[IFDSFact]]
-        for { entry ← state.endSummaries } {
-            result.get(entry._1) match {
-                case Some(existingFacts) ⇒ result = result.updated(entry._1, existingFacts + entry._2)
-                case None                ⇒ result = result.updated(entry._1, Set(entry._2))
-            }
-        }
-        result
+        state.endSummaries.foldLeft(Map.empty[S, Set[IFDSFact]])((result, entry) ⇒
+            result.updated(entry._1, result.getOrElse(entry._1, Set.empty[IFDSFact]) + entry._2))
     }
 
     /**

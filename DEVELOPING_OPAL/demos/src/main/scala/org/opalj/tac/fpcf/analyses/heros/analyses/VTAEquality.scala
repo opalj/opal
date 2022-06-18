@@ -123,8 +123,8 @@ object VTAEquality {
             }
             .foreach { entity ⇒
                 val entityResult = propertyStore(entity, IFDSBasedVariableTypeAnalysisScheduler.property.key) match {
-                    case FinalEP(_, VTAResult(map)) ⇒ map
-                    case _                          ⇒ throw new RuntimeException
+                    case FinalEP(_, VTAResult(map, _)) ⇒ map
+                    case _                             ⇒ throw new RuntimeException
                 }
                 entityResult.keys.foreach { declaredMethodStatement ⇒
                     val statement = declaredMethodStatement.asJavaStatement
