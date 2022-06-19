@@ -2,11 +2,11 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeIFDSProblem}
-import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, Function, GetElementPtr, Load, PHI, Ret, Store, Sub}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSProblem}
+import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, GetElementPtr, Load, PHI, Ret, Store, Sub}
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
-abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[Function, LLVMStatement, NativeFact] {
+abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[LLVMFunction, LLVMStatement, NativeFact] {
     override def nullFact: NativeFact = NativeNullFact
 
     /**
@@ -68,20 +68,23 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return The facts, which hold after the execution of `statement` under the assumption that
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
-    override def callFlow(call: LLVMStatement, callee: Function, in: NativeFact): Set[NativeFact] = in match {
-        // Taint formal parameter if actual parameter is tainted
-        case NativeVariable(value) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
-            case Some(index) ⇒ Set(NativeVariable(callee.argument(index)))
-            case None        ⇒ Set()
-        }
-        // TODO pass other java taints
-        case NativeNullFact ⇒ Set(in)
-        case NativeArrayElement(base, indices) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(base) match {
-            case Some(index) ⇒ Set(NativeArrayElement(callee.argument(index), indices))
-            case None        ⇒ Set()
-        }
-        case _ ⇒ Set() // Nothing to do
-
+    override def callFlow(call: LLVMStatement, callee: NativeFunction, in: NativeFact): Set[NativeFact] = callee match {
+        case LLVMFunction(callee) ⇒
+            in match {
+                // Taint formal parameter if actual parameter is tainted
+                case NativeVariable(value) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
+                    case Some(index) ⇒ Set(NativeVariable(callee.argument(index)))
+                    case None        ⇒ Set()
+                }
+                // TODO pass other java taints
+                case NativeNullFact ⇒ Set(in)
+                case NativeArrayElement(base, indices) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(base) match {
+                    case Some(index) ⇒ Set(NativeArrayElement(callee.argument(index), indices))
+                    case None        ⇒ Set()
+                }
+                case _ ⇒ Set() // Nothing to do
+            }
+        case _ ⇒ throw new RuntimeException("this case should be handled by outsideAnalysisContext")
     }
 
     /**
@@ -103,16 +106,16 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
                 case _                              ⇒ Set()
             }
             case NativeNullFact ⇒ Set(NativeNullFact)
-            case NativeFlowFact(flow) if !flow.contains(LLVMFunction(call.function)) ⇒
-                Set(NativeFlowFact(LLVMFunction(call.function) +: flow))
+            case NativeFlowFact(flow) if !flow.contains(call.function) ⇒
+                Set(NativeFlowFact(call.function +: flow))
             case _ ⇒ Set()
         }
         if (exit.callable.name == "source") in match {
             case NativeNullFact ⇒ flows += NativeVariable(call.instruction)
         }
         if (exit.callable.name == "sink") in match {
-            case NativeVariable(value) if value == exit.callable.argument(0) ⇒
-                flows += NativeFlowFact(Seq(LLVMFunction(call.callable), LLVMFunction(exit.callable)))
+            case NativeVariable(value) if value == exit.callable.function.argument(0) ⇒
+                flows += NativeFlowFact(Seq(call.callable, exit.callable))
             case _ ⇒
         }
         flows

@@ -7,9 +7,9 @@ import org.opalj.fpcf._
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
 import org.opalj.ll.fpcf.properties.NativeTaint
-import org.opalj.ll.llvm.value.{Function, Ret}
+import org.opalj.ll.llvm.value.Ret
 import org.opalj.tac.Assignment
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
@@ -68,7 +68,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
                 case c                      ⇒ s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
             }).mkString
             val nativeFunctionName = "Java_"+callee.classFile.fqn+"_"+calleeName
-            val function = llvmProject.function(nativeFunctionName).get
+            val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[Fact]
             val entryFacts = nativeCallFlow(call, function, in, callee)
             for (entryFact ← entryFacts) { // ifds line 14
@@ -111,7 +111,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
      */
     private def nativeCallFlow(
         call:         JavaStatement,
-        callee:       Function,
+        callee:       LLVMFunction,
         in:           Fact,
         nativeCallee: Method
     ): Set[NativeFact] = {
@@ -124,7 +124,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
                 allParamsWithIndices.flatMap {
                     case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
                         // TODO: this is passed
-                        Some(NativeVariable(callee.argument(paramIndex + 1))) // offset JNIEnv
+                        Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
                     case _ ⇒ None // Nothing to do
                 }.toSet
 
@@ -132,7 +132,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             case ArrayElement(index, taintedIndex) ⇒
                 allParamsWithIndices.flatMap {
                     case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
-                        Some(NativeVariable(callee.argument(paramIndex + 1))) // offset JNIEnv
+                        Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
                     case _ ⇒ None // Nothing to do
                 }.toSet
 

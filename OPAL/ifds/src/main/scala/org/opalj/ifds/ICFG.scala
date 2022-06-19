@@ -3,7 +3,7 @@ package org.opalj.ifds
 
 import scala.collection.{Set ⇒ SomeSet}
 
-abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, _]] {
+abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]] {
     /**
      * Determines the statements at which the analysis starts.
      *

@@ -3,7 +3,11 @@ package org.opalj.ll.fpcf.analyses.ifds
 import org.opalj.ifds.Callable
 import org.opalj.ll.llvm.value.Function
 
-case class LLVMFunction(val function: Function) extends Callable {
+abstract class NativeFunction extends Callable {
+    def name: String
+}
+
+case class LLVMFunction(function: Function) extends NativeFunction {
     override def name: String = function.name
     override def signature: String = function.name // TODO: add signature
 }

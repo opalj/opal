@@ -17,7 +17,7 @@ class Value(ref: LLVMValueRef) {
         LLVMGetValueName(ref).getString
     }
 
-    def typ: Type = Type(LLVMTypeOf(ref))
+    def typ: Type = Type(LLVMTypeOf(ref)) // because type is a keyword
 
     val address = ref.address
     override def equals(other: Any): Boolean =

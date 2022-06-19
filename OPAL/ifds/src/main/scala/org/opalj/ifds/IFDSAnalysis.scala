@@ -49,7 +49,7 @@ object Dependees {
  * that is the fact reaches the statement as an input.
  * Source fact is the fact within the analysis entity.
  */
-case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[C, _], C]() {
+case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C]() {
     var edges = Map.empty[S, Either[Set[IFDSFact], Map[S, Set[IFDSFact]]]]
 
     /**
@@ -115,7 +115,7 @@ case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[C, _], C]() {
  * @param source The callable and input fact for which the callable is analyzed.
  * @param endSummaries Output facts of the analyzed callable as pairs of exit statement and fact
  */
-protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, _], Work](
+protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], Work](
         val source:        (C, IFDSFact),
         val dependees:     Dependees[Work]           = Dependees[Work](),
         val pathEdges:     PathEdges[IFDSFact, S, C] = PathEdges[IFDSFact, S, C](),
@@ -141,7 +141,7 @@ protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalys
  * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
  * @tparam IFDSFact
  */
-class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, _]](
+class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
         implicit
         project:         SomeProject,
         val ifdsProblem: IFDSProblem[IFDSFact, C, S],
@@ -414,7 +414,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
     }
 }
 
-abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, _]]
+abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
     extends FPCFLazyAnalysisScheduler {
     final override type InitializationData = IFDSAnalysis[IFDSFact, C, S]
     def property: IFDSPropertyMetaInformation[S, IFDSFact]

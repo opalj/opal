@@ -30,9 +30,9 @@ public class TaintTest {
             demo.test_native_zero_no_flow();
             demo.test_native_array_tainted_flow();
             demo.test_native_array_untainted_no_flow();
-            /*demo.test_native_call_java_sink_flow();
+            demo.test_native_call_java_sink_flow();
             demo.test_native_call_java_source_flow();
-            demo.test_native_call_java_sanitize_no_flow();*/
+            demo.test_native_call_java_sanitize_no_flow();
             System.out.println("done");
         }
 
@@ -107,7 +107,7 @@ public class TaintTest {
             this.native_array_untainted();
         }
 
-        /*public void test_native_call_java_sink_flow() {
+        public void test_native_call_java_sink_flow() {
             System.out.println("native call java sink");
             this.propagate_to_java_sink(source());
         }
@@ -120,7 +120,7 @@ public class TaintTest {
         public void test_native_call_java_sanitize_no_flow() {
             System.out.println("native call java sanitize");
             this.sink(this.propagate_java_sanitize(this.source()));
-        }*/
+        }
 
         public int indirect_source() {
             return source();
