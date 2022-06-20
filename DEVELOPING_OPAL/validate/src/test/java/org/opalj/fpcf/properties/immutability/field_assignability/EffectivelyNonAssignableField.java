@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L3FieldAssignabilityAnalysis;
 
 /**
  * Annotation to state that the annotated field reference is immutable

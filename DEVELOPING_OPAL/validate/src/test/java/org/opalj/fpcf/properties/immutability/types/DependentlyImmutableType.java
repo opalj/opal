@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.TypeImmutabilityAnalysis;
 
 /**
  * Annotation to state that the annotated type shallow immutable.
@@ -26,5 +26,5 @@ public @interface DependentlyImmutableType {
 
     String[] parameter() default {""};
 
-    Class<? extends FPCFAnalysis>[] analyses() default {L1TypeImmutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {TypeImmutabilityAnalysis.class};
 }

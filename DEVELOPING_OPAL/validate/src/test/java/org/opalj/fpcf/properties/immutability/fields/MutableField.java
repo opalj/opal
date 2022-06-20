@@ -2,10 +2,7 @@
 package org.opalj.fpcf.properties.immutability.fields;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
-import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 import java.lang.annotation.Documented;
