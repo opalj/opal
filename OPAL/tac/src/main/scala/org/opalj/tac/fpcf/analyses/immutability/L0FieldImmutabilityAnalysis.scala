@@ -28,43 +28,39 @@ import org.opalj.br.SourceFile
 import org.opalj.br.TypeVariableSignature
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.Assignable
-import org.opalj.br.fpcf.properties.FieldAssignability
-import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.MutableType
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
-import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.DependentlyImmutableField
-import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.LazilyInitialized
-import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.NonAssignable
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
-import org.opalj.br.Attribute
-import org.opalj.br.ClassFile
-import org.opalj.br.ClassSignature
-import org.opalj.br.FormalTypeParameter
-import org.opalj.br.fpcf.properties.DependentlyImmutableType
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.MutableClass
+import org.opalj.br.fpcf.properties.immutability.MutableField
+import org.opalj.br.fpcf.properties.immutability.MutableType
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 
 /**
- * Analysis that determines the immutability of org.opalj.br.Field
+ * Analysis that determines the immutability of org.opalj.br.Field.
  * @author Tobias Roth
  */
 class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
@@ -73,11 +69,11 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     /**
      *  Describes the different kinds of dependently immutable fields.
      *
-     *  [[NotDependentlyImmutable]] non-transitively immutable or mutable types could still exist.
+     *  [[NotDependentlyImmutable]] There are non-transitively immutable or mutable types.
      *  Example: Generic<T, MutableClass> f
      *
      *  [[NotNonTransitivelyImmutableOrMutable]] There are no non-transitively immutable and no mutable types.
-     *  Example: Generic<T,T> f
+     *  Example: Generic<T,String> f
      *
      *  [[OnlyTransitivelyImmutable]] There are only transitively immutable types and no generic parameters left.
      *  Example: Generic<String, String> f
@@ -92,7 +88,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             var upperBound:                 FieldImmutability               = TransitivelyImmutableField,
             var typeImmutability:           TypeImmutability                = TransitivelyImmutableType,
             var classImmutability:          ClassImmutability               = TransitivelyImmutableClass,
-            var referenceIsImmutable:       Option[Boolean]                 = None,
+            var fieldIsNotAssignable:       Option[Boolean]                 = None,
             var dependentImmutability:      DependentImmutabilityTypes      = OnlyTransitivelyImmutable,
             var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
             var genericTypeParameters:      Set[String]                     = Set.empty
@@ -108,8 +104,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
     def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
         case field: Field ⇒ determineFieldImmutability(field)
-        case _ ⇒
-            throw new IllegalArgumentException(s"${entity.getClass.getName} is not an org.opalj.br.Field")
+        case _            ⇒ throw new IllegalArgumentException(s"${entity.getClass.getName} is not an org.opalj.br.Field")
     }
 
     private[analyses] def determineFieldImmutability(
@@ -120,52 +115,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
         /**
-         * Returns the formal type parameters from the class' and outer classes' signature
-         */
-        def getFormalTypeParameters: Set[String] = {
-
-            /**
-             *
-             * Extract the formal type parameters if it exists of a class' attribute
-             */
-            def collectFormalTypeParameterFromClassAttribute(attribute: Attribute): Iterator[String] =
-                attribute match {
-                    case ClassSignature(typeParameters, _, _) ⇒
-                        typeParameters.iterator.map { case FormalTypeParameter(identifier, _, _) ⇒ identifier }
-                    case _ ⇒ Iterator.empty
-                }
-
-            /**
-             * If the genericity is nested in an inner class
-             * collect the generic type parameters from the field's outer classes
-             */
-            def getAllFormalParameters(classFile: ClassFile): Iterator[String] = {
-                classFile.attributes.iterator.flatMap(collectFormalTypeParameterFromClassAttribute(_)) ++ {
-                    if (classFile.outerType.isDefined) {
-                        val outerClassFile = project.classFile(classFile.outerType.get._1)
-                        if (outerClassFile.isDefined && outerClassFile.get != classFile) {
-                            getAllFormalParameters(outerClassFile.get)
-                        } else
-                            Iterator.empty
-                    } else
-                        Iterator.empty
-                }
-            }
-            getAllFormalParameters(field.classFile).toSet
-        }
-
-        val classFormalTypeParameters: Set[String] = getFormalTypeParameters
-
-        /**
-         * Returns, if a generic parameter like e.g. 'T' is in the class' or an outer class' signature
-         * @param string The generic type parameter that should be looked for
-         */
-        def isInClassesGenericTypeParameters(string: String): Boolean =
-            classFormalTypeParameters.contains(string)
-
-        /**
-         * Query the type iterator for concrete class types.
-         * Note: Does only work in a closed world assumption!!
+         * Query type iterator for concrete class types.
+         * Note: This only works precisely in a closed world assumption!!
          */
         def queryTypeIterator(implicit state: State, typeIterator: TypeIterator): Unit = {
             val actualTypes = typeIterator.typesProperty(state.field, typeIterator)
@@ -176,22 +127,23 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         def handleGenericity()(implicit state: State): Unit = {
-            var noShallowOrMutableTypesInGenericTypeFound = true
-            var onlyDeepImmutableTypesInGenericTypeFound = true
-            var genericParameters: List[ObjectType] = List()
+            var noNonTransitivelyImmutableOrMutableType = true
+            var onlyTransitivelyImmutableTypes = true
             var noRelevantAttributesFound = true
+            var genericParameters: List[ObjectType] = List()
 
             state.field.attributes.foreach {
 
-                case RuntimeInvisibleAnnotationTable(_) | SourceFile(_) ⇒ // no including generic parameter
+                case RuntimeInvisibleAnnotationTable(_) | SourceFile(_) ⇒ // no generic parameter
 
                 case TypeVariableSignature(t) ⇒
                     state.genericTypeParameters += t
                     noRelevantAttributesFound = false
-                    onlyDeepImmutableTypesInGenericTypeFound = false
-                    state.classImmutability = DependentImmutableClass(Set.empty).meet(state.classImmutability)
-                    if (!isInClassesGenericTypeParameters(t))
-                        noShallowOrMutableTypesInGenericTypeFound = false
+                    onlyTransitivelyImmutableTypes = false
+                    state.classImmutability = DependentlyImmutableClass(state.genericTypeParameters).
+                        meet(state.classImmutability)
+                //if (!isInClassesGenericTypeParameters(t))
+                //    noNonTransitivelyImmutableOrMutableType = false
 
                 case ClassTypeSignature(_, SimpleClassTypeSignature(_, typeArguments), _) ⇒
                     noRelevantAttributesFound = false
@@ -199,10 +151,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     typeArguments.foreach {
 
                         case ProperTypeArgument(_, TypeVariableSignature(identifier)) ⇒
-                            onlyDeepImmutableTypesInGenericTypeFound = false
+                            onlyTransitivelyImmutableTypes = false // At least one generic paramter found
                             state.genericTypeParameters += identifier
-                            if (!isInClassesGenericTypeParameters(identifier))
-                                noShallowOrMutableTypesInGenericTypeFound = false
+                        //if (!isInClassesGenericTypeParameters(identifier))
+                        //    noNonTransitivelyImmutableOrMutableType = false
 
                         case ProperTypeArgument(
                             _,
@@ -219,35 +171,35 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             genericParameters ::= ObjectType(objectPath)
 
                         case _ ⇒
-                            noShallowOrMutableTypesInGenericTypeFound = false
-                            onlyDeepImmutableTypesInGenericTypeFound = false
+                            noNonTransitivelyImmutableOrMutableType = false
+                            onlyTransitivelyImmutableTypes = false
                     }
                 case _ ⇒
-                    noShallowOrMutableTypesInGenericTypeFound = false
-                    onlyDeepImmutableTypesInGenericTypeFound = false
+                    noNonTransitivelyImmutableOrMutableType = false
+                    onlyTransitivelyImmutableTypes = false
             }
 
             genericParameters.foreach(objectType ⇒ {
 
                 propertyStore(objectType, TypeImmutability.key) match {
 
-                    case FinalP(TransitivelyImmutableType) ⇒ //nothing to do here: default value is deep immutable
+                    case LBP(TransitivelyImmutableType) ⇒ //nothing to do here; default value: transitively immutable
 
-                    //no nested generic classes are allowed
+                    //nested generic classes are over-approximated as mutable
                     case UBP(DependentlyImmutableType(_) | NonTransitivelyImmutableType | MutableType) ⇒
-                        noShallowOrMutableTypesInGenericTypeFound = false
-                        onlyDeepImmutableTypesInGenericTypeFound = false
+                        noNonTransitivelyImmutableOrMutableType = false
+                        onlyTransitivelyImmutableTypes = false
 
                     case ep ⇒ state.fieldImmutabilityDependees += ep
                 }
             })
 
-            //Prevents the case of keeping the default values of these
-            // flags only because of no relevant attribute has been found
+            //Prevents the case of keeping the default values of these flags
+            // only because of no relevant attribute have been found
             if (!noRelevantAttributesFound) {
-                if (onlyDeepImmutableTypesInGenericTypeFound) {
+                if (onlyTransitivelyImmutableTypes) {
                     //nothing to do...
-                } else if (noShallowOrMutableTypesInGenericTypeFound &&
+                } else if (noNonTransitivelyImmutableOrMutableType &&
                     state.dependentImmutability != NotDependentlyImmutable) {
                     state.dependentImmutability = NotNonTransitivelyImmutableOrMutable
                 } else
@@ -264,13 +216,12 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             if (referenceType.isArrayType)
                 state.classImmutability = MutableClass
             else {
-                val result = propertyStore(referenceType, ClassImmutability.key)
+                propertyStore(referenceType, ClassImmutability.key) match {
 
-                result match {
                     case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable is default
 
-                    case FinalP(DependentImmutableClass(_)) ⇒
-                        state.classImmutability = DependentImmutableClass(Set.empty).meet(state.classImmutability)
+                    case FinalP(DependentlyImmutableClass(_)) ⇒
+                        state.classImmutability = DependentlyImmutableClass(Set.empty).meet(state.classImmutability)
 
                     case UBP(MutableClass | NonTransitivelyImmutableClass) ⇒
                         state.classImmutability = MutableClass.meet(state.classImmutability)
@@ -288,30 +239,34 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
             if (state.hasFieldImmutabilityDependees) {
                 val lowerBound =
-                    if (state.referenceIsImmutable.isDefined && state.referenceIsImmutable.get)
+                    if (state.fieldIsNotAssignable.isDefined && state.fieldIsNotAssignable.get)
                         NonTransitivelyImmutableField
                     else
                         MutableField
                 state.upperBound =
-                    state.referenceIsImmutable match {
+                    state.fieldIsNotAssignable match {
 
                         case Some(false) ⇒ MutableField
 
-                        case Some(true) | None ⇒
-                            state.classImmutability match {
+                        case _ ⇒ state.classImmutability match {
 
-                                case TransitivelyImmutableClass                   ⇒ TransitivelyImmutableField.meet(state.upperBound)
+                            case TransitivelyImmutableClass ⇒
+                                TransitivelyImmutableField.meet(state.upperBound)
 
-                                case MutableClass | NonTransitivelyImmutableClass ⇒ NonTransitivelyImmutableField.meet(state.upperBound)
+                            case MutableClass | NonTransitivelyImmutableClass ⇒
+                                NonTransitivelyImmutableField.meet(state.upperBound)
 
-                                case DependentImmutableClass(_) ⇒ //TransitivelyImmutableField
-                                    state.dependentImmutability match {
-                                        case NotNonTransitivelyImmutableOrMutable ⇒
-                                            DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
-                                        case OnlyTransitivelyImmutable ⇒ TransitivelyImmutableField.meet(state.upperBound)
-                                        case NotDependentlyImmutable   ⇒ NonTransitivelyImmutableField.meet(state.upperBound)
-                                    }
-                            }
+                            case DependentlyImmutableClass(_) ⇒
+                                state.dependentImmutability match {
+                                    case NotNonTransitivelyImmutableOrMutable ⇒
+                                        DependentlyImmutableField(state.genericTypeParameters).
+                                            meet(state.upperBound)
+                                    case OnlyTransitivelyImmutable ⇒ TransitivelyImmutableField.
+                                        meet(state.upperBound)
+                                    case NotDependentlyImmutable ⇒
+                                        NonTransitivelyImmutableField.meet(state.upperBound)
+                                }
+                        }
                     }
 
                 if (lowerBound == state.upperBound)
@@ -325,10 +280,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         c
                     )
             } else {
-                state.referenceIsImmutable match {
+                state.fieldIsNotAssignable match {
 
-                    case Some(false) ⇒
-                        Result(field, MutableField)
+                    case Some(false) ⇒ Result(field, MutableField)
 
                     case Some(true) ⇒
                         state.classImmutability match {
@@ -339,19 +293,20 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             case NonTransitivelyImmutableClass | MutableClass ⇒
                                 Result(field, NonTransitivelyImmutableField.meet(state.upperBound))
 
-                            case DependentImmutableClass(_) ⇒ state.dependentImmutability match {
+                            case DependentlyImmutableClass(_) ⇒ state.dependentImmutability match {
 
                                 case OnlyTransitivelyImmutable ⇒
                                     Result(field, TransitivelyImmutableField.meet(state.upperBound))
 
                                 case NotNonTransitivelyImmutableOrMutable ⇒
-                                    Result(field, DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound))
+                                    Result(field, DependentlyImmutableField(state.genericTypeParameters).
+                                        meet(state.upperBound))
 
                                 case NotDependentlyImmutable ⇒
                                     Result(field, NonTransitivelyImmutableField.meet(state.upperBound))
                             }
                         }
-                    case None ⇒ throw new Error("Reference immutability is not determined yet!")
+                    case None ⇒ throw new Error("Assignability is not determined yet!")
                 }
             }
         }
@@ -374,28 +329,29 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 eps match {
                     case LBP(TransitivelyImmutableClass | TransitivelyImmutableType) ⇒
 
-                    case UBP(NonTransitivelyImmutableClass | MutableClass) ⇒
-                        state.classImmutability = MutableClass
+                    case UBP(NonTransitivelyImmutableClass | MutableClass)           ⇒ state.classImmutability = MutableClass
 
                     case UBP(Assignable | UnsafelyLazilyInitialized) ⇒
-                        state.referenceIsImmutable = Some(false)
+                        state.fieldIsNotAssignable = Some(false)
                         return Result(state.field, MutableField);
 
                     case LBP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒
-                        state.referenceIsImmutable = Some(true)
+                        state.fieldIsNotAssignable = Some(true)
 
-                    case FinalP(DependentImmutableClass(_)) ⇒
-                        state.classImmutability = DependentImmutableClass(Set.empty)
+                    case FinalP(DependentlyImmutableClass(_)) ⇒
+                        state.classImmutability = DependentlyImmutableClass(Set.empty)
 
                     case UBP(DependentlyImmutableType(_) | NonTransitivelyImmutableType | MutableType) ⇒
                         state.dependentImmutability = NotDependentlyImmutable
 
-                    case ubp @ UBP(TransitivelyImmutableClass | TransitivelyImmutableType | DependentImmutableClass(_)) ⇒
+                    case ubp @ UBP(TransitivelyImmutableClass |
+                        TransitivelyImmutableType | DependentlyImmutableClass(_)) ⇒
                         state.fieldImmutabilityDependees += ubp
 
                     case ubp @ UBP(EffectivelyNonAssignable | NonAssignable) ⇒ state.fieldImmutabilityDependees += ubp
 
-                    case ep                                                  ⇒ throw new Exception(s"$ep + was not covered")
+                    case ep ⇒
+                        throw new Exception(s"$ep + was not covered")
                 }
             }
             createResult
@@ -406,10 +362,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         propertyStore(field, FieldAssignability.key) match {
 
-            case FinalP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒
-                state.referenceIsImmutable = Some(true)
+            case LBP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒
+                state.fieldIsNotAssignable = Some(true)
 
-            case FinalP(Assignable | UnsafelyLazilyInitialized) ⇒
+            case UBP(Assignable | UnsafelyLazilyInitialized) ⇒
                 return Result(field, MutableField);
 
             case ep ⇒ state.fieldImmutabilityDependees += ep
@@ -418,15 +374,16 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         /**
          * Determines whether the field is dependent immutable if the flag [[considerGenericity]] is set
          */
-        considerGenericity = true
         if (considerGenericity)
             handleGenericity()
         else //The analysis is optimistic so the default value must be adapted in this case
             state.dependentImmutability = NotDependentlyImmutable
 
-        if (field.fieldType.isReferenceType && (!state.classImmutability.isInstanceOf[DependentImmutableClass] || state.dependentImmutability == NotDependentlyImmutable)) { //TODO
+        if (field.fieldType.isReferenceType &&
+            (!state.classImmutability.isInstanceOf[DependentlyImmutableClass] ||
+                state.dependentImmutability == NotDependentlyImmutable)) {
             queryTypeIterator
-        } //else state.classImmutability = TransitivelyImmutable is default
+        } else state.classImmutability = TransitivelyImmutableClass
 
         createResult()
     }
@@ -441,14 +398,11 @@ trait L0FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     )
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
-
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 }
 
 /**
- *
  * Executor for the eager field immutability analysis.
- *
  */
 object EagerL0FieldImmutabilityAnalysis
     extends L0FieldImmutabilityAnalysisScheduler
@@ -460,7 +414,7 @@ object EagerL0FieldImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldImmutabilityAnalysis(p)
-        val fields = p.allProjectClassFiles.flatMap(classfile ⇒ classfile.fields)
+        val fields = p.allFields // allProjectClassFiles.flatMap(classfile ⇒ classfile.fields)
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
