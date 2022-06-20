@@ -1,22 +1,29 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
+package tac
 package fpcf
 package analyses
+package immutability
+package field_assignability
 
+import org.opalj.br.Field
+import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.fpcf.properties.FieldAssignability
-import org.opalj.br.fpcf.properties.Assignable
-import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.NonAssignable
 
 /**
  * Determines if a private, static, non-final field is always initialized at most once or
@@ -31,9 +38,9 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
 
     /**
      * Invoked for in the lazy computation case.
-     * Final fields are considered [[org.opalj.br.fpcf.properties.DeclaredFinalField]], non-final and
+     * Final fields are considered [[org.opalj.br.fpcf.properties.immutability.NonAssignable]], non-final and
      * non-private fields or fields of library classes whose method bodies are not available are
-     * considered [[org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis]].
+     * considered [[org.opalj.br.fpcf.properties.immutability.Assignable]].
      * For all other cases the call is delegated to [[determineFieldAssignability]].
      */
     def determineFieldAssignabilityLazy(e: Entity): ProperPropertyComputationResult = {
