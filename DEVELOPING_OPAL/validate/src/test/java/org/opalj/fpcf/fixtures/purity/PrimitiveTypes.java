@@ -37,10 +37,10 @@ class PrimitiveTypes {
 
     @CompileTimePure(value = "Uses effectively final field",
             eps = @EP(cf = PrimitiveTypes.class, field = "effectivelyFinalField",
-                    pk = "FieldImmutability", p = "ShallowImmutableField"))
+                    pk = "FieldImmutability", p = "NonTransitivelyImmutableField"))
     @Pure(value = "Uses effectively final field",
             eps = @EP(cf = PrimitiveTypes.class, field = "effectivelyFinalField",
-                    pk = "FieldImmutability", p = "ShallowImmutableField"),
+                    pk = "FieldImmutability", p = "NonTransitivelyImmutableField"),
             analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
     public int getScaledEffectivelyFinalField() {

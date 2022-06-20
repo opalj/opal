@@ -55,10 +55,10 @@ final class DependentCalls { // This class is immutable
 
     @Pure(value = "field used is effectively final",
             eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldImmutability",
-                    p = "ShallowImmutableField"))
+                    p = "NonTransitivelyImmutableField"))
     @Impure(value = "field used not recognized as effectively final",
             eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldImmutability",
-                    p = "ShallowImmutableField"),
+                    p = "NonTransitivelyImmutableField"),
             negate = true, analyses = L0PurityAnalysis.class)
     public static int pureUsesEffectivelyFinalField(int i, int j) {
         return i * j * myValue;
