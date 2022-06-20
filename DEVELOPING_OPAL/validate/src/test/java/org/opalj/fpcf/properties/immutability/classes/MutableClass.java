@@ -3,7 +3,7 @@ package org.opalj.fpcf.properties.immutability.classes;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -24,5 +24,5 @@ public @interface MutableClass {
      */
     String value();
 
-    Class<? extends FPCFAnalysis>[] analyses() default {L1ClassImmutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {ClassImmutabilityAnalysis.class};
 }

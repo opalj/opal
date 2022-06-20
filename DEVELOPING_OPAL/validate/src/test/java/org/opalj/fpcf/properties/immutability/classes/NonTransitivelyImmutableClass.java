@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
 
 /**
  * Annotation to state that the annotated class is shallow immutable
@@ -24,5 +24,5 @@ public @interface NonTransitivelyImmutableClass {
      */
     String value();
 
-    Class<? extends FPCFAnalysis>[] analyses() default {L1ClassImmutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {ClassImmutabilityAnalysis.class};
 }
