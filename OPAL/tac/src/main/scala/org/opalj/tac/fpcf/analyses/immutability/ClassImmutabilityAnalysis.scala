@@ -16,25 +16,13 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.DependentlyImmutableField
-import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.EOptionP
-
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.IncrementalResult
-
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBP
 import org.opalj.fpcf.LUBP
@@ -53,25 +41,34 @@ import org.opalj.log.OPALLogger
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimE
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.MutableClass
+import org.opalj.br.fpcf.properties.immutability.MutableField
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 
 /**
  *
- * Determines the mutability of instances of a specific class. In case the class
- * is abstract the (implicit) assumption is made that all abstract methods (if any) are/can
+ * Determines the immutability of instances of a specific class. In the case of an abstract class
+ * the (implicit) assumption is made that all abstract methods (if any) are/can
  * be implemented without necessarily/always requiring additional state; i.e., only the currently
- * defined fields are taken into consideration. An interfaces is always considered to be immutable.
+ * defined fields are taken into consideration. An interfaces is always considered to be transitively immutable.
  * If you need to know if all possible instances of an interface or some type; i.e., all instances
- * of the classes that implement the respective interface/inherit from some class are immutable,
- * you can query the [[org.opalj.br.fpcf.properties.TypeImmutability]] property.
+ * of the classes that implement the respective interface/inherit from some class are transitively immutable,
+ * you can query the [[TypeImmutability]] property.
  *
  * In case of incomplete class hierarchies or if the class hierarchy is complete, but some
  * class files are not found the sound approximation is done that the respective classes are
  * mutable.
  *
- * This analysis uses the [[org.opalj.br.fpcf.properties.FieldImmutability]] property to determine
- * the field immutability.
+ * This analysis uses the [[FieldImmutability]] property to determine the immutability of a class.
  *
- * TODO Discuss the case if a constructor calls an instance method which is overrideable (See Verifiable Functional Purity Paper for some arguements.)
+ * TODO Discuss the case if a constructor calls an instance method which is overrideable (See Verifiable Functional Purity Paper for some arguments.)
  *
  * @author Michael Eichberg
  * @author Florian Kübler
@@ -79,19 +76,18 @@ import org.opalj.br.analyses.ProjectInformationKeys
  * @author Tobias Roth
  *
  */
-class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
    * The analysis is implemented as an incremental analysis which starts with the analysis
    * of those types which directly inherit from java.lang.Object and then propagates the
-   * mutability information down the class hierarchy.
+   * immutability information down the class hierarchy.
    *
    * This propagation needs to be done eagerly to ensure that all types are associated with
    * some property when the initial computation finishes and fallback properties are associated.
    */
 
     /**
-     * Creates a result object that sets this type and all subclasses of if to the given
-     * immutability rating.
+     * Creates a result object that sets this type and all subclasses of if to the given immutability rating.
      */
     @inline private[this] def createResultForAllSubtypes(
         t:            ObjectType,
@@ -104,10 +100,10 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         MultiResult(r)
     }
     @inline private[this] def createIncrementalResult(
-        t:                   ObjectType,
-        cfMutability:        EOptionP[Entity, Property],
-        cfMutabilityIsFinal: Boolean,
-        result:              ProperPropertyComputationResult
+        t:                     ObjectType,
+        cfImmutability:        EOptionP[Entity, Property],
+        cfImmutabilityIsFinal: Boolean,
+        result:                ProperPropertyComputationResult
     ): IncrementalResult[ClassFile] = {
         var results: List[ProperPropertyComputationResult] = List(result)
         var nextComputations: List[(PropertyComputation[ClassFile], ClassFile)] = Nil
@@ -117,13 +113,13 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 case Some(scf) ⇒
                     nextComputations ::= (
                         (
-                            determineL1ClassImmutability(t, cfMutability, cfMutabilityIsFinal,
+                            determineClassImmutability(t, cfImmutability, cfImmutabilityIsFinal,
                                 lazyComputation = false), scf
                         )
                     )
                 case None ⇒
                     OPALLogger.warn(
-                        "project configuration - object immutability analysis",
+                        "project configuration - class immutability analysis",
                         s"missing class file of ${t.toJava}; setting all subtypes to mutable"
                     )
                     results ::= createResultForAllSubtypes(t, MutableClass)
@@ -152,18 +148,20 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         genericTypeBounds
     }
 
+    /*
+     * If the type is transitively immutable the class itself is also transitively immutable.
+     */
     val defaultTransitivelyImmutableTypes = project.config.getStringList(
-        "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
+        "org.opalj.fpcf.analyses.TypeImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
     ).toArray().toList.map(s ⇒ ObjectType(s.asInstanceOf[String])).toSet
 
-    def doDetermineL1ClassImmutability(e: Entity): ProperPropertyComputationResult = {
+    def doDetermineClassImmutability(e: Entity): ProperPropertyComputationResult = {
         e match {
             case t: ObjectType ⇒
                 if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
                     return Result(t, TransitivelyImmutableClass)
                 //this is safe
-                val a = classHierarchy.superclassType(t)
-                a match {
+                classHierarchy.superclassType(t) match {
                     case None ⇒ Result(t, MutableClass);
                     case Some(superClassType) ⇒
                         val cf = project.classFile(t) match {
@@ -176,14 +174,14 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                             case UBP(MutableClass) ⇒
                                 Result(t, MutableClass)
                             case eps: EPS[ObjectType, ClassImmutability] ⇒
-                                determineL1ClassImmutability(
+                                determineClassImmutability(
                                     superClassType,
                                     eps,
                                     eps.isFinal,
                                     lazyComputation = true
                                 )(cf)
                             case epk ⇒
-                                determineL1ClassImmutability(
+                                determineClassImmutability(
                                     superClassType,
                                     epk,
                                     superClassMutabilityIsFinal = false,
@@ -208,7 +206,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
      *      must not be "MutableObject"; this case has to be handled explicitly. Hence,
      *      the mutability is either unknown, immutable or (at least) conditionally immutable.
      */
-    def determineL1ClassImmutability(
+    def determineClassImmutability(
         superClassType:              ObjectType,
         superClassInformation:       EOptionP[Entity, Property],
         superClassMutabilityIsFinal: Boolean,
@@ -224,14 +222,14 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
             dependees += (SuperClassKey -> superClassInformation)
         }
 
-        // Collect all fields for which we need to determine the effective mutability!
-        var hasFieldsWithUnknownMutability = false
+        // Collect all fields for which we need to determine the effective immutability!
+        var hasFieldsWithUnknownImmutability = false
 
         val instanceFields = cf.fields.iterator.filter { f ⇒
             !f.isStatic
         }.toList
-        var hasShallowImmutableFields = false
-        var hasDependentImmutableFields = false
+        var hasNonTransitivelyImmutableFields = false
+        var hasDependentlyImmutableFields = false
         var genericTypeParameters: Set[String] = Set.empty
 
         val fieldsPropertyStoreInformation = propertyStore(instanceFields, FieldImmutability)
@@ -244,21 +242,21 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 else
                     return createResultForAllSubtypes(t, MutableClass);
 
-            case FinalP(NonTransitivelyImmutableField) ⇒ hasShallowImmutableFields = true
+            case FinalP(NonTransitivelyImmutableField) ⇒ hasNonTransitivelyImmutableFields = true
 
             case FinalP(DependentlyImmutableField(parameters)) ⇒
                 genericTypeParameters ++= parameters
-                hasDependentImmutableFields = true
+                hasDependentlyImmutableFields = true
 
             case FinalP(TransitivelyImmutableField) ⇒
 
             case ep @ InterimE(e) ⇒
-                hasFieldsWithUnknownMutability = true
+                hasFieldsWithUnknownImmutability = true
                 dependees += (e -> ep)
 
             case epk @ EPK(e: Entity, _) ⇒
-                // <=> The mutability information is not yet available.
-                hasFieldsWithUnknownMutability = true
+                // <=> The immutability information is not yet available.
+                hasFieldsWithUnknownImmutability = true
                 dependees += (e -> epk)
 
             case _ ⇒
@@ -274,18 +272,18 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
             case UBP(MutableClass)                  ⇒ MutableClass
             case UBP(NonTransitivelyImmutableClass) ⇒ NonTransitivelyImmutableClass
-            case UBP(DependentImmutableClass(parameters)) ⇒
+            case UBP(DependentlyImmutableClass(parameters)) ⇒
                 genericTypeParameters ++= parameters
-                DependentImmutableClass(genericTypeParameters)
+                DependentlyImmutableClass(genericTypeParameters)
             case _ ⇒ TransitivelyImmutableClass
         }
-        if (hasShallowImmutableFields) {
+        if (hasNonTransitivelyImmutableFields) {
             maxLocalImmutability = NonTransitivelyImmutableClass
         }
 
-        if (hasDependentImmutableFields &&
+        if (hasDependentlyImmutableFields &&
             maxLocalImmutability != NonTransitivelyImmutableClass && maxLocalImmutability != MutableClass) {
-            maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
+            maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
         }
 
         if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType)) {
@@ -307,7 +305,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
             return createIncrementalResult(
                 t,
                 FinalEP(t, maxLocalImmutability),
-                cfMutabilityIsFinal = true,
+                cfImmutabilityIsFinal = true,
                 Result(t, maxLocalImmutability)
             );
         }
@@ -329,14 +327,14 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                     if (someEPS.isFinal) dependees -= SuperClassKey
                     maxLocalImmutability = NonTransitivelyImmutableClass
 
-                case UBP(DependentImmutableClass(parameter)) ⇒
+                case UBP(DependentlyImmutableClass(parameter)) ⇒
                     if (someEPS.isFinal) dependees -= SuperClassKey
                     if (maxLocalImmutability != NonTransitivelyImmutableClass) {
                         genericTypeParameters ++= parameter
-                        maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
+                        maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
                     }
 
-                case LBP(NonTransitivelyImmutableClass) ⇒ // super class is a least shallow immutable
+                case LBP(NonTransitivelyImmutableClass) ⇒ // super class is at least non-transitively immutable
                     if (minLocalImmutability != NonTransitivelyImmutableClass &&
                         !dependees.valuesIterator.exists(_.pk == FieldImmutability.key))
                         minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
@@ -344,24 +342,28 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 case LUBP(MutableClass, TransitivelyImmutableClass) ⇒ // No information about superclass
 
                 case FinalP(DependentlyImmutableField(parameter)) ⇒
-                    if (hasShallowImmutableFields) {
+                    if (hasNonTransitivelyImmutableFields) {
                         maxLocalImmutability = NonTransitivelyImmutableClass
-                    } else if (maxLocalImmutability != MutableClass && maxLocalImmutability != NonTransitivelyImmutableClass) {
+                    } else if (maxLocalImmutability != MutableClass &&
+                        maxLocalImmutability != NonTransitivelyImmutableClass) {
                         genericTypeParameters ++= parameter
-                        maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
+                        maxLocalImmutability = DependentlyImmutableClass(genericTypeParameters)
                     }
 
                 // Field Immutability related dependencies:
-                case FinalP(TransitivelyImmutableField)                                  ⇒
-                case FinalP(NonTransitivelyImmutableField)                               ⇒ maxLocalImmutability = NonTransitivelyImmutableClass
-                case FinalP(MutableField)                                                ⇒ return Result(t, MutableClass);
-                case UBP(MutableField)                                                   ⇒ return Result(t, MutableClass);
-                case ELBP(e, NonTransitivelyImmutableField | TransitivelyImmutableField) ⇒ dependees -= e
-                case UBP(TransitivelyImmutableField)                                     ⇒ // no information about field mutability
-                case UBP(NonTransitivelyImmutableField)                                  ⇒ maxLocalImmutability = NonTransitivelyImmutableClass
+                case FinalP(TransitivelyImmutableField) ⇒
+                case FinalP(NonTransitivelyImmutableField) ⇒
+                    maxLocalImmutability = NonTransitivelyImmutableClass
+                case FinalP(MutableField) ⇒ return Result(t, MutableClass);
+                case UBP(MutableField)    ⇒ return Result(t, MutableClass);
+                case ELBP(e, NonTransitivelyImmutableField |
+                    TransitivelyImmutableField) ⇒ dependees -= e
+                case UBP(TransitivelyImmutableField)    ⇒ // no information about field mutability
+                case UBP(NonTransitivelyImmutableField) ⇒ maxLocalImmutability = NonTransitivelyImmutableClass
                 case UBP(DependentlyImmutableField(parameter)) if maxLocalImmutability != NonTransitivelyImmutableClass ⇒
                     genericTypeParameters ++= parameter
-                    maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
+                    maxLocalImmutability =
+                        DependentlyImmutableClass(genericTypeParameters)
                 case _ ⇒ Result(t, MutableClass) //TODO check
             }
 
@@ -418,12 +420,12 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
     }
 }
 
-trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 
     final override def uses: Set[PropertyBounds] =
-        PropertyBounds.lubs(ClassImmutability, FieldImmutability) //TypeImmutability, //XXX
+        PropertyBounds.lubs(ClassImmutability, FieldImmutability)
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq()
 
@@ -440,11 +442,11 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         implicit val logContext: LogContext = project.logContext
 
         // 1.1
-        // java.lang.Object is by definition deep immutable.
-        set(ObjectType.Object, TransitivelyImmutableClass) //ImmutableObject)
+        // java.lang.Object is by definition transitively immutable.
+        set(ObjectType.Object, TransitivelyImmutableClass)
 
         // 1.2
-        // All (instances of) interfaces are (by their very definition) also immutable.
+        // All (instances of) interfaces are (by their very definition) also transitively immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
         allInterfaces.foreach(cf ⇒ set(cf.thisType, TransitivelyImmutableClass))
 
@@ -459,7 +461,7 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         unexpectedRootClassTypes foreach { rt ⇒
             allSubtypes(rt, reflexive = true) foreach { ot ⇒
                 project.classFile(ot) foreach { cf ⇒
-                    set(cf.thisType, MutableClass) //MutableObjectDueToUnknownSupertypes)
+                    set(cf.thisType, MutableClass)
                 }
             }
         }
@@ -484,7 +486,7 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
                         s"${t.toJava}'s class file is not available"
                     )
                     allSubtypes(t, reflexive = true).foreach(project.classFile(_).foreach { cf ⇒
-                        set(cf.thisType, MutableClass) //MutableObjectDueToUnknownSupertypes)
+                        set(cf.thisType, MutableClass)
                     })
             }
         cfs
@@ -510,7 +512,7 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  * @author Tobias Roth
  * @author Michael Eichberg
  */
-object EagerL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisScheduler
+object EagerClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -518,9 +520,9 @@ object EagerL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisSched
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, cfs: InitializationData): FPCFAnalysis = {
-        val analysis = new L1ClassImmutabilityAnalysis(p)
+        val analysis = new ClassImmutabilityAnalysis(p)
         ps.scheduleEagerComputationsForEntities(cfs)(
-            analysis.determineL1ClassImmutability(
+            analysis.determineClassImmutability(
                 superClassType = null,
                 FinalEP(ObjectType.Object, TransitivelyImmutableClass),
                 superClassMutabilityIsFinal = true,
@@ -535,7 +537,7 @@ object EagerL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisSched
  * Scheduler to run the class immutability analysis lazily.
  * @author Michael Eichberg
  */
-object LazyL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisScheduler
+object LazyClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
@@ -545,10 +547,10 @@ object LazyL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisSchedu
         ps:     PropertyStore,
         unused: InitializationData
     ): FPCFAnalysis = {
-        val analysis = new L1ClassImmutabilityAnalysis(p)
+        val analysis = new ClassImmutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             ClassImmutability.key,
-            analysis.doDetermineL1ClassImmutability
+            analysis.doDetermineClassImmutability
         )
         analysis
     }
