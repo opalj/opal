@@ -50,16 +50,16 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.fpcf.properties.immutability.Assignable
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.tac.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.properties.Assignable
-import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.LazilyInitialized
 
 /**
  * An inter-procedural analysis to determine a method's purity.

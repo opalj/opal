@@ -48,18 +48,18 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.br.fpcf.properties.FieldAssignability
-import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.LazilyInitialized
-import org.opalj.br.fpcf.properties.NonAssignable
 
 /**
  * Base trait for analyses that analyze the purity of methods.
