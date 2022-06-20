@@ -9,23 +9,21 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0ClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldAssignabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0TypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL1FieldAssignabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -59,8 +57,8 @@ class PurityTests extends PropertiesTest {
                 Set(
                     EagerL0PurityAnalysis,
                     LazyL0FieldAssignabilityAnalysis,
-                    LazyL0ClassImmutabilityAnalysis,
-                    LazyL0TypeImmutabilityAnalysis
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis
                 )
             )
         as.propertyStore.shutdown()
@@ -73,8 +71,9 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 LazyL1FieldAssignabilityAnalysis,
-                LazyL0ClassImmutabilityAnalysis,
-                LazyL0TypeImmutabilityAnalysis,
+                LazyL0FieldImmutabilityAnalysis,
+                LazyClassImmutabilityAnalysis,
+                LazyTypeImmutabilityAnalysis,
                 EagerL1PurityAnalysis
             )
         )
@@ -95,8 +94,9 @@ class PurityTests extends PropertiesTest {
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
             LazyL1FieldAssignabilityAnalysis,
-            LazyL0ClassImmutabilityAnalysis,
-            LazyL0TypeImmutabilityAnalysis
+            LazyL0FieldImmutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis
         ))
 
         as.propertyStore.shutdown()
@@ -114,8 +114,8 @@ class PurityTests extends PropertiesTest {
                 EagerL2PurityAnalysis,
                 LazyL0FieldImmutabilityAnalysis,
                 LazyL3FieldAssignabilityAnalysis,
-                LazyL1ClassImmutabilityAnalysis,
-                LazyL1TypeImmutabilityAnalysis,
+                LazyClassImmutabilityAnalysis,
+                LazyTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,

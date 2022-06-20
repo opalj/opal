@@ -35,15 +35,15 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.br.fpcf.properties.DependentlyImmutableType
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
-import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.FieldAssignability
-import org.opalj.br.fpcf.properties.LazilyInitialized
-import org.opalj.br.fpcf.properties.NonAssignable
-import org.opalj.br.fpcf.properties.NonAssignableField
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.NonAssignableField
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.instructions._
 
 /**
@@ -225,7 +225,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            import org.opalj.br.fpcf.properties.Assignable
+            import org.opalj.br.fpcf.properties.immutability.Assignable
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 

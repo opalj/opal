@@ -17,14 +17,16 @@ import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 
 /**
  * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not
@@ -36,7 +38,7 @@ import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 @RunWith(classOf[JUnitRunner])
 class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
-    def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
+  def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
     val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1PurityAnalysis,
@@ -45,8 +47,9 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1FieldAssignabilityAnalysis,
-        EagerL0ClassImmutabilityAnalysis,
-        EagerL0TypeImmutabilityAnalysis
+        EagerL0FieldImmutabilityAnalysis,
+        EagerClassImmutabilityAnalysis,
+        EagerTypeImmutabilityAnalysis
     )
 
     def checkProject(p: SomeProject, withSupportAnalyses: Boolean): Unit = {
