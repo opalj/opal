@@ -37,7 +37,7 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
@@ -154,7 +154,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         rhs match {
             case md: MethodDescription ⇒
                 val method =
-                    typeProvider.expandContext(state.callContext, md.method(declaredMethods), pc)
+                    typeIterator.expandContext(state.callContext, md.method(declaredMethods), pc)
                 state.includeSharedPointsToSet(
                     defSiteObject,
                     currentPointsTo(defSiteObject, method, PointsToSetLike.noFilter),
@@ -170,7 +170,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 val method = pd.method(declaredMethods)
                 val fp = pd.fp(method, virtualFormalParameters)
                 if (fp ne null) {
-                    val entity = typeProvider match {
+                    val entity = typeIterator match {
                         case _: SimpleContextProvider ⇒ fp
                         case _                        ⇒ (state.callContext, fp)
                     }
@@ -184,7 +184,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             case asd: AllocationSiteDescription ⇒
                 val method = asd.method(declaredMethods)
                 val allocationContext = if (method == state.callContext.method) state.callContext
-                else typeProvider.expandContext(state.callContext, method, pc)
+                else typeIterator.expandContext(state.callContext, method, pc)
                 if (asd.instantiatedType.startsWith("[")) {
                     val theInstantiatedType = FieldType(asd.instantiatedType).asArrayType
                     val pts = createPointsToSet(
@@ -267,14 +267,14 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     if (fp.origin == -1) {
                         handleCallReceiver(
                             IntTrieSet(pc),
-                            typeProvider.expandContext(state.callContext, method, pc),
+                            typeIterator.expandContext(state.callContext, method, pc),
                             isNonVirtualCall = true
                         )
                     } else {
                         handleCallParameter(
                             IntTrieSet(pc),
                             -fp.origin - 2,
-                            typeProvider.expandContext(state.callContext, method, pc)
+                            typeIterator.expandContext(state.callContext, method, pc)
                         )
                     }
                 }
@@ -301,7 +301,7 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

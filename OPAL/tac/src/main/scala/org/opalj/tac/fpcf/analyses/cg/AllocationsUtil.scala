@@ -28,7 +28,7 @@ object AllocationsUtil {
         failure:           () ⇒ Unit
     )(process: (ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
         implicit
-        state: TypeProviderState,
+        state: TypeIteratorState,
         ps:    PropertyStore
     ): Unit = {
         if (allocationContext eq NoContext) {
@@ -88,14 +88,14 @@ object AllocationsUtil {
         failure:    () ⇒ Unit
     )(process: (ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Unit = {
-        val allocations = typeProvider.typesProperty(
-            value, context.asInstanceOf[typeProvider.ContextType], depender, stmts
+        val allocations = typeIterator.typesProperty(
+            value, context.asInstanceOf[typeIterator.ContextType], depender, stmts
         )
-        typeProvider.foreachAllocation(value, context, stmts, allocations) {
+        typeIterator.foreachAllocation(value, context, stmts, allocations) {
             (tpe, allocationContext, pc) ⇒
                 if (typeFilter(tpe)) {
                     handleAllocation(
@@ -121,7 +121,7 @@ object AllocationsUtil {
         failure:           () ⇒ Unit
     )(process: (ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
         implicit
-        state: TypeProviderState,
+        state: TypeIteratorState,
         ps:    PropertyStore
     ): Unit = {
         if (allocationContext eq NoContext) {
@@ -153,8 +153,8 @@ object AllocationsUtil {
         failure:  DataType ⇒ Unit
     )(process: (DataType, ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Unit = {
         val epk = eps.toEPK
@@ -186,8 +186,8 @@ object AllocationsUtil {
                     deps.foreach {
                         case data: Entity if dataType(data) ⇒
                             val (expr, stmts) = value(data.asInstanceOf[DataType])
-                            typeProvider.continuationForAllocations(
-                                expr, eps.asInstanceOf[EPS[Entity, typeProvider.PropertyType]]
+                            typeIterator.continuationForAllocations(
+                                expr, eps.asInstanceOf[EPS[Entity, typeIterator.PropertyType]]
                             ) { (_, allocationContext, allocationPC) ⇒
                                 handleAllocation(
                                     context, expr, stmts,

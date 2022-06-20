@@ -37,7 +37,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
@@ -107,7 +107,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         // ensures, that we only add new vm reachable methods
         val indirectCalls = new IndirectCalls()
 
-        typeProvider.continuation(receiverVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) {
+        typeIterator.continuation(receiverVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) {
             newType ⇒
                 handleType(newType, state.callContext, pc, receiver, parameters, indirectCalls)
         }(state)
@@ -145,9 +145,9 @@ class OOSWriteObjectAnalysis private[analyses] (
         parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
         indirectCalls: IndirectCalls
     )(implicit state: CGState[ContextType]): Unit = {
-        typeProvider.foreachType(
+        typeIterator.foreachType(
             param,
-            typeProvider.typesProperty(
+            typeIterator.typesProperty(
                 param, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
             )
         ) { tpe ⇒ handleType(tpe, callContext, callPC, receiver, parameters, indirectCalls) }
@@ -189,7 +189,7 @@ class OOSWriteObjectAnalysis private[analyses] (
                 WriteExternalDescriptor,
                 parameters,
                 receiver,
-                tgt ⇒ typeProvider.expandContext(callContext, tgt, callPC)
+                tgt ⇒ typeIterator.expandContext(callContext, tgt, callPC)
             )
         } else {
             val writeObjectMethod = project.specialCall(
@@ -209,7 +209,7 @@ class OOSWriteObjectAnalysis private[analyses] (
                 WriteObjectDescriptor,
                 parameters,
                 receiver,
-                tgt ⇒ typeProvider.expandContext(callContext, tgt, callPC)
+                tgt ⇒ typeIterator.expandContext(callContext, tgt, callPC)
             )
         }
 
@@ -231,7 +231,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             WriteObjectDescriptor,
             parameters,
             receiver,
-            tgt ⇒ typeProvider.expandContext(callContext, tgt, callPC)
+            tgt ⇒ typeIterator.expandContext(callContext, tgt, callPC)
         )
     }
 
@@ -333,7 +333,7 @@ class OISReadObjectAnalysis private[analyses] (
                             ReadExternalDescriptor,
                             parameterList,
                             receiver,
-                            tgt ⇒ typeProvider.expandContext(context, tgt, pc)
+                            tgt ⇒ typeIterator.expandContext(context, tgt, pc)
                         )
 
                         // call to no-arg constructor
@@ -341,7 +341,7 @@ class OISReadObjectAnalysis private[analyses] (
                             calleesAndCallers.addCall(
                                 context,
                                 pc,
-                                typeProvider.expandContext(context, declaredMethods(c), pc),
+                                typeIterator.expandContext(context, declaredMethods(c), pc),
                                 Seq.empty,
                                 receiver
                             )
@@ -360,7 +360,7 @@ class OISReadObjectAnalysis private[analyses] (
                             ReadObjectDescriptor,
                             parameterList,
                             receiver,
-                            tgt ⇒ typeProvider.expandContext(context, tgt, pc)
+                            tgt ⇒ typeIterator.expandContext(context, tgt, pc)
                         )
 
                         // call to first super no-arg constructor
@@ -375,7 +375,7 @@ class OISReadObjectAnalysis private[analyses] (
                                 calleesAndCallers.addCall(
                                     context,
                                     pc,
-                                    typeProvider.expandContext(
+                                    typeIterator.expandContext(
                                         context, declaredMethods(constructor.get), pc
                                     ),
                                     Seq.empty,
@@ -400,7 +400,7 @@ class OISReadObjectAnalysis private[analyses] (
                             calleesAndCallers.addCall(
                                 context,
                                 pc,
-                                typeProvider.expandContext(
+                                typeIterator.expandContext(
                                     context, declaredMethods(constructor), pc
                                 ),
                                 Seq.empty,
@@ -421,7 +421,7 @@ class OISReadObjectAnalysis private[analyses] (
                         JustReturnsObject,
                         Seq.empty,
                         receiver,
-                        tgt ⇒ typeProvider.expandContext(context, tgt, pc)
+                        tgt ⇒ typeIterator.expandContext(context, tgt, pc)
                     )
 
                     // call to `validateObject`
@@ -436,7 +436,7 @@ class OISReadObjectAnalysis private[analyses] (
                             JustReturnsObject,
                             Seq.empty,
                             receiver,
-                            tgt ⇒ typeProvider.expandContext(context, tgt, pc)
+                            tgt ⇒ typeIterator.expandContext(context, tgt, pc)
                         )
                     }
                 }
@@ -485,13 +485,13 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 object SerializationRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callers, Callees, TACAI)
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeProviderKey).usedPropertyKinds
+        p.get(TypeIteratorKey).usedPropertyKinds
     }
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees)

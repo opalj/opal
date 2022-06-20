@@ -26,16 +26,16 @@ import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 class SystemPropertiesAnalysisScheduler private[analyses] (
         final val project: SomeProject
 ) extends ReachableMethodAnalysis {
 
-    final override implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    final override implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def processMethod(
         callContext: ContextType, tacaiEP: EPS[Method, TACAI]
@@ -133,7 +133,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
 object SystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(Callers),

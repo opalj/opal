@@ -6,7 +6,7 @@ package cg
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
@@ -27,6 +27,6 @@ object CFA_1_1_CallGraphKey extends CallGraphKey {
     ): Traversable[FPCFAnalysisScheduler] = {
         AllocationSiteBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
-    override def getTypeProvider(project: SomeProject) =
-        new CFA_k_l_TypeProvider(project, 1, 1)
+    override def getTypeIterator(project: SomeProject) =
+        new CFA_k_l_TypeIterator(project, 1, 1)
 }

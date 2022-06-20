@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.ai.ValueOrigin
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -160,7 +160,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
 sealed trait InterProceduralEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, IsOverridableMethodKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, IsOverridableMethodKey, TypeIteratorKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 
@@ -183,7 +183,7 @@ object EagerInterProceduralEscapeAnalysis
         val analysis = new InterProceduralEscapeAnalysis(p)
 
         val declaredMethods = p.get(DeclaredMethodsKey)
-        implicit val typeProvider = p.get(TypeProviderKey)
+        implicit val typeIterator = p.get(TypeIteratorKey)
 
         val methods = declaredMethods.declaredMethods
         val callersProperties = ps(methods.toTraversable, Callers)

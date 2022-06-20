@@ -39,7 +39,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -61,7 +61,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
-    private[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // only constructors may initialize a class
@@ -256,7 +256,7 @@ class InstantiatedTypesAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override type InitializationData = Null
 

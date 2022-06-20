@@ -33,7 +33,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -195,7 +195,7 @@ trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler 
         VirtualFormalParametersKey,
         DefinitionSitesKey,
         TamiFlexKey,
-        TypeProviderKey
+        TypeIteratorKey
     )
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)

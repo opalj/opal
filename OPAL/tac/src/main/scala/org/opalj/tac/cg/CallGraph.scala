@@ -7,7 +7,7 @@ import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.properties.cg.NoCallers
  *
  * @author Florian Kuebler
  */
-class CallGraph private[cg] ()(implicit ps: PropertyStore, typeProvider: TypeProvider) {
+class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIterator) {
     assert(ps.entities(_.pk == Callees.key).forall(ps(_, Callees.key).isFinal))
     assert(ps.entities(_.pk == Callers.key).forall(ps(_, Callers.key).isFinal))
 
@@ -86,7 +86,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeProvider: TypePro
             case EUBP(m: DeclaredMethod, ub: Callers) if ub ne NoCallers ⇒
                 ub.calleeContexts(m).map { context ⇒
                     if (context.hasContext) context
-                    else typeProvider.newContext(m)
+                    else typeIterator.newContext(m)
                 }
             case _ ⇒
                 Iterator.empty

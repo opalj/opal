@@ -38,14 +38,12 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.ClassifiedImpure
-import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.ContextuallyPure
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.ExtensibleLocalField
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.FieldLocality
-import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.FreshReturnValue
 import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
@@ -58,7 +56,6 @@ import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.StaticDataUsage
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.properties.UsesConstantDataOnly
 import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
@@ -75,6 +72,9 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.NoCallers
@@ -119,9 +119,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             var lbPurity:  Purity                        = CompileTimePure,
             var ubPurity:  Purity                        = CompileTimePure
     ) extends AnalysisState {
+
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
-        var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldMutability], Set[Option[Expr[V]]])] = Map.empty
+        var fieldAssignabilityDependees: Map[Field, (EOptionP[Field, FieldAssignability], Set[Option[Expr[V]]])] = Map.empty
 
         var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] = Map.empty
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
@@ -140,7 +141,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         def dependees: Set[SomeEOptionP] =
             (fieldLocalityDependees.valuesIterator.map(_._1) ++
-                fieldMutabilityDependees.valuesIterator.map(_._1) ++
+                fieldAssignabilityDependees.valuesIterator.map(_._1) ++
                 classImmutabilityDependees.valuesIterator.map(_._1) ++
                 typeImmutabilityDependees.valuesIterator.map(_._1) ++
                 purityDependees.valuesIterator.map(_._1) ++
@@ -164,14 +165,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         def addFieldMutabilityDependee(
             f:     Field,
-            eop:   EOptionP[Field, FieldMutability],
+            eop:   EOptionP[Field, FieldAssignability],
             owner: Option[Expr[V]]
         ): Unit = {
-            if (fieldMutabilityDependees.contains(f)) {
-                val (_, oldOwners) = fieldMutabilityDependees(f)
-                fieldMutabilityDependees += ((f, (eop, oldOwners + owner)))
+            if (fieldAssignabilityDependees.contains(f)) {
+                val (_, oldOwners) = fieldAssignabilityDependees(f)
+                fieldAssignabilityDependees += ((f, (eop, oldOwners + owner)))
             } else {
-                fieldMutabilityDependees += ((f, (eop, Set(owner))))
+                fieldAssignabilityDependees += ((f, (eop, Set(owner))))
             }
         }
 
@@ -235,7 +236,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         def removeFieldLocalityDependee(f: Field): Unit = fieldLocalityDependees -= f
-        def removeFieldMutabilityDependee(f: Field): Unit = fieldMutabilityDependees -= f
+        def removeFieldMutabilityDependee(f: Field): Unit = fieldAssignabilityDependees -= f
         def removeClassImmutabilityDependee(t: ObjectType): Unit = classImmutabilityDependees -= t
         def removeTypeImmutabilityDependee(t: ObjectType): Unit = typeImmutabilityDependees -= t
         def removePurityDependee(context: Context): Unit = purityDependees -= context
@@ -588,7 +589,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * Adds the dependee necessary if a field mutability is not known yet.
      */
     override def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldMutability],
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
         state.addFieldMutabilityDependee(ep.e, ep, objRef)
@@ -642,7 +643,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             state.updateStaticDataUsage(None)
 
         if (!state.ubPurity.isDeterministic) {
-            state.fieldMutabilityDependees = Map.empty
+            state.fieldAssignabilityDependees = Map.empty
             state.classImmutabilityDependees = Map.empty
             state.typeImmutabilityDependees = Map.empty
             state.updateStaticDataUsage(None)
@@ -697,7 +698,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         if (state.staticDataUsage.isDefined) newLowerBound = newLowerBound meet Pure
 
-        if (state.fieldMutabilityDependees.nonEmpty ||
+        if (state.fieldAssignabilityDependees.nonEmpty ||
             state.classImmutabilityDependees.nonEmpty ||
             state.typeImmutabilityDependees.nonEmpty) {
             newLowerBound = newLowerBound meet SideEffectFree
@@ -743,12 +744,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 dependees._2.foreach { e ⇒
                     checkMethodPurity(eps.asInstanceOf[EOptionP[Context, Purity]], e)
                 }
-            case FieldMutability.key ⇒
+            case FieldAssignability.key ⇒
                 val e = eps.e.asInstanceOf[Field]
-                val dependees = state.fieldMutabilityDependees(e)
+                val dependees = state.fieldAssignabilityDependees(e)
                 state.removeFieldMutabilityDependee(e)
                 dependees._2.foreach { e ⇒
-                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldMutability]], e)
+                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldAssignability]], e)
                 }
             case ClassImmutability.key ⇒
                 val e = eps.e.asInstanceOf[ObjectType]
@@ -835,7 +836,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             candidate foreach { mdc ⇒
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTMethod = declaredMethods(mdc.method)
-                    val fISTContext = typeProvider.expandContext(state.context, fISTMethod, 0)
+                    val fISTContext = typeIterator.expandContext(state.context, fISTMethod, 0)
                     val fISTPurity = propertyStore(fISTContext, Purity.key)
                     val self = UVar(
                         ASObjectValue(isNull = No, isPrecise = false, state.declClass),
@@ -960,7 +961,7 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = {
         Set(
-            PropertyBounds.lub(FieldMutability),
+            PropertyBounds.lub(FieldAssignability),
             PropertyBounds.lub(ClassImmutability),
             PropertyBounds.lub(TypeImmutability),
             PropertyBounds.lub(StaticDataUsage),

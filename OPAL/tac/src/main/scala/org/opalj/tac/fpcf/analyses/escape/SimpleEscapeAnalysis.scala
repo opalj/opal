@@ -29,7 +29,7 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.ValueOrigin
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -98,7 +98,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, TypeIteratorKey)
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),

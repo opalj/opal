@@ -11,7 +11,7 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTATypeProvider
+import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
@@ -52,5 +52,5 @@ object RTACallGraphKey extends CallGraphKey {
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
 
-    override def getTypeProvider(project: SomeProject) = new RTATypeProvider(project)
+    override def getTypeIterator(project: SomeProject) = new RTATypeIterator(project)
 }

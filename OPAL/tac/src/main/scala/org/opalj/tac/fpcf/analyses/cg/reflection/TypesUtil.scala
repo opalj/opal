@@ -59,8 +59,8 @@ object TypesUtil {
         onlyObjectTypes: Boolean
     )(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Set[ObjectType] = {
         StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls ⇒
@@ -194,8 +194,8 @@ object TypesUtil {
         onlyObjectTypes: Boolean
     )(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Set[Type] = {
         var possibleTypes: Set[Type] = Set.empty
@@ -231,8 +231,8 @@ object TypesUtil {
         onlyObjectTypes: Boolean
     )(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Set[Type] = {
         var possibleTypes: Set[Type] = Set.empty

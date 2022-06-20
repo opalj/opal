@@ -93,6 +93,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asMethodTypeConst: MethodTypeConst = throw new ClassCastException();
     def isMethodHandleConst: Boolean = false
     def asMethodHandleConst: MethodHandleConst = throw new ClassCastException();
+    def isCompare: Boolean = false
     def isConst: Boolean = false
     def isIntConst: Boolean = false
     def asIntConst: IntConst = throw new ClassCastException();
@@ -117,6 +118,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asNew: New = throw new ClassCastException();
     def isNewArray: Boolean = false
     def asNewArray: NewArray[V] = throw new ClassCastException();
+    def isArrayLoad: Boolean = false
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
     def asArrayLength: ArrayLength[V] = throw new ClassCastException();
     def isFieldRead: Boolean = false
@@ -127,6 +129,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asGetStatic: GetStatic = throw new ClassCastException();
     def asInvokedynamicFunctionCall: InvokedynamicFunctionCall[V] = throw new ClassCastException();
     def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
+    def isFunctionCall: Boolean = false
     def isStaticFunctionCall: Boolean = false
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
     def asInstanceFunctionCall: InstanceFunctionCall[V] = throw new ClassCastException();
@@ -178,7 +181,7 @@ case class Compare[+V <: Var[V]](
         condition: RelationalOperator,
         right:     Expr[V]
 ) extends Expr[V] {
-
+    final override def isCompare: Boolean = true
     final override def asCompare: this.type = this
     final override def astID: Int = Compare.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeInt
@@ -560,6 +563,7 @@ object NewArray { final val ASTID = -18 }
 case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends ArrayExpr[V] {
 
     final override def asArrayLoad: this.type = this
+    final override def isArrayLoad: Boolean = true
     final override def astID: Int = ArrayLoad.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
     final override def isSideEffectFree: Boolean = false
@@ -782,6 +786,7 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
     final override def asFunctionCall: this.type = this
+    final override def isFunctionCall: Boolean = true
 }
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {

@@ -28,19 +28,22 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.ImmutableContainerType
-import org.opalj.br.fpcf.properties.ImmutableType
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.NonAssignableField
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.instructions._
 
 /**
@@ -113,7 +116,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (!fieldType.isBaseType) {
                                 propertyStore(fieldType, TypeImmutability.key) match {
-                                    case FinalP(ImmutableType) ⇒
+                                    case FinalP(TransitivelyImmutableType) ⇒
                                     case _: FinalEP[_, TypeImmutability] ⇒
                                         return Result(context, ImpureByAnalysis);
                                     case ep ⇒
@@ -121,9 +124,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                                 }
                             }
                             if (field.isNotFinal) {
-                                propertyStore(field, FieldMutability.key) match {
-                                    case FinalP(_: FinalField) ⇒
-                                    case _: FinalEP[Field, FieldMutability] ⇒
+                                propertyStore(field, FieldAssignability.key) match {
+                                    case FinalP(_: NonAssignableField) ⇒
+                                    case _: FinalEP[Field, FieldAssignability] ⇒
                                         return Result(context, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -222,6 +225,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
+            import org.opalj.br.fpcf.properties.immutability.Assignable
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
@@ -233,7 +237,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(_: FinalField | ImmutableType) ⇒
+                case FinalP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒
                     if (dependees.isEmpty) {
                         Result(context, Pure)
                     } else {
@@ -242,12 +246,12 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case FinalP(ImmutableContainerType) ⇒
+                case FinalP(NonTransitivelyImmutableType | DependentlyImmutableType(_)) ⇒ //ImmutableContainerType) ⇒
                     Result(context, ImpureByAnalysis)
 
                 // The type is at most conditionally immutable.
                 case FinalP(_: TypeImmutability) ⇒ Result(context, ImpureByAnalysis)
-                case FinalP(_: NonFinalField)    ⇒ Result(context, ImpureByAnalysis)
+                case FinalP(Assignable)          ⇒ Result(context, ImpureByAnalysis)
 
                 case FinalP(CompileTimePure | Pure) ⇒
                     if (dependees.isEmpty)
@@ -287,10 +291,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         referenceTypedParameters foreach { e ⇒
             propertyStore(e, TypeImmutability.key) match {
-                case FinalP(ImmutableType) ⇒ /*everything is Ok*/
+                case FinalP(TransitivelyImmutableType) ⇒ /*everything is Ok*/
                 case _: FinalEP[_, _] ⇒
                     return Result(context, ImpureByAnalysis);
-                case InterimUBP(ub) if ub ne ImmutableType ⇒
+                case InterimUBP(ub) if ub ne TransitivelyImmutableType ⇒
                     return Result(context, ImpureByAnalysis);
                 case epk ⇒ dependees += epk
             }
@@ -346,7 +350,7 @@ trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         Seq(DeclaredMethodsKey, SimpleContextsKey)
 
     final override def uses: Set[PropertyBounds] = {
-        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldMutability))
+        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldAssignability))
     }
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)

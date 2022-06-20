@@ -47,10 +47,10 @@ import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
@@ -242,7 +242,7 @@ object CallGraph extends ProjectAnalysisApplication {
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))
 
-        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
         for (m ← allMethods) {
             val mSig = m.descriptor.toJava(m.name)

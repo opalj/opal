@@ -26,12 +26,9 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.ContextuallyPure
 import org.opalj.br.fpcf.properties.ContextuallySideEffectFree
@@ -48,17 +45,12 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
@@ -67,7 +59,6 @@ import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
@@ -77,9 +68,17 @@ import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -150,8 +149,9 @@ object Purity {
             case None      ⇒ Traversable.empty
         }
 
-        val JDKFiles = if (withoutJDK) Traversable.empty
-        else JavaClassFileReader().ClassFiles(JRELibraryFolder)
+        val JDKFiles =
+            if (withoutJDK) Traversable.empty
+            else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         val isJDK: Boolean = cp eq JRELibraryFolder
         val dirName = if (isJDK) "JDK" else cp.getName
@@ -164,10 +164,11 @@ object Purity {
         var callGraphTime: Seconds = Seconds.None
 
         // TODO: use variables for the constants
-        implicit var config: Config = if (isLibrary)
-            ConfigFactory.load("LibraryProject.conf")
-        else
-            ConfigFactory.load("ApplicationProject.conf")
+        implicit var config: Config =
+            if (isLibrary)
+                ConfigFactory.load("LibraryProject.conf")
+            else
+                ConfigFactory.load("CommandLineProject.conf")
 
         // TODO: in case of application this value is already set
         if (closedWorldAssumption) {
@@ -191,7 +192,9 @@ object Purity {
                 libraryClassFilesAreInterfacesOnly = false,
                 Traversable.empty
             )
-        } { t ⇒ projectTime = t.toSeconds }
+        } { t ⇒
+            projectTime = t.toSeconds
+        }
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               ⇒ Set(domain)
@@ -212,7 +215,9 @@ object Purity {
         )
 
         PropertyStore.updateDebug(debug)
-        val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
+        val ps = time { project.get(PropertyStoreKey) } { t ⇒
+            propertyStoreTime = t.toSeconds
+        }
 
         analysis match {
             case LazyL0PurityAnalysis ⇒
@@ -239,7 +244,9 @@ object Purity {
 
         time {
             project.get(callGraphKey)
-        } { t ⇒ callGraphTime = t.toSeconds }
+        } { t ⇒
+            callGraphTime = t.toSeconds
+        }
 
         val reachableMethods =
             ps.entities(Callers.key).collect {
@@ -252,15 +259,18 @@ object Purity {
             val analyses = analysis :: support
 
             manager.runAll(
-                analyses,
-                { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
-                    if (css.contains(analysis)) {
-                        analyzedMethods.foreach { dm ⇒ ps.force(dm, br.fpcf.properties.Purity.key) }
+                analyses, { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                if (css.contains(analysis)) {
+                    analyzedMethods.foreach { dm ⇒
+                        ps.force(dm, br.fpcf.properties.Purity.key)
                     }
                 }
+            }
             )
 
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t ⇒
+            analysisTime = t.toSeconds
+        }
         ps.shutdown()
 
         val entitiesWithPurity = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
@@ -395,19 +405,25 @@ object Purity {
                         resultsWriter.println(s"${m.definedMethod.toJava} => externally side-effect free")
                     }
                     for (m ← dExternallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific externally side-effect free")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific externally side-effect free"
+                        )
                     }
                     for ((m, p) ← contextuallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually pure: $p")
                     }
                     for ((m, p) ← dContextuallyPure) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually pure: $p")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific contextually pure: $p"
+                        )
                     }
                     for ((m, p) ← contextuallySideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually side-effect free: $p")
                     }
                     for ((m, p) ← dContextuallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p"
+                        )
                     }
                     for (m ← lbImpure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => impure")
@@ -541,13 +557,16 @@ object Purity {
                 Console.println(usage)
                 return ;
         }
+        if (!fieldMutabilityAnalysisName.contains("L3")) {
+            if (eager) {
 
-        if (eager) {
-            support ::= EagerClassImmutabilityAnalysis
-            support ::= EagerTypeImmutabilityAnalysis
-        } else {
-            support ::= LazyClassImmutabilityAnalysis
-            support ::= LazyTypeImmutabilityAnalysis
+                support ::= EagerClassImmutabilityAnalysis
+                support ::= EagerTypeImmutabilityAnalysis
+            } else {
+
+                support ::= LazyClassImmutabilityAnalysis
+                support ::= LazyTypeImmutabilityAnalysis
+            }
         }
 
         escapeAnalysisName match {
@@ -558,7 +577,6 @@ object Purity {
                 support ::= LazyInterProceduralEscapeAnalysis
 
             case Some("none") ⇒
-
             case Some(a) ⇒
                 Console.println(s"unknown escape analysis: $a")
                 Console.println(usage)
@@ -566,29 +584,38 @@ object Purity {
         }
 
         fieldMutabilityAnalysisName match {
-            case Some("L0") if eager ⇒ support ::= EagerL0FieldMutabilityAnalysis
+            case Some("L0") if eager ⇒ support ::= EagerL0FieldAssignabilityAnalysis
 
-            case Some("L0")          ⇒ support ::= LazyL0FieldMutabilityAnalysis
+            case Some("L0")          ⇒ support ::= LazyL0FieldAssignabilityAnalysis
 
-            case Some("L1") if eager ⇒ support ::= EagerL1FieldMutabilityAnalysis
+            case Some("L1") if eager ⇒ support ::= EagerL1FieldAssignabilityAnalysis
 
-            case Some("L1")          ⇒ support ::= LazyL1FieldMutabilityAnalysis
+            case Some("L1")          ⇒ support ::= LazyL1FieldAssignabilityAnalysis
 
             case Some("L2") if eager ⇒
-                support ::= EagerL2FieldMutabilityAnalysis
-                support ::= EagerUnsoundPrematurelyReadFieldsAnalysis
+                support ::= EagerL2FieldAssignabilityAnalysis
 
             case Some("L2") ⇒
-                support ::= LazyL2FieldMutabilityAnalysis
-                support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
+                support ::= LazyL2FieldAssignabilityAnalysis
+
+            case Some("L3") ⇒
+                support ::= LazyL0FieldImmutabilityAnalysis
+
+                if (eager) {
+                    support ::= EagerClassImmutabilityAnalysis
+                    support ::= EagerTypeImmutabilityAnalysis
+                } else {
+                    support ::= LazyClassImmutabilityAnalysis
+                    support ::= LazyTypeImmutabilityAnalysis
+                }
 
             case Some("none") ⇒
-
-            case None ⇒ analysis match {
-                case LazyL0PurityAnalysis ⇒ LazyL0FieldMutabilityAnalysis
-                case LazyL1PurityAnalysis ⇒ LazyL1FieldMutabilityAnalysis
-                case LazyL2PurityAnalysis ⇒ LazyL1FieldMutabilityAnalysis
-            }
+            case None ⇒
+                analysis match {
+                    case LazyL0PurityAnalysis ⇒ LazyL0FieldAssignabilityAnalysis
+                    case LazyL1PurityAnalysis ⇒ LazyL1FieldAssignabilityAnalysis
+                    case LazyL2PurityAnalysis ⇒ LazyL1FieldAssignabilityAnalysis
+                }
 
             case Some(a) ⇒
                 Console.println(s"unknown field mutability analysis: $a")
