@@ -2,7 +2,6 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.PC
 
 /**
@@ -18,7 +17,7 @@ import org.opalj.br.PC
  *
  * @author Michael Eichberg
  */
-trait TheMemoryLayout { domain: ValuesDomain ⇒
+trait TheMemoryLayout { domain: ValuesDomain =>
 
     private[this] var theOperandsArray: OperandsArray = null
 

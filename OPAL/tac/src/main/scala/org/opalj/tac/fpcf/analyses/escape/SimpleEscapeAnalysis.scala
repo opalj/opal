@@ -68,12 +68,12 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
         fp: (Context, VirtualFormalParameter)
     ): ProperPropertyComputationResult = {
         fp._2 match {
-            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
                 Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer =>
                 val ctx = createContext(fp, -1, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
-            case VirtualFormalParameter(_, _) ⇒
+            case VirtualFormalParameter(_, _) =>
                 Result(fp, AtMost(NoEscape))
         }
     }
@@ -123,10 +123,10 @@ object EagerSimpleEscapeAnalysis
         val declaredMethods = p.get(DeclaredMethodsKey)
         val simpleContexts = p.get(SimpleContextsKey)
 
-        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.map { fp ⇒
+        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.map { fp =>
             (simpleContexts(fp.method), fp)
         }
-        val ass = p.get(DefinitionSitesKey).getAllocationSites.map { as ⇒
+        val ass = p.get(DefinitionSitesKey).getAllocationSites.map { as =>
             (simpleContexts(declaredMethods(as.method)), as)
         }
 

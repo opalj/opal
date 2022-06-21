@@ -177,18 +177,18 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                     val (updatedOperands, updatedLocals) =
                         theObjectValue.refineUpperTypeBound(
                             -1, Serializable,
-                            Chain(theObjectValue),
+                            List(theObjectValue),
                             Locals(IndexedSeq(theFileValue, theObjectValue))
                         )
-                    updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
-                    updatedLocals(0).asInstanceOf[ReferenceValue].upperTypeBound.head should be(File)
-                    updatedLocals(1).asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
+                    updatedOperands.head.asInstanceOf[TheReferenceValue].upperTypeBound.head should be(Serializable)
+                    updatedLocals(0).asInstanceOf[TheReferenceValue].upperTypeBound.head should be(File)
+                    updatedLocals(1).asInstanceOf[TheReferenceValue].upperTypeBound.head should be(Serializable)
                 }
 
                 {
                     // there is nothing to refine...
                     val (updatedOperands, _) =
-                        theFileValue.refineUpperTypeBound(-1, Serializable, Chain(theObjectValue), Locals.empty)
+                        theFileValue.refineUpperTypeBound(-1, Serializable, List(theObjectValue), Locals.empty)
                     updatedOperands.head should be(theObjectValue)
                 }
             }
@@ -207,7 +207,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineIsNull(-1, No, Chain(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineIsNull(-1, No, List(mv1), Locals.empty)
                 refinedOperands.head should be(v2)
             }
 
@@ -225,7 +225,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), Chain(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 
@@ -249,7 +249,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, Constructor, Chain(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, Constructor, List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 
@@ -270,7 +270,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, RuntimeException, Chain(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, RuntimeException, List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 

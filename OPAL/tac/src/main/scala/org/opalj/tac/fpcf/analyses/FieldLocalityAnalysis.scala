@@ -147,7 +147,7 @@ class FieldLocalityAnalysis private[analyses] (
                 return Result(field, NoLocalField);
 
             val subtypes = classHierarchy.allSubtypes(thisType, reflexive = false)
-            val existsCloneableSubtypeWithoutClone = subtypes.exists { subtype ⇒
+            val existsCloneableSubtypeWithoutClone = subtypes.exists { subtype =>
                 isCloneable(subtype) &&
                     !project.classFile(subtype).exists(_.methodsWithBody.exists(isClone))
             }
@@ -174,9 +174,9 @@ class FieldLocalityAnalysis private[analyses] (
      */
     private[this] def step3()(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
         for {
-            (method, pcs) ← fieldAccessInformation.allAccesses(state.field)
-            (tacai, callees) ← getTACAIAndCallers(method, Some(pcs))
-            pc ← pcs
+            (method, pcs) <- fieldAccessInformation.allAccesses(state.field)
+            (tacai, callees) <- getTACAIAndCallers(method, Some(pcs))
+            pc <- pcs
         } {
             var isLocal = true
             callees.forNewCalleeContexts(null, declaredMethods(method)) {
@@ -194,8 +194,8 @@ class FieldLocalityAnalysis private[analyses] (
         state.potentialCloneCallers = potentialCloneCallers
 
         for {
-            method ← potentialCloneCallers
-            (tacai, callees) ← getTACAIAndCallers(method, None)
+            method <- potentialCloneCallers
+            (tacai, callees) <- getTACAIAndCallers(method, None)
         } {
             var isLocal = true
             callees.forNewCalleeContexts(null, declaredMethods(method)) {
@@ -220,7 +220,7 @@ class FieldLocalityAnalysis private[analyses] (
      * class.
      */
     def allSubclassMethods(field: Field): Set[Method] = {
-        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ot ⇒
+        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ot =>
             project.classFile(ot)
         }.flatMap(_.methodsWithBody.filter(!_.isStatic)).toSet
     }
@@ -245,9 +245,9 @@ class FieldLocalityAnalysis private[analyses] (
             // Values read from the field may not escape, except for
             // [[org.opalj.fpcf.properties.EscapeViaReturn]] in which case we have a
             // [[org.opalj.fpcf.properties.LocalFieldWithGetter]].
-            case _@ Assignment(_, _, GetField(_, declType, `fieldName`, `fieldType`, objRef)) ⇒
+            case _@ Assignment(_, _, GetField(_, declType, `fieldName`, `fieldType`, objRef)) =>
                 project.resolveFieldReference(declType, fieldName, fieldType) match {
-                    case Some(`field`) ⇒
+                    case Some(`field`) =>
                         val escape = propertyStore(
                             (context, definitionSites(context.method.definedMethod, pc)),
                             EscapeProperty.key
@@ -255,22 +255,22 @@ class FieldLocalityAnalysis private[analyses] (
                         val isGetFieldOfReceiver =
                             objRef.asVar.definedBy == tac.SelfReferenceParameter
                         !fieldValueEscapes(escape, isGetFieldOfReceiver)
-                    case _ ⇒
+                    case _ =>
                         true // A field from a different class (None if that class is unknown)
                 }
 
             // Values assigned to the field must be fresh and non-escaping.
-            case PutField(_, declaredFieldType, `fieldName`, `fieldType`, _, value) ⇒
+            case PutField(_, declaredFieldType, `fieldName`, `fieldType`, _, value) =>
                 project.resolveFieldReference(declaredFieldType, `fieldName`, `fieldType`) match {
-                    case Some(`field`) ⇒
+                    case Some(`field`) =>
                         // value is fresh and does not escape.
                         // in case of escape via return, we have a local field with getter
                         !checkFreshnessAndEscapeOfValue(value, pc, tacai.stmts, context)
-                    case _ ⇒
+                    case _ =>
                         true // A field from a different class (None if that class is unknown)
                 }
 
-            case _ ⇒ true
+            case _ => true
         }
     }
 
@@ -295,7 +295,7 @@ class FieldLocalityAnalysis private[analyses] (
         while (index < maxIndex) {
             val stmt = stmts(index)
             stmt match {
-                case NonVirtualFunctionCallStatement(call) if callsSuperClone(call) ⇒
+                case NonVirtualFunctionCallStatement(call) if callsSuperClone(call) =>
                     val uses = stmt.asAssignment.targetVar.usedBy
                     if (!isOverwrittenOnEachPathFromClone(index, stmt.pc, context, uses, tacai)) {
                         if (method.classFile eq state.field.classFile) {
@@ -319,7 +319,7 @@ class FieldLocalityAnalysis private[analyses] (
                             }
                         }
                     }
-                case _ ⇒
+                case _ =>
             }
             index += 1
         }
@@ -346,22 +346,22 @@ class FieldLocalityAnalysis private[analyses] (
         state: FieldLocalityState
     ): Boolean = eOptionP match {
 
-        case FinalP(NoEscape | EscapeInCallee) ⇒ false
+        case FinalP(NoEscape | EscapeInCallee) => false
 
         // The field may be leaked by a getter, but only if the field's owning instance is the
         // receiver of the getter method.
-        case FinalP(EscapeViaReturn) ⇒
+        case FinalP(EscapeViaReturn) =>
             if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 false
             } else
                 true
 
-        case InterimUBP(NoEscape | EscapeInCallee) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee) =>
             state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
             false
 
-        case InterimUBP(EscapeViaReturn) ⇒
+        case InterimUBP(EscapeViaReturn) =>
             if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
@@ -370,10 +370,10 @@ class FieldLocalityAnalysis private[analyses] (
                 true
 
         // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]].
-        case _: SomeEPS ⇒
+        case _: SomeEPS =>
             true
 
-        case _ ⇒
+        case _ =>
             state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
             false
     }
@@ -385,7 +385,7 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def checkFreshnessAndEscapeOfValue(
         value: Expr[V], putField: Int, stmts: Array[Stmt[V]], context: Context
     )(implicit state: FieldLocalityState): Boolean = {
-        value.asVar.definedBy exists { defSite ⇒
+        value.asVar.definedBy exists { defSite =>
             if (defSite < 0)
                 true // Parameters are not fresh
             else {
@@ -415,16 +415,16 @@ class FieldLocalityAnalysis private[analyses] (
     )(implicit state: FieldLocalityState): Boolean = {
         // the object stored in the field is fresh
         stmt match {
-            case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
+            case Assignment(_, _, New(_, _) | NewArray(_, _, _)) =>
                 false // fresh by definition
 
-            case Assignment(pc, _, _: StaticFunctionCall[V] | _: NonVirtualFunctionCall[V] | _: VirtualFunctionCall[V]) ⇒
+            case Assignment(pc, _, _: StaticFunctionCall[V] | _: NonVirtualFunctionCall[V] | _: VirtualFunctionCall[V]) =>
                 handleCallSite(caller, pc)
 
-            case Assignment(_, _, _: Const) ⇒
+            case Assignment(_, _, _: Const) =>
                 false
 
-            case _ ⇒
+            case _ =>
                 true
 
         }
@@ -445,11 +445,11 @@ class FieldLocalityAnalysis private[analyses] (
         } else {
             val callees = calleesEP.ub
 
-            callees.callerContexts.exists { callerContext ⇒
+            callees.callerContexts.exists { callerContext =>
                 if (callees.isIncompleteCallSite(callerContext, pc)) {
                     true
                 } else {
-                    callees.callees(callerContext, pc).exists { callee ⇒
+                    callees.callees(callerContext, pc).exists { callee =>
                         callee.method.descriptor.returnType.isReferenceType &&
                             !isFreshReturnValue(propertyStore(callee, ReturnValueFreshness.key))
                     }
@@ -466,23 +466,23 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def isFreshReturnValue(
         eOptionP: EOptionP[Context, ReturnValueFreshness]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
-        case UBP(NoFreshReturnValue) ⇒
+        case UBP(NoFreshReturnValue) =>
             false
 
         //IMPROVE - we might treat values returned from a getter as fresh in some cases
         // e.g. if the method's receiver is the same as the analyzed field's owning instance.
-        case UBP(Getter) ⇒
+        case UBP(Getter) =>
             false
 
-        case UBP(ExtensibleGetter) ⇒
+        case UBP(ExtensibleGetter) =>
             false
 
-        case FinalP(FreshReturnValue) ⇒ true
+        case FinalP(FreshReturnValue) => true
 
-        case FinalP(PrimitiveReturnValue) ⇒
+        case FinalP(PrimitiveReturnValue) =>
             throw new RuntimeException(s"unexpected property $eOptionP for entity ${state.field}")
 
-        case epkOrCnd ⇒
+        case epkOrCnd =>
             state.addMethodDependee(epkOrCnd)
             true
     }
@@ -524,22 +524,22 @@ class FieldLocalityAnalysis private[analyses] (
 
             var foundPut = false
             currentBB match {
-                case currentBB: BasicBlock ⇒
-                    for (index ← currentBB.startPC to currentBB.endPC) {
+                case currentBB: BasicBlock =>
+                    for (index <- currentBB.startPC to currentBB.endPC) {
                         tacai.stmts(index) match {
-                            case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, _) ⇒
+                            case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, _) =>
                                 if (objRef.asVar.definedBy == IntTrieSet(defSite)) {
                                     // The field's owning instance must be the result of super.clone
                                     foundPut = true // There is a matching PutField in this BB
                                 }
-                            case _ ⇒
+                            case _ =>
                         }
                     }
-                case exit: ExitNode ⇒
+                case exit: ExitNode =>
                     if (exit.isNormalReturnExitNode) {
                         return false; // Found the exit node, but no PutField, so the field may leak
                     }
-                case _ ⇒
+                case _ =>
             }
 
             // If there is not PutField in this basic block, we have to inspect all successors
@@ -558,22 +558,22 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def clonedInstanceEscapes(
         eOptionP: EOptionP[(Context, DefinitionSiteLike), EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
-        case FinalP(NoEscape | EscapeInCallee) ⇒ false
+        case FinalP(NoEscape | EscapeInCallee) => false
 
-        case InterimUBP(NoEscape | EscapeInCallee) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee) =>
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
-        case FinalP(EscapeViaReturn) ⇒ false
+        case FinalP(EscapeViaReturn) => false
 
-        case InterimUBP(EscapeViaReturn) ⇒
+        case InterimUBP(EscapeViaReturn) =>
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
         // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]]
-        case _: SomeEPS ⇒ true
+        case _: SomeEPS => true
 
-        case _ ⇒
+        case _ =>
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
     }
@@ -606,12 +606,12 @@ class FieldLocalityAnalysis private[analyses] (
         someEPS: SomeEPS
     )(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
         val isNotLocal = someEPS.pk match {
-            case ReturnValueFreshness.key ⇒
+            case ReturnValueFreshness.key =>
                 val newEP = someEPS.asInstanceOf[EOptionP[Context, ReturnValueFreshness]]
                 state.removeMethodDependee(newEP)
                 !isFreshReturnValue(newEP)
 
-            case EscapeProperty.key ⇒
+            case EscapeProperty.key =>
                 val newEP = someEPS.asInstanceOf[EOptionP[(Context, DefinitionSiteLike), EscapeProperty]]
                 val isGetFieldOfReceiver = state.isGetFieldOfReceiver(newEP.e)
                 state.removeDefinitionSiteDependee(newEP)
@@ -621,7 +621,7 @@ class FieldLocalityAnalysis private[analyses] (
                 else
                     fieldValueEscapes(newEP, isGetFieldOfReceiver)
 
-            case TACAI.key ⇒
+            case TACAI.key =>
                 val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
                 state.addTACDependee(newEP)
                 val m = newEP.e
@@ -631,7 +631,7 @@ class FieldLocalityAnalysis private[analyses] (
                     var isLocal = true
                     val tac = newEP.ub.tac.get
                     if (state.tacFieldAccessPCs.contains(m)) {
-                        callersEP.ub.forNewCalleeContexts(null, dm) { callContext ⇒
+                        callersEP.ub.forNewCalleeContexts(null, dm) { callContext =>
                             isLocal &&= state.tacFieldAccessPCs(m).forall {
                                 isLocalForFieldAccess(callContext, _, tac)
                             }
@@ -646,7 +646,7 @@ class FieldLocalityAnalysis private[analyses] (
                 } else
                     false
 
-            case Callers.key ⇒
+            case Callers.key =>
                 val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Callers]]
                 val dm = newEP.e
                 val oldEP = state.getCallersDependee(dm)
@@ -657,7 +657,7 @@ class FieldLocalityAnalysis private[analyses] (
                     var isLocal = true
                     val tac = tacDependee.ub.tac.get
                     if (state.tacFieldAccessPCs.contains(m)) {
-                        newEP.ub.forNewCalleeContexts(oldEP.ub, dm) { callContext ⇒
+                        newEP.ub.forNewCalleeContexts(oldEP.ub, dm) { callContext =>
                             isLocal &&= state.tacFieldAccessPCs(m).forall {
                                 isLocalForFieldAccess(callContext, _, tac)
                             }
@@ -672,10 +672,10 @@ class FieldLocalityAnalysis private[analyses] (
                 } else
                     false
 
-            case Callees.key ⇒
+            case Callees.key =>
                 val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
                 state.updateCalleeDependee(newEP)
-                state.getCallsites(newEP.e).exists(pc ⇒ handleCallSite(newEP.e, pc))
+                state.getCallsites(newEP.e).exists(pc => handleCallSite(newEP.e, pc))
         }
         if (isNotLocal) {
             Result(state.field, NoLocalField)

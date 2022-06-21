@@ -6,9 +6,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import scala.util.control.ControlThrowable
-import org.opalj.collection.immutable.Naught
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * @author Michael Eichberg
@@ -34,7 +34,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
             immutableList.findMethod(
                 "<init>",
                 MethodDescriptor(
-                    RefArray(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
+                    ArraySeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
                 )
             ).isDefined
         )
@@ -74,29 +74,29 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("that findField on a class without fields does not fail") {
         quicksort.fields should be(empty)
-        quicksort.findField("DoesNotExist") should be(Naught)
+        quicksort.findField("DoesNotExist") should be(List.empty)
     }
 
     test("that findField finds all fields") {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
 
-        boundedBuffer.findField("buffer") should not be ('empty)
-        boundedBuffer.findField("first") should not be ('empty)
-        boundedBuffer.findField("last") should not be ('empty)
-        boundedBuffer.findField("size") should not be ('empty)
-        boundedBuffer.findField("numberInBuffer") should not be ('empty)
+        boundedBuffer.findField("buffer") should not be (Symbol("Empty"))
+        boundedBuffer.findField("first") should not be (Symbol("Empty"))
+        boundedBuffer.findField("last") should not be (Symbol("Empty"))
+        boundedBuffer.findField("size") should not be (Symbol("Empty"))
+        boundedBuffer.findField("numberInBuffer") should not be (Symbol("Empty"))
     }
 
     test("that findField does not find non-existing fields") {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
 
-        boundedBuffer.findField("BUFFER") should be(Naught)
-        boundedBuffer.findField("firsT") should be(Naught)
-        boundedBuffer.findField("lAst") should be(Naught)
-        boundedBuffer.findField("Size") should be(Naught)
-        boundedBuffer.findField("AnumberInBuffers") should be(Naught)
+        boundedBuffer.findField("BUFFER") should be(List.empty)
+        boundedBuffer.findField("firsT") should be(List.empty)
+        boundedBuffer.findField("lAst") should be(List.empty)
+        boundedBuffer.findField("Size") should be(List.empty)
+        boundedBuffer.findField("AnumberInBuffers") should be(List.empty)
     }
 
     val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")
@@ -140,7 +140,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         )
 
         var foundNestedTypes: Set[ObjectType] = Set.empty
-        outerClass.foreachNestedClass({ nc ⇒ foundNestedTypes += nc.thisType })(innerclassesProject)
+        outerClass.foreachNestedClass({ nc => foundNestedTypes += nc.thisType })(innerclassesProject)
 
         foundNestedTypes.size should be(expectedNestedTypes.size)
         foundNestedTypes should be(expectedNestedTypes)
@@ -150,20 +150,20 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         val project = analyses.Project(jarFile)
         var innerClassesCount = 0
         var failures: List[String] = List.empty
-        val nestedTypes = for (classFile ← project.allClassFiles) yield {
+        val nestedTypes = for (classFile <- project.allClassFiles) yield {
             try {
                 // should not time out or crash...
                 classFile.nestedClasses(project)
                 var nestedClasses: List[Type] = Nil
-                classFile.foreachNestedClass({ c ⇒
+                classFile.foreachNestedClass({ c =>
                     nestedClasses = c.thisType :: nestedClasses
                     innerClassesCount += 1
                 })(project)
                 innerClassesCount += 1
                 Some((classFile.thisType, nestedClasses))
             } catch {
-                case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable ⇒
+                case ct: ControlThrowable => throw ct
+                case t: Throwable =>
                     failures =
                         s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass().getSimpleName()} - ${t.getMessage()}" ::
                             failures
@@ -185,8 +185,8 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         val o$1 = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1")
         val o$1$q = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1$Query")
         nestedTypeInformation(o) should contain(o$1)
-        nestedTypeInformation(o$1) should be('empty) // the jar contains inconsistent code...
-        nestedTypeInformation(o$1$q) should be('empty)
+        nestedTypeInformation(o$1) should be(Symbol("Empty")) // the jar contains inconsistent code...
+        nestedTypeInformation(o$1$q) should be(Symbol("Empty"))
     }
 
     test("that it is possible to get the inner classes information for batik-DOMViewer 1.7.jar") {
@@ -197,7 +197,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         val D$3 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
         nestedTypeInformation(D$Panel) should contain(D$2)
         nestedTypeInformation(D$2) should contain(D$3)
-        nestedTypeInformation(D$3) should be('empty)
+        nestedTypeInformation(D$3) should be(Symbol("Empty"))
     }
 
     test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {

@@ -3,8 +3,8 @@ package org.opalj
 package graphs
 
 import scala.annotation.tailrec
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Representation of a (post) dominator tree of, for example, a control flow graph.
@@ -28,7 +28,7 @@ abstract class AbstractDominatorTree {
      *
      * Defined w.r.t. the (implicitly) augmented CFG.
      */
-    val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) // IntFunction[Consumer[IntConsumer]]
+    val foreachSuccessorOf: Int => ((Int => Unit) => Unit) // IntFunction[Consumer[IntConsumer]]
 
     // PROPERTIES OF THE TREE
     //
@@ -92,7 +92,7 @@ abstract class AbstractDominatorTree {
      *
      * @param n The id of a valid node.
      */
-    final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int ⇒ U): Unit = {
+    final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int => U): Unit = {
         if (n != startNode || reflexive) {
             var c = if (reflexive) n else idom(n)
             while (c != startNode) {
@@ -106,14 +106,14 @@ abstract class AbstractDominatorTree {
     /**
      * The array which stores the immediate dominator for each node.
      */
-    def immediateDominators: IntArray = IntArray._UNSAFE_from(idom)
+    def immediateDominators: ArraySeq[Int] = ArraySeq.unsafeWrapArray(idom)
 
     /**
      * (Re-)computes the dominator tree's leaf nodes. Due to the way the graph is stored,
      * this method has a complexity of O(2n). Hence, if the leaves are required more than
      * once, storing/caching them should be considered.
      */
-    def leaves(isIndexValid: Int ⇒ Boolean = _ ⇒ true): Chain[Int] = {
+    def leaves(isIndexValid: Int => Boolean = _ => true): List[Int] = {
         // A leaf is a node which does not dominate another node.
         var i = 0
         val max = idom.length
@@ -127,11 +127,11 @@ abstract class AbstractDominatorTree {
             i += 1
         }
         // second loop - collect leaves
-        var theLeaves = Chain.empty[Int]
+        var theLeaves = List.empty[Int]
         i = 0
         while (i < max) {
             if (isIndexValid(i) && !dominates(i)) {
-                theLeaves :&:= i
+                theLeaves ::= i
             }
             i += 1
         }
@@ -146,12 +146,12 @@ abstract class AbstractDominatorTree {
      *          specific index is actually identifying a node. This is particularly useful/
      *          required if the `idom` array given at initialization time is a sparse array.
      */
-    def toDot(isIndexValid: Int ⇒ Boolean = _ ⇒ true): String = {
+    def toDot(isIndexValid: Int => Boolean = _ => true): String = {
         val g = Graph.empty[Int]
-        idom.zipWithIndex.foreach { e ⇒
+        idom.zipWithIndex.foreach { e =>
             val (t, s /*index*/ ) = e
             if (isIndexValid(s) && s != startNode)
-                g += (t, s)
+                g.addEdge(t, s)
         }
         g.toDot(rankdir = "BT", ranksep = "0.3")
     }

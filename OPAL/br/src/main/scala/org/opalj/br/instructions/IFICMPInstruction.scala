@@ -30,8 +30,8 @@ object IFICMPInstruction {
 
     def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = {
         i match {
-            case i: IFICMPInstruction[_] ⇒ Some((i.condition, i.branchoffset))
-            case _                       ⇒ None
+            case i: IFICMPInstruction[_] => Some((i.condition, i.branchoffset))
+            case _                       => None
         }
     }
 

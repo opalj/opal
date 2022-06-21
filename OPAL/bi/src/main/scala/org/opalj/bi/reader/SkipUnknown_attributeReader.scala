@@ -14,7 +14,7 @@ import org.opalj.log.OPALLogger
 trait SkipUnknown_attributeReader
     extends Unknown_attributeAbstractions
     with ClassFileReaderConfiguration {
-    this: Constant_PoolReader ⇒
+    this: Constant_PoolReader =>
 
     //
     // TYPE DEFINITIONS AND FACTORY METHODS

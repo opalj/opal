@@ -3,7 +3,10 @@ package org.opalj
 package ai
 
 import java.net.URL
-import org.opalj.br.analyses.{ProjectAnalysisApplication, BasicReport, Project}
+
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.Method
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.MethodDescriptor
@@ -26,7 +29,7 @@ object MethodCallInformation extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         //        val mutex = new Object // JUST USED TO GET A REASONABLE DEBUG OUTPUT
 
@@ -39,17 +42,17 @@ object MethodCallInformation extends ProjectAnalysisApplication {
             val result = PerformAI(domain)
 
             val code = method.body.get
-            foreachPCWithOperands(domain)(code, result.operandsArray) { (pc, instruction, ops) ⇒
+            foreachPCWithOperands(domain)(code, result.operandsArray) { (pc, instruction, ops) =>
 
                 def isPotentiallyRefinable(methodDescriptor: MethodDescriptor): Boolean = {
                     methodDescriptor.parametersCount > 0 &&
-                        methodDescriptor.parameterTypes.exists { t ⇒
+                        methodDescriptor.parameterTypes.exists { t =>
                             t.isArrayType || (t.isObjectType && ch.hasSubtypes(t.asObjectType).isYesOrUnknown)
                         }
                 }
 
                 instruction match {
-                    case invoke: MethodInvocationInstruction if isPotentiallyRefinable(invoke.methodDescriptor) ⇒
+                    case invoke: MethodInvocationInstruction if isPotentiallyRefinable(invoke.methodDescriptor) =>
                         callsCount.incrementAndGet()
                         val methodDescriptor = invoke.methodDescriptor
                         val parameterTypes = methodDescriptor.parameterTypes
@@ -57,15 +60,15 @@ object MethodCallInformation extends ProjectAnalysisApplication {
 
                         var index = 0
                         val hasMorePreciseType =
-                            operands.exists { op ⇒
+                            operands.exists { op =>
                                 val foundMorePreciseType = op match {
-                                    case v: domain.AReferenceValue ⇒
+                                    case v: domain.AReferenceValue =>
                                         val utb = v.upperTypeBound
                                         // If the upper type bound has multiple types
                                         // the type bound is necessarily more precise
                                         // the the method parameter's type.
                                         !utb.isSingletonSet || (utb.head ne parameterTypes(index))
-                                    case _ ⇒ // we don't care about primitive types
+                                    case _ => // we don't care about primitive types
                                         false
                                 }
                                 index += 1
@@ -89,12 +92,12 @@ object MethodCallInformation extends ProjectAnalysisApplication {
                             refinedCallsCount.incrementAndGet()
                         }
 
-                    case _ ⇒ // we don't care about all other instructions
+                    case _ => // we don't care about all other instructions
                 }
             }
         }
 
-        theProject.parForeachMethodWithBody(isInterrupted)(mi ⇒ analyzeMethod(mi.method))
+        theProject.parForeachMethodWithBody(isInterrupted)(mi => analyzeMethod(mi.method))
 
         BasicReport(s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information.")
     }

@@ -18,34 +18,34 @@ import org.opalj.br.ObjectType
 trait DefaultReferenceValuesBinding
     extends DefaultTypeLevelReferenceValues
     with DefaultExceptionsFactory {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
-    type AReferenceValue = ReferenceValue
+    type AReferenceValue = ReferenceValueLike
     type DomainReferenceValue = AReferenceValue
 
     final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
-    type DomainNullValue = NullValue
-    type DomainObjectValue = ObjectValue
-    type DomainArrayValue = ArrayValue
+    type DomainNullValue = ANullValue
+    type DomainObjectValue = AnObjectValue
+    type DomainArrayValue = AnArrayValue
 
-    val TheNullValue: DomainNullValue = new NullValue()
+    val TheNullValue: DomainNullValue = new ANullValue()
 
     //
     // CONCRETE CLASSES AND FACTORY METHODS
     //
 
-    protected case class DefaultSObjectValue(theUpperTypeBound: ObjectType) extends SObjectValue {
+    protected case class DefaultSObjectValue(theUpperTypeBound: ObjectType) extends SObjectValueLike {
         override def isNull: Answer = Unknown
     }
 
-    protected case class DefaultArrayValue(theUpperTypeBound: ArrayType) extends ArrayValue {
+    protected case class DefaultArrayValue(theUpperTypeBound: ArrayType) extends AnArrayValue {
         override def isNull: Answer = Unknown
     }
 
     protected case class DefaultMObjectValue(
             upperTypeBound: UIDSet[ObjectType]
-    ) extends MObjectValue {
+    ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }
 

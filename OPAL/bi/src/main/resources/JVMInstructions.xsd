@@ -411,7 +411,7 @@
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→call_site_specifier"/>
+            <enumeration value="ushort_cp_index->call_site_specifier"/>
         </restriction>
     </simpleType>
 
@@ -423,7 +423,7 @@
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→methodref"/>
+            <enumeration value="ushort_cp_index->methodref"/>
         </restriction>
     </simpleType>
 
@@ -437,7 +437,7 @@
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→interface_methodref"/>
+            <enumeration value="ushort_cp_index->interface_methodref"/>
         </restriction>
     </simpleType>
 
@@ -447,7 +447,7 @@
             entry .</documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→fieldref"/>
+            <enumeration value="ushort_cp_index->fieldref"/>
         </restriction>
     </simpleType>
 
@@ -457,7 +457,7 @@
             Constant_class entry that identifies either a class, interface or array type .</documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→referenceType"/>
+            <enumeration value="ushort_cp_index->referenceType"/>
         </restriction>
     </simpleType>
 
@@ -467,7 +467,7 @@
             Constant_class entry that identifies either a class or interface type .</documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→objectType"/>
+            <enumeration value="ushort_cp_index->objectType"/>
         </restriction>
     </simpleType>
 
@@ -479,7 +479,7 @@
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→constant_value"/>
+            <enumeration value="ushort_cp_index->constant_value"/>
         </restriction>
     </simpleType>
 
@@ -489,7 +489,7 @@
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ubyte_cp_index→constant_value"/>
+            <enumeration value="ubyte_cp_index->constant_value"/>
         </restriction>
     </simpleType>
 

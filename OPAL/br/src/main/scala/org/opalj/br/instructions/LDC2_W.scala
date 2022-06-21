@@ -58,9 +58,9 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case LoadDouble(thatValue) ⇒
+            case LoadDouble(thatValue) =>
                 thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -112,9 +112,9 @@ object LDC2_W {
 
     def apply(constantValue: ConstantValue[_]): LDC2_W[_] = {
         constantValue.value match {
-            case v: Long   ⇒ LoadLong(v)
-            case d: Double ⇒ LoadDouble(d)
-            case _ ⇒
+            case v: Long   => LoadLong(v)
+            case d: Double => LoadDouble(d)
+            case _ =>
                 throw BytecodeProcessingFailedException(
                     "unsupported LDC2_W constant value: "+constantValue
                 )

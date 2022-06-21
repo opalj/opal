@@ -2,31 +2,33 @@
 package org.opalj
 package ba
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.mutable.Locals
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntRefPair
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bi.ACC_STATIC
-import org.opalj.br.StackMapTable
+import org.opalj.br.AppendFrame
+import org.opalj.br.Attributes
+import org.opalj.br.ChopFrame
+import org.opalj.br.ClassFile
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.FullFrame
 import org.opalj.br.Method
 import org.opalj.br.Methods
-import org.opalj.br.Attributes
-import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
-import org.opalj.br.FullFrame
-import org.opalj.br.ChopFrame
-import org.opalj.br.AppendFrame
-import org.opalj.br.SameLocals1StackItemFrameExtended
-import org.opalj.br.SameLocals1StackItemFrame
 import org.opalj.br.SameFrame
 import org.opalj.br.SameFrameExtended
-import org.opalj.br.VerificationTypeInfo
+import org.opalj.br.SameLocals1StackItemFrame
+import org.opalj.br.SameLocals1StackItemFrameExtended
+import org.opalj.br.StackMapFrame
+import org.opalj.br.StackMapTable
 import org.opalj.br.TopVariableInfo
+import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.instructions.Instruction
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.TypeCheckingDomain
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. The ''Builder'' is
@@ -71,7 +73,7 @@ class CodeAttributeBuilder[T] private[ba] (
 
     def instruction(index: Int): Instruction = instructions(index)
 
-    def foreachInstructionWithIndex[U](f: IntRefPair[Instruction] ⇒ U): Unit = {
+    def foreachInstructionWithIndex[U](f: IntRefPair[Instruction] => U): Unit = {
         val instructions = this.instructions
         var i = 0
         val max = instructions.length
@@ -150,7 +152,7 @@ class CodeAttributeBuilder[T] private[ba] (
         classHierarchy: ClassHierarchy
     ): (br.Code, (Map[br.PC, T], List[String])) = {
 
-        import CodeAttributeBuilder.warnMessage
+        import org.opalj.ba.CodeAttributeBuilder.warnMessage
         var warnings = List.empty[String]
 
         val computedMaxLocals = br.Code.computeMaxLocals(
@@ -191,7 +193,7 @@ class CodeAttributeBuilder[T] private[ba] (
 
         // We need to compute the stack map table if we don't have one already!
         if (classFileVersion.major >= bi.Java6MajorVersion &&
-            attributes.forall(a ⇒ a.kindId != StackMapTable.KindId) &&
+            attributes.forall(a => a.kindId != StackMapTable.KindId) &&
             (hasControlTransferInstructions || exceptionHandlers.nonEmpty)) {
             // Let's create fake code and method objects to make it possible
             // to use the AI framework for computing the stack map table...
@@ -241,7 +243,7 @@ object CodeAttributeBuilder {
         implicit
         classHierarchy: ClassHierarchy
     ): StackMapTable = {
-        type VerificationTypeInfos = RefArray[VerificationTypeInfo]
+        type VerificationTypeInfos = ArraySeq[VerificationTypeInfo]
 
         val c = m.body.get
 
@@ -257,16 +259,16 @@ object CodeAttributeBuilder {
         ): VerificationTypeInfos = {
             val lastLocalsIndex = locals.indexOfLastNonNullValue
             var index = 0
-            val b = RefArray.newBuilder[VerificationTypeInfo]
+            val b = ArraySeq.newBuilder[VerificationTypeInfo]
             b.sizeHint(lastLocalsIndex + 1)
             while (index <= lastLocalsIndex) {
                 b += (
                     locals(index) match {
-                        case null | r.domain.TheIllegalValue ⇒
+                        case null | r.domain.TheIllegalValue =>
                             index += 1
                             TopVariableInfo
 
-                        case dv ⇒
+                        case dv =>
                             val operandSize = dv.computationalType.operandSize
                             if (operandSize == 2 && locals(index + 1) != null) {
                                 // This situation may arises in cases where we use a local variable
@@ -288,12 +290,12 @@ object CodeAttributeBuilder {
         var lastVerificationTypeInfoLocals: VerificationTypeInfos =
             computeLocalsVerificationTypeInfo(ils)
         var lastverificationTypeInfoStack: VerificationTypeInfos =
-            RefArray.empty // has to be empty...
+            ArraySeq.empty // has to be empty...
 
         val framePCs = c.stackMapTablePCs(classHierarchy)
-        val fs = new Array[AnyRef /*actually StackMapFrame*/ ](framePCs.size)
+        val fs = new Array[StackMapFrame](framePCs.size)
         var frameIndex = 0
-        framePCs.foreach { pc ⇒
+        framePCs.foreach { pc =>
             val verificationTypeInfoLocals: VerificationTypeInfos = {
                 val locals = r.localsArray(pc)
                 if (locals == null) {
@@ -302,7 +304,7 @@ object CodeAttributeBuilder {
                         c.instructions.
                             zipWithIndex.
                             filter(_._1 != null).
-                            map(e ⇒ e._2+": "+e._1)
+                            map(e => s"${e._2}: ${e._1}")
                     val instructionsAsString = instructions.mkString("\n\t\t", "\n\t\t", "\n")
                     val body =
                         s"; pc $pc is dead; unable to compute stack map table:"+
@@ -318,16 +320,16 @@ object CodeAttributeBuilder {
                 var operands = r.operandsArray(pc)
                 var operandIndex = operands.size
                 if (operandIndex == 0) {
-                    RefArray.empty // an empty stack is a VERY common case...
+                    ArraySeq.empty // an empty stack is a VERY common case...
                 } else {
-                    val os = new Array[AnyRef /*VerificationTypeInfo*/ ](operandIndex /*HERE == operands.size*/ )
+                    val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
                     do {
                         os(operandIndex) = operands.head.verificationTypeInfo
                         operands = operands.tail
                         operandIndex -= 1
                     } while (operandIndex >= 0)
-                    RefArray._UNSAFE_from[VerificationTypeInfo](os)
+                    ArraySeq.unsafeWrapArray[VerificationTypeInfo](os)
                 }
             }
 
@@ -363,7 +365,7 @@ object CodeAttributeBuilder {
                 // all "still" existing locals are equal...
                 verificationTypeInfoLocals.iterator
                 .zipWithIndex
-                .forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
+                .forall { case (vtil, index) => vtil == lastVerificationTypeInfoLocals(index) }
             )) {
                 // ---- CHOP FRAME ...
                 //
@@ -373,7 +375,7 @@ object CodeAttributeBuilder {
                 // all previously existing locals are equal...
                 lastVerificationTypeInfoLocals.iterator
                 .zipWithIndex
-                .forall { case (vtil, index) ⇒ vtil == verificationTypeInfoLocals(index) }
+                .forall { case (vtil, index) => vtil == verificationTypeInfoLocals(index) }
             )) {
                 // ---- APPEND FRAME ...
                 //
@@ -407,6 +409,6 @@ object CodeAttributeBuilder {
             frameIndex += 1
             lastPC = pc
         }
-        StackMapTable(RefArray._UNSAFE_from(fs))
+        StackMapTable(ArraySeq.unsafeWrapArray(fs))
     }
 }

@@ -21,7 +21,7 @@ import org.opalj.ai.fpcf.properties.FieldValue
 trait RefinedTypeLevelFieldAccessInstructions
     extends TypeLevelFieldAccessInstructions
     with PropertyStoreBased {
-    domain: ReferenceValuesDomain with ValuesFactory with Configuration with TheProject ⇒
+    domain: ReferenceValuesDomain with ValuesFactory with Configuration with TheProject =>
 
     abstract override def usesProperties: Set[PropertyKind] = {
         super.usesProperties ++ Set(FieldValue)
@@ -35,16 +35,16 @@ trait RefinedTypeLevelFieldAccessInstructions
         fieldType:      FieldType
     ): Computation[DomainValue, ExceptionValue] = {
         project.resolveFieldReference(declaringClass, fieldName, fieldType) match {
-            case Some(field) ⇒
+            case Some(field) =>
                 dependees.getOrQueryAndUpdate(field, FieldValue.key) match {
-                    case UsedPropertiesBound(fv) ⇒
+                    case UsedPropertiesBound(fv) =>
                         val vi = fv.value(classHierarchy)
                         doGetfield(pc, objectref, domain.InitializedDomainValue(pc, vi))
-                    case _ ⇒
+                    case _ =>
                         // fallback
                         super.getfield(pc, objectref, declaringClass, fieldName, fieldType)
                 }
-            case None ⇒
+            case None =>
                 // fallback
                 super.getfield(pc, objectref, declaringClass, fieldName, fieldType)
         }
@@ -60,16 +60,16 @@ trait RefinedTypeLevelFieldAccessInstructions
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing] = {
         project.resolveFieldReference(declaringClass, fieldName, fieldType) match {
-            case Some(field) ⇒
+            case Some(field) =>
                 dependees.getOrQueryAndUpdate(field, FieldValue.key) match {
-                    case LBP(fv) ⇒
+                    case LBP(fv) =>
                         val vi = fv.value(classHierarchy)
                         doGetstatic(pc, domain.InitializedDomainValue(pc, vi))
-                    case _ ⇒
+                    case _ =>
                         // fallback
                         super.getstatic(pc, declaringClass, fieldName, fieldType)
                 }
-            case None ⇒
+            case None =>
                 // fallback
                 super.getstatic(pc, declaringClass, fieldName, fieldType)
         }

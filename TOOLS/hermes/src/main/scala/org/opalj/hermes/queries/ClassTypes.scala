@@ -30,15 +30,15 @@ class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val classTypesLocations = Array.fill(10)(new LocationsContainer[S])
 
         val functionalInterfaces = project.functionalInterfaces
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
         } {
             val location = ClassFileLocation(source, classFile)
@@ -71,11 +71,11 @@ class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
                     classTypesLocations(5) += location
                 } else {
                     var isJava8Interface = false
-                    if (explicitlyDefinedMethods.exists(m ⇒ !m.isAbstract && !m.isStatic)) {
+                    if (explicitlyDefinedMethods.exists(m => !m.isAbstract && !m.isStatic)) {
                         classTypesLocations(6) += location
                         isJava8Interface = true
                     }
-                    if (explicitlyDefinedMethods.exists(m ⇒ m.isStatic)) {
+                    if (explicitlyDefinedMethods.exists(m => m.isStatic)) {
                         classTypesLocations(7) += location
                         isJava8Interface = true
                     }
@@ -89,7 +89,7 @@ class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, classTypesLocations(featureIDIndex))
         }
     }

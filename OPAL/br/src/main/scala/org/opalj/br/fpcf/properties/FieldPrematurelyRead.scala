@@ -43,7 +43,7 @@ object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation 
     final val key: PropertyKey[FieldPrematurelyRead] = {
         PropertyKey.create(
             PropertyKeyName,
-            (ps: PropertyStore, _, f: Field) ⇒ {
+            (ps: PropertyStore, _, f: Field) => {
                 val p = ps.context(classOf[SomeProject])
                 if (isPrematurelyReadFallback(p, f)) PrematurelyReadField
                 else NotPrematurelyReadField
@@ -57,13 +57,13 @@ object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation 
         var superclassType = field.classFile.superclassType
         while (!prematurelyRead && superclassType.isDefined) {
             val classFile = p.classFile(superclassType.get)
-            prematurelyRead = classFile.isEmpty || classFile.get.methods.exists { m ⇒
-                m.isConstructor && (m.body.isEmpty || m.body.get.instructions.exists { inst ⇒
+            prematurelyRead = classFile.isEmpty || classFile.get.methods.exists { m =>
+                m.isConstructor && (m.body.isEmpty || m.body.get.instructions.exists { inst =>
                     inst != null && (inst.opcode match {
                         case INVOKEDYNAMIC.opcode | INVOKEINTERFACE.opcode | INVOKESTATIC.opcode |
-                            INVOKEVIRTUAL.opcode ⇒
+                            INVOKEVIRTUAL.opcode =>
                             true
-                        case _ ⇒
+                        case _ =>
                             false
                     })
                 })
@@ -72,20 +72,20 @@ object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation 
         }
         if (!prematurelyRead) {
             val subClasses = p.classHierarchy.allSubclassTypes(classType, reflexive = true)
-            prematurelyRead = subClasses exists { classType ⇒
+            prematurelyRead = subClasses exists { classType =>
                 val classFile = p.classFile(classType)
-                classFile.isEmpty || classFile.get.methods.exists { m ⇒
-                    m.isConstructor && (m.body.isEmpty || m.body.get.instructions.exists { inst ⇒
+                classFile.isEmpty || classFile.get.methods.exists { m =>
+                    m.isConstructor && (m.body.isEmpty || m.body.get.instructions.exists { inst =>
                         inst != null && (inst.opcode match {
-                            case GETFIELD.opcode ⇒
+                            case GETFIELD.opcode =>
                                 val GETFIELD(declClass, name, _) = inst
                                 declClass == classType && name == field.name
                             case INVOKEDYNAMIC.opcode | INVOKEINTERFACE.opcode |
-                                INVOKESTATIC.opcode | INVOKEVIRTUAL.opcode ⇒
+                                INVOKESTATIC.opcode | INVOKEVIRTUAL.opcode =>
                                 true
-                            case INVOKESPECIAL.opcode ⇒
+                            case INVOKESPECIAL.opcode =>
                                 inst.asInvocationInstruction.name != "<init>"
-                            case _ ⇒
+                            case _ =>
                                 false
                         })
                     })

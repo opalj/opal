@@ -12,7 +12,7 @@ import scala.annotation.switch
  */
 trait GotoInstructionLike extends UnconditionalBranchInstructionLike {
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -25,9 +25,9 @@ object GotoInstruction {
 
     def unapply(instruction: Instruction): Option[Int] = {
         (instruction.opcode: @switch) match {
-            case GOTO.opcode | GOTO_W.opcode ⇒
+            case GOTO.opcode | GOTO_W.opcode =>
                 Some(instruction.asInstanceOf[GotoInstruction].branchoffset)
-            case _ ⇒ None
+            case _ => None
         }
     }
 }

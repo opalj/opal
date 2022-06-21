@@ -4,7 +4,7 @@ package br
 
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
-import org.opalj.br.reader.Java9Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java9Framework.{ClassFile => ClassFileReader}
 
 /**
  * Loads class files from a JAR archive and prints the signature and module related
@@ -24,7 +24,7 @@ object ClassFileInformation {
             sys.exit(-1)
         }
 
-        for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
+        for (classFileName <- args.drop(1) /* drop the name of the jar file */ ) {
 
             // Load class file (the class file name has to correspond to the name of
             // the file inside the archive.)
@@ -37,7 +37,7 @@ object ClassFileInformation {
             println(thisType.toJava)
 
             // superclassType returns an Option, because java.lang.Object does not have a super class
-            superclassType foreach { s ⇒ println("  extends "+s.toJava) }
+            superclassType foreach { s => println("  extends "+s.toJava) }
             if (interfaceTypes.nonEmpty) {
                 println(interfaceTypes.map(_.toJava).mkString("  implement ", ", ", ""))
             }
@@ -45,13 +45,13 @@ object ClassFileInformation {
             // the source file attribute is an optional attribute and is only specified
             // if the compiler settings are such that debug information is added to the
             // compile class file.
-            sourceFile foreach { s ⇒ println("\tSOURCEFILE: "+s) }
+            sourceFile foreach { s => println("\tSOURCEFILE: "+s) }
 
-            module foreach { m ⇒
+            module foreach { m =>
                 println("\tMODULE: ")
                 if (m.requires.nonEmpty) {
                     println(
-                        m.requires.map { r ⇒
+                        m.requires.map { r =>
                             val flags = AccessFlags.toString(r.flags, AccessFlagsContexts.MODULE)
                             s"\t\trequires $flags${r.requires};"
                         }.sorted.mkString("\n")
@@ -66,7 +66,7 @@ object ClassFileInformation {
                     println(m.opens.map(_.toJava).sorted.mkString("", "\n", "\n"))
                 }
                 if (m.uses.nonEmpty) {
-                    println(m.uses.map(use ⇒ s"uses ${use.toJava};").sorted.mkString("", "\n", "\n"))
+                    println(m.uses.map(use => s"uses ${use.toJava};").sorted.mkString("", "\n", "\n"))
                 }
                 if (m.provides.nonEmpty) {
                     println(m.provides.map(_.toJava).sorted.mkString("", "\n", "\n"))

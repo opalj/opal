@@ -23,8 +23,7 @@ class PrimitiveTACAIDomain(
     with TheMethod
     with RecordDefUse {
 
-    def this(project: SomeProject, method: Method) {
+    def this(project: SomeProject, method: Method) =
         this(project.classHierarchy, method)
-    }
 }
 

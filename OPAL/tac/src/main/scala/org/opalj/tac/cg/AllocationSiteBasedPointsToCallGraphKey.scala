@@ -35,7 +35,7 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
 
     override protected[cg] def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         List(
             AllocationSiteBasedPointsToAnalysisScheduler,
             AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler,

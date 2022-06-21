@@ -36,7 +36,7 @@ class ProjectIndexTest extends AnyFlatSpec with Matchers {
         val descriptor = MethodDescriptor.NoArgsAndReturnVoid
         val methods = methodsProjectIndex.findMethods(name, descriptor)
         methods should have size (1)
-        methods.forall(m ⇒ m.name == name && m.descriptor == descriptor) should be(true)
+        methods.forall(m => m.name == name && m.descriptor == descriptor) should be(true)
     }
 
     it should "find multiple methods with the same signature if the method is overridden or reimplemented" in {
@@ -44,7 +44,7 @@ class ProjectIndexTest extends AnyFlatSpec with Matchers {
         val descriptor = MethodDescriptor.NoArgsAndReturnVoid
         val methods = methodsProjectIndex.findMethods(name, descriptor)
         methods should have size (4)
-        methods.forall(m ⇒ m.name == name && m.descriptor == descriptor) should be(true)
+        methods.forall(m => m.name == name && m.descriptor == descriptor) should be(true)
     }
 
     it should ("not find a method that does not exist") in {
@@ -62,7 +62,7 @@ class ProjectIndexTest extends AnyFlatSpec with Matchers {
         val fieldType = IntegerType
         val matches = fieldsProjectIndex.findFields(name, fieldType).toSet
         matches should have size (4)
-        matches.forall(f ⇒ f.name == name && f.fieldType == fieldType) should be(true)
+        matches.forall(f => f.name == name && f.fieldType == fieldType) should be(true)
     }
 
     it should ("find all definitions of the field \"y : int\"") in {
@@ -70,7 +70,7 @@ class ProjectIndexTest extends AnyFlatSpec with Matchers {
         val fieldType = IntegerType
         val results = fieldsProjectIndex.findFields(name, fieldType).toSet
         results should have size (3)
-        results.forall(f ⇒ f.name == name && f.fieldType == fieldType) should be(true)
+        results.forall(f => f.name == name && f.fieldType == fieldType) should be(true)
     }
 
     it should ("not find a field that does not exist") in {

@@ -4,14 +4,14 @@ package br
 package instructions
 
 import scala.annotation.switch
-
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.MethodDescriptor.DefaultConstructorDescriptor
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Provides helper methods to facilitate the generation of classes.
@@ -208,16 +208,16 @@ object ClassFileFactory {
                     implMethod.methodDescriptor,
                     methodDescriptor
                 )) {
-                RefArray.empty
+                ArraySeq.empty
             } else {
-                RefArray(createField(fieldType = receiverType, name = ReceiverFieldName))
+                ArraySeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
-            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex.map[FieldTemplate] { p ⇒
+            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex.map[FieldTemplate] { p =>
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
-        val fields: RefArray[FieldTemplate] =
+        val fields: ArraySeq[FieldTemplate] =
             receiverField ++ additionalFieldsForStaticParameters
 
         val constructor: MethodTemplate = createConstructor(definingType, fields)
@@ -261,13 +261,14 @@ object ClassFileFactory {
             factoryMethodName
         )
 
-        bridgeMethodDescriptors.foreachWithIndex { (bridgeMethodDescriptor, i) ⇒
-            methods(3 + i) = createBridgeMethod(
-                methodName,
-                bridgeMethodDescriptor,
-                methodDescriptor,
-                definingType.objectType
-            )
+        bridgeMethodDescriptors.iterator.zipWithIndex.foreach {
+            case (bridgeMethodDescriptor, i) =>
+                methods(3 + i) = createBridgeMethod(
+                    methodName,
+                    bridgeMethodDescriptor,
+                    methodDescriptor,
+                    definingType.objectType
+                )
         }
 
         // Add a writeReplace and $deserializeLambda$ method if the class isSerializable
@@ -295,10 +296,10 @@ object ClassFileFactory {
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
-            definingType.theSuperinterfaceTypes.toRefArray,
+            definingType.theSuperinterfaceTypes.toArraySeq,
             fields,
-            RefArray._UNSAFE_from[MethodTemplate](methods),
-            RefArray(VirtualTypeFlag)
+            ArraySeq.unsafeWrapArray(methods).asInstanceOf[MethodTemplates],
+            ArraySeq(VirtualTypeFlag)
         )
     }
 
@@ -339,7 +340,7 @@ object ClassFileFactory {
         // val a = new ArrayBuffer[Object](100)
         var buildMethodType: Array[Instruction] = Array() // IMPROVE [L10] Use ArrayBuffer
 
-        bootstrapArguments.iterator.zipWithIndex.foreach { ia ⇒
+        bootstrapArguments.iterator.zipWithIndex.foreach { ia =>
             val (arg, idx) = ia
             val staticHandle = arg.asInstanceOf[InvokeStaticMethodHandle]
 
@@ -376,7 +377,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            RefArray(ObjectType.Class),
+                            ArraySeq(ObjectType.Class),
                             ObjectType.MethodType
                         )
                     ), null, null
@@ -390,7 +391,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            RefArray(ObjectType.Class, ObjectType.Class),
+                            ArraySeq(ObjectType.Class, ObjectType.Class),
                             ObjectType.MethodType
                         )
                     ), null, null
@@ -405,7 +406,7 @@ object ClassFileFactory {
                 )
 
                 // The following parameters are put into an array of Class
-                staticHandle.methodDescriptor.parameterTypes.tail.zipWithIndex.foreach { pt ⇒
+                staticHandle.methodDescriptor.parameterTypes.tail.zipWithIndex.foreach { pt =>
                     val (param, i) = pt
                     buildMethodType ++= Array(
                         DUP,
@@ -421,7 +422,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            RefArray(
+                            ArraySeq(
                                 ObjectType.Class,
                                 ObjectType.Class,
                                 ArrayType(ObjectType.Class)
@@ -444,7 +445,7 @@ object ClassFileFactory {
                     ObjectType.MethodHandles$Lookup,
                     "getStatic",
                     MethodDescriptor(
-                        RefArray(
+                        ArraySeq(
                             ObjectType.Class,
                             ObjectType.String,
                             ObjectType.MethodType
@@ -473,7 +474,7 @@ object ClassFileFactory {
                     false,
                     "methodType",
                     MethodDescriptor(
-                        RefArray(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
+                        ArraySeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
                     )
                 ), null, null,
                 ASTORE_3,
@@ -497,7 +498,7 @@ object ClassFileFactory {
                         false,
                         "bootstrap",
                         MethodDescriptor(
-                            RefArray(
+                            ArraySeq(
                                 ObjectType.MethodHandles$Lookup,
                                 ObjectType.String,
                                 ObjectType.MethodType,
@@ -527,15 +528,15 @@ object ClassFileFactory {
 
         val maxStack = Code.computeMaxStack(instructions)
 
-        val methods = RefArray(
+        val methods = ArraySeq(
             Method(
                 bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
                 staticMethodName,
                 MethodDescriptor(
-                    RefArray(ObjectType.SerializedLambda),
+                    ArraySeq(ObjectType.SerializedLambda),
                     ObjectType.Object
                 ),
-                RefArray(
+                ArraySeq(
                     Code(maxStack, maxLocals = 5, instructions, NoExceptionHandlers, NoAttributes)
                 )
             )
@@ -550,10 +551,10 @@ object ClassFileFactory {
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
-            definingType.theSuperinterfaceTypes.toRefArray,
+            definingType.theSuperinterfaceTypes.toArraySeq,
             NoFieldTemplates, // Class fields
             methods,
-            RefArray(VirtualTypeFlag)
+            ArraySeq(VirtualTypeFlag)
         )
     }
 
@@ -635,13 +636,13 @@ object ClassFileFactory {
                 else
                     1
             )
-        val maxLocals = 1 + fields.iterator.sum(_.fieldType.computationalType.operandSize)
+        val maxLocals = 1 + fields.iterator.map(_.fieldType.computationalType.operandSize).sum
 
         Method(
             bi.ACC_PUBLIC.mask,
             "<init>",
             MethodDescriptor(fields.map[FieldType](_.fieldType), VoidType),
-            RefArray(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
+            ArraySeq(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
         )
     }
 
@@ -682,7 +683,7 @@ object ClassFileFactory {
         var currentInstructionPC = 0
         var nextLocalVariableIndex = 1
 
-        fields foreach { f ⇒
+        fields foreach { f =>
             instructions(currentInstructionPC) = ALOAD_0
             currentInstructionPC = ALOAD_0.indexOfNextInstruction(currentInstructionPC, false)
             val llvi = LoadLocalVariableInstruction(f.fieldType, nextLocalVariableIndex)
@@ -707,7 +708,7 @@ object ClassFileFactory {
     ): Int = {
         var numberOfInstructions = 0
         var localVariableIndex = localVariableOffset
-        fieldTypes foreach { ft ⇒
+        fieldTypes foreach { ft =>
             numberOfInstructions += (if (localVariableIndex <= 3) 1 else 2)
             localVariableIndex += ft.computationalType.operandSize
         }
@@ -737,7 +738,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.sum(_.computationalType.operandSize.toInt)
+        val maxLocals = fieldTypes.iterator.map(_.computationalType.operandSize.toInt).sum
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0
@@ -746,7 +747,7 @@ object ClassFileFactory {
         instructions(currentPC) = DUP
         currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
         var currentVariableIndex = 0
-        fieldTypes.foreach { t ⇒
+        fieldTypes.foreach { t =>
             val instruction = LoadLocalVariableInstruction(t, currentVariableIndex)
             currentVariableIndex += t.computationalType.operandSize
             instructions(currentPC) = instruction
@@ -762,7 +763,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
             factoryMethodName,
             MethodDescriptor(fieldTypes, typeToCreate),
-            RefArray(body)
+            ArraySeq(body)
         )
     }
 
@@ -819,7 +820,7 @@ object ClassFileFactory {
         )
 
         additionalFieldsForStaticParameters.zipWithIndex.foreach {
-            case (x, i) ⇒
+            case (x, i) =>
                 instructions ++= Array(
                     DUP,
                     BIPUSH(i), null,
@@ -838,7 +839,7 @@ object ClassFileFactory {
                 isInterface = false,
                 "<init>",
                 MethodDescriptor(
-                    RefArray(
+                    ArraySeq(
                         ObjectType.Class,
                         ObjectType.String,
                         ObjectType.String,
@@ -862,7 +863,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_SYNTHETIC.mask,
             "writeReplace",
             MethodDescriptor.JustReturnsObject,
-            RefArray(body)
+            ArraySeq(body)
         )
     }
 
@@ -898,7 +899,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask | bi.ACC_SYNTHETIC.mask,
             "$deserializeLambda$",
             deserializedLambdaMethodDescriptor,
-            RefArray(body)
+            ArraySeq(body)
         )
     }
 
@@ -927,7 +928,7 @@ object ClassFileFactory {
                 invocationInstruction
             )
 
-        Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, RefArray(code))
+        Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, ArraySeq(code))
     }
 
     /**
@@ -996,7 +997,7 @@ object ClassFileFactory {
             )
 
         val forwardingCallInstruction: Array[Instruction] = (invocationInstruction: @switch) match {
-            case INVOKESTATIC.opcode ⇒
+            case INVOKESTATIC.opcode =>
                 Array(
                     INVOKESTATIC(
                         implMethod.receiverType.asObjectType, receiverIsInterface,
@@ -1004,7 +1005,7 @@ object ClassFileFactory {
                     ), null, null
                 )
 
-            case INVOKESPECIAL.opcode ⇒
+            case INVOKESPECIAL.opcode =>
                 val methodDescriptor =
                     if (implMethod.name == "<init>") {
                         MethodDescriptor(fixedImplDescriptor.parameterTypes, VoidType)
@@ -1017,11 +1018,11 @@ object ClassFileFactory {
                 )
                 Array(invoke, null, null)
 
-            case INVOKEINTERFACE.opcode ⇒
+            case INVOKEINTERFACE.opcode =>
                 val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
                 Array(invoke, null, null, null, null)
 
-            case INVOKEVIRTUAL.opcode ⇒
+            case INVOKEVIRTUAL.opcode =>
                 val invoke = INVOKEVIRTUAL(implMethod.receiverType, implMethod.name, fixedImplDescriptor)
                 Array(invoke, null, null)
         }
@@ -1107,7 +1108,7 @@ object ClassFileFactory {
 
             var numberOfInstructions = 3 + // need to create a new object array
                 LoadConstantInstruction(arraySize).length
-            forwarderParameters.zipWithIndex foreach { p ⇒
+            forwarderParameters.zipWithIndex foreach { p =>
                 val (t, i) = p
                 val loadInstructions = if (lvIndex > 3) 2 else 1
                 // primitive types need 3 for a boxing (invokestatic)
@@ -1131,7 +1132,7 @@ object ClassFileFactory {
             instructions(nextIndex) = ANEWARRAY(ObjectType.Object)
             nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
 
-            forwarderParameters.zipWithIndex foreach { p ⇒
+            forwarderParameters.zipWithIndex foreach { p =>
                 val (t, i) = p
 
                 instructions(nextIndex) = DUP
@@ -1234,7 +1235,7 @@ object ClassFileFactory {
                     if (rt != ft) {
                         if (ft.isNumericType && rt.isNumericType) {
                             val conversion = ft.asNumericType.convertTo(rt.asNumericType)
-                            conversion foreach { instr ⇒
+                            conversion foreach { instr =>
                                 instructions(currentIndex) = instr
                                 currentIndex = instr.indexOfNextInstruction(currentIndex, false)
                             }
@@ -1255,7 +1256,7 @@ object ClassFileFactory {
                             instructions(currentIndex) = boxInstruction
                             currentIndex = boxInstruction.indexOfNextInstruction(currentIndex, false)
                         } else {
-                            throw new UnknownError("Should not occur: "+ft+" → "+rt)
+                            throw new UnknownError("Should not occur: "+ft+" -> "+rt)
                         }
                     }
                 }
@@ -1264,7 +1265,7 @@ object ClassFileFactory {
             instructions
         }
     } catch {
-        case t: Throwable ⇒
+        case t: Throwable =>
             OPALLogger.error(
                 "internal error",
                 s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+
@@ -1404,7 +1405,7 @@ object ClassFileFactory {
             methodName,
             bridgeMethodDescriptor.parameterTypes,
             bridgeMethodDescriptor.returnType,
-            RefArray(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
+            ArraySeq(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
         )
     }
 

@@ -11,7 +11,7 @@ class TypeTest extends AnyFunSpec {
 
     describe("types") {
         it("should be properly initialized on first usage") {
-            Seq(ByteType, CharType, ShortType, IntegerType, LongType, FloatType, DoubleType, BooleanType) foreach { t ⇒
+            Seq(ByteType, CharType, ShortType, IntegerType, LongType, FloatType, DoubleType, BooleanType) foreach { t =>
                 val wt = t.WrapperType
                 val pt = ObjectType.primitiveType(wt)
                 assert(pt.isDefined, s"primitive type lookup failed (${t.WrapperType.toJava})")

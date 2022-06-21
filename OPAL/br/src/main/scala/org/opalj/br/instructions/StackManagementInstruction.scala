@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that directly manipulates the operand stack by popping, swapping or
  * duplicating values.
@@ -27,8 +25,8 @@ abstract class StackManagementInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
     final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

@@ -4,7 +4,6 @@ package hermes
 package queries
 
 import org.opalj.collection.mutable.ArrayMap
-import org.opalj.collection.immutable.Naught
 import org.opalj.bi.LatestSupportedJavaMajorVersion
 import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
@@ -22,7 +21,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override val featureIDs: Seq[String] = {
         featureId(Java1MajorVersion) +: (
-            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion)
+            for (majorVersion <- Java5MajorVersion to LatestSupportedJavaMajorVersion)
                 yield featureId(majorVersion)
         )
     }
@@ -30,13 +29,13 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val data = ArrayMap[LocationsContainer[S]](LatestSupportedJavaMajorVersion)
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
         } {
             val version = classFile.majorVersion
@@ -53,17 +52,17 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
             val java1MajorVersionFeatureId = this.featureId(Java1MajorVersion)
             val extensions = data(Java1MajorVersion)
             if (data(Java1MajorVersion) eq null)
-                Feature[S](java1MajorVersionFeatureId, 0, Naught)
+                Feature[S](java1MajorVersionFeatureId, 0, List.empty)
             else
                 Feature[S](java1MajorVersionFeatureId, extensions.size, extensions)
         } +: (
-            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion) yield {
+            for (majorVersion <- Java5MajorVersion to LatestSupportedJavaMajorVersion) yield {
                 val featureId = this.featureId(majorVersion)
                 val extensions = data(majorVersion)
                 if (extensions ne null) {
                     Feature[S](featureId, extensions.size, extensions)
                 } else
-                    Feature[S](featureId, 0, Naught)
+                    Feature[S](featureId, 0, List.empty)
             }
         )
     }

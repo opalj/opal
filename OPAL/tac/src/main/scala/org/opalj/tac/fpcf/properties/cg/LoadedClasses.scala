@@ -39,10 +39,10 @@ sealed class LoadedClasses private[properties] (
         }
     }
 
-    def updated(newClasses: TraversableOnce[ObjectType]): LoadedClasses = {
+    def updated(newClasses: IterableOnce[ObjectType]): LoadedClasses = {
         var updatedOrderedClasses = orderedClasses
         var updatedClasses = classes
-        for { c ← newClasses } {
+        for { c <- newClasses.iterator } {
             val nextUpdatedClasses = updatedClasses + c
             if (nextUpdatedClasses ne updatedClasses /* <= used as a contains check */ ) {
                 updatedOrderedClasses ::= c
@@ -78,11 +78,11 @@ object LoadedClasses extends LoadedClassesMetaInformation {
         val name = "opalj.LoadedClasses"
         PropertyKey.create(
             name,
-            (ps: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+            (ps: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
                     OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
                     NoLoadedClasses
-                case _ ⇒
+                case _ =>
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
         )

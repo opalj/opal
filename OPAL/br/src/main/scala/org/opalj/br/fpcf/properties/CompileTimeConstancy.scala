@@ -41,7 +41,7 @@ object CompileTimeConstancy extends CompileTimeConstancyPropertyMetaInformation 
      */
     final val key = PropertyKey.create[Field, CompileTimeConstancy](
         "CompileTimeConstancy",
-        (_: PropertyStore, _: FallbackReason, field: Field) ⇒ {
+        (_: PropertyStore, _: FallbackReason, field: Field) => {
             if (field.isStatic && field.isFinal && field.constantFieldValue.isDefined)
                 CompileTimeConstantField
             else
@@ -65,6 +65,6 @@ case object CompileTimeVaryingField extends CompileTimeConstancy {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: CompileTimeConstancy): Unit = {
         if (other ne CompileTimeVaryingField)
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }

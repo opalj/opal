@@ -4,7 +4,6 @@ package ai
 package domain
 package tracing
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
 
@@ -19,7 +18,7 @@ import org.opalj.br._
  *
  * @author Michael Eichberg
  */
-trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization { domain: Domain ⇒
+trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization { domain: Domain =>
 
     trait Property { def join(otherProperty: DomainProperty): Update[DomainProperty] }
 
@@ -59,15 +58,15 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
      */
     abstract override def properties(
         pc:               Int,
-        propertyToString: AnyRef ⇒ String
+        propertyToString: AnyRef => String
     ): Option[String] = {
 
         val thisProperty = Option(propertiesArray(pc)).map(_.toString())
 
         super.properties(pc, propertyToString) match {
-            case superProperty @ Some(description) ⇒
+            case superProperty @ Some(description) =>
                 thisProperty map (_+"; "+description) orElse superProperty
-            case None ⇒
+            case None =>
                 thisProperty
         }
 
@@ -91,12 +90,12 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
         val forceScheduling: Boolean = {
             if (wasJoinPerformed) {
                 propertiesArray(successorPC) join propertiesArray(currentPC) match {
-                    case NoUpdate ⇒
+                    case NoUpdate =>
                         false
-                    case StructuralUpdate(property) ⇒
+                    case StructuralUpdate(property) =>
                         propertiesArray(successorPC) = property
                         true
-                    case MetaInformationUpdate(property) ⇒
+                    case MetaInformationUpdate(property) =>
                         propertiesArray(successorPC) = property
                         false
                 }

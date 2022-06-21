@@ -6,7 +6,7 @@ package analyses
 package cg
 package xta
 
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
@@ -23,7 +23,6 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.Entity
@@ -39,6 +38,8 @@ import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.DefinedMethod
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
@@ -74,24 +75,24 @@ final class TypePropagationAnalysis private[analyses] (
         implicit val state: TypePropagationState[ContextType] = new TypePropagationState(
             callContext, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP
         )
-        implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
+        implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
 
         if (calleesEOptP.hasUBP)
             processCallees(calleesEOptP.ub)
         processTACStatements
         processArrayTypes(state.ownInstantiatedTypes)
 
-        returnResults(partialResults.iterator())
+        returnResults(partialResults.iterator)
     }
 
     /**
      * Processes the method upon initialization. Finds field/array accesses and wires up dependencies accordingly.
      */
-    private def processTACStatements(implicit state: State, partialResults: RefArrayBuffer[SomePartialResult]): Unit = {
+    private def processTACStatements(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
         val bytecode = state.callContext.method.definedMethod.body.get
         val tac = state.tac
         tac.stmts.foreach {
-            case stmt @ Assignment(_, _, expr) if expr.isFieldRead ⇒
+            case stmt @ Assignment(_, _, expr) if expr.isFieldRead =>
                 val fieldRead = expr.asFieldRead
                 if (fieldRead.declaredFieldType.isReferenceType) {
                     // Internally, generic fields have type "Object" due to type erasure. In many cases
@@ -105,53 +106,53 @@ final class TypePropagationAnalysis private[analyses] (
                             fieldRead.declaredFieldType.asReferenceType
 
                     fieldRead.resolveField match {
-                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
+                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) =>
                             registerEntityForBackwardPropagation(f, mostPreciseFieldType)
-                        case _ ⇒
+                        case _ =>
                             val ef = ExternalField(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
                             registerEntityForBackwardPropagation(ef, mostPreciseFieldType)
                     }
                 }
 
-            case fieldWrite: FieldWriteAccessStmt[_] ⇒
+            case fieldWrite: FieldWriteAccessStmt[_] =>
                 if (fieldWrite.declaredFieldType.isReferenceType) {
                     fieldWrite.resolveField match {
-                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
+                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) =>
                             registerEntityForForwardPropagation(f, UIDSet(f.fieldType.asReferenceType))
-                        case _ ⇒
+                        case _ =>
                             val ef = ExternalField(fieldWrite.declaringClass, fieldWrite.name, fieldWrite.declaredFieldType)
                             registerEntityForForwardPropagation(ef, UIDSet(ef.declaredFieldType.asReferenceType))
                     }
                 }
 
-            case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID ⇒
+            case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID =>
                 state.methodReadsArrays = true
 
-            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID ⇒
+            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID =>
                 state.methodWritesArrays = true
 
-            case _ ⇒
+            case _ =>
         }
     }
 
     private def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
 
-        case EUBP(e: DefinedMethod, _: Callees) ⇒
+        case EUBP(e: DefinedMethod, _: Callees) =>
             if (debug) {
                 assert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
             }
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(state)
 
-        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity ⇒
+        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
             handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
-        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) ⇒
+        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
             handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
-        case _ ⇒
+        case _ =>
             sys.error("received unexpected update")
     }
 
@@ -162,9 +163,9 @@ final class TypePropagationAnalysis private[analyses] (
         state: State
     ): ProperPropertyComputationResult = {
         state.updateCalleeDependee(eps)
-        implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
+        implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
         processCallees(eps.ub)
-        returnResults(partialResults.iterator())
+        returnResults(partialResults.iterator)
     }
 
     private def handleUpdateOfOwnTypeSet(
@@ -177,8 +178,8 @@ final class TypePropagationAnalysis private[analyses] (
         state.updateOwnInstantiatedTypesDependee(eps)
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
 
-        implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
-        for (fpe ← state.forwardPropagationEntities.iterator().asScala) {
+        implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
+        for (fpe <- state.forwardPropagationEntities.iterator().asScala) {
             val filters = state.forwardPropagationFilters(fpe)
             val propagation = propagateTypes(fpe, unseenTypes, filters)
             if (propagation.isDefined)
@@ -187,7 +188,7 @@ final class TypePropagationAnalysis private[analyses] (
 
         processArrayTypes(unseenTypes)
 
-        returnResults(partialResults.iterator())
+        returnResults(partialResults.iterator)
     }
 
     private def handleUpdateOfBackwardPropagationTypeSet(
@@ -212,9 +213,9 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: RefArrayBuffer[SomePartialResult]
+        partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
-        for (t ← unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
+        for (t <- unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
             if (state.methodWritesArrays) {
                 registerEntityForForwardPropagation(at, UIDSet(at.componentType.asReferenceType))
             }
@@ -238,12 +239,12 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: RefArrayBuffer[SomePartialResult]
+        partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
         val bytecode = state.callContext.method.definedMethod.body.get
         for {
-            pc ← callees.callSitePCs(state.callContext)
-            calleeContext ← callees.callees(state.callContext, pc)
+            pc <- callees.callSitePCs(state.callContext)
+            calleeContext <- callees.callees(state.callContext, pc)
             callee = calleeContext.method
             if !state.isSeenCallee(pc, callee) && !isIgnoredCallee(callee)
         } {
@@ -271,11 +272,11 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: RefArrayBuffer[SomePartialResult]
+        partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
         val params = UIDSet.newBuilder[ReferenceType]
 
-        for (param ← callee.descriptor.parameterTypes) {
+        for (param <- callee.descriptor.parameterTypes) {
             if (param.isReferenceType) {
                 params += param.asReferenceType
             }
@@ -303,7 +304,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: RefArrayBuffer[SomePartialResult]
+        partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
         val returnValueIsUsed = {
             val tacIndex = state.tac.properStmtIndexForPC(pc)
@@ -338,7 +339,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: RefArrayBuffer[SomePartialResult]
+        partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
         // Propagation from and to the same entity can be ignored.
         val typeSetEntity = selectTypeSetEntity(e)
@@ -360,7 +361,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: RefArrayBuffer[SomePartialResult]
+        partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
         val typeSetEntity = selectTypeSetEntity(e)
         if (typeSetEntity == state.typeSetEntity) {
@@ -445,11 +446,11 @@ final class TypePropagationAnalysis private[analyses] (
             return None;
         }
 
-        val filteredTypes = newTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, nt) ⇒
+        val filteredTypes = newTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, nt) =>
             val fitr = filters.iterator
             var canditateMatches = false
             while (!canditateMatches && fitr.hasNext) {
-                val tf = fitr.next
+                val tf = fitr.next()
                 if (candidateMatchesTypeFilter(nt, tf)) {
                     canditateMatches = true
                     builder += nt
@@ -473,7 +474,7 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def returnResults(
-        partialResults: TraversableOnce[SomePartialResult]
+        partialResults: IterableOnce[SomePartialResult]
     )(implicit state: State): ProperPropertyComputationResult = {
         // Always re-register the continuation. It is impossible for all dependees to be final in XTA/...
         Results(

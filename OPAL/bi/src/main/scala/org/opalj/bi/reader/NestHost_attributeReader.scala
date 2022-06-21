@@ -51,7 +51,7 @@ trait NestHost_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt
         NestHost_attribute(
             cp,
@@ -62,5 +62,5 @@ trait NestHost_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(NestHostAttribute.Name → parserFactory())
+    registerAttributeReader(NestHostAttribute.Name -> parserFactory())
 }

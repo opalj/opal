@@ -31,8 +31,8 @@ object IF0Instruction {
 
     def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = {
         i match {
-            case i: IF0Instruction[_] ⇒ Some((i.condition, i.branchoffset))
-            case _                    ⇒ None
+            case i: IF0Instruction[_] => Some((i.condition, i.branchoffset))
+            case _                    => None
         }
     }
 

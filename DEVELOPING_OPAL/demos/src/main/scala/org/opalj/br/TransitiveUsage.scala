@@ -9,7 +9,6 @@ import org.opalj.br.analyses.Project
 
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessorAdapter
 import org.opalj.de.DependencyType
@@ -47,15 +46,16 @@ object TransitiveUsage extends AnalysisApplication {
         ): Unit = {
             def process(vse: VirtualSourceElement): Unit = {
                 vse match {
-                    case VirtualClass(declaringClassType) ⇒
+                    case VirtualClass(declaringClassType) =>
                         processType(declaringClassType)
-                    case VirtualField(declaringClassType, _, fieldType) ⇒
+                    case VirtualField(declaringClassType, _, fieldType) =>
                         processType(declaringClassType)
                         processType(fieldType)
-                    case VirtualMethod(declaringClassType, _, descriptor) ⇒
+                    case VirtualMethod(declaringClassType, _, descriptor) =>
                         processType(declaringClassType)
                         processType(descriptor.returnType)
                         descriptor.parameterTypes.view foreach { processType(_) }
+                    case VirtualForwardingMethod(_, _, _, _) | _: VirtualMethod => throw new MatchError(vse)
                 }
             }
             process(source)
@@ -85,7 +85,7 @@ object TransitiveUsage extends AnalysisApplication {
         override def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ) = {
 
             val baseType = ObjectType(parameters.head.substring(7).replace('.', '/'))

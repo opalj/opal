@@ -33,7 +33,7 @@ class PerformanceEvaluation extends Locking {
      * @param f The function that will be evaluated and for which the execution
      *      time will be measured.
      */
-    final def time[T](s: Symbol)(f: ⇒ T): T = {
+    final def time[T](s: Symbol)(f: => T): T = {
         val startTime = System.nanoTime
         try {
             f
@@ -141,9 +141,9 @@ object PerformanceEvaluation {
      *          then it may happen that the used amount of memory is negative.
      */
     def memory[T](
-        f: ⇒ T
+        f: => T
     )(
-        mu: Long ⇒ Unit
+        mu: Long => Unit
     )(
         implicit
         logContext: Option[LogContext] = None
@@ -165,7 +165,7 @@ object PerformanceEvaluation {
      * @param   r A function that is passed the time (in nanoseconds) that it
      *          took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
-    def time[T](f: ⇒ T)(r: Nanoseconds ⇒ Unit): T = {
+    def time[T](f: => T)(r: Nanoseconds => Unit): T = {
         val startTime: Long = System.nanoTime
         val result =
             try {
@@ -177,7 +177,7 @@ object PerformanceEvaluation {
         result
     }
 
-    def timed[T](f: ⇒ T): (Nanoseconds, T) = {
+    def timed[T](f: => T): (Nanoseconds, T) = {
         val startTime: Long = System.nanoTime
         val result = f
         (Nanoseconds.TimeSpan(startTime, System.nanoTime), result)
@@ -270,66 +270,74 @@ object PerformanceEvaluation {
         epsilon:                     Int,
         consideredRunsEpsilon:       Int,
         minimalNumberOfRelevantRuns: Int,
-        f:                           ⇒ T,
+        f:                           => T,
         runGC:                       Boolean = false
     )(
-        r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit
+        r: (Nanoseconds, Seq[Nanoseconds]) => Unit
     ): T = {
 
-        require(minimalNumberOfRelevantRuns >= 3)
-        require(
-            consideredRunsEpsilon > epsilon,
-            s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
-        )
+        try {
+            require(minimalNumberOfRelevantRuns >= 3)
 
-        var result: T = 0.asInstanceOf[T]
+            require(
+                consideredRunsEpsilon > epsilon,
+                s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
+            )
 
-        val e = epsilon.toDouble / 100.0d
-        val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
+            var result: T = 0.asInstanceOf[T]
 
-        var runsSinceLastUpdate = 0
-        var times = List.empty[Nanoseconds]
-        if (runGC) gc()
-        time { result = f } { t ⇒
-            times = t :: times
-            if (t.timeSpan <= 999 /*ns*/ ) {
-                r(t, times)
-                OPALLogger.warn(
-                    "common",
-                    s"the time required by the function (${t.toString}) "+
-                        "is too small to get meaningful measurements."
-                )(GlobalLogContext)
+            val e = epsilon.toDouble / 100.0d
+            val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
 
-                return result;
-            }
-        }
-        var avg: Double = times.head.timeSpan.toDouble
-        do {
+            var runsSinceLastUpdate = 0
+            var times = List.empty[Nanoseconds]
             if (runGC) gc()
-            time {
-                result = f
-            } { t ⇒
-                if (t.timeSpan <= avg * filterE) {
-                    // let's throw away all runs that are significantly slower than the last run
-                    times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
-                    avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
-                    runsSinceLastUpdate = 0
-                } else {
-                    runsSinceLastUpdate += 1
-                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
-                        // for whatever reason the current average seems to be "too" slow
-                        // let's add the last run to rise the average
-                        times = t :: times
+            time { result = f } { t =>
+                times = t :: times
+                if (t.timeSpan <= 999 /*ns*/ ) {
+                    r(t, times)
+                    OPALLogger.warn(
+                        "common",
+                        s"the time required by the function (${t.toString}) "+
+                            "is too small to get meaningful measurements."
+                    )(GlobalLogContext)
+
+                    // Non local-returns will be deprecated in Scala 3
+                    // Replace this by scala.util.control.NonLocalReturns in Scala 3
+                    throw Return[T](result)
+                }
+            }
+            var avg: Double = times.head.timeSpan.toDouble
+            do {
+                if (runGC) gc()
+                time {
+                    result = f
+                } { t =>
+                    if (t.timeSpan <= avg * filterE) {
+                        // let's throw away all runs that are significantly slower than the last run
+                        times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
                         avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
                         runsSinceLastUpdate = 0
+                    } else {
+                        runsSinceLastUpdate += 1
+                        if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
+                            // for whatever reason the current average seems to be "too" slow
+                            // let's add the last run to rise the average
+                            times = t :: times
+                            avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
+                            runsSinceLastUpdate = 0
+                        }
                     }
+                    r(t, times)
                 }
-                r(t, times)
-            }
-        } while (times.size < minimalNumberOfRelevantRuns ||
-            Math.abs(avg - times.head.timeSpan) > avg * e)
+            } while (times.size < minimalNumberOfRelevantRuns ||
+                Math.abs(avg - times.head.timeSpan) > avg * e)
 
-        result
+            result
+
+        } catch {
+            case Return(result) => result.asInstanceOf[T]
+        }
     }
 
     /**
@@ -338,7 +346,7 @@ object PerformanceEvaluation {
      * @param    r A function that is passed the time that it took to evaluate `f` and the result
      *             produced by `f`; `r` is only called if `f` succeeds.
      */
-    def run[T, X](f: ⇒ T)(r: (Nanoseconds, T) ⇒ X): X = {
+    def run[T, X](f: => T)(r: (Nanoseconds, T) => X): X = {
         val startTime: Long = System.nanoTime
         val result = f
         val endTime: Long = System.nanoTime

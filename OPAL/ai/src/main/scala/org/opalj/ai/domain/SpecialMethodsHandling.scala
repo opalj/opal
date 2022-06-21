@@ -3,7 +3,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.:&:
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
@@ -11,7 +10,8 @@ import org.opalj.br.IntegerType
 import org.opalj.ai.Configuration
 import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Hard-codes some part of the semantics of some very high-profile (native) methods of the JDK
@@ -25,7 +25,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Michael Eichberg
  */
 trait SpecialMethodsHandling extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with IntegerValuesDomain with Configuration with TheCode ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with IntegerValuesDomain with Configuration with TheCode =>
 
     import SpecialMethodsHandling._
 
@@ -51,7 +51,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         // way. Hence, the exceptions are fresh, the type is precise and the value is properly
         // initialized in a well-defined(fixed) manner.
 
-        val length :&: destPos :&: dest :&: sourcePos :&: source :&: _ = operands
+        val length :: destPos :: dest :: sourcePos :: source :: _ = operands
         val sourceIsNull = refIsNull(pc, source)
         val destIsNull = refIsNull(pc, dest)
         if (sourceIsNull.isYes || destIsNull.isYes) {
@@ -83,7 +83,7 @@ object SpecialMethodsHandling {
 
     final val SystemArraycopyDescriptor = {
         MethodDescriptor(
-            RefArray(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+            ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     }

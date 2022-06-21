@@ -139,7 +139,7 @@ object AnnotationValue { final val tag: Int = '@' }
 case class ArrayValue(values: Seq[ElementValue]) extends StructuredElementValue {
 
     final override def attribute_length: Int = {
-        1 + values.foldLeft(2 /*num_values*/ )((c, n) ⇒ c + n.attribute_length)
+        1 + values.foldLeft(2 /*num_values*/ )((c, n) => c + n.attribute_length)
     }
 
     final override def tag: Int = ArrayValue.tag.toInt
@@ -147,7 +147,7 @@ case class ArrayValue(values: Seq[ElementValue]) extends StructuredElementValue 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val valueNodes =
             if (values.nonEmpty)
-                this.values.map(v ⇒ Seq(v.toXHTML)).reduce((c, n) ⇒ c ++: (Text(", ") +: n))
+                this.values.map(v => Seq(v.toXHTML)).reduce((c, n) => c ++: (Text(", ") +: n))
             else
                 NodeSeq.Empty
         <div class="constant_value">[{ valueNodes }]</div>

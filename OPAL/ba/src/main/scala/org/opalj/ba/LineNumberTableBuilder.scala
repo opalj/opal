@@ -2,7 +2,7 @@
 package org.opalj
 package ba
 
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Used to incrementally build the [[org.opalj.br.UnpackedLineNumberTable]].
@@ -11,18 +11,18 @@ import org.opalj.collection.immutable.RefArray
  */
 class LineNumberTableBuilder {
 
-    private[this] var lineNumbers: br.LineNumbers = RefArray.empty
+    private[this] var lineNumbers: br.LineNumbers = ArraySeq.empty
 
     def add(element: LINENUMBER, pc: br.PC): this.type = {
         lineNumbers :+= br.LineNumber(pc, element.lineNumber)
         this
     }
 
-    def result(): RefArray[br.UnpackedLineNumberTable] = {
+    def result(): ArraySeq[br.UnpackedLineNumberTable] = {
         if (lineNumbers.nonEmpty) {
-            RefArray(br.UnpackedLineNumberTable(lineNumbers))
+            ArraySeq(br.UnpackedLineNumberTable(lineNumbers))
         } else {
-            RefArray.empty
+            ArraySeq.empty
         }
     }
 }

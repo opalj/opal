@@ -18,7 +18,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
+import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
@@ -45,9 +45,9 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
         e: Entity
     ): ProperPropertyComputationResult = {
         e match {
-            case m: Method ⇒
+            case m: Method =>
                 aggregateExceptionsThrownByOverridingMethods(m)
-            case e ⇒
+            case e =>
                 val m = s"the ThrownExceptions property is only defined for methods; found $e"
                 throw new UnknownError(m)
         }
@@ -71,32 +71,32 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 
         // Get all subtypes, including the current method
         val allSubtypes = project.classHierarchy.allSubtypes(m.classFile.thisType, reflexive = true)
-        allSubtypes foreach { subType ⇒
+        allSubtypes foreach { subType =>
             project.classFile(subType).foreach(_.findMethod(m.name, m.descriptor) match {
-                case Some(subtypeMethod) ⇒
+                case Some(subtypeMethod) =>
                     ps(subtypeMethod, ThrownExceptions.key) match {
                         case UBP(MethodIsAbstract) |
                             UBP(MethodBodyIsNotAvailable) |
                             UBP(MethodIsNative) |
                             UBP(UnknownExceptionIsThrown) |
                             UBP(AnalysisLimitation) |
-                            UBP(UnresolvedInvokeDynamicInstruction) ⇒
+                            UBP(UnresolvedInvokeDynamicInstruction) =>
                             return Result(m, SomeException)
-                        case eps: EPS[Entity, Property] ⇒
+                        case eps: EPS[Entity, Property] =>
                             initialExceptions ++= eps.ub.types.concreteTypes
                             if (eps.isRefinable) {
                                 dependees += eps
                             }
-                        case epk ⇒ dependees += epk
+                        case epk => dependees += epk
                     }
-                case None ⇒
+                case None =>
             })
         }
 
         var exceptions = initialExceptions.toImmutableTypesSet
 
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            dependees = dependees.filter { d ⇒
+            dependees = dependees.filter { d =>
                 d.e != eps.e || d.pk != eps.pk
             }
             // If the property is not final we want to keep updated of new values
@@ -114,9 +114,9 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
                     MethodIsNative |
                     UnknownExceptionIsThrown |
                     AnalysisLimitation |
-                    UnresolvedInvokeDynamicInstruction ⇒
+                    UnresolvedInvokeDynamicInstruction =>
                     return Result(m, SomeException)
-                case te: ThrownExceptions ⇒
+                case te: ThrownExceptions =>
                     exceptions = exceptions ++ te.types.concreteTypes
             }
             if (dependees.isEmpty) {

@@ -5,8 +5,6 @@ package instructions
 
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 /**
  * Return from subroutine.
@@ -37,8 +35,8 @@ case class RET(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[Int /*PC*/ ] = {
-        nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
+    ): List[Int /*PC*/ ] = {
+        nextInstructions(currentPC, () => CFGFactory(code, classHierarchy))
     }
 
     override def jumpTargets(
@@ -48,31 +46,31 @@ case class RET(
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC] = {
-        nextInstructions(currentPC, false /*irrelevant*/ ).toIterator
+        nextInstructions(currentPC, false /*irrelevant*/ ).iterator
     }
 
     final def nextInstructions(
-        currentPC: Int, cfg: () ⇒ CFG[Instruction, Code]
+        currentPC: Int, cfg: () => CFG[Instruction, Code]
     )(
         implicit
         code: Code
-    ): Chain[Int /*PC*/ ] = {
+    ): List[Int /*PC*/ ] = {
 
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
-        var jumpTargetPCs: Chain[Int] = Naught
-        code.iterate { (pc, instruction) ⇒
+        var jumpTargetPCs: List[Int] = List.empty
+        code.iterate { (pc, instruction) =>
             if (pc != currentPC) { // filter this ret!
                 instruction.opcode match {
 
-                    case JSR.opcode | JSR_W.opcode ⇒
-                        jumpTargetPCs :&:= (instruction.indexOfNextInstruction(pc))
+                    case JSR.opcode | JSR_W.opcode =>
+                        jumpTargetPCs ::= (instruction.indexOfNextInstruction(pc))
 
-                    case RET.opcode ⇒
+                    case RET.opcode =>
                         // we have found another RET ... hence, we have at least two subroutines
-                        return cfg().successors(currentPC).toChain;
+                        return cfg().successors(currentPC).toList;
 
-                    case _ ⇒
+                    case _ =>
                     // we don't care
                 }
             }
@@ -80,9 +78,9 @@ case class RET(
         jumpTargetPCs
     }
 
-    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final override def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final override def stackSlotsChange: Int = 0
 

@@ -4,7 +4,7 @@ package br
 
 import scala.collection.Map
 
-import org.opalj.collection.immutable.ConstArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines commonly useful type aliases.
@@ -22,7 +22,7 @@ package object analyses {
 
     type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
 
-    type StringConstantsInformation = Map[String, ConstArray[PCInMethod]]
+    type StringConstantsInformation = Map[String, ArraySeq[PCInMethod]]
 
     /**
      * An analysis that may produce a result.

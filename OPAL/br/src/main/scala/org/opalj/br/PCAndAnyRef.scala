@@ -13,8 +13,8 @@ package br
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: PCAndAnyRef[_] ⇒ this.pc == that.pc && this.value == that.value
-            case _                    ⇒ false
+            case that: PCAndAnyRef[_] => this.pc == that.pc && this.value == that.value
+            case _                    => false
         }
     }
 

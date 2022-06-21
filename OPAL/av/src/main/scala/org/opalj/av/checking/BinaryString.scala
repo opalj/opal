@@ -17,8 +17,8 @@ final class BinaryString private (private val string: String) {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BinaryString ⇒ that.string == this.string
-            case _                  ⇒ false
+            case that: BinaryString => that.string == this.string
+            case _                  => false
         }
     }
 

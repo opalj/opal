@@ -36,7 +36,7 @@ object FieldMutability extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         project.get(RTACallGraphKey)
         val (ps, _) = project.get(FPCFAnalysesManagerKey).runAll(

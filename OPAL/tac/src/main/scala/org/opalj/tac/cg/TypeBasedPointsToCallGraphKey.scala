@@ -36,7 +36,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
 
     override protected[cg] def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         List(
             TypeBasedPointsToAnalysisScheduler,
             TypeBasedConfiguredMethodsPointsToAnalysisScheduler,

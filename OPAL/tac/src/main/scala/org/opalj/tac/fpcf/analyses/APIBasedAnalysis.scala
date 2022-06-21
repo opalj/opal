@@ -52,11 +52,11 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
         oldCallers: Callers
     )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
         (callersEOptP: @unchecked) match {
-            case EUBP(dm: DeclaredMethod, callersUB: Callers) ⇒
+            case EUBP(dm: DeclaredMethod, callersUB: Callers) =>
                 var results: List[ProperPropertyComputationResult] = Nil
                 if (callersUB.nonEmpty) {
                     callersUB.forNewCallerContexts(oldCallers, dm) {
-                        (calleeContext, callerContext, pc, isDirect) ⇒
+                        (calleeContext, callerContext, pc, isDirect) =>
                             if (callerContext.hasContext) {
                                 val caller = callerContext.method
 
@@ -81,6 +81,6 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
 
                 Results(results)
 
-            case _: EPK[_, _] ⇒ InterimPartialResult(Set(callersEOptP), c(null))
+            case _: EPK[_, _] => InterimPartialResult(Set(callersEOptP), c(null))
         }
 }

@@ -23,9 +23,7 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
 @RunWith(classOf[JUnitRunner])
 class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
-    private object ValuesDomain extends {
-        final val project: Project[java.net.URL] = TestSupport.createJREProject
-    } with ValuesCoordinatingDomain
+    private object ValuesDomain extends ValuesCoordinatingDomain
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
@@ -33,7 +31,9 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelDynamicLoads
-        with TheProject
+        with TheProject {
+        override final val project: Project[java.net.URL] = TestSupport.createJREProject()
+    }
 
     behavior of "instances of domains of type l0.DomainReferenceValuesBinding"
 

@@ -21,11 +21,11 @@ object StringUtil {
         value: Expr[V],
         stmts: Array[Stmt[V]]
     ): Option[Set[String]] = {
-        Some(value.asVar.definedBy.map[Set[String]] { index ⇒
+        Some(value.asVar.definedBy.map[Set[String]] { index =>
             if (index >= 0) {
                 getString(index, stmts) match {
-                    case Some(v) ⇒ Set(v)
-                    case _ ⇒
+                    case Some(v) => Set(v)
+                    case _ =>
                         return None;
                 }
             } else {
@@ -45,7 +45,7 @@ object StringUtil {
         context:  ContextType,
         depender: Entity,
         stmts:    Array[Stmt[V]],
-        failure:  () ⇒ Unit
+        failure:  () => Unit
     )(
         implicit
         typeProvider: TypeProvider,
@@ -56,11 +56,11 @@ object StringUtil {
 
         AllocationsUtil.handleAllocations(
             value, context, depender, stmts, _ eq ObjectType.String, failure
-        ) { (_, defSite, _stmts) ⇒
+        ) { (_, defSite, _stmts) =>
             getString(defSite, _stmts) match {
-                case Some(v) ⇒
+                case Some(v) =>
                     strings += v
-                case _ ⇒
+                case _ =>
                     failure()
             }
         }
@@ -71,8 +71,8 @@ object StringUtil {
     private[reflection] def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
         val expr = stmts(stringDefSite).asAssignment.expr
         expr match {
-            case StringConst(_, v) ⇒ Some(v)
-            case _                 ⇒ None
+            case StringConst(_, v) => Some(v)
+            case _                 => None
         }
     }
 }

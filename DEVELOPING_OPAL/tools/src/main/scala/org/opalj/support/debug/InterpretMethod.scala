@@ -60,7 +60,7 @@ object InterpretMethod {
         import language.existentials
 
         def printUsage(issue: Option[String]): Unit = {
-            issue.foreach(issue ⇒ println(s"Failure: $issue."))
+            issue.foreach(issue => println(s"Failure: $issue."))
             println("You have to specify the following parameters.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
@@ -132,7 +132,7 @@ object InterpretMethod {
             try {
                 Project(file)
             } catch {
-                case e: Exception ⇒
+                case e: Exception =>
                     println(RED+"[error] Cannot process file: "+e.getMessage+"."+RESET)
                     return ;
             }
@@ -148,11 +148,11 @@ object InterpretMethod {
         val method =
             (
                 if (methodName.contains("("))
-                    classFile.methods.find(m ⇒ m.descriptor.toJava(m.name).contains(methodName))
+                    classFile.methods.find(m => m.descriptor.toJava(m.name).contains(methodName))
                 else
                     classFile.methods.find(_.name == methodName)
             ) match {
-                    case Some(method) ⇒
+                    case Some(method) =>
                         if (method.body.isDefined)
                             method
                         else {
@@ -160,10 +160,10 @@ object InterpretMethod {
                                 "[error] The method: "+methodName+" does not have a body"+RESET)
                             return ;
                         }
-                    case None ⇒
+                    case None =>
                         println(RED+
                             "[error] Cannot find the method: "+methodName+"."+RESET +
-                            classFile.methods.map(m ⇒ m.descriptor.toJava(m.name)).toSet.
+                            classFile.methods.map(m => m.descriptor.toJava(m.name)).toSet.
                             toSeq.sorted.mkString(" Candidates: ", ", ", "."))
                         return ;
                 }
@@ -249,11 +249,11 @@ object InterpretMethod {
                 ".html"
             )
         } catch {
-            case ife: InterpretationFailedException ⇒
+            case ife: InterpretationFailedException =>
 
                 ai match {
-                    case ai: IMAI ⇒ ai.xHTMLTracer.result(null);
-                    case _        ⇒ /*nothing to do*/
+                    case ai: IMAI => ai.xHTMLTracer.result(null);
+                    case _        => /*nothing to do*/
                 }
 
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
@@ -278,18 +278,18 @@ object InterpretMethod {
                             }
 
                     val metaInformation = ife.cause match {
-                        case ife: InterpretationFailedException ⇒
+                        case ife: InterpretationFailedException =>
                             aiState + ife.cause.
                                 getStackTrace.
                                 mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                                 "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
-                        case e: Throwable ⇒
+                        case e: Throwable =>
                             val message = e.getMessage()
                             if (message != null)
                                 aiState+"<br>Underlying cause: "+util.XHTML.htmlify(message)
                             else
                                 aiState+"<br>Underlying cause: <NULL>"
-                        case _ ⇒
+                        case _ =>
                             aiState
                     }
 

@@ -3,13 +3,12 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * Counts the number of native methods.
@@ -56,15 +55,15 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisApplication {
         def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ) = {
             val methods =
                 (
                     for {
-                        classFile ← project.allClassFiles.par
+                        classFile <- project.allClassFiles.par
                         if classFile.isPublic
                         if !restrictedPackages.exists(classFile.fqn.startsWith(_))
-                        method ← classFile.methods
+                        method <- classFile.methods
                         if method.body.isDefined
                         if method.isPublic || (method.isProtected && !classFile.isFinal)
                         referenceParametersCount = method.parameterTypes.count(_.isReferenceType)
@@ -74,7 +73,7 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisApplication {
                 ).seq
 
             BasicReport(
-                methods.size+" public and protected methods in non-restricted packages found:\n"+
+                s"${methods.size} public and protected methods in non-restricted packages found:\n"+
                     methods.mkString("\t", "\n\t", "\n")
             )
         }

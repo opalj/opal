@@ -5,7 +5,9 @@ package da
 import scala.reflect.ClassTag
 
 import scala.collection.mutable
-import org.opalj.bi.reader.{Constant_PoolReader, Constant_PoolAbstractions}
+
+import org.opalj.bi.reader.Constant_PoolAbstractions
+import org.opalj.bi.reader.Constant_PoolReader
 
 /**
  * Representation of the constant pool as specified by the JVM Specification (Java 8).
@@ -17,7 +19,7 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
 
     // HERE, WE DON'T NEED A DEFERRED ACTIONS STORE
     protected[this] def createDeferredActionsStore(): DeferredActionsStore = {
-        new mutable.ArrayBuffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry {
+        new mutable.ArrayBuffer[ClassFile => ClassFile] with Constant_Pool_Entry {
             override def Constant_Type_Value: Nothing = {
                 throw new UnsupportedOperationException()
             }
@@ -45,7 +47,7 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
     //
 
     type Constant_Pool_Entry = org.opalj.da.Constant_Pool_Entry
-    val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
+    override implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry] = ClassTag(classOf[org.opalj.da.Constant_Pool_Entry])
 
     type CONSTANT_Class_info = org.opalj.da.CONSTANT_Class_info
     def CONSTANT_Class_info(i: Int): CONSTANT_Class_info = da.CONSTANT_Class_info(i)

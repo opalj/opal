@@ -3,7 +3,8 @@ package org.opalj
 package br
 
 import org.opalj.collection.immutable.UShortPair
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Given a class files' main elements the attribute is build.
@@ -19,9 +20,9 @@ trait ClassFileAttributeBuilder {
         accessFlags:    Int,
         thisType:       ObjectType,
         superclassType: Option[ObjectType],
-        interfaceTypes: RefArray[ObjectType],
-        fields:         RefArray[FieldTemplate],
-        methods:        RefArray[MethodTemplate]
+        interfaceTypes: ArraySeq[ObjectType],
+        fields:         ArraySeq[FieldTemplate],
+        methods:        ArraySeq[MethodTemplate]
     ): Attribute
 
 }

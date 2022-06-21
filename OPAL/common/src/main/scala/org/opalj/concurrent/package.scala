@@ -8,15 +8,15 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicLong
-
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.util.control.ControlThrowable
 import scala.concurrent.ExecutionContext
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.warn
 import org.opalj.log.OPALLogger.info
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -28,7 +28,7 @@ package object concurrent {
 
     private implicit def logContext: GlobalLogContext.type = GlobalLogContext
 
-    final val defaultIsInterrupted = () ⇒ Thread.currentThread.isInterrupted
+    final val defaultIsInterrupted = () => Thread.currentThread.isInterrupted
 
     final def handleUncaughtException(t: Throwable): Unit = {
         error("internal", "uncaught exception", t)
@@ -127,7 +127,7 @@ package object concurrent {
             try {
                 handleUncaughtException(e)
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     // We shouldn't use the OPALLogger here to ensure that we can report
                     // problems related to the logger!
                     Console.err.println("[fatal] internal error when reporting errors: ")
@@ -204,12 +204,12 @@ package object concurrent {
     @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
     final def parForeachArrayElement[T, U](
         data:                 Array[T],
-        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,
-        isInterrupted:        () ⇒ Boolean = defaultIsInterrupted
+        parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks,
+        isInterrupted:        () => Boolean = defaultIsInterrupted
     )(
         f: Function[T, U]
     ): Unit = {
-        parForeachSeqElement(data, parallelizationLevel, isInterrupted)(f)
+        parForeachSeqElement(ArraySeq.unsafeWrapArray(data), parallelizationLevel, isInterrupted)(f)
     }
 
     /**
@@ -235,7 +235,7 @@ package object concurrent {
     final def parForeachSeqElement[T, U](
         data:                 IndexedSeq[T],
         parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks,
-        isInterrupted:        () ⇒ Boolean  = defaultIsInterrupted
+        isInterrupted:        () => Boolean = defaultIsInterrupted
     )(
         f: Function[T, U]
     ): Unit = {
@@ -257,10 +257,10 @@ package object concurrent {
                 try {
                     f(data(i))
                 } catch {
-                    case ct: ControlThrowable ⇒
+                    case ct: ControlThrowable =>
                         val t = new Throwable("unsupported non-local return", ct)
                         addSuppressed(t)
-                    case t: Throwable ⇒
+                    case t: Throwable =>
                         addSuppressed(t)
                 }
             }
@@ -280,7 +280,7 @@ package object concurrent {
             try {
                 var t = 0
                 while (t < maxThreads) {
-                    pool.execute { () ⇒
+                    pool.execute { () =>
                         try {
                             analyzeArrayElements()
                         } finally {
@@ -291,7 +291,7 @@ package object concurrent {
                 }
                 latch.await()
             } catch {
-                case t: Throwable ⇒ addSuppressed(t) // <= actually, we should never get here...
+                case t: Throwable => addSuppressed(t) // <= actually, we should never get here...
             }
         }
         if (exceptions != null) {

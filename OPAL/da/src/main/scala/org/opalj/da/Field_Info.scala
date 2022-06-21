@@ -38,7 +38,7 @@ case class Field_Info(
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, FIELD)
         val (constantValue, otherAttributes) =
-            attributes.partition(a ⇒ a.attribute_name == "ConstantValue")
+            attributes.partition(a => a.attribute_name == "ConstantValue")
         val fieldName = this.fieldName
         val fieldDeclaration =
             <span class="field_declaration">

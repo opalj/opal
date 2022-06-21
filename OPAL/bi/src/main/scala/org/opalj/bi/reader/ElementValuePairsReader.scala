@@ -4,9 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for an annotation's element-value pairs.
@@ -18,10 +19,12 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     //
 
     type ElementValue <: AnyRef
-    type ElementValues = RefArray[ElementValue]
+    implicit val elementValueType: ClassTag[ElementValue] // TODO: Replace in Scala 3 by `type ElementValue : ClassTag`
+    type ElementValues = ArraySeq[ElementValue]
 
     type ElementValuePair <: AnyRef
-    type ElementValuePairs = RefArray[ElementValuePair]
+    implicit val elementValuePairType: ClassTag[ElementValuePair] // TODO: Replace in Scala 3 by `type ExceptionValuePair : ClassTag`
+    type ElementValuePairs = ArraySeq[ElementValuePair]
 
     def ElementValuePair(
         constant_pool:      Constant_Pool,
@@ -100,7 +103,7 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     //
 
     def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs = {
-        fillRefArray(in.readUnsignedShort) {
+        fillArraySeq(in.readUnsignedShort) {
             ElementValuePair(cp, in)
         }
     }
@@ -139,19 +142,19 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     def ElementValue(cp: Constant_Pool, in: DataInputStream): ElementValue = {
         val tag = in.readByte
         (tag: @scala.annotation.switch) match {
-            case 'B' ⇒ ByteValue(cp, in.readUnsignedShort)
-            case 'C' ⇒ CharValue(cp, in.readUnsignedShort)
-            case 'D' ⇒ DoubleValue(cp, in.readUnsignedShort)
-            case 'F' ⇒ FloatValue(cp, in.readUnsignedShort)
-            case 'I' ⇒ IntValue(cp, in.readUnsignedShort)
-            case 'J' ⇒ LongValue(cp, in.readUnsignedShort)
-            case 'S' ⇒ ShortValue(cp, in.readUnsignedShort)
-            case 'Z' ⇒ BooleanValue(cp, in.readUnsignedShort)
-            case 's' ⇒ StringValue(cp, in.readUnsignedShort)
-            case 'e' ⇒ EnumValue(cp, in.readUnsignedShort, in.readUnsignedShort)
-            case 'c' ⇒ ClassValue(cp, in.readUnsignedShort)
-            case '@' ⇒ AnnotationValue(cp, Annotation(cp, in))
-            case '[' ⇒ ArrayValue(cp, fillRefArray(in.readUnsignedShort)(ElementValue(cp, in)))
+            case 'B' => ByteValue(cp, in.readUnsignedShort)
+            case 'C' => CharValue(cp, in.readUnsignedShort)
+            case 'D' => DoubleValue(cp, in.readUnsignedShort)
+            case 'F' => FloatValue(cp, in.readUnsignedShort)
+            case 'I' => IntValue(cp, in.readUnsignedShort)
+            case 'J' => LongValue(cp, in.readUnsignedShort)
+            case 'S' => ShortValue(cp, in.readUnsignedShort)
+            case 'Z' => BooleanValue(cp, in.readUnsignedShort)
+            case 's' => StringValue(cp, in.readUnsignedShort)
+            case 'e' => EnumValue(cp, in.readUnsignedShort, in.readUnsignedShort)
+            case 'c' => ClassValue(cp, in.readUnsignedShort)
+            case '@' => AnnotationValue(cp, Annotation(cp, in))
+            case '[' => ArrayValue(cp, fillArraySeq(in.readUnsignedShort)(ElementValue(cp, in)))
         }
     }
 }
