@@ -35,7 +35,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
     private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    import DominatorsPerformanceEvaluation.time as dTime
+    import DominatorsPerformanceEvaluation.{time => dTime}
 
     class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain
