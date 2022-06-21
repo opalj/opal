@@ -62,7 +62,7 @@ class Java8Invokedynamics(
         project:              Project[S],
         rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
-        import org.opalj.br.reader.InvokedynamicRewriting.*
+        import org.opalj.br.reader.InvokedynamicRewriting._
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
