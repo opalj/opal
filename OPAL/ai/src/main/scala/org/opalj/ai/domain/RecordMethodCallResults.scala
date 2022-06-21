@@ -3,7 +3,9 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.{Set, immutable}
+import scala.collection.Set
+import scala.collection.immutable
+
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ObjectType

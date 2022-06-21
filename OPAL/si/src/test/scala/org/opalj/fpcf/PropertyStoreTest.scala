@@ -2,7 +2,8 @@
 package org.opalj.fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
+import scala.collection.mutable
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.BeforeAndAfterAll

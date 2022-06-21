@@ -3,11 +3,12 @@ package org.opalj
 package ai
 package project
 
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
-import org.opalj.br.analyses.{Project, ReportableAnalysisResult}
-
-import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ReportableAnalysisResult
 
 /**
  * Template class for analyzing complete Java projects that use the abstract interpreter.

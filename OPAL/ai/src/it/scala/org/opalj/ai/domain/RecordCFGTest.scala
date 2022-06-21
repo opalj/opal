@@ -4,22 +4,24 @@ package ai
 package domain
 
 import java.net.URL
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
 
-import scala.jdk.CollectionConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
+import org.junit.runner.RunWith
+import org.opalj.graphs.ControlDependencies
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.graphs.ControlDependencies
-import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.Method
 import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.TestSupport.createJREProject
 
 /**
@@ -33,7 +35,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
     private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    import DominatorsPerformanceEvaluation.{time => dTime}
+    import DominatorsPerformanceEvaluation.time as dTime
 
     class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain

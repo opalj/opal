@@ -5,12 +5,17 @@ package queries
 package jcg
 
 import java.util.concurrent.ConcurrentHashMap
-import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, Instruction, MethodInvocationInstruction}
-import org.opalj.da.ClassFile
 
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.da.ClassFile
+import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Groups test case features that perform a method calls that are related to Java 8

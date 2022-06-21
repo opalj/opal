@@ -3,9 +3,12 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication}
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
+
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Lists all abstract classes and interfaces that have no concrete subclasses in

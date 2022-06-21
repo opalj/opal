@@ -32,7 +32,8 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.lang.{Boolean => JBoolean}
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.TestSupport.allBIProjects

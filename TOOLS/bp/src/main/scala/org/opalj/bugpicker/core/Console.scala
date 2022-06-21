@@ -18,7 +18,10 @@ import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.br.analyses.{Analysis, AnalysisApplication, BasicReport, Project}
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.AnalysisApplication
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analyses.BugPickerAnalysis

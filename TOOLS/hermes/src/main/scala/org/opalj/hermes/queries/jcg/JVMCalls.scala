@@ -4,12 +4,13 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.da.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.{Instruction, VirtualMethodInvocationInstruction}
-import org.opalj.da.ClassFile
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 
 /**
  * Groups test case features for features that explicitly must be modeled to imitate the JVM's

@@ -3,7 +3,9 @@ package org.opalj
 package collection
 package mutable
 
-import scala.collection.{SeqFactory, SpecificIterableFactory, mutable}
+import scala.collection.SeqFactory
+import scala.collection.SpecificIterableFactory
+import scala.collection.mutable
 
 /**
  * An array based implementation of a mutable stack of `int` values which has a

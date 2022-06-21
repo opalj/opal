@@ -5,7 +5,8 @@ package br
 import java.net.URL
 
 import org.opalj.br.instructions._
-import org.opalj.br.analyses.{BasicReport, Project}
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.ProjectAnalysisApplication

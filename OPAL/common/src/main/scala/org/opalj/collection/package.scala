@@ -3,7 +3,8 @@ package org.opalj
 
 import java.util.{Arrays => JArrays}
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.immutable.{ArraySeq, HashMap}
+import scala.collection.immutable.ArraySeq
+import scala.collection.immutable.HashMap
 import scala.jdk.CollectionConverters._
 
 /**

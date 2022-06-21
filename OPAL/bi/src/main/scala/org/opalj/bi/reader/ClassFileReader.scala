@@ -3,43 +3,46 @@ package org.opalj
 package bi
 package reader
 
+import java.io.BufferedInputStream
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
-import java.io.ByteArrayInputStream
-import java.io.DataInputStream
-import java.io.BufferedInputStream
 import java.io.IOException
-import java.io.ByteArrayOutputStream
+import java.net.URI
+import java.net.URL
+import java.nio.file.Files
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.nio.file.Files
-import java.util.zip.{ZipEntry, ZipFile}
-import java.net.URL
-import java.net.URI
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.jar.JarInputStream
 import java.util.jar.JarEntry
-import scala.util.control.ControlThrowable
-import scala.jdk.CollectionConverters._
+import java.util.jar.JarInputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.util.control.ControlThrowable
+
 import org.apache.commons.text.similarity.LevenshteinDistance
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
 import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
-import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
-import org.opalj.concurrent.BoundedExecutionContext
-import org.opalj.concurrent.parForeachSeqElement
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.concurrent.Tasks
 
-import scala.collection.immutable.ArraySeq
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.concurrent.BoundedExecutionContext
+import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
+import org.opalj.concurrent.parForeachSeqElement
+import org.opalj.concurrent.Tasks
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -172,7 +175,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     // IMPLEMENTATION
     //
 
-    import ClassFileReader.ExceptionHandler
+    import org.opalj.bi.reader.ClassFileReader.ExceptionHandler
 
     final val defaultExceptionHandler: ExceptionHandler = (source, t) => {
         error("class file reader", s"processing $source failed", t)

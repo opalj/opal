@@ -17,7 +17,8 @@ import org.opalj.br.MethodCallMethodHandle
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
-import org.opalj.br.instructions.{INVOKEVIRTUAL, Instruction}
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.tac.LazyTACUsingAIKey

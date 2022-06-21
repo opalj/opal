@@ -3,15 +3,18 @@ package org.opalj
 package br
 package instructions
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.analyses.{Project, SomeProject}
-import org.opalj.br.reader.{Java8Framework, Java8LibraryFramework}
-
 import scala.collection.immutable.ArraySeq
+
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.reader.Java8Framework
+import org.opalj.br.reader.Java8LibraryFramework
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.

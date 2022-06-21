@@ -3,7 +3,8 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.{Map, mutable}
+import scala.collection.Map
+import scala.collection.mutable
 
 /**
  * An index that enables the efficient lookup of source elements (methods and fields)

@@ -22,7 +22,9 @@ import org.opalj.fpcf.SomeInterimEP
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.{AllocationFreeMethod, AllocationFreeness, MethodWithAllocations}
+import org.opalj.br.fpcf.properties.AllocationFreeMethod
+import org.opalj.br.fpcf.properties.AllocationFreeness
+import org.opalj.br.fpcf.properties.MethodWithAllocations
 import org.opalj.br.instructions._
 
 /**

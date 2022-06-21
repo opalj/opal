@@ -6,7 +6,8 @@ import scala.annotation.tailrec
 import scala.annotation.switch
 import scala.reflect.ClassTag
 import java.util.Arrays.fill
-import scala.collection.{AbstractIterator, mutable}
+import scala.collection.AbstractIterator
+import scala.collection.mutable
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.Queue
 import org.opalj.util.AnyToAnyThis

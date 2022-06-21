@@ -5,7 +5,11 @@ package analyses
 
 import scala.jdk.CollectionConverters._
 
-import org.opalj.log.{ConsoleOPALLogger, StandardLogContext, Error, GlobalLogContext, OPALLogger}
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.Error
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
 
 /**
  * Enables the querying of a project.

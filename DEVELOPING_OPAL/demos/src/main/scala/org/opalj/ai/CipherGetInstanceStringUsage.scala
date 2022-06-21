@@ -5,16 +5,18 @@ import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.jdk.CollectionConverters._
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.MethodDescriptor.JustReturnsString
-import org.opalj.br.{ObjectType, PCAndInstruction}
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.LoadString
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 
 /**
  * The analysis demonstrates how to find values passed to Chipher.getInstance:

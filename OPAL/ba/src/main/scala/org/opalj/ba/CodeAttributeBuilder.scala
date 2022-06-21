@@ -2,17 +2,33 @@
 package org.opalj
 package ba
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.mutable.Locals
-import org.opalj.collection.immutable.IntRefPair
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.bi.ACC_STATIC
+import org.opalj.br.AppendFrame
+import org.opalj.br.Attributes
+import org.opalj.br.ChopFrame
+import org.opalj.br.ClassFile
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.FullFrame
+import org.opalj.br.Method
+import org.opalj.br.Methods
+import org.opalj.br.ObjectType
+import org.opalj.br.SameFrame
+import org.opalj.br.SameFrameExtended
+import org.opalj.br.SameLocals1StackItemFrame
+import org.opalj.br.SameLocals1StackItemFrameExtended
+import org.opalj.br.StackMapFrame
+import org.opalj.br.StackMapTable
+import org.opalj.br.TopVariableInfo
+import org.opalj.br.VerificationTypeInfo
+import org.opalj.br.instructions.Instruction
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
-import org.opalj.bi.ACC_STATIC
-import org.opalj.br.{AppendFrame, Attributes, ChopFrame, ClassFile, ClassHierarchy, FullFrame, Method, Methods, ObjectType, SameFrame, SameFrameExtended, SameLocals1StackItemFrame, SameLocals1StackItemFrameExtended, StackMapFrame, StackMapTable, TopVariableInfo, VerificationTypeInfo}
-import org.opalj.br.instructions.Instruction
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. The ''Builder'' is
@@ -136,7 +152,7 @@ class CodeAttributeBuilder[T] private[ba] (
         classHierarchy: ClassHierarchy
     ): (br.Code, (Map[br.PC, T], List[String])) = {
 
-        import CodeAttributeBuilder.warnMessage
+        import org.opalj.ba.CodeAttributeBuilder.warnMessage
         var warnings = List.empty[String]
 
         val computedMaxLocals = br.Code.computeMaxLocals(

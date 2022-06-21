@@ -1,31 +1,35 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.hermes.queries.jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.da
-import org.opalj.ai.InterruptableAI
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.hermes.DefaultFeatureQuery
+import org.opalj.hermes.HermesConfig
+import org.opalj.hermes.InstructionLocation
+import org.opalj.hermes.LocationsContainer
+import org.opalj.hermes.ProjectConfiguration
+
 import org.opalj.bi.REF_invokeInterface
 import org.opalj.bi.REF_invokeSpecial
 import org.opalj.bi.REF_invokeStatic
 import org.opalj.bi.REF_invokeVirtual
 import org.opalj.bi.REF_newInvokeSpecial
-import org.opalj.br.MethodWithBody
 import org.opalj.br.InvokeSpecialMethodHandle
-import org.opalj.br.MethodCallMethodHandle
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.Method
+import org.opalj.br.MethodCallMethodHandle
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.{AASTORE, ARETURN, INVOKEDYNAMIC, Instruction}
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.ObjectType.LambdaMetafactory
-import org.opalj.hermes.HermesConfig
-import org.opalj.hermes.InstructionLocation
-import org.opalj.hermes.ProjectConfiguration
-import org.opalj.hermes.LocationsContainer
-import org.opalj.hermes.DefaultFeatureQuery
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.ai.Domain
+import org.opalj.ai.InterruptableAI
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 
 /**
  * This feature query corresponds to the Java8Invokedynamics.md test cases from the JCG call
@@ -58,7 +62,7 @@ class Java8Invokedynamics(
         project:              Project[S],
         rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
-        import org.opalj.br.reader.InvokedynamicRewriting._
+        import org.opalj.br.reader.InvokedynamicRewriting.*
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 

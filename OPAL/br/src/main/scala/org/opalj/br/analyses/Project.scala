@@ -11,7 +11,10 @@ import java.net.URL
 import java.util.Arrays.{sort => sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
-import scala.collection.{Map, Set, immutable, mutable}
+import scala.collection.Map
+import scala.collection.Set
+import scala.collection.immutable
+import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer

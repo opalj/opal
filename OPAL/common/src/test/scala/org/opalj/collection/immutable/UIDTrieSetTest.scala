@@ -9,9 +9,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import scala.language.implicitConversions
-import org.opalj.util.{Nanoseconds, PerformanceEvaluation}
 import org.scalacheck.Prop.propBoolean
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation
 
 @RunWith(classOf[JUnitRunner])
 class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with Matchers {

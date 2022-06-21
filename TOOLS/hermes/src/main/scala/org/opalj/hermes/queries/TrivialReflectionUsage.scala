@@ -7,9 +7,10 @@ import org.opalj.da.ClassFile
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.MethodInfo
-import org.opalj.br.instructions.{INVOKESTATIC, Instruction}
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.Instruction
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 

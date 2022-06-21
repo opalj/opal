@@ -5,8 +5,11 @@ package viz
 
 import java.net.URL
 
-import br._
-import br.analyses.{OneStepAnalysis, AnalysisApplication, BasicReport, Project}
+import org.opalj.br._
+import org.opalj.br.analyses.AnalysisApplication
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of instructions aggregated per package.
@@ -28,7 +31,8 @@ object InstructionStatistics extends AnalysisApplication {
             isInterrupted: () => Boolean
         ): BasicReport = {
 
-            import scala.collection.mutable.{HashSet, HashMap}
+            import scala.collection.mutable.HashMap
+            import scala.collection.mutable.HashSet
 
             // Collect the number of instructions per package
             // FQPN = FullyQualifiedPackageName

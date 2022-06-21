@@ -4,15 +4,19 @@ package hermes
 
 import java.io.File
 import java.net.URL
-import scala.collection.{Map, immutable}
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.GlobalLogContext
+
+import scala.collection.Map
+import scala.collection.immutable
+
 import org.opalj.br
 import org.opalj.da
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
 import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
 
 /**
  * Meta-information about a project that belongs to a corpus.

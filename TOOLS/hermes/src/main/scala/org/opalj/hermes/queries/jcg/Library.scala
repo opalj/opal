@@ -4,20 +4,23 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.br.MethodWithBody
-import org.opalj.br.Field
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.Method
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectIndex
-import org.opalj.br.analyses.ProjectIndexKey
-import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKEVIRTUAL, Instruction, VirtualMethodInvocationInstruction}
-import org.opalj.da.ClassFile
-
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
+
+import org.opalj.da.ClassFile
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectIndex
+import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 
 /**
  * Groups test case features that test the support for libraries/partial programs. All test cases

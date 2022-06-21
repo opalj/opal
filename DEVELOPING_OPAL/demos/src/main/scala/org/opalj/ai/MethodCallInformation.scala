@@ -3,7 +3,10 @@ package org.opalj
 package ai
 
 import java.net.URL
-import org.opalj.br.analyses.{ProjectAnalysisApplication, BasicReport, Project}
+
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.Method
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.MethodDescriptor

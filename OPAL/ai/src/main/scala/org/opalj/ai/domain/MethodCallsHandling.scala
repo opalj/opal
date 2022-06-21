@@ -3,10 +3,12 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.{Set, mutable}
+import scala.collection.Set
+import scala.collection.mutable
+
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.Method
 
 /**
  * Provides support for handling method invocations, but does not handle any invocations directly.

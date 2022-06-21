@@ -5,8 +5,12 @@ package fpcf
 package analyses
 
 import java.io.File
-import scala.collection.immutable.{ArraySeq, ListSet}
+
+import scala.collection.immutable.ArraySeq
+import scala.collection.immutable.ListSet
+
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time

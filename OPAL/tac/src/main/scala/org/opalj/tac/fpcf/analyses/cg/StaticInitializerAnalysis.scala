@@ -6,7 +6,22 @@ package analyses
 package cg
 
 import scala.language.existentials
-import org.opalj.fpcf.{EOptionP, EPK, EPS, FinalEP, FinalP, InterimEP, InterimEUBP, InterimPartialResult, InterimUBP, PartialResult, PropertyBounds, PropertyComputationResult, PropertyStore, Results, SomeEPS}
+
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimEP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -14,8 +29,8 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers

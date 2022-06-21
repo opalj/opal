@@ -4,12 +4,12 @@ package ai
 package domain
 package l1
 
-import org.opalj.ai.domain.Origin.{MultipleOriginsValue, SingleOriginValue}
-
 import scala.language.existentials
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+
 import java.util.IdentityHashMap
+
 import org.opalj.collection.IntIterator
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.IdentityPair
@@ -26,6 +26,8 @@ import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
+import org.opalj.ai.domain.Origin.MultipleOriginsValue
+import org.opalj.ai.domain.Origin.SingleOriginValue
 
 /**
  * This partial domain enables tracking of a reference value's null-ness and must-alias information.

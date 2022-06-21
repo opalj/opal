@@ -3,8 +3,11 @@ package org.opalj
 package da
 
 import scala.reflect.ClassTag
+
 import scala.collection.mutable
-import org.opalj.bi.reader.{Constant_PoolAbstractions, Constant_PoolReader}
+
+import org.opalj.bi.reader.Constant_PoolAbstractions
+import org.opalj.bi.reader.Constant_PoolReader
 
 /**
  * Representation of the constant pool as specified by the JVM Specification (Java 8).

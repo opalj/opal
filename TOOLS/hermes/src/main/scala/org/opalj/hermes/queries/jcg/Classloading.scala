@@ -4,19 +4,20 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodWithBody
-import org.opalj.br.ReferenceType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.{INVOKEVIRTUAL, Instruction}
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.value.KnownTypedValue
 import org.opalj.da.ClassFile
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
+import org.opalj.tac.DUVar
 import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.TACode
-import org.opalj.tac.DUVar
-import org.opalj.value.KnownTypedValue
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Groups test case features that perform classloading.
