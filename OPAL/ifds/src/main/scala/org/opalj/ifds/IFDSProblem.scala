@@ -11,7 +11,7 @@ import org.opalj.ifds.Dependees.Getter
  * @author Mario Trageser
  * @author Marc Clement
  */
-abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](val icfg: ICFG[IFDSFact, C, S]) {
+abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](val icfg: ICFG[C, S]) {
     type Work = (S, IFDSFact, Option[S])
 
     /**

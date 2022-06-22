@@ -46,7 +46,7 @@ object JavaStatement {
 }
 
 abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
-    extends IFDSProblem[Fact, Method, JavaStatement](new ForwardICFG[Fact]()(project)) {
+    extends IFDSProblem[Fact, Method, JavaStatement](new ForwardICFG()(project)) {
     /**
      * Gets the call object for a statement that contains a call.
      *

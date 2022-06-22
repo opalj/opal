@@ -2,10 +2,10 @@
 package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.ifds.{AbstractIFDSFact, ICFG}
-import org.opalj.ll.llvm.{FunctionType, PointerType}
-import org.opalj.ll.llvm.value.{Call, Function, Instruction, Ret, Terminator, Value}
+import org.opalj.ll.llvm.{PointerType, StructType}
+import org.opalj.ll.llvm.value.{Call, Function, GetElementPtr, Instruction, Load, Ret, Terminator, Value}
 
-class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, NativeFunction, LLVMStatement] {
+class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[NativeFunction, LLVMStatement] {
     /**
      * Determines the statements at which the analysis starts.
      *
@@ -52,13 +52,21 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[IFDSFact, Nat
 
     private def resolveCallee(calledValue: Value): Set[NativeFunction] = calledValue match {
         case function: Function ⇒ Set(LLVMFunction(function))
-        case _ ⇒ calledValue.typ match {
-            case p: PointerType ⇒ {
-                val functionType = p.element.asInstanceOf[FunctionType]
-                println(functionType.repr())
-                Set()
-            }
-            case _ ⇒ Set()
+        case load: Load ⇒ resolveCallee(load.src)
+        case gep: GetElementPtr if isJNI(gep) => Set()
+        case _ ⇒ Set()
+    }
+
+    private def isJNI(gep: GetElementPtr): Boolean = {
+        if (gep.base.typ.isInstanceOf[PointerType]) {
+           val pointerType = gep.base.typ.asInstanceOf[PointerType]
+           if (pointerType.element.isInstanceOf[StructType]) {
+              val struct = pointerType.element.asInstanceOf[StructType]
+              if (struct.name == "struct.JNINativeInterface_") {
+                 return true
+              }
+           }
         }
+        false
     }
 }

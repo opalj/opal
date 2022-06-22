@@ -5,15 +5,15 @@ import org.opalj.br.{DeclaredMethod, Method}
 import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{FinalEP, PropertyStore}
-import org.opalj.ifds.{AbstractIFDSFact, ICFG}
+import org.opalj.ifds.ICFG
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.{Assignment, DUVar, Expr, ExprStmt, LazyDetachedTACAIKey, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, TACMethodParameter, TACode, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.value.ValueInformation
 
-class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit project: SomeProject)
-    extends ICFG[IFDSFact, Method, JavaStatement] {
+class ForwardICFG(implicit project: SomeProject)
+    extends ICFG[Method, JavaStatement] {
     val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)

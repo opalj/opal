@@ -83,12 +83,7 @@ case class FunctionType(ref: LLVMTypeRef) extends Type(ref) {
 }
 /** Structures */
 case class StructType(ref: LLVMTypeRef) extends Type(ref) {
-    def name: String = {
-        val bytePointer = LLVMGetStructName(ref)
-        val string = bytePointer.getString
-        LLVMDisposeMessage(bytePointer)
-        string
-    }
+    def name: String = LLVMGetStructName(ref).getString
     def elementCount: Int = LLVMCountStructElementTypes(ref)
     def elementAtIndex(i: Int) = {
         assert(i < elementCount)
