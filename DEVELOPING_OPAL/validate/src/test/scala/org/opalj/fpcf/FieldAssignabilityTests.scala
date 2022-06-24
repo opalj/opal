@@ -8,21 +8,19 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.EagerL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
- * Tests the field reference immutability analysis
+ * Tests the field assignability analysis
  *
  * @author Tobias Roth
  */
@@ -52,14 +50,62 @@ class FieldAssignabilityTests extends PropertiesTest {
     }
     L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
-    describe("the org.opalj.fpcf.analyses.L3FieldAssignability is executed") {
+    describe("the org.opalj.fpcf.analyses.L0FieldAssignability is executed") {
+
         val as = executeAnalyses(
             Set(
-                EagerL3FieldAssignabilityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
-                LazyL1ClassImmutabilityAnalysis,
-                LazyL1TypeImmutabilityAnalysis,
-                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                EagerL0FieldAssignabilityAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyL2PurityAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                LazyFieldLocalityAnalysis
+            )
+        )
+        as.propertyStore.shutdown()
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
+    }
+
+    describe("the org.opalj.fpcf.analyses.L1FieldAssignability is executed") {
+
+        val as = executeAnalyses(
+            Set(
+                EagerL1FieldAssignabilityAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyL2PurityAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                LazyFieldLocalityAnalysis
+            )
+        )
+        as.propertyStore.shutdown()
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
+    }
+
+    describe("the org.opalj.fpcf.analyses.L2FieldAssignability is executed") {
+
+        val as = executeAnalyses(
+            Set(
+                EagerL2FieldAssignabilityAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyL2PurityAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                LazyFieldLocalityAnalysis
+            )
+        )
+        as.propertyStore.shutdown()
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
+    }
+
+    describe("the org.opalj.fpcf.analyses.L3FieldAssignability is executed") {
+
+        val as = executeAnalyses(
+            Set(
+                EagerL2FieldAssignabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL2PurityAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
