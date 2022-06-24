@@ -8,7 +8,7 @@ package field_assignability
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 
 /**
  * This is the basis for the matchers that match the immutability of a field reference
@@ -50,11 +50,11 @@ class FieldAssignabilityMatcher(val property: FieldAssignability)
     }
 }
 
-class LazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.LazilyInitialized)
+class LazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.LazilyInitialized)
 
-class UnsafelyLazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.UnsafelyLazilyInitialized)
+class UnsafelyLazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.UnsafelyLazilyInitialized)
 
-class EffectivelyNonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.EffectivelyNonAssignable)
+class EffectivelyNonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.EffectivelyNonAssignable)
 
-class NonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.NonAssignable)
+class NonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.NonAssignable)
 

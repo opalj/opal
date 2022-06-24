@@ -8,7 +8,7 @@ package fields
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 
 /**
  * Matches a field's `FieldImmutability` property. The match is successful if the field has the
@@ -44,7 +44,7 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        import org.opalj.br.fpcf.properties.DependentlyImmutableField
+        import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
         if (!properties.exists(p ⇒ p match {
             case DependentlyImmutableField(_) ⇒
                 val annotationType = a.annotationType.asFieldType.asObjectType
@@ -64,9 +64,11 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
     }
 }
 
-class NonTransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.NonTransitivelyImmutableField)
+class MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.MutableField)
 
-class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DependentlyImmutableField(Set.empty))
+class NonTransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.NonTransitivelyImmutableField)
 
-class TransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.TransitivelyImmutableField)
+class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(Set.empty))
+
+class TransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.TransitivelyImmutableField)
 

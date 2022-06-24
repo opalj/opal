@@ -9,9 +9,10 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties
-import org.opalj.br.fpcf.properties.DependentImmutableClass
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.fpcf.properties.immutability.classes
 
-class AbstractClassImmutabilityMatcher(val property: properties.ClassImmutability) extends AbstractPropertyMatcher {
+class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject
 
@@ -37,16 +38,17 @@ class AbstractClassImmutabilityMatcher(val property: properties.ClassImmutabilit
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
+        import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 
         if (!properties.exists(p ⇒ p match {
-            case DependentImmutableClass(_) ⇒
+            case DependentlyImmutableClass(_) ⇒
                 val annotationType = a.annotationType.asFieldType.asObjectType
                 val parameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
                         asArrayValue.values.map(x ⇒ x.asStringValue.value)
-                property.isInstanceOf[DependentImmutableClass] &&
-                    p.asInstanceOf[DependentImmutableClass].parameter.size == parameters.size &&
-                    parameters.toList.forall(param ⇒ p.asInstanceOf[DependentImmutableClass].parameter.contains(param))
+                property.isInstanceOf[classes.DependentlyImmutableClass] &&
+                    p.asInstanceOf[classes.DependentlyImmutableClass].parameter.size == parameters.size &&
+                    parameters.toList.forall(param ⇒ p.asInstanceOf[classes.DependentlyImmutableClass].parameter.contains(param))
             case _ ⇒ p == property
         })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
@@ -57,13 +59,13 @@ class AbstractClassImmutabilityMatcher(val property: properties.ClassImmutabilit
 }
 
 class TransitivelyImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.TransitivelyImmutableClass)
+    extends AbstractClassImmutabilityMatcher(properties.immutability.TransitivelyImmutableClass)
 
 class DependentlyImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.DependentImmutableClass(Set.empty))
+    extends AbstractClassImmutabilityMatcher(properties.immutability.DependentlyImmutableClass(Set.empty))
 
 class NonTransitivelyImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.NonTransitivelyImmutableClass)
+    extends AbstractClassImmutabilityMatcher(properties.immutability.NonTransitivelyImmutableClass)
 
 class MutableClassMatcher extends AbstractPropertyMatcher {
     override def validateProperty(

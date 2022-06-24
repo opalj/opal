@@ -6,12 +6,9 @@ package immutability
 package field_assignability
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.BooleanValue
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.PrematurelyReadField
+import org.opalj.br.fpcf.properties.immutability.Assignable
 
 /**
  * Matches mutable field references
@@ -19,7 +16,7 @@ import org.opalj.br.fpcf.properties.PrematurelyReadField
  */
 class AssignableFieldReferenceMatcher extends AbstractPropertyMatcher {
 
-    val property = br.fpcf.properties.Assignable
+    val property = Assignable
 
     final private val PropertyReasonID = 0
 
@@ -38,12 +35,13 @@ class AssignableFieldReferenceMatcher extends AbstractPropertyMatcher {
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
         if (!analyses.exists(as.contains)) return false;
+        true
 
-        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead")
-            .asInstanceOf[BooleanValue]
-            .value
+        // val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead")
+        //     .asInstanceOf[BooleanValue]
+        //     .value
 
-        if (prematurelyRead) {
+        /*   if (prematurelyRead) {
             val propertyStore = p.get(PropertyStoreKey)
             propertyStore(entity, FieldPrematurelyRead.key) match {
                 case FinalP(PrematurelyReadField) ⇒ true
@@ -51,7 +49,7 @@ class AssignableFieldReferenceMatcher extends AbstractPropertyMatcher {
             }
         } else {
             true
-        }
+        } */
     }
 
     def validateProperty(

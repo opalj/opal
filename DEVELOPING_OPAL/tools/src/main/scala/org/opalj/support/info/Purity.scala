@@ -73,12 +73,12 @@ import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -593,9 +593,11 @@ object Purity {
             case Some("L1")          ⇒ support ::= LazyL1FieldAssignabilityAnalysis
 
             case Some("L2") if eager ⇒
+
                 support ::= EagerL2FieldAssignabilityAnalysis
 
             case Some("L2") ⇒
+
                 support ::= LazyL2FieldAssignabilityAnalysis
 
             case Some("L3") ⇒

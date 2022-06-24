@@ -4,7 +4,7 @@ package org.opalj.fpcf.properties.immutability.types
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
@@ -36,7 +36,7 @@ class AbstractTypeImmutabilityMatcher(
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        import org.opalj.br.fpcf.properties.DependentlyImmutableType
+        import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
         if (!properties.exists(p ⇒ p match {
             case DependentlyImmutableType(_) ⇒
                 val annotationType = a.annotationType.asFieldType.asObjectType
@@ -56,11 +56,11 @@ class AbstractTypeImmutabilityMatcher(
 }
 
 class TransitiveImmutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.TransitivelyImmutableType)
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType)
 class DependentlyImmutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DependentlyImmutableType(Set.empty))
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(Set.empty))
 class NonTransitiveImmutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.NonTransitivelyImmutableType)
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType)
 class MutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.MutableType)
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.MutableType)
 

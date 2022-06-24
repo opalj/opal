@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 
 /**
  * Computes the field immutability; see [[FieldImmutability]] for details.
@@ -45,7 +45,7 @@ object FieldImmutabilityRunner extends ProjectAnalysisApplication {
 
         project.get(RTACallGraphKey)
         val (ps, _) = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL3FieldAssignabilityAnalysis,
+            LazyL2FieldAssignabilityAnalysis,
             LazyL0FieldImmutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis,

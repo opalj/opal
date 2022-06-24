@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreContext
@@ -154,7 +154,7 @@ object Immutability {
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
-                LazyL3FieldAssignabilityAnalysis,
+                LazyL2FieldAssignabilityAnalysis,
                 LazyL0FieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
@@ -203,7 +203,7 @@ object Immutability {
                     analysis match {
                         case Assignability ⇒
                             import org.opalj.br.fpcf.properties.immutability
-                            if (css.contains(LazyL3FieldAssignabilityAnalysis))
+                            if (css.contains(LazyL2FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f ⇒ propertyStore.force(f, immutability.FieldAssignability.key)
                                 )
@@ -229,7 +229,7 @@ object Immutability {
                         case All ⇒
                             import org.opalj.br.fpcf.properties.immutability
                             import org.opalj.br.fpcf.properties.immutability
-                            if (css.contains(LazyL3FieldAssignabilityAnalysis))
+                            if (css.contains(LazyL2FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(f ⇒ {
                                     import org.opalj.br.fpcf.properties.immutability
                                     propertyStore.force(f, immutability.FieldAssignability.key)

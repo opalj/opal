@@ -17,8 +17,8 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 
 /**

@@ -1,16 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.immutability.fields
+/*package org.opalj.fpcf.properties.immutability.fields
 
-import org.opalj.br
 import org.opalj.br.AnnotationLike
-import org.opalj.br.BooleanValue
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.PrematurelyReadField
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
@@ -38,8 +32,9 @@ class MutableFieldMatcher extends AbstractPropertyMatcher {
 
         if (!analyses.exists(as.contains))
             return false;
+        else return true;
 
-        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead").asInstanceOf[BooleanValue].value
+        /*val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead").asInstanceOf[BooleanValue].value
 
         if (prematurelyRead) {
             val propertyStore = p.get(PropertyStoreKey)
@@ -49,7 +44,7 @@ class MutableFieldMatcher extends AbstractPropertyMatcher {
             }
         } else {
             true
-        }
+        } */
     }
 
     def validateProperty(
@@ -59,12 +54,12 @@ class MutableFieldMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        import org.opalj.br.fpcf.properties.FieldImmutability
-        if (properties.forall(p ⇒ p == br.fpcf.properties.MutableField || p.key != FieldImmutability.key))
+        import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+        import org.opalj.br.fpcf.properties.immutability.MutableField
+        if (properties.forall(p ⇒ p == MutableField || p.key != FieldImmutability.key))
             None
         else {
             Some(a.elementValuePairs.head.value.toString)
         }
     }
-
-}
+}*/
