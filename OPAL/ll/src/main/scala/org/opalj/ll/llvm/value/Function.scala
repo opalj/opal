@@ -19,7 +19,7 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
     def argumentCount: Int = LLVMCountParams(ref)
     def argument(index: Int): Argument = {
         assert(index < argumentCount)
-        Argument(LLVMGetParam(ref, index))
+        Argument(LLVMGetParam(ref, index), index)
     }
 
     def entryBlock: BasicBlock = {
@@ -57,10 +57,12 @@ class BasicBlockIterator(var ref: LLVMBasicBlockRef) extends Iterator[BasicBlock
 
 class ArgumentIterator(var ref: LLVMValueRef) extends Iterator[Argument] {
     override def hasNext: Boolean = ref != null
+    var index = 0
 
     override def next(): Argument = {
-        val argument = Argument(ref)
+        val argument = Argument(ref, index)
         this.ref = LLVMGetNextParam(ref)
+        index += 1
         argument
     }
 }

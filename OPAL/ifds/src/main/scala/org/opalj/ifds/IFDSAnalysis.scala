@@ -8,11 +8,6 @@ import org.opalj.ifds.Dependees.Getter
 
 import scala.collection.{mutable, Set ⇒ SomeSet}
 
-abstract class Statement[C, Node] {
-    def node(): Node
-    def callable(): C
-}
-
 case class Dependees[Work]() {
     case class Dependee(eOptionP: SomeEOptionP, worklist: Set[Work] = Set.empty)
     var dependees = Map.empty[SomeEPK, Dependee]

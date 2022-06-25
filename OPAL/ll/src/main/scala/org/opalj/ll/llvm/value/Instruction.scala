@@ -3,7 +3,8 @@ package org.opalj.ll.llvm.value
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM._
-import org.opalj.ll.llvm.Type
+import org.opalj.ll.llvm.value.constant.ConstantIntValue
+import org.opalj.ll.llvm.{FunctionType, Type}
 
 object OptionalInstruction {
     def apply(ref: LLVMValueRef): Option[Instruction] = {
@@ -100,7 +101,7 @@ trait Terminator {
         (0 to numSuccessors - 1).map(i ⇒ getSuccessor(i).firstInstruction)
 }
 
-sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
+sealed abstract class Instruction(ref: LLVMValueRef) extends User(ref) {
     def isTerminator: Boolean = LLVMIsATerminatorInst(ref) != null
     def parent: BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
     def function: Function = parent.parent
@@ -108,12 +109,6 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
 
     override def toString: String = {
         s"${this.getClass.getSimpleName}(${repr})"
-    }
-
-    def numOperands: Int = LLVMGetNumOperands(ref)
-    def operand(index: Int): Value = {
-        assert(index < numOperands)
-        Value(LLVMGetOperand(ref, index)).get
     }
 }
 
@@ -166,6 +161,9 @@ case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref) {
     def isConstant = (1 until numOperands).forall(operand(_).isInstanceOf[ConstantIntValue])
     def constants = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
     def isZero = isConstant && constants.forall(_ == 0)
+
+    def numIndices: Int = LLVMGetNumIndices(ref)
+    def indices: Iterable[Int] = LLVMGetIndices(ref).asBuffer().array()
 }
 case class Trunc(ref: LLVMValueRef) extends Instruction(ref)
 case class ZExt(ref: LLVMValueRef) extends Instruction(ref)
@@ -184,13 +182,14 @@ case class ICmp(ref: LLVMValueRef) extends Instruction(ref)
 case class FCmp(ref: LLVMValueRef) extends Instruction(ref)
 case class PHI(ref: LLVMValueRef) extends Instruction(ref)
 case class Call(ref: LLVMValueRef) extends Instruction(ref) {
-    def calledValue: Value = Value(LLVMGetCalledValue(ref)).get
-    def calledFunctionType: Type = Type(LLVMGetCalledFunctionType(ref))
+    def calledValue: Value = Value(LLVMGetCalledValue(ref)).get // corresponds to last operand
+    def calledFunctionType: FunctionType = Type(LLVMGetCalledFunctionType(ref)).asInstanceOf[FunctionType]
     def indexOfArgument(argument: Value): Option[Int] = {
         for (i ← 0 to numOperands)
             if (operand(i) == argument) return Some(i)
         None
     }
+    def numArgOperands: Int = LLVMGetNumArgOperands(ref)
 }
 case class Select(ref: LLVMValueRef) extends Instruction(ref)
 case class UserOp1(ref: LLVMValueRef) extends Instruction(ref)

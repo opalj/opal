@@ -4,7 +4,6 @@ package org.opalj.ll.llvm.value
 import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
 import org.bytedeco.llvm.global.LLVM._
 import org.opalj.graphs.Node
-import org.opalj.ll.llvm.value
 
 case class BasicBlock(block_ref: LLVMBasicBlockRef)
     extends Value(LLVMBasicBlockAsValue(block_ref))
@@ -14,11 +13,11 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
     def firstInstruction: Instruction = Instruction(LLVMGetFirstInstruction(block_ref))
     def lastInstruction: Instruction = Instruction(LLVMGetLastInstruction(block_ref))
 
-    def terminator(): Option[Instruction with value.Terminator] = {
+    def terminator(): Option[Instruction with Terminator] = {
         OptionalInstruction(LLVMGetBasicBlockTerminator(block_ref)) match {
             case Some(terminator) ⇒ {
                 assert(terminator.isTerminator)
-                Some(terminator.asInstanceOf[Instruction with value.Terminator])
+                Some(terminator.asInstanceOf[Instruction with Terminator])
             }
             case None ⇒ None
         }

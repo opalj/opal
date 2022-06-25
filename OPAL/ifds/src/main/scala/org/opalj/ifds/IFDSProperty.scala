@@ -3,7 +3,7 @@ package org.opalj.ifds
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyMetaInformation
 
-trait IFDSPropertyMetaInformation[S, IFDSFact] extends PropertyMetaInformation {
+trait IFDSPropertyMetaInformation[S, IFDSFact <: AbstractIFDSFact] extends PropertyMetaInformation {
     /**
      * Creates an IFDSProperty containing the result of this analysis.
      *
@@ -14,7 +14,7 @@ trait IFDSPropertyMetaInformation[S, IFDSFact] extends PropertyMetaInformation {
     def create(result: Map[S, Set[IFDSFact]], debugData: Map[S, Set[IFDSFact]]): IFDSProperty[S, IFDSFact]
 }
 
-abstract class IFDSProperty[S, IFDSFact]
+abstract class IFDSProperty[S, IFDSFact <: AbstractIFDSFact]
     extends Property
     with IFDSPropertyMetaInformation[S, IFDSFact] {
 

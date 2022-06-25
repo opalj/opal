@@ -7,7 +7,7 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ifds
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
-import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaForwardTaintAnalysisScheduler, NativeFact, NativeForwardTaintAnalysisScheduler, NativeNullFact}
+import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaForwardTaintAnalysisScheduler, NativeTaintFact, NativeForwardTaintAnalysisScheduler, NativeTaintNullFact}
 import org.opalj.ll.llvm.value.Function
 import org.opalj.log.GlobalLogContext
 import org.opalj.tac.cg.RTACallGraphKey
@@ -17,7 +17,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers {
-    describe("MultilingualForwardTaintAnalysis") {
+    describe("CrossLanguageForwardTaintAnalysis") {
         implicit val config = BaseConfig.withValue(ifds.ConfigKeyPrefix+"debug", ConfigValueFactory.fromAnyRef(true))
         val project =
             Project(
@@ -61,7 +61,7 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
         }
 
         val function: Function = project.get(LLVMProjectKey).function("Java_TaintTest_native_1array_1tainted").get
-        val debugData = ps((LLVMFunction(function), NativeNullFact), NativeForwardTaintAnalysisScheduler.property.key).ub.asInstanceOf[IFDSProperty[LLVMStatement, NativeFact]].debugData
+        val debugData = ps((LLVMFunction(function), NativeTaintNullFact), NativeForwardTaintAnalysisScheduler.property.key).ub.asInstanceOf[IFDSProperty[LLVMStatement, NativeTaintFact]].debugData
         for {
             bb ← function.basicBlocks
             instruction ← bb.instructions

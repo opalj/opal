@@ -1,11 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds
 
-import org.opalj.ifds.{AbstractIFDSFact, ICFG}
-import org.opalj.ll.llvm.{PointerType, StructType}
-import org.opalj.ll.llvm.value.{Call, Function, GetElementPtr, Instruction, Load, Ret, Terminator, Value}
+import org.opalj.ifds.ICFG
+import org.opalj.ll.llvm.value.{Call, Function, Instruction, Ret, Terminator}
 
-class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[NativeFunction, LLVMStatement] {
+object NativeForwardICFG extends ICFG[NativeFunction, LLVMStatement] {
     /**
      * Determines the statements at which the analysis starts.
      *
@@ -40,7 +39,7 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[NativeFunctio
      */
     override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[NativeFunction]] = {
         statement.instruction match {
-            case call: Call ⇒ Some(resolveCallee(call.calledValue))
+            case call: Call ⇒ Some(resolveCallee(call))
             case _          ⇒ None
         }
     }
@@ -50,23 +49,10 @@ class NativeForwardICFG[IFDSFact <: AbstractIFDSFact] extends ICFG[NativeFunctio
         case _      ⇒ false
     }
 
-    private def resolveCallee(calledValue: Value): Set[NativeFunction] = calledValue match {
-        case function: Function ⇒ Set(LLVMFunction(function))
-        case load: Load ⇒ resolveCallee(load.src)
-        case gep: GetElementPtr if isJNI(gep) => Set()
-        case _ ⇒ Set()
-    }
-
-    private def isJNI(gep: GetElementPtr): Boolean = {
-        if (gep.base.typ.isInstanceOf[PointerType]) {
-           val pointerType = gep.base.typ.asInstanceOf[PointerType]
-           if (pointerType.element.isInstanceOf[StructType]) {
-              val struct = pointerType.element.asInstanceOf[StructType]
-              if (struct.name == "struct.JNINativeInterface_") {
-                 return true
-              }
-           }
-        }
-        false
-    }
+    private def resolveCallee(call: Call): Set[NativeFunction] =
+        if (call.calledValue.isInstanceOf[Function])
+            Set(LLVMFunction(call.calledValue.asInstanceOf[Function]))
+        else if (JNICallUtil.isJNICall(call))
+            JNICallUtil.resolve(call)
+        else Set()
 }

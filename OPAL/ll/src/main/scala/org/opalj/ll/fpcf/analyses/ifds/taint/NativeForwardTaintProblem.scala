@@ -6,8 +6,8 @@ import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunct
 import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, GetElementPtr, Load, PHI, Ret, Store, Sub}
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
-abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeFact](project) with TaintProblem[LLVMFunction, LLVMStatement, NativeFact] {
-    override def nullFact: NativeFact = NativeNullFact
+abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeTaintFact](project) with TaintProblem[LLVMFunction, LLVMStatement, NativeTaintFact] {
+    override def nullFact: NativeTaintFact = NativeTaintNullFact
 
     /**
      * Computes the data flow for a normal statement.
@@ -20,7 +20,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         that the facts in `in` held before `statement` and `successor` will be
      *         executed next.
      */
-    override def normalFlow(statement: LLVMStatement, in: NativeFact, predecessor: Option[LLVMStatement]): Set[NativeFact] = statement.instruction match {
+    override def normalFlow(statement: LLVMStatement, in: NativeTaintFact, predecessor: Option[LLVMStatement]): Set[NativeTaintFact] = statement.instruction match {
         case _: Alloca ⇒ Set(in)
         case store: Store ⇒ in match {
             case NativeVariable(value) if value == store.src ⇒ store.dst match {
@@ -68,7 +68,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return The facts, which hold after the execution of `statement` under the assumption that
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
-    override def callFlow(call: LLVMStatement, callee: NativeFunction, in: NativeFact): Set[NativeFact] = callee match {
+    override def callFlow(call: LLVMStatement, callee: NativeFunction, in: NativeTaintFact): Set[NativeTaintFact] = callee match {
         case LLVMFunction(callee) ⇒
             in match {
                 // Taint formal parameter if actual parameter is tainted
@@ -77,7 +77,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
                     case None        ⇒ Set()
                 }
                 // TODO pass other java taints
-                case NativeNullFact ⇒ Set(in)
+                case NativeTaintNullFact ⇒ Set(in)
                 case NativeArrayElement(base, indices) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(base) match {
                     case Some(index) ⇒ Set(NativeArrayElement(callee.argument(index), indices))
                     case None        ⇒ Set()
@@ -97,21 +97,21 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         under the assumption that `in` held before the execution of `exit` and that
      *         `successor` will be executed next.
      */
-    override def returnFlow(exit: LLVMStatement, in: NativeFact, call: LLVMStatement, callFact: NativeFact, successor: LLVMStatement): Set[NativeFact] = {
+    override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement, callFact: NativeTaintFact, successor: LLVMStatement): Set[NativeTaintFact] = {
         val callee = exit.callable()
-        var flows: Set[NativeFact] = if (sanitizesReturnValue(callee)) Set.empty else in match {
+        var flows: Set[NativeTaintFact] = if (sanitizesReturnValue(callee)) Set.empty else in match {
             case NativeVariable(value) ⇒ exit.instruction match {
                 case ret: Ret if ret.value == value ⇒ Set(NativeVariable(call.instruction))
                 case _: Ret                         ⇒ Set()
                 case _                              ⇒ Set()
             }
-            case NativeNullFact ⇒ Set(NativeNullFact)
+            case NativeTaintNullFact ⇒ Set(NativeTaintNullFact)
             case NativeFlowFact(flow) if !flow.contains(call.function) ⇒
                 Set(NativeFlowFact(call.function +: flow))
             case _ ⇒ Set()
         }
         if (exit.callable.name == "source") in match {
-            case NativeNullFact ⇒ flows += NativeVariable(call.instruction)
+            case NativeTaintNullFact ⇒ flows += NativeVariable(call.instruction)
         }
         if (exit.callable.name == "sink") in match {
             case NativeVariable(value) if value == exit.callable.function.argument(0) ⇒
@@ -129,7 +129,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return The facts, which hold after the call independently of what happens in the callee
      *         under the assumption that `in` held before `call`.
      */
-    override def callToReturnFlow(call: LLVMStatement, in: NativeFact, successor: LLVMStatement): Set[NativeFact] = Set(in)
+    override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: LLVMStatement): Set[NativeTaintFact] = Set(in)
 
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
         case PHI(_) ⇒ true

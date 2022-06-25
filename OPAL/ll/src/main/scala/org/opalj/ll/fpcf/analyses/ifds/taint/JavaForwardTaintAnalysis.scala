@@ -73,11 +73,11 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             val entryFacts = nativeCallFlow(call, function, in, callee)
             for (entryFact ← entryFacts) { // ifds line 14
                 val e = (function, entryFact)
-                val exitFacts: Map[LLVMStatement, Set[NativeFact]] =
-                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, NativeFact), IFDSProperty[LLVMStatement, NativeFact]]] match {
-                        case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeFact]] ⇒
+                val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
+                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, NativeTaintFact), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
+                        case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] ⇒
                             ep.p.flows
-                        case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeFact]] ⇒
+                        case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] ⇒
                             ep.ub.flows
                         case _ ⇒
                             Map.empty
@@ -114,7 +114,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         callee:       LLVMFunction,
         in:           Fact,
         nativeCallee: Method
-    ): Set[NativeFact] = {
+    ): Set[NativeTaintFact] = {
         val callObject = asCall(call.stmt)
         val allParams = callObject.allParams
         val allParamsWithIndices = allParams.zipWithIndex
@@ -147,7 +147,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
 
             case StaticField(classType, fieldName) ⇒ Set(JavaStaticField(classType, fieldName))
 
-            case NullFact                          ⇒ Set(NativeNullFact)
+            case NullFact                          ⇒ Set(NativeTaintNullFact)
 
             case _                                 ⇒ Set() // Nothing to do
 
@@ -166,7 +166,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
      */
     private def nativeReturnFlow(
         exit:         LLVMStatement,
-        in:           NativeFact,
+        in:           NativeTaintFact,
         call:         JavaStatement,
         callFact:     Fact,
         nativeCallee: Method,
@@ -217,8 +217,8 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             // Track the call chain to the sink back
             case NativeFlowFact(flow) if !flow.contains(JavaMethod(call.method)) ⇒
                 flows += FlowFact(JavaMethod(call.method) +: flow)
-            case NativeNullFact ⇒ flows += NullFact
-            case _              ⇒
+            case NativeTaintNullFact ⇒ flows += NullFact
+            case _                   ⇒
         }
 
         // Propagate taints of the return value
@@ -232,7 +232,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             flows += ArrayElement(call.index, taintedIndex)
           case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) ⇒
             flows += InstanceField(call.index, declClass, taintedField)*/
-                    case NativeNullFact ⇒
+                    case NativeTaintNullFact ⇒
                         val taints = createTaints(nativeCallee, call)
                         if (taints.nonEmpty) flows ++= taints
                     case _ ⇒ // Nothing to do

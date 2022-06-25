@@ -12,7 +12,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(NativeFunction, NativeFact)] = Seq.empty
+    override val entryPoints: Seq[(NativeFunction, NativeTaintFact)] = Seq.empty
 
     /**
      * The sanitize method is a sanitizer.
@@ -23,12 +23,12 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * We do not sanitize parameters.
      */
-    override protected def sanitizesParameter(call: LLVMStatement, in: NativeFact): Boolean = false
+    override protected def sanitizesParameter(call: LLVMStatement, in: NativeTaintFact): Boolean = false
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
      */
-    protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeFact] =
+    protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeTaintFact] =
         if (callee.name == "source") Set.empty //TODO Set(NativeVariable())
         else Set.empty
 
@@ -39,17 +39,17 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     protected def createFlowFact(
         callee: Function,
         call:   LLVMStatement,
-        in:     Set[NativeFact]
+        in:     Set[NativeTaintFact]
     ): Option[NativeFlowFact] =
         if (callee.name == "sink" && in.contains(JavaVariable(-2))) Some(NativeFlowFact(Seq(call.function)))
         else None
 }
 
-class SimpleNativeForwardTaintAnalysis(implicit project: SomeProject)
+class SimpleNativeForwardTaintAnalysis(project: SomeProject)
     extends NativeIFDSAnalysis(project, new SimpleNativeForwardTaintProblem(project), NativeTaint)
 
-object NativeForwardTaintAnalysisScheduler extends NativeIFDSAnalysisScheduler[NativeFact] {
-    override def init(p: SomeProject, ps: PropertyStore) = new SimpleNativeForwardTaintAnalysis()(p)
-    override def property: IFDSPropertyMetaInformation[LLVMStatement, NativeFact] = NativeTaint
+object NativeForwardTaintAnalysisScheduler extends NativeIFDSAnalysisScheduler[NativeTaintFact] {
+    override def init(p: SomeProject, ps: PropertyStore) = new SimpleNativeForwardTaintAnalysis(p)
+    override def property: IFDSPropertyMetaInformation[LLVMStatement, NativeTaintFact] = NativeTaint
     override val uses: Set[PropertyBounds] = Set() // ++ PropertyBounds.ub(Taint) TODO: we do not use the native taint yet
 }
