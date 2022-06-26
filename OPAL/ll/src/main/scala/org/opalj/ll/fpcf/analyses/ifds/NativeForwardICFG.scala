@@ -1,10 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds
 
+import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
 import org.opalj.ifds.ICFG
 import org.opalj.ll.llvm.value.{Call, Function, Instruction, Ret, Terminator}
 
-object NativeForwardICFG extends ICFG[NativeFunction, LLVMStatement] {
+class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMStatement] {
+    implicit val declaredMethods = project.get(DeclaredMethodsKey)
+
     /**
      * Determines the statements at which the analysis starts.
      *
@@ -37,7 +40,7 @@ object NativeForwardICFG extends ICFG[NativeFunction, LLVMStatement] {
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[NativeFunction]] = {
+    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[_ <: NativeFunction]] = {
         statement.instruction match {
             case call: Call ⇒ Some(resolveCallee(call))
             case _          ⇒ None
@@ -49,7 +52,7 @@ object NativeForwardICFG extends ICFG[NativeFunction, LLVMStatement] {
         case _      ⇒ false
     }
 
-    private def resolveCallee(call: Call): Set[NativeFunction] =
+    private def resolveCallee(call: Call): Set[_ <: NativeFunction] =
         if (call.calledValue.isInstanceOf[Function])
             Set(LLVMFunction(call.calledValue.asInstanceOf[Function]))
         else if (JNICallUtil.isJNICall(call))

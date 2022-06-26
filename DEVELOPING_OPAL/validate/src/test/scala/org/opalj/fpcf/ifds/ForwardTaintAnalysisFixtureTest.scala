@@ -8,7 +8,7 @@ import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.ForwardFlowPath
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintAnalysisFixtureScheduler
-import org.opalj.tac.fpcf.analyses.ifds.taint.NullFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 
 import java.net.URL
 
@@ -34,7 +34,7 @@ class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
         val project = testContext.project
         val eas = methodsWithAnnotations(project).map {
             case (method, entityString, annotations) ⇒
-                ((method, NullFact), entityString, annotations)
+                ((method, TaintNullFact), entityString, annotations)
         }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(ForwardFlowPath.PROPERTY_VALIDATOR_KEY))

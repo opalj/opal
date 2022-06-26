@@ -27,7 +27,7 @@ abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    def getCalleesIfCallStatement(statement: S): Option[SomeSet[C]]
+    def getCalleesIfCallStatement(statement: S): Option[SomeSet[_ <: C]]
 
     /**
      * Determines whether the statement is an exit statement.

@@ -10,14 +10,14 @@ import org.opalj.tac.fpcf.analyses.ifds.old.{JavaIFDSProblem, DeclaredMethodJava
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem ⇒ NewJavaIFDSProblem}
 
-abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[Fact](project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, Fact] {
-    override def nullFact: Fact = NullFact
+abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[TaintFact](project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, TaintFact] {
+    override def nullFact: TaintFact = TaintNullFact
 
     /**
      * If a variable gets assigned a tainted value, the variable will be tainted.
      */
     override def normalFlow(statement: DeclaredMethodJavaStatement, successor: Option[DeclaredMethodJavaStatement],
-                            in: Set[Fact]): Set[Fact] =
+                            in: Set[TaintFact]): Set[TaintFact] =
         statement.stmt.astID match {
             case Assignment.ASTID ⇒
                 in ++ createNewTaints(statement.stmt.asAssignment.expr, statement, in)
@@ -64,10 +64,10 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * edges will be created.
      */
     override def callFlow(call: DeclaredMethodJavaStatement, callee: DeclaredMethod,
-                          in: Set[Fact], a: (DeclaredMethod, Fact)): Set[Fact] = {
+                          in: Set[TaintFact], a: (DeclaredMethod, TaintFact)): Set[TaintFact] = {
         val callObject = asCall(call.stmt)
         val allParams = callObject.allParams
-        var facts = Set.empty[Fact]
+        var facts = Set.empty[TaintFact]
 
         if (relevantCallee(callee)) {
             val allParamsWithIndices = allParams.zipWithIndex
@@ -127,7 +127,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * If the sanitize method was called, nothing will be tainted.
      */
     override def returnFlow(call: DeclaredMethodJavaStatement, callee: DeclaredMethod, exit: DeclaredMethodJavaStatement,
-                            successor: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] = {
+                            successor: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = {
 
         /**
          * Checks whether the callee's formal parameter is of a reference type.
@@ -145,7 +145,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
         if (sanitizesReturnValue(callee)) return Set.empty
         val callStatement = asCall(call.stmt)
         val allParams = callStatement.allParams
-        var flows: Set[Fact] = Set.empty
+        var flows: Set[TaintFact] = Set.empty
         in.foreach {
             // Taint actual parameter if formal parameter is tainted
             case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
@@ -187,7 +187,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
                     flows += ArrayElement(call.index, taintedIndex)
                 case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) ⇒
                     flows += InstanceField(call.index, declClass, taintedField)
-                case NullFact ⇒
+                case TaintNullFact ⇒
                     val taints = createTaints(callee, call)
                     if (taints.nonEmpty) flows ++= taints
                 case _ ⇒ // Nothing to do
@@ -203,8 +203,8 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * Removes taints according to `sanitizeParamters`.
      */
     override def callToReturnFlow(call: DeclaredMethodJavaStatement, successor: DeclaredMethodJavaStatement,
-                                  in:     Set[Fact],
-                                  source: (DeclaredMethod, Fact)): Set[Fact] =
+                                  in:     Set[TaintFact],
+                                  source: (DeclaredMethod, TaintFact)): Set[TaintFact] =
         in -- sanitizeParameters(call, in)
 
     /**
@@ -216,7 +216,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * @param call The call.
      * @return Some variable fact, if necessary. Otherwise none.
      */
-    protected def createTaints(callee: DeclaredMethod, call: DeclaredMethodJavaStatement): Set[Fact]
+    protected def createTaints(callee: DeclaredMethod, call: DeclaredMethodJavaStatement): Set[TaintFact]
 
     /**
      * Called, when the call to return facts are computed for some `callee`.
@@ -227,7 +227,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def createFlowFact(callee: DeclaredMethod, call: DeclaredMethodJavaStatement,
-                                 in: Set[Fact]): Option[FlowFact]
+                                 in: Set[TaintFact]): Option[FlowFact]
 
     /**
      * If a parameter is tainted, the result will also be tainted.
@@ -235,7 +235,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      */
     override def outsideAnalysisContext(callee: DeclaredMethod): Option[OutsideAnalysisContextHandler] = {
         super.outsideAnalysisContext(callee) match {
-            case Some(_) ⇒ Some(((call: DeclaredMethodJavaStatement, successor: DeclaredMethodJavaStatement, in: Set[Fact]) ⇒ {
+            case Some(_) ⇒ Some(((call: DeclaredMethodJavaStatement, successor: DeclaredMethodJavaStatement, in: Set[TaintFact]) ⇒ {
                 val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
                 if (call.stmt.astID == Assignment.ASTID && in.exists {
                     case Variable(index) ⇒
@@ -275,7 +275,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * @param in The incoming facts
      * @return The new facts, created by the assignment
      */
-    private def createNewTaints(expression: Expr[V], statement: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] =
+    private def createNewTaints(expression: Expr[V], statement: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] =
         expression.astID match {
             case Var.ASTID ⇒
                 val definedBy = expression.asVar.definedBy
@@ -319,7 +319,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
                 else Set.empty
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID |
                 NewArray.ASTID | ArrayLength.ASTID ⇒
-                (0 until expression.subExprCount).foldLeft(Set.empty[Fact])((acc, subExpr) ⇒
+                (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) ⇒
                     acc ++ createNewTaints(expression.subExpr(subExpr), statement, in))
             case _ ⇒ Set.empty
         }
@@ -331,7 +331,7 @@ abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem
      * @param in The current data flow facts.
      * @return True, if the expression could be tainted
      */
-    private def isTainted(expression: Expr[V], in: Set[Fact]): Boolean = {
+    private def isTainted(expression: Expr[V], in: Set[TaintFact]): Boolean = {
         val definedBy = expression.asVar.definedBy
         expression.isVar && in.exists {
             case Variable(index)            ⇒ definedBy.contains(index)

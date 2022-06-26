@@ -28,7 +28,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(DeclaredMethod, Fact)] =
+    override val entryPoints: Seq[(DeclaredMethod, TaintFact)] =
         p.allProjectClassFiles.filter(classFile ⇒
             classFile.thisType.fqn == "java/lang/Class")
             .flatMap(classFile ⇒ classFile.methods)
@@ -43,12 +43,12 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = Set.empty
 
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.
      */
-    override def shouldPerformUnbalancedReturn(source: (DeclaredMethod, Fact)): Boolean = {
+    override def shouldPerformUnbalancedReturn(source: (DeclaredMethod, TaintFact)): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
             (!canBeCalledFromOutside(source._1) ||
                 // The source is callable from outside, but should create unbalanced return facts.
@@ -59,8 +59,8 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
      * This analysis does not create FlowFacts at calls.
      * Instead, FlowFacts are created at the start node of methods.
      */
-    override protected def createFlowFactAtCall(call: DeclaredMethodJavaStatement, in: Set[Fact],
-                                                source: (DeclaredMethod, Fact)): Option[FlowFact] = None
+    override protected def createFlowFactAtCall(call: DeclaredMethodJavaStatement, in: Set[TaintFact],
+                                                source: (DeclaredMethod, TaintFact)): Option[FlowFact] = None
 
     /**
      * This analysis does not create FlowFacts at returns.
@@ -68,7 +68,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
      */
     protected def applyFlowFactFromCallee(
         calleeFact: FlowFact,
-        source:     (DeclaredMethod, Fact)
+        source:     (DeclaredMethod, TaintFact)
     ): Option[FlowFact] = None
 
     /**
@@ -76,10 +76,10 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
      * and a formal parameter is tainted, we create a FlowFact.
      */
     override protected def createFlowFactAtBeginningOfMethod(
-        in:     Set[Fact],
-        source: (DeclaredMethod, Fact)
+        in:     Set[TaintFact],
+        source: (DeclaredMethod, TaintFact)
     ): Option[FlowFact] = {
-        if (source._2.isInstanceOf[UnbalancedReturnFact[Fact @unchecked]] &&
+        if (source._2.isInstanceOf[UnbalancedReturnFact[TaintFact @unchecked]] &&
             canBeCalledFromOutside(source._1) && in.exists {
                 // index < 0 means, that it is a parameter.
                 case Variable(index) if index < 0            ⇒ true
@@ -92,14 +92,14 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
     }
 }
 
-object BackwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[Fact] {
+object BackwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact] {
 
     override def init(p: SomeProject, ps: PropertyStore): BackwardClassForNameTaintAnalysisScheduler = {
         p.get(RTACallGraphKey)
         new BackwardClassForNameTaintAnalysisScheduler()(p)
     }
 
-    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, Fact] = OldTaint
+    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, TaintFact] = OldTaint
 }
 
 class BackwardClassForNameTaintAnalysisRunner extends AbsractIFDSAnalysisRunner {

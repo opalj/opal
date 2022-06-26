@@ -6,16 +6,16 @@ import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
 import org.opalj.tac.{Assignment, Expr, Stmt}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 
-trait Fact extends AbstractIFDSFact
+trait TaintFact extends AbstractIFDSFact
 
-case object NullFact extends Fact with AbstractIFDSNullFact
+case object TaintNullFact extends TaintFact with AbstractIFDSNullFact
 
 /**
  * A tainted variable.
  *
  * @param index The variable's definition site.
  */
-case class Variable(index: Int) extends Fact
+case class Variable(index: Int) extends TaintFact
 
 /**
  * A tainted array element.
@@ -23,7 +23,7 @@ case class Variable(index: Int) extends Fact
  * @param index The array's definition site.
  * @param element The index of the tainted element in the array.
  */
-case class ArrayElement(index: Int, element: Int) extends Fact
+case class ArrayElement(index: Int, element: Int) extends TaintFact
 
 /**
  * A tainted static field.
@@ -31,7 +31,7 @@ case class ArrayElement(index: Int, element: Int) extends Fact
  * @param classType The field's class.
  * @param fieldName The field's name.
  */
-case class StaticField(classType: ObjectType, fieldName: String) extends Fact
+case class StaticField(classType: ObjectType, fieldName: String) extends TaintFact
 
 /**
  * A tainted instance field.
@@ -40,7 +40,7 @@ case class StaticField(classType: ObjectType, fieldName: String) extends Fact
  * @param classType The field's type.
  * @param fieldName The field's value.
  */
-case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
+case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends TaintFact
 
 /**
  * A path of method calls, originating from the analyzed method, over which a tainted variable
@@ -48,7 +48,7 @@ case class InstanceField(index: Int, classType: ObjectType, fieldName: String) e
  *
  * @param flow A sequence of method calls, originating from but not including this method.
  */
-case class FlowFact(flow: Seq[Callable]) extends Fact {
+case class FlowFact(flow: Seq[Callable]) extends TaintFact {
     override val hashCode: Int = {
         var r = 1
         flow.foreach(f ⇒ r = (r + f.hashCode()) * 31)

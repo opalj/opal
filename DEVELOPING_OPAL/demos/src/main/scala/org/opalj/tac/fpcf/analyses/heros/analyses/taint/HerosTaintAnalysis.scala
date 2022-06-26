@@ -4,18 +4,18 @@ package org.opalj.tac.fpcf.analyses.heros.analyses.taint
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalICFG
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, NullFact}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintNullFact}
 
 /**
  * A common subclass of all Heros taint analyses.
  *
  * @author Mario Trageser
  */
-abstract class HerosTaintAnalysis(p: SomeProject, icfg: OpalICFG) extends HerosAnalysis[Fact](p, icfg) {
+abstract class HerosTaintAnalysis(p: SomeProject, icfg: OpalICFG) extends HerosAnalysis[TaintFact](p, icfg) {
 
     /**
      * Uses the NullFact of the TaintAnalysis.
      */
-    override def createZeroValue(): Fact = NullFact
+    override def createZeroValue(): TaintFact = TaintNullFact
 
 }

@@ -8,7 +8,7 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.old.{DeclaredMethodJavaStatement, ForwardIFDSAnalysis, IFDSAnalysisScheduler}
 import org.opalj.tac.fpcf.analyses.ifds.old.taint.ForwardTaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, NullFact, Variable}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, TaintNullFact, Variable}
 import org.opalj.tac.fpcf.properties.OldTaint
 
 /**
@@ -25,11 +25,11 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(DeclaredMethod, Fact)] = p.allProjectClassFiles.filter(classFile ⇒
+    override val entryPoints: Seq[(DeclaredMethod, TaintFact)] = p.allProjectClassFiles.filter(classFile ⇒
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(classFile ⇒ classFile.methods)
         .filter(method ⇒ method.isPublic && outsideAnalysisContext(declaredMethods(method)).isEmpty)
-        .map(method ⇒ declaredMethods(method) → NullFact)
+        .map(method ⇒ declaredMethods(method) → TaintNullFact)
 
     /**
      * The sanitize method is a sanitizer.
@@ -39,12 +39,12 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = Set.empty
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
      */
-    override protected def createTaints(callee: DeclaredMethod, call: DeclaredMethodJavaStatement): Set[Fact] =
+    override protected def createTaints(callee: DeclaredMethod, call: DeclaredMethodJavaStatement): Set[TaintFact] =
         if (callee.name == "source") Set(Variable(call.index))
         else Set.empty
 
@@ -53,14 +53,14 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
      * Note, that sink does not accept array parameters. No need to handle them.
      */
     override protected def createFlowFact(callee: DeclaredMethod, call: DeclaredMethodJavaStatement,
-                                          in: Set[Fact]): Option[FlowFact] =
+                                          in: Set[TaintFact]): Option[FlowFact] =
         if (callee.name == "sink" && in.contains(Variable(-2))) Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
 }
 
-object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Fact] {
+object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact] {
 
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture()(p)
 
-    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, Fact] = OldTaint
+    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, TaintFact] = OldTaint
 }

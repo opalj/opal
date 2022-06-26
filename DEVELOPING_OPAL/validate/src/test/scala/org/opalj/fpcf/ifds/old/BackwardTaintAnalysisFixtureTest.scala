@@ -7,7 +7,7 @@ import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.BackwardFlowPath
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.taint.NullFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.old.BackwardTaintAnalysisFixtureScheduler
 
 import java.net.URL
@@ -35,7 +35,7 @@ class BackwardTaintAnalysisFixtureTest extends PropertiesTest {
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
             case (methods, entityString, annotations) ⇒
-                ((declaredMethods(methods), NullFact), entityString, annotations)
+                ((declaredMethods(methods), TaintNullFact), entityString, annotations)
         }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(BackwardFlowPath.PROPERTY_VALIDATOR_KEY))

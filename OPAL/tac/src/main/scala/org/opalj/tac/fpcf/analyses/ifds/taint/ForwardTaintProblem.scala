@@ -9,17 +9,17 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 
 abstract class ForwardTaintProblem(project: SomeProject)
-    extends JavaIFDSProblem[Fact](project)
-    with TaintProblem[Method, JavaStatement, Fact] {
+    extends JavaIFDSProblem[TaintFact](project)
+    with TaintProblem[Method, JavaStatement, TaintFact] {
     val declaredMethods = project.get(DeclaredMethodsKey)
-    override def nullFact: Fact = NullFact
+    override def nullFact: TaintFact = TaintNullFact
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 
     /**
      * If a variable gets assigned a tainted value, the variable will be tainted.
      */
-    override def normalFlow(statement: JavaStatement, in: Fact, predecessor: Option[JavaStatement]): Set[Fact] = {
+    override def normalFlow(statement: JavaStatement, in: TaintFact, predecessor: Option[JavaStatement]): Set[TaintFact] = {
         statement.stmt.astID match {
             case Assignment.ASTID ⇒
                 Set(in) ++ createNewTaints(statement.stmt.asAssignment.expr, statement, in)
@@ -60,7 +60,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * parameter is detected, no call-to-start
      * edges will be created.
      */
-    override def callFlow(call: JavaStatement, callee: Method, in: Fact): Set[Fact] = {
+    override def callFlow(call: JavaStatement, callee: Method, in: TaintFact): Set[TaintFact] = {
         val callObject = asCall(call.stmt)
         val allParams = callObject.allParams
 
@@ -118,7 +118,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * Creates new taints and FlowFacts, if necessary.
      * If the sanitize method was called, nothing will be tainted.
      */
-    override def returnFlow(exit: JavaStatement, in: Fact, call: JavaStatement, callFact: Fact, successor: JavaStatement): Set[Fact] = {
+    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, callFact: TaintFact, successor: JavaStatement): Set[TaintFact] = {
         if (!isPossibleReturnFlow(exit, successor)) return Set.empty
 
         val callee = exit.callable()
@@ -138,7 +138,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
         if (sanitizesReturnValue(callee)) return Set.empty
         val callStatement = asCall(call.stmt)
         val allParams = callStatement.allParams
-        var flows: Set[Fact] = Set.empty
+        var flows: Set[TaintFact] = Set.empty
         in match {
             // Taint actual parameter if formal parameter is tainted
             case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
@@ -180,7 +180,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
                     flows += ArrayElement(call.index, taintedIndex)
                 case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) ⇒
                     flows += InstanceField(call.index, declClass, taintedField)
-                case NullFact ⇒
+                case TaintNullFact ⇒
                     val taints = createTaints(callee, call)
                     if (taints.nonEmpty) flows ++= taints
                 case _ ⇒ // Nothing to do
@@ -195,7 +195,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
     /**
      * Removes taints according to `sanitizesParameter`.
      */
-    override def callToReturnFlow(call: JavaStatement, in: Fact, successor: JavaStatement): Set[Fact] =
+    override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: JavaStatement): Set[TaintFact] =
         if (sanitizesParameter(call, in)) Set() else Set(in)
 
     /**
@@ -207,7 +207,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * @param call The call.
      * @return Some variable fact, if necessary. Otherwise none.
      */
-    protected def createTaints(callee: Method, call: JavaStatement): Set[Fact]
+    protected def createTaints(callee: Method, call: JavaStatement): Set[TaintFact]
 
     /**
      * Called, when the call to return facts are computed for some `callee`.
@@ -218,7 +218,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def createFlowFact(callee: Method, call: JavaStatement,
-                                 in: Fact): Option[FlowFact]
+                                 in: TaintFact): Option[FlowFact]
 
     /**
      * If a parameter is tainted, the result will also be tainted.
@@ -226,7 +226,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      */
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         super.outsideAnalysisContext(callee) match {
-            case Some(_) ⇒ Some(((call: JavaStatement, successor: JavaStatement, in: Fact, _: Getter) ⇒ {
+            case Some(_) ⇒ Some(((call: JavaStatement, successor: JavaStatement, in: TaintFact, _: Getter) ⇒ {
                 val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
                 if (call.stmt.astID == Assignment.ASTID && (in match {
                     case Variable(index) ⇒
@@ -257,7 +257,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * @param in The incoming facts
      * @return The new facts, created by the assignment
      */
-    private def createNewTaints(expression: Expr[V], statement: JavaStatement, in: Fact): Set[Fact] = {
+    private def createNewTaints(expression: Expr[V], statement: JavaStatement, in: TaintFact): Set[TaintFact] = {
         expression.astID match {
             case Var.ASTID ⇒
                 val definedBy = expression.asVar.definedBy
@@ -302,7 +302,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
                 else Set.empty
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID |
                 NewArray.ASTID | ArrayLength.ASTID ⇒
-                (0 until expression.subExprCount).foldLeft(Set.empty[Fact])((acc, subExpr) ⇒
+                (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) ⇒
                     acc ++ createNewTaints(expression.subExpr(subExpr), statement, in))
             case _ ⇒ Set.empty
         }
@@ -315,7 +315,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * @param in The current data flow facts.
      * @return True, if the expression could be tainted
      */
-    private def isTainted(expression: Expr[V], in: Fact): Boolean = {
+    private def isTainted(expression: Expr[V], in: TaintFact): Boolean = {
         val definedBy = expression.asVar.definedBy
         expression.isVar && (in match {
             case Variable(index)            ⇒ definedBy.contains(index)

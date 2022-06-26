@@ -7,7 +7,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.old._
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, Variable}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, Variable}
 import org.opalj.tac.fpcf.analyses.ifds._
 import org.opalj.tac.fpcf.properties.OldTaint
 
@@ -25,12 +25,12 @@ class ForwardClassForNameTaintAnalysis$Scheduler private (implicit val project: 
     extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), OldTaint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
-    extends old.taint.ForwardTaintProblem(project) with old.taint.TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, Fact] {
+    extends old.taint.ForwardTaintProblem(project) with old.taint.TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, TaintFact] {
 
     /**
      * The string parameters of all public methods are entry points.
      */
-    override def entryPoints: Seq[(DeclaredMethod, Fact)] = for {
+    override def entryPoints: Seq[(DeclaredMethod, TaintFact)] = for {
         m ← methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index ← m.descriptor.parameterTypes.zipWithIndex.collect {
@@ -46,20 +46,20 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[Fact]): Set[Fact] = Set.empty
+    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = Set.empty
 
     /**
      * This analysis does not create new taints on the fly.
      * Instead, the string parameters of all public methods are tainted in the entry points.
      */
-    override protected def createTaints(callee: DeclaredMethod, call: DeclaredMethodJavaStatement): Set[Fact] =
+    override protected def createTaints(callee: DeclaredMethod, call: DeclaredMethodJavaStatement): Set[TaintFact] =
         Set.empty
 
     /**
      * Create a FlowFact, if Class.forName is called with a tainted variable for the first parameter.
      */
     override protected def createFlowFact(callee: DeclaredMethod, call: DeclaredMethodJavaStatement,
-                                          in: Set[Fact]): Option[FlowFact] =
+                                          in: Set[TaintFact]): Option[FlowFact] =
         if (isClassForName(callee) && in.contains(Variable(-2)))
             Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
@@ -85,14 +85,14 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         method.declaringClassType == ObjectType.Class && method.name == "forName"
 }
 
-object ForwardClassForNameTaintAnalysis$Scheduler extends IFDSAnalysisScheduler[Fact] {
+object ForwardClassForNameTaintAnalysis$Scheduler extends IFDSAnalysisScheduler[TaintFact] {
 
     override def init(p: SomeProject, ps: PropertyStore): ForwardClassForNameTaintAnalysis$Scheduler = {
         p.get(RTACallGraphKey)
         new ForwardClassForNameTaintAnalysis$Scheduler()(p)
     }
 
-    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, Fact] = OldTaint
+    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, TaintFact] = OldTaint
 }
 
 class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
@@ -103,7 +103,7 @@ class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
         for {
             e ← analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysis$Scheduler.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[DeclaredMethodJavaStatement, Fact]].flows.values.flatten.toSet[Fact]
+            fact ← flows.ub.asInstanceOf[IFDSProperty[DeclaredMethodJavaStatement, TaintFact]].flows.values.flatten.toSet[TaintFact]
         } {
             fact match {
                 case FlowFact(flow) ⇒ println(s"flow: "+flow.asInstanceOf[Set[Method]].map(_.toJava).mkString(", "))

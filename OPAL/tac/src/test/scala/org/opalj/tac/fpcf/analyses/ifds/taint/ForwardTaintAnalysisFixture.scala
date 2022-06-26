@@ -23,11 +23,11 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, Fact)] = p.allProjectClassFiles.filter(classFile ⇒
+    override val entryPoints: Seq[(Method, TaintFact)] = p.allProjectClassFiles.filter(classFile ⇒
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(classFile ⇒ classFile.methods)
         .filter(method ⇒ method.isPublic && outsideAnalysisContext(method).isEmpty)
-        .map(method ⇒ method → NullFact)
+        .map(method ⇒ method → TaintNullFact)
 
     /**
      * The sanitize method is a sanitizer.
@@ -37,12 +37,12 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizesParameter(call: JavaStatement, in: Fact): Boolean = false
+    override protected def sanitizesParameter(call: JavaStatement, in: TaintFact): Boolean = false
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
      */
-    override protected def createTaints(callee: Method, call: JavaStatement): Set[Fact] =
+    override protected def createTaints(callee: Method, call: JavaStatement): Set[TaintFact] =
         if (callee.name == "source") Set(Variable(call.index))
         else Set.empty
 
@@ -51,14 +51,14 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
      * Note, that sink does not accept array parameters. No need to handle them.
      */
     override protected def createFlowFact(callee: Method, call: JavaStatement,
-                                          in: Fact): Option[FlowFact] =
+                                          in: TaintFact): Option[FlowFact] =
         if (callee.name == "sink" && in == Variable(-2)) Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
 }
 
-object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Fact, Method, JavaStatement] {
+object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture(p)
-    override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
+    override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey, DeclaredMethodsKey, PropertyStoreKey)
 }

@@ -259,7 +259,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <
      */
     private def handleCall(
         call:    S,
-        callees: SomeSet[C],
+        callees: SomeSet[_ <: C],
         in:      IFDSFact
     )(
         implicit

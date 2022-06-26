@@ -2,17 +2,19 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.{PropertyBounds, PropertyStore}
+import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Function
+import org.opalj.tac.fpcf.properties.Taint
 
 class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaintProblem(p) {
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
     override val entryPoints: Seq[(NativeFunction, NativeTaintFact)] = Seq.empty
+    override val javaPropertyKey: PropertyKey[Taint] = Taint.key
 
     /**
      * The sanitize method is a sanitizer.

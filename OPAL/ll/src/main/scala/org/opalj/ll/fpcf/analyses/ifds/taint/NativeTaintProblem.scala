@@ -2,12 +2,12 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.ObjectType
-import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
+import org.opalj.ifds.{AbstractIFDSNullFact, Callable, AbstractIFDSFact}
 import org.opalj.ll.llvm.value.Value
 
 trait NativeTaintFact extends AbstractIFDSFact
 
-case object NativeTaintNullFact extends NativeTaintFact with AbstractIFDSNullFact
+object NativeTaintNullFact extends NativeTaintFact with AbstractIFDSNullFact
 
 /**
  * A tainted variable.

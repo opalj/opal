@@ -3,7 +3,7 @@ package org.opalj.tac.fpcf.analyses.ifds.old.taint
 
 import org.opalj.br.Method
 import org.opalj.tac.fpcf.analyses.ifds.old.UnbalancedReturnFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 
 /**
  * The unbalanced return fact of this analysis.
@@ -12,8 +12,8 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.Fact
  * @param innerFact The fact, which will hold in the caller context after the call.
  * @param callChain The current call chain from the sink.
  */
-case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Seq[Method])
-    extends UnbalancedReturnFact[Fact] with Fact
+case class UnbalancedTaintFact(index: Int, innerFact: TaintFact, callChain: Seq[Method])
+    extends UnbalancedReturnFact[TaintFact] with TaintFact
 
 trait TaintProblem[C, Statement, IFDSFact] {
 

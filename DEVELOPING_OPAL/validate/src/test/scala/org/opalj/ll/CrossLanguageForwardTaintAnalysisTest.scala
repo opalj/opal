@@ -12,7 +12,7 @@ import org.opalj.ll.llvm.value.Function
 import org.opalj.log.GlobalLogContext
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact, NullFact}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, TaintNullFact}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -35,14 +35,14 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
         val (ps, analyses) = manager.runAll(JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler)
         for (method ← project.allMethodsWithBody) {
             val flows =
-                ps((method, NullFact), JavaForwardTaintAnalysisScheduler.property.key)
+                ps((method, TaintNullFact), JavaForwardTaintAnalysisScheduler.property.key)
             println("---METHOD: "+method.toJava+"  ---")
             val flowFacts = flows.ub
-                .asInstanceOf[IFDSProperty[JavaStatement, Fact]]
+                .asInstanceOf[IFDSProperty[JavaStatement, TaintFact]]
                 .flows
                 .values
                 .flatten
-                .toSet[Fact]
+                .toSet[TaintFact]
                 .flatMap {
                     case FlowFact(flow) ⇒ Some(flow)
                     case _              ⇒ None

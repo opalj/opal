@@ -1,12 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSProblem}
 import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, GetElementPtr, Load, PHI, Ret, Store, Sub}
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintProblem}
 
-abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeTaintFact](project) with TaintProblem[LLVMFunction, LLVMStatement, NativeTaintFact] {
+abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeTaintFact, TaintFact](project) with TaintProblem[LLVMFunction, LLVMStatement, NativeTaintFact] {
     override def nullFact: NativeTaintFact = NativeTaintNullFact
 
     /**
@@ -134,5 +136,152 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
         case PHI(_) ⇒ true
         case _      ⇒ false
+    }
+
+    /**
+     * Computes the data flow for a call to start edge.
+     *
+     * @param call The analyzed call statement.
+     * @param callee The called method, for which the data flow shall be computed.
+     * @param in The fact which holds before the execution of the `call`.
+     * @param source The entity, which is analyzed.
+     * @return The facts, which hold after the execution of `statement` under the assumption that
+     *         the facts in `in` held before `statement` and `statement` calls `callee`.
+     */
+    override protected def javaCallFlow(
+        call:   LLVMStatement,
+        callee: Method,
+        in:     NativeTaintFact
+    ): Set[TaintFact] = {
+        /*val callObject = asCall(call.stmt)
+    val allParams = callObject.allParams
+    val allParamsWithIndices = allParams.zipWithIndex
+    in match {
+      // Taint formal parameter if actual parameter is tainted
+      case Variable(index) ⇒
+        allParamsWithIndices.flatMap {
+          case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+            // TODO: this is passed
+            Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
+          case _ ⇒ None // Nothing to do
+        }.toSet
+
+      // Taint element of formal parameter if element of actual parameter is tainted
+      case ArrayElement(index, taintedIndex) ⇒
+        allParamsWithIndices.flatMap {
+          case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+            Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
+          case _ ⇒ None // Nothing to do
+        }.toSet
+
+      case InstanceField(index, declaredClass, taintedField) ⇒
+        // Taint field of formal parameter if field of actual parameter is tainted
+        // Only if the formal parameter is of a type that may have that field!
+        allParamsWithIndices.flatMap {
+          case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+            Some(JavaInstanceField(paramIndex + 1, declaredClass, taintedField)) // TODO subtype check
+          case _ ⇒ None // Nothing to do
+        }.toSet
+
+      case StaticField(classType, fieldName) ⇒ Set(JavaStaticField(classType, fieldName))
+
+      case NullFact                          ⇒ Set(NativeTaintNullFact)
+
+      case _                                 ⇒ Set() // Nothing to do
+
+    }*/
+        Set() // TODO
+    }
+
+    /**
+     * Computes the data flow for an exit to return edge.
+     *
+     * @param call The statement, which called the `callee`.
+     * @param exit The statement, which terminated the `callee`.
+     * @param in The fact which holds before the execution of the `exit`.
+     * @return The facts, which hold after the execution of `exit` in the caller's context
+     *         under the assumption that `in` held before the execution of `exit` and that
+     *         `successor` will be executed next.
+     */
+    override protected def javaReturnFlow(
+        exit:      JavaStatement,
+        in:        TaintFact,
+        call:      LLVMStatement,
+        callFact:  NativeTaintFact,
+        successor: LLVMStatement
+    ): Set[NativeTaintFact] = {
+        /*
+      val callee = exit.callable()
+      /**
+       * Checks whether the callee's formal parameter is of a reference type.
+       */
+      def isRefTypeParam(index: Int): Boolean =
+        if (index == -1) true
+        else {
+          val parameterOffset = if (callee.isStatic) 0 else 1
+          callee.descriptor.parameterType(
+            JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+              - parameterOffset
+          ).isReferenceType
+        }
+
+      if (sanitizesReturnValue(callee)) return Set.empty
+      val callStatement = asCall(call.stmt)
+      val allParams = callStatement.allParams
+      var flows: Set[Fact] = Set.empty
+      in match {
+        // Taint actual parameter if formal parameter is tainted
+        case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
+          val param = allParams(
+            JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+          )
+          flows ++= param.asVar.definedBy.iterator.map(Variable)
+
+        // Taint element of actual parameter if element of formal parameter is tainted
+        case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
+          val param = allParams(
+            JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+          )
+          flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
+
+        case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
+          // Taint field of actual parameter if field of formal parameter is tainted
+          val param =
+            allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
+          param.asVar.definedBy.foreach { defSite ⇒
+            flows += InstanceField(defSite, declClass, taintedField)
+          }
+
+        case sf: StaticField ⇒ flows += sf
+
+        // Track the call chain to the sink back
+        case FlowFact(flow) if !flow.contains(JavaMethod(call.method)) ⇒
+          flows += FlowFact(JavaMethod(call.method) +: flow)
+        case _ ⇒
+      }
+
+      // Propagate taints of the return value
+      if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
+        val returnValueDefinedBy = exit.stmt.asReturnValue.expr.asVar.definedBy
+        in match {
+          case Variable(index) if returnValueDefinedBy.contains(index) ⇒
+            flows += Variable(call.index)
+          case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) ⇒
+            flows += ArrayElement(call.index, taintedIndex)
+          case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) ⇒
+            flows += InstanceField(call.index, declClass, taintedField)
+          case NullFact ⇒
+            val taints = createTaints(callee, call)
+            if (taints.nonEmpty) flows ++= taints
+          case _ ⇒ // Nothing to do
+        }
+      }
+      val flowFact = createFlowFact(callee, call, in)
+      if (flowFact.isDefined) flows += flowFact.get
+
+      flows
+
+      */
+        Set() // TODO
     }
 }

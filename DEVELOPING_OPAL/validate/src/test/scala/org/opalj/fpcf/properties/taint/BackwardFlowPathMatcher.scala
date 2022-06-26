@@ -7,7 +7,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.{EPS, Entity, FinalEP, Property}
 import org.opalj.tac.fpcf.analyses.ifds.taint.old.BackwardTaintAnalysisFixtureScheduler
-import org.opalj.tac.fpcf.analyses.ifds.taint.{Fact, FlowFact}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact}
 import org.opalj.tac.fpcf.properties.OldTaint
 
 /**
@@ -22,7 +22,7 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        val method = entity.asInstanceOf[(DefinedMethod, Fact)]._1.definedMethod
+        val method = entity.asInstanceOf[(DefinedMethod, TaintFact)]._1.definedMethod
         val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) ⇒
             evp.value.asArrayValue.values.map((value: ElementValue) ⇒
                 value.asStringValue.value)).head.toIndexedSeq

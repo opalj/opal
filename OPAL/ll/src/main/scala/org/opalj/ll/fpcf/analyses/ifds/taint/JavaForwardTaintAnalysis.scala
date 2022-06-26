@@ -21,9 +21,9 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, Fact)] = for {
+    override val entryPoints: Seq[(Method, TaintFact)] = for {
         m ← p.allMethodsWithBody
-    } yield m -> NullFact
+    } yield m -> TaintNullFact
 
     /**
      * The sanitize method is a sanitizer.
@@ -34,12 +34,12 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
     /**
      * We do not sanitize parameters.
      */
-    override protected def sanitizesParameter(call: JavaStatement, in: Fact): Boolean = false
+    override protected def sanitizesParameter(call: JavaStatement, in: TaintFact): Boolean = false
 
     /**
      * Creates a new variable fact for the callee, if the source was called.
      */
-    override protected def createTaints(callee: Method, call: JavaStatement): Set[Fact] =
+    override protected def createTaints(callee: Method, call: JavaStatement): Set[TaintFact] =
         if (callee.name == "source") Set(Variable(call.index))
         else Set.empty
 
@@ -50,7 +50,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
     override protected def createFlowFact(
         callee: Method,
         call:   JavaStatement,
-        in:     Fact
+        in:     TaintFact
     ): Option[FlowFact] =
         if (callee.name == "sink" && in == Variable(-2))
             Some(FlowFact(Seq(JavaMethod(call.method), JavaMethod(callee))))
@@ -58,7 +58,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
 
     // Multilingual additions here
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
-        def handleNativeMethod(call: JavaStatement, successor: JavaStatement, in: Fact, dependeesGetter: Getter): Set[Fact] = {
+        def handleNativeMethod(call: JavaStatement, successor: JavaStatement, in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
             // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
             val calleeName = callee.name.map(c ⇒ c match {
                 case c if isAlphaNumeric(c) ⇒ c
@@ -69,7 +69,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             }).mkString
             val nativeFunctionName = "Java_"+callee.classFile.fqn+"_"+calleeName
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
-            var result = Set.empty[Fact]
+            var result = Set.empty[TaintFact]
             val entryFacts = nativeCallFlow(call, function, in, callee)
             for (entryFact ← entryFacts) { // ifds line 14
                 val e = (function, entryFact)
@@ -112,7 +112,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
     private def nativeCallFlow(
         call:         JavaStatement,
         callee:       LLVMFunction,
-        in:           Fact,
+        in:           TaintFact,
         nativeCallee: Method
     ): Set[NativeTaintFact] = {
         val callObject = asCall(call.stmt)
@@ -147,7 +147,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
 
             case StaticField(classType, fieldName) ⇒ Set(JavaStaticField(classType, fieldName))
 
-            case NullFact                          ⇒ Set(NativeTaintNullFact)
+            case TaintNullFact                     ⇒ Set(NativeTaintNullFact)
 
             case _                                 ⇒ Set() // Nothing to do
 
@@ -168,10 +168,10 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         exit:         LLVMStatement,
         in:           NativeTaintFact,
         call:         JavaStatement,
-        callFact:     Fact,
+        callFact:     TaintFact,
         nativeCallee: Method,
         successor:    JavaStatement
-    ): Set[Fact] = {
+    ): Set[TaintFact] = {
         /**
          * Checks whether the callee's formal parameter is of a reference type.
          */
@@ -188,7 +188,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         if (sanitizesReturnValue(nativeCallee)) return Set.empty
         val callStatement = asCall(call.stmt)
         val allParams = callStatement.allParams
-        var flows: Set[Fact] = Set.empty
+        var flows: Set[TaintFact] = Set.empty
         in match {
             // Taint actual parameter if formal parameter is tainted
             case JavaVariable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
@@ -217,7 +217,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             // Track the call chain to the sink back
             case NativeFlowFact(flow) if !flow.contains(JavaMethod(call.method)) ⇒
                 flows += FlowFact(JavaMethod(call.method) +: flow)
-            case NativeTaintNullFact ⇒ flows += NullFact
+            case NativeTaintNullFact ⇒ flows += TaintNullFact
             case _                   ⇒
         }
 
@@ -251,9 +251,9 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
 class SimpleJavaForwardTaintAnalysis(project: SomeProject)
     extends IFDSAnalysis()(project, new SimpleJavaForwardTaintProblem(project), Taint)
 
-object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[Fact, Method, JavaStatement] {
+object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleJavaForwardTaintAnalysis(p)
-    override def property: IFDSPropertyMetaInformation[JavaStatement, Fact] = Taint
+    override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
     override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.ub(NativeTaint))
 }
