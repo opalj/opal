@@ -57,7 +57,7 @@ case class InstanceField(index: Int, classType: ObjectType, fieldName: String) e
 case class FlowFact(flow: Seq[Method]) extends Fact {
     override val hashCode: Int = {
         var r = 1
-        flow.foreach(f ⇒ r = (r + f.hashCode()) * 31)
+        flow.foreach(f => r = (r + f.hashCode()) * 31)
         r
     }
 }

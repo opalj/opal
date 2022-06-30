@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.heros.cfg
 
-import java.util.{List ⇒ JList}
-import java.util.{Collection ⇒ JCollection}
-import java.util.{Set ⇒ JSet}
+import java.util.{List => JList}
+import java.util.{Collection => JCollection}
+import java.util.{Set => JSet}
 import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
@@ -29,7 +29,7 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
     override def getStartPointsOf(m: Method): JCollection[Statement] = {
         val TACode(_, code, _, cfg, _) = tacai(m)
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).map {
-            case bb: BasicBlock ⇒
+            case bb: BasicBlock =>
                 val index = bb.endPC
                 Statement(m, bb, code(index), index, code, cfg)
         }.asJava
@@ -41,19 +41,19 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
         val cfg = stmt.cfg
         val index = stmt.index
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).exists {
-            case bb: BasicBlock ⇒ bb.endPC == index
+            case bb: BasicBlock => bb.endPC == index
         }
     }
 
     override def allNonCallStartNodes(): JSet[Statement] = {
         val res = new ConcurrentLinkedQueue[Statement]
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val TACode(_, code, _, cfg, _) = tacai(m)
             val endIndex = code.length
             val startIndices =
                 (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).map {
-                    case bb: BasicBlock ⇒ bb.endPC
+                    case bb: BasicBlock => bb.endPC
                 }
             var index = 0
             while (index < endIndex) {

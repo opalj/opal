@@ -19,7 +19,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalICFG
@@ -29,6 +29,8 @@ import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 
 /**
@@ -52,6 +54,8 @@ abstract class HerosAnalysis[F](p: SomeProject, icfg: OpalICFG)
      */
     protected implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
+    implicit protected val typeProvider: TypeProvider = p.get(TypeProviderKey)
+
     /**
      * The number of threads can be configured with NUM_THREADS.
      */
@@ -62,9 +66,9 @@ abstract class HerosAnalysis[F](p: SomeProject, icfg: OpalICFG)
      * with FunctionCall)
      */
     protected def asCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
-        case Assignment.ASTID ⇒ stmt.asAssignment.expr.asFunctionCall
-        case ExprStmt.ASTID   ⇒ stmt.asExprStmt.expr.asFunctionCall
-        case _                ⇒ stmt.asMethodCall
+        case Assignment.ASTID => stmt.asAssignment.expr.asFunctionCall
+        case ExprStmt.ASTID   => stmt.asExprStmt.expr.asFunctionCall
+        case _                => stmt.asMethodCall
     }
 }
 
@@ -128,7 +132,7 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
         val p = Project(bytecode.RTJar)
         var times = Seq.empty[Milliseconds]
         for {
-            _ ← 1 to HerosAnalysisRunner.NUM_EXECUTIONS
+            _ <- 1 to HerosAnalysisRunner.NUM_EXECUTIONS
         } {
             times :+= evalProject(Project.recreate(p))
         }
@@ -147,8 +151,8 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
      */
     private def evalProject(p: SomeProject): Milliseconds = {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-            case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+            case None               => Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+            case Some(requirements) => requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         }
         p.get(RTACallGraphKey)
         val analysis = createAnalysis(p)
@@ -158,7 +162,7 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
             JOptionPane.showMessageDialog(null, "Call Graph finished")
         time {
             solver.solve()
-        } { t ⇒ analysisTime = t.toMilliseconds }
+        } { t => analysisTime = t.toMilliseconds }
         if (HerosAnalysis.MEASURE_MEMORY)
             JOptionPane.showMessageDialog(null, "Analysis finished")
         printResultsToConsole(analysis, analysisTime)

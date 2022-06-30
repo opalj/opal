@@ -85,43 +85,43 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
                                       in: Set[Fact]): Set[Fact] = {
         val stmt = statement.stmt
         stmt.astID match {
-            case Assignment.ASTID if isTainted(statement.index, in) ⇒
+            case Assignment.ASTID if isTainted(statement.index, in) =>
                 in ++ createNewTaints(stmt.asAssignment.expr, statement)
-            case ArrayStore.ASTID ⇒
+            case ArrayStore.ASTID =>
                 val arrayStore = stmt.asArrayStore
                 val arrayIndex = TaintAnalysis.getIntConstant(arrayStore.index, statement.code)
                 val arrayDefinedBy = arrayStore.arrayRef.asVar.definedBy
                 val result = in ++ in.collect {
                     // In this case, we taint the whole array.
-                    case Variable(index) if arrayDefinedBy.contains(index) ⇒
+                    case Variable(index) if arrayDefinedBy.contains(index) =>
                         createNewTaints(arrayStore.value, statement)
                     // In this case, we taint exactly the stored element.
                     case ArrayElement(index, taintedElement) if arrayDefinedBy.contains(index) &&
-                        (arrayIndex.isEmpty || arrayIndex.get == taintedElement) ⇒
+                        (arrayIndex.isEmpty || arrayIndex.get == taintedElement) =>
                         createNewTaints(arrayStore.value, statement)
                 }.flatten
                 if (arrayDefinedBy.size == 1 && arrayIndex.isDefined)
                     result - ArrayElement(arrayDefinedBy.head, arrayIndex.get)
                 else result
-            case PutField.ASTID ⇒
+            case PutField.ASTID =>
                 val putField = stmt.asPutField
                 val objectDefinedBy = putField.objRef.asVar.definedBy
                 if (in.exists {
                     case InstanceField(index, declaringClass, name) if objectDefinedBy.contains(index) &&
-                        putField.declaringClass == declaringClass && putField.name == name ⇒
+                        putField.declaringClass == declaringClass && putField.name == name =>
                         true
-                    case _ ⇒ false
+                    case _ => false
                 }) in ++ createNewTaints(putField.value, statement)
                 else in
-            case PutStatic.ASTID ⇒
+            case PutStatic.ASTID =>
                 val putStatic = stmt.asPutStatic
                 if (in.exists {
-                    case StaticField(declaringClass, name) if putStatic.declaringClass == declaringClass && putStatic.name == name ⇒
+                    case StaticField(declaringClass, name) if putStatic.declaringClass == declaringClass && putStatic.name == name =>
                         true
-                    case _ ⇒ false
+                    case _ => false
                 }) in ++ createNewTaints(putStatic.value, statement)
                 else in
-            case _ ⇒ in
+            case _ => in
         }
     }
 
@@ -147,37 +147,37 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
         val flow = collection.mutable.Set.empty[Fact]
         if (call.stmt.astID == Assignment.ASTID && exit.stmt.astID == ReturnValue.ASTID)
             in.foreach {
-                case Variable(index) if index == call.index ⇒
+                case Variable(index) if index == call.index =>
                     flow ++= createNewTaints(exit.stmt.asReturnValue.expr, exit)
-                case ArrayElement(index, taintedElement) if index == call.index ⇒
+                case ArrayElement(index, taintedElement) if index == call.index =>
                     flow ++= createNewArrayElementTaints(exit.stmt.asReturnValue.expr, taintedElement,
                         call)
-                case InstanceField(index, declaringClass, name) if index == call.index ⇒
+                case InstanceField(index, declaringClass, name) if index == call.index =>
                     flow ++= createNewInstanceFieldTaints(exit.stmt.asReturnValue.expr, declaringClass,
                         name, call)
-                case _ ⇒ // Nothing to do
+                case _ => // Nothing to do
             }
         val thisOffset = if (callee.definedMethod.isStatic) 0 else 1
         callObject.allParams.iterator.zipWithIndex
-            .filter(pair ⇒ (pair._2 == 0 && !staticCall) ||
+            .filter(pair => (pair._2 == 0 && !staticCall) ||
                 callObject.descriptor.parameterTypes(pair._2 - thisOffset).isReferenceType)
-            .foreach { pair ⇒
+            .foreach { pair =>
                 val param = pair._1.asVar
                 val paramIndex = pair._2
                 in.foreach {
-                    case Variable(index) if param.definedBy.contains(index) ⇒
+                    case Variable(index) if param.definedBy.contains(index) =>
                         flow += Variable(AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall))
-                    case ArrayElement(index, taintedElement) if param.definedBy.contains(index) ⇒
+                    case ArrayElement(index, taintedElement) if param.definedBy.contains(index) =>
                         flow += ArrayElement(
                             AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall), taintedElement
                         )
-                    case InstanceField(index, declaringClass, name) if param.definedBy.contains(index) ⇒
+                    case InstanceField(index, declaringClass, name) if param.definedBy.contains(index) =>
                         flow += InstanceField(
                             AbstractIFDSAnalysis.switchParamAndVariableIndex(paramIndex, staticCall),
                             declaringClass, name
                         )
-                    case staticField: StaticField ⇒ flow += staticField
-                    case _                        ⇒ // Nothing to do
+                    case staticField: StaticField => flow += staticField
+                    case _                        => // Nothing to do
                 }
             }
         flow.toSet
@@ -204,11 +204,11 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
                                                         in:        Set[Fact]): Set[Fact] = {
         val callStatement = asCall(call.stmt)
         in ++ in.collect {
-            case Variable(index) if index == call.index ⇒
+            case Variable(index) if index == call.index =>
                 callStatement.allParams.flatMap(createNewTaints(_, call))
-            case ArrayElement(index, _) if index == call.index ⇒
+            case ArrayElement(index, _) if index == call.index =>
                 callStatement.allParams.flatMap(createNewTaints(_, call))
-            case InstanceField(index, _, _) if index == call.index ⇒
+            case InstanceField(index, _, _) if index == call.index =>
                 callStatement.allParams.flatMap(createNewTaints(_, call))
         }.flatten
     }
@@ -223,7 +223,7 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
         taintActualsIfFormalsTainted(source._1, call, facts, source, isCallFlow = false)
             .map(UnbalancedTaintFact(call.index, _, currentCallChain(source)))
             // Avoid infinite loops.
-            .filter(unbalancedTaintFact ⇒ !containsHeadTwice(unbalancedTaintFact.callChain))
+            .filter(unbalancedTaintFact => !containsHeadTwice(unbalancedTaintFact.callChain))
 
     /**
      * Propagates the call to createFlowFactAtBeginningOfMethod.
@@ -250,8 +250,8 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
         val method = source._1.definedMethod
         val sourceFact = source._2
         sourceFact match {
-            case fact: UnbalancedTaintFact ⇒ method +: fact.callChain
-            case _                         ⇒ Seq(method)
+            case fact: UnbalancedTaintFact => method +: fact.callChain
+            case _                         => Seq(method)
         }
     }
 
@@ -273,10 +273,10 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
      * @return True, if the variable or array element is tainted.
      */
     private def isTainted(index: Int, in: Set[Fact], taintedElement: Option[Int] = None): Boolean = in.exists {
-        case Variable(variableIndex) ⇒ variableIndex == index
-        case ArrayElement(variableIndex, element) ⇒
+        case Variable(variableIndex) => variableIndex == index
+        case ArrayElement(variableIndex, element) =>
             variableIndex == index && (taintedElement.isEmpty || taintedElement.get == element)
-        case _ ⇒ false
+        case _ => false
     }
 
     /**
@@ -288,25 +288,25 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
      */
     private def createNewTaints(expression: Expr[V], statement: Statement): Set[Fact] =
         expression.astID match {
-            case Var.ASTID ⇒ expression.asVar.definedBy.map(Variable)
-            case ArrayLoad.ASTID ⇒
+            case Var.ASTID => expression.asVar.definedBy.map(Variable)
+            case ArrayLoad.ASTID =>
                 val arrayLoad = expression.asArrayLoad
                 val arrayIndex = TaintAnalysis.getIntConstant(expression.asArrayLoad.index, statement.code)
                 val arrayDefinedBy = arrayLoad.arrayRef.asVar.definedBy
                 if (arrayIndex.isDefined) arrayDefinedBy.map(ArrayElement(_, arrayIndex.get))
                 else arrayDefinedBy.map(Variable)
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID |
-                PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID ⇒
-                (0 until expression.subExprCount).foldLeft(Set.empty[Fact])((acc, subExpr) ⇒
+                PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID =>
+                (0 until expression.subExprCount).foldLeft(Set.empty[Fact])((acc, subExpr) =>
                     acc ++ createNewTaints(expression.subExpr(subExpr), statement))
-            case GetField.ASTID ⇒
+            case GetField.ASTID =>
                 val getField = expression.asGetField
                 getField.objRef.asVar.definedBy
                     .map(InstanceField(_, getField.declaringClass, getField.name))
-            /*case GetStatic.ASTID ⇒
+            /*case GetStatic.ASTID =>
                 val getStatic = expression.asGetStatic
                 Set(StaticField(getStatic.declaringClass, getStatic.name))*/
-            case _ ⇒ Set.empty
+            case _ => Set.empty
         }
 
     /**
@@ -320,19 +320,19 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
     private def createNewArrayElementTaints(expression: Expr[V], taintedElement: Int,
                                             statement: Statement): Set[Fact] =
         createNewTaints(expression, statement).map {
-            case Variable(variableIndex)            ⇒ ArrayElement(variableIndex, taintedElement)
+            case Variable(variableIndex)            => ArrayElement(variableIndex, taintedElement)
             // We do not nest taints. Instead, we taint the whole inner array.
-            case ArrayElement(variableIndex, _)     ⇒ ArrayElement(variableIndex, taintedElement)
-            case InstanceField(variableIndex, _, _) ⇒ ArrayElement(variableIndex, taintedElement)
+            case ArrayElement(variableIndex, _)     => ArrayElement(variableIndex, taintedElement)
+            case InstanceField(variableIndex, _, _) => ArrayElement(variableIndex, taintedElement)
         }
 
     private def createNewInstanceFieldTaints(expression: Expr[V], declaringClass: ObjectType,
                                              name: String, statement: Statement): Set[Fact] =
         createNewTaints(expression, statement).map {
-            case Variable(variableIndex)        ⇒ InstanceField(variableIndex, declaringClass, name)
+            case Variable(variableIndex)        => InstanceField(variableIndex, declaringClass, name)
             // We do not nest taints. Instead, taint the whole field.
-            case ArrayElement(variableIndex, _) ⇒ InstanceField(variableIndex, declaringClass, name)
-            case InstanceField(variableIndex, _, _) ⇒
+            case ArrayElement(variableIndex, _) => InstanceField(variableIndex, declaringClass, name)
+            case InstanceField(variableIndex, _, _) =>
                 InstanceField(variableIndex, declaringClass, name)
         }
 
@@ -361,29 +361,29 @@ abstract class BackwardTaintAnalysis(implicit val project: SomeProject)
         val staticCall = callee.definedMethod.isStatic
         val thisOffset = if (staticCall) 0 else 1
         val formalParameterIndices = (0 until callStatement.descriptor.parametersCount)
-            .map(index ⇒ AbstractIFDSAnalysis.switchParamAndVariableIndex(index + thisOffset, staticCall))
+            .map(index => AbstractIFDSAnalysis.switchParamAndVariableIndex(index + thisOffset, staticCall))
         val facts = scala.collection.mutable.Set.empty[Fact]
         calleeFacts.foreach {
-            case Variable(index) if formalParameterIndices.contains(index) ⇒
+            case Variable(index) if formalParameterIndices.contains(index) =>
                 facts ++= createNewTaints(
                     callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)), call
                 )
-            case ArrayElement(index, taintedElement) if formalParameterIndices.contains(index) ⇒
+            case ArrayElement(index, taintedElement) if formalParameterIndices.contains(index) =>
                 facts ++= createNewArrayElementTaints(
                     callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)),
                     taintedElement, call
                 )
-            case InstanceField(index, declaringClass, name) if formalParameterIndices.contains(index) ⇒
+            case InstanceField(index, declaringClass, name) if formalParameterIndices.contains(index) =>
                 facts ++= createNewInstanceFieldTaints(
                     callStatement.allParams(AbstractIFDSAnalysis.switchParamAndVariableIndex(index, staticCall)),
                     declaringClass, name, call
                 )
-            case staticField: StaticField ⇒ facts += staticField
+            case staticField: StaticField => facts += staticField
             // If the source was reached in a callee, create a flow fact from this method to the sink.
-            case calleeFact: FlowFact if isCallFlow ⇒
+            case calleeFact: FlowFact if isCallFlow =>
                 val callerFact = applyFlowFactFromCallee(calleeFact, source)
                 if (callerFact.isDefined) facts += callerFact.get
-            case _ ⇒ // Nothing to do
+            case _ => // Nothing to do
         }
         facts.toSet
     }

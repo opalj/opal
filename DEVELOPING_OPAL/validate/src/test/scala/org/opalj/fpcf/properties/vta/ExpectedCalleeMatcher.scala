@@ -23,7 +23,7 @@ class ExpectedCalleeMatcher extends VTAMatcher {
     def validateSingleAnnotation(project: SomeProject, entity: Entity,
                                  taCode: TACode[TACMethodParameter, DUVar[ValueInformation]],
                                  method: Method, annotation: AnnotationLike,
-                                 properties: Traversable[Property]): Option[String] = {
+                                 properties: Iterable[Property]): Option[String] = {
         val elementValuePairs = annotation.elementValuePairs
         val expected = (
             elementValuePairs.head.value.asIntValue.value,
@@ -35,18 +35,18 @@ class ExpectedCalleeMatcher extends VTAMatcher {
         // Get ALL the exit facts for the method for ALL input facts
         val allReachableExitFacts =
             propertyStore.entities(propertyKey).collect {
-                case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method ⇒
+                case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method =>
                     (m, inputFact)
             }.flatMap(propertyStore(_, propertyKey) match {
-                case FinalEP(_, VTAResult(result)) ⇒
-                    result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).collect {
-                        case CalleeType(index, t, upperBound) ⇒
+                case FinalEP(_, VTAResult(result)) =>
+                    result.values.fold(Set.empty)((acc, facts) => acc ++ facts).collect {
+                        case CalleeType(index, t, upperBound) =>
                             Seq((
                                 taCode.lineNumber(method.body.get, index).get,
                                 referenceTypeToString(t), upperBound
                             ))
                     }
-                case _ ⇒ Seq.empty
+                case _ => Seq.empty
             }).flatten
         if (allReachableExitFacts.contains(expected)) None
         else Some(expected.toString)

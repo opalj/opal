@@ -36,10 +36,10 @@ class ForwardClassForNameTaintAnalysis private (implicit project: SomeProject)
      * The string parameters of all public methods are entry points.
      */
     override def entryPoints: Seq[(DeclaredMethod, Fact)] = for {
-        m ← methodsCallableFromOutside.toSeq
+        m <- methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
-        index ← m.descriptor.parameterTypes.zipWithIndex.collect {
-            case (pType, index) if pType == ObjectType.String ⇒ index
+        index <- m.descriptor.parameterTypes.zipWithIndex.collect {
+            case (pType, index) if pType == ObjectType.String => index
         }
     } yield (m, Variable(-2 - index))
 
@@ -75,9 +75,9 @@ class ForwardClassForNameTaintAnalysis private (implicit project: SomeProject)
      */
     override protected def relevantCallee(callee: DeclaredMethod): Boolean =
         callee.descriptor.parameterTypes.exists {
-            case ObjectType.Object ⇒ true
-            case ObjectType.String ⇒ true
-            case _                 ⇒ false
+            case ObjectType.Object => true
+            case ObjectType.String => true
+            case _                 => false
         } && (!canBeCalledFromOutside(callee) || isClassForName(callee))
 
     /**
@@ -106,13 +106,13 @@ class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
 
     override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit =
         for {
-            e ← analysis.entryPoints
+            e <- analysis.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysis.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            fact <- flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
+                case FlowFact(flow) => println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                case _              =>
             }
         }
 }

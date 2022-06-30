@@ -36,11 +36,11 @@ class BackwardClassForNameTaintAnalysis private (implicit project: SomeProject)
      * The string parameters of all public methods are entry points.
      */
     override val entryPoints: Seq[(DeclaredMethod, Fact)] =
-        p.allProjectClassFiles.filter(classFile ⇒
+        p.allProjectClassFiles.filter(classFile =>
             classFile.thisType.fqn == "java/lang/Class")
-            .flatMap(classFile ⇒ classFile.methods)
+            .flatMap(classFile => classFile.methods)
             .filter(_.name == "forName")
-            .map(method ⇒ declaredMethods(method) → Variable(-2))
+            .map(method => declaredMethods(method) -> Variable(-2))
 
     /**
      * There is no sanitizing in this analysis.
@@ -89,10 +89,10 @@ class BackwardClassForNameTaintAnalysis private (implicit project: SomeProject)
         if (source._2.isInstanceOf[UnbalancedReturnFact[Fact @unchecked]] &&
             canBeCalledFromOutside(source._1) && in.exists {
                 // index < 0 means, that it is a parameter.
-                case Variable(index) if index < 0            ⇒ true
-                case ArrayElement(index, _) if index < 0     ⇒ true
-                case InstanceField(index, _, _) if index < 0 ⇒ true
-                case _                                       ⇒ false
+                case Variable(index) if index < 0            => true
+                case ArrayElement(index, _) if index < 0     => true
+                case InstanceField(index, _, _) if index < 0 => true
+                case _                                       => false
             }) {
             Some(FlowFact(currentCallChain(source)))
         } else None
@@ -116,22 +116,22 @@ class BackwardClassForNameTaintAnalysisRunner extends AbsractIFDSAnalysisRunner 
     override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit = {
         val propertyKey = BackwardClassForNameTaintAnalysis.property.key
         val flowFactsAtSources = ps.entities(propertyKey).collect {
-            case EPS((m: DefinedMethod, inputFact)) if canBeCalledFromOutside(m, ps) ⇒
+            case EPS((m: DefinedMethod, inputFact)) if canBeCalledFromOutside(m, ps) =>
                 (m, inputFact)
         }.flatMap(ps(_, propertyKey) match {
-            case FinalEP(_, Taint(result)) ⇒
-                result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).filter {
-                    case FlowFact(_) ⇒ true
-                    case _           ⇒ false
+            case FinalEP(_, Taint(result)) =>
+                result.values.fold(Set.empty)((acc, facts) => acc ++ facts).filter {
+                    case FlowFact(_) => true
+                    case _           => false
                 }
-            case _ ⇒ Seq.empty
+            case _ => Seq.empty
         })
         for {
-            fact ← flowFactsAtSources
+            fact <- flowFactsAtSources
         } {
             fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
+                case FlowFact(flow) => println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                case _              =>
             }
         }
     }

@@ -20,11 +20,11 @@ class ForwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(DeclaredMethod, Fact)] = p.allProjectClassFiles.filter(classFile ⇒
+    override val entryPoints: Seq[(DeclaredMethod, Fact)] = p.allProjectClassFiles.filter(classFile =>
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
-        .flatMap(classFile ⇒ classFile.methods)
-        .filter(method ⇒ method.isPublic && insideAnalysisContext(declaredMethods(method)))
-        .map(method ⇒ declaredMethods(method) → NullFact)
+        .flatMap(classFile => classFile.methods)
+        .filter(method => method.isPublic && insideAnalysisContext(declaredMethods(method)))
+        .map(method => declaredMethods(method) -> NullFact)
 
     /**
      * The sanitize method is a sanitizer.

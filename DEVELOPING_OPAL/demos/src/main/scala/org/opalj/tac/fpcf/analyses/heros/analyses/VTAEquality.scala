@@ -4,12 +4,11 @@ package org.opalj.tac.fpcf.analyses.heros.analyses
 import java.io.File
 import java.net.URL
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import heros.solver.IFDSSolver
-import org.opalj.BaseConfig
 
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.EPS
@@ -21,10 +20,11 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.BaseConfig
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -56,7 +56,7 @@ object VTAEquality {
        * because the VariableTypeFact holds after the statement.
        */
             case statement if statement.stmt.astID != Return.ASTID && statement.stmt.astID != ReturnValue.ASTID
-                && (statement.stmt.astID != Assignment.ASTID || statement.stmt.asAssignment.expr.astID != New.ASTID) ⇒
+                && (statement.stmt.astID != Assignment.ASTID || statement.stmt.asAssignment.expr.astID != New.ASTID) =>
                 val opalFacts = opalResult(statement)
                 /*
          * ifdsResultsAt returns the facts before the statements.
@@ -70,38 +70,38 @@ object VTAEquality {
                     println(s"Statement: $statement")
                     println(s"Opal: $opalFacts")
                     println(s"Heros: $herosFacts")
-                    println
+                    println()
                 } else
-                    opalFacts.filter(!herosFacts.contains(_)).foreach { fact ⇒
+                    opalFacts.filter(!herosFacts.contains(_)).foreach { fact =>
                         println("Error: Heros fact missing:")
                         println(s"Statement: $statement")
                         println(s"Fact: $fact")
                         println(s"Opal: $opalFacts")
                         println(s"Heros: $herosFacts")
-                        println
+                        println()
                     }
-            case _ ⇒
+            case _ =>
         }
     }
 
     private def performHerosAnalysis = {
-        val project = FixtureProject.recreate { piKeyUnidueId ⇒
+        val project = FixtureProject.recreate { piKeyUnidueId =>
             piKeyUnidueId != PropertyStoreKey.uniqueId
         }
         implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-            case Some(requirements) ⇒
+            case None => Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+            case Some(requirements) =>
                 requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         }
         project.get(RTACallGraphKey)
         val initialMethods =
             project.allProjectClassFiles
                 .filter(_.fqn.startsWith("org/opalj/fpcf/fixtures/vta"))
-                .flatMap(classFile ⇒ classFile.methods)
+                .flatMap(classFile => classFile.methods)
                 .filter(isEntryPoint)
-                .map(method ⇒ method -> entryPointsForMethod(method).asJava)
+                .map(method => method -> entryPointsForMethod(method).asJava)
                 .toMap
         val cgf = new OpalForwardICFG(project)
         val herosAnalysis = new HerosVariableTypeAnalysis(project, cgf, initialMethods)
@@ -111,14 +111,14 @@ object VTAEquality {
     }
 
     private def performOpalAnalysis = {
-        val project = FixtureProject.recreate { piKeyUnidueId ⇒
+        val project = FixtureProject.recreate { piKeyUnidueId =>
             piKeyUnidueId != PropertyStoreKey.uniqueId
         }
         val propertyStore = project.get(PropertyStoreKey)
         var result = Map.empty[Statement, Set[VTAFact]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-            case Some(requirements) ⇒
+            case None => Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+            case Some(requirements) =>
                 requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         }
         project.get(RTACallGraphKey)
@@ -126,15 +126,15 @@ object VTAEquality {
         propertyStore
             .entities(IFDSBasedVariableTypeAnalysis.property.key)
             .collect {
-                case EPS((m: DefinedMethod, inputFact)) ⇒
+                case EPS((m: DefinedMethod, inputFact)) =>
                     (m, inputFact)
             }
-            .foreach { entity ⇒
+            .foreach { entity =>
                 val entityResult = propertyStore(entity, IFDSBasedVariableTypeAnalysis.property.key) match {
-                    case FinalEP(_, VTAResult(map)) ⇒ map
-                    case _                          ⇒ throw new RuntimeException
+                    case FinalEP(_, VTAResult(map)) => map
+                    case _                          => throw new RuntimeException
                 }
-                entityResult.keys.foreach { statement ⇒
+                entityResult.keys.foreach { statement =>
                     /*
            * Heros returns the facts before the statements.
            * However, CalleeType facts hold after the statement and are therefore not returned.
@@ -144,7 +144,7 @@ object VTAEquality {
                     result = result.updated(
                         statement,
                         result.getOrElse(statement, Set.empty) ++ entityResult(statement)
-                            .filter(fact ⇒ fact != VTANullFact && !fact.isInstanceOf[CalleeType])
+                            .filter(fact => fact != VTANullFact && !fact.isInstanceOf[CalleeType])
                     )
                 }
             }
@@ -161,7 +161,7 @@ object VTAEquality {
 
     private def entryPointsForMethod(method: Method): Set[VTAFact] = {
         (method.descriptor.parameterTypes.zipWithIndex.collect {
-            case (t, index) if t.isReferenceType ⇒
+            case (t, index) if t.isReferenceType =>
                 VariableType(
                     switchParamAndVariableIndex(index, method.isStatic),
                     t.asReferenceType,
@@ -180,12 +180,12 @@ object VTAEquality {
         val fixtureFiles = new File(sourceFolder)
         val fixtureClassFiles = ClassFiles(fixtureFiles)
 
-        val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
+        val projectClassFiles = fixtureClassFiles.filter { cfSrc =>
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/fixtures")
         }
 
-        val propertiesClassFiles = fixtureClassFiles.filter { cfSrc ⇒
+        val propertiesClassFiles = fixtureClassFiles.filter { cfSrc =>
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
@@ -217,7 +217,7 @@ object VTAEquality {
             projectClassFiles,
             libraryClassFiles,
             libraryClassFilesAreInterfacesOnly = false,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 

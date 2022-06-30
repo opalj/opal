@@ -23,10 +23,10 @@ case class UnbalancedTaintFact(index: Int, innerFact: Fact, callChain: Array[Met
 class BackwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
     extends BackwardTaintAnalysis {
 
-    override val entryPoints: Seq[(DeclaredMethod, Fact)] = p.allProjectClassFiles.filter(classFile ⇒
+    override val entryPoints: Seq[(DeclaredMethod, Fact)] = p.allProjectClassFiles.filter(classFile =>
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(_.methods).filter(_.name == "sink")
-        .map(method ⇒ declaredMethods(method) →
+        .map(method => declaredMethods(method) ->
             Variable(AbstractIFDSAnalysis.switchParamAndVariableIndex(0, isStaticMethod = true)))
 
     /**
@@ -49,8 +49,8 @@ class BackwardTaintAnalysisFixture private (implicit val pProject: SomeProject)
                                                 source: (DeclaredMethod, Fact)): Option[FlowFact] = {
         val callPc = call.code(call.index).pc
         if (in.exists {
-            case Variable(index) ⇒ index == call.index
-            case _               ⇒ false
+            case Variable(index) => index == call.index
+            case _               => false
         } && getCallees(call.node.asBasicBlock, callPc, source._1).exists(_.name == "source")) {
             val callChain = currentCallChain(source)
             // Avoid infinite loops.

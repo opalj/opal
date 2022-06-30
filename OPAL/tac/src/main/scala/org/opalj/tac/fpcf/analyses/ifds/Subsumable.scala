@@ -63,7 +63,7 @@ trait Subsumable[IFDSFact <: AbstractIFDSFact] {
         oldFacts: Set[T],
         project:  SomeProject
     ): Boolean =
-        newFacts.exists(newFact ⇒ !oldFacts.contains(newFact))
+        newFacts.exists(newFact => !oldFacts.contains(newFact))
 
     /**
      * Filters the new information from a new set of exit facts given the already known exit facts.
@@ -82,7 +82,7 @@ trait Subsumable[IFDSFact <: AbstractIFDSFact] {
         project:      SomeProject
     ): Map[Statement, Set[T]] = {
         var result = newExitFacts
-        for ((key, values) ← oldExitFacts) {
+        for ((key, values) <- oldExitFacts) {
             result = result.updated(key, result(key) -- values)
         }
         result

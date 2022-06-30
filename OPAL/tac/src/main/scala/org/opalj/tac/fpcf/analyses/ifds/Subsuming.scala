@@ -17,8 +17,8 @@ trait Subsuming[IFDSFact <: SubsumableFact] extends Subsumable[IFDSFact] {
      */
     override protected def subsume[T <: IFDSFact](facts: Set[T], project: SomeProject): Set[T] = {
         val result = facts.foldLeft(facts) {
-            (result, fact) ⇒
-                if (facts.exists(other ⇒ other != fact && other.subsumes(fact, project))) result - fact
+            (result, fact) =>
+                if (facts.exists(other => other != fact && other.subsumes(fact, project))) result - fact
                 else result
         }
         numberOfSubsumptions.triesToSubsume += 1
@@ -36,7 +36,7 @@ trait Subsuming[IFDSFact <: SubsumableFact] extends Subsumable[IFDSFact] {
             * In most cases, the fact will be contained in the old facts.
             * This is why we first do the contains check before linearly iterating over the old facts.
             */
-            fact ⇒ !(oldFacts.contains(fact) || oldFacts.exists(_.subsumes(fact, project)))
+            fact => !(oldFacts.contains(fact) || oldFacts.exists(_.subsumes(fact, project)))
         }
 
     /**
@@ -47,13 +47,13 @@ trait Subsuming[IFDSFact <: SubsumableFact] extends Subsumable[IFDSFact] {
         oldExitFacts: Map[Statement, Set[T]], project: SomeProject
     ): Map[Statement, Set[T]] =
         newExitFacts.keys.map {
-            statement ⇒
+            statement =>
                 val old = oldExitFacts.get(statement)
                 val newFacts = newExitFacts(statement)
                 val newInformation =
                     if (old.isDefined && old.get.nonEmpty) notSubsumedBy(newFacts, old.get, project)
                     else newFacts
-                statement → newInformation
+                statement -> newInformation
         }.toMap
 
     /**
@@ -62,7 +62,7 @@ trait Subsuming[IFDSFact <: SubsumableFact] extends Subsumable[IFDSFact] {
     override protected def notSubsumedBy[T <: IFDSFact](facts: Set[T], otherFacts: Set[T],
                                                         project: SomeProject): Set[T] = {
         val result = facts.foldLeft(facts) {
-            (result, fact) ⇒
+            (result, fact) =>
                 if (otherFacts.contains(fact) || otherFacts.exists(_.subsumes(fact, project)))
                     result - fact
                 else result

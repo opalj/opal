@@ -7,7 +7,6 @@ import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.value.ValueInformation
-
 import scala.collection.immutable.ArraySeq
 
 /**

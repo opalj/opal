@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.heros.cfg
 
-import java.util.{Collection ⇒ JCollection}
-import java.util.{Set ⇒ JSet}
+import java.util.{Collection => JCollection}
+import java.util.{Set => JSet}
 import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -29,7 +29,7 @@ class OpalForwardICFG(project: SomeProject) extends OpalICFG(project) {
 
     override def allNonCallStartNodes(): JSet[Statement] = {
         val res = new ConcurrentLinkedQueue[Statement]
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val TACode(_, code, _, cfg, _) = tacai(m)
             val endIndex = code.length
@@ -50,7 +50,7 @@ class OpalForwardICFG(project: SomeProject) extends OpalICFG(project) {
         val tac = tacai(method)
         val cfg = tac.cfg
         val code = tac.stmts
-        cfg.allNodes.filter(_.isExitNode).flatMap(_.predecessors).map { bb ⇒
+        cfg.allNodes.filter(_.isExitNode).flatMap(_.predecessors).map { bb =>
             val endPc = bb.asBasicBlock.endPC
             Statement(method, bb, code(endPc), endPc, code, cfg)
         }
