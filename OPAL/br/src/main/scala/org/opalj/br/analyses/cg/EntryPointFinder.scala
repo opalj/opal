@@ -143,7 +143,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  * This trait provides an analysis that loads entry points from the project configuration file.
  *
  * All entry points must be configured under the following configuration key:
- *      **org.opalj.br.analyses.cg.InitialEntryPointsKey.entryPoints**
+ * **org.opalj.br.analyses.cg.InitialEntryPointsKey.entryPoints**
  *
  * Example:
  * {{{
@@ -156,7 +156,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  *                ]
  *            }
  *        }
- *  }}}
+ * }}}
  *
  * Please note that the first entry point, by adding the "+" to the declaring class' name, considers
  * all "add" methods from all subtypes independently from the respective method's descriptor. In
@@ -347,5 +347,45 @@ object AllEntryPointsFinder extends EntryPointFinder {
         if (project.config.as[Boolean](ConfigKey))
             project.allProjectClassFiles.flatMap(_.methodsWithBody)
         else project.allMethodsWithBody
+    }
+}
+
+/**
+ * The AndroidEntryPointFinder considers specific methods of app components as entry points.
+ * It does not work for androidx
+ *
+ * @author Tom Nikisch
+ */
+object AndroidEntryPointsFinder extends EntryPointFinder {
+
+    val activityEPS: List[String] = List("onCreate", "onRestart", "onStart", "onResume",
+        "onStop", "onDestroy", "onActivityResult")
+    val serviceEPS: List[String] = List("onCreate", "onStartCommand", "onBind", "onStart")
+    val contentProviderEPS: List[String] = List("onCreate", "query", "insert", "update")
+    val locationListenerEPS: List[String] = List("onLocationChanged", "onProviderDisabled", "onProviderEnabled",
+        "onStatusChanged")
+    val onNmeaMessageListenerEPS: List[String] = List("onNmeaMessage")
+    val defaultEPS = Map("android/app/Activity" -> activityEPS, "android/app/Service" -> serviceEPS,
+        "android/content/ContentProvider" -> contentProviderEPS,
+        "android/location/LocationListener" -> locationListenerEPS,
+        "android/location/onNmeaMessageListener" -> onNmeaMessageListenerEPS)
+
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+        val eps = ArrayBuffer.empty[Method]
+        for ((superClass, methodList) <- defaultEPS) {
+            eps ++= findEPS(ObjectType(superClass), methodList, project)
+        }
+        eps
+    }
+
+    def findEPS(ot: ObjectType, possibleEPS: List[String], project: SomeProject): ArrayBuffer[Method] = {
+        val eps = ArrayBuffer.empty[Method]
+        val classHierarchy = project.classHierarchy
+        classHierarchy.foreachSubclass(ot, project) { sc =>
+            for (pep <- possibleEPS; m <- sc.findMethod(pep) if m.body.isDefined && !eps.contains(m)) {
+                eps += m
+            }
+        }
+        eps
     }
 }
