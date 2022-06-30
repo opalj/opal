@@ -33,7 +33,7 @@ trait LogMessage {
      */
     def message: String
 
-    private def categoryToConsoleOutput: String = category.map(c ⇒ s"[$c]").getOrElse("")
+    private def categoryToConsoleOutput: String = category.map(c => s"[$c]").getOrElse("")
 
     /**
      * Creates a string representation of the log message that is well-suited for
@@ -47,7 +47,7 @@ trait LogMessage {
                 (s"[${level.id}]$categoryToConsoleOutput ", "")
             }
 
-        message.split('\n').map { ln ⇒
+        message.split('\n').map { ln =>
             var cr = ""
             var rawln = ln
             if (ln.length > 0 && ln.charAt(0) == '\r') {

@@ -42,14 +42,14 @@ private[mutable] object ZeroLengthBitSet extends FixedSizeBitSet {
     override def iterator: IntIterator = IntIterator.empty
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FixedSizeBitSet ⇒ that.isEmpty
-            case _                     ⇒ false
+            case that: FixedSizeBitSet => that.isEmpty
+            case _                     => false
         }
     }
     override def hashCode: Int = 1 // same as Arrays.hashCode(empty long array)
 }
 
-private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet ⇒
+private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet =>
 
     private[mutable] var set: Long = 0L
 
@@ -75,11 +75,11 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FixedSizeBitSet64  ⇒ that.set == this.set
-            case that: FixedSizeBitSet128 ⇒ that.set2 == 0L && that.set1 == this.set
-            case that: FixedSizeBitSetN   ⇒ that.equals(this)
-            case ZeroLengthBitSet         ⇒ this.set == 0L
-            case _                        ⇒ false
+            case that: FixedSizeBitSet64  => that.set == this.set
+            case that: FixedSizeBitSet128 => that.set2 == 0L && that.set1 == this.set
+            case that: FixedSizeBitSetN   => that.equals(this)
+            case ZeroLengthBitSet         => this.set == 0L
+            case _                        => false
         }
     }
 
@@ -92,7 +92,7 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
     }
 }
 
-private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSet ⇒
+private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSet =>
 
     private[mutable] var set1: Long = 0L
     private[mutable] var set2: Long = 0L
@@ -144,11 +144,11 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FixedSizeBitSet128 ⇒ this.set1 == that.set1 && this.set2 == that.set2
-            case ZeroLengthBitSet         ⇒ this.set1 == 0L && this.set2 == 0L
-            case that: FixedSizeBitSet64  ⇒ this.set2 == 0L && this.set1 == that.set
-            case that: FixedSizeBitSetN   ⇒ that.equals(this)
-            case _                        ⇒ false
+            case that: FixedSizeBitSet128 => this.set1 == that.set1 && this.set2 == that.set2
+            case ZeroLengthBitSet         => this.set1 == 0L && this.set2 == 0L
+            case that: FixedSizeBitSet64  => this.set2 == 0L && this.set1 == that.set
+            case that: FixedSizeBitSetN   => that.equals(this)
+            case _                        => false
         }
     }
 
@@ -164,7 +164,7 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
 
 private[mutable] final class FixedSizeBitSetN private[mutable] (
         private val set: Array[Long]
-) extends FixedSizeBitSet { thisSet ⇒
+) extends FixedSizeBitSet { thisSet =>
 
     assert(set.length > 2)
 
@@ -210,28 +210,28 @@ private[mutable] final class FixedSizeBitSetN private[mutable] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FixedSizeBitSetN if this.set.length == that.set.length ⇒
+            case that: FixedSizeBitSetN if this.set.length == that.set.length =>
                 java.util.Arrays.equals(this.set, that.set)
 
-            case ZeroLengthBitSet ⇒
+            case ZeroLengthBitSet =>
                 var i = 0
                 val length = set.length
                 while (i < length) { if (set(i) != 0) return false; i += 1 }
                 true
 
-            case that: FixedSizeBitSet64 ⇒
+            case that: FixedSizeBitSet64 =>
                 var i = 1
                 val length = set.length
                 while (i < length) { if (set(i) != 0) return false; i += 1 }
                 set(0) == that.set
 
-            case that: FixedSizeBitSet128 ⇒
+            case that: FixedSizeBitSet128 =>
                 var i = 2
                 val length = set.length
                 while (i < length) { if (set(i) != 0) return false; i += 1 }
                 set(0) == that.set1 && set(1) == that.set2
 
-            case _ ⇒
+            case _ =>
                 super.equals(other)
         }
     }

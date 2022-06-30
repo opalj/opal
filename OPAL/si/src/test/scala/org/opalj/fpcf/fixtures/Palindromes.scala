@@ -15,8 +15,8 @@ object Palindromes {
             reason: FallbackReason,
             e:      Entity
         ): PalindromeProperty = reason match {
-            case PropertyIsNotComputedByAnyAnalysis               ⇒ NoAnalysisForPalindromeProperty
-            case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ PalindromePropertyNotAnalyzed
+            case PropertyIsNotComputedByAnyAnalysis               => NoAnalysisForPalindromeProperty
+            case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => PalindromePropertyNotAnalyzed
         }
         PropertyKey.create[Entity, PalindromeProperty]("Palindrome", fallback _)
     }

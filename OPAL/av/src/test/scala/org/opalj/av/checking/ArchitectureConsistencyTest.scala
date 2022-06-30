@@ -3,14 +3,15 @@ package org.opalj.av
 package checking
 
 import org.junit.runner.RunWith
-
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.{BooleanValue, StringValue}
-import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.junit.JUnitRunner
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.BooleanValue
+import org.opalj.br.StringValue
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests for architectural Specifications.
@@ -26,10 +27,10 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
     val project = ClassFiles(locateTestResources("classfiles/mathematics.jar", "av"))
 
     def testEnsemblesAreNonEmpty(specification: Specification): Unit = {
-        specification.ensembles.foreach { e ⇒
+        specification.ensembles.foreach { e =>
             val (ensembleID, (matcher, extent)) = e
-            if (ensembleID != 'empty && extent.isEmpty)
-                fail(ensembleID+" didn't match any elements ("+matcher+")")
+            if (ensembleID != Symbol("Empty") && extent.isEmpty)
+                fail(s"$ensembleID didn't match any elements ($matcher)")
         }
     }
 
@@ -40,13 +41,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
      */
     it should "correctly validate a valid specification using is_only_allowed_to_use constraints" in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Example is_only_allowed_to (USE, 'Mathematics)
+            Symbol("Example") is_only_allowed_to (USE, Symbol("Mathematics"))
         }
 
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
@@ -57,13 +58,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
     it should ("correctly identify deviations between the specified (using is_only_allowed_to_use constraints) and implemented architecture") in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Mathematics is_only_allowed_to (USE, 'Rational)
+            Symbol("Mathematics") is_only_allowed_to (USE, Symbol("Rational"))
         }
         specification.analyze() should not be (empty) // <= primary test
 
@@ -75,13 +76,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
      */
     it should ("validate the is_not_allowed_to_use constraint with no violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Example is_not_allowed_to (USE, 'Rational)
+            Symbol("Example") is_not_allowed_to (USE, Symbol("Rational"))
         }
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
         result should be(empty)
@@ -91,13 +92,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
     it should ("validate the is_not_allowed_to_use constraint with violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Mathematics is_not_allowed_to (USE, 'Number)
+            Symbol("Mathematics") is_not_allowed_to (USE, Symbol("Number"))
         }
         specification.analyze() should not be (empty)
 
@@ -109,13 +110,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
      */
     it should ("validate the is_only_to_be_used_by constraint with no violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Mathematics is_only_to_be_used_by 'Example
+            Symbol("Mathematics") is_only_to_be_used_by Symbol("Example")
         }
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
         result should be(empty)
@@ -125,13 +126,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
     it should ("validate the is_only_to_be_used_by constraint with violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Rational is_only_to_be_used_by 'Mathematics
+            Symbol("Rational") is_only_to_be_used_by Symbol("Mathematics")
         }
         specification.analyze() should not be (empty)
 
@@ -143,13 +144,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
      */
     it should ("validate the allows_incoming_dependencies_from constraint with no violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Mathematics allows_incoming_dependencies_from 'Example
+            Symbol("Mathematics") allows_incoming_dependencies_from Symbol("Example")
         }
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
         result should be(empty)
@@ -159,13 +160,13 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
     it should ("validate the allows_incoming_dependencies_from constraint with violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations) { "mathematics.Operations*" }
-            ensemble('Number) { "mathematics.Number*" }
-            ensemble('Rational) { "mathematics.Rational*" }
-            ensemble('Mathematics) { "mathematics.Mathematics*" }
-            ensemble('Example) { "mathematics.Example*" }
+            ensemble(Symbol("Operations")) { "mathematics.Operations*" }
+            ensemble(Symbol("Number")) { "mathematics.Number*" }
+            ensemble(Symbol("Rational")) { "mathematics.Rational*" }
+            ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
+            ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            'Number allows_incoming_dependencies_from 'Rational
+            Symbol("Number") allows_incoming_dependencies_from Symbol("Rational")
         }
         specification.analyze() should not be (empty)
 
@@ -177,12 +178,12 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
      */
     it should ("validate the every_element_should_implement_method constraint with no violations") in {
         val specification = new Specification(project) {
-            ensemble('Mathematics)(ClassMatcher(
+            ensemble(Symbol("Mathematics"))(ClassMatcher(
                 "mathematics.Mathematics",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            'Mathematics every_element_should_implement_method MethodWithName("operation1")
+            Symbol("Mathematics") every_element_should_implement_method MethodWithName("operation1")
 
         }
         specification.analyze() should be(empty)
@@ -192,12 +193,12 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
     it should ("validate the every_element_should_implement_method constraint with violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations)(ClassMatcher(
+            ensemble(Symbol("Operations"))(ClassMatcher(
                 "mathematics.Operations",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            'Operations every_element_should_implement_method MethodWithName("operation1")
+            Symbol("Operations") every_element_should_implement_method MethodWithName("operation1")
         }
         specification.analyze() should not be (empty)
 
@@ -210,22 +211,22 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
     it should ("validate the every_element_should_extend constraint with no violations") in {
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
-            ensemble('Address)(ClassMatcher(
+            ensemble(Symbol("Address"))(ClassMatcher(
                 "entity.impl.Address",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            ensemble('User)(ClassMatcher(
+            ensemble(Symbol("User"))(ClassMatcher(
                 "entity.impl.User",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            ensemble('AbstractEntity)(ClassMatcher(
+            ensemble(Symbol("AbstractEntity"))(ClassMatcher(
                 "entity.AbstractEntity",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            'Address every_element_should_extend 'AbstractEntity
+            Symbol("Address") every_element_should_extend Symbol("AbstractEntity")
 
         }
 
@@ -237,22 +238,22 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
     it should ("validate the every_element_should_extend constraint with violations") in {
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
-            ensemble('Address)(ClassMatcher(
+            ensemble(Symbol("Address"))(ClassMatcher(
                 "entity.impl.Address",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            ensemble('User)(ClassMatcher(
+            ensemble(Symbol("User"))(ClassMatcher(
                 "entity.impl.User",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            ensemble('AbstractEntity)(ClassMatcher(
+            ensemble(Symbol("AbstractEntity"))(ClassMatcher(
                 "entity.AbstractEntity",
                 matchPrefix = false, matchMethods = false, matchFields = false
             ))
 
-            'Address every_element_should_extend 'User
+            Symbol("Address") every_element_should_extend Symbol("User")
 
         }
 
@@ -268,9 +269,9 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
 
-            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+            ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            'EntityId every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Id"))
+            Symbol("EntityId") every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Id"))
         }
 
         specification.analyze() should be(empty)
@@ -283,9 +284,9 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
 
-            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+            ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            'EntityId every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Entity"))
+            Symbol("EntityId") every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Entity"))
         }
 
         specification.analyze() should not be (empty)
@@ -301,15 +302,15 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
 
-            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+            ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            'EntityId every_element_should_be_annotated_with
+            Symbol("EntityId") every_element_should_be_annotated_with
                 ("(entity.annotation.Id - entity.annotation.Column)",
                     Seq(
                         AnnotatedWith("entity.annotation.Id"),
                         AnnotatedWith(
                             "entity.annotation.Column",
-                            "name" → StringValue("id"), "nullable" → BooleanValue(false)
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(false)
                         )
                     )
                 )
@@ -325,15 +326,15 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
 
-            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+            ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            'EntityId every_element_should_be_annotated_with
+            Symbol("EntityId") every_element_should_be_annotated_with
                 ("(entity.annotation.Id - entity.annotation.Column)",
                     Seq(
                         AnnotatedWith("entity.annotation.Id"),
                         AnnotatedWith(
                             "entity.annotation.Column",
-                            "name" → StringValue("id"), "nullable" → BooleanValue(true)
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(true)
                         )
                     )
                 )

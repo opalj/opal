@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package purity
 
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.value.ValueInformation
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -127,7 +126,7 @@ trait SystemOutErrRater extends DomainSpecificRater {
     }
 
     private def isOutErr(expr: Expr[V])(implicit code: Array[Stmt[V]]): Boolean = {
-        expr.isVar && expr.asVar.definedBy.forall { defSite ⇒
+        expr.isVar && expr.asVar.definedBy.forall { defSite =>
             if (defSite < 0) false
             else {
                 val stmt = code(defSite)
@@ -207,7 +206,7 @@ trait ExceptionRater extends DomainSpecificRater {
         val declClass = call.declaringClass
         if (declClass.isObjectType && call.name == "<init>" &&
             declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
-            !ConstArray.find(project.instanceMethods(declClass.asObjectType))(mdc ⇒
+            !org.opalj.control.find(project.instanceMethods(declClass.asObjectType))(mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
                     MethodDescriptor.withNoArgs(ObjectType.Throwable)

@@ -60,15 +60,15 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 dm.descriptor
             )
 
-        for (method ← methods) {
+        for (method <- methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
-                case FinalP(UsesNoStaticData)     ⇒
-                case FinalP(UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalP(UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ InterimUBP(UsesConstantDataOnly) ⇒
+                case FinalP(UsesNoStaticData)     =>
+                case FinalP(UsesConstantDataOnly) => maxLevel = UsesConstantDataOnly
+                case FinalP(UsesVaryingData)      => return Result(dm, VUsesVaryingData);
+                case ep @ InterimUBP(UsesConstantDataOnly) =>
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
-                case epk ⇒ dependees += epk
+                case epk => dependees += epk
             }
         }
 
@@ -76,13 +76,13 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalP(UsesNoStaticData)     ⇒
-                case FinalP(UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalP(UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ InterimUBP(UsesConstantDataOnly) ⇒
+                case FinalP(UsesNoStaticData)     =>
+                case FinalP(UsesConstantDataOnly) => maxLevel = UsesConstantDataOnly
+                case FinalP(UsesVaryingData)      => return Result(dm, VUsesVaryingData);
+                case ep @ InterimUBP(UsesConstantDataOnly) =>
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
-                case epk ⇒ dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
+                case epk => dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
             }
 
             if (dependees.isEmpty) {
@@ -108,8 +108,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
     /** Called when the analysis is scheduled lazily. */
     def doDetermineUsage(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case m: DeclaredMethod ⇒ determineUsage(m)
-            case _                 ⇒ throw new IllegalArgumentException(s"$e is not a method")
+            case m: DeclaredMethod => determineUsage(m)
+            case _                 => throw new IllegalArgumentException(s"$e is not a method")
         }
     }
 

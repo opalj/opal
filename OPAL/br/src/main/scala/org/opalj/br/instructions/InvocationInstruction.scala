@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that "invokes" something. This can, e.g., be the invocation of a method
  * or – using [[INCOMPLETE_INVOKEDYNAMIC]] – the read of a field value.
@@ -43,7 +41,7 @@ abstract class InvocationInstruction
      */
     def isInstanceMethod: Boolean
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = {
         if (methodDescriptor.returnType.isVoidType) 0 else 1
     }
 
@@ -88,12 +86,12 @@ abstract class InvocationInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         if (regularSuccessorsOnly)
-            Chain.singleton(indexOfNextInstruction(currentPC))
+            List(indexOfNextInstruction(currentPC))
         else {
             val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
-            indexOfNextInstruction(currentPC) :&: exceptionHandlerPCs
+            indexOfNextInstruction(currentPC) :: exceptionHandlerPCs
         }
     }
 

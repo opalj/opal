@@ -4,10 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''Record'' attribute (Java 16).
@@ -28,7 +28,8 @@ trait Record_attributeReader extends AttributeReader {
     type Record_attribute >: Null <: Attribute
 
     type RecordComponent <: AnyRef
-    type RecordComponents = RefArray[RecordComponent]
+    implicit val recordComponentType: ClassTag[RecordComponent] // TODO: Replace in Scala 3 by `type RecordComponent : ClassTag`
+    type RecordComponents = ArraySeq[RecordComponent]
 
     def Record_attribute(
         cp:                   Constant_Pool,
@@ -81,7 +82,7 @@ trait Record_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val components_count = in.readUnsignedShort
         if (components_count > 0 || reifyEmptyAttributes) {
@@ -90,7 +91,7 @@ trait Record_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(components_count) {
+                fillArraySeq(components_count) {
                     {
                         val name_index = in.readUnsignedShort
                         val descriptor_index = in.readUnsignedShort
@@ -114,6 +115,6 @@ trait Record_attributeReader extends AttributeReader {
         }
     }: Record_attribute
 
-    registerAttributeReader(RecordAttribute.Name → parserFactory())
+    registerAttributeReader(RecordAttribute.Name -> parserFactory())
 
 }

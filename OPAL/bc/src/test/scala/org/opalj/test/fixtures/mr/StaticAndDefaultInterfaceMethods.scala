@@ -6,14 +6,11 @@ package mr
 
 import java.nio.file.Files
 import java.nio.file.Paths
-
 import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_STATIC
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntArray
 import org.opalj.da.ClassFile
 import org.opalj.da.Method_Info
 import org.opalj.da.Constant_Pool_Entry
@@ -24,6 +21,8 @@ import org.opalj.da.CONSTANT_Methodref_info
 import org.opalj.da.CONSTANT_String_info
 import org.opalj.da.Code_attribute
 import org.opalj.da.Code
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Generates three interfaces SuperIntf, Intf and SubIntf where Intf inherits from
@@ -62,11 +61,11 @@ object StaticAndDefaultInterfaceMethods extends App {
         this_class = 1 /*mr/SuperIntf*/ , super_class = 3 /*extends java.lang.Object*/ ,
         // Interfaces.empty,
         // Fields.empty,
-        methods = RefArray(
+        methods = ArraySeq(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask,
                 name_index = 7, descriptor_index = 8,
-                attributes = RefArray(
+                attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 9,
                         max_stack = 1, max_locals = 1,
@@ -115,13 +114,13 @@ object StaticAndDefaultInterfaceMethods extends App {
         minor_version = 0, major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
         this_class = 1 /*mr/Intf*/ , super_class = 3 /*extends java.lang.Object*/ ,
-        interfaces = IntArray(5) /*mr/SuperIntf*/ ,
+        interfaces = ArraySeq(5) /*mr/SuperIntf*/ ,
         // Fields.empty,
-        methods = RefArray(
+        methods = ArraySeq(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                 name_index = 7, descriptor_index = 8,
-                attributes = RefArray(
+                attributes = ArraySeq(
                     Code_attribute(
                         attribute_name_index = 9,
                         max_stack = 1, max_locals = 1,
@@ -158,7 +157,7 @@ object StaticAndDefaultInterfaceMethods extends App {
         minor_version = 0, major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
         this_class = 1 /*mr/SubIntf*/ , super_class = 3 /*extends java.lang.Object*/ ,
-        interfaces = IntArray(5) //mr/Intf
+        interfaces = ArraySeq(5) //mr/Intf
     )
     val assembledSubIntf = Assembler(subIntfCF)
     val assembledSubIntfPath =

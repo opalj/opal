@@ -5,6 +5,8 @@ package reader
 
 import org.opalj.bi.reader.InnerClasses_attributeReader
 
+import scala.reflect.ClassTag
+
 /**
  * The factory methods to create inner classes attributes and entries.
  *
@@ -17,6 +19,7 @@ trait InnerClasses_attributeBinding
 
     type InnerClasses_attribute = br.InnerClassTable
     type InnerClassesEntry = br.InnerClass
+    override implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] = ClassTag(classOf[br.InnerClass])
 
     def InnerClasses_attribute(
         cp:                   Constant_Pool,

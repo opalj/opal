@@ -46,7 +46,7 @@ class ConstantFieldValuesResolutionTest extends AnyFunSpec with Matchers {
 
         it("(Prerequisite) it should be possible to get the constant value of a field") {
             val theField = IntegerValues.fields.find(_.name == "theValue").get
-            theField.constantFieldValue should be('defined)
+            theField.constantFieldValue should be(Symbol("defined"))
             theField.constantFieldValue.get.toInt should be(42)
         }
     }

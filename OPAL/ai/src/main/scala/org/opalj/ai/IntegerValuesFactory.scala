@@ -9,7 +9,7 @@ import org.opalj.br.CTIntType
  *
  * @author Michael Eichberg
  */
-trait IntegerValuesFactory extends ValuesDomain { domain ⇒
+trait IntegerValuesFactory extends ValuesDomain { domain =>
 
     /**
      * Factory method to create a representation of a boolean value if we know the

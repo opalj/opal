@@ -27,7 +27,7 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         import scala.collection.immutable.TreeMap // <= Sorted...
@@ -35,8 +35,8 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
         var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
 
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
             descriptor = method.descriptor
         } {
             val parametersCount = descriptor.parametersCount + (if (method.isStatic) 0 else 1)
@@ -52,9 +52,9 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
         BasicReport("\nResults:\n"+
             "Method Parameters Distribution:\n"+
             "#Parameters\tFrequency:\n"+
-            methodParametersDistribution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")+"\n\n"+
+            methodParametersDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n")+"\n\n"+
             "MaxLocals Distribution:\n"+
             "#Locals\t\tFrequency:\n"+
-            maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n"))
+            maxLocalsDistrbution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n"))
     }
 }

@@ -21,7 +21,7 @@ import org.opalj.br.ShortType
  *
  * @author Michael Eichberg
  */
-trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
+trait TypeLevelIntegerValues extends Domain { this: Configuration =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -33,14 +33,14 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
      * Abstracts over values with computational type `integer`.
      */
     protected[this] trait ComputationalTypeIntegerValue[T <: CTIntType] extends TypedValue[T] {
-        this: DomainTypedValue[T] ⇒
+        this: DomainTypedValue[T] =>
 
         override def summarize(pc: Int): DomainValue = this
 
     }
 
     trait BooleanValue extends ComputationalTypeIntegerValue[BooleanType] with IsBooleanValue {
-        this: DomainTypedValue[BooleanType] ⇒
+        this: DomainTypedValue[BooleanType] =>
 
         final override def leastUpperType: Option[BooleanType] = Some(BooleanType)
 
@@ -50,7 +50,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait ByteValue extends ComputationalTypeIntegerValue[ByteType] with IsByteValue {
-        this: DomainTypedValue[ByteType] ⇒
+        this: DomainTypedValue[ByteType] =>
 
         final override def leastUpperType: Option[ByteType] = Some(ByteType)
 
@@ -61,7 +61,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait CharValue extends ComputationalTypeIntegerValue[CharType] with IsCharValue {
-        this: DomainTypedValue[CharType] ⇒
+        this: DomainTypedValue[CharType] =>
 
         final override def leastUpperType: Option[CharType] = Some(CharType)
 
@@ -72,7 +72,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait ShortValue extends ComputationalTypeIntegerValue[ShortType] with IsShortValue {
-        this: DomainTypedValue[ShortType] ⇒
+        this: DomainTypedValue[ShortType] =>
 
         final override def leastUpperType: Option[ShortType] = Some(ShortType)
 
@@ -83,7 +83,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait IntegerValue extends ComputationalTypeIntegerValue[IntegerType] with IsIntegerValue {
-        this: DomainTypedValue[IntegerType] ⇒
+        this: DomainTypedValue[IntegerType] =>
 
         final override def leastUpperType: Option[IntegerType] = Some(IntegerType)
 

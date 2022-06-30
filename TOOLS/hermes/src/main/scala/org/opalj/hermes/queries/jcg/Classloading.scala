@@ -4,17 +4,20 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodWithBody
-import org.opalj.br.ReferenceType
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.value.KnownTypedValue
+import org.opalj.da.ClassFile
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.da.ClassFile
+import org.opalj.br.instructions.Instruction
+import org.opalj.tac.DUVar
 import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.TACode
-import org.opalj.tac.DUVar
-import org.opalj.value.KnownTypedValue
 
 /**
  * Groups test case features that perform classloading.
@@ -43,7 +46,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =
@@ -54,7 +57,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val classHierarchy = project.classHierarchy
 
         val hasCustomClassLoaders =
-            project.allClassFiles exists { cf ⇒
+            project.allClassFiles exists { cf =>
                 classHierarchy.isSubtypeOf(cf.thisType, ClassLoaderT) &&
                     !(cf.thisType.fqn.startsWith("java/") ||
                         cf.thisType.fqn.startsWith("sun/") ||
@@ -64,14 +67,14 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation ← body collect {
-                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) ⇒ i
-            }
+            pcAndInvocation <- body collect ({
+                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
+            }: PartialFunction[Instruction, Instruction])
             TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {
             val pc = pcAndInvocation.pc
@@ -83,7 +86,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 locations(0) += l // standard java classloader
         }
 
-        locations;
+        ArraySeq.unsafeWrapArray(locations)
     }
 
     def isStandardClassLoader(receiverType: ReferenceType): Boolean = {

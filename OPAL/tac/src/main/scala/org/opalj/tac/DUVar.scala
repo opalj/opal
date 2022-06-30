@@ -80,14 +80,14 @@ object DefSites {
     def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
         Some(
             valueExpr match {
-                case UVar(_, defSites) ⇒ defSites
-                case _: Const          ⇒ IntTrieSet.empty
+                case UVar(_, defSites) => defSites
+                case _: Const          => IntTrieSet.empty
             }
         )
     }
 
     def toString(defSites: IntTrieSet): Iterator[String] = {
-        defSites.iterator.map { defSite ⇒
+        defSites.iterator.map { defSite =>
             if (isImmediateVMException(defSite))
                 "exception[VM]@"+pcOfImmediateVMException(defSite)
             else if (isMethodExternalExceptionOrigin(defSite))
@@ -150,7 +150,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
      */
     private[tac] override def remapIndexes(
         pcToIndex:                    Array[Int],
-        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+        isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
         assert(
             origin >= 0,
@@ -163,7 +163,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
             else
                 initialNewOrigin
         origin = newOrigin
-        useSites = useSites map { useSite ⇒
+        useSites = useSites map { useSite =>
             // a use site is always positive...
             val newUseSite = pcToIndex(useSite)
             if (newUseSite == newOrigin)
@@ -235,9 +235,9 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     private[tac] override def remapIndexes(
         pcToIndex:                    Array[Int],
-        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+        isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
-        defSites = defSites map { defSite ⇒
+        defSites = defSites map { defSite =>
             if (defSite >= 0) {
                 val defSiteIndex = pcToIndex(defSite)
                 if (isIndexOfCaughtExceptionStmt(defSiteIndex))
@@ -262,8 +262,8 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UVar[_] ⇒ this.defSites == that.defSites
-            case _             ⇒ false
+            case that: UVar[_] => this.defSites == that.defSites
+            case _             => false
         }
     }
 

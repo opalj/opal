@@ -4,8 +4,7 @@ package ai
 package domain
 package l1
 
-import scala.collection.Set
-import scala.collection.immutable.{Set ⇒ ImmutableSet}
+import scala.collection.immutable
 
 /**
  * Records '''all''' exception values thrown by a method. I.e., for each instruction that
@@ -14,17 +13,17 @@ import scala.collection.immutable.{Set ⇒ ImmutableSet}
  * @author Michael Eichberg
  */
 trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
-    domain: ReferenceValues with Configuration with ExceptionsFactory ⇒
+    domain: ReferenceValues with Configuration with ExceptionsFactory =>
 
-    override type ThrownException = Set[DomainSingleOriginReferenceValue]
+    override type ThrownException = immutable.Set[DomainSingleOriginReferenceValue]
 
     override protected[this] def recordThrownException(
         pc:    Int,
         value: ExceptionValue
     ): ThrownException = {
         value match {
-            case DomainMultipleReferenceValuesTag(value)   ⇒ value.values
-            case DomainSingleOriginReferenceValueTag(sorv) ⇒ ImmutableSet.empty + sorv
+            case DomainMultipleReferenceValuesTag(value)   => value.values
+            case DomainSingleOriginReferenceValueTag(sorv) => immutable.Set.empty + sorv
         }
     }
 
@@ -34,9 +33,9 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
         value:                     ExceptionValue
     ): ThrownException = {
         value match {
-            case DomainMultipleReferenceValuesTag(value) ⇒
+            case DomainMultipleReferenceValuesTag(value) =>
                 previouslyThrownException ++ value.values
-            case DomainSingleOriginReferenceValueTag(sorv) ⇒
+            case DomainSingleOriginReferenceValueTag(sorv) =>
                 previouslyThrownException + sorv
         }
     }

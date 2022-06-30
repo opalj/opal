@@ -20,7 +20,7 @@ class StringConstantsInformationKeyTest extends AnyFlatSpec with Matchers {
     val stringsProject = Project(ClassFiles(stringsArchive))
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty, true)
+    val opalProject = Project(ClassFiles(opal), Iterable.empty, true)
 
     //
     //

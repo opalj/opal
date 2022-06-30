@@ -13,7 +13,8 @@ import org.opalj.br.CodeAttribute
 import org.opalj.br.UnpackedLineNumberTable
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.br.instructions.PCLabel
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Mutable container for some labeled code.
@@ -40,9 +41,9 @@ class LabeledCode(
 
     def removedDeadCode(): Unit = {
         CODE.removeDeadCode(instructions) match {
-            case is: ArrayBuffer[CodeElement[AnyRef]] ⇒
+            case is: ArrayBuffer[CodeElement[AnyRef]] =>
                 instructions = is
-            case is: IndexedSeq[CodeElement[AnyRef]] ⇒
+            case is: IndexedSeq[CodeElement[AnyRef]] =>
                 instructions = new ArrayBuffer[CodeElement[AnyRef]](is.size) ++ is
         }
     }
@@ -132,17 +133,17 @@ class LabeledCode(
         // we already inserted other code, we could have multiple labels...)
         insertionPosition match {
 
-            case InsertionPosition.Before ⇒
+            case InsertionPosition.Before =>
                 val insertionPCLabel = LabelElement(InstructionLabel(insertionPC))
                 val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
-                instructions.insert(insertionPCLabelIndex + 1, newInstructions: _*)
+                instructions.insertAll(insertionPCLabelIndex + 1, newInstructions)
 
-            case InsertionPosition.At ⇒
+            case InsertionPosition.At =>
                 val insertionPCLabel = LabelElement(InstructionLabel(insertionPC))
                 val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
-                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
+                instructions.insertAll(insertionPCLabelIndex, newInstructions)
 
-            case InsertionPosition.After ⇒
+            case InsertionPosition.After =>
                 val originalCode = this.originalCode
                 val effectivePC = originalCode.pcOfNextInstruction(insertionPC)
                 var insertionPCLabelIndex =
@@ -157,7 +158,7 @@ class LabeledCode(
                 while (instructions(insertionPCLabelIndex - 1).isExceptionHandlerElement) {
                     insertionPCLabelIndex -= 1
                 }
-                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
+                instructions.insertAll(insertionPCLabelIndex, newInstructions)
 
         }
     }
@@ -181,7 +182,7 @@ class LabeledCode(
             pcInstructionLikeIndex += 1
         }
         instructions.remove(pcInstructionLikeIndex)
-        instructions.insert(pcInstructionLikeIndex, newInstructions: _*)
+        instructions.insertAll(pcInstructionLikeIndex, newInstructions)
     }
 
     /**
@@ -193,40 +194,41 @@ class LabeledCode(
         val codeSize = initialCodeAttributeBuilder.instructions.length
         var explicitAttributes = initialCodeAttributeBuilder.attributes
         // We filter the (old) stack map table - it is most likely no longer valid!
-        val oldAttributes = originalCode.attributes.filter { a ⇒ a.kindId != StackMapTable.KindId }
+        val oldAttributes = originalCode.attributes.filter { a => a.kindId != StackMapTable.KindId }
 
         initialCodeAttributeBuilder.copy(
             oldAttributes.map[br.Attribute] {
 
-                case lnt: LineNumberTable ⇒
+                case lnt: LineNumberTable =>
                     val oldRemappedLNT =
                         lnt.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)
                     val explicitLNT =
                         initialCodeAttributeBuilder.attributes.collectFirst {
-                            case lnt: LineNumberTable ⇒ lnt
+                            case lnt: LineNumberTable => lnt
                         }
                     explicitLNT match {
-                        case None ⇒ oldRemappedLNT
-                        case Some(explicitLNT @ LineNumberTable(explicitLNs)) ⇒
-                            explicitAttributes = explicitAttributes.filter(a ⇒ a != explicitLNT)
+                        case None => oldRemappedLNT
+                        case Some(explicitLNT @ LineNumberTable(explicitLNs)) =>
+                            explicitAttributes = explicitAttributes.filter(a => a != explicitLNT)
                             // explicit line number have precedence
                             val newLNs = new Int2IntAVLTreeMap()
-                            oldRemappedLNT.lineNumbers.foreach { ln ⇒
+                            oldRemappedLNT.lineNumbers.foreach { ln =>
                                 newLNs.put(ln.startPC, ln.lineNumber)
                             }
-                            explicitLNs.foreach(ln ⇒ newLNs.put(ln.startPC, ln.lineNumber))
-                            val finalLNs = new Array[AnyRef](newLNs.size)
+                            explicitLNs.foreach(ln => newLNs.put(ln.startPC, ln.lineNumber))
+                            val finalLNs = new Array[LineNumber](newLNs.size)
                             var index = 0
-                            newLNs.int2IntEntrySet().iterator().forEachRemaining { e ⇒
+                            newLNs.int2IntEntrySet().iterator().forEachRemaining { e =>
                                 finalLNs(index) = LineNumber(e.getIntKey, e.getIntValue)
                                 index += 1
                             }
-                            UnpackedLineNumberTable(RefArray._UNSAFE_from[LineNumber](finalLNs))
+                            UnpackedLineNumberTable(ArraySeq.unsafeWrapArray[LineNumber](finalLNs))
+                        case Some(_) => throw new MatchError(explicitLNT)
                     }
 
-                case ca: CodeAttribute ⇒ ca.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)
+                case ca: CodeAttribute => ca.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)
 
-                case a                 ⇒ a
+                case a                 => a
             } ++ explicitAttributes
         )
     }
@@ -246,16 +248,16 @@ object LabeledCode {
      *                          output; this is particularly useful to filter dead code.
      * @return The labeled code.
      */
-    def apply(code: Code, filterInstruction: PC ⇒ Boolean = (_) ⇒ true): LabeledCode = {
+    def apply(code: Code, filterInstruction: PC => Boolean = (_) => true): LabeledCode = {
         val codeSize = code.codeSize
         val estimatedSize = codeSize
         val labeledInstructions = new ArrayBuffer[CodeElement[AnyRef]](estimatedSize)
 
         // Transform the current code to use labels; this approach handles cases such as
         // switches which now require more/less bytes very elegantly.
-        code.iterate { (pc, i) ⇒
+        code.iterate { (pc, i) =>
             // IMPROVE [L1] use while loop
-            code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex ⇒
+            code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex =>
                 val (eh, index) = ehIndex
                 // Recall that endPC is exclusive while TRYEND is inclusive... Hence,
                 // we have to add it before the next instruction...
@@ -274,7 +276,7 @@ object LabeledCode {
         }
         // The pc of a handler that handles "all" instructions is equal to "codeSize" and
         // therefore code.iterate will not reach it.
-        code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex ⇒
+        code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex =>
             val (eh, index) = ehIndex
             if (eh.endPC == codeSize) {
                 labeledInstructions += TRYEND(Symbol(s"eh$index"))

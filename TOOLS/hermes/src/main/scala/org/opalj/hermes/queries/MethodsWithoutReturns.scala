@@ -24,18 +24,18 @@ class MethodsWithoutReturns(implicit hermes: HermesConfig) extends FeatureQuery 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val infiniteLoopMethods: LocationsContainer[S] = new LocationsContainer[S]
         val alwaysThrowsExceptionMethods: LocationsContainer[S] = new LocationsContainer[S]
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
-            if !isInterrupted
+            (classFile, source) <- project.projectClassFilesWithSources
+            if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method ← classFile.methods
-            body ← method.body
-            hasReturnInstruction = body.exists { (pc, i) ⇒ i.isInstanceOf[ReturnInstruction] }
+            method <- classFile.methods
+            body <- method.body
+            hasReturnInstruction = body.instructionIterator.exists { i => i.isInstanceOf[ReturnInstruction] }
             if !hasReturnInstruction
         } {
             val cfg = CFGFactory(body, project.classHierarchy)

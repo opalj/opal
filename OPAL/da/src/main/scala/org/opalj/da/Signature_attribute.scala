@@ -42,34 +42,34 @@ Add a comment to this line
 +    }
 +
 +    def typeSigToXHTML(ts: TypeSignature): Node = ts match {
-+        case _: BooleanType ⇒
++        case _: BooleanType =>
 +            <span>boolean</span>
-+        case _: ByteType ⇒
++        case _: ByteType =>
 +            <span>byte</span>
-+        case _: CharType ⇒
++        case _: CharType =>
 +            <span>char</span>
-+        case _: DoubleType ⇒
++        case _: DoubleType =>
 +            <span>double</span>
-+        case _: FloatType ⇒
++        case _: FloatType =>
 +            <span>float</span>
-+        case _: IntegerType ⇒
++        case _: IntegerType =>
 +            <span>int</span>
-+        case _: LongType ⇒
++        case _: LongType =>
 +            <span>long</span>
-+        case _: ShortType ⇒
++        case _: ShortType =>
 +            <span>short</span>
 +
-+        case scts: SimpleClassTypeSignature ⇒
++        case scts: SimpleClassTypeSignature =>
 +            <span>
 +                <span class="fqn">{ scts.simpleName }</span>
 +                &lt;{ scts.typeArguments.map(typeArgToXHTML) }
 +                &gt;
 +            </span>
-+        case ats: ArrayTypeSignature ⇒
++        case ats: ArrayTypeSignature =>
 +            <span>[{ typeSigToXHTML(ats.typeSignature) }</span>
-+        case tvs: TypeVariableSignature ⇒
++        case tvs: TypeVariableSignature =>
 +            <span>T{ tvs.identifier };&nbsp;</span>
-+        case cts: ClassTypeSignature ⇒
++        case cts: ClassTypeSignature =>
 +            <span>
 +                L
 +                {
@@ -87,24 +87,24 @@ Add a comment to this line
 +                &gt;
 +                {
 +                    cts.classTypeSignatureSuffix.map {
-+                        e ⇒ e.simpleName + e.typeArguments.map { typeArgToXHTML(_) }
++                        e => e.simpleName + e.typeArguments.map { typeArgToXHTML(_) }
 +                    }
 +                }
 +                ;&nbsp;
 +            </span>
-+        case _ ⇒ <span>{ ts.toJVMSignature }</span>
++        case _ => <span>{ ts.toJVMSignature }</span>
 +    }
 +
 +    def typeArgToXHTML(ta: TypeArgument): Node = {
 +        ta match {
-+            case w: Wildcard ⇒
++            case w: Wildcard =>
 +                <span>*</span>
-+            case prop: ProperTypeArgument ⇒
++            case prop: ProperTypeArgument =>
 +                <span>
 +                    { if (prop.varianceIndicator.isDefined) prop.varianceIndicator.get.toJVMSignature }
 +                    { typeSigToXHTML(prop.fieldTypeSignature) }
 +                </span>
-+            case _ ⇒
++            case _ =>
 +                // this is a complete list of TypeArugments at the time of writing
 +                throw new IllegalArgumentException("unknown TypeArugment")
 +        }

@@ -52,8 +52,8 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]]
 
     // =================================== DEFAULT FUNCTIONALITY ===================================
     // ==================================== (can be overridden) ====================================
@@ -83,7 +83,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
         try {
             processSource(Source.fromURL(descriptionResourceURL)(Codec.UTF8)) { _.mkString }
         } catch {
-            case t: Throwable ⇒ s"not available: $descriptionResourceURL; ${t.getMessage}"
+            case t: Throwable => s"not available: $descriptionResourceURL; ${t.getMessage}"
         }
     }
 
@@ -106,7 +106,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     private[hermes] val accumulatedAnalysisTime: LongProperty = new SimpleLongProperty()
 
     private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] = {
-        featureIDs.map(fid ⇒ new SimpleObjectProperty(Feature[S](fid)))
+        featureIDs.map(fid => new SimpleObjectProperty(Feature[S](fid)))
     }
 
 }
@@ -119,16 +119,16 @@ abstract class DefaultFeatureQuery(
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]]
 
     final def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val locations = evaluate(projectConfiguration, project, rawClassFiles)
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, locations(featureIDIndex))
         }
     }
@@ -144,15 +144,15 @@ abstract class DefaultGroupedFeaturesQuery(
     def evaluateFeatureGroups[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): IndexedSeq[TraversableOnce[LocationsContainer[S]]]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IndexedSeq[IterableOnce[LocationsContainer[S]]]
 
     final def featureIDs: Seq[String] = groupedFeatureIDs.flatten
 
     final override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         evaluateFeatureGroups(projectConfiguration, project, rawClassFiles).flatten
     }

@@ -112,7 +112,7 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             Annotation(ObjectType("entity/annotation/Transient"))
         ) should be(true)
 
-        AnnotatedWith("entity.annotation.Column", "name" → StringValue("first_name"))(
+        AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name"))(
             Annotation(
                 ObjectType("entity/annotation/Column"),
                 ElementValuePairs(ElementValuePair("name", StringValue("first_name")))
@@ -132,7 +132,7 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             )
         AnnotatedWith(
             "entity.annotation.Column",
-            Map("name" → StringValue("first_name"))
+            Map("name" -> StringValue("first_name"))
         )(fixture) should be(false)
     }
 
@@ -152,14 +152,14 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             )
         )
         HasAtLeastTheAnnotations(
-            AnnotatedWith("entity.annotation.Column", "name" → StringValue("first_name"))
+            AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name"))
         )(columnAnnotation) should be(true)
 
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Transient"))(
             IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs))
         ) should be(true)
 
-        HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column", "name" → StringValue("first_name")))(
+        HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name")))(
             IndexedSeq(Annotation(
                 ObjectType("entity/annotation/Column"),
                 ElementValuePairs(ElementValuePair("name", StringValue("first_name")))
@@ -197,7 +197,7 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         ) should be(false)
 
         HasAtLeastTheAnnotations(
-            AnnotatedWith("entity.annotation.Column", Map("name" → StringValue("first_name")))
+            AnnotatedWith("entity.annotation.Column", Map("name" -> StringValue("first_name")))
         )(
                 IndexedSeq(
                     Annotation(
@@ -438,7 +438,7 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             HasAtLeastTheAnnotations(
                 AnnotatedWith(
                     "entity.annotation.Column",
-                    Map("name" → StringValue("first_name"), "nullable" → BooleanValue(false))
+                    Map("name" -> StringValue("first_name"), "nullable" -> BooleanValue(false))
                 )
             )
         ).extension(project).size should be(1)
@@ -463,8 +463,8 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             HasAtLeastTheAnnotations(
                 AnnotatedWith(
                     "entity.annotation.Column",
-                    "name" → StringValue("street"),
-                    "nullable" → BooleanValue(false)
+                    "name" -> StringValue("street"),
+                    "nullable" -> BooleanValue(false)
                 )
             )
         ).extension(project) should be(empty)
@@ -507,7 +507,7 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             ClassMatcher("entity.impl.User"),
             AnnotatedWith(
                 "entity.annotation.Column",
-                "name" → StringValue("street"), "nullable" → BooleanValue(false)
+                "name" -> StringValue("street"), "nullable" -> BooleanValue(false)
             )
         ).extension(project) should be(empty)
 

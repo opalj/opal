@@ -4,8 +4,6 @@ package ai
 
 import scala.annotation.switch
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.FixedSizeBitSet
@@ -71,11 +69,11 @@ sealed abstract class AIResult {
     lazy val evaluatedInstructions: BitSet = {
         /*
         val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
-        evaluatedPCs foreach { pc ⇒ if (pc >= 0) evaluatedInstructions += pc }
+        evaluatedPCs foreach { pc => if (pc >= 0) evaluatedInstructions += pc }
         evaluatedInstructions
         */
         val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
-        evaluatedPCs.foldLeft(evaluatedInstructions) { (evaluatedInstructions, pc) ⇒
+        evaluatedPCs.foldLeft(evaluatedInstructions) { (evaluatedInstructions, pc) =>
             if (pc >= 0) evaluatedInstructions += pc else evaluatedInstructions
         }
     }
@@ -158,7 +156,7 @@ sealed abstract class AIResult {
             else "Worklist: empty\n"
         }
         if (memoryLayoutBeforeSubroutineCall.nonEmpty) {
-            for ((subroutineId, operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
+            for ((subroutineId, operandsArray, localsArray) <- memoryLayoutBeforeSubroutineCall) {
                 result += s"Memory Layout Before Calling Subroutine $subroutineId:\n"
                 result += memoryLayoutToText(domain)(operandsArray, localsArray)
             }
@@ -223,18 +221,18 @@ sealed abstract class AICompleted extends AIResult {
 /* Design - We need to use a builder to construct a Result object in two steps.
  * This is necessary to correctly type the data structures that store the memory
  * layout and which depend on the given domain. */
-object AIResultBuilder { builder ⇒
+object AIResultBuilder { builder =>
 
     def subroutinePCs(evaluatedPCs: IntArrayStack): IntArraySet = {
         var instructions = IntArraySet.empty
         var subroutineLevel = 0
         // It is possible to have a method with just JSRs and no RETs...
         // Hence, we have to iterate from the beginning.
-        evaluatedPCs foreachReverse { pc ⇒
+        evaluatedPCs foreachReverse { pc =>
             (pc: @switch) match {
-                case SUBROUTINE_START ⇒ subroutineLevel += 1
-                case SUBROUTINE_END   ⇒ subroutineLevel -= 1
-                case pc               ⇒ if (subroutineLevel > 0) instructions += pc
+                case SUBROUTINE_START => subroutineLevel += 1
+                case SUBROUTINE_END   => subroutineLevel -= 1
+                case pc               => if (subroutineLevel > 0) instructions += pc
             }
         }
         instructions
@@ -330,7 +328,7 @@ object AIResultBuilder { builder ⇒
                     val codeSize = code.instructions.length
                     subroutinesOperandsArray = new Array(codeSize)
                     subroutinesLocalsArray = new Array(codeSize)
-                    subroutinePCs foreach { pc ⇒
+                    subroutinePCs foreach { pc =>
                         subroutinesOperandsArray(pc) = operandsArray(pc)
                         operandsArray(pc) = null
                         subroutinesLocalsArray(pc) = localsArray(pc)

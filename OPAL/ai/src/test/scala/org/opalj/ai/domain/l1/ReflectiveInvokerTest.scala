@@ -9,9 +9,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
 import br._
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the ReflectiveInvoker trait.
@@ -57,11 +56,11 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
             value match {
-                case i: IntegerRange if i.lowerBound == i.upperBound ⇒
+                case i: IntegerRange if i.lowerBound == i.upperBound =>
                     Some(Integer.valueOf(i.lowerBound))
-                case r: ReferenceValue if r.upperTypeBound.includes(ObjectType.StringBuilder) ⇒
+                case r: TheReferenceValue if r.upperTypeBound.includes(ObjectType.StringBuilder) =>
                     Some(new java.lang.StringBuilder())
-                case _ ⇒
+                case _ =>
                     super.toJavaObject(pc, value)
             }
         }
@@ -83,7 +82,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val stringValue = StringValue(IrrelevantPC, "A")
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(FieldTypes(ObjectType.Object), ObjectType.String)
-        val operands = Chain(stringValue)
+        val operands = List(stringValue)
 
         //static String String.valueOf(Object)
         /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
@@ -98,7 +97,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val integerValue = IntegerValue(IrrelevantPC, 1)
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
-        val operands = Chain(integerValue)
+        val operands = List(integerValue)
 
         //static String String.valueOf(int)
         /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
@@ -112,8 +111,8 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val stringValue = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(FieldTypes.Empty, IntegerType)
-        val operands = Chain(stringValue)
+        val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
+        val operands = List(stringValue)
 
         //int String.length()
         /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
@@ -141,11 +140,11 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(FieldTypes(IntegerType, IntegerType), ObjectType.String)
-        val operands =
-            /*p2=*/ IntegerValue(IrrelevantPC, 3) :&:
-                /*p1=*/ IntegerValue(IrrelevantPC, 1) :&:
-                receiver :&:
-                Naught
+        val operands = List(
+            /*p2=*/ IntegerValue(IrrelevantPC, 3),
+            /*p1=*/ IntegerValue(IrrelevantPC, 1),
+            receiver
+        )
 
         //String <String>.substring(int int)
         /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
@@ -159,10 +158,10 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val declaringClass = ObjectType.StringBuilder
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), VoidType)
-        val operands =
-            IntegerValue(IrrelevantPC, 1) :&:
-                TypedValue(IrrelevantPC, declaringClass) :&:
-                Naught
+        val operands = List(
+            IntegerValue(IrrelevantPC, 1),
+            TypedValue(IrrelevantPC, declaringClass)
+        )
 
         //void StringBuilder.ensureCapacity(int)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "ensureCapacity", descriptor, operands)
@@ -175,8 +174,8 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val instanceValue = TypedValue(IrrelevantPC, ObjectType.String)
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(FieldTypes.Empty, IntegerType)
-        val operands = Chain(instanceValue)
+        val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
+        val operands = List(instanceValue)
 
         //int String.length()
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
@@ -189,7 +188,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
-        val operands = Chain(TypedValue(1, ObjectType.Object))
+        val operands = List(TypedValue(1, ObjectType.Object))
 
         //String String.valueOf(int)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
@@ -202,7 +201,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val declaringClass = ObjectType("ANonExistingClass")
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
-        val operands = Chain(StringValue(IrrelevantPC, "A"))
+        val operands = List(StringValue(IrrelevantPC, "A"))
 
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
         result should be(None)
@@ -215,7 +214,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val receiver = StringValue(IrrelevantPC, "A")
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(FieldTypes(ObjectType.Object), ObjectType.String)
-        val operands = Chain(receiver)
+        val operands = List(receiver)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
         result should be(None)
     }
@@ -227,7 +226,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         val receiver = NullValue(IrrelevantPC)
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(NoFieldTypes, IntegerType)
-        val operands = Chain(receiver)
+        val operands = List(receiver)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
         result should be(Some(ThrowsException(Seq(
             InitializedObjectValue(IrrelevantPC, ObjectType.NullPointerException)
@@ -240,12 +239,13 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(RefArray(IntegerType, IntegerType), ObjectType.String)
+        val descriptor = MethodDescriptor(ArraySeq(IntegerType, IntegerType), ObjectType.String)
         val operands =
-            /*p2=*/ IntegerValue(IrrelevantPC, 1) :&:
-                /*p1=*/ IntegerValue(IrrelevantPC, 3) :&:
-                receiver :&:
-                Naught
+            List(
+                /*p2=*/ IntegerValue(IrrelevantPC, 1),
+                /*p1=*/ IntegerValue(IrrelevantPC, 3),
+                receiver
+            )
 
         //String <String>.substring(int /*lower*/, int/*upper*/)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)

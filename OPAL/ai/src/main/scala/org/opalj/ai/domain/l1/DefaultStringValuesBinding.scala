@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
  * @author Michael Eichberg
  */
 trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with StringValues {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
     type DomainStringValue = StringValue
     final val DomainStringValueTag: ClassTag[DomainStringValue] = implicitly

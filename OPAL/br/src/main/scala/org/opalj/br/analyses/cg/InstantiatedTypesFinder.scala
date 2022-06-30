@@ -14,9 +14,9 @@ import org.opalj.log.OPALLogger
  */
 sealed trait InstantiatedTypesFinder {
 
-    def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+    def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         // These types can be introduced via constants!
-        Traversable(ObjectType.String, ObjectType.Class)
+        Iterable(ObjectType.String, ObjectType.Class)
     }
 }
 
@@ -28,7 +28,7 @@ sealed trait InstantiatedTypesFinder {
  */
 trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] =
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] =
         super.collectInstantiatedTypes(project)
 }
 
@@ -41,17 +41,17 @@ trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
  */
 trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         val closedPackages = project.get(ClosedPackagesKey)
-        project.allClassFiles.iterator.filter { cf ⇒
+        project.allClassFiles.iterator.filter { cf =>
             !cf.isInterfaceDeclaration && !cf.isAbstract &&
                 (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
                     !closedPackages.isClosed(cf.thisType.packageName)) &&
-                    cf.constructors.exists { ctor ⇒
+                    cf.constructors.exists { ctor =>
                         ctor.isPublic ||
                             !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
                     }
-        }.map(_.thisType).toTraversable ++ super.collectInstantiatedTypes(project)
+        }.map(_.thisType).iterator.to(Iterable) ++ super.collectInstantiatedTypes(project)
     }
 }
 
@@ -89,7 +89,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
         InitialInstantiatedTypesKey.ConfigKeyPrefix+"instantiatedTypes"
     }
 
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         implicit val logContext = project.logContext
         var instantiatedTypes = Set.empty[ObjectType]
 
@@ -105,7 +105,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
             try {
                 project.config.as[List[String]](additionalInstantiatedTypesKey)
             } catch {
-                case e: Throwable ⇒
+                case e: Throwable =>
                     OPALLogger.error(
                         "project configuration - recoverable",
                         s"configuration key $additionalInstantiatedTypesKey is invalid; "+
@@ -115,7 +115,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
                     return instantiatedTypes;
             }
 
-        configInstantiatedTypes foreach { configuredType ⇒
+        configInstantiatedTypes foreach { configuredType =>
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
                 configuredType.substring(0, configuredType.size - 1)
@@ -154,14 +154,14 @@ object LibraryInstantiatedTypesFinder
  * @author Dominik Helm
  */
 object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix+
             "AllInstantiatedTypesFinder.projectClassesOnly"
         val allClassFiles = if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
             project.allProjectClassFiles
         else project.allClassFiles
-        allClassFiles.iterator.filter { cf ⇒
+        allClassFiles.iterator.filter { cf =>
             !cf.isInterfaceDeclaration && !cf.isAbstract
-        }.map(_.thisType).toTraversable
+        }.map(_.thisType).to(Iterable)
     }
 }

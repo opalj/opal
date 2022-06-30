@@ -26,6 +26,8 @@ import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
+import org.opalj.ai.domain.Origin.MultipleOriginsValue
+import org.opalj.ai.domain.Origin.SingleOriginValue
 
 /**
  * This partial domain enables tracking of a reference value's null-ness and must-alias information.
@@ -33,9 +35,9 @@ import org.opalj.br.Type
  * @author Michael Eichberg
  */
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
-    type AReferenceValue <: ReferenceValue with DomainReferenceValue
+    type AReferenceValue <: TheReferenceValue with DomainReferenceValue
     val AReferenceValueTag: ClassTag[AReferenceValue]
 
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with AReferenceValue
@@ -123,7 +125,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * values are definitively not reference equal unless they are type incompatible.
      */
     override def refAreEqual(pc: Int, v1: DomainValue, v2: DomainValue): Answer = {
-        assert(v1.isInstanceOf[ReferenceValue] && v2.isInstanceOf[ReferenceValue])
+        assert(v1.isInstanceOf[TheReferenceValue] && v2.isInstanceOf[TheReferenceValue])
         if (v1 eq v2)
             return Yes;
 
@@ -144,7 +146,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     protected def effectiveUTB(utb: UIDSet[_ <: ReferenceType]): UIDSet[_ <: ReferenceType] = {
         val it = utb.iterator
         while (it.hasNext) {
-            val t: ReferenceType = it.next
+            val t: ReferenceType = it.next()
             if (t.isArrayType)
                 return utb;
 
@@ -207,31 +209,31 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         def asUTBForArrays: ArrayType = overallUTB.head.asArrayType
         def asUTBForObjects: UIDSet[ObjectType] = overallUTB.asInstanceOf[UIDSet[ObjectType]]
 
-        values.tail foreach { value ⇒
+        values.tail foreach { value =>
             overallUTB = value match {
 
-                case SObjectValue(nextUTB) ⇒
+                case SObjectValueLike(nextUTB) =>
                     if (currentUTBisUTBForArrays)
                         classHierarchy.joinAnyArrayTypeWithObjectType(nextUTB)
                     else
                         classHierarchy.joinObjectTypes(nextUTB, asUTBForObjects, true)
 
-                case MObjectValue(nextUTB) ⇒
+                case MObjectValueLike(nextUTB) =>
                     if (currentUTBisUTBForArrays)
                         classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(nextUTB)
                     else
                         classHierarchy.joinUpperTypeBounds(asUTBForObjects, nextUTB, true)
 
-                case ArrayValue(nextUTB) ⇒
+                case AnArrayValue(nextUTB) =>
                     if (currentUTBisUTBForArrays)
                         classHierarchy.joinArrayTypes(asUTBForArrays, nextUTB) match {
-                            case Left(arrayType)       ⇒ UIDSet(arrayType)
-                            case Right(upperTypeBound) ⇒ upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]
+                            case Left(arrayType)       => UIDSet(arrayType)
+                            case Right(upperTypeBound) => upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]
                         }
                     else
                         classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(asUTBForObjects)
 
-                case _: NullValue ⇒ /*"Do Nothing"*/ overallUTB
+                case _: NullValue => /*"Do Nothing"*/ overallUTB
             }
         }
         overallUTB
@@ -243,7 +245,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * This trait defines the additional methods needed for the refinement of the new
      * properties.
      */
-    trait ReferenceValue extends super.ReferenceValue { this: AReferenceValue ⇒
+    trait TheReferenceValue extends super.ReferenceValueLike { this: AReferenceValue =>
 
         /**
          * Returns the reference id of this object. I.e., an approximation of the object's
@@ -331,24 +333,24 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             (
                 // OPERANDS
                 operands mapConserve {
-                    case AReferenceValueTag(op) ⇒
+                    case AReferenceValueTag(op) =>
                         val newOp = refine(op)
                         if (newOp.refineIf(refinements))
                             // RESTART REFINEMENT PROCESS!
                             return doPropagateRefinement(refinements, operands, locals);
                         newOp
-                    case op ⇒
+                    case op =>
                         op
                 },
                 // REGISTERS
                 locals mapConserve {
-                    case AReferenceValueTag(l) ⇒
+                    case AReferenceValueTag(l) =>
                         val newL = refine(l)
                         if (newL.refineIf(refinements))
                             // RESTART REFINEMENT PROCESS!
                             return doPropagateRefinement(refinements, operands, locals);
                         newL
-                    case l ⇒
+                    case l =>
                         l
                 }
             )
@@ -381,10 +383,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      *       standard sets - the UID trait is implemented.
      */
     trait SingleOriginReferenceValue
-        extends ReferenceValue
+        extends TheReferenceValue
         with SingleOriginValue
         with UID {
-        this: DomainSingleOriginReferenceValue ⇒
+        this: DomainSingleOriginReferenceValue =>
 
         final override def id: Int = origin
 
@@ -471,9 +473,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // Invariant:
             // At most one value represented by MultipleReferenceValues
             // has the same origin as this value.
-            other.values find { that ⇒ this.origin == that.origin } match {
-                case None ⇒ StructuralUpdate(other.addValue(this))
-                case Some(that) ⇒
+            other.values find { that => this.origin == that.origin } match {
+                case None => StructuralUpdate(other.addValue(this))
+                case Some(that) =>
                     if (this eq that) {
                         // <=> this value is part of the other "MultipleReferenceValues",
                         // however the MultipleReferenceValues (as a whole) may need
@@ -485,7 +487,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         // This value has the the same origin as a value found in
                         // MultipleReferenceValues.
                         val key = IdentityPair(this, that)
-                        val joinResult = joinedValues.computeIfAbsent(key, _ ⇒ this.join(pc, that))
+                        val joinResult = joinedValues.computeIfAbsent(key, _ => this.join(pc, that))
 
                         if (joinResult.isNoUpdate)
                             StructuralUpdate(other.rejoinValue(that, this, this))
@@ -511,8 +513,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             that:   DomainNullValue
         ): Update[DomainSingleOriginReferenceValue] = {
             this.isNull match {
-                case Yes | Unknown ⇒ NoUpdate
-                case No            ⇒ StructuralUpdate(this.update(isNull = Unknown))
+                case Yes | Unknown => NoUpdate
+                case No            => StructuralUpdate(this.update(isNull = Unknown))
             }
         }
 
@@ -524,19 +526,19 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(this ne other)
 
             other match {
-                case DomainSingleOriginReferenceValueTag(that) ⇒
+                case DomainSingleOriginReferenceValueTag(that) =>
                     if (this.origin == that.origin)
                         that match {
-                            case DomainNullValueTag(that) ⇒
+                            case DomainNullValueTag(that) =>
                                 doJoinWithNullValueWithSameOrigin(joinPC, that)
-                            case _ ⇒
+                            case _ =>
                                 doJoinWithNonNullValueWithSameOrigin(joinPC, that)
                         }
                     else {
                         val values = UIDSet2[DomainSingleOriginReferenceValue](this, that)
                         StructuralUpdate(MultipleReferenceValues(values))
                     }
-                case DomainMultipleReferenceValuesTag(that) ⇒
+                case DomainMultipleReferenceValuesTag(that) =>
                     doJoinWithMultipleReferenceValues(joinPC, that)
             }
         }
@@ -544,7 +546,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     protected class NullValue(
             override val origin: ValueOrigin
-    ) extends super.NullValue with SingleOriginReferenceValue { this: DomainNullValue ⇒
+    ) extends super.ANullValue with SingleOriginReferenceValue { this: DomainNullValue =>
 
         final def refId: RefId = domain.nullRefId
 
@@ -589,15 +591,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (other match {
-                case DomainReferenceValueTag(v) ⇒ v.isNull.isYes
-                case _                          ⇒ false
+                case DomainReferenceValueTag(v) => v.isNull.isYes
+                case _                          => false
             })
         }
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: NullValue ⇒ that.origin == this.origin && (that canEqual this)
-                case _               ⇒ false
+                case that: NullValue => that.origin == this.origin && (that canEqual this)
+                case _               => false
             }
         }
 
@@ -609,7 +611,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     trait NonNullSingleOriginReferenceValue extends SingleOriginReferenceValue {
-        this: DomainSingleOriginReferenceValue ⇒
+        this: DomainSingleOriginReferenceValue =>
 
         override def doRefineIsNull(isNull: Answer): DomainSingleOriginReferenceValue = {
             if (isNull.isYes) {
@@ -661,7 +663,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     trait NonNullSingleOriginSReferenceValue[T <: ReferenceType]
         extends NonNullSingleOriginReferenceValue {
-        this: DomainSingleOriginReferenceValue ⇒
+        this: DomainSingleOriginReferenceValue =>
 
         def theUpperTypeBound: T
 
@@ -682,9 +684,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     protected trait ArrayValue
-        extends super.ArrayValue
+        extends super.AnArrayValue
         with NonNullSingleOriginSReferenceValue[ArrayType] {
-        this: DomainArrayValue ⇒
+        this: DomainArrayValue =>
 
         assert(isNull.isNoOrUnknown)
         assert(isPrecise || !classHierarchy.isKnownToBeFinal(theUpperTypeBound))
@@ -732,14 +734,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ): targetDomain.DomainValue = {
             val adaptedValue = targetDomain match {
 
-                case thatDomain: l1.ReferenceValues ⇒
+                case thatDomain: l1.ReferenceValues =>
                     val thatT = thatDomain.nextRefId()
                     thatDomain.ArrayValue(targetOrigin, isNull, isPrecise, theUpperTypeBound, thatT)
 
-                case thatDomain: l0.DefaultTypeLevelReferenceValues ⇒
+                case thatDomain: l0.DefaultTypeLevelReferenceValues =>
                     thatDomain.ReferenceValue(targetOrigin, theUpperTypeBound)
 
-                case _ ⇒
+                case _ =>
                     super.adapt(targetDomain, targetOrigin)
             }
             adaptedValue.asInstanceOf[targetDomain.DomainValue]
@@ -749,7 +751,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: ArrayValue ⇒
+                case that: ArrayValue =>
                     (that eq this) ||
                         (
                             (that canEqual this) &&
@@ -758,7 +760,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             this.isNull == that.isNull &&
                             (this.upperTypeBound eq that.upperTypeBound)
                         )
-                case _ ⇒
+                case _ =>
                     false
             }
         }
@@ -774,15 +776,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     }
 
-    trait ObjectValue extends super.ObjectValue with NonNullSingleOriginReferenceValue {
-        this: DomainObjectValue ⇒
+    trait ObjectValue extends super.AnObjectValue with NonNullSingleOriginReferenceValue {
+        this: DomainObjectValue =>
     }
 
     protected trait SObjectValue
-        extends super.SObjectValue
+        extends super.SObjectValueLike
         with NonNullSingleOriginSReferenceValue[ObjectType]
         with ObjectValue {
-        this: DomainObjectValue ⇒
+        this: DomainObjectValue =>
 
         assert(this.isNull.isNoOrUnknown)
         assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || isPrecise)
@@ -825,7 +827,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 //        the overall type hierarchy)
                 // No => we add it as another type bound
                 if (supertype.isArrayType) {
-                    val message = s"incompatible refinement ${thisUTB.toJava} ⇒ ${supertype.toJava}"
+                    val message = s"incompatible refinement ${thisUTB.toJava} => ${supertype.toJava}"
                     throw ImpossibleRefinement(this, message)
                 }
 
@@ -839,47 +841,47 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (this eq other)
                 return true;
 
-            def checkPrecisionAndNullness(that: ReferenceValue): Boolean = {
+            def checkPrecisionAndNullness(that: TheReferenceValue): Boolean = {
                 (!this.isPrecise || that.isPrecise) &&
                     (this.isNull.isUnknown || that.isNull.isNo)
             }
 
             other match {
 
-                case that: SObjectValue ⇒
+                case that: SObjectValue =>
                     checkPrecisionAndNullness(that) &&
                         isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound)
 
-                case that: ArrayValue ⇒
+                case that: ArrayValue =>
                     checkPrecisionAndNullness(that) &&
                         isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound)
 
-                case that: MultipleReferenceValues ⇒
+                case that: MultipleReferenceValues =>
                     checkPrecisionAndNullness(that) &&
                         classHierarchy.isSubtypeOf(that.upperTypeBound, theUpperTypeBound)
 
-                case that: MObjectValue ⇒
+                case that: MObjectValue =>
                     val thisUTB = this.theUpperTypeBound
                     val thatUTB = that.upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]
                     checkPrecisionAndNullness(that) &&
                         classHierarchy.isSubtypeOf(thatUTB, thisUTB)
 
-                case _: NullValue ⇒ this.isNull.isUnknown
+                case _: NullValue => this.isNull.isUnknown
 
-                case _            ⇒ false
+                case _            => false
             }
         }
 
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val adaptedValue = target match {
-                case thatDomain: l1.ReferenceValues ⇒
+                case thatDomain: l1.ReferenceValues =>
                     val thatT = thatDomain.nextRefId()
                     thatDomain.ObjectValue(pc, isNull, isPrecise, theUpperTypeBound, thatT)
 
-                case thatDomain: l0.DefaultTypeLevelReferenceValues ⇒
+                case thatDomain: l0.DefaultTypeLevelReferenceValues =>
                     thatDomain.ReferenceValue(pc, theUpperTypeBound)
 
-                case _ ⇒
+                case _ =>
                     super.adapt(target, pc)
             }
             adaptedValue.asInstanceOf[target.DomainValue]
@@ -887,7 +889,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: SObjectValue ⇒
+                case that: SObjectValue =>
                     (that eq this) ||
                         (
                             (that canEqual this) &&
@@ -897,7 +899,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             (this.theUpperTypeBound eq that.theUpperTypeBound)
                         )
 
-                case _ ⇒ false
+                case _ => false
             }
         }
 
@@ -913,8 +915,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         override def toString: String = toString(theUpperTypeBound.toJava)
     }
 
-    protected trait MObjectValue extends super.MObjectValue with ObjectValue {
-        value: DomainObjectValue ⇒
+    protected trait MObjectValue extends super.MObjectValueLike with ObjectValue {
+        value: DomainObjectValue =>
 
         /**
          * If we have an incomplete type hierarchy it may happen that we ceate an
@@ -939,7 +941,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (supertype.isObjectType) {
                 val theSupertype = supertype.asObjectType
                 var newUTB: UIDSet[ObjectType] = UIDSet.empty
-                upperTypeBound foreach { (anUTB: ObjectType) ⇒
+                upperTypeBound foreach { (anUTB: ObjectType) =>
                     if (domain.isSubtypeOf(supertype, anUTB))
                         newUTB += theSupertype
                     else {
@@ -994,27 +996,27 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             target match {
-                case td: ReferenceValues ⇒
+                case td: ReferenceValues =>
                     td.ObjectValue(origin, isNull, this.upperTypeBound, td.nextRefId()).
                         asInstanceOf[target.DomainValue]
 
-                case td: l0.DefaultTypeLevelReferenceValues ⇒
+                case td: l0.DefaultTypeLevelReferenceValues =>
                     td.ObjectValue(origin, this.upperTypeBound).
                         asInstanceOf[target.DomainValue]
 
-                case _ ⇒ super.adapt(target, origin)
+                case _ => super.adapt(target, origin)
             }
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: MObjectValue ⇒
+                case that: MObjectValue =>
                     (this eq that) || (
                         this.origin == that.origin &&
                         this.isNull == that.isNull &&
                         (this canEqual that) &&
                         (this.upperTypeBound == that.upperTypeBound)
                     )
-                case _ ⇒ false
+                case _ => false
             }
         }
 
@@ -1054,11 +1056,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val upperTypeBound:     UIDSet[_ <: ReferenceType],
             override val refId:     RefId
     ) extends IsMultipleReferenceValue
-        with ReferenceValue
+        with TheReferenceValue
         with MultipleOriginsValue {
-        this: DomainMultipleReferenceValues ⇒
+        this: DomainMultipleReferenceValues =>
 
-        def this(values: UIDSet[DomainSingleOriginReferenceValue]) {
+        def this(values: UIDSet[DomainSingleOriginReferenceValue]) =
             this(
                 values,
                 values.idSet,
@@ -1067,7 +1069,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 domain.upperTypeBound(values),
                 nextRefId()
             )
-        }
 
         assert(values.size > 1, "a MultipleReferenceValue must have multiple values")
         assert(
@@ -1122,15 +1123,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // Please recall that the upperTypeBound contains exactly one value if the value
             // may be an ArrayValue. (There are no union types related to array values.)
             isNull match {
-                case Yes     ⇒ No
-                case Unknown ⇒ if (upperTypeBound.head.isArrayType) Unknown else No
-                case No      ⇒ if (upperTypeBound.head.isArrayType) Yes else No
+                case Yes     => No
+                case Unknown => if (upperTypeBound.head.isArrayType) Unknown else No
+                case No      => if (upperTypeBound.head.isArrayType) Yes else No
             }
         }
 
-        override def baseValues: Traversable[DomainSingleOriginReferenceValue] = values
+        override def baseValues: Iterable[DomainSingleOriginReferenceValue] = values
 
-        override def allValues: Traversable[DomainSingleOriginReferenceValue] = values
+        override def allValues: Iterable[DomainSingleOriginReferenceValue] = values
 
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 
@@ -1235,10 +1236,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          */
         override def summarize(pc: Int): DomainReferenceValue = {
             upperTypeBound /*<= basically creates the summary*/ match {
-                case EmptyUpperTypeBound ⇒ NullValue(pc)
-                case UIDSet1(referenceType) ⇒
+                case EmptyUpperTypeBound => NullValue(pc)
+                case UIDSet1(referenceType) =>
                     ReferenceValue(pc, isNull, isPrecise, referenceType, refId)
-                case utb ⇒
+                case utb =>
                     // We have an UpperTypeBound that has multiple types. Such bounds
                     // cannot contain array types.
                     ObjectValue(pc, isNull, utb.asInstanceOf[UIDSet[ObjectType]], refId)
@@ -1280,7 +1281,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // the origin of a value
             val thisValues = this.values
             var refinedValues = UIDSet.empty[DomainSingleOriginReferenceValue]
-            thisValues.foreach { value ⇒
+            thisValues.foreach { value =>
                 val refinedValue = refinements.get(value)
                 // INVARIANT: refinedValue ne value
                 if (refinedValue == null) {
@@ -1389,23 +1390,24 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ): (Operands, Locals) = {
 
             var newValue = value
+            val upperBoundGoal = upperTypeBoundGoal.asInstanceOf[UIDSet[ReferenceType]]
 
             if (isNullGoal.isYesOrNo && newValue.isNull != isNullGoal) {
                 newValue = newValue.doRefineIsNull(isNullGoal)
             }
 
             if (newValue.isNull.isNoOrUnknown) {
-                val newValueUTB = newValue.upperTypeBound
-                if (upperTypeBoundGoal != newValueUTB) {
+                val newValueUTB = newValue.upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]
+                if (upperBoundGoal != newValueUTB) {
                     // ALSO have to handle the case where upperTypeBoundGoal and
                     // newValueUTB are NOT in an inheritance relationship!
-                    val goalIsASubtype = classHierarchy.isASubtypeOf(upperTypeBoundGoal, newValueUTB)
+                    val goalIsASubtype = classHierarchy.isASubtypeOf(upperBoundGoal, newValueUTB)
                     if (goalIsASubtype.isYes)
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal)
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal)
                     else if (goalIsASubtype.isUnknown)
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal ++ newValueUTB)
-                    else if (!classHierarchy.isSubtypeOf(newValueUTB, upperTypeBoundGoal))
-                        newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal ++ newValueUTB)
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal ++ newValueUTB)
+                    else if (!classHierarchy.isSubtypeOf(newValueUTB, upperBoundGoal))
+                        newValue = newValue.doRefineUpperTypeBound(upperBoundGoal ++ newValueUTB)
                 }
             }
 
@@ -1433,7 +1435,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // Furthermore, the parameter isNull is either Yes or No and we are
             // going to filter those values that do not satisfy the constraint.
 
-            val newValues = values.filter(v ⇒ v.isNull == isNull || v.isNull.isUnknown)
+            val newValues = values.filter(v => v.isNull == isNull || v.isNull.isUnknown)
 
             if (newValues.isSingletonSet) {
                 refineToValue(newValues.head, isNull, this.upperTypeBound, operands, locals)
@@ -1485,11 +1487,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // given supertype.
             var filteredValuesOrigins = origins
             val filteredValues =
-                this.values filter { value ⇒
+                this.values filter { value =>
                     value.isNull.isYes || {
                         value.isValueASubtypeOf(supertype) match {
-                            case Yes | Unknown ⇒ true
-                            case No            ⇒ { filteredValuesOrigins -= value.id; false }
+                            case Yes | Unknown => true
+                            case No            => { filteredValuesOrigins -= value.id; false }
                         }
                     }
                 }
@@ -1571,10 +1573,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // a join of thisValue with thatValue
             val joinKey = IdentityPair(thisValue, thatValue)
             val joinResult =
-                joinedValues.computeIfAbsent(joinKey, _ ⇒ thisValue.join(joinPC, thatValue))
+                joinedValues.computeIfAbsent(joinKey, _ => thisValue.join(joinPC, thatValue))
 
             joinResult match {
-                case NoUpdate ⇒
+                case NoUpdate =>
                     var updateType: UpdateType = NoUpdateType
                     // though thisValue abstracts over the "joined" value
                     // we still have to check that this value (as a whole)
@@ -1612,8 +1614,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     } else
                         NoUpdate
 
-                case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(joinedValue)) ⇒
+                case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(joinedValue)) =>
                     update.updateValue(rejoinValue(thisValue, thatValue, joinedValue))
+
+                case MetaInformationUpdate(_) | StructuralUpdate(_) => throw new MatchError(joinResult)
             }
         }
 
@@ -1622,22 +1626,22 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             other match {
 
-                case DomainSingleOriginReferenceValueTag(thatValue) ⇒
+                case DomainSingleOriginReferenceValueTag(thatValue) =>
                     this.values.find(_.origin == thatValue.origin) match {
-                        case Some(thisValue) ⇒
+                        case Some(thisValue) =>
                             doRejoinSingleOriginReferenceValue(joinPC, thisValue, thatValue)
-                        case None ⇒
+                        case None =>
                             StructuralUpdate(this.addValue(thatValue))
                     }
 
-                case DomainMultipleReferenceValuesTag(that) ⇒
+                case DomainMultipleReferenceValuesTag(that) =>
                     var updateType: UpdateType = NoUpdateType
                     var otherValues = that.values
                     var newValues = UIDSet.empty[DomainSingleOriginReferenceValue]
                     var newOrigins = that.origins
-                    this.values foreach { thisValue ⇒
+                    this.values foreach { thisValue =>
                         otherValues.findById(thisValue.origin) match {
-                            case Some(otherValue) ⇒
+                            case Some(otherValue) =>
                                 otherValues -= otherValue
                                 if (thisValue eq otherValue) {
                                     newValues += thisValue
@@ -1645,18 +1649,19 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                     val joinResult =
                                         joinedValues.computeIfAbsent(
                                             new IdentityPair(thisValue, otherValue),
-                                            _ ⇒ thisValue.join(joinPC, otherValue)
+                                            _ => thisValue.join(joinPC, otherValue)
                                         )
 
                                     joinResult match {
-                                        case NoUpdate ⇒
+                                        case NoUpdate =>
                                             newValues += thisValue
-                                        case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(otherValue)) ⇒
+                                        case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(otherValue)) =>
                                             updateType = updateType &: update
                                             newValues += otherValue
+                                        case MetaInformationUpdate(_) | StructuralUpdate(_) => throw new MatchError(joinResult)
                                     }
                                 }
-                            case None ⇒
+                            case None =>
                                 newValues += thisValue
                                 newOrigins += thisValue.origin
                         }
@@ -1736,7 +1741,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 val value = TypedValue(pc, upperTypeBound.head.asArrayType.componentType)
                 ComputedValueOrException(value, thrownExceptions)
             } else {
-                values.map(_.load(pc, index)).reduce((c1, c2) ⇒ mergeDEsComputations(pc, c1, c2))
+                values.map(_.load(pc, index)).reduce((c1, c2) => mergeDEsComputations(pc, c1, c2))
             }
         }
 
@@ -1759,7 +1764,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 ComputationWithSideEffectOrException(thrownExceptions)
             } else {
                 (values map (_.store(pc, value, index))) reduce {
-                    (c1, c2) ⇒ mergeEsComputations(pc, c1, c2)
+                    (c1, c2) => mergeEsComputations(pc, c1, c2)
                 }
             }
         }
@@ -1778,7 +1783,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     ComputedValue(IntegerValue(pc))
             } else {
                 val computations = values map (_.length(pc))
-                computations reduce { (c1, c2) ⇒ mergeDEComputations(pc, c1, c2) }
+                computations reduce { (c1, c2) => mergeDEComputations(pc, c1, c2) }
             }
         }
 
@@ -1786,12 +1791,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: MultipleReferenceValues ⇒
+                case that: MultipleReferenceValues =>
                     this.isNull == that.isNull &&
                         this.isPrecise == that.isPrecise &&
                         this.upperTypeBound == that.upperTypeBound &&
                         that.values == this.values
-                case _ ⇒
+                case _ =>
                     false
             }
         }
@@ -1813,8 +1818,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     object MultipleReferenceValues {
         def unapply(value: DomainValue): Option[UIDSet[DomainSingleOriginReferenceValue]] = {
             value match {
-                case mrv: MultipleReferenceValues ⇒ Some(mrv.values)
-                case _                            ⇒ None
+                case mrv: MultipleReferenceValues => Some(mrv.values)
+                case _                            => None
             }
         }
     }
@@ -1896,9 +1901,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     abstract override def toJavaObject(pc: Int, value: DomainValue): Option[Object] = {
         value match {
             case sov: SObjectValue if sov.isPrecise && sov.isNull.isNo &&
-                (sov.upperTypeBound.head eq ObjectType.Object) ⇒
+                (sov.upperTypeBound.head eq ObjectType.Object) =>
                 Some(new Object)
-            case _ ⇒
+            case _ =>
                 super.toJavaObject(pc, value)
         }
     }
@@ -1962,8 +1967,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         refId:             RefId
     ): DomainSingleOriginReferenceValue = {
         theUpperTypeBound match {
-            case ot: ObjectType ⇒ ObjectValue(origin, isNull, isPrecise, ot, refId)
-            case at: ArrayType  ⇒ ArrayValue(origin, isNull, isPrecise, at, refId)
+            case ot: ObjectType => ObjectValue(origin, isNull, isPrecise, ot, refId)
+            case at: ArrayType  => ArrayValue(origin, isNull, isPrecise, at, refId)
         }
     }
 
@@ -1984,9 +1989,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         refId:          RefId
     ): DomainSingleOriginReferenceValue = {
         upperTypeBound match {
-            case UIDSet1(referenceType) ⇒
+            case UIDSet1(referenceType) =>
                 ReferenceValue(origin, isNull, isPrecise, referenceType, refId)
-            case _ ⇒
+            case _ =>
                 val utb = upperTypeBound.asInstanceOf[UIDSet[ObjectType]]
                 ObjectValue(origin, isNull, utb, refId)
         }
@@ -2062,10 +2067,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // is NOT YET SUPPORTED because THE INDIVIDUAL VALUES OF A MultipleReferenceValues
             // have to have unique origins.
 
-            case _: IsNullValue ⇒
+            case _: IsNullValue =>
                 NullValue(origin)
 
-            case v: IsReferenceValue ⇒
+            case v: IsReferenceValue =>
                 if (v.upperTypeBound.size > 1)
                     // handles MObjectValue
                     ObjectValue(origin, v.isNull, v.upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
@@ -2076,7 +2081,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 } else
                     ReferenceValue(origin, v.isNull, v.isPrecise, v.leastUpperType.get)
 
-            case vi ⇒ super.InitializedDomainValue(origin, vi)
+            case vi => super.InitializedDomainValue(origin, vi)
         }
     }
 

@@ -3,7 +3,6 @@ package org.opalj.hermes
 package queries
 
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -17,12 +16,12 @@ import org.opalj.hermes.queries.util.InstanceAPIMethod
  */
 class BytecodeInstrumentationAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override def apiFeatures: Chain[APIFeature] = {
+    override def apiFeatures: List[APIFeature] = {
         val Instrumentation = ObjectType("java/lang/instrument/Instrumentation")
 
-        Chain(
+        List(
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Instrumentation, "retransformClasses"),
                     InstanceAPIMethod(Instrumentation, "addTransformer"),
                     InstanceAPIMethod(Instrumentation, "isModifiableClass"),
@@ -33,21 +32,21 @@ class BytecodeInstrumentationAPIUsage(implicit hermes: HermesConfig) extends API
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Instrumentation, "setNativeMethodPrefix"),
                     InstanceAPIMethod(Instrumentation, "isNativeMethodPrefixSupported")
                 ), "instrumenting native methods"
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Instrumentation, "appendToBootstrapClassLoaderSearch"),
                     InstanceAPIMethod(Instrumentation, "appendToSystemClassLoaderSearch")
                 ), "appending class loader search"
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Instrumentation, "getAllLoadedClasses"),
                     InstanceAPIMethod(Instrumentation, "getInitiatedClasses"),
                     InstanceAPIMethod(Instrumentation, "getObjectSize")

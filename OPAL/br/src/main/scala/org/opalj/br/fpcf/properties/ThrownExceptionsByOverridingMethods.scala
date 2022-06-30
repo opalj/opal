@@ -9,7 +9,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
+import org.opalj.br.collection.{TypesSet => BRTypesSet}
 
 sealed trait ThrownExceptionsByOverridingMethodsPropertyMetaInformation
     extends PropertyMetaInformation {

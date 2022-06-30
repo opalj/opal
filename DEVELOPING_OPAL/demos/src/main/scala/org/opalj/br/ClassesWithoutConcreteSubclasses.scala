@@ -4,7 +4,11 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.{ProjectAnalysisApplication, BasicReport, Project}
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
+
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Lists all abstract classes and interfaces that have no concrete subclasses in
@@ -20,12 +24,12 @@ object ClassesWithoutConcreteSubclasses extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ) = {
         val classHierarchy = project.classHierarchy
         val abstractTypes =
             for {
-                classFile ← project.allClassFiles.par
+                classFile <- project.allClassFiles.par
                 if classFile.isAbstract
                 thisType = classFile.thisType
                 if classHierarchy.directSubtypesOf(thisType).isEmpty

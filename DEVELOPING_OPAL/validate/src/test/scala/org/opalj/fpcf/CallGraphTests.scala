@@ -60,8 +60,8 @@ class CallGraphTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(TypeProviderKey) {
-            case Some(_) ⇒ throw new IllegalArgumentException()
-            case None    ⇒ () ⇒ cgKey.getTypeProvider(p)
+            case Some(_) => throw new IllegalArgumentException()
+            case None    => () => cgKey.getTypeProvider(p)
         }
     }
 

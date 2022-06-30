@@ -37,7 +37,7 @@ package object bi {
             assert(false)
             info("OPAL Bytecode Infrastructure", "Production Build")
         } catch {
-            case _: AssertionError ⇒
+            case _: AssertionError =>
                 info("OPAL Bytecode Infrastructure", "Development Build with Assertions")
         }
     }
@@ -58,7 +58,7 @@ package object bi {
      * class file.
      */
     def jdkVersion(majorVersion: Int): String = {
-        // 61 == 17, 60 == 16, 59 == 15, 58 == 14, 57 == 13, 56 == 12, 55 == 11, 54 == 10, 53 == 9,
+        // 62 == 18, 61 == 17, 60 == 16, 59 == 15, 58 == 14, 57 == 13, 56 == 12, 55 == 11, 54 == 10, 53 == 9,
         // 52 == 8, 51 == 7, 50 == 6, 49 == 5.0, 48 == 1.4, 47 == 1.3, 46 == 1.2, 45 == 1.1/1.0.2
         if (majorVersion >= 49) {
             "Java "+(majorVersion - 44)
@@ -71,6 +71,7 @@ package object bi {
 
     // previous versions are not really relevant in the context of Java bytecode
     final val Java1MajorVersion = 45
+    final val Java1_2MajorVersion = 46
     final val Java5MajorVersion = 49
     final val Java5Version = UShortPair(0, Java5MajorVersion)
     final val Java6MajorVersion = 50
@@ -97,17 +98,19 @@ package object bi {
     final val Java16Version = UShortPair(0, Java16MajorVersion)
     final val Java17MajorVersion = 61
     final val Java17Version = UShortPair(0, Java17MajorVersion)
+    final val Java18MajorVersion = 62
+    final val Java18Version = UShortPair(0, Java18MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java17MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java18MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java17Version
+    final val LatestSupportedJavaVersion = Java18Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
@@ -133,8 +136,8 @@ package object bi {
         val versionString = System.getProperty("java.version")
         try {
             val isAtLeastSpecifiedJavaVersion = versionString.split('.') match {
-                case Array("1", "8", _*)     ⇒ x == 8
-                case Array(majorVersion, _*) ⇒ parseInt(majorVersion) >= x
+                case Array("1", "8", _*)     => x == 8
+                case Array(majorVersion, _*) => parseInt(majorVersion) >= x
             }
             if (isAtLeastSpecifiedJavaVersion) {
                 info("system configuration", s"current JRE is at least Java $x")
@@ -144,15 +147,15 @@ package object bi {
                 false // we were not able to detect/derive enough information!
             }
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 error("system configuration", s"could not interpret JRE version: $versionString", t)
                 false
         }
     }
 
     val MissingLibraryWarning: String = {
-        process(this.getClass.getResourceAsStream("MissingLibraryWarning.txt")) { in ⇒
-            Source.fromInputStream(in).getLines.mkString("\n")
+        process(this.getClass.getResourceAsStream("MissingLibraryWarning.txt")) { in =>
+            Source.fromInputStream(in).getLines().mkString("\n")
         }
     }
 

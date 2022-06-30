@@ -2,9 +2,8 @@
 package org.opalj
 package br
 
-import java.util.{Arrays ⇒ JArrays}
-
-import org.opalj.collection.immutable.RefArray
+import java.util.{Arrays => JArrays}
+import scala.collection.immutable.ArraySeq
 
 /**
  * A method's line number table.
@@ -25,7 +24,7 @@ import org.opalj.collection.immutable.RefArray
 case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumberTable {
 
     def lineNumbers: LineNumbers = {
-        val lineNumbersBuilder = RefArray.newBuilder[LineNumber]
+        val lineNumbersBuilder = ArraySeq.newBuilder[LineNumber]
         var e = 0
         val entries = rawLineNumbers.length / 4
         while (e < entries) {
@@ -68,7 +67,7 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
         val raw_pc_lns = rawLineNumbers.grouped(2).zipWithIndex.filter(_._2 % 2 == 1)
         val raw_lns = raw_pc_lns.map(_._1)
         val lns =
-            raw_lns map { bytes ⇒
+            raw_lns map { bytes =>
                 val hb = bytes(0); val lb = bytes(1); asUnsignedShort(hb, lb)
             }
         Some(lns.min)
@@ -76,9 +75,9 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: CompactLineNumberTable ⇒
+            case that: CompactLineNumberTable =>
                 JArrays.equals(this.rawLineNumbers, that.rawLineNumbers)
-            case _ ⇒
+            case _ =>
                 false
         }
     }

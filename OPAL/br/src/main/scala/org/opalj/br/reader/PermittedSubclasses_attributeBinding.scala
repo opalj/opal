@@ -3,7 +3,8 @@ package org.opalj.br.reader
 
 import org.opalj.bi.reader.PermittedSubclasses_attributeReader
 import org.opalj.br.PermittedSubclasses
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Implements the factory methods to create the `PermittedSubclasses` attribute (Java 17).
@@ -25,7 +26,7 @@ trait PermittedSubclasses_attributeBinding
         classes:              PermittedSubclassesArray
     ): PermittedSubclasses_attribute = {
         new PermittedSubclasses(
-            RefArray.mapFrom(classes) { p ⇒ cp(p).asObjectType(cp) }
+            ArraySeq.from(classes).map { p => cp(p).asObjectType(cp) }
         )
     }
 }

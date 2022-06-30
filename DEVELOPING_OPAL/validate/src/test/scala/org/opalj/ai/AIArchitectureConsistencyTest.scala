@@ -3,13 +3,12 @@ package org.opalj
 package ai
 
 import org.junit.runner.RunWith
-
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.av.checking.Specification
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Tests that the implemented architecture of the abstract interpretation
@@ -26,76 +25,76 @@ class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
     it should "be consistent with the specified architecture" in {
         val expected =
             new Specification(
-                Specification.ProjectDirectory("OPAL/ai/target/scala-2.12/classes"),
+                Specification.ProjectDirectory(s"OPAL/ai/target/scala-$ScalaMajorVersion/classes"),
                 useAnsiColors = true
             ) {
 
-                ensemble('Util) { "org.opalj.ai.util.*" }
+                ensemble(Symbol("Util")) { "org.opalj.ai.util.*" }
 
-                ensemble('AI) {
+                ensemble(Symbol("AI")) {
                     "org.opalj.ai.*" except classes("""org\.opalj\.ai\..+Test.*""".r)
                 }
-                ensemble('Issues) {
+                ensemble(Symbol("Issues")) {
                     "org.opalj.issues.*" except
                         classes("""org\.opalj\.issues\..+Test.*""".r)
                 }
-                ensemble('Common) {
+                ensemble(Symbol("Common")) {
                     "org.opalj.ai.common.*" except
                         classes("""org\.opalj\.ai\.common\..+Test.*""".r)
                 }
-                ensemble('Domain) {
+                ensemble(Symbol("Domain")) {
                     "org.opalj.ai.domain.*" except
                         classes("""org\.opalj\.ai\.domain\..+Test.*""".r)
                 }
-                ensemble('DomainL0) {
+                ensemble(Symbol("DomainL0")) {
                     "org.opalj.ai.domain.l0.*" except
                         classes("""org\.opalj\.ai\.domain\.l0\..+Test.*""".r)
                 }
-                ensemble('DomainL1) {
+                ensemble(Symbol("DomainL1")) {
                     "org.opalj.ai.domain.l1.*" except
                         classes("""org\.opalj\.ai\.domain\.l1\..+Test.*""".r)
                 }
-                ensemble('DomainL2) {
+                ensemble(Symbol("DomainL2")) {
                     "org.opalj.ai.domain.l2.*" except
                         classes("""org\.opalj\.ai\.domain\.l2\..+Test.*""".r)
                 }
-                ensemble('DomainTracing) {
+                ensemble(Symbol("DomainTracing")) {
                     "org.opalj.ai.domain.tracing.*" except
                         classes("""org\.opalj\.ai\.domain\.tracing\..+Test.*""".r)
                 }
 
-                ensemble('Project) {
+                ensemble(Symbol("Project")) {
                     "org.opalj.ai.project.*" except
                         classes("""org\.opalj\.ai\.project\..+Test.*""".r)
                 }
 
-                ensemble('DomainLA) {
+                ensemble(Symbol("DomainLA")) {
                     "org.opalj.ai.domain.la.*" except
                         classes("""org\.opalj\.ai\.domain\.la\..+Test.*""".r)
                 }
-                ensemble('Analyses) { "org.opalj.fpcf.analyses.**" }
+                ensemble(Symbol("Analyses")) { "org.opalj.fpcf.analyses.**" }
 
-                'Util is_only_allowed_to (USE, empty)
+                Symbol("Util") is_only_allowed_to (USE, empty)
 
-                'AI is_only_allowed_to (USE, 'Util)
+                Symbol("AI") is_only_allowed_to (USE, Symbol("Util"))
 
-                'Issues is_only_allowed_to (USE, 'AI)
+                Symbol("Issues") is_only_allowed_to (USE, Symbol("AI"))
 
-                'Domain is_only_allowed_to (USE, 'Util, 'AI)
+                Symbol("Domain") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"))
 
-                'DomainL0 is_only_allowed_to (USE, 'Util, 'AI, 'Domain)
-                'DomainL1 is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0)
-                'DomainL2 is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1)
+                Symbol("DomainL0") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
+                Symbol("DomainL1") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"))
+                Symbol("DomainL2") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"))
 
-                'DomainTracing is_only_allowed_to (USE, 'Util, 'AI, 'Domain)
+                Symbol("DomainTracing") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
 
-                'Project is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2)
+                Symbol("Project") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"), Symbol("DomainL2"))
 
                 // we have a cyclic dependency between code in ..ai.domain.la and
                 // ai.analyses.** which is "intended" since we do fix-point
                 // computations
-                'DomainLA is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'Analyses)
-                'Analyses is_only_allowed_to (USE, 'Util, 'AI, 'Common, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLA, 'Project)
+                Symbol("DomainLA") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"), Symbol("DomainL2"), Symbol("Analyses"))
+                Symbol("Analyses") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Common"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"), Symbol("DomainL2"), Symbol("DomainLA"), Symbol("Project"))
 
                 // 'Common is allowed to use everything
             }

@@ -6,7 +6,9 @@ package reader
 import org.opalj.bi.reader.TypeAnnotationsReader
 import org.opalj.bi.reader.TypeAnnotationTargetReader
 import org.opalj.bi.reader.TypeAnnotationPathReader
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Factory methods to create representations of Java type annotations.
@@ -21,14 +23,17 @@ trait TypeAnnotationsBinding
     with AttributeBinding {
 
     type TypeAnnotation = br.TypeAnnotation
+    override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[br.TypeAnnotation])
 
     type TypeAnnotationTarget = br.TypeAnnotationTarget
 
     type TypeAnnotationPath = br.TypeAnnotationPath
 
     type TypeAnnotationPathElement = br.TypeAnnotationPathElement
+    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = ClassTag(classOf[br.TypeAnnotationPathElement])
 
     type LocalvarTableEntry = br.LocalvarTableEntry
+    override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[br.LocalvarTableEntry])
 
     //
     // TypeAnnotation
@@ -197,7 +202,7 @@ trait TypeAnnotationsBinding
         TADirectlyOnType
 
     override def TypeAnnotationPath(
-        path: RefArray[TypeAnnotationPathElement]
+        path: ArraySeq[TypeAnnotationPathElement]
     ): TAOnNestedType = {
         TAOnNestedType(path)
     }

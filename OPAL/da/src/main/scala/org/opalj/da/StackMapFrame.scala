@@ -37,10 +37,10 @@ sealed abstract class StackMapFrame {
             if (verification_type_infos.isEmpty) {
                 List(<i>&lt;Empty&gt;</i>)
             } else {
-                val vtis = verification_type_infos.map(l ⇒ l.toXHTML)
+                val vtis = verification_type_infos.map(l => l.toXHTML)
                 val vtisIt = vtis.iterator
                 val head = vtisIt.next()
-                vtisIt.foldLeft(List(head)) { (r, n) ⇒ r ++ List(Text(", "), n) }
+                vtisIt.foldLeft(List(head)) { (r, n) => r ++ List(Text(", "), n) }
             }
         )
     }
@@ -193,7 +193,7 @@ case class AppendFrame(
 
     final override def attribute_length: Int = {
         val initial = 1 + 2
-        verification_type_info_locals.foldLeft(initial)((c, n) ⇒ c + n.attribute_length)
+        verification_type_info_locals.foldLeft(initial)((c, n) => c + n.attribute_length)
     }
 
     override def toXHTML(

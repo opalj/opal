@@ -3,8 +3,8 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.mutable.OpenHashMap
-import org.opalj.collection.immutable.ConstArray
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -17,14 +17,14 @@ import org.opalj.collection.immutable.ConstArray
  * @author Florian Kuebler
  */
 class VirtualFormalParameters private[analyses] (
-        val data: scala.collection.Map[DeclaredMethod, ConstArray[VirtualFormalParameter]]
+        val data: scala.collection.Map[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
 ) {
     /**
      * Returns the virtual formal parameters array for the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)
-     * [[org.opalj.collection.immutable.ConstArray]] is returned.
+     * [[scala.collection.immutable.ArraySeq]] is returned.
      */
-    def apply(m: DeclaredMethod): ConstArray[VirtualFormalParameter] = data.getOrElse(m, null)
+    def apply(m: DeclaredMethod): ArraySeq[VirtualFormalParameter] = data.getOrElse(m, null)
 
     def virtualFormalParameters: Iterable[VirtualFormalParameter] = {
         // todo Why should it ever be null?
@@ -56,10 +56,10 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      */
     override def compute(p: SomeProject): VirtualFormalParameters = {
 
-        val sites = new OpenHashMap[DeclaredMethod, ConstArray[VirtualFormalParameter]]
+        val sites = mutable.HashMap.empty[DeclaredMethod, ArraySeq[VirtualFormalParameter]]
 
         for {
-            dm ← p.get(DeclaredMethodsKey).declaredMethods
+            dm <- p.get(DeclaredMethodsKey).declaredMethods
             if (dm.hasSingleDefinedMethod)
         } {
             val md = dm.descriptor
@@ -73,7 +73,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
                 formalParameters(p) = new VirtualFormalParameter(dm, -p - 1)
                 p += 1
             }
-            sites += (dm → ConstArray(formalParameters))
+            sites += (dm -> ArraySeq.unsafeWrapArray(formalParameters))
         }
 
         new VirtualFormalParameters(sites)
@@ -84,8 +84,8 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
     // PROPERTYSTORE AND TO ENSURE THAT VIRTUAL FORMAL PARAMETERS AND THE PROPERTYSTORE CONTAIN THE SAME
     // OBJECTS!
     //
-    final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], VirtualFormalParameters) = {
-        (p: SomeProject) ⇒
+    final val entityDerivationFunction: (SomeProject) => (Iterable[AnyRef], VirtualFormalParameters) = {
+        (p: SomeProject) =>
             {
                 // this will collect the formal parameters of the project if not yet collected...
                 val formalParameters = p.get(VirtualFormalParametersKey)

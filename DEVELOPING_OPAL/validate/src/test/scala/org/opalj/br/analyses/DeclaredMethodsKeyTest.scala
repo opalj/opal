@@ -5,8 +5,6 @@ package analyses
 
 import java.io.File
 import java.net.URL
-
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funspec.AnyFunSpec
@@ -34,7 +32,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
         val fixtureClassFiles = ClassFiles(fixtureFiles)
         if (fixtureClassFiles.isEmpty) fail(s"no class files at $fixtureFiles")
 
-        val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
+        val projectClassFiles = fixtureClassFiles.filter { cfSrc =>
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/br/analyses/fixtures/declared_methods")
         }
@@ -54,19 +52,19 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
 
     var annotated: Set[DeclaredMethod] = Set.empty
 
-    for (cf ← FixtureProject.allProjectClassFiles) {
+    for (cf <- FixtureProject.allProjectClassFiles) {
         val classType = cf.thisType
         it(classType.simpleName) {
             val annotations = cf.runtimeInvisibleAnnotations
             if (annotations.nonEmpty)
                 for {
-                    annotation ← annotations
+                    annotation <- annotations
                     annotationType = annotation.annotationType
                 } {
                     if (annotationType == singleAnnotationType)
                         checkDeclaredMethod(classType, annotation)
                     else if (annotationType == multiAnnotationType) {
-                        for (value ← getValue(annotation, "value").asArrayValue.values) {
+                        for (value <- getValue(annotation, "value").asArrayValue.values) {
                             val annotation = value.asAnnotationValue.annotation
                             checkDeclaredMethod(classType, annotation)
                         }
@@ -79,7 +77,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
     // there may not be any additional defined method. There may be VirtualDeclaredMethods for
     // predefined methods from the JDK, though.
     it("should not create excess declared methods") {
-        val excessMethods = declaredMethods.filter(m ⇒ m.hasSingleDefinedMethod && !annotated.contains(m))
+        val excessMethods = declaredMethods.filter(m => m.hasSingleDefinedMethod && !annotated.contains(m))
         if (excessMethods.nonEmpty)
             fail(
                 "found unexpected methods: \n\t"+excessMethods.mkString("\n\t")
@@ -91,7 +89,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
         val descriptor = MethodDescriptor(getValue(annotation, "descriptor").asStringValue.value)
         val declaringClasses = getValue(annotation, "declaringClass").asArrayValue.values
 
-        val methodOs = declaringClasses map { declClass ⇒
+        val methodOs = declaringClasses map { declClass =>
             val declClassType = declClass.asClassValue.value.asObjectType
             (declClassType, FixtureProject.classFile(declClassType).get.findMethod(name, descriptor))
         }
@@ -113,7 +111,7 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
             actual.hasSingleDefinedMethod && (actual.definedMethod eq methodOs.head._2.get)
         } else {
             actual.hasMultipleDefinedMethods &&
-                ConstArray(methodOs.map(_._2.get): _*) == actual.definedMethods
+                methodOs.map(_._2.get) == actual.definedMethods
 
         }
 
@@ -126,6 +124,6 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
     }
 
     def getValue(a: Annotation, name: String): ElementValue = {
-        a.elementValuePairs.collectFirst { case ElementValuePair(`name`, value) ⇒ value }.get
+        a.elementValuePairs.collectFirst { case ElementValuePair(`name`, value) => value }.get
     }
 }

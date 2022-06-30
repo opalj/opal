@@ -21,7 +21,7 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain =>
 
     /**
      * (Indirectly) called by OPAL for a new value-based constraint.

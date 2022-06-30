@@ -23,7 +23,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 object PropertyStoreKey
-    extends ProjectInformationKey[PropertyStore, (List[PropertyStoreContext[AnyRef]]) ⇒ PropertyStore] {
+    extends ProjectInformationKey[PropertyStore, (List[PropertyStoreContext[AnyRef]]) => PropertyStore] {
 
     final val configKey = "org.opalj.fpcf.PropertyStore.Default"
 
@@ -54,19 +54,19 @@ object PropertyStoreKey
             PropertyStoreContext(classOf[Config], project.config)
         )
         project.getProjectInformationKeyInitializationData(this) match {
-            case Some(psFactory) ⇒
+            case Some(psFactory) =>
                 OPALLogger.info(
                     "analysis configuration",
                     s"the PropertyStore is initialized using: $psFactory"
                 )
                 psFactory(context)
-            case None ⇒
+            case None =>
                 val ps = project.config.as[Option[String]](configKey) match {
-                    case Some("Sequential") ⇒
+                    case Some("Sequential") =>
                         org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                    case Some("Parallel") | None ⇒
+                    case Some("Parallel") | None =>
                         org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                    case Some(unknown) ⇒
+                    case Some(unknown) =>
                         OPALLogger.error(
                             "analysis configuration",
                             s"unknown PropertyStore $unknown configured,"+

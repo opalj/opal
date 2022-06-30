@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that stores the top-most stack value in a local variable.
  *
@@ -31,13 +29,13 @@ abstract class StoreLocalVariableInstruction extends Instruction with NoLabels {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def readsLocal: Boolean = false
 
@@ -65,15 +63,15 @@ object StoreLocalVariableInstruction {
      */
     def apply(fieldType: FieldType, lvIndex: Int): StoreLocalVariableInstruction =
         (fieldType.id: @scala.annotation.switch) match {
-            case IntegerType.id ⇒ ISTORE.canonicalRepresentation(lvIndex)
-            case ByteType.id    ⇒ ISTORE.canonicalRepresentation(lvIndex)
-            case ShortType.id   ⇒ ISTORE.canonicalRepresentation(lvIndex)
-            case CharType.id    ⇒ ISTORE.canonicalRepresentation(lvIndex)
-            case BooleanType.id ⇒ ISTORE.canonicalRepresentation(lvIndex)
-            case LongType.id    ⇒ LSTORE.canonicalRepresentation(lvIndex)
-            case FloatType.id   ⇒ FSTORE.canonicalRepresentation(lvIndex)
-            case DoubleType.id  ⇒ DSTORE.canonicalRepresentation(lvIndex)
-            case _              ⇒ ASTORE.canonicalRepresentation(lvIndex)
+            case IntegerType.id => ISTORE.canonicalRepresentation(lvIndex)
+            case ByteType.id    => ISTORE.canonicalRepresentation(lvIndex)
+            case ShortType.id   => ISTORE.canonicalRepresentation(lvIndex)
+            case CharType.id    => ISTORE.canonicalRepresentation(lvIndex)
+            case BooleanType.id => ISTORE.canonicalRepresentation(lvIndex)
+            case LongType.id    => LSTORE.canonicalRepresentation(lvIndex)
+            case FloatType.id   => FSTORE.canonicalRepresentation(lvIndex)
+            case DoubleType.id  => DSTORE.canonicalRepresentation(lvIndex)
+            case _              => ASTORE.canonicalRepresentation(lvIndex)
         }
 
     /**
@@ -82,12 +80,12 @@ object StoreLocalVariableInstruction {
      */
     def apply(computationalType: ComputationalType, lvIndex: Int): StoreLocalVariableInstruction = {
         computationalType match {
-            case ComputationalTypeInt           ⇒ ISTORE.canonicalRepresentation(lvIndex)
-            case ComputationalTypeFloat         ⇒ FSTORE.canonicalRepresentation(lvIndex)
-            case ComputationalTypeLong          ⇒ LSTORE.canonicalRepresentation(lvIndex)
-            case ComputationalTypeDouble        ⇒ DSTORE.canonicalRepresentation(lvIndex)
-            case ComputationalTypeReference     ⇒ ASTORE.canonicalRepresentation(lvIndex)
-            case ComputationalTypeReturnAddress ⇒ ASTORE.canonicalRepresentation(lvIndex)
+            case ComputationalTypeInt           => ISTORE.canonicalRepresentation(lvIndex)
+            case ComputationalTypeFloat         => FSTORE.canonicalRepresentation(lvIndex)
+            case ComputationalTypeLong          => LSTORE.canonicalRepresentation(lvIndex)
+            case ComputationalTypeDouble        => DSTORE.canonicalRepresentation(lvIndex)
+            case ComputationalTypeReference     => ASTORE.canonicalRepresentation(lvIndex)
+            case ComputationalTypeReturnAddress => ASTORE.canonicalRepresentation(lvIndex)
         }
     }
 

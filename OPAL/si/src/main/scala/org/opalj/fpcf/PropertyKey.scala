@@ -37,7 +37,7 @@ object PropertyKey {
      *       This fact is also used to distinguish these two property kinds.
      */
     private[this] val fallbackPropertyComputations = {
-        new Array[(PropertyStore, FallbackReason, Entity) ⇒ Property](SupportedPropertyKinds)
+        new Array[(PropertyStore, FallbackReason, Entity) => Property](SupportedPropertyKinds)
     }
 
     private[this] val lastKeyId = new AtomicInteger(-1)
@@ -90,7 +90,7 @@ object PropertyKey {
         setKeyName(thisKeyId, name)
 
         fallbackPropertyComputations(thisKeyId) =
-            fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) ⇒ Property]
+            fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) => Property]
 
         val pk = new PropertyKey(thisKeyId)
         propertyKeys(thisKeyId) = pk
@@ -106,7 +106,7 @@ object PropertyKey {
         name:             String,
         fallbackProperty: P
     ): PropertyKey[P] = {
-        val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty
+        val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) => fallbackProperty
         create(name, fpc)
     }
 

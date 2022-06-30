@@ -4,9 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''inner classes'' attribute.
@@ -18,7 +19,8 @@ trait InnerClasses_attributeReader extends AttributeReader {
     //
 
     type InnerClassesEntry <: AnyRef
-    type InnerClasses = RefArray[InnerClassesEntry]
+    implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] // TODO: Replace in Scala 3 by `type InnerClassesEntry : ClassTag`
+    type InnerClasses = ArraySeq[InnerClassesEntry]
 
     type InnerClasses_attribute >: Null <: Attribute
 
@@ -63,7 +65,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val number_of_classes = in.readUnsignedShort
         if (number_of_classes > 0 || reifyEmptyAttributes) {
@@ -72,7 +74,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(number_of_classes) {
+                fillArraySeq(number_of_classes) {
                     InnerClassesEntry(
                         cp,
                         in.readUnsignedShort, in.readUnsignedShort,
@@ -85,5 +87,5 @@ trait InnerClasses_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(InnerClassesAttribute.Name → parserFactory())
+    registerAttributeReader(InnerClassesAttribute.Name -> parserFactory())
 }

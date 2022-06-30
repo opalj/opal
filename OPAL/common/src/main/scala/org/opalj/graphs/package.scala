@@ -2,15 +2,11 @@
 package org.opalj
 
 import scala.reflect.ClassTag
-
-import scala.collection.mutable.ArrayStack
-
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.mutable.RefArrayStack
-import org.opalj.collection.mutable.RefArrayBuffer
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
+
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -50,7 +46,7 @@ package object graphs {
      * @return an adjacency matrix describing the given graph encoded using CSV. The returned
      *         byte array an be directly saved and represents a valid CSV file.
      */
-    def toAdjacencyMatrix(maxNodeId: Int, successors: Int ⇒ Set[Int]): Array[Byte] = {
+    def toAdjacencyMatrix(maxNodeId: Int, successors: Int => Set[Int]): Array[Byte] = {
         val columns = (maxNodeId + 1) * 2
         /* <=> nodes + (',' OR '\n') */
         val rows = maxNodeId + 1
@@ -78,11 +74,11 @@ package object graphs {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        rootNodes: Traversable[_ <: Node],
-        dir:       String                 = "forward",
-        ranksep:   String                 = "0.8",
-        fontname:  String                 = "Helvetica",
-        rankdir:   String                 = "TB"
+        rootNodes: Iterable[_ <: Node],
+        dir:       String              = "forward",
+        ranksep:   String              = "0.8",
+        fontname:  String              = "Helvetica",
+        rankdir:   String              = "TB"
     ): String = {
         var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
@@ -102,15 +98,15 @@ package object graphs {
             if (nextNode.toHRR.isDefined) {
                 var visualProperties = nextNode.visualProperties
                 visualProperties += (
-                    "label" → nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
+                    "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
                 )
                 s +=
                     "\t"+nextNode.nodeId +
-                    visualProperties.map(e ⇒ "\""+e._1+"\"=\""+e._2+"\"").
+                    visualProperties.map(e => "\""+e._1+"\"=\""+e._2+"\"").
                     mkString("[", ",", "];\n")
             }
 
-            val f: (Node ⇒ Unit) = sn ⇒ {
+            val f: (Node => Unit) = sn => {
                 if (nextNode.toHRR.isDefined)
                     s += "\t"+nextNode.nodeId+" -> "+sn.nodeId+" [dir="+dir+"];\n"
 
@@ -131,7 +127,7 @@ package object graphs {
      * The first call, which will initialize the JavaScript engine, will take some time.
      * Afterwards, the tranformation is much faster.
      */
-    final lazy val dotToSVG: String ⇒ String = {
+    final lazy val dotToSVG: String => String = {
         import javax.script.Invocable
         import javax.script.ScriptEngine
         import javax.script.ScriptEngineManager
@@ -161,7 +157,7 @@ package object graphs {
             "finished initialization of JavaScript engine for rendering dot graphics"
         )(GlobalLogContext)
 
-        (dot: String) ⇒ invocable.invokeFunction("Viz", dot).toString
+        (dot: String) => invocable.invokeFunction("Viz", dot).toString
     }
 
     // ---------------------------------------------------------------------------------------
@@ -171,7 +167,7 @@ package object graphs {
     // ---------------------------------------------------------------------------------------
 
     final def closedSCCs[N >: Null <: AnyRef: ClassTag](g: Graph[N]): List[Iterable[N]] = {
-        closedSCCs(g.vertices, g.asTraversable)
+        closedSCCs(g.vertices, g.asIterable)
     }
 
     /**
@@ -193,8 +189,8 @@ package object graphs {
      *         of the graph.
      */
     def closedSCCs[N >: Null <: AnyRef: ClassTag](
-        ns: Traversable[N],
-        es: N ⇒ Traversable[N] // TODO Improve(?) N => Iterator[N]
+        ns: Iterable[N],
+        es: N => Iterable[N] // TODO Improve(?) N => Iterator[N]
     ): List[Iterable[N]] = {
 
         val nDFSNums = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[N]()
@@ -206,8 +202,8 @@ package object graphs {
         val ProcessedNodeNum: Int = -1
         val PathSegmentSeparator: Null = null
 
-        val workstack = new RefArrayStack[N](8) //mutable.ArrayStack.empty[N]
-        val path = RefArrayBuffer.withInitialSize[N](16)
+        val workstack = new mutable.Stack[N](initialSize = 8)
+        val path = new ArrayBuffer[N](initialSize = 16)
 
         var cSCCs = List.empty[Iterable[N]]
 
@@ -217,14 +213,14 @@ package object graphs {
 
             var initialDFSNum: Int = nextDFSNum
 
-            path._UNSAFE_resetSize()
+            path.clear()
 
-            workstack.resetSize()
+            workstack.clear()
             workstack.push(initialN)
 
             def markPathAsProcessed(): Unit = {
-                path.foreach(n ⇒ setDFSNum(n, ProcessedNodeNum))
-                path._UNSAFE_resetSize()
+                path.foreach(n => setDFSNum(n, ProcessedNodeNum))
+                path.clear()
             }
             def addToPath(n: N): Unit = {
                 if (path.isEmpty) {
@@ -254,8 +250,8 @@ package object graphs {
                         if (nDFSNum != cSCCDFSNum) {
                             // This is the trivial case... obviously the end of the path is a
                             // closed SCC.
-                            // ALTERNATIVE: val cSCC = path.dropWhile(n ⇒ dfsNum(n) != cSCCDFSNum)
-                            val cSCC = path.slice(from = cSCCDFSNum - initialDFSNum)
+                            // ALTERNATIVE: val cSCC = path.dropWhile(n => dfsNum(n) != cSCCDFSNum)
+                            val cSCC = path.drop(cSCCDFSNum - initialDFSNum)
                             cSCCs ::= cSCC
                             markPathAsProcessed()
                         } else {
@@ -264,13 +260,13 @@ package object graphs {
                             // ALTERNATIVE CHECK:
                             //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
-                                path.iterator(from = cSCCDFSNum - initialDFSNum).forall(n ⇒
+                                path.iterator.drop(cSCCDFSNum - initialDFSNum).forall(n =>
                                     // ... for all cSCCandidates
-                                    es(n).forall(succN ⇒
+                                    es(n).forall(succN =>
                                         hasDFSNum(succN) &&
                                             dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications
                                     ))) {
-                                cSCCs ::= path.slice(from = cSCCDFSNum - initialDFSNum)
+                                cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
                         }
@@ -306,7 +302,7 @@ package object graphs {
                     if (succNs.nonEmpty) {
                         workstack.push(n)
                         workstack.push(PathSegmentSeparator: N)
-                        workstack ++= succNs
+                        workstack prependAll succNs
                     } else {
                         // We have a path which leads to a node with no outgoing edge;
                         // hence, all nodes on the path cannot be part of a cSCC.
@@ -317,7 +313,7 @@ package object graphs {
             assert(path.isEmpty)
         }
 
-        ns.foreach(n ⇒ if (!hasDFSNum(n)) dfs(n))
+        ns.foreach(n => if (!hasDFSNum(n)) dfs(n))
         cSCCs
     }
 
@@ -326,14 +322,14 @@ package object graphs {
 
     final def closedSCCs[N >: Null <: AnyRef](
         ns: Traversable[N],
-        es: N ⇒ Traversable[N]
+        es: N => Traversable[N]
     ): List[Iterable[N]] = {
 
         case class NInfo(dfsNum: Int, var cSCCId: Int = Undetermined) {
             override def toString: String = {
                 val cSCCId = this.cSCCId match {
-                    case Undetermined ⇒ "Undetermined"
-                    case id           ⇒ id.toString
+                    case Undetermined => "Undetermined"
+                    case id           => id.toString
                 }
                 s"(dfsNum=$dfsNum,cSCCId=$cSCCId)"
             }
@@ -344,27 +340,27 @@ package object graphs {
         def setDFSNum(n: N, dfsNum: Int): Unit = {
             nodeInfo.put(n, NInfo(dfsNum))
         }
-        val hasDFSNum: (N) ⇒ Boolean = (n: N) ⇒ nodeInfo.get(n).isDefined
-        val dfsNum: (N) ⇒ Int = (n: N) ⇒ nodeInfo(n).dfsNum
-        val setCSCCId: (N, Int) ⇒ Unit = (n: N, cSCCId: Int) ⇒ nodeInfo(n).cSCCId = cSCCId
-        val cSCCId: (N) ⇒ Int = (n: N) ⇒ nodeInfo(n).cSCCId
+        val hasDFSNum: (N) => Boolean = (n: N) => nodeInfo.get(n).isDefined
+        val dfsNum: (N) => Int = (n: N) => nodeInfo(n).dfsNum
+        val setCSCCId: (N, Int) => Unit = (n: N, cSCCId: Int) => nodeInfo(n).cSCCId = cSCCId
+        val cSCCId: (N) => Int = (n: N) => nodeInfo(n).cSCCId
 
         closedSCCs(ns, es, setDFSNum, hasDFSNum, dfsNum, setCSCCId, cSCCId)
     }
 
     def closedSCCs[N >: Null <: AnyRef](
         ns:        Traversable[N],
-        es:        N ⇒ Traversable[N],
-        setDFSNum: (N, Int) ⇒ Unit,
-        hasDFSNum: (N) ⇒ Boolean,
-        dfsNum:    (N) ⇒ Int,
-        setCSCCId: (N, Int) ⇒ Unit,
-        cSCCId:    (N) ⇒ Int
+        es:        N => Traversable[N],
+        setDFSNum: (N, Int) => Unit,
+        hasDFSNum: (N) => Boolean,
+        dfsNum:    (N) => Int,
+        setCSCCId: (N, Int) => Unit,
+        cSCCId:    (N) => Int
     ): List[Iterable[N]] = {
         /* The following is not a strict requirement, more an expectation (however, (c)sccs
          * not reachable from a node in ns will not be detected!
         assert(
-            { val allNodes = ns.toSet; allNodes.forall { n ⇒ es(n).forall(allNodes.contains) } },
+            { val allNodes = ns.toSet; allNodes.forall { n => es(n).forall(allNodes.contains) } },
             "the graph references nodes which are not in the set of all nodes"
         )
         */
@@ -424,7 +420,7 @@ package object graphs {
             // PROCESSING
             while (worklist.nonEmpty) {
                 // println(
-                //  s"next iteration { path=${path.map(n ⇒ dfsNum(n)+":"+n).mkString(",")}; "+
+                //  s"next iteration { path=${path.map(n => dfsNum(n)+":"+n).mkString(",")}; "+
                 //  s"thisParthFirstDFSNum=$thisPathFirstDFSNum; "+
                 //  s"nextDFSNum=$nextDFSNum; nextCSCCId=$nextCSCCId }")
 
@@ -437,17 +433,17 @@ package object graphs {
                         val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
                         val nCSCCId = cSCCId(n)
                         nCSCCId match {
-                            case Undetermined ⇒
+                            case Undetermined =>
                                 killPath()
                             case nCSCCId if nCSCCId == cSCCId(path.last) &&
                                 (
                                     thisPathNDFSNum == 0 /*all elements on the path define a cSCC*/ ||
                                     nCSCCId != cSCCId(path(thisPathNDFSNum - 1))
-                                ) ⇒
+                                ) =>
                                 reportPath(path.takeRight(pathLength - thisPathNDFSNum))
                                 killPath()
 
-                            case someCSCCId ⇒
+                            case someCSCCId =>
                                 /*nothing to do*/
                                 assert(
                                     // nDFSNum == 0 ???
@@ -475,20 +471,20 @@ package object graphs {
                             // this cycle may become a cSCC
                             val nCSCCId = cSCCId(n)
                             nCSCCId match {
-                                case Undetermined ⇒
+                                case Undetermined =>
                                     // we have a new cycle
                                     val nCSCCId = nextCSCCId
                                     nextCSCCId += 1
                                     val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
                                     val cc = path.view.takeRight(pathLength - thisPathNDFSNum)
-                                    cc.foreach(n ⇒ setCSCCId(n, nCSCCId))
+                                    cc.foreach(n => setCSCCId(n, nCSCCId))
                                 // val header = s"Nodes in a cSCC candidate $nCSCCId: "
                                 // println(cc.mkString(header, ",", ""))
                                 // println("path: "+path.mkString)
 
-                                case nCSCCId ⇒
+                                case nCSCCId =>
                                     val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
-                                    path.view.takeRight(pathLength - thisPathNDFSNum).foreach { n ⇒
+                                    path.view.takeRight(pathLength - thisPathNDFSNum).foreach { n =>
                                         setCSCCId(n, nCSCCId)
                                     }
                             }
@@ -501,7 +497,7 @@ package object graphs {
                         addToPath(n)
                         worklist.push(n)
                         worklist.push(PathElementSeparator)
-                        es(n) foreach { nextN ⇒
+                        es(n) foreach { nextN =>
                             if (hasDFSNum(nextN) && dfsNum(nextN) < thisPathFirstDFSNum) {
                                 killPath()
                             } else {
@@ -514,7 +510,7 @@ package object graphs {
             nextDFSNum
         }
 
-        ns.foldLeft(0)((initialDFSNum, n) ⇒ dfs(initialDFSNum, n))
+        ns.foldLeft(0)((initialDFSNum, n) => dfs(initialDFSNum, n))
 
         cSCCs
     }
@@ -554,9 +550,9 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ IntIterator,
-        filterSingletons: Boolean           = false
-    ): Chain[Chain[Int]] = {
+        es:               Int => IntIterator,
+        filterSingletons: Boolean            = false
+    ): List[List[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
         * (cannot handle very large, degenerated graphs due to non-tail recursion)
@@ -605,7 +601,7 @@ package object graphs {
         */
 
         // output data structure
-        var sccs: Chain[Chain[Int]] = Naught
+        var sccs: List[List[Int]] = List.empty
 
         val nIndex = new Array[Int](ns + 1)
         val nLowLink = new Array[Int](ns + 1)
@@ -629,7 +625,7 @@ package object graphs {
             index += 1
             s.push(n)
             nOnStack(n) = true
-            es(n).foreach { w ⇒
+            es(n).foreach { w =>
                 if (nIndex(w) == UndefinedIndex) {
                     scc(w)
                     nLowLink(n) = Math.min(nLowLink(n), nLowLink(w))
@@ -662,14 +658,14 @@ package object graphs {
                 //              signal that the node was not yet processed.
 
                 val ws = IntArrayStack(n)
-                val wsSuccessors = ArrayStack[IntIterator](null)
+                val wsSuccessors = mutable.Stack[IntIterator](null)
                 // INVARIANT:
                 // If wsSuccessors(x) is not null then we have to pop the two values which identify
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of
                 // the next node that should be processed.
                 do {
                     val n = ws.pop()
-                    var remainingSuccessors = wsSuccessors.pop
+                    var remainingSuccessors = wsSuccessors.pop()
                     if (remainingSuccessors eq null) {
                         // ... we are processing the node n for the first time
                         nIndex(n) = index
@@ -704,17 +700,17 @@ package object graphs {
                     if (continue && !remainingSuccessors.hasNext) {
                         // ... there are no more successors
                         if (nLowLink(n) == nIndex(n)) {
-                            var nextSCC = Chain.empty[Int]
+                            var nextSCC = List.empty[Int]
                             var w: Int = -1
                             do {
                                 w = s.pop()
                                 nOnStack(w) = false
-                                nextSCC :&:= w
+                                nextSCC ::= w
                             } while (n != w)
                             if (!filterSingletons ||
                                 nextSCC.tail.nonEmpty ||
                                 es(n).exists(_ == n)) {
-                                sccs :&:= nextSCC
+                                sccs ::= nextSCC
                             }
                         }
                     }

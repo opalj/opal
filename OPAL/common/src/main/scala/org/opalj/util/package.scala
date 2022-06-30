@@ -13,6 +13,8 @@ import com.typesafe.config.ConfigRenderOptions
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 
+import scala.annotation.nowarn
+
 /**
  * Utility methods.
  *
@@ -29,11 +31,12 @@ package object util {
         versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
     }
 
-    def avg(ts: Traversable[Nanoseconds]): Nanoseconds = {
-        if (ts.isEmpty)
+    def avg(ts: IterableOnce[Nanoseconds]): Nanoseconds = {
+        val iterator = ts.iterator
+        if (iterator.isEmpty)
             return Nanoseconds.None;
 
-        Nanoseconds(ts.map(_.timeSpan).sum / ts.size)
+        Nanoseconds(iterator.map(_.timeSpan).sum / iterator.size)
     }
 
     /**
@@ -54,6 +57,7 @@ package object util {
      *  Tries its best to run the garbage collector and to wait until all objects are also
      *  finalized.
      */
+    @nowarn("msg=method getObjectPendingFinalizationCount in trait MemoryMXBean is deprecated")
     final def gc(
         memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean,
         maxGCTime:    Milliseconds = new Milliseconds(333)

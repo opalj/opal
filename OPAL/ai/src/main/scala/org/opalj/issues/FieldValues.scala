@@ -7,7 +7,6 @@ import scala.xml.Group
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.instructions.FieldReadAccess
@@ -30,20 +29,20 @@ class FieldValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectReadFieldValues: Chain[PCAndAnyRef[String]] = {
-        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) ⇒
+    def collectReadFieldValues: List[PCAndAnyRef[String]] = {
+        code.foldLeft(List.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) =>
             instruction match {
                 case fra @ FieldReadAccess(_ /*decl.ClassType*/ , _ /* name*/ , fieldType) if {
                     val nextPC = fra.indexOfNextInstruction(pc)
                     val operands = operandsArray(nextPC)
                     operands != null &&
                         operands.head.isMorePreciseThan(result.domain.TypedValue(pc, fieldType))
-                } ⇒
+                } =>
                     PCAndAnyRef(
                         pc,
-                        s"${operandsArray(fra.indexOfNextInstruction(pc)).head} ← $fra"
-                    ) :&: readFields
-                case _ ⇒
+                        s"${operandsArray(fra.indexOfNextInstruction(pc)).head} <- $fra"
+                    ) :: readFields
+                case _ =>
                     readFields
             }
         }
@@ -52,7 +51,7 @@ class FieldValues(
     def toXHTML(basicInfoOnly: Boolean): Node = {
         import PCLineComprehension.{pcNode, lineNode, line}
         val readFieldValues =
-            collectReadFieldValues map { fieldData ⇒
+            collectReadFieldValues map { fieldData =>
                 val pc = fieldData.pc
                 val details = fieldData.value
                 <li>
@@ -80,19 +79,19 @@ class FieldValues(
         import PCLineComprehension.line
 
         Json.obj(
-            "type" → "FieldValues",
-            "values" → collectReadFieldValues.map { fieldData ⇒
+            "type" -> "FieldValues",
+            "values" -> collectReadFieldValues.map { fieldData =>
                 val pc = fieldData.pc
                 val details = fieldData.value
 
                 Json.obj(
-                    "classFileFQN" → classFileFQN,
-                    "methodJVMSignature" → methodJVMSignature,
-                    "pc" → pc,
-                    "line" → line(pc),
-                    "details" → details
+                    "classFileFQN" -> classFileFQN,
+                    "methodJVMSignature" -> methodJVMSignature,
+                    "pc" -> pc,
+                    "line" -> line(pc),
+                    "details" -> details
                 )
-            }.toIterable
+            }
         )
     }
 }

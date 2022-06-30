@@ -4,14 +4,16 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.da.ClassFile
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.da.ClassFile
-
-import scala.collection.mutable.ArrayBuffer
+import org.opalj.br.instructions.Instruction
 
 /**
  * Groups test case features that perform a polymorphic method calls over package boundaries. This is
@@ -33,21 +35,21 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(2)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
             callerPackage = callerType.packageName
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation ← body collect {
-                case iv: INVOKEVIRTUAL ⇒ iv
-            }
+            pcAndInvocation <- body collect ({
+                case iv: INVOKEVIRTUAL => iv
+            }: PartialFunction[Instruction, INVOKEVIRTUAL])
         } {
             val pc = pcAndInvocation.pc
             val invoke = pcAndInvocation.value
@@ -76,7 +78,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     )
 
                 if (matchesPreconditions) {
-                    if (project.classHierarchy.existsSubclass(rtOt, project) { cf ⇒
+                    if (project.classHierarchy.existsSubclass(rtOt, project) { cf =>
                         val ot = cf.thisType
                         if (ot.packageName eq callerPackage) {
                             isMethodOverriddenInDiffPackage(rtOt, ot, name, methodDescriptor, project)
@@ -94,7 +96,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             }
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 
     private def isMethodOverriddenInDiffPackage[S](
@@ -104,7 +106,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         methodDescriptor: MethodDescriptor,
         project:          Project[S]
     ) = {
-        project.classHierarchy.existsSubclass(rtOt, project) { sot ⇒
+        project.classHierarchy.existsSubclass(rtOt, project) { sot =>
             (sot.thisType.packageName ne callerPackage) &&
                 sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
         }
@@ -122,7 +124,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         val callingPackage = declaredType.packageName
 
         val worklist = ArrayBuffer[Int]()
-        classHierarchy.directSupertypes(targetType).foreach { sot ⇒
+        classHierarchy.directSupertypes(targetType).foreach { sot =>
             worklist.append(sot.id)
         }
         while (worklist.nonEmpty) {
@@ -135,7 +137,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     return true;
                 }
             }
-            classHierarchy.directSupertypes(ot).foreach { sot ⇒
+            classHierarchy.directSupertypes(ot).foreach { sot =>
                 worklist.append(sot.id)
             }
         }

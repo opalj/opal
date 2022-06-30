@@ -50,21 +50,21 @@ abstract class ProjectLocation(
 
     def compareTo(other: IssueLocation): Int = {
         other match {
-            case _: InstructionLocation ⇒ 1
-            case _: MethodLocation      ⇒ 1
-            case _: FieldLocation       ⇒ 1
-            case _: ClassLocation       ⇒ 1
-            case _: PackageLocation     ⇒ 1
-            case that: ProjectLocation ⇒
+            case _: InstructionLocation => 1
+            case _: MethodLocation      => 1
+            case _: FieldLocation       => 1
+            case _: ClassLocation       => 1
+            case _: PackageLocation     => 1
+            case that: ProjectLocation =>
                 that.theProject.hashCode() compare this.theProject.hashCode() match {
-                    case 0 ⇒
+                    case 0 =>
                         (this.description, that.description) match {
-                            case (None, None)       ⇒ 0
-                            case (Some(_), None)    ⇒ -1
-                            case (None, Some(_))    ⇒ 1
-                            case (Some(x), Some(y)) ⇒ x compare y
+                            case (None, None)       => 0
+                            case (Some(_), None)    => -1
+                            case (None, Some(_))    => 1
+                            case (Some(x), Some(y)) => x compare y
                         }
-                    case x ⇒ x
+                    case x => x
                 }
 
         }
@@ -98,7 +98,7 @@ class PackageLocation(
     }
 
     def detailsAsXHTML(basicInfoOnly: Boolean): List[Node] = {
-        details.map(d ⇒ <div>{ d.toXHTML(basicInfoOnly) }</div>).toList
+        details.map(d => <div>{ d.toXHTML(basicInfoOnly) }</div>).toList
     }
 
     final override def toXHTML(basicInfoOnly: Boolean): Node = {
@@ -112,15 +112,15 @@ class PackageLocation(
         ))
     }
 
-    def locationAsIDL: JsObject = Json.obj("package" → thePackage.replace('/', '.'))
+    def locationAsIDL: JsObject = Json.obj("package" -> thePackage.replace('/', '.'))
 
     def detailsAsIDL: JsValue = Json.toJson(details)
 
     final override def toIDL: JsValue = {
         Json.obj(
-            "description" → description,
-            "location" → locationAsIDL,
-            "details" → detailsAsIDL
+            "description" -> description,
+            "location" -> locationAsIDL,
+            "details" -> detailsAsIDL
         )
     }
 }
@@ -156,12 +156,12 @@ class ClassLocation(
             (
                 "class",
                 Json.obj(
-                    "fqn" → classFile.fqn,
-                    "type" → typeToIDL(classFile.thisType),
-                    "accessFlags" → {
+                    "fqn" -> classFile.fqn,
+                    "type" -> typeToIDL(classFile.thisType),
+                    "accessFlags" -> {
                         classFile.accessFlags match {
-                            case 0 ⇒ JsNull
-                            case _ ⇒ classAccessFlagsToString(classFile.accessFlags)
+                            case 0 => JsNull
+                            case _ => classAccessFlagsToString(classFile.accessFlags)
                         }
                     }
                 )
@@ -179,7 +179,7 @@ class MethodLocation(
     with MethodComprehension {
 
     val firstLineOfMethod: Option[String] = {
-        method.body.flatMap(_.firstLineNumber.map(ln ⇒ (if (ln > 2) (ln - 2) else 0).toString))
+        method.body.flatMap(_.firstLineNumber.map(ln => (if (ln > 2) (ln - 2) else 0).toString))
     }
 
     override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
@@ -203,10 +203,10 @@ class MethodLocation(
 
     override def locationAsIDL: JsObject = {
         super.locationAsIDL + (
-            "method" → (
+            "method" -> (
                 methodToIDL(method.accessFlags, method.name, method.descriptor) +
-                ("signature" → JsString(methodJVMSignature)) +
-                ("firstLine" → Json.toJson(firstLineOfMethod))
+                ("signature" -> JsString(methodJVMSignature)) +
+                ("firstLine" -> Json.toJson(firstLineOfMethod))
             )
         )
     }
@@ -231,7 +231,7 @@ class InstructionLocation(
     }
 
     override def locationAsIDL: JsObject = {
-        var instructionLocation = Json.obj("pc" → pc)
+        var instructionLocation = Json.obj("pc" -> pc)
         if (line.isDefined) instructionLocation += (("line", JsNumber(line.get)))
 
         super.locationAsIDL + (("instruction", instructionLocation))
@@ -239,13 +239,13 @@ class InstructionLocation(
 
     override def toEclipseConsoleString: String = {
         val source = classFile.thisType.toJava.split('$').head
-        val line = this.line.map(":"+_).getOrElse("")
+        val line = this.line.map(line => s":$line").getOrElse("")
         "("+source+".java"+line+") "
     }
 
     override def toAnsiColoredString: String = {
         theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"+
-            line.map(_+": ").getOrElse(" ")
+            line.map(line => s"$line: ").getOrElse(" ")
     }
 
 }

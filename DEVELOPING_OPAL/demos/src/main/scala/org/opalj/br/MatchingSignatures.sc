@@ -59,8 +59,8 @@ object SigTest {
                             Some("de/tud/cs/se/flashcards/model/"),
                             SimpleClassTypeSignature("FlashcardObserver", None),
                             List()))))),
-            List()) ⇒ true
-        case _ ⇒ false
+            List()) => true
+        case _ => false
     }
 
     cts match {
@@ -74,12 +74,12 @@ object SigTest {
                         BasicClassTypeSignature(
                             ObjectType("de/tud/cs/se/flashcards/model/FlashcardObserver")
                             ))))),
-            List()) ⇒ true
-        case _ ⇒ false
+            List()) => true
+        case _ => false
     }
 
     cts match {
-        case GenericContainer(c, t) ⇒ c.toJava+"<"+t.toJava+">"
-        case _                      ⇒ "Not a generic container"
+        case GenericContainer(c, t) => c.toJava+"<"+t.toJava+">"
+        case _                      => "Not a generic container"
     }
 }

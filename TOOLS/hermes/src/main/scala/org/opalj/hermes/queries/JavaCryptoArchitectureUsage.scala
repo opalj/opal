@@ -4,7 +4,6 @@ package hermes
 package queries
 
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -18,7 +17,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override val apiFeatures: Chain[APIFeature] = {
+    override val apiFeatures: List[APIFeature] = {
 
         // java.security
         val SecureRandom = ObjectType("java/security/SecureRandom")
@@ -46,12 +45,12 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
         val init = "<init>"
         val getInstance = "getInstance"
 
-        Chain(
+        List(
 
             StaticAPIMethod(Cipher, getInstance),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(SecureRandom, init),
                     StaticAPIMethod(SecureRandom, getInstance),
                     StaticAPIMethod(SecureRandom, "getInstanceStrong")
@@ -60,7 +59,7 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(MessageDigest, init),
                     StaticAPIMethod(MessageDigest, getInstance)
                 ),
@@ -68,7 +67,7 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Signature, init),
                     StaticAPIMethod(Signature, getInstance)
                 ),
@@ -76,7 +75,7 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Mac, init),
                     StaticAPIMethod(Mac, getInstance)
                 ),
@@ -84,7 +83,7 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(KeyFactory, init),
                     StaticAPIMethod(KeyFactory, getInstance),
                     InstanceAPIMethod(SecretKeyFactory, init),
@@ -100,7 +99,7 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(KeyStore, init),
                     StaticAPIMethod(KeyStore, getInstance)
                 ),
@@ -108,7 +107,7 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(CertificateFactory, init),
                     StaticAPIMethod(CertificateFactory, getInstance),
                     InstanceAPIMethod(CertPathBuilder, init),

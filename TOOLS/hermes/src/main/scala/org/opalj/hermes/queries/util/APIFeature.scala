@@ -6,8 +6,6 @@ package util
 
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
@@ -27,7 +25,7 @@ sealed abstract class APIFeature {
     /**
      * Returns all methods of the API that belong to this feature.
      */
-    def apiMethods: Chain[APIMethod]
+    def apiMethods: List[APIMethod]
 }
 
 /**
@@ -38,7 +36,7 @@ sealed abstract class ClassExtension extends APIFeature {
 
     def declClass: ObjectType
 
-    override def apiMethods: Chain[APIMethod] = Naught
+    override def apiMethods: List[APIMethod] = List()
 }
 
 /**
@@ -61,7 +59,7 @@ sealed abstract class APIMethod(private val fID: Option[String] = None) extends 
 
     final def matches(i: MethodInvocationInstruction): Boolean = this.unapply(i)
 
-    final override val apiMethods = Chain(this)
+    final override val apiMethods = List(this)
 
     private def customFeatureID: Option[String] = fID
 
@@ -186,4 +184,4 @@ object StaticAPIMethod {
  *
  * @note It is assumed that the passed featureID is unique throughout all feature extractors.
  */
-case class APIFeatureGroup(apiMethods: Chain[APIMethod], featureID: String) extends APIFeature
+case class APIFeatureGroup(apiMethods: List[APIMethod], featureID: String) extends APIFeature

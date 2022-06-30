@@ -22,7 +22,7 @@ trait AnalysisDemo extends ProjectAnalysisApplication {
         propertyStore.entities(property, property)
     }
 
-    def finalReport(infoStrings: Traversable[String], caption: String): String = {
+    def finalReport(infoStrings: Iterable[String], caption: String): String = {
         infoStrings.mkString(s"\n$caption:", "\n\t", s"\nTotal: ${infoStrings.size}\n\n")
     }
 }
@@ -30,13 +30,13 @@ trait AnalysisDemo extends ProjectAnalysisApplication {
 trait MethodAnalysisDemo extends AnalysisDemo {
 
     def buildMethodInfo(
-        entities:    Traversable[SomeEPS],
-        withJarInfo: Boolean              = false
+        entities:    Iterable[SomeEPS],
+        withJarInfo: Boolean           = false
     )(
         implicit
         project: Project[URL]
-    ): Traversable[String] = {
-        entities map { eps ⇒
+    ): Iterable[String] = {
+        entities map { eps =>
             val method = eps.e.asInstanceOf[Method]
             val methodString = getVisibilityModifier(method)+" "+method.name
             val classFile = method.classFile
@@ -44,11 +44,11 @@ trait MethodAnalysisDemo extends AnalysisDemo {
                 project.source(classFile.thisType)
             else ""
             val classVisibility = if (classFile.isPublic) "public" else ""
-            jarInfo + s"\n\t $classVisibility "+classFile.thisType.toJava+" | "+methodString
+            s"$jarInfo\n\t $classVisibility "+classFile.thisType.toJava+" | "+methodString
         }
     }
 
     private[this] def getVisibilityModifier(method: Method): String = {
-        method.visibilityModifier.map(v ⇒ v.javaName.get).getOrElse("")
+        method.visibilityModifier.map(v => v.javaName.get).getOrElse("")
     }
 }

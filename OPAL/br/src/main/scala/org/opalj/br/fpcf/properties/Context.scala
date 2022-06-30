@@ -6,14 +6,13 @@ package properties
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
-import scala.collection.mutable.OpenHashMap
-
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+
+import scala.collection.mutable
 
 /**
  * Provides the context in which a method was invoked or an object was allocated.
@@ -137,7 +136,7 @@ object CallStringContextsKey extends ProjectInformationKey[CallStringContexts, N
 class CallStringContexts {
 
     @volatile private var id2Context = new Array[CallStringContext](32768)
-    private val context2id = new OpenHashMap[(DeclaredMethod, List[(DeclaredMethod, Int)]), CallStringContext]()
+    private val context2id = new mutable.HashMap[(DeclaredMethod, List[(DeclaredMethod, Int)]), CallStringContext]()
 
     private val nextId = new AtomicInteger(1)
     private val rwLock = new ReentrantReadWriteLock()

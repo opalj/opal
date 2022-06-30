@@ -10,7 +10,7 @@ package instructions
  */
 abstract class ReturnValueInstruction extends ReturnInstruction {
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = -returnValueComputationalType.operandSize
 

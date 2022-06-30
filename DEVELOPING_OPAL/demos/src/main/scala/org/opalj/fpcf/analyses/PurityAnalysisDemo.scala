@@ -46,26 +46,26 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
-        var r: () ⇒ String = null
+        var r: () => String = null
 
         def handleResults(t: Nanoseconds, ts: Seq[Nanoseconds]) = {
             performanceData += ((t, List(setupTime, analysisTime)))
-            performanceData = performanceData.filter((t_ts) ⇒ ts.contains(t_ts._1))
+            performanceData = performanceData.filter((t_ts) => ts.contains(t_ts._1))
         }
 
-        List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel ⇒
+        List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel =>
             performanceData = Map.empty
 
             println(s"\nRunning analysis with $parallelismLevel thread(s):")
-            r = time[() ⇒ String](5, 10, 5, analyze(project, parallelismLevel))(handleResults)
+            r = time[() => String](5, 10, 5, analyze(project, parallelismLevel))(handleResults)
             println(
                 s"Results with $parallelismLevel threads:\n"+
                     performanceData.values.
-                    map(v ⇒ v.map(_.toSeconds.toString(false))).
-                    map(v ⇒ List("setup\t", "analysis\t").zip(v).map(e ⇒ e._1 + e._2).mkString("", "\n", "\n")).
+                    map(v => v.map(_.toSeconds.toString(false))).
+                    map(v => List("setup\t", "analysis\t").zip(v).map(e => e._1 + e._2).mkString("", "\n", "\n")).
                     mkString("\n")
             )
 
@@ -75,7 +75,7 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
         BasicReport(r())
     }
 
-    def analyze(theProject: Project[URL], parallelismLevel: Int): () ⇒ String = {
+    def analyze(theProject: Project[URL], parallelismLevel: Int): () => String = {
         val project = Project.recreate(theProject) // We need an empty project(!)
 
         import project.get
@@ -85,30 +85,30 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
         val propertyStore = time {
             PropertyStoreKey.parallelismLevel = parallelismLevel
             get(PropertyStoreKey)
-        } { r ⇒ setupTime = r }
+        } { r => setupTime = r }
 
         time {
             LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null)
             EagerL0PurityAnalysis.start(project, propertyStore, null)
             propertyStore.waitOnPhaseCompletion()
-        } { r ⇒ analysisTime = r }
+        } { r => analysisTime = r }
 
         println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
 
-        () ⇒ {
+        () => {
             val effectivelyFinalEntities: Iterator[EPS[Entity, FieldMutability]] =
                 propertyStore.entities(FieldMutability.key)
 
             val effectivelyFinalFields: Iterator[(Field, Property)] =
-                effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.ub))
+                effectivelyFinalEntities.map(ep => (ep.e.asInstanceOf[Field], ep.ub))
 
             val effectivelyFinalFieldsAsStrings =
-                effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava)
+                effectivelyFinalFields.map(f => s"${f._2} >> ${f._1.toJava}")
 
             val pureEntities: Iterator[EPS[Entity, Purity]] = propertyStore.entities(Purity.key)
             val pureMethods: Iterator[(DefinedMethod, Property)] =
-                pureEntities.map(eps ⇒ (eps.e.asInstanceOf[DefinedMethod], eps.ub))
-            val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
+                pureEntities.map(eps => (eps.e.asInstanceOf[DefinedMethod], eps.ub))
+            val pureMethodsAsStrings = pureMethods.map(m => s"${m._2} >> ${m._1.toJava}")
 
             val fieldInfo =
                 effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
@@ -125,7 +125,7 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
                 )
 
             fieldInfo + methodInfo + propertyStore.toString(false)+
-                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
+                "\nPure methods: "+pureMethods.filter(m => m._2 == Pure).size
         }
     }
 }

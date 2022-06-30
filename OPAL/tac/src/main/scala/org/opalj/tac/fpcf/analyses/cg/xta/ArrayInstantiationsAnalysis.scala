@@ -57,7 +57,7 @@ final class ArrayInstantiationsAnalysis(
 
         // We only care about arrays of reference types.
         val instantiatedArrays = code.instructions.collect {
-            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType ⇒ arr.arrayType
+            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType => arr.arrayType
         }
 
         val multidimensionalArrayPartialResults = multidimensionalArrayInitialAssignments(instantiatedArrays)
@@ -98,8 +98,8 @@ final class ArrayInstantiationsAnalysis(
         // Note: Since 'until' is an exclusive range, all array types in 'arrays' with
         // dimension 1 are not processed here.
         for (
-            at ← arrays;
-            dim ← 1 until at.dimensions
+            at <- arrays;
+            dim <- 1 until at.dimensions
         ) {
 
             val targetAT = ArrayType(dim + 1, at.elementType)

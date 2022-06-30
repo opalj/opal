@@ -11,7 +11,7 @@ package domain
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-trait AsDomainValue { domain: ReferenceValuesDomain ⇒
+trait AsDomainValue { domain: ReferenceValuesDomain =>
 
     /**
      * Converts the given Java object to a corresponding `DomainValue`. The conversion may be lossy.

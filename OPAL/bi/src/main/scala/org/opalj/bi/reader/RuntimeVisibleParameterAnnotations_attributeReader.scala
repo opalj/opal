@@ -5,8 +5,6 @@ package reader
 
 import java.io.DataInputStream
 
-import scala.collection.GenTraversableOnce
-
 /**
  * Generic parser for `RuntimeVisibleParameterAnnotations` attributes.
  */
@@ -17,7 +15,7 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
     //
 
     type ParameterAnnotations
-    type ParametersAnnotations <: GenTraversableOnce[ParameterAnnotations]
+    type ParametersAnnotations <: IterableOnce[ParameterAnnotations]
     /**
      * Method that delegates to another reader to parse the annotations of the parameters.
      */
@@ -57,10 +55,10 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val parameter_annotations = ParametersAnnotations(cp, in)
-        if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
+        if (parameter_annotations.iterator.nonEmpty || reifyEmptyAttributes) {
             RuntimeVisibleParameterAnnotations_attribute(
                 cp, ap_name_index, ap_descriptor_index, attribute_name_index, parameter_annotations
             )
@@ -69,6 +67,6 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
         }
     }
 
-    registerAttributeReader(RuntimeVisibleParameterAnnotationsAttribute.Name → parserFactory())
+    registerAttributeReader(RuntimeVisibleParameterAnnotationsAttribute.Name -> parserFactory())
 
 }

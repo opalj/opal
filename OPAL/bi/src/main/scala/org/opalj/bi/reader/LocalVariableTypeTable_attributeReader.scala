@@ -4,9 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the local variable type table attribute.
@@ -20,7 +21,8 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     type LocalVariableTypeTable_attribute >: Null <: Attribute
 
     type LocalVariableTypeTableEntry <: AnyRef
-    type LocalVariableTypes = RefArray[LocalVariableTypeTableEntry]
+    implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableTypeTableEntry] // TODO: Replace in Scala 3 by `type LocalVariableTypeTableEntry : ClassTag`
+    type LocalVariableTypes = ArraySeq[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
         cp:                        Constant_Pool,
@@ -65,7 +67,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
 
         val entriesCount = in.readUnsignedShort()
@@ -75,7 +77,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(entriesCount) {
+                fillArraySeq(entriesCount) {
                     LocalVariableTypeTableEntry(
                         cp,
                         in.readUnsignedShort,
@@ -91,5 +93,5 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(LocalVariableTypeTableAttribute.Name → parserFactory())
+    registerAttributeReader(LocalVariableTypeTableAttribute.Name -> parserFactory())
 }

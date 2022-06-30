@@ -58,9 +58,9 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     final val key: PropertyKey[InstantiatedTypes] = {
         PropertyKey.create(
             "InstantiatedTypes",
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ InstantiatedTypes(UIDSet.empty)
-                case _                                                ⇒ throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => InstantiatedTypes(UIDSet.empty)
+                case _                                                => throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
             }
         )
     }
@@ -81,17 +81,17 @@ class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
             PartialResult[SomeProject, InstantiatedTypes](
                 project,
                 InstantiatedTypes.key,
-                (current: EOptionP[SomeProject, InstantiatedTypes]) ⇒ current match {
-                    case InterimUBP(ub: InstantiatedTypes) ⇒
+                (current: EOptionP[SomeProject, InstantiatedTypes]) => current match {
+                    case InterimUBP(ub: InstantiatedTypes) =>
                         if (ub.classes.contains(instantiatedType))
                             None
                         else
                             Some(InterimEUBP(project, InstantiatedTypes(ub.classes + instantiatedType)))
 
-                    case _: EPK[_, _] ⇒
+                    case _: EPK[_, _] =>
                         Some(InterimEUBP(project, InstantiatedTypes(UIDSet(instantiatedType))))
 
-                    case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+                    case r => throw new IllegalStateException(s"unexpected previous result $r")
                 }
             )
         }
@@ -100,18 +100,18 @@ class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         def checkCallers(callersProperty: EOptionP[DeclaredMethod, Callers]): PropertyComputationResult = {
             val callers: Callers = callersProperty match {
-                case FinalP(NoCallers) ⇒
+                case FinalP(NoCallers) =>
                     return NoResult
 
-                case UBP(v) ⇒ v
+                case UBP(v) => v
 
-                case r      ⇒ throw new IllegalStateException(s"unexpected result for callers $r")
+                case r      => throw new IllegalStateException(s"unexpected result for callers $r")
             }
 
             if (callers.hasCallersWithUnknownContext || callers.hasVMLevelCallers)
                 return result()
 
-            for ((caller, _, isDirect) ← callers.callers) {
+            for ((caller, _, isDirect) <- callers.callers) {
                 if (!isDirect)
                     return result()
 
@@ -125,7 +125,7 @@ class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 val body = caller.definedMethod.body.get
 
-                if (body.exists((_, instruction) ⇒ instruction == NEW(instantiatedType)))
+                if (body.exists((_, instruction) => instruction == NEW(instantiatedType)))
                     return result()
             }
 
@@ -171,7 +171,7 @@ object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSche
 /* RUNNER */
 
 object InstantiatedTypesRunner extends ProjectAnalysisApplication {
-    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
             CHACallGraphAnalysisScheduler,
             InstantiatedTypesAnalysisScheduler

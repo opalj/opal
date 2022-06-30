@@ -23,9 +23,9 @@ case class MULTIANEWARRAY(
 
     final def length: Int = 4
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = dimensions
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = dimensions
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = -dimensions + 1
 

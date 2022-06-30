@@ -9,7 +9,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain =>
 
     /**
      * This type determines in which way the returned values are recorded.

@@ -4,7 +4,6 @@ package br
 package instructions
 
 import java.net.URL
-
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -13,7 +12,8 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -27,7 +27,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
 
         val testProject = biProject("proxy.jar")
 
-        val proxies: Seq[(ClassFile, URL)] = testProject.allMethods.map { m ⇒
+        val proxies: Seq[(ClassFile, URL)] = testProject.allMethods.map { m =>
             val classFile = m.classFile
             val t = classFile.thisType
             var proxy: ClassFile = null
@@ -94,7 +94,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                         methodHandle,
                         invocationInstruction,
                         MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
-                        RefArray.empty
+                        ArraySeq.empty
                     )
 
                 def verifyMethod(method: Method): Unit = {
@@ -102,7 +102,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                     val result = BaseAI(method, domain)
 
                     // the abstract interpretation succeeded
-                    result should not be ('wasAborted)
+                    result should not be (Symbol("wasAborted"))
 
                     // the method was non-empty
                     val instructions = method.body.get.instructions
@@ -117,7 +117,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
 
                     // the layout of the instructions array is correct
                     for {
-                        pc ← instructions.indices
+                        pc <- instructions.indices
                         if instructions(pc) != null
                     } {
                         val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
@@ -144,7 +144,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                 }
 
             }
-            proxy → testProject.source(t).get
+            proxy -> testProject.source(t).get
         }.toSeq
 
         describe("the project should be extendable with the generated proxies") {
@@ -157,15 +157,15 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
             }
 
             it("should have the right class files") {
-                testProject.allProjectClassFiles foreach { cf ⇒
-                    extendedProject.classFile(cf.thisType) should be('defined)
+                testProject.allProjectClassFiles foreach { cf =>
+                    extendedProject.classFile(cf.thisType) should be(Symbol("defined"))
                     if (testProject.source(cf.thisType).isDefined)
-                        extendedProject.source(cf.thisType) should be('defined)
+                        extendedProject.source(cf.thisType) should be(Symbol("defined"))
                 }
-                proxies foreach { p ⇒
+                proxies foreach { p =>
                     val (proxy, _ /* source*/ ) = p
-                    extendedProject.classFile(proxy.thisType) should be('defined)
-                    extendedProject.source(proxy.thisType) should be('defined)
+                    extendedProject.classFile(proxy.thisType) should be(Symbol("defined"))
+                    extendedProject.source(proxy.thisType) should be(Symbol("defined"))
                 }
             }
         }

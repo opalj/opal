@@ -3,10 +3,11 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * Counts the number of private methods that have at least one parameter with
@@ -24,18 +25,18 @@ object PrivateMethodsWithObjectTypeParameterCounter extends ProjectAnalysisAppli
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         val overallPotential = new java.util.concurrent.atomic.AtomicInteger(0)
         val methods = (
             for {
-                classFile ← project.allClassFiles.par
-                method ← classFile.methods
+                classFile <- project.allClassFiles.par
+                method <- classFile.methods
                 if method.isPrivate //|| method.isPackagePrivate
                 if method.name != "readObject" && method.name != "writeObject"
                 potential = (method.descriptor.parameterTypes.collect {
-                    case ot: ObjectType ⇒ project.classHierarchy.allSubtypes(ot, false).size
-                    case _              ⇒ 0
+                    case ot: ObjectType => project.classHierarchy.allSubtypes(ot, false).size
+                    case _              => 0
                 }).sum
                 if potential >= 5
             } yield {

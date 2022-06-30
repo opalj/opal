@@ -5,7 +5,7 @@ package br
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -23,11 +23,11 @@ object ShowLocalVariableTypeTables extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         params:        Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val messages = new ConcurrentLinkedQueue[String]()
-        project.parForeachMethodWithBody(isInterrupted) { mi ⇒
+        project.parForeachMethodWithBody(isInterrupted) { mi =>
             val m = mi.method
             val lvtt = m.body.get.localVariableTypeTable
             if (lvtt.nonEmpty)
@@ -37,7 +37,6 @@ object ShowLocalVariableTypeTables extends ProjectAnalysisApplication {
                 )
         }
 
-        import JavaConverters._
         BasicReport(messages.asScala.mkString("\n", "\n\n", "\n"))
     }
 }

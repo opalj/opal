@@ -5,6 +5,8 @@ package reader
 
 import org.opalj.bi.reader.MethodParameters_attributeReader
 
+import scala.reflect.ClassTag
+
 /**
  * Implements the factory methods to create method parameter tables and their entries.
  *
@@ -16,6 +18,7 @@ trait MethodParameters_attributeBinding
     with AttributeBinding {
 
     type MethodParameter = br.MethodParameter
+    override implicit val methodParameterType: ClassTag[MethodParameter] = ClassTag(classOf[br.MethodParameter])
 
     type MethodParameters_attribute = br.MethodParameterTable
 
