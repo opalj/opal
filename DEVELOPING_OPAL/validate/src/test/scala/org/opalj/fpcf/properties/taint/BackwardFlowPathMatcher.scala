@@ -20,24 +20,24 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val method = entity.asInstanceOf[(DefinedMethod, TaintFact)]._1.definedMethod
-        val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) ⇒
-            evp.value.asArrayValue.values.map((value: ElementValue) ⇒
+        val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) =>
+            evp.value.asArrayValue.values.map((value: ElementValue) =>
                 value.asStringValue.value)).head.toIndexedSeq
         val propertyStore = p.get(PropertyStoreKey)
         val propertyKey = BackwardTaintAnalysisFixtureScheduler.property.key
         val allReachableFlowFacts =
             propertyStore.entities(propertyKey).collect {
-                case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method ⇒
+                case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method =>
                     (m, inputFact)
             }.flatMap(propertyStore(_, propertyKey) match {
-                case FinalEP(_, OldTaint(result, _)) ⇒
-                    result.values.fold(Set.empty)((acc, facts) ⇒ acc ++ facts).collect {
-                        case FlowFact(methods) ⇒ methods.map(_.name)
+                case FinalEP(_, OldTaint(result, _)) =>
+                    result.values.fold(Set.empty)((acc, facts) => acc ++ facts).collect {
+                        case FlowFact(methods) => methods.map(_.name)
                     }
-                case _ ⇒ Seq.empty
+                case _ => Seq.empty
             }).toIndexedSeq
         if (expectedFlow.isEmpty) {
             if (allReachableFlowFacts.nonEmpty) return Some(s"There should be no flow for $entity")

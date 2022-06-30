@@ -15,32 +15,32 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
     val llvmProject = project.get(LLVMProjectKey)
     val javaPropertyKey: PropertyKey[Property]
 
-    override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, LLVMStatement, Fact, Getter) ⇒ Set[Fact]] = callee match {
-        case LLVMFunction(function) ⇒
+    override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, LLVMStatement, Fact, Getter) => Set[Fact]] = callee match {
+        case LLVMFunction(function) =>
             function.basicBlockCount match {
-                case 0 ⇒ Some((_: LLVMStatement, _: LLVMStatement, in: Fact, _: Getter) ⇒ Set(in))
-                case _ ⇒ None
+                case 0 => Some((_: LLVMStatement, _: LLVMStatement, in: Fact, _: Getter) => Set(in))
+                case _ => None
             }
-        case JNIMethod(method) ⇒ Some(handleJavaMethod(method))
+        case JNIMethod(method) => Some(handleJavaMethod(method))
     }
 
     private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: LLVMStatement, in: Fact, dependeesGetter: Getter): Set[Fact] = {
         var result = Set.empty[Fact]
         val entryFacts = javaCallFlow(call, callee, in)
-        for (entryFact ← entryFacts) { // ifds line 14
+        for (entryFact <- entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[JavaStatement, Set[JavaFact]] =
                 dependeesGetter(e, javaPropertyKey).asInstanceOf[EOptionP[(JavaStatement, JavaFact), IFDSProperty[JavaStatement, JavaFact]]] match {
-                    case ep: FinalEP[_, IFDSProperty[JavaStatement, JavaFact]] ⇒
+                    case ep: FinalEP[_, IFDSProperty[JavaStatement, JavaFact]] =>
                         ep.p.flows
-                    case ep: InterimEUBP[_, IFDSProperty[JavaStatement, JavaFact]] ⇒
+                    case ep: InterimEUBP[_, IFDSProperty[JavaStatement, JavaFact]] =>
                         ep.ub.flows
-                    case _ ⇒
+                    case _ =>
                         Map.empty
                 }
             for {
-                (exitStatement, exitStatementFacts) ← exitFacts // ifds line 15.2
-                exitStatementFact ← exitStatementFacts // ifds line 15.3
+                (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
+                exitStatementFact <- exitStatementFacts // ifds line 15.3
             } {
                 result ++= javaReturnFlow(exitStatement, exitStatementFact, call, in, successor)
             }

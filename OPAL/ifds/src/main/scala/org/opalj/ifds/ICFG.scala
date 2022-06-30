@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ifds
 
-import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.{Set => SomeSet}
 
 abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
     /**

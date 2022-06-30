@@ -31,10 +31,10 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
      * The string parameters of all public methods are entry points.
      */
     override def entryPoints: Seq[(DeclaredMethod, TaintFact)] = for {
-        m ← methodsCallableFromOutside.toSeq
+        m <- methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
-        index ← m.descriptor.parameterTypes.zipWithIndex.collect {
-            case (pType, index) if pType == ObjectType.String ⇒ index
+        index <- m.descriptor.parameterTypes.zipWithIndex.collect {
+            case (pType, index) if pType == ObjectType.String => index
         }
     } yield (m, Variable(-2 - index))
 
@@ -70,9 +70,9 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
      */
     override protected def relevantCallee(callee: DeclaredMethod): Boolean =
         callee.descriptor.parameterTypes.exists {
-            case ObjectType.Object ⇒ true
-            case ObjectType.String ⇒ true
-            case _                 ⇒ false
+            case ObjectType.Object => true
+            case ObjectType.String => true
+            case _                 => false
         } && (!canBeCalledFromOutside(callee) || isClassForName(callee))
 
     /**
@@ -101,13 +101,13 @@ class ForwardClassForNameAnalysisRunner extends AbsractIFDSAnalysisRunner {
 
     override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit =
         for {
-            e ← analysis.ifdsProblem.entryPoints
+            e <- analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysis$Scheduler.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[DeclaredMethodJavaStatement, TaintFact]].flows.values.flatten.toSet[TaintFact]
+            fact <- flows.ub.asInstanceOf[IFDSProperty[DeclaredMethodJavaStatement, TaintFact]].flows.values.flatten.toSet[TaintFact]
         } {
             fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.asInstanceOf[Set[Method]].map(_.toJava).mkString(", "))
-                case _              ⇒
+                case FlowFact(flow) => println(s"flow: "+flow.asInstanceOf[Set[Method]].map(_.toJava).mkString(", "))
+                case _              =>
             }
         }
 }

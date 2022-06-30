@@ -14,14 +14,14 @@ sealed trait SimplePurityPropertyMetaInformation extends PropertyMetaInformation
 sealed trait SimplePurity extends SimplePurityPropertyMetaInformation with OrderedProperty {
     def meet(other: SimplePurity): SimplePurity = {
         (this, other) match {
-            case (Pure, Pure) ⇒ Pure
-            case (_, _)       ⇒ Impure
+            case (Pure, Pure) => Pure
+            case (_, _)       => Impure
         }
     }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: SimplePurity): Unit = {
         if (meet(other) != other) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 
@@ -45,13 +45,13 @@ class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             .basicBlocks
             .flatMap(_.instructions)
             .foreach {
-                case instruction: Store ⇒
+                case instruction: Store =>
                     instruction.dst match {
-                        case _: GlobalVariable ⇒
+                        case _: GlobalVariable =>
                             return Result(function, Impure)
-                        case _ ⇒ Unit
+                        case _ => ()
                     }
-                case _ ⇒ Unit
+                case _ => ()
             }
         Result(function, Pure)
     }

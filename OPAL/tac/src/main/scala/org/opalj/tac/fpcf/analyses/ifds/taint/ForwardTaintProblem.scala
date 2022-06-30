@@ -21,9 +21,9 @@ abstract class ForwardTaintProblem(project: SomeProject)
      */
     override def normalFlow(statement: JavaStatement, in: TaintFact, predecessor: Option[JavaStatement]): Set[TaintFact] = {
         statement.stmt.astID match {
-            case Assignment.ASTID ⇒
+            case Assignment.ASTID =>
                 Set(in) ++ createNewTaints(statement.stmt.asAssignment.expr, statement, in)
-            case ArrayStore.ASTID ⇒
+            case ArrayStore.ASTID =>
                 val store = statement.stmt.asArrayStore
                 val definedBy = store.arrayRef.asVar.definedBy
                 val arrayIndex = TaintProblem.getIntConstant(store.index, statement.code)
@@ -38,20 +38,20 @@ abstract class ForwardTaintProblem(project: SomeProject)
                     // untaint
                     Set()
                 } else Set(in)
-            case PutField.ASTID ⇒
+            case PutField.ASTID =>
                 val put = statement.stmt.asPutField
                 val definedBy = put.objRef.asVar.definedBy
                 if (isTainted(put.value, in))
                     Set(in) ++ definedBy.map { InstanceField(_, put.declaringClass, put.name) }
                 else
                     Set(in)
-            case PutStatic.ASTID ⇒
+            case PutStatic.ASTID =>
                 val put = statement.stmt.asPutStatic
                 if (isTainted(put.value, in))
                     Set(in, StaticField(put.declaringClass, put.name))
                 else
                     Set(in)
-            case _ ⇒ Set(in)
+            case _ => Set(in)
         }
     }
 
@@ -67,44 +67,44 @@ abstract class ForwardTaintProblem(project: SomeProject)
         val allParamsWithIndices = allParams.zipWithIndex
         in match {
             // Taint formal parameter if actual parameter is tainted
-            case Variable(index) ⇒
+            case Variable(index) =>
                 allParamsWithIndices.flatMap {
-                    case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+                    case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
                         Some(Variable(JavaIFDSProblem.switchParamAndVariableIndex(
                             paramIndex,
                             callee.isStatic
                         )))
-                    case _ ⇒ None // Nothing to do
+                    case _ => None // Nothing to do
                 }.toSet
 
             // Taint element of formal parameter if element of actual parameter is tainted
-            case ArrayElement(index, taintedIndex) ⇒
+            case ArrayElement(index, taintedIndex) =>
                 allParamsWithIndices.flatMap {
-                    case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+                    case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
                         Some(ArrayElement(
                             JavaIFDSProblem.switchParamAndVariableIndex(paramIndex, callee.isStatic),
                             taintedIndex
                         ))
-                    case _ ⇒ None // Nothing to do
+                    case _ => None // Nothing to do
                 }.toSet
 
-            case InstanceField(index, declClass, taintedField) ⇒
+            case InstanceField(index, declClass, taintedField) =>
                 // Taint field of formal parameter if field of actual parameter is tainted
                 // Only if the formal parameter is of a type that may have that field!
                 allParamsWithIndices.flatMap {
                     case (param, pIndex) if param.asVar.definedBy.contains(index) &&
                         (JavaIFDSProblem.switchParamAndVariableIndex(pIndex, callee.isStatic) != -1 ||
-                            project.classHierarchy.isSubtypeOf(declClass, declaredMethods(callee).declaringClassType)) ⇒
+                            project.classHierarchy.isSubtypeOf(declClass, declaredMethods(callee).declaringClassType)) =>
                         Some(InstanceField(
                             JavaIFDSProblem.switchParamAndVariableIndex(pIndex, callee.isStatic),
                             declClass, taintedField
                         ))
-                    case _ ⇒ None // Nothing to do
+                    case _ => None // Nothing to do
                 }.toSet
 
-            case sf: StaticField ⇒ Set(sf)
+            case sf: StaticField => Set(sf)
 
-            case _               ⇒ Set() // Nothing to do
+            case _               => Set() // Nothing to do
 
         }
     }
@@ -121,7 +121,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
     override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, callFact: TaintFact, successor: JavaStatement): Set[TaintFact] = {
         if (!isPossibleReturnFlow(exit, successor)) return Set.empty
 
-        val callee = exit.callable()
+        val callee = exit.callable
         /**
          * Checks whether the callee's formal parameter is of a reference type.
          */
@@ -141,49 +141,49 @@ abstract class ForwardTaintProblem(project: SomeProject)
         var flows: Set[TaintFact] = Set.empty
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
+            case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) =>
                 val param = allParams(
                     JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                 )
                 flows ++= param.asVar.definedBy.iterator.map(Variable)
 
             // Taint element of actual parameter if element of formal parameter is tainted
-            case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
+            case ArrayElement(index, taintedIndex) if index < 0 && index > -100 =>
                 val param = allParams(
                     JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                 )
                 flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
 
-            case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
+            case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 =>
                 // Taint field of actual parameter if field of formal parameter is tainted
                 val param =
                     allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
-                param.asVar.definedBy.foreach { defSite ⇒
+                param.asVar.definedBy.foreach { defSite =>
                     flows += InstanceField(defSite, declClass, taintedField)
                 }
 
-            case sf: StaticField ⇒ flows += sf
+            case sf: StaticField => flows += sf
 
             // Track the call chain to the sink back
-            case FlowFact(flow) if !flow.contains(JavaMethod(call.method)) ⇒
+            case FlowFact(flow) if !flow.contains(JavaMethod(call.method)) =>
                 flows += FlowFact(JavaMethod(call.method) +: flow)
-            case _ ⇒
+            case _ =>
         }
 
         // Propagate taints of the return value
         if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
             val returnValueDefinedBy = exit.stmt.asReturnValue.expr.asVar.definedBy
             in match {
-                case Variable(index) if returnValueDefinedBy.contains(index) ⇒
+                case Variable(index) if returnValueDefinedBy.contains(index) =>
                     flows += Variable(call.index)
-                case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) ⇒
+                case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) =>
                     flows += ArrayElement(call.index, taintedIndex)
-                case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) ⇒
+                case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) =>
                     flows += InstanceField(call.index, declClass, taintedField)
-                case TaintNullFact ⇒
+                case TaintNullFact =>
                     val taints = createTaints(callee, call)
                     if (taints.nonEmpty) flows ++= taints
-                case _ ⇒ // Nothing to do
+                case _ => // Nothing to do
             }
         }
         val flowFact = createFlowFact(callee, call, in)
@@ -226,24 +226,24 @@ abstract class ForwardTaintProblem(project: SomeProject)
      */
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         super.outsideAnalysisContext(callee) match {
-            case Some(_) ⇒ Some(((call: JavaStatement, successor: JavaStatement, in: TaintFact, _: Getter) ⇒ {
+            case Some(_) => Some(((call: JavaStatement, successor: JavaStatement, in: TaintFact, _: Getter) => {
                 val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
                 if (call.stmt.astID == Assignment.ASTID && (in match {
-                    case Variable(index) ⇒
+                    case Variable(index) =>
                         allParams.zipWithIndex.exists {
-                            case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
-                            case _                                                   ⇒ false
+                            case (param, _) if param.asVar.definedBy.contains(index) => true
+                            case _                                                   => false
                         }
-                    case ArrayElement(index, _) ⇒
+                    case ArrayElement(index, _) =>
                         allParams.zipWithIndex.exists {
-                            case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
-                            case _                                                   ⇒ false
+                            case (param, _) if param.asVar.definedBy.contains(index) => true
+                            case _                                                   => false
                         }
-                    case _ ⇒ false
+                    case _ => false
                 })) Set(Variable(call.index))
                 else Set.empty
             }): OutsideAnalysisContextHandler)
-            case None ⇒ None
+            case None => None
         }
 
     }
@@ -259,52 +259,52 @@ abstract class ForwardTaintProblem(project: SomeProject)
      */
     private def createNewTaints(expression: Expr[V], statement: JavaStatement, in: TaintFact): Set[TaintFact] = {
         expression.astID match {
-            case Var.ASTID ⇒
+            case Var.ASTID =>
                 val definedBy = expression.asVar.definedBy
                 in match {
-                    case Variable(index) if definedBy.contains(index) ⇒
+                    case Variable(index) if definedBy.contains(index) =>
                         Set(Variable(statement.index))
-                    case _ ⇒ Set()
+                    case _ => Set()
                 }
-            case ArrayLoad.ASTID ⇒
+            case ArrayLoad.ASTID =>
                 val loadExpression = expression.asArrayLoad
                 val arrayDefinedBy = loadExpression.arrayRef.asVar.definedBy
                 if (in match {
                     // One specific array element may be tainted
-                    case ArrayElement(index, taintedElement) ⇒
+                    case ArrayElement(index, taintedElement) =>
                         val loadedIndex = TaintProblem.getIntConstant(loadExpression.index, statement.code)
                         arrayDefinedBy.contains(index) &&
                             (loadedIndex.isEmpty || taintedElement == loadedIndex.get)
                     // Or the whole array
-                    case Variable(index) ⇒ arrayDefinedBy.contains(index)
-                    case _               ⇒ false
+                    case Variable(index) => arrayDefinedBy.contains(index)
+                    case _               => false
                 }) Set(Variable(statement.index))
                 else
                     Set.empty
-            case GetField.ASTID ⇒
+            case GetField.ASTID =>
                 val get = expression.asGetField
                 val objectDefinedBy = get.objRef.asVar.definedBy
                 if (in match {
                     // The specific field may be tainted
-                    case InstanceField(index, _, taintedField) ⇒
+                    case InstanceField(index, _, taintedField) =>
                         taintedField == get.name && objectDefinedBy.contains(index)
                     // Or the whole object
-                    case Variable(index) ⇒ objectDefinedBy.contains(index)
-                    case _               ⇒ false
+                    case Variable(index) => objectDefinedBy.contains(index)
+                    case _               => false
                 })
                     Set(Variable(statement.index))
                 else
                     Set.empty
-            case GetStatic.ASTID ⇒
+            case GetStatic.ASTID =>
                 val get = expression.asGetStatic
                 if (in == StaticField(get.declaringClass, get.name))
                     Set(Variable(statement.index))
                 else Set.empty
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID |
-                NewArray.ASTID | ArrayLength.ASTID ⇒
-                (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) ⇒
+                NewArray.ASTID | ArrayLength.ASTID =>
+                (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) =>
                     acc ++ createNewTaints(expression.subExpr(subExpr), statement, in))
-            case _ ⇒ Set.empty
+            case _ => Set.empty
         }
     }
 
@@ -318,10 +318,10 @@ abstract class ForwardTaintProblem(project: SomeProject)
     private def isTainted(expression: Expr[V], in: TaintFact): Boolean = {
         val definedBy = expression.asVar.definedBy
         expression.isVar && (in match {
-            case Variable(index)            ⇒ definedBy.contains(index)
-            case ArrayElement(index, _)     ⇒ definedBy.contains(index)
-            case InstanceField(index, _, _) ⇒ definedBy.contains(index)
-            case _                          ⇒ false
+            case Variable(index)            => definedBy.contains(index)
+            case ArrayElement(index, _)     => definedBy.contains(index)
+            case InstanceField(index, _, _) => definedBy.contains(index)
+            case _                          => false
         })
     }
 }

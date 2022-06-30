@@ -370,9 +370,9 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
         "android/location/LocationListener" -> locationListenerEPS,
         "android/location/onNmeaMessageListener" -> onNmeaMessageListenerEPS)
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val eps = ArrayBuffer.empty[Method]
-        for ((superClass, methodList) ← defaultEPS) {
+        for ((superClass, methodList) <- defaultEPS) {
             eps ++= findEPS(ObjectType(superClass), methodList, project)
         }
         eps
@@ -381,8 +381,8 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
     def findEPS(ot: ObjectType, possibleEPS: List[String], project: SomeProject): ArrayBuffer[Method] = {
         val eps = ArrayBuffer.empty[Method]
         val classHierarchy = project.classHierarchy
-        classHierarchy.foreachSubclass(ot, project) { sc ⇒
-            for (pep ← possibleEPS; m ← sc.findMethod(pep) if m.body.isDefined && !eps.contains(m)) {
+        classHierarchy.foreachSubclass(ot, project) { sc =>
+            for (pep <- possibleEPS; m <- sc.findMethod(pep) if m.body.isDefined && !eps.contains(m)) {
                 eps += m
             }
         }

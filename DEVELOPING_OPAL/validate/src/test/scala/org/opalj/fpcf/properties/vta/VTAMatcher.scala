@@ -28,18 +28,18 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val method = entity.asInstanceOf[(DefinedMethod, VTAFact)]._1.definedMethod
         val taCode = p.get(PropertyStoreKey)(method, TACAI.key) match {
-            case FinalP(TheTACAI(tac)) ⇒ tac
-            case _ ⇒
+            case FinalP(TheTACAI(tac)) => tac
+            case _ =>
                 throw new IllegalStateException(
                     "TAC of annotated method not present after analysis"
                 )
         }
         val result = a.elementValuePairs(0).value.asArrayValue.values
-            .map(annotationValue ⇒
+            .map(annotationValue =>
                 validateSingleAnnotation(p, entity, taCode, method,
                     annotationValue.asAnnotationValue.annotation, properties)).filter(_.isDefined)
         if (result.isEmpty) None
@@ -49,11 +49,11 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
     def validateSingleAnnotation(project: SomeProject, entity: Entity,
                                  taCode: TACode[TACMethodParameter, DUVar[ValueInformation]],
                                  method: Method, annotation: AnnotationLike,
-                                 properties: Traversable[Property]): Option[String]
+                                 properties: Iterable[Property]): Option[String]
 
     def referenceTypeToString(t: ReferenceType): String = t match {
-        case objectType: ObjectType ⇒ objectType.simpleName
-        case arrayType: ArrayType ⇒
+        case objectType: ObjectType => objectType.simpleName
+        case arrayType: ArrayType =>
             referenceTypeToString(arrayType.elementType.asReferenceType)+"[]"
     }
 }

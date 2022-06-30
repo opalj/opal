@@ -69,8 +69,8 @@ class IFDSBasedVariableTypeAnalysisRunner extends AbsractIFDSAnalysisRunner {
         analysis: AbstractIFDSAnalysis[_]
     ): Option[Object] =
         analysis match {
-            case subsuming: Subsuming[_, _] ⇒ Some(subsuming.numberOfSubsumptions)
-            case _                          ⇒ None
+            case subsuming: Subsuming[_, _] => Some(subsuming.numberOfSubsumptions)
+            case _                          => None
         }
 
     override protected def writeAdditionalEvaluationResultsToFile(

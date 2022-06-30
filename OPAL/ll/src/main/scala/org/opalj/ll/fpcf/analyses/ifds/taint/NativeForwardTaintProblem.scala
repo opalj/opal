@@ -23,42 +23,42 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         executed next.
      */
     override def normalFlow(statement: LLVMStatement, in: NativeTaintFact, predecessor: Option[LLVMStatement]): Set[NativeTaintFact] = statement.instruction match {
-        case _: Alloca ⇒ Set(in)
-        case store: Store ⇒ in match {
-            case NativeVariable(value) if value == store.src ⇒ store.dst match {
-                case dst: Alloca                          ⇒ Set(in, NativeVariable(dst))
-                case gep: GetElementPtr if gep.isConstant ⇒ Set(in, NativeArrayElement(gep.base, gep.constants))
+        case _: Alloca => Set(in)
+        case store: Store => in match {
+            case NativeVariable(value) if value == store.src => store.dst match {
+                case dst: Alloca                          => Set(in, NativeVariable(dst))
+                case gep: GetElementPtr if gep.isConstant => Set(in, NativeArrayElement(gep.base, gep.constants))
             }
-            case NativeArrayElement(base, indices) if store.src == base ⇒ Set(in, NativeArrayElement(store.dst, indices))
-            case NativeVariable(value) if value == store.dst ⇒ Set()
-            case _ ⇒ Set(in)
+            case NativeArrayElement(base, indices) if store.src == base => Set(in, NativeArrayElement(store.dst, indices))
+            case NativeVariable(value) if value == store.dst => Set()
+            case _ => Set(in)
         }
-        case load: Load ⇒ in match {
-            case NativeVariable(value) if value == load.src ⇒ Set(in, NativeVariable(load))
-            case NativeArrayElement(base, indices) ⇒ load.src match {
-                case gep: GetElementPtr if gep.isConstant && gep.base == base && gep.constants == indices ⇒ Set(in, NativeVariable(load))
-                case _ ⇒ Set(in, NativeArrayElement(load, indices))
+        case load: Load => in match {
+            case NativeVariable(value) if value == load.src => Set(in, NativeVariable(load))
+            case NativeArrayElement(base, indices) => load.src match {
+                case gep: GetElementPtr if gep.isConstant && gep.base == base && gep.constants == indices => Set(in, NativeVariable(load))
+                case _ => Set(in, NativeArrayElement(load, indices))
             }
-            case _ ⇒ Set(in)
+            case _ => Set(in)
         }
-        case add: Add ⇒ in match {
-            case NativeVariable(value) if value == add.op1 || value == add.op2 ⇒ Set(in, NativeVariable(add))
-            case _ ⇒ Set(in)
+        case add: Add => in match {
+            case NativeVariable(value) if value == add.op1 || value == add.op2 => Set(in, NativeVariable(add))
+            case _ => Set(in)
         }
-        case sub: Sub ⇒ in match {
-            case NativeVariable(value) if value == sub.op1 || value == sub.op2 ⇒ Set(in, NativeVariable(sub))
-            case _ ⇒ Set(in)
+        case sub: Sub => in match {
+            case NativeVariable(value) if value == sub.op1 || value == sub.op2 => Set(in, NativeVariable(sub))
+            case _ => Set(in)
         }
-        case gep: GetElementPtr ⇒ in match {
-            case NativeVariable(value) if value == gep.base ⇒ Set(in, NativeVariable(gep))
-            case NativeArrayElement(base, indices) if base == gep.base && gep.isZero ⇒ Set(in, NativeArrayElement(gep, indices))
-            case _ ⇒ Set(in)
+        case gep: GetElementPtr => in match {
+            case NativeVariable(value) if value == gep.base => Set(in, NativeVariable(gep))
+            case NativeArrayElement(base, indices) if base == gep.base && gep.isZero => Set(in, NativeArrayElement(gep, indices))
+            case _ => Set(in)
         }
-        case bitcast: BitCast ⇒ in match {
-            case NativeVariable(value) if value == bitcast.operand(0) ⇒ Set(in, NativeVariable(bitcast))
-            case _ ⇒ Set(in)
+        case bitcast: BitCast => in match {
+            case NativeVariable(value) if value == bitcast.operand(0) => Set(in, NativeVariable(bitcast))
+            case _ => Set(in)
         }
-        case _ ⇒ Set(in)
+        case _ => Set(in)
     }
 
     /**
@@ -71,22 +71,22 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
     override def callFlow(call: LLVMStatement, callee: NativeFunction, in: NativeTaintFact): Set[NativeTaintFact] = callee match {
-        case LLVMFunction(callee) ⇒
+        case LLVMFunction(callee) =>
             in match {
                 // Taint formal parameter if actual parameter is tainted
-                case NativeVariable(value) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
-                    case Some(index) ⇒ Set(NativeVariable(callee.argument(index)))
-                    case None        ⇒ Set()
+                case NativeVariable(value) => call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
+                    case Some(index) => Set(NativeVariable(callee.argument(index)))
+                    case None        => Set()
                 }
                 // TODO pass other java taints
-                case NativeTaintNullFact ⇒ Set(in)
-                case NativeArrayElement(base, indices) ⇒ call.instruction.asInstanceOf[Call].indexOfArgument(base) match {
-                    case Some(index) ⇒ Set(NativeArrayElement(callee.argument(index), indices))
-                    case None        ⇒ Set()
+                case NativeTaintNullFact => Set(in)
+                case NativeArrayElement(base, indices) => call.instruction.asInstanceOf[Call].indexOfArgument(base) match {
+                    case Some(index) => Set(NativeArrayElement(callee.argument(index), indices))
+                    case None        => Set()
                 }
-                case _ ⇒ Set() // Nothing to do
+                case _ => Set() // Nothing to do
             }
-        case _ ⇒ throw new RuntimeException("this case should be handled by outsideAnalysisContext")
+        case _ => throw new RuntimeException("this case should be handled by outsideAnalysisContext")
     }
 
     /**
@@ -100,25 +100,25 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         `successor` will be executed next.
      */
     override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement, callFact: NativeTaintFact, successor: LLVMStatement): Set[NativeTaintFact] = {
-        val callee = exit.callable()
+        val callee = exit.callable
         var flows: Set[NativeTaintFact] = if (sanitizesReturnValue(callee)) Set.empty else in match {
-            case NativeVariable(value) ⇒ exit.instruction match {
-                case ret: Ret if ret.value == value ⇒ Set(NativeVariable(call.instruction))
-                case _: Ret                         ⇒ Set()
-                case _                              ⇒ Set()
+            case NativeVariable(value) => exit.instruction match {
+                case ret: Ret if ret.value == value => Set(NativeVariable(call.instruction))
+                case _: Ret                         => Set()
+                case _                              => Set()
             }
-            case NativeTaintNullFact ⇒ Set(NativeTaintNullFact)
-            case NativeFlowFact(flow) if !flow.contains(call.function) ⇒
+            case NativeTaintNullFact => Set(NativeTaintNullFact)
+            case NativeFlowFact(flow) if !flow.contains(call.function) =>
                 Set(NativeFlowFact(call.function +: flow))
-            case _ ⇒ Set()
+            case _ => Set()
         }
         if (exit.callable.name == "source") in match {
-            case NativeTaintNullFact ⇒ flows += NativeVariable(call.instruction)
+            case NativeTaintNullFact => flows += NativeVariable(call.instruction)
         }
         if (exit.callable.name == "sink") in match {
-            case NativeVariable(value) if value == exit.callable.function.argument(0) ⇒
+            case NativeVariable(value) if value == exit.callable.function.argument(0) =>
                 flows += NativeFlowFact(Seq(call.callable, exit.callable))
-            case _ ⇒
+            case _ =>
         }
         flows
     }
@@ -134,8 +134,8 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
     override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: LLVMStatement): Set[NativeTaintFact] = Set(in)
 
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
-        case PHI(_) ⇒ true
-        case _      ⇒ false
+        case PHI(_) => true
+        case _      => false
     }
 
     /**
@@ -158,36 +158,36 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
     val allParamsWithIndices = allParams.zipWithIndex
     in match {
       // Taint formal parameter if actual parameter is tainted
-      case Variable(index) ⇒
+      case Variable(index) =>
         allParamsWithIndices.flatMap {
-          case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+          case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
             // TODO: this is passed
             Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
-          case _ ⇒ None // Nothing to do
+          case _ => None // Nothing to do
         }.toSet
 
       // Taint element of formal parameter if element of actual parameter is tainted
-      case ArrayElement(index, taintedIndex) ⇒
+      case ArrayElement(index, taintedIndex) =>
         allParamsWithIndices.flatMap {
-          case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+          case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
             Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
-          case _ ⇒ None // Nothing to do
+          case _ => None // Nothing to do
         }.toSet
 
-      case InstanceField(index, declaredClass, taintedField) ⇒
+      case InstanceField(index, declaredClass, taintedField) =>
         // Taint field of formal parameter if field of actual parameter is tainted
         // Only if the formal parameter is of a type that may have that field!
         allParamsWithIndices.flatMap {
-          case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+          case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
             Some(JavaInstanceField(paramIndex + 1, declaredClass, taintedField)) // TODO subtype check
-          case _ ⇒ None // Nothing to do
+          case _ => None // Nothing to do
         }.toSet
 
-      case StaticField(classType, fieldName) ⇒ Set(JavaStaticField(classType, fieldName))
+      case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
 
-      case NullFact                          ⇒ Set(NativeTaintNullFact)
+      case NullFact                          => Set(NativeTaintNullFact)
 
-      case _                                 ⇒ Set() // Nothing to do
+      case _                                 => Set() // Nothing to do
 
     }*/
         Set() // TODO
@@ -231,49 +231,49 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
       var flows: Set[Fact] = Set.empty
       in match {
         // Taint actual parameter if formal parameter is tainted
-        case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
+        case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) =>
           val param = allParams(
             JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
           )
           flows ++= param.asVar.definedBy.iterator.map(Variable)
 
         // Taint element of actual parameter if element of formal parameter is tainted
-        case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
+        case ArrayElement(index, taintedIndex) if index < 0 && index > -100 =>
           val param = allParams(
             JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
           )
           flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
 
-        case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
+        case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 =>
           // Taint field of actual parameter if field of formal parameter is tainted
           val param =
             allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
-          param.asVar.definedBy.foreach { defSite ⇒
+          param.asVar.definedBy.foreach { defSite =>
             flows += InstanceField(defSite, declClass, taintedField)
           }
 
-        case sf: StaticField ⇒ flows += sf
+        case sf: StaticField => flows += sf
 
         // Track the call chain to the sink back
-        case FlowFact(flow) if !flow.contains(JavaMethod(call.method)) ⇒
+        case FlowFact(flow) if !flow.contains(JavaMethod(call.method)) =>
           flows += FlowFact(JavaMethod(call.method) +: flow)
-        case _ ⇒
+        case _ =>
       }
 
       // Propagate taints of the return value
       if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
         val returnValueDefinedBy = exit.stmt.asReturnValue.expr.asVar.definedBy
         in match {
-          case Variable(index) if returnValueDefinedBy.contains(index) ⇒
+          case Variable(index) if returnValueDefinedBy.contains(index) =>
             flows += Variable(call.index)
-          case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) ⇒
+          case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) =>
             flows += ArrayElement(call.index, taintedIndex)
-          case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) ⇒
+          case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) =>
             flows += InstanceField(call.index, declClass, taintedField)
-          case NullFact ⇒
+          case NullFact =>
             val taints = createTaints(callee, call)
             if (taints.nonEmpty) flows ++= taints
-          case _ ⇒ // Nothing to do
+          case _ => // Nothing to do
         }
       }
       val flowFact = createFlowFact(callee, call, in)

@@ -26,10 +26,10 @@ class BackwardTaintAnalysisFixture(implicit val project: SomeProject)
 
 class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p) {
 
-    override val entryPoints: Seq[(DeclaredMethod, TaintFact)] = p.allProjectClassFiles.filter(classFile ⇒
+    override val entryPoints: Seq[(DeclaredMethod, TaintFact)] = p.allProjectClassFiles.filter(classFile =>
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(_.methods).filter(_.name == "sink")
-        .map(method ⇒ declaredMethods(method) →
+        .map(method => declaredMethods(method) ->
             Variable(JavaIFDSProblem.switchParamAndVariableIndex(0, isStaticMethod = true)))
 
     /**
@@ -40,7 +40,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = Set.empty
+    override protected def sanitizesParameter(call: DeclaredMethodJavaStatement, in: TaintFact): Boolean = false
 
     /**
      * Create a flow fact, if a source method is called and the returned value is tainted.
@@ -51,8 +51,8 @@ class BackwardTaintProblemFixture(p: SomeProject) extends BackwardTaintProblem(p
     override protected def createFlowFactAtCall(call: DeclaredMethodJavaStatement, in: Set[TaintFact],
                                                 source: (DeclaredMethod, TaintFact)): Option[FlowFact] = {
         if (in.exists {
-            case Variable(index) ⇒ index == call.index
-            case _               ⇒ false
+            case Variable(index) => index == call.index
+            case _               => false
         } && icfg.getCalleesIfCallStatement(call).get.exists(_.name == "source")) {
             val callChain = currentCallChain(source)
             // Avoid infinite loops.

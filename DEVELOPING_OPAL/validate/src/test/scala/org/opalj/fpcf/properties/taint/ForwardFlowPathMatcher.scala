@@ -18,18 +18,18 @@ class ForwardFlowPathMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
-        val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) ⇒
-            evp.value.asArrayValue.values.map((value: ElementValue) ⇒
+        val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) =>
+            evp.value.asArrayValue.values.map((value: ElementValue) =>
                 value.asStringValue.value)).head.toIndexedSeq
         val flows = properties.filter(_.isInstanceOf[IFDSProperty[_, _]]).head
             .asInstanceOf[IFDSProperty[_, _]]
             .flows
             .values
-            .fold(Set.empty)((acc, facts) ⇒ acc ++ facts)
+            .fold(Set.empty)((acc, facts) => acc ++ facts)
             .collect {
-                case FlowFact(methods) ⇒ methods.map(_.name).toIndexedSeq
+                case FlowFact(methods) => methods.map(_.name).toIndexedSeq
             }
         if (expectedFlow.isEmpty) {
             if (flows.nonEmpty) return Some(s"There should be no flow for $entity")

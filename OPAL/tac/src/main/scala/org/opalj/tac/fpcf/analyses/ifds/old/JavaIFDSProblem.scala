@@ -25,9 +25,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     implicit final protected val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
-    override def outsideAnalysisContext(callee: DeclaredMethod): Option[(DeclaredMethodJavaStatement, DeclaredMethodJavaStatement, Set[Fact]) ⇒ Set[Fact]] = callee.definedMethod.body.isDefined match {
-        case true  ⇒ None
-        case false ⇒ Some((_call: DeclaredMethodJavaStatement, _successor: DeclaredMethodJavaStatement, in: Set[Fact]) ⇒ in)
+    override def outsideAnalysisContext(callee: DeclaredMethod): Option[(DeclaredMethodJavaStatement, DeclaredMethodJavaStatement, Set[Fact]) => Set[Fact]] = callee.definedMethod.body.isDefined match {
+        case true  => None
+        case false => Some((_call: DeclaredMethodJavaStatement, _successor: DeclaredMethodJavaStatement, in: Set[Fact]) => in)
     }
 
     /**
@@ -58,9 +58,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
      * @return The call object for `call`.
      */
     protected def asCall(call: Stmt[V]): Call[V] = call.astID match {
-        case Assignment.ASTID ⇒ call.asAssignment.expr.asFunctionCall
-        case ExprStmt.ASTID   ⇒ call.asExprStmt.expr.asFunctionCall
-        case _                ⇒ call.asMethodCall
+        case Assignment.ASTID => call.asAssignment.expr.asFunctionCall
+        case ExprStmt.ASTID   => call.asExprStmt.expr.asFunctionCall
+        case _                => call.asMethodCall
     }
 
     override def specialCase(source: (DeclaredMethod, Fact), propertyKey: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, Fact]): Option[ProperPropertyComputationResult] = {
@@ -85,12 +85,12 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
     private def baseMethodResult(source: (DeclaredMethod, Fact), propertyKey: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, Fact]): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) ⇒ Result(source, p)
+            case FinalP(p) => Result(source, p)
 
-            case ep @ InterimUBP(ub: Property) ⇒
+            case ep @ InterimUBP(ub: Property) =>
                 InterimResult.forUB(source, ub, Set(ep), c)
 
-            case epk ⇒
+            case epk =>
                 InterimResult.forUB(source, propertyKey.create(Map.empty), Set(epk), c)
         }
         c(propertyStore((declaredMethods(source._1.definedMethod), source._2), propertyKey.key))
@@ -105,5 +105,5 @@ abstract class JavaBackwardIFDSProblem[IFDSFact <: AbstractIFDSFact, UnbalancedI
      * @return False, if no unbalanced return should be performed.
      */
     def shouldPerformUnbalancedReturn(source: (DeclaredMethod, IFDSFact)): Boolean =
-        source._2.isInstanceOf[UnbalancedReturnFact[IFDSFact]] || entryPoints.contains(source)
+        source._2.isInstanceOf[UnbalancedReturnFact[IFDSFact @unchecked]] || entryPoints.contains(source)
 }

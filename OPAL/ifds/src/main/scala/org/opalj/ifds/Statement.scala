@@ -2,6 +2,6 @@
 package org.opalj.ifds
 
 abstract class Statement[C, Node] {
-    def node(): Node
-    def callable(): C
+    def node: Node
+    def callable: C
 }

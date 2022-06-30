@@ -6,7 +6,7 @@ import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf._
 import org.opalj.ifds.{AbstractIFDSFact, IFDS, IFDSProperty, IFDSPropertyMetaInformation, Statement}
 
-import scala.collection.{mutable, Set ⇒ SomeSet}
+import scala.collection.{mutable, Set => SomeSet}
 
 /**
  * The state of the analysis. For each method and source fact, there is a separate state.
@@ -102,7 +102,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
             new State(entity, Map(entity -> Set.empty), Map.empty, Set.empty[Node])
         val queue = mutable.Queue
             .empty[QueueEntry]
-        icfg.startNodes(sourceFact, function).foreach { start ⇒
+        icfg.startNodes(sourceFact, function).foreach { start =>
             state.incomingFacts += start -> Set(sourceFact)
             queue.enqueue((start, Set(sourceFact), None, None, None))
         }
@@ -138,15 +138,15 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
         eps: SomeEPS
     )(implicit state: State): ProperPropertyComputationResult = {
         (eps: @unchecked) match {
-            case FinalE(e: (C, IFDSFact) @unchecked) ⇒
+            case FinalE(e: (C, IFDSFact) @unchecked) =>
                 reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1, Some(e._2))
 
             case interimEUBP @ InterimEUBP(
                 e: (C, IFDSFact) @unchecked,
                 ub: IFDSProperty[S, IFDSFact] @unchecked
-                ) ⇒
+                ) =>
                 if (ub.flows.values
-                    .forall(facts ⇒ facts.size == 1 && facts.forall(_ == ifdsProblem.nullFact))) {
+                    .forall(facts => facts.size == 1 && facts.forall(_ == ifdsProblem.nullFact))) {
                     // Do not re-analyze the caller if we only get the null fact.
                     // Update the pendingIfdsDependee entry to the new interim result.
                     state.pendingIfdsDependees +=
@@ -155,11 +155,11 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                 } else
                     reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1, Some(e._2))
 
-            case FinalEP(_: C @unchecked, _: Any) ⇒
+            case FinalEP(_: C @unchecked, _: Any) =>
                 // TODO: Any was Callees, how to verify this?
                 reAnalyzeBasicBlocks(state.pendingCgCallSites)
 
-            case InterimEUBP(_: C @unchecked, _: Any) ⇒
+            case InterimEUBP(_: C @unchecked, _: Any) =>
                 // TODO: Any was Callees, how to verify this?
                 reAnalyzeBasicBlocks(state.pendingCgCallSites)
         }
@@ -198,7 +198,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
      * analyzed with the `inputFacts`.
      */
         if (calleeWithUpdateFact.isEmpty)
-            for (successor ← successors) {
+            for (successor <- successors) {
                 statistics.numberOfCalls.callToReturnFlow += 1
                 statistics.sumOfInputfactsForCallbacks += in.size
                 summaryEdges += successor ->
@@ -208,16 +208,16 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                     )
             }
 
-        for (callee ← callees) {
+        for (callee <- callees) {
             ifdsProblem.outsideAnalysisContext(callee) match {
-                case Some(handler) ⇒
+                case Some(handler) =>
                     // Let the concrete analysis decide what to do.
                     for {
-                        successor ← successors
+                        successor <- successors
                     } summaryEdges +=
                         successor -> (summaryEdges(successor) ++
                             handler(call, successor, in))
-                case None ⇒
+                case None =>
                     val callToStart =
                         if (calleeWithUpdateFact.isDefined) Set(calleeWithUpdateFact.get)
                         else {
@@ -225,7 +225,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                         }
                     var allNewExitFacts: Map[S, Set[IFDSFact]] = Map.empty
                     // Collect exit facts for each input fact separately
-                    for (fact ← callToStart) {
+                    for (fact <- callToStart) {
                         /*
                          * If this is a recursive call with the same input facts, we assume that the
                          * call only produces the facts that are already known. The call site is added to
@@ -246,11 +246,11 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                                 .asInstanceOf[EOptionP[(C, IFDSFact), IFDSProperty[S, IFDSFact]]]
                             val oldValue = state.pendingIfdsDependees.get(e)
                             val oldExitFacts: Map[S, Set[IFDSFact]] = oldValue match {
-                                case Some(ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]]) ⇒ ep.ub.flows
-                                case _                                                   ⇒ Map.empty
+                                case Some(ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]]) => ep.ub.flows
+                                case _                                                   => Map.empty
                             }
                             val exitFacts: Map[S, Set[IFDSFact]] = callFlows match {
-                                case ep: FinalEP[_, IFDSProperty[S, IFDSFact]] ⇒
+                                case ep: FinalEP[_, IFDSProperty[S, IFDSFact]] =>
                                     if (state.pendingIfdsCallSites.contains(e)
                                         && state.pendingIfdsCallSites(e).nonEmpty) {
                                         val newDependee =
@@ -259,7 +259,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                                     }
                                     state.pendingIfdsDependees -= e
                                     ep.p.flows
-                                case ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]] ⇒
+                                case ep: InterimEUBP[_, IFDSProperty[S, IFDSFact]] =>
                                     /*
                                      * Add the call site to `pendingIfdsCallSites` and
                                      * `pendingIfdsDependees` and continue with the facts in the interim
@@ -268,7 +268,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                                      */
                                     addIfdsDependee(e, callFlows, basicBlock, call)
                                     ep.ub.flows
-                                case _ ⇒
+                                case _ =>
                                     addIfdsDependee(e, callFlows, basicBlock, call)
                                     Map.empty
                             }
@@ -307,10 +307,10 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
     protected def collectResult(implicit state: State): Map[S, Set[IFDSFact]] = {
         var result = Map.empty[S, Set[IFDSFact]]
         state.outgoingFacts.foreach(
-            blockFacts ⇒
+            blockFacts =>
                 blockFacts._2.get(None) match {
-                    case Some(facts) ⇒ result += icfg.lastStatement(blockFacts._1) -> facts
-                    case None        ⇒
+                    case Some(facts) => result += icfg.lastStatement(blockFacts._1) -> facts
+                    case None        =>
                 }
         )
         result
@@ -342,8 +342,8 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
         // First process for normal returns, then abnormal returns.
         var result = summaryEdges
         for {
-            successor ← successors
-            exitStatement ← exitFacts.keys
+            successor <- successors
+            exitStatement <- exitFacts.keys
         } result = addSummaryEdge(result, call, exitStatement, successor, callee, exitFacts)
         result
     }
@@ -375,10 +375,10 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                 calleeWithUpdate,
                 calleeWithUpdateFact
             )
-            val allOut = IFDS.mergeMaps(oldOut, nextOut).mapValues(facts ⇒ subsume(facts, project))
+            val allOut = IFDS.mergeMaps(oldOut, nextOut).view.mapValues(facts => subsume(facts, project)).toMap
             state.outgoingFacts = state.outgoingFacts.updated(basicBlock, allOut)
 
-            for (successor ← icfg.nextNodes(basicBlock)) {
+            for (successor <- icfg.nextNodes(basicBlock)) {
                 if (icfg.isLastNode(successor)) {
                     // Re-analyze recursive call sites with the same input fact.
                     val nextOutSuccessors = nextOut.get(Some(successor))
@@ -488,7 +488,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
         var result: Map[Option[Node], Set[IFDSFact]] =
             if (calleesO.isEmpty) {
                 var result: Map[Option[Node], Set[IFDSFact]] = Map.empty
-                for (node ← icfg.nextNodes(basicBlock)) {
+                for (node <- icfg.nextNodes(basicBlock)) {
                     statistics.numberOfCalls.normalFlow += 1
                     statistics.sumOfInputfactsForCallbacks += in.size
                     result += Some(node) -> ifdsProblem.normalFlow(
@@ -505,10 +505,10 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
                 result
             } else
                 handleCall(basicBlock, statement, calleesO.get, flows, callFact)
-                    .map(entry ⇒ Some(entry._1.node) -> entry._2)
+                    .map(entry => Some(entry._1.node) -> entry._2)
 
         // Propagate the null fact.
-        result = result.map(result ⇒ result._1 -> propagateNullFact(in, result._2))
+        result = result.map(result => result._1 -> propagateNullFact(in, result._2))
         result
     }
 
@@ -519,7 +519,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
      */
     private def reAnalyzeBasicBlocks(basicBlocks: Set[Node])(implicit state: State): Unit = {
         val queue: mutable.Queue[QueueEntry] = mutable.Queue.empty
-        for (bb ← basicBlocks) queue.enqueue((bb, state.incomingFacts(bb), None, None, None))
+        for (bb <- basicBlocks) queue.enqueue((bb, state.incomingFacts(bb), None, None, None))
         process(queue)
     }
 
@@ -536,7 +536,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[C, 
         fact:      Option[IFDSFact]
     )(implicit state: State): Unit = {
         val queue: mutable.Queue[QueueEntry] = mutable.Queue.empty
-        for (callSite ← callSites) {
+        for (callSite <- callSites) {
             val node = callSite.node
             queue.enqueue((node, state.incomingFacts(node), Some(callSite), Some(callee), fact))
         }
@@ -634,7 +634,7 @@ abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact, C <: AnyRef, 
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
         val ifdsAnalysis = analysis.asInstanceOf[IFDSAnalysis[IFDSFact, C, S, Node]]
-        for (e ← ifdsAnalysis.ifdsProblem.entryPoints) {
+        for (e <- ifdsAnalysis.ifdsProblem.entryPoints) {
             ps.force(e, ifdsAnalysis.propertyKey.key)
         }
     }

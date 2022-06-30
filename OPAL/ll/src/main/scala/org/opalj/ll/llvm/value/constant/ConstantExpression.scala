@@ -40,7 +40,7 @@ object ConstantExpression {
             // case LLVMAlloca         => AllocaConst(ref)
             // case LLVMLoad           => LoadConst(ref)
             // case LLVMStore          => StoreConst(ref)
-            case LLVMGetElementPtr ⇒ GetElementPtrConst(ref)
+            case LLVMGetElementPtr => GetElementPtrConst(ref)
             // case LLVMTrunc          => TruncConst(ref)
             // case LLVMZExt           => ZExtConst(ref)
             // case LLVMSExt           => SExtConst(ref)
@@ -78,7 +78,7 @@ object ConstantExpression {
             // case LLVMCatchPad       => CatchPadConst(ref)
             // case LLVMCleanupPad     => CleanupPadConst(ref)
             // case LLVMCatchSwitch    => CatchSwitchConst(ref)
-            case opCode            ⇒ throw new IllegalArgumentException("unknown instruction opcode: "+opCode)
+            case opCode            => throw new IllegalArgumentException("unknown instruction opcode: "+opCode)
         }
     }
 }

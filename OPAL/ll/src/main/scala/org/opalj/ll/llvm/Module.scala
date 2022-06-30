@@ -19,10 +19,10 @@ case class Module(ref: LLVMModuleRef) {
 
     def function(name: String): Function =
         Value(LLVMGetNamedFunction(ref, name)) match {
-            case None ⇒
+            case None =>
                 throw new IllegalArgumentException("Unknown function '"+name+"'")
-            case Some(function: Function) ⇒ function
-            case Some(_)                  ⇒ throw new IllegalStateException("Expected LLVMGetNamedFunction to return a Function ref")
+            case Some(function: Function) => function
+            case Some(_)                  => throw new IllegalStateException("Expected LLVMGetNamedFunction to return a Function ref")
         }
 }
 

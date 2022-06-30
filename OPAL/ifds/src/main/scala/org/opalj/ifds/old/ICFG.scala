@@ -3,7 +3,7 @@ package org.opalj.ifds.old
 
 import org.opalj.ifds.{AbstractIFDSFact, Statement}
 
-import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.{Set => SomeSet}
 
 abstract class ICFG[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_, Node], Node] {
     /**

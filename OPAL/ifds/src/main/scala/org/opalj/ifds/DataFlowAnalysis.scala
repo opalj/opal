@@ -13,7 +13,7 @@ abstract class DataFlowAnalysis[Facts >: Null <: AnyRef, C <: AnyRef, S <: State
         var facts = Map.empty[S, Facts]
         val workList = new mutable.Queue[S]()
 
-        for (entryStatement ← icfg.startStatements(callable)) {
+        for (entryStatement <- icfg.startStatements(callable)) {
             facts = facts.updated(entryStatement, entryFacts)
             workList.enqueue(entryStatement)
         }
@@ -22,14 +22,14 @@ abstract class DataFlowAnalysis[Facts >: Null <: AnyRef, C <: AnyRef, S <: State
             val statement = workList.dequeue()
             val inFacts = facts.get(statement).get
 
-            for (successor ← icfg.nextStatements(statement)) {
+            for (successor <- icfg.nextStatements(statement)) {
                 val newOutFacts = transferFunction(inFacts, statement, successor)
                 facts.get(successor) match {
-                    case None ⇒ {
+                    case None => {
                         facts = facts.updated(successor, newOutFacts)
                         workList.enqueue(successor)
                     }
-                    case Some(existingOutFacts) ⇒ {
+                    case Some(existingOutFacts) => {
                         val outFacts = join(existingOutFacts, newOutFacts)
                         if (outFacts ne existingOutFacts) {
                             facts = facts.updated(successor, outFacts)

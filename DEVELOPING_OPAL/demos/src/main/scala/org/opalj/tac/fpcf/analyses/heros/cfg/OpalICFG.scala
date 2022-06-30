@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.heros.cfg
 
-import java.util.{List ⇒ JList}
-import java.util.{Collection ⇒ JCollection}
-import java.util.{Set ⇒ JSet}
+import java.util.{List => JList}
+import java.util.{Collection => JCollection}
+import java.util.{Set => JSet}
 import scala.collection.JavaConverters._
 import heros.InterproceduralCFG
 import org.opalj.fpcf.FinalEP
@@ -46,7 +46,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeProvider
  */
 abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaStatement, Method] {
 
-    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] =
+    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] =
         project.get(LazyDetachedTACAIKey)
     implicit val ps: PropertyStore = project.get(PropertyStoreKey)
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -57,8 +57,7 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaSta
     override def getPredsOf(stmt: JavaStatement): JList[JavaStatement] = {
         stmt.cfg
             .predecessors(stmt.index)
-            .toChain
-            .map { index ⇒
+            .map { index =>
                 JavaStatement(stmt.method, index, stmt.code, stmt.cfg)
             }
             .toList
@@ -68,8 +67,7 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaSta
     override def getSuccsOf(stmt: JavaStatement): JList[JavaStatement] = {
         stmt.cfg
             .successors(stmt.index)
-            .toChain
-            .map { index ⇒
+            .map { index =>
                 JavaStatement(stmt.method, index, stmt.code, stmt.cfg)
             }
             .toList
@@ -83,8 +81,8 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaSta
             .directCallees(typeProvider.newContext(declaredMethod), callInstr.stmt.pc)
             .map(_.method)
             .collect {
-                case d: DefinedMethod           ⇒ List(d.definedMethod)
-                case md: MultipleDefinedMethods ⇒ md.definedMethods
+                case d: DefinedMethod           => List(d.definedMethod)
+                case md: MultipleDefinedMethods => md.definedMethods
             }
             .flatten
             .filter(_.body.isDefined)
@@ -98,11 +96,11 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaSta
         callers
             .callers(declaredMethod)
             .flatMap {
-                case (method, pc, true) ⇒
+                case (method, pc, true) =>
                     val TACode(_, code, pcToIndex, cfg, _) = tacai(method.definedMethod)
                     val index = pcToIndex(pc)
                     Some(JavaStatement(method.definedMethod, index, code, cfg))
-                case _ ⇒ None
+                case _ => None
             }
             .toSet
             .asJava
@@ -112,10 +110,10 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaSta
         val TACode(_, code, _, cfg, _) = tacai(m)
         code.zipWithIndex
             .collect {
-                case (mc: MethodCall[V], index) ⇒ JavaStatement(m, index, code, cfg)
-                case (as @ Assignment(_, _, _: FunctionCall[V]), index) ⇒
+                case (mc: MethodCall[V], index) => JavaStatement(m, index, code, cfg)
+                case (as @ Assignment(_, _, _: FunctionCall[V]), index) =>
                     JavaStatement(m, index, code, cfg)
-                case (ex @ ExprStmt(_, _: FunctionCall[V]), index) ⇒
+                case (ex @ ExprStmt(_, _: FunctionCall[V]), index) =>
                     JavaStatement(m, index, code, cfg)
             }
             .toSet
@@ -127,17 +125,17 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaSta
 
     override def isCallStmt(stmt: JavaStatement): Boolean = {
         def isCallExpr(expr: Expr[V]) = expr.astID match {
-            case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+            case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID =>
                 true
-            case _ ⇒ false
+            case _ => false
         }
 
         stmt.stmt.astID match {
-            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID =>
                 true
-            case Assignment.ASTID ⇒ isCallExpr(stmt.stmt.asAssignment.expr)
-            case ExprStmt.ASTID   ⇒ isCallExpr(stmt.stmt.asExprStmt.expr)
-            case _                ⇒ false
+            case Assignment.ASTID => isCallExpr(stmt.stmt.asAssignment.expr)
+            case ExprStmt.ASTID   => isCallExpr(stmt.stmt.asExprStmt.expr)
+            case _                => false
         }
     }
 

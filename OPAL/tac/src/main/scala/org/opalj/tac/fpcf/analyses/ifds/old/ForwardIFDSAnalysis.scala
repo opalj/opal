@@ -40,7 +40,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
      * Catch nodes are skipped to their successor.
      */
     override protected def nextNodes(basicBlock: BasicBlock): Set[CFGNode] =
-        basicBlock.successors.map { successor ⇒
+        basicBlock.successors.map { successor =>
             if (successor.isCatchNode) successor.successors.head
             else successor
         }
@@ -126,8 +126,8 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
         if (AbstractIFDSAnalysis.OPTIMIZE_CROSS_PRODUCT_IN_RETURN_FLOW) {
             val successors = nextStatementsWithNode(call)
             for {
-                successor ← successors
-                exitStatement ← exitFacts.keys
+                successor <- successors
+                exitStatement <- exitFacts.keys
                 if (successor._2.isBasicBlock || successor._2.isNormalReturnExitNode) &&
                     (exitStatement.stmt.astID == Return.ASTID || exitStatement.stmt.astID == ReturnValue.ASTID) ||
                     (successor._2.isCatchNode || successor._2.isAbnormalReturnExitNode) &&
@@ -136,8 +136,8 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
         } else {
             val successors = nextStatements(call)
             for {
-                successor ← successors
-                exitStatement ← exitFacts.keys
+                successor <- successors
+                exitStatement <- exitFacts.keys
             } result = addSummaryEdge(result, call, exitStatement, successor, callee, exitFacts)
         }
         result
@@ -152,11 +152,11 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
         val basicBlock = statement.node.asBasicBlock
         if (index == basicBlock.endPC)
             basicBlock.successors.iterator
-                .map(successorNode ⇒ firstStatement(successorNode) → successorNode).toMap
+                .map(successorNode => firstStatement(successorNode) -> successorNode).toMap
         else {
             val nextIndex = index + 1
             Map(old.DeclaredMethodJavaStatement(statement.method, basicBlock, statement.code(nextIndex), nextIndex,
-                statement.code, statement.cfg, statement.declaredMethod) → basicBlock)
+                statement.code, statement.cfg, statement.declaredMethod) -> basicBlock)
         }
     }
 
@@ -172,7 +172,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
         state: State
     ): Map[DeclaredMethodJavaStatement, Set[IFDSFact]] = {
         var result = Map.empty[DeclaredMethodJavaStatement, Set[IFDSFact]]
-        exit.predecessors foreach { predecessor ⇒
+        exit.predecessors foreach { predecessor =>
             if (predecessor.isBasicBlock) {
                 val basicBlock = predecessor.asBasicBlock
                 val exitFacts = state.outgoingFacts.get(basicBlock).flatMap(_.get(exit))
@@ -180,7 +180,7 @@ abstract class ForwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact](ifdsProblem: IF
                     val lastIndex = basicBlock.endPC
                     val stmt = old.DeclaredMethodJavaStatement(state.method, basicBlock, state.code(lastIndex),
                         lastIndex, state.code, state.cfg, state.source._1)
-                    result += stmt → exitFacts.get
+                    result += stmt -> exitFacts.get
                 }
             }
         }

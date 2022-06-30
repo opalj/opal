@@ -21,7 +21,7 @@ class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
         p.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey
         )(
-            (_: Option[Set[Class[_ <: AnyRef]]]) ⇒
+            (_: Option[Set[Class[_ <: AnyRef]]]) =>
                 Set[Class[_ <: AnyRef]](
                     classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]]
                 )
@@ -34,7 +34,7 @@ class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
-            case (methods, entityString, annotations) ⇒
+            case (methods, entityString, annotations) =>
                 ((declaredMethods(methods), TaintNullFact), entityString, annotations)
         }
         testContext.propertyStore.shutdown()

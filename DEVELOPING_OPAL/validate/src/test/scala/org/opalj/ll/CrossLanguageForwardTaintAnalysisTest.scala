@@ -27,13 +27,13 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
             )
 
         project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-            current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint/TaintTest.ll")
+            current => List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint/TaintTest.ll")
         )
         project.get(LLVMProjectKey)
         project.get(RTACallGraphKey)
         val manager = project.get(FPCFAnalysesManagerKey)
         val (ps, analyses) = manager.runAll(JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler)
-        for (method ← project.allMethodsWithBody) {
+        for (method <- project.allMethodsWithBody) {
             val flows =
                 ps((method, TaintNullFact), JavaForwardTaintAnalysisScheduler.property.key)
             println("---METHOD: "+method.toJava+"  ---")
@@ -44,10 +44,10 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
                 .flatten
                 .toSet[TaintFact]
                 .flatMap {
-                    case FlowFact(flow) ⇒ Some(flow)
-                    case _              ⇒ None
+                    case FlowFact(flow) => Some(flow)
+                    case _              => None
                 }
-            for (flow ← flowFacts)
+            for (flow <- flowFacts)
                 println(s"flow: "+flow.map(_.name).mkString(", "))
             if (method.name.contains("no_flow")) {
                 it(s"${method.name} has no flow") {
@@ -63,10 +63,10 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
         val function: Function = project.get(LLVMProjectKey).function("Java_TaintTest_native_1array_1tainted").get
         val debugData = ps((LLVMFunction(function), NativeTaintNullFact), NativeForwardTaintAnalysisScheduler.property.key).ub.asInstanceOf[IFDSProperty[LLVMStatement, NativeTaintFact]].debugData
         for {
-            bb ← function.basicBlocks
-            instruction ← bb.instructions
+            bb <- function.basicBlocks
+            instruction <- bb.instructions
         } {
-            for (fact ← debugData.getOrElse(LLVMStatement(instruction), Set.empty))
+            for (fact <- debugData.getOrElse(LLVMStatement(instruction), Set.empty))
                 println("\t"+fact)
             println(instruction.repr)
         }

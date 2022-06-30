@@ -83,8 +83,8 @@ class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit
         val caller = declaredMethods(statement.method)
         val ep = propertyStore(caller, Callees.key)
         ep match {
-            case FinalEP(_, p) ⇒ Some(p.directCallees(typeProvider.newContext(caller), pc).map(_.method).toSet)
-            case _ ⇒
+            case FinalEP(_, p) => Some(p.directCallees(typeProvider.newContext(caller), pc).map(_.method).toSet)
+            case _ =>
                 throw new IllegalStateException(
                     "call graph mut be computed before the analysis starts"
                 )

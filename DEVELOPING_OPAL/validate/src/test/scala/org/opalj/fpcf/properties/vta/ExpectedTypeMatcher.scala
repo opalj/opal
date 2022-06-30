@@ -17,7 +17,7 @@ class ExpectedTypeMatcher extends VTAMatcher {
     def validateSingleAnnotation(project: SomeProject, entity: Entity,
                                  taCode: TACode[TACMethodParameter, DUVar[ValueInformation]],
                                  method: Method, annotation: AnnotationLike,
-                                 properties: Traversable[Property]): Option[String] = {
+                                 properties: Iterable[Property]): Option[String] = {
         val elementValuePairs = annotation.elementValuePairs
         val expected = (
             elementValuePairs.head.value.asIntValue.value,
@@ -28,9 +28,9 @@ class ExpectedTypeMatcher extends VTAMatcher {
             .asInstanceOf[VTAResult]
             .flows
             .values
-            .fold(Set.empty)((acc, facts) ⇒ acc ++ facts)
+            .fold(Set.empty)((acc, facts) => acc ++ facts)
             .collect {
-                case VariableType(definedBy, t, upperBound) ⇒
+                case VariableType(definedBy, t, upperBound) =>
                     (taCode.lineNumber(method.body.get, definedBy).get, referenceTypeToString(t),
                         upperBound)
             }

@@ -8,39 +8,39 @@ import org.bytedeco.llvm.global.LLVM._
 object Type {
     def apply(ref: LLVMTypeRef): Type = {
         LLVMGetTypeKind(ref) match {
-            case LLVMVoidTypeKind           ⇒ VoidType(ref)
-            case LLVMHalfTypeKind           ⇒ HalfType(ref)
-            case LLVMFloatTypeKind          ⇒ FloatType(ref)
-            case LLVMDoubleTypeKind         ⇒ DoubleType(ref)
-            case LLVMX86_FP80TypeKind       ⇒ X86_FP80Type(ref)
-            case LLVMFP128TypeKind          ⇒ FP128Type(ref)
-            case LLVMPPC_FP128TypeKind      ⇒ PPC_FP128Type(ref)
-            case LLVMLabelTypeKind          ⇒ LabelType(ref)
-            case LLVMIntegerTypeKind        ⇒ IntegerType(ref)
-            case LLVMFunctionTypeKind       ⇒ FunctionType(ref)
-            case LLVMStructTypeKind         ⇒ StructType(ref)
-            case LLVMArrayTypeKind          ⇒ ArrayType(ref)
-            case LLVMPointerTypeKind        ⇒ PointerType(ref)
-            case LLVMVectorTypeKind         ⇒ VectorType(ref)
-            case LLVMMetadataTypeKind       ⇒ MetadataType(ref)
-            case LLVMX86_MMXTypeKind        ⇒ X86_MMXType(ref)
-            case LLVMTokenTypeKind          ⇒ TokenType(ref)
-            case LLVMScalableVectorTypeKind ⇒ ScalableVectorType(ref)
-            case LLVMBFloatTypeKind         ⇒ FloatType(ref)
-            case typeKind                   ⇒ throw new IllegalArgumentException("unknown type kind: "+typeKind)
+            case LLVMVoidTypeKind           => VoidType(ref)
+            case LLVMHalfTypeKind           => HalfType(ref)
+            case LLVMFloatTypeKind          => FloatType(ref)
+            case LLVMDoubleTypeKind         => DoubleType(ref)
+            case LLVMX86_FP80TypeKind       => X86_FP80Type(ref)
+            case LLVMFP128TypeKind          => FP128Type(ref)
+            case LLVMPPC_FP128TypeKind      => PPC_FP128Type(ref)
+            case LLVMLabelTypeKind          => LabelType(ref)
+            case LLVMIntegerTypeKind        => IntegerType(ref)
+            case LLVMFunctionTypeKind       => FunctionType(ref)
+            case LLVMStructTypeKind         => StructType(ref)
+            case LLVMArrayTypeKind          => ArrayType(ref)
+            case LLVMPointerTypeKind        => PointerType(ref)
+            case LLVMVectorTypeKind         => VectorType(ref)
+            case LLVMMetadataTypeKind       => MetadataType(ref)
+            case LLVMX86_MMXTypeKind        => X86_MMXType(ref)
+            case LLVMTokenTypeKind          => TokenType(ref)
+            case LLVMScalableVectorTypeKind => ScalableVectorType(ref)
+            case LLVMBFloatTypeKind         => FloatType(ref)
+            case typeKind                   => throw new IllegalArgumentException("unknown type kind: "+typeKind)
         }
     }
 }
 
 sealed abstract class Type(ref: LLVMTypeRef) {
-    def repr(): String = {
+    def repr: String = {
         val bytePointer = LLVMPrintTypeToString(ref)
         val string = bytePointer.getString
         LLVMDisposeMessage(bytePointer)
         string
     }
 
-    override def toString: String = s"Type(${repr()})"
+    override def toString: String = s"Type(${repr})"
 
     def isSized: Boolean = intToBool(LLVMTypeIsSized(ref))
 }
@@ -78,7 +78,7 @@ case class FunctionType(ref: LLVMTypeRef) extends Type(ref) {
     def params: Iterable[Type] = {
         val result = new PointerPointer[LLVMTypeRef](paramCount.toLong)
         LLVMGetParamTypes(ref, result)
-        (0.toLong until paramCount.toLong).map(result.get(_)).map(p ⇒ Type(new LLVMTypeRef(p)))
+        (0.toLong until paramCount.toLong).map(result.get(_)).map(p => Type(new LLVMTypeRef(p)))
     }
 }
 /** Structures */

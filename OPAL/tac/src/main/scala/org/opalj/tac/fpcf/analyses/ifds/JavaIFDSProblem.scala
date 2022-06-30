@@ -30,13 +30,13 @@ case class JavaStatement(
     override def hashCode(): Int = method.hashCode() * 31 + index
 
     override def equals(o: Any): Boolean = o match {
-        case s: JavaStatement ⇒ s.index == index && s.method == method
-        case _                ⇒ false
+        case s: JavaStatement => s.index == index && s.method == method
+        case _                => false
     }
 
     override def toString: String = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
-    override def callable(): Method = method
-    override def node(): CFGNode = cfg.bb(index)
+    override def callable: Method = method
+    override def node: CFGNode = cfg.bb(index)
     def stmt: Stmt[V] = code(index)
 }
 
@@ -54,9 +54,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
      * @return The call object for `call`.
      */
     protected def asCall(call: Stmt[V]): Call[V] = call.astID match {
-        case Assignment.ASTID ⇒ call.asAssignment.expr.asFunctionCall
-        case ExprStmt.ASTID   ⇒ call.asExprStmt.expr.asFunctionCall
-        case _                ⇒ call.asMethodCall
+        case Assignment.ASTID => call.asAssignment.expr.asFunctionCall
+        case ExprStmt.ASTID   => call.asExprStmt.expr.asFunctionCall
+        case _                => call.asMethodCall
     }
 
     /**
@@ -74,9 +74,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
             (exit.stmt.astID != Return.ASTID && exit.stmt.astID != ReturnValue.ASTID)
     }
 
-    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact, Getter) ⇒ Set[Fact]] = callee.body.isDefined match {
-        case true  ⇒ None
-        case false ⇒ Some((_: JavaStatement, _: JavaStatement, in: Fact, _: Getter) ⇒ Set(in))
+    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact, Getter) => Set[Fact]] = callee.body.isDefined match {
+        case true  => None
+        case false => Some((_: JavaStatement, _: JavaStatement, in: Fact, _: Getter) => Set(in))
     }
 }
 

@@ -25,11 +25,11 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(DeclaredMethod, TaintFact)] = p.allProjectClassFiles.filter(classFile ⇒
+    override val entryPoints: Seq[(DeclaredMethod, TaintFact)] = p.allProjectClassFiles.filter(classFile =>
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
-        .flatMap(classFile ⇒ classFile.methods)
-        .filter(method ⇒ method.isPublic && outsideAnalysisContext(declaredMethods(method)).isEmpty)
-        .map(method ⇒ declaredMethods(method) → TaintNullFact)
+        .flatMap(classFile => classFile.methods)
+        .filter(method => method.isPublic && outsideAnalysisContext(declaredMethods(method)).isEmpty)
+        .map(method => declaredMethods(method) -> TaintNullFact)
 
     /**
      * The sanitize method is a sanitizer.
@@ -39,7 +39,7 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * We do not sanitize paramters.
      */
-    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = Set.empty
+    override protected def sanitizesParameter(call: DeclaredMethodJavaStatement, in: TaintFact): Boolean = false
 
     /**
      * Creates a new variable fact for the callee, if the source was called.

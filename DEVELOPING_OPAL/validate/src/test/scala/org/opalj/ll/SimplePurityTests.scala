@@ -13,9 +13,9 @@ import scala.collection.immutable.List
 class SimplePurityTests extends AnyFunSpec with Matchers {
     describe("SimplePurityAnalysis") {
         it("executes") {
-            val project = Project(Traversable.empty)
+            val project = Project(Iterable.empty)
             project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-                current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/purity.ll")
+                current => List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/purity.ll")
             )
             val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(EagerSimplePurityAnalysis)
 

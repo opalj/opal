@@ -96,7 +96,7 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
 
     def needsPredecessor(statement: S): Boolean
 
-    type OutsideAnalysisContextHandler = ((S, S, IFDSFact, Getter) ⇒ Set[IFDSFact]) {
+    type OutsideAnalysisContextHandler = ((S, S, IFDSFact, Getter) => Set[IFDSFact]) {
         def apply(call: S, successor: S, in: IFDSFact, dependeesGetter: Getter): Set[IFDSFact]
     }
 

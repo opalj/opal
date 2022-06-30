@@ -33,11 +33,11 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         cfg:        CFG[Stmt[V], TACStmts[V]]
     ): Set[BasicBlock] =
         sourceFact match {
-            case fact: UnbalancedReturnFact[IFDSFact] ⇒ Set(cfg.bb(fact.index))
-            case _ ⇒
+            case fact: UnbalancedReturnFact[IFDSFact @unchecked] => Set(cfg.bb(fact.index))
+            case _ =>
                 Set(cfg.normalReturnNode, cfg.abnormalReturnNode)
                     .flatMap(_.predecessors)
-                    .foldLeft(Set.empty[BasicBlock])((c, n) ⇒ c + n.asBasicBlock)
+                    .foldLeft(Set.empty[BasicBlock])((c, n) => c + n.asBasicBlock)
         }
 
     /**
@@ -67,10 +67,10 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
        * If the analysis for the unbalanced return finished, remove the entity from the
        * dependencies.
        */
-            case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒
-                if (e._2.isInstanceOf[UnbalancedReturnFact[IFDSFact]]) {
+            case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) =>
+                if (e._2.isInstanceOf[UnbalancedReturnFact[IFDSFact @unchecked]]) {
                     state.pendingIfdsDependees -= e
-                    createResult
+                    createResult()
                 } else super.propertyUpdate(eps)
             /*
        * If there is an interim result for an unbalanced return fact, ignore it and just create the result.
@@ -78,8 +78,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
             case interimEUBP @ InterimEUBP(
                 e: (DeclaredMethod, IFDSFact) @unchecked,
                 _: IFDSProperty[DeclaredMethodJavaStatement, IFDSFact] @unchecked
-                ) ⇒
-                if (e._2.isInstanceOf[UnbalancedReturnFact[IFDSFact]]) {
+                ) =>
+                if (e._2.isInstanceOf[UnbalancedReturnFact[IFDSFact @unchecked]]) {
                     state.pendingIfdsDependees +=
                         e -> interimEUBP
                         .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[DeclaredMethodJavaStatement, IFDSFact]]]
@@ -87,7 +87,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                 } else super.propertyUpdate(eps)
 
             // If this is not an update for an unbalanced return fact, handle it as usual.
-            case _ ⇒ super.propertyUpdate(eps)
+            case _ => super.propertyUpdate(eps)
         }
     }
 
@@ -100,8 +100,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         else {
             val predecessors = scala.collection.mutable.Set.empty[CFGNode]
             basicBlock.predecessors.foreach {
-                case basicBlock: BasicBlock ⇒ predecessors += basicBlock
-                case catchNode: CatchNode ⇒
+                case basicBlock: BasicBlock => predecessors += basicBlock
+                case catchNode: CatchNode =>
                     predecessors ++= catchNode.predecessors.iterator.map(_.asBasicBlock)
             }
             predecessors.toSet
@@ -139,8 +139,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         if (ifdsProblem.shouldPerformUnbalancedReturn(state.source)) {
             // Get all callers of this method
             propertyStore(state.source._1, Callers.key) match {
-                case FinalEP(_, p: Callers) ⇒
-                    p.callers(state.source._1).foreach { callersProperty ⇒
+                case FinalEP(_, p: Callers) =>
+                    p.callers(state.source._1).iterator.foreach { callersProperty =>
                         val (caller, callPc, directCall) = callersProperty
                         // We do not handle indirect calls.
                         if (directCall) {
@@ -148,9 +148,9 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                             // Get the caller's tac to create the unbalanced return facts
                             val callerTac = propertyStore(definedCaller, TACAI.key)
                             callerTac match {
-                                case FinalP(TheTACAI(tac)) ⇒
+                                case FinalP(TheTACAI(tac)) =>
                                     addDependencyForUnbalancedReturn(caller, tac.pcToIndex(callPc), newIn, tac)(state)
-                                case _ ⇒
+                                case _ =>
                                     val pendingTacCallSites = state.pendingTacCallSites
                                     state.pendingTacDependees += definedCaller -> callerTac
                                     state.pendingTacCallSites = pendingTacCallSites.updated(
@@ -162,7 +162,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                         }
 
                     }
-                case _ ⇒
+                case _ =>
                     throw new IllegalStateException(
                         "call graph mut be computed before the analysis starts"
                     )
@@ -248,19 +248,19 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         val definedCallee = callee.definedMethod
         val ep = propertyStore(definedCallee, TACAI.key)
         ep match {
-            case FinalP(TheTACAI(tac)) ⇒
+            case FinalP(TheTACAI(tac)) =>
                 val cfg = tac.cfg
                 val successors = predecessorStatementsWithNode(call)
                 val flow = scala.collection.mutable.Set.empty[IFDSFact]
                 (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors)
-                    .foreach { bb ⇒
+                    .foreach { bb =>
                         val exitPc = bb.asBasicBlock.endPC
                         val calleeStmts = tac.stmts
                         val exitStmt = calleeStmts(exitPc)
                         val exitStatement =
                             old.DeclaredMethodJavaStatement(definedCallee, cfg.bb(exitPc), exitStmt, exitPc, calleeStmts, cfg, state.source._1)
                         for {
-                            successor ← successors
+                            successor <- successors
                             if !AbstractIFDSAnalysis.OPTIMIZE_CROSS_PRODUCT_IN_RETURN_FLOW ||
                                 (successor._2.isBasicBlock || successor._2.isNormalReturnExitNode) &&
                                 (exitStatement.stmt.astID == Return.ASTID || exitStatement.stmt.astID == ReturnValue.ASTID) ||
@@ -273,7 +273,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
                         }
                     }
                 flow.toSet
-            case _ ⇒
+            case _ =>
                 val pendingTacCallSites = state.pendingTacCallSites
                 val index = call.index
                 state.pendingTacDependees += definedCallee -> ep
@@ -302,12 +302,12 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
             numberOfCalls.callFlow += 1
             sumOfInputFactsForCallbacks += in.size
             val exitToReturnFacts = ifdsProblem.callFlow(call, callee, in, state.source)
-            successors.foreach { successor ⇒
+            successors.foreach { successor =>
                 val updatedValue = result.get(successor) match {
-                    case Some(facts) ⇒
+                    case Some(facts) =>
                         if (facts.size >= exitToReturnFacts.size) facts ++ exitToReturnFacts
                         else exitToReturnFacts ++ facts
-                    case None ⇒ exitToReturnFacts
+                    case None => exitToReturnFacts
                 }
                 result = result.updated(successor, updatedValue)
             }
@@ -320,9 +320,9 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
      */
     override protected def beforeHandleCall(call: DeclaredMethodJavaStatement, in: Set[IFDSFact]): Set[IFDSFact] =
         in.map {
-            case unbalancedFact: UnbalancedReturnFact[IFDSFact] if unbalancedFact.index == call.index ⇒
+            case unbalancedFact: UnbalancedReturnFact[IFDSFact @unchecked] if unbalancedFact.index == call.index =>
                 unbalancedFact.innerFact
-            case fact ⇒ fact
+            case fact => fact
         }
 
     /**
@@ -341,7 +341,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
         val basicBlock = statement.node.asBasicBlock
         if (index == basicBlock.endPC)
             basicBlock.successors.iterator
-                .map(successorNode ⇒ lastStatement(successorNode) -> successorNode)
+                .map(successorNode => lastStatement(successorNode) -> successorNode)
                 .toMap
         else {
             val nextIndex = index + 1
@@ -403,7 +403,7 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
             callerCfg,
             caller
         )
-        ifdsProblem.unbalancedReturnFlow(in, call, caller, state.source).foreach { in ⇒
+        ifdsProblem.unbalancedReturnFlow(in, call, caller, state.source).foreach { in =>
             val callerEntity = (caller, in)
             /*
        * Add the caller with the unbalanced return fact as a dependency to
@@ -411,8 +411,8 @@ abstract class BackwardIFDSAnalysis[IFDSFact <: AbstractIFDSFact, UnbalancedIFDS
        */
             val callerAnalysisResult = propertyStore(callerEntity, propertyKey.key)
             callerAnalysisResult match {
-                case FinalEP(_, _) ⇒ // Caller was already analyzed with the fact
-                case _ ⇒
+                case FinalEP(_, _) => // Caller was already analyzed with the fact
+                case _ =>
                     val pendingIfdsCallSites = state.pendingIfdsCallSites
                     state.pendingIfdsDependees += callerEntity ->
                         callerAnalysisResult

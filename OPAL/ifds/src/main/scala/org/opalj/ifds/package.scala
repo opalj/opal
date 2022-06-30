@@ -16,7 +16,7 @@ package object ifds {
             assert(false) // <= test whether assertions are turned on or off...
             info(FrameworkName, "Production Build")
         } catch {
-            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
+            case _: AssertionError => info(FrameworkName, "Development Build with Assertions")
         }
     }
 

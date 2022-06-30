@@ -8,7 +8,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.{Collections, Collection ⇒ JCollection, List ⇒ JList, Set ⇒ JSet}
+import java.util.{Collections, Collection => JCollection, List => JList, Set => JSet}
 import scala.collection.JavaConverters._
 
 /**
@@ -25,7 +25,7 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
     override def getStartPointsOf(m: Method): JCollection[JavaStatement] = {
         val TACode(_, code, _, cfg, _) = tacai(m)
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).map {
-            case bb: BasicBlock ⇒
+            case bb: BasicBlock =>
                 val index = bb.endPC
                 JavaStatement(m, index, code, cfg)
         }.asJava
@@ -37,19 +37,19 @@ class OpalBackwardICFG(project: SomeProject) extends OpalICFG(project) {
         val cfg = stmt.cfg
         val index = stmt.index
         (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).exists {
-            case bb: BasicBlock ⇒ bb.endPC == index
+            case bb: BasicBlock => bb.endPC == index
         }
     }
 
     override def allNonCallStartNodes(): JSet[JavaStatement] = {
         val res = new ConcurrentLinkedQueue[JavaStatement]
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val TACode(_, code, _, cfg, _) = tacai(m)
             val endIndex = code.length
             val startIndices =
                 (cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors).map {
-                    case bb: BasicBlock ⇒ bb.endPC
+                    case bb: BasicBlock => bb.endPC
                 }
             var index = 0
             while (index < endIndex) {

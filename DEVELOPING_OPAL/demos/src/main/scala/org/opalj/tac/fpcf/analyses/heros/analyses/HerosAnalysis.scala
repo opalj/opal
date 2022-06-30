@@ -64,9 +64,9 @@ abstract class HerosAnalysis[F](p: SomeProject, icfg: OpalICFG)
      * with FunctionCall)
      */
     protected def asCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
-        case Assignment.ASTID ⇒ stmt.asAssignment.expr.asFunctionCall
-        case ExprStmt.ASTID   ⇒ stmt.asExprStmt.expr.asFunctionCall
-        case _                ⇒ stmt.asMethodCall
+        case Assignment.ASTID => stmt.asAssignment.expr.asFunctionCall
+        case ExprStmt.ASTID   => stmt.asExprStmt.expr.asFunctionCall
+        case _                => stmt.asMethodCall
     }
 }
 
@@ -132,7 +132,7 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
         val p = Project(bytecode.RTJar)
         var times = Seq.empty[Milliseconds]
         for {
-            _ ← 1 to HerosAnalysisRunner.NUM_EXECUTIONS
+            _ <- 1 to HerosAnalysisRunner.NUM_EXECUTIONS
         } {
             times :+= evalProject(Project.recreate(p))
         }
@@ -151,8 +151,8 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
      */
     private def evalProject(p: SomeProject): Milliseconds = {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-            case Some(requirements) ⇒
+            case None => Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+            case Some(requirements) =>
                 requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
         }
         p.get(RTACallGraphKey)
@@ -163,7 +163,7 @@ abstract class HerosAnalysisRunner[F, Analysis <: HerosAnalysis[F]] {
             JOptionPane.showMessageDialog(null, "Call Graph finished")
         time {
             solver.solve()
-        } { t ⇒
+        } { t =>
             analysisTime = t.toMilliseconds
         }
         if (HerosAnalysis.MEASURE_MEMORY)

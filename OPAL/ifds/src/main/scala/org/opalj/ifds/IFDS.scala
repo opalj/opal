@@ -13,14 +13,14 @@ object IFDS {
      */
     def mergeMaps[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
         var result = map1
-        for ((key, values) ← map2) {
+        for ((key, values) <- map2) {
             result.get(key) match {
-                case Some(resultValues) ⇒
+                case Some(resultValues) =>
                     if (resultValues.size > values.size)
                         result = result.updated(key, resultValues ++ values)
                     else
                         result = result.updated(key, values ++ resultValues)
-                case None ⇒
+                case None =>
                     result = result.updated(key, values)
             }
         }

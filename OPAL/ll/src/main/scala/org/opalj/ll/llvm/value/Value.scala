@@ -37,33 +37,33 @@ object Value {
         if (ref == null) return None
         if (ref.isNull) return None
         Some(LLVMGetValueKind(ref) match {
-            case LLVMArgumentValueKind           ⇒ Argument(ref)
-            case LLVMBasicBlockValueKind         ⇒ BasicBlock(LLVMValueAsBasicBlock(ref))
+            case LLVMArgumentValueKind           => Argument(ref)
+            case LLVMBasicBlockValueKind         => BasicBlock(LLVMValueAsBasicBlock(ref))
             //LLVMMemoryUseValueKind
             //LLVMMemoryDefValueKind
             //LLVMMemoryPhiValueKind
-            case LLVMFunctionValueKind           ⇒ Function(ref)
+            case LLVMFunctionValueKind           => Function(ref)
             //LLVMGlobalAliasValueKind
             //LLVMGlobalIFuncValueKind
-            case LLVMGlobalVariableValueKind     ⇒ GlobalVariable(ref)
+            case LLVMGlobalVariableValueKind     => GlobalVariable(ref)
             //LLVMBlockAddressValueKind
-            case LLVMConstantExprValueKind       ⇒ ConstantExpression(ref)
+            case LLVMConstantExprValueKind       => ConstantExpression(ref)
             //LLVMConstantArrayValueKind
             //LLVMConstantStructValueKind
             //LLVMConstantVectorValueKind
             //LLVMUndefValueValueKind
             //LLVMConstantAggregateZeroValueKind
-            case LLVMConstantDataArrayValueKind  ⇒ ConstantDataArray(ref)
-            case LLVMConstantDataVectorValueKind ⇒ ConstantDataVector(ref)
-            case LLVMConstantIntValueKind        ⇒ ConstantIntValue(ref)
+            case LLVMConstantDataArrayValueKind  => ConstantDataArray(ref)
+            case LLVMConstantDataVectorValueKind => ConstantDataVector(ref)
+            case LLVMConstantIntValueKind        => ConstantIntValue(ref)
             //LLVMConstantFPValueKind
             //LLVMConstantPointerNullValueKind
             //LLVMConstantTokenNoneValueKind
             //LLVMMetadataAsValueValueKind
             //LLVMInlineAsmValueKind
-            case LLVMInstructionValueKind        ⇒ Instruction(ref)
+            case LLVMInstructionValueKind        => Instruction(ref)
             //LLVMPoisonValueValueKind
-            case valueKind                       ⇒ throw new IllegalArgumentException("unknown valueKind: "+valueKind)
+            case valueKind                       => throw new IllegalArgumentException("unknown valueKind: "+valueKind)
         })
     }
 }

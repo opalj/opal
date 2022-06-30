@@ -36,7 +36,7 @@ class HerosVariableTypeAnalysis(
 
     override val initialSeeds: util.Map[JavaStatement, util.Set[VTAFact]] = {
         var result: Map[JavaStatement, util.Set[VTAFact]] = Map.empty
-        for ((m, facts) ← initialMethods) {
+        for ((m, facts) <- initialMethods) {
             result += icfg.getStartPointsOf(m).iterator().next() -> facts
         }
         result.asJava
@@ -55,26 +55,26 @@ class HerosVariableTypeAnalysis(
                 if (!insideAnalysisContext(statement.method)) return KillAll.v()
                 val stmt = statement.stmt
                 stmt.astID match {
-                    case Assignment.ASTID ⇒
-                        (source: VTAFact) ⇒ {
+                    case Assignment.ASTID =>
+                        (source: VTAFact) => {
                             val fact =
                                 newFact(statement.method, statement.stmt.asAssignment.expr, statement.index, source)
                             if (fact.isDefined) TwoElementSet.twoElementSet(source, fact.get)
                             else Collections.singleton(source)
                         }
-                    case ArrayStore.ASTID ⇒
-                        (source: VTAFact) ⇒ {
+                    case ArrayStore.ASTID =>
+                        (source: VTAFact) => {
                             val flow = scala.collection.mutable.Set.empty[VTAFact]
                             flow += source
                             newFact(statement.method, stmt.asArrayStore.value, statement.index, source).foreach {
-                                case VariableType(_, t, upperBound) if !(t.isArrayType && t.asArrayType.dimensions <= 254) ⇒
+                                case VariableType(_, t, upperBound) if !(t.isArrayType && t.asArrayType.dimensions <= 254) =>
                                     stmt.asArrayStore.arrayRef.asVar.definedBy
                                         .foreach(flow += VariableType(_, ArrayType(t), upperBound))
-                                case _ ⇒ // Nothing to do
+                                case _ => // Nothing to do
                             }
                             flow.asJava
                         }
-                    case _ ⇒ Identity.v()
+                    case _ => Identity.v()
                 }
             }
 
@@ -83,21 +83,21 @@ class HerosVariableTypeAnalysis(
                 else {
                     val callObject = asCall(stmt.stmt)
                     val allParams = callObject.allParams
-                    source: VTAFact ⇒ {
+                    source: VTAFact => {
                         val flow = scala.collection.mutable.Set.empty[VTAFact]
                         source match {
-                            case VariableType(definedBy, t, upperBound) ⇒
+                            case VariableType(definedBy, t, upperBound) =>
                                 allParams.iterator.zipWithIndex.foreach {
-                                    case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) ⇒
+                                    case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) =>
                                         flow += VariableType(
                                             JavaIFDSProblem
                                                 .switchParamAndVariableIndex(parameterIndex, callee.isStatic),
                                             t,
                                             upperBound
                                         )
-                                    case _ ⇒
+                                    case _ =>
                                 }
-                            case _ ⇒
+                            case _ =>
                         }
                         flow.asJava
                     }
@@ -111,12 +111,12 @@ class HerosVariableTypeAnalysis(
             ): FlowFunction[VTAFact] =
                 if (exit.stmt.astID == ReturnValue.ASTID && stmt.stmt.astID == Assignment.ASTID) {
                     val returnValue = exit.stmt.asReturnValue.expr.asVar
-                    source: VTAFact ⇒ {
+                    source: VTAFact => {
                         source match {
                             // If we know the type of the return value, we create a fact for the assigned variable.
-                            case VariableType(definedBy, t, upperBound) if returnValue.definedBy.contains(definedBy) ⇒
+                            case VariableType(definedBy, t, upperBound) if returnValue.definedBy.contains(definedBy) =>
                                 Collections.singleton(VariableType(stmt.index, t, upperBound))
-                            case _ ⇒ Collections.emptySet()
+                            case _ => Collections.emptySet()
                         }
                     }
                 } else KillAll.v()
@@ -128,21 +128,21 @@ class HerosVariableTypeAnalysis(
                 if (!insideAnalysisContext(statement.method)) return KillAll.v()
                 val stmt = statement.stmt
                 val calleeDefinitionSites = asCall(stmt).receiverOption
-                    .map(callee ⇒ callee.asVar.definedBy)
+                    .map(callee => callee.asVar.definedBy)
                     .getOrElse(EmptyIntTrieSet)
                 val callOutsideOfAnalysisContext =
                     getCallees(statement).exists(
-                        method ⇒
+                        method =>
                             !((method.hasSingleDefinedMethod || method.hasMultipleDefinedMethods) && insideAnalysisContext(
                                 method.definedMethod
                             ))
                     )
-                source: VTAFact ⇒ {
+                source: VTAFact => {
                     val result = scala.collection.mutable.Set[VTAFact](source)
                     source match {
-                        case VariableType(index, t, upperBound) if calleeDefinitionSites.contains(index) ⇒
+                        case VariableType(index, t, upperBound) if calleeDefinitionSites.contains(index) =>
                             result += CalleeType(statement.index, t, upperBound)
-                        case _ ⇒
+                        case _ =>
                     }
                     if (callOutsideOfAnalysisContext) {
                         val returnType = asCall(stmt).descriptor.returnType
@@ -162,31 +162,31 @@ class HerosVariableTypeAnalysis(
         statementIndex: Int,
         source:         VTAFact
     ): Option[VariableType] = expression.astID match {
-        case New.ASTID ⇒
+        case New.ASTID =>
             source match {
-                case VTANullFact ⇒
+                case VTANullFact =>
                     Some(VariableType(statementIndex, expression.asNew.tpe, upperBound = false))
-                case _ ⇒ None
+                case _ => None
             }
-        case Var.ASTID ⇒
+        case Var.ASTID =>
             source match {
-                case VariableType(index, t, upperBound) if expression.asVar.definedBy.contains(index) ⇒
+                case VariableType(index, t, upperBound) if expression.asVar.definedBy.contains(index) =>
                     Some(VariableType(statementIndex, t, upperBound))
-                case _ ⇒ None
+                case _ => None
             }
-        case ArrayLoad.ASTID ⇒
+        case ArrayLoad.ASTID =>
             source match {
                 case VariableType(index, t, upperBound) if isArrayOfObjectType(t) &&
-                    expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) ⇒
+                    expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) =>
                     Some(VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound))
-                case _ ⇒ None
+                case _ => None
             }
-        case GetField.ASTID | GetStatic.ASTID ⇒
+        case GetField.ASTID | GetStatic.ASTID =>
             val t = expression.asFieldRead.declaredFieldType
             if (t.isReferenceType)
                 Some(VariableType(statementIndex, t.asReferenceType, upperBound = true))
             else None
-        case _ ⇒ None
+        case _ => None
     }
 
     @tailrec private def isArrayOfObjectType(
@@ -219,9 +219,9 @@ class HerosVariableTypeAnalysisRunner
         val initialMethods =
             p.allProjectClassFiles
                 .filter(_.fqn.startsWith("java/lang"))
-                .flatMap(classFile ⇒ classFile.methods)
+                .flatMap(classFile => classFile.methods)
                 .filter(isEntryPoint)
-                .map(method ⇒ method -> entryPointsForMethod(method).asJava)
+                .map(method => method -> entryPointsForMethod(method).asJava)
                 .toMap
         new HerosVariableTypeAnalysis(p, new OpalForwardICFG(p), initialMethods)
     }
@@ -239,7 +239,7 @@ class HerosVariableTypeAnalysisRunner
 
     private def entryPointsForMethod(method: Method): Set[VTAFact] = {
         (method.descriptor.parameterTypes.zipWithIndex.collect {
-            case (t, index) if t.isReferenceType ⇒
+            case (t, index) if t.isReferenceType =>
                 VariableType(
                     JavaIFDSProblem.switchParamAndVariableIndex(index, method.isStatic),
                     t.asReferenceType,

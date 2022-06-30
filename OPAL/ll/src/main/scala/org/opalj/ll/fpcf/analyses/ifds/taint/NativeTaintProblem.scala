@@ -52,7 +52,7 @@ case class JavaInstanceField(index: Int, classType: ObjectType, fieldName: Strin
 case class NativeFlowFact(flow: Seq[Callable]) extends NativeTaintFact {
     override val hashCode: Int = {
         var r = 1
-        flow.foreach(f ⇒ r = (r + f.hashCode()) * 31)
+        flow.foreach(f => r = (r + f.hashCode()) * 31)
         r
     }
 }

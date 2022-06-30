@@ -29,12 +29,12 @@ abstract class IFDSProperty[S, IFDSFact <: AbstractIFDSFact]
     def debugData: Map[S, Set[IFDSFact]]
 
     override def equals(other: Any): Boolean = other match {
-        case that: IFDSProperty[S, IFDSFact] ⇒
+        case that: IFDSProperty[S @unchecked, IFDSFact @unchecked] =>
             // We cached the "hashCode" to make the following comparison more efficient;
             // note that all properties are eventually added to some set and therefore
             // the hashCode is required anyway!
             (this eq that) || (this.hashCode == that.hashCode && this.flows == that.flows)
-        case _ ⇒
+        case _ =>
             false
     }
 

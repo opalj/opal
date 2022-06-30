@@ -42,7 +42,7 @@ case class FlowFact(flow: ListSet[Method]) extends Fact {
     override val hashCode: Int = {
         // HERE, a foldLeft introduces a lot of overhead due to (un)boxing.
         var r = 1
-        flow.foreach(f ⇒ r = (r + f.hashCode()) * 31)
+        flow.foreach(f => r = (r + f.hashCode()) * 31)
         r
     }
 }
@@ -69,9 +69,9 @@ class PRATaintAnalysis private (
 
     override def normalFlow(stmt: Statement, succ: Statement, in: Set[Fact]): Set[Fact] =
         stmt.stmt.astID match {
-            case Assignment.ASTID ⇒
+            case Assignment.ASTID =>
                 handleAssignment(stmt, stmt.stmt.asAssignment.expr, in)
-            case _ ⇒ in
+            case _ => in
         }
 
     /**
@@ -79,21 +79,21 @@ class PRATaintAnalysis private (
      */
     def isTainted(expr: Expr[V], in: Set[Fact]): Boolean = {
         expr.isVar && in.exists {
-            case Variable(index) ⇒ expr.asVar.definedBy.contains(index)
-            case _               ⇒ false
+            case Variable(index) => expr.asVar.definedBy.contains(index)
+            case _               => false
         }
     }
 
     def handleAssignment(stmt: Statement, expr: Expr[V], in: Set[Fact]): Set[Fact] =
         expr.astID match {
-            case Var.ASTID ⇒
+            case Var.ASTID =>
                 val newTaint = in.collect {
-                    case Variable(index) if expr.asVar.definedBy.contains(index) ⇒
+                    case Variable(index) if expr.asVar.definedBy.contains(index) =>
                         Some(Variable(stmt.index))
-                    case _ ⇒ None
+                    case _ => None
                 }.flatten
                 in ++ newTaint
-            case _ ⇒ in
+            case _ => in
         }
 
     override def callFlow(
@@ -107,9 +107,9 @@ class PRATaintAnalysis private (
             Set.empty
         } else {
             in.collect {
-                case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
+                case Variable(index) => // Taint formal parameter if actual parameter is tainted
                     allParams.zipWithIndex.collect {
-                        case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
+                        case (param, pIndex) if param.asVar.definedBy.contains(index) =>
                             Variable(paramToIndex(pIndex, !callee.definedMethod.isStatic))
                     }
             }.flatten
@@ -142,18 +142,18 @@ class PRATaintAnalysis private (
         else {
             val allParams = (asCall(stmt.stmt).receiverOption ++ asCall(stmt.stmt).params).toSeq
             var flows: Set[Fact] = Set.empty
-            for (fact ← in) {
+            for (fact <- in) {
                 fact match {
-                    case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
+                    case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) =>
                         // Taint actual parameter if formal parameter is tainted
                         val param =
                             allParams(paramToIndex(index, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(Variable)
 
-                    case FlowFact(flow) ⇒
+                    case FlowFact(flow) =>
                         val newFlow = flow + stmt.method
                         flows += FlowFact(newFlow)
-                    case _ ⇒
+                    case _ =>
                 }
             }
 
@@ -161,7 +161,7 @@ class PRATaintAnalysis private (
             if (exit.stmt.astID == ReturnValue.ASTID && stmt.stmt.astID == Assignment.ASTID) {
                 val returnValue = exit.stmt.asReturnValue.expr.asVar
                 flows ++= in.collect {
-                    case Variable(index) if returnValue.definedBy.contains(index) ⇒
+                    case Variable(index) if returnValue.definedBy.contains(index) =>
                         Variable(stmt.index)
                 }
             }
@@ -180,9 +180,9 @@ class PRATaintAnalysis private (
         val call = asCall(stmt.stmt)
         if (isSink(call)) {
             if (in.exists {
-                case Variable(index) ⇒
-                    asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
-                case _ ⇒ false
+                case Variable(index) =>
+                    asCall(stmt.stmt).params.exists(p => p.asVar.definedBy.contains(index))
+                case _ => false
             }) {
                 in ++ Set(FlowFact(ListSet(stmt.method)))
             } else {
@@ -202,8 +202,8 @@ class PRATaintAnalysis private (
     }
 
     val entryPoints: Map[DeclaredMethod, Fact] = (for {
-        m ← p.allMethodsWithBody
-    } yield declaredMethods(m) → NullFact).toMap
+        m <- p.allMethodsWithBody
+    } yield declaredMethods(m) -> NullFact).toMap
 
 }
 
@@ -244,11 +244,11 @@ object PRATaintAnalysisRunner {
             JavaClassFileReader().ClassFiles(cp),
             JavaClassFileReader().ClassFiles(new File("/home/dominik/Desktop/android.jar")),
             libraryClassFilesAreInterfacesOnly = false,
-            Traversable.empty
+            Iterable.empty
         )
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+            (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = p.logContext
                 val ps = PKESequentialPropertyStore.apply(context: _*)
                 PropertyStore.updateDebug(false)
@@ -256,9 +256,9 @@ object PRATaintAnalysisRunner {
             }
         )
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+            (i: Option[Set[Class[_ <: AnyRef]]]) => (i match {
+                case None               => Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                case Some(requirements) => requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
             }): Set[Class[_ <: AnyRef]]
         )
 
@@ -270,15 +270,15 @@ object PRATaintAnalysisRunner {
         val (_, analyses) =
             manager.runAll(LazyL0BaseAIAnalysis, TACAITransformer, PRATaintAnalysis)
 
-        val entryPoints = analyses.collect { case (_, a: PRATaintAnalysis) ⇒ a.entryPoints }.head
+        val entryPoints = analyses.collect { case (_, a: PRATaintAnalysis) => a.entryPoints }.head
         for {
-            e ← entryPoints
+            e <- entryPoints
             flows = ps(e, PRATaintAnalysis.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            fact <- flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
+                case FlowFact(flow) => println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                case _              =>
             }
         }
 
@@ -287,14 +287,14 @@ object PRATaintAnalysisRunner {
     def getList(file: File): Map[(String, MethodDescriptor), ObjectType] = {
         (
             for {
-                line ← Source.fromFile(file).getLines()
+                line <- Source.fromFile(file).getLines()
                 Array(declClass, returnType, signature, _) = line.split(' ')
                 index = signature.indexOf("(")
                 name = signature.substring(0, index)
                 parameters = signature.substring(index + 1, signature.length - 1)
                 jvmSignature = parameters.split(',').map(toJVMType).mkString("(", "", ")"+toJVMType(returnType))
                 descriptor = MethodDescriptor(jvmSignature)
-            } yield (name, descriptor) → ObjectType(declClass.replace('.', '/'))
+            } yield (name, descriptor) -> ObjectType(declClass.replace('.', '/'))
         ).toMap
     }
 
@@ -302,16 +302,16 @@ object PRATaintAnalysisRunner {
         val trimmedType = javaType.trim
         if (trimmedType.endsWith("[]")) "["+toJVMType(trimmedType.substring(0, trimmedType.length - 2))
         else trimmedType match {
-            case "void"    ⇒ "V"
-            case "byte"    ⇒ "B"
-            case "char"    ⇒ "C"
-            case "double"  ⇒ "D"
-            case "float"   ⇒ "F"
-            case "int"     ⇒ "I"
-            case "long"    ⇒ "J"
-            case "short"   ⇒ "S"
-            case "boolean" ⇒ "Z"
-            case _         ⇒ "L"+trimmedType.replace('.', '/')+";"
+            case "void"    => "V"
+            case "byte"    => "B"
+            case "char"    => "C"
+            case "double"  => "D"
+            case "float"   => "F"
+            case "int"     => "I"
+            case "long"    => "J"
+            case "short"   => "S"
+            case "boolean" => "Z"
+            case _         => "L"+trimmedType.replace('.', '/')+";"
         }
     }
 }
