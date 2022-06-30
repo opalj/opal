@@ -32,7 +32,7 @@ object ProjectSerializer {
         println("OPAL - Project Serializer")
         println("Writes out the project's rewritten and transformed class files.")
         println("(No INVOKEDYNAMICS and optimized bytecode.)")
-        error.foreach { e ⇒ println(); Console.err.println(e); println() }
+        error.foreach { e => println(); Console.err.println(e); println() }
         println("Parameters:")
         println("   -in <JAR File or Folder> a jar or a folder containing a project's class files")
         println("   -out <FileName> the folder where the class files are stored.")
@@ -47,13 +47,13 @@ object ProjectSerializer {
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-in"  ⇒ { i += 1; in = args(i) }
-                case "-out" ⇒ { i += 1; out = args(i) }
+                case "-in"  => { i += 1; in = args(i) }
+                case "-out" => { i += 1; out = args(i) }
 
-                case "-h" | "--help" ⇒
+                case "-h" | "--help" =>
                     showUsage(error = None);
                     System.exit(0)
-                case arg ⇒
+                case arg =>
                     showUsage(Some(s"Unsupported: $arg"))
                     System.exit(2)
             }
@@ -89,7 +89,7 @@ object ProjectSerializer {
     def serialize(p: SomeProject, targetFolder: File): Unit = {
         val zipFile = new File(targetFolder.getAbsolutePath + File.separator+"project.zip")
         val zipOut = new ZipOutputStream(new FileOutputStream(zipFile))
-        p.parForeachProjectClassFile() { cf ⇒
+        p.parForeachProjectClassFile() { cf =>
             val classFileFolderName = s"${targetFolder.getAbsolutePath}/${cf.thisType.packageName}"
             val classFileFolder = new File(classFileFolderName)
             classFileFolder.mkdirs()
@@ -98,7 +98,7 @@ object ProjectSerializer {
 
             val b = Assembler(ba.toDA(cf))
             process(new BufferedOutputStream(new FileOutputStream(targetFile))) {
-                bos ⇒ bos.write(b)
+                bos => bos.write(b)
             }
             zipOut.synchronized {
                 val e = new ZipEntry(classFileName)

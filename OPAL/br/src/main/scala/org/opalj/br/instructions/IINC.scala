@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * Increment local variable by constant.
  *
@@ -32,9 +30,9 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def isShiftInstruction: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def stackSlotsChange: Int = 0
 
@@ -64,8 +62,8 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
     final def expressionResult: Register = Register(lvIndex)

@@ -21,7 +21,7 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  * {{{
  *  project.getOrCreateProjectInformationKeyInitializationData(
  *      SimpleAIKey,
- *      (m: Method) ⇒ {
+ *      (m: Method) => {
  *          // call the constructor of the domain of your liking
  *          new org....Domain(p,m)
  *      }
@@ -37,7 +37,7 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  * @author Michael Eichberg
  */
 object SimpleAIKey
-    extends ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method ⇒ Domain with RecordDefUse] {
+    extends ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method => Domain with RecordDefUse] {
 
     /**
      * The SimpleAIKey has no special prerequisites.
@@ -56,39 +56,39 @@ object SimpleAIKey
      */
     override def compute(
         project: SomeProject
-    ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
+    ): Method => AIResult { val domain: Domain with RecordDefUse } = {
         implicit val logContext: LogContext = project.logContext
 
         val domainFactory =
             project.getProjectInformationKeyInitializationData(this) match {
-                case Some(f) ⇒
+                case Some(f) =>
                     OPALLogger.info(
                         "project configuration",
                         s"using configured domain factory ($f) for abstract interpretations"
                     )
                     f
-                case None ⇒
+                case None =>
                     OPALLogger.info(
                         "project configuration",
                         "using l1.DefaultDomainWithCFGAndDefUse for abstract interpretations"
                     )
-                    (m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m)
+                    (m: Method) => new DefaultDomainWithCFGAndDefUse(project, m)
             }
 
         val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
-        (m: Method) ⇒ aiResults.getOrElseUpdate(m, BaseAI(m, domainFactory(m)))
+        (m: Method) => aiResults.getOrElseUpdate(m, BaseAI(m, domainFactory(m)))
         /*
-        (m: Method) ⇒ {
+        (m: Method) => {
             aiResults.get(m) match {
-                case Some(taCode) ⇒ taCode
-                case None ⇒
+                case Some(taCode) => taCode
+                case None =>
                     val brCode = m.body.get
                     // Basically, we use double checked locking; we really don't want to
                     // transform the code more than once!
                     brCode.synchronized {
                         aiResults.get(m) match {
-                            case Some(aiResult) ⇒ aiResult
-                            case None ⇒
+                            case Some(aiResult) => aiResult
+                            case None =>
                                 val aiResult = BaseAI(m, domainFactory(m))
                                 aiResults.put(m, aiResult)
                                 aiResult

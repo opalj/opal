@@ -18,7 +18,7 @@ class RefAccumulatorTest extends AnyFlatSpec with Matchers {
 
     it should "be empty if it is newly created" in {
         val l = RefAccumulator.empty[String]
-        l should be('empty)
+        l should be(Symbol("empty"))
         l.nonEmpty should be(false)
     }
 
@@ -26,23 +26,23 @@ class RefAccumulatorTest extends AnyFlatSpec with Matchers {
         val l = RefAccumulator.empty[String]
         l += "s"
         l += "d"
-        l should be('nonEmpty)
+        l should be(Symbol("nonEmpty"))
         l.pop() should be("d")
-        l should be('nonEmpty)
+        l should be(Symbol("nonEmpty"))
         l.pop() should be("s")
-        l should be('empty)
+        l should be(Symbol("empty"))
     }
 
     it should "be possible to add collections of reference values" in {
         val l = RefAccumulator.empty[String]
         l ++= List("s")
         l ++= Iterator("d", "c")
-        l should be('nonEmpty)
+        l should be(Symbol("nonEmpty"))
         l.pop() should be("d")
         l.pop() should be("c")
-        l should be('nonEmpty)
+        l should be(Symbol("nonEmpty"))
         l.pop() should be("s")
-        l should be('empty)
+        l should be(Symbol("empty"))
     }
 
     it should "be possible to add collections of reference values and also reference values" in {
@@ -50,13 +50,13 @@ class RefAccumulatorTest extends AnyFlatSpec with Matchers {
         l ++= List("s")
         l += "x"
         l ++= Iterator("d", "c")
-        l should be('nonEmpty)
+        l should be(Symbol("nonEmpty"))
         l.pop() should be("d")
         l.pop() should be("c")
-        l should be('nonEmpty)
+        l should be(Symbol("nonEmpty"))
         l.pop() should be("x")
-        l should be('nonEmpty)
+        l should be(Symbol("nonEmpty"))
         l.pop() should be("s")
-        l should be('empty)
+        l should be(Symbol("empty"))
     }
 }

@@ -67,7 +67,7 @@ Next, we will discuss a complete query which finds *native* methods.
 
             for {
                 // Let's iterate over all class files belonging to the project.
-                (classFile, source) ← project.projectClassFilesWithSources
+                (classFile, source) <- project.projectClassFilesWithSources
 
                 // It is highly recommended to regularly check if the query should be aborted;
                 // if so, the reported (intermediate/partial) results will always be thrown away.
@@ -77,7 +77,7 @@ Next, we will discuss a complete query which finds *native* methods.
                 // is generally meaningful to always create instances of location information,
                 // which may be shared, as soon as possible.
                 classLocation = ClassFileLocation(source, classFile)
-                m ← classFile.methods
+                m <- classFile.methods
                 if m.isNative // basically "the query"
             } {
                 // The current method is native and is added to the set of native methods..

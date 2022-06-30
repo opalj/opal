@@ -24,7 +24,7 @@ object CFA_1_1_CallGraphKey extends CallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         AllocationSiteBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
     override def getTypeProvider(project: SomeProject) =

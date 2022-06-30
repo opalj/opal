@@ -4,18 +4,18 @@ package br
 package reader
 
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.OPALLogger
 import org.opalj.bi.reader.ClassFileReader
-import org.opalj.br.reader.{ClassFileReaderConfiguration ⇒ BRClassFileReaderConfiguration}
-import org.opalj.collection.immutable.RefArray
+import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
+
+import scala.collection.immutable.ArraySeq
 
 /**
  *
  * @author Michael Eichberg
  */
 trait ClassFileBinding extends ClassFileReader {
-    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding ⇒
+    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding =>
 
     /**
      * This property determines whether artificial [[SynthesizedClassFiles]] attributes
@@ -25,11 +25,11 @@ trait ClassFileBinding extends ClassFileReader {
      *          `ClassFileBinding.DeleteSynthesizedClassFilesAttributesConfigKey`.
      */
     val deleteSynthesizedClassFilesAttributes: Boolean = {
-        import ClassFileBinding.{DeleteSynthesizedClassFilesAttributesConfigKey ⇒ Key}
+        import ClassFileBinding.{DeleteSynthesizedClassFilesAttributesConfigKey => Key}
         val deleteConfiguration = config.as[Option[Boolean]](Key)
         val delete: Boolean = deleteConfiguration match {
-            case Some(x) ⇒ x
-            case None ⇒
+            case Some(x) => x
+            case None =>
                 OPALLogger.warn("project configuration", s"the configuration key $Key is not set")
                 false
         }
@@ -46,8 +46,8 @@ trait ClassFileBinding extends ClassFileReader {
 
     type ClassFile = br.ClassFile
 
-    //type Fields = RefArray[Field_Info]
-    //type Methods = RefArray[Method_Info]
+    //type Fields = ArraySeq[Field_Info]
+    //type Methods = ArraySeq[Method_Info]
 
     def ClassFile(
         cp:                Constant_Pool,
@@ -71,7 +71,7 @@ trait ClassFileBinding extends ClassFileReader {
                 else
                     Some(cp(super_class_index).asObjectType(cp))
             },
-            RefArray.mapFrom(interfaces)(cp(_).asObjectType(cp)),
+            ArraySeq.from(interfaces).map(cp(_).asObjectType(cp)),
             fields,
             methods,
             attributes
@@ -82,7 +82,7 @@ trait ClassFileBinding extends ClassFileReader {
      * Tests if the class file has a [[SynthesizedClassFiles]] attribute and – if so –
      * extracts the class file and removes the attribute.
      */
-    val extractSynthesizedClassFiles: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
+    val extractSynthesizedClassFiles: List[ClassFile] => List[ClassFile] = { classFiles =>
         var updatedClassFiles = List.empty[ClassFile]
         var classFilesToProcess = classFiles
         while (classFilesToProcess.nonEmpty) {
@@ -90,10 +90,10 @@ trait ClassFileBinding extends ClassFileReader {
             classFilesToProcess = classFilesToProcess.tail
 
             var hasSynthesizedClassFilesAttribute = false
-            val newAttributes = classFile.attributes.filterNot { a ⇒
+            val newAttributes = classFile.attributes.filterNot { a =>
                 if (a.kindId == SynthesizedClassFiles.KindId) {
                     val SynthesizedClassFiles(synthesizedClassFiles) = a
-                    synthesizedClassFiles.foreach { cfAndReason ⇒
+                    synthesizedClassFiles.foreach { cfAndReason =>
                         classFilesToProcess ::= cfAndReason._1
                     }
                     hasSynthesizedClassFilesAttribute = true
@@ -118,7 +118,7 @@ trait ClassFileBinding extends ClassFileReader {
      * JVM or the instructions are at least enhanced and have explicit references to the
      * bootstrap methods.
      */
-    val removeBootstrapMethodAttribute: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
+    val removeBootstrapMethodAttribute: List[ClassFile] => List[ClassFile] = { classFiles =>
         var updatedClassFiles = List.empty[ClassFile]
         var classFilesToProcess = classFiles
         while (classFilesToProcess.nonEmpty) {

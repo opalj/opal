@@ -35,7 +35,7 @@ trait CFGNode extends Node {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors += predecessor
     }
-    def addPredecessors(predecessor: TraversableOnce[CFGNode]): Unit = {
+    def addPredecessors(predecessor: IterableOnce[CFGNode]): Unit = {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors ++= predecessor
     }
@@ -66,10 +66,10 @@ trait CFGNode extends Node {
      * whether the exception is handled or not is not relevant!
      */
     def mayThrowException: Boolean = {
-        _successors.exists(successor ⇒ successor.isCatchNode || successor.isAbnormalReturnExitNode)
+        _successors.exists(successor => successor.isCatchNode || successor.isAbnormalReturnExitNode)
     }
 
-    final override def foreachSuccessor(f: Node ⇒ Unit): Unit = _successors foreach f
+    final override def foreachSuccessor(f: Node => Unit): Unit = _successors foreach f
 
     private[this] var _successors: Set[CFGNode] = Set.empty
 
@@ -94,7 +94,7 @@ trait CFGNode extends Node {
         // the following
         //_successors.
         //filterNot(reachable.contains).
-        //foreach { d ⇒ reachable += d; d.reachable(reachable) }
+        //foreach { d => reachable += d; d.reachable(reachable) }
 
         var remainingSuccessors = this._successors
         while (remainingSuccessors.nonEmpty) {
@@ -102,7 +102,7 @@ trait CFGNode extends Node {
             remainingSuccessors = remainingSuccessors.tail
             if (reachable.add(successor)) {
                 for {
-                    nextSuccessor ← successor.successors
+                    nextSuccessor <- successor.successors
                     if !remainingSuccessors.contains(nextSuccessor)
                     if !reachable.contains(nextSuccessor)
                 } {
@@ -147,7 +147,7 @@ trait CFGNode extends Node {
             if (successors.isEmpty) {
                 if (bb.isBasicBlock) frontier = bb.asBasicBlock :: frontier
             } else {
-                successors.foreach { succBB ⇒
+                successors.foreach { succBB =>
                     var nextBB = succBB
                     // The basic block to which a subroutine returns to cannot be the start
                     // of a subroutine because a subroutine's code is never reached via a

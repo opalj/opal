@@ -52,7 +52,7 @@ class InterProceduralEscapeAnalysisContext(
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
         val propertyStore:           PropertyStore,
-        val isMethodOverridable:     Method ⇒ Answer
+        val isMethodOverridable:     Method => Answer
 ) extends AbstractEscapeAnalysisContext
     with PropertyStoreContainer
     with IsMethodOverridableContainer
@@ -79,7 +79,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
 
-    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
     private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
     override def determineEscapeOfFP(
@@ -88,13 +88,13 @@ class InterProceduralEscapeAnalysis private[analyses] (
         fp._2 match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
-            case VirtualFormalParameter(dm: DefinedMethod, i) if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, i) if fp._1.isInstanceOf[SimpleContext] && dm.declaringClassType != dm.definedMethod.classFile.thisType =>
                 def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
                     eOptionP match {
-                        case FinalP(p) ⇒
+                        case FinalP(p) =>
                             Result(fp, p)
 
-                        case InterimLUBP(lb, ub) ⇒
+                        case InterimLUBP(lb, ub) =>
                             InterimResult.create(
                                 fp,
                                 lb,
@@ -103,7 +103,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                                 handleEscapeState
                             )
 
-                        case _ ⇒
+                        case _ =>
                             InterimResult(
                                 fp,
                                 GlobalEscape,
@@ -121,18 +121,18 @@ class InterProceduralEscapeAnalysis private[analyses] (
                     propertyStore((simpleContexts(base), parameterOfBase), EscapeProperty.key)
                 )
 
-            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
                 Result(fp, AtMost(NoEscape))
 
             // parameters of base types are not considered
-            case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType ⇒
+            case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType =>
                 Result(fp, AtMost(NoEscape))
 
-            case VirtualFormalParameter(dm: DefinedMethod, i) ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, i) =>
                 val ctx = createContext(fp, i, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
 
-            case VirtualFormalParameter(_: VirtualDeclaredMethod, _) ⇒
+            case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
                 throw new IllegalArgumentException()
         }
     }
@@ -186,22 +186,22 @@ object EagerInterProceduralEscapeAnalysis
         implicit val typeProvider = p.get(TypeProviderKey)
 
         val methods = declaredMethods.declaredMethods
-        val callersProperties = ps(methods.toTraversable, Callers)
+        val callersProperties = ps(methods.to(Iterable), Callers)
         assert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map {
-            v ⇒ v.e → v.ub
+            v => v.e -> v.ub
         }.toMap
 
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.collect {
-            case fp if reachableMethods.contains(fp.method) ⇒
-                reachableMethods(fp.method).calleeContexts(fp.method).map((_, fp))
+            case fp if reachableMethods.contains(fp.method) =>
+                reachableMethods(fp.method).calleeContexts(fp.method).iterator.map((_, fp))
         }.flatten
 
         val ass = p.get(DefinitionSitesKey).getAllocationSites.collect {
-            case as if reachableMethods.contains(declaredMethods(as.method)) ⇒
+            case as if reachableMethods.contains(declaredMethods(as.method)) =>
                 val dm = declaredMethods(as.method)
-                reachableMethods(dm).calleeContexts(dm).map((_, as))
+                reachableMethods(dm).calleeContexts(dm).iterator.map((_, as))
         }.flatten
 
         ps.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)

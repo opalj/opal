@@ -48,11 +48,11 @@ class FinalizerAnalysis private[analyses] ( final val project: SomeProject) exte
 
         // is the method reachable?
         (propertyStore(dm, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -69,16 +69,16 @@ class FinalizerAnalysis private[analyses] ( final val project: SomeProject) exte
         )
         assert(finalizers.size < 2)
 
-        val r = finalizers.map { finalizerMethod ⇒
+        val r = finalizers.map { finalizerMethod =>
             val finalizer = declaredMethods(finalizerMethod)
             PartialResult[DeclaredMethod, Callers](finalizer, Callers.key, {
-                case InterimUBP(ub: Callers) ⇒
+                case InterimUBP(ub: Callers) =>
                     if (!ub.hasVMLevelCallers)
                         Some(InterimEUBP(finalizer, ub.updatedWithVMLevelCall()))
                     else None
-                case _: EPK[_, _] ⇒
+                case _: EPK[_, _] =>
                     Some(InterimEUBP(finalizer, OnlyVMLevelCallers))
-                case r ⇒
+                case r =>
                     throw new IllegalStateException(s"unexpected previous result $r")
             })
         }

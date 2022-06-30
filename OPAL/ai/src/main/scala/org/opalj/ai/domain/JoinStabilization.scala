@@ -2,7 +2,7 @@
 package org.opalj
 package ai
 
-import java.util.{HashMap ⇒ JHashMap}
+import java.util.{HashMap => JHashMap}
 //import scala.collection.mutable.Map
 //import scala.collection.mutable.AnyRefMap
 
@@ -35,7 +35,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
     // THE FOLLOWING IS AN ALTERNATIVE IMPLEMENTATION
     // WHICH IS LESS EFFICIENT (BUT WAS EXPECTED TO BE MORE EFFICIENT)
     //
-    //    import java.util.{ IdentityHashMap ⇒ IDMap }
+    //    import java.util.{ IdentityHashMap => IDMap }
     //
     //    private[this] val leftValues =
     //        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()

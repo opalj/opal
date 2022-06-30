@@ -3,7 +3,7 @@ package org.opalj
 package br
 
 import org.opalj.collection.immutable._
-import org.opalj.util.{Nanoseconds ⇒ NS}
+import org.opalj.util.{Nanoseconds => NS}
 
 object UIDSetDemo extends App {
 
@@ -89,7 +89,7 @@ object UIDSetDemo extends App {
                     s += SUID(r.nextInt(addCount * 2))
                     i += 1
                 }
-                s.result
+                s.result()
                 runs += 1
             }
             println("Using +!:  "+NS(System.nanoTime - t).toSeconds)
@@ -112,7 +112,7 @@ object UIDSetDemo extends App {
             println("Using Set: "+NS(System.nanoTime - t).toSeconds)
         }
     }
-    (0 to 5).foreach(e ⇒ evalAdd)
+    (0 to 5).foreach(e => evalAdd())
 
     /////////////////////////////////// EXTENSIVE EVAL ///////////////////////////////////
 
@@ -210,7 +210,7 @@ object UIDSetDemo extends App {
         )
     }
 
-    for { i ← 0 until 5 } {
+    for { i <- 0 until 5 } {
         org.opalj.util.gc()
         eval(scala.collection.immutable.Set.empty)
         org.opalj.util.gc()

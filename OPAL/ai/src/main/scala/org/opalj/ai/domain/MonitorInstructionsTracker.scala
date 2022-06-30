@@ -15,7 +15,7 @@ import org.opalj.collection.immutable.IntTrieSet
  * @author Michael Eichberg
  */
 trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomInitialization {
-    this: ValuesDomain with ExceptionsFactory with Configuration ⇒
+    this: ValuesDomain with ExceptionsFactory with Configuration =>
 
     protected[this] var usesMonitorInstruction: Boolean = _
 

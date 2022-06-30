@@ -39,7 +39,7 @@ object RTACallGraphKey extends CallGraphKey {
 
     override def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         // in case the library entrypoints finder is configured, we want to use the
         // EagerLibraryEntryPointsAnalysis
         val isLibrary =

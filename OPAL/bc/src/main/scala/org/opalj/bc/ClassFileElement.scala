@@ -11,7 +11,7 @@ import java.io.DataOutputStream
  */
 trait ClassFileElement[T] {
 
-    def write(t: T)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit
+    def write(t: T)(implicit out: DataOutputStream, segmentInformation: (String, Int) => Unit): Unit
 
 }
 

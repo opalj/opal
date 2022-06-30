@@ -101,12 +101,12 @@ object AccessFlagsContexts extends Enumeration {
 
     def potentialAccessFlags(ctx: AccessFlagsContext): IndexedSeq[AccessFlag] = {
         ctx match {
-            case INNER_CLASS       ⇒ INNER_CLASS_FLAGS
-            case CLASS             ⇒ CLASS_FLAGS
-            case METHOD            ⇒ METHOD_FLAGS
-            case FIELD             ⇒ FIELD_FLAGS
-            case METHOD_PARAMETERS ⇒ METHOD_PARAMETER_FLAGS
-            case MODULE            ⇒ MODULE_FLAGS
+            case INNER_CLASS       => INNER_CLASS_FLAGS
+            case CLASS             => CLASS_FLAGS
+            case METHOD            => METHOD_FLAGS
+            case FIELD             => FIELD_FLAGS
+            case METHOD_PARAMETERS => METHOD_PARAMETER_FLAGS
+            case MODULE            => MODULE_FLAGS
         }
     }
 }

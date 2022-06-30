@@ -7,7 +7,7 @@ package ai
  *
  * @author Michael Eichberg
  */
-trait MonitorInstructionsDomain { this: ValuesDomain ⇒
+trait MonitorInstructionsDomain { this: ValuesDomain =>
 
     /**
      * Handles a `monitorenter` instruction.

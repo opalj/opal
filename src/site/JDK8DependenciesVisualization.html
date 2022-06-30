@@ -166,10 +166,10 @@
 
 		chord.append("title").text(function(d) {
 		  return packages[d.source.index].name
-			  + " → " + packages[d.target.index].name
+			  + " -> " + packages[d.target.index].name
 			  + ": " + formatPercent((d.source.value)/packages[d.source.index].percentage)
 			  + "\n" + packages[d.target.index].name
-			  + " → " + packages[d.source.index].name
+			  + " -> " + packages[d.source.index].name
 			  + ": " + formatPercent((d.target.value)/packages[d.target.index].percentage)
 		});
 

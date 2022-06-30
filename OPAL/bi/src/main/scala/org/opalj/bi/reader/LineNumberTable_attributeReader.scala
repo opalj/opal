@@ -4,9 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
@@ -20,7 +21,8 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     type LineNumberTable_attribute >: Null <: Attribute
 
     type LineNumberTableEntry <: AnyRef
-    type LineNumbers = RefArray[LineNumberTableEntry]
+    implicit val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] // TODO: Replace in Scala 3 by `type LineNumberTableEntry : ClassTag`
+    type LineNumbers = ArraySeq[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
         cp:                   Constant_Pool,
@@ -55,7 +57,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val line_number_table_length = in.readUnsignedShort
         if (line_number_table_length > 0 || reifyEmptyAttributes) {
@@ -64,7 +66,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(line_number_table_length) {
+                fillArraySeq(line_number_table_length) {
                     LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
                 }
             )
@@ -72,5 +74,5 @@ trait LineNumberTable_attributeReader extends AttributeReader {
             null
     }
 
-    registerAttributeReader(LineNumberTableAttribute.Name → parserFactory())
+    registerAttributeReader(LineNumberTableAttribute.Name -> parserFactory())
 }

@@ -9,8 +9,6 @@ import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
@@ -35,6 +33,8 @@ import org.opalj.da.ConstantValue_attribute
 import org.opalj.da.Field_Info
 import org.opalj.da.Method_Info
 import org.opalj.bc.Assembler
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Creates a fixture to test loading of dynamic constants.
@@ -179,7 +179,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                 this_class = 2, /*Test*/
                 super_class = 4, /*extends java.lang.Object*/
                 // Interfaces.empty,
-                fields = RefArray(
+                fields = ArraySeq(
                     Field_Info(
                         access_flags = ACC_PUBLIC.mask,
                         name_index = 5, /*instanceField*/
@@ -194,15 +194,15 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask | ACC_FINAL.mask,
                         name_index = 8, /*staticField*/
                         descriptor_index = 9, /*I*/
-                        RefArray(ConstantValue_attribute(10, 11 /*1337*/ ))
+                        ArraySeq(ConstantValue_attribute(10, 11 /*1337*/ ))
                     )
                 ),
-                methods = RefArray(
+                methods = ArraySeq(
                     Method_Info(
                         access_flags = ACC_PRIVATE.mask,
                         name_index = 12, /*<init>*/
                         descriptor_index = 13, /*()V*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 1,
@@ -219,7 +219,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 20, /*arrayVarHandle*/
                         descriptor_index = 30, /*()Ljava/lang/invoke/VarHandle;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -235,7 +235,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 31, /*enumConstant*/
                         descriptor_index = 40, /*()Ljava/math/RoundingMode;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -251,7 +251,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 41, /*explicitCast*/
                         descriptor_index = 49, /*()Ljava/lang/Object;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -267,7 +267,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 50, /*fieldVarHandle*/
                         descriptor_index = 30, /*()Ljava/lang/invoke/VarHandle;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -283,7 +283,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 64, /*getStaticFinal1*/
                         descriptor_index = 65, /*()LTest;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -299,7 +299,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 72, /*getStaticFinal2*/
                         descriptor_index = 73, /*()I*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -315,7 +315,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 74, /*invoke*/
                         descriptor_index = 73, /*()I*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -331,7 +331,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 90, /*nestedConstants1*/
                         descriptor_index = 73, /*()I*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -347,7 +347,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 97, /*nestedConstants2*/
                         descriptor_index = 98, /*()J*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 2,
                             max_locals = 0,
@@ -363,7 +363,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 99, /*nullConstant*/
                         descriptor_index = 65, /*()LTest;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -379,7 +379,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 105, /*primitiveClass*/
                         descriptor_index = 113, /*()Ljava/lang/Class;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -395,7 +395,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                         name_index = 114, /*staticFieldVarHandle*/
                         descriptor_index = 30, /*()Ljava/lang/invoke/VarHandle;*/
-                        attributes = RefArray(Code_attribute(
+                        attributes = ArraySeq(Code_attribute(
                             attribute_name_index = 16,
                             max_stack = 1,
                             max_locals = 0,
@@ -408,11 +408,11 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         ))
                     )
                 ),
-                attributes = RefArray(
-                    BootstrapMethods_attribute(17, RefArray(
+                attributes = ArraySeq(
+                    BootstrapMethods_attribute(17, ArraySeq(
                         BootstrapMethod( // 0
                             24, /*ConstantBootstraps.arrayVarHandle*/
-                            RefArray(BootstrapArgument(26 /*[Ljava/lang/String;*/ ))
+                            ArraySeq(BootstrapArgument(26 /*[Ljava/lang/String;*/ ))
                         ),
                         BootstrapMethod( // 1
                             35, /*ConstantBootstraps.enumConstant*/
@@ -420,11 +420,11 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         ),
                         BootstrapMethod( // 2
                             45, /*ConstantBootstraps.explicitClast*/
-                            RefArray(BootstrapArgument(2) /*Test.class*/ )
+                            ArraySeq(BootstrapArgument(2) /*Test.class*/ )
                         ),
                         BootstrapMethod( // 3
                             54, /*ConstantBootstraps.fieldVarHandle*/
-                            RefArray(
+                            ArraySeq(
                                 BootstrapArgument(2), /*Test*/
                                 BootstrapArgument(2) /*Test*/
                             )
@@ -435,11 +435,11 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         ),
                         BootstrapMethod( // 5
                             69, /*ConstantBootstraps.getStaticFinal(Lookup,String,Class,Class)*/
-                            RefArray(BootstrapArgument(2) /*Test*/ )
+                            ArraySeq(BootstrapArgument(2) /*Test*/ )
                         ),
                         BootstrapMethod( // 6
                             78, /*ConstantBootstraps.invoke*/
-                            RefArray(
+                            ArraySeq(
                                 BootstrapArgument(85), /*Math.max*/
                                 BootstrapArgument(86), /*42*/
                                 BootstrapArgument(11) /*getStaticFinal(Test.staticField)*/
@@ -447,7 +447,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         ),
                         BootstrapMethod( // 7
                             78, /*ConstantBootstraps.invoke*/
-                            RefArray(
+                            ArraySeq(
                                 BootstrapArgument(85), /*Math.max*/
                                 BootstrapArgument(86), /*42*/
                                 BootstrapArgument(71) /*1337*/
@@ -455,7 +455,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         ),
                         BootstrapMethod( // 8
                             45, /*ConstantBootstraps.explicitCast*/
-                            RefArray(BootstrapArgument(93) /*invoke(Math.max(42,getStaticFinal(Test.staticField))*/ )
+                            ArraySeq(BootstrapArgument(93) /*invoke(Math.max(42,getStaticFinal(Test.staticField))*/ )
                         ),
                         BootstrapMethod( // 9
                             102, /*ConstantBootstraps.nullConstant*/
@@ -467,7 +467,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                         ),
                         BootstrapMethod( // 11
                             117, /*ConstantBootstraps.staticFieldVarHandle*/
-                            RefArray(
+                            ArraySeq(
                                 BootstrapArgument(2) /*Test*/ ,
                                 BootstrapArgument(2) /*Test*/
                             )

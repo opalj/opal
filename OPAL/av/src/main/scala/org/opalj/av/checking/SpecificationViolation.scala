@@ -78,14 +78,14 @@ case class PropertyViolation(
         val javaSourceClass = s"(${source.classType.toJava}.java:$sourceLineNumber)"
         val javaSource =
             source match {
-                case VirtualField(_, name, fieldType) ⇒
+                case VirtualField(_, name, fieldType) =>
                     javaSourceClass + s" {${fieldType.toJava} $name}"
-                case VirtualMethod(_, name, descriptor) ⇒
+                case VirtualMethod(_, name, descriptor) =>
                     if (sourceLineNumber == 1)
                         javaSourceClass + s" {${descriptor.toJava(name)}}"
                     else
                         javaSourceClass
-                case _ ⇒
+                case _ =>
                     javaSourceClass
             }
 

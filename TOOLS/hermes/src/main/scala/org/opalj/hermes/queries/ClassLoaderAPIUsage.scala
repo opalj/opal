@@ -3,7 +3,6 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType
@@ -21,15 +20,15 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override val apiFeatures: Chain[APIFeature] = {
+    override val apiFeatures: List[APIFeature] = {
 
         val ClassLoader = ObjectType("java/lang/ClassLoader")
 
-        Chain(
+        List(
             APIClassExtension("custom ClassLoader implementation", ClassLoader),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     StaticAPIMethod(ClassLoader, "getSystemClassLoader"),
                     InstanceAPIMethod(ClassLoader, "<init>", NoArgsAndReturnVoid)
                 ),
@@ -37,7 +36,7 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(ClassLoader, "<init>", JustTakes(ClassLoader)),
                     InstanceAPIMethod(ObjectType.Class, "getClassLoader")
                 ),
@@ -45,7 +44,7 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(ClassLoader, "defineClass"),
                     InstanceAPIMethod(ClassLoader, "definePackage")
                 ),
@@ -53,7 +52,7 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
             ),
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(ClassLoader, "getResource"),
                     InstanceAPIMethod(ClassLoader, "getResourceAsStream"),
                     InstanceAPIMethod(ClassLoader, "getResources"),

@@ -2,9 +2,8 @@
 package org.opalj
 package br
 
-import scala.collection.{Map ⇒ SomeMap}
+import scala.collection.{Map => SomeMap}
 import scala.math.Ordered
-
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.ACC_NATIVE
@@ -21,7 +20,8 @@ import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Represents a single method.
@@ -96,7 +96,7 @@ sealed abstract class JVMMethod
         attributes:  Attributes       = this.attributes
     ): MethodTemplate = {
         // ensure invariant that the code attribute is explicitly extracted...
-        assert(attributes.forall { a ⇒ a.kindId != Code.KindId })
+        assert(attributes.forall { a => a.kindId != Code.KindId })
 
         val n = if (this.name eq name) name else name.intern()
 
@@ -198,16 +198,16 @@ sealed abstract class JVMMethod
     def signature: MethodSignature = new MethodSignature(name, descriptor)
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
-        attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) ⇒ as } match {
-            case Some(annotations) ⇒ annotations
-            case None              ⇒ NoParameterAnnotations
+        attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) => as } match {
+            case Some(annotations) => annotations
+            case None              => NoParameterAnnotations
         }
     }
 
     def runtimeInvisibleParameterAnnotations: ParameterAnnotations = {
-        attributes.collectFirst { case RuntimeInvisibleParameterAnnotationTable(as) ⇒ as } match {
-            case Some(annotations) ⇒ annotations
-            case None              ⇒ NoParameterAnnotations
+        attributes.collectFirst { case RuntimeInvisibleParameterAnnotationTable(as) => as } match {
+            case Some(annotations) => annotations
+            case None              => NoParameterAnnotations
         }
     }
 
@@ -220,7 +220,7 @@ sealed abstract class JVMMethod
      * value then this value is returned.
      */
     def annotationDefault: Option[ElementValue] = {
-        attributes collectFirst { case ev: ElementValue ⇒ ev }
+        attributes collectFirst { case ev: ElementValue => ev }
     }
 
     /**
@@ -228,7 +228,7 @@ sealed abstract class JVMMethod
      * returned.
      */
     def methodParameters: Option[MethodParameterTable] = {
-        attributes collectFirst { case mp: MethodParameterTable ⇒ mp }
+        attributes collectFirst { case mp: MethodParameterTable => mp }
     }
 
     /**
@@ -271,7 +271,7 @@ sealed abstract class JVMMethod
 
     final def isNative: Boolean = (ACC_NATIVE.mask & accessFlags) != 0
 
-    final def isStrict: Boolean = (ACC_STRICT.mask & accessFlags) != 0
+    def isStrict: Boolean = (ACC_STRICT.mask & accessFlags) != 0
 
     final def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
@@ -317,11 +317,11 @@ sealed abstract class JVMMethod
      * Each method optionally defines a method type signature.
      */
     def methodTypeSignature: Option[MethodTypeSignature] = {
-        attributes collectFirst { case s: MethodTypeSignature ⇒ s }
+        attributes collectFirst { case s: MethodTypeSignature => s }
     }
 
     def exceptionTable: Option[ExceptionTable] = {
-        attributes collectFirst { case et: ExceptionTable ⇒ et }
+        attributes collectFirst { case et: ExceptionTable => et }
     }
 
     /**
@@ -468,6 +468,17 @@ final class Method private[br] (
 
     override def asMethod: this.type = this
 
+    /**
+     *
+     * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
+     *         Strict evaluation of float expressions was also required in Java 1.0 and 1.1.
+     */
+    override def isStrict: Boolean =
+        if (this.classFile.version.major >= bi.Java17MajorVersion || this.classFile.version.major < bi.Java1_2MajorVersion)
+            true
+        else
+            (ACC_STRICT.mask & accessFlags) != 0
+
     def isAccessibleBy(
         objectType: ObjectType,
         nests:      SomeMap[ObjectType, ObjectType]
@@ -477,15 +488,15 @@ final class Method private[br] (
     ): Boolean = {
         visibilityModifier match {
             // TODO Respect Java 9 modules
-            case Some(ACC_PUBLIC) ⇒ true
-            case Some(ACC_PROTECTED) ⇒
+            case Some(ACC_PUBLIC) => true
+            case Some(ACC_PROTECTED) =>
                 declaringClassFile.thisType.packageName == objectType.packageName ||
                     objectType.isASubtypeOf(declaringClassFile.thisType).isNotNo
-            case Some(ACC_PRIVATE) ⇒
+            case Some(ACC_PRIVATE) =>
                 val thisType = declaringClassFile.thisType
                 thisType == objectType ||
                     nests.getOrElse(thisType, thisType) == nests.getOrElse(objectType, objectType)
-            case None ⇒ declaringClassFile.thisType.packageName == objectType.packageName
+            case None => declaringClassFile.thisType.packageName == objectType.packageName
         }
     }
 }
@@ -524,8 +535,8 @@ object Method {
      */
     def isObjectSerializationRelated(
         method:                             Method,
-        isInheritedBySerializableOnlyClass: ⇒ Answer,
-        isInheritedByExternalizableClass:   ⇒ Answer
+        isInheritedBySerializableOnlyClass: => Answer,
+        isInheritedByExternalizableClass:   => Answer
     ): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
@@ -566,10 +577,10 @@ object Method {
         declaringPackageOfSuperclassMethod: String
     ): Boolean = {
         superclassMethodVisibility match {
-            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) ⇒ true
-            case Some(ACC_PRIVATE)                      ⇒ false
+            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) => true
+            case Some(ACC_PRIVATE)                      => false
 
-            case None ⇒
+            case None =>
                 declaringPackageOfSubclassMethod == declaringPackageOfSuperclassMethod
         }
     }
@@ -586,7 +597,7 @@ object Method {
         attributes:  Attributes
     ): MethodTemplate = {
 
-        val (bodies, remainingAttributes) = attributes partitionByType classOf[Code]
+        val (bodies, remainingAttributes) = partitionByType(attributes, classOf[Code])
         val body = bodies.headOption
 
         new MethodTemplate(
@@ -606,7 +617,7 @@ object Method {
         attributes:  Attributes
     ): Method = {
 
-        val (bodies, remainingAttributes) = attributes partitionByType classOf[Code]
+        val (bodies, remainingAttributes) = partitionByType(attributes, classOf[Code])
         val body = bodies.headOption
 
         new Method(
@@ -633,7 +644,7 @@ object Method {
         name:           String,
         parameterTypes: FieldTypes = NoFieldTypes,
         returnType:     Type       = VoidType,
-        attributes:     Attributes = RefArray.empty
+        attributes:     Attributes = ArraySeq.empty
     ): MethodTemplate = {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
@@ -656,6 +667,6 @@ object Method {
             )
         ))
         val accessFlags = ACC_PUBLIC.mask
-        new MethodTemplate(accessFlags, "<init>", NoArgsAndReturnVoid, body, RefArray.empty)
+        new MethodTemplate(accessFlags, "<init>", NoArgsAndReturnVoid, body, ArraySeq.empty)
     }
 }

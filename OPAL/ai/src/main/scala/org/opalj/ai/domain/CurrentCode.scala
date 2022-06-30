@@ -15,7 +15,7 @@ import org.opalj.collection.immutable.IntTrieSet
  *
  * @author Michael Eichberg
  */
-trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDomain ⇒
+trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDomain =>
 
     private[this] var theCode: Code = _
 

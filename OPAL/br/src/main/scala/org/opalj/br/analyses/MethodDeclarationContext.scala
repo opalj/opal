@@ -36,14 +36,14 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: MethodDeclarationContext ⇒
+            case that: MethodDeclarationContext =>
                 this.packageName == that.packageName && {
                     val thisMethod = this.method
                     val thatMethod = that.method
                     thisMethod.name == thatMethod.name &&
                         thisMethod.descriptor == thatMethod.descriptor
                 }
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -158,9 +158,9 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
         packageName: String
     ): Boolean = {
         visibility match {
-            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) ⇒ true
-            case Some(ACC_PRIVATE)                      ⇒ false
-            case None                                   ⇒ this.packageName == packageName
+            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) => true
+            case Some(ACC_PRIVATE)                      => false
+            case None                                   => this.packageName == packageName
         }
     }
 }

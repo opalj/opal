@@ -12,7 +12,7 @@ object Marker {
     final val Key = {
         PropertyKey.create[Entity, MarkerProperty](
             "Marker",
-            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked
+            (ps: PropertyStore, reason: FallbackReason, e: Entity) => NotMarked
         )
     }
 

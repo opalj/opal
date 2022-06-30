@@ -74,7 +74,7 @@ class PropertyTracingTest extends AnyFlatSpec with Matchers {
         def isSanitized(): Boolean = hasPropertyOnExit
     }
 
-    private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit): Unit = {
+    private def evaluateMethod(name: String)(f: AnalysisDomain => Unit): Unit = {
         /*
          * In this case we want to make sure that a specific value (given as a
          * parameter to a method) is always sanitized (within the method.) I.e.,
@@ -94,55 +94,55 @@ class PropertyTracingTest extends AnyFlatSpec with Matchers {
     //
 
     it should "be able to correctly identify that the method notSanitized1 does not sanitize the value" in {
-        evaluateMethod("notSanitized1") { domain ⇒
+        evaluateMethod("notSanitized1") { domain =>
             domain.isSanitized() should be(false)
         }
     }
 
     it should "be able to correctly identify that the method notSanitized2 does not sanitize the value" in {
-        evaluateMethod("notSanitized2") { domain ⇒
+        evaluateMethod("notSanitized2") { domain =>
             domain.isSanitized() should be(false)
         }
     }
 
     it should "be able to correctly identify that the method sanitized1 does sanitize the value" in {
-        evaluateMethod("sanitized1") { domain ⇒
+        evaluateMethod("sanitized1") { domain =>
             domain.isSanitized() should be(true)
         }
     }
     it should "be able to correctly identify that the method sanitized2 does sanitize the value" in {
-        evaluateMethod("sanitized2") { domain ⇒
+        evaluateMethod("sanitized2") { domain =>
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized3 does sanitize the value" in {
-        evaluateMethod("sanitized3") { domain ⇒
+        evaluateMethod("sanitized3") { domain =>
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized4 does sanitize the value" in {
-        evaluateMethod("sanitized4") { domain ⇒
+        evaluateMethod("sanitized4") { domain =>
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized5 does sanitize the value" in {
-        evaluateMethod("sanitized5") { domain ⇒
+        evaluateMethod("sanitized5") { domain =>
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized6 does sanitize the value" in {
-        evaluateMethod("sanitized6") { domain ⇒
+        evaluateMethod("sanitized6") { domain =>
             domain.isSanitized() should be(true)
         }
     }
 
     // We can not yet identify that the value is definitively sanitized.
     //    it should "be able to correctly identify that the method sanitized7 does sanitize the value" in {
-    //        evaluateMethod("sanitized7", domain ⇒ {
+    //        evaluateMethod("sanitized7", domain => {
     //            domain.isSanitized() should be(true)
     //        })
     //    }

@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
 import scala.collection.mutable.Builder
 
@@ -14,7 +14,7 @@ import scala.collection.mutable.Builder
  * @author Michael Eichberg
  */
 sealed abstract class IntArraySet
-    extends (Int ⇒ Int)
+    extends (Int => Int)
     with IntSet[IntArraySet]
     with IntCollectionWithStableOrdering[IntArraySet] {
 
@@ -23,7 +23,7 @@ sealed abstract class IntArraySet
      * (1,4),(1,8) and (4,8) will be returned; the pairings (4,1) etc. will not be returned.
      * The order between the two values is not defined.
      */
-    def foreachPair[U](f: (Int, Int) ⇒ U): Unit
+    def foreachPair[U](f: (Int, Int) => U): Unit
 
     def reverseIntIterator: IntIterator
 
@@ -44,28 +44,28 @@ case object EmptyIntArraySet extends IntArraySet {
     override def size: Int = 0
     override def max: Int = throw new UnsupportedOperationException("empty set")
     override def min: Int = throw new UnsupportedOperationException("empty set")
-    override def foreach[U](f: Int ⇒ U): Unit = {}
-    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
-    override def withFilter(p: Int ⇒ Boolean): IntArraySet = this
-    override def map(f: Int ⇒ Int): IntArraySet = this
+    override def foreach[U](f: Int => U): Unit = {}
+    override def foreachPair[U](f: (Int, Int) => U): Unit = {}
+    override def withFilter(p: Int => Boolean): IntArraySet = this
+    override def map(f: Int => Int): IntArraySet = this
     override def map(map: Array[Int]): IntArraySet = this
-    override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = this
+    override def flatMap(f: Int => IntArraySet): IntArraySet = this
     override def -(i: Int): this.type = this
     override def subsetOf(other: IntArraySet): Boolean = true
     override def +(i: Int): IntArraySet1 = new IntArraySet1(i)
     override def iterator: IntIterator = IntIterator.empty
     override def reverseIntIterator: IntIterator = IntIterator.empty
     override def contains(value: Int): Boolean = false
-    override def exists(p: Int ⇒ Boolean): Boolean = false
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
-    override def forall(f: Int ⇒ Boolean): Boolean = true
+    override def exists(p: Int => Boolean): Boolean = false
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = z
+    override def forall(f: Int => Boolean): Boolean = true
 
-    override def toChain: Chain[Int] = Naught
+    override def toList: List[Int] = List.empty
 
     override def equals(other: Any): Boolean = {
         other match {
-            case is: IntArraySet ⇒ is.isEmpty
-            case _               ⇒ false
+            case is: IntArraySet => is.isEmpty
+            case _               => false
         }
     }
 
@@ -79,12 +79,12 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i) }
-    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
+    override def foreach[U](f: Int => U): Unit = { f(i) }
+    override def foreachPair[U](f: (Int, Int) => U): Unit = {}
     override def max: Int = this.i
     override def min: Int = this.i
-    override def withFilter(p: Int ⇒ Boolean): IntArraySet = if (p(i)) this else EmptyIntArraySet
-    override def map(f: Int ⇒ Int): IntArraySet = {
+    override def withFilter(p: Int => Boolean): IntArraySet = if (p(i)) this else EmptyIntArraySet
+    override def map(f: Int => Int): IntArraySet = {
         val i = this.i
         val newI = f(i)
         if (newI != i)
@@ -99,7 +99,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
         else
             new IntArraySet1(mappedI)
     }
-    override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i)
+    override def flatMap(f: Int => IntArraySet): IntArraySet = f(i)
     override def -(i: Int): IntArraySet = if (this.i != i) this else EmptyIntArraySet
     override def +(i: Int): IntArraySet = {
         val thisI = this.i
@@ -115,16 +115,16 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     override def size: Int = 1
 
     override def contains(value: Int): Boolean = value == i
-    override def exists(p: Int ⇒ Boolean): Boolean = p(i)
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(z, i)
-    override def forall(f: Int ⇒ Boolean): Boolean = f(i)
+    override def exists(p: Int => Boolean): Boolean = p(i)
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(z, i)
+    override def forall(f: Int => Boolean): Boolean = f(i)
 
-    override def toChain: Chain[Int] = new :&:[Int](i)
+    override def toList: List[Int] = List(i)
 
     override def equals(other: Any): Boolean = {
         other match {
-            case is: IntArraySet ⇒ is.isSingletonSet && is.min == i
-            case _               ⇒ false
+            case is: IntArraySet => is.isSingletonSet && is.min == i
+            case _               => false
         }
     }
 
@@ -140,9 +140,9 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
 
     override def apply(index: Int): Int = {
         index match {
-            case 0 ⇒ i1
-            case 1 ⇒ i2
-            case _ ⇒ throw new IndexOutOfBoundsException()
+            case 0 => i1
+            case 1 => i2
+            case _ => throw new IndexOutOfBoundsException()
         }
     }
     override def isEmpty: Boolean = false
@@ -157,10 +157,10 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
         def next(): Int = { i += 1; if (i == 1) i1 else i2 }
     }
     override def reverseIntIterator: IntIterator = IntIterator(i2, i1)
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
-    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = f(i1, i2)
+    override def foreach[U](f: Int => U): Unit = { f(i1); f(i2) }
+    override def foreachPair[U](f: (Int, Int) => U): Unit = f(i1, i2)
 
-    override def withFilter(p: Int ⇒ Boolean): IntArraySet = {
+    override def withFilter(p: Int => Boolean): IntArraySet = {
         if (p(i1)) {
             if (p(i2)) this
             else new IntArraySet1(i1)
@@ -170,7 +170,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
                 EmptyIntArraySet
         }
     }
-    override def map(f: Int ⇒ Int): IntArraySet = {
+    override def map(f: Int => Int): IntArraySet = {
         val i1 = this.i1
         val newI1 = f(i1)
         val i2 = this.i2
@@ -183,7 +183,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     override def map(map: Array[Int]): IntArraySet = {
         IntArraySet2(map(i1), map(i2))
     }
-    override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i1) ++ f(i2)
+    override def flatMap(f: Int => IntArraySet): IntArraySet = f(i1) ++ f(i2)
     override def -(i: Int): IntArraySet = {
         if (i == i1) new IntArraySet1(i2)
         else if (i == i2) new IntArraySet1(i1)
@@ -201,16 +201,16 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
         }
     }
     override def contains(value: Int): Boolean = value == i1 || value == i2
-    override def exists(p: Int ⇒ Boolean): Boolean = p(i1) || p(i2)
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(f(z, i1), i2)
-    override def forall(f: Int ⇒ Boolean): Boolean = f(i1) && f(i2)
+    override def exists(p: Int => Boolean): Boolean = p(i1) || p(i2)
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(z, i1), i2)
+    override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2)
 
-    override def toChain: Chain[Int] = i1 :&: i2 :&: Naught
+    override def toList: List[Int] = List(i1, i2)
 
     override def equals(other: Any): Boolean = {
         other match {
-            case is: IntArraySet ⇒ is.size == 2 && is.min == this.i1 && is.max == this.i2
-            case _               ⇒ false
+            case is: IntArraySet => is.size == 2 && is.min == this.i1 && is.max == this.i2
+            case _               => false
         }
     }
 
@@ -227,10 +227,10 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
 
     override def apply(index: Int): Int = {
         index match {
-            case 0 ⇒ i1
-            case 1 ⇒ i2
-            case 2 ⇒ i3
-            case _ ⇒ throw new IndexOutOfBoundsException()
+            case 0 => i1
+            case 1 => i2
+            case 2 => i3
+            case _ => throw new IndexOutOfBoundsException()
         }
     }
     override def isEmpty: Boolean = false
@@ -243,13 +243,13 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def iterator: IntIterator = new IntIterator {
         private[this] var i = 0
         def hasNext: Boolean = i < 3
-        def next: Int = { i += 1; if (i == 1) i1 else if (i == 2) i2 else i3 }
+        def next(): Int = { i += 1; if (i == 1) i1 else if (i == 2) i2 else i3 }
     }
     override def reverseIntIterator: IntIterator = IntIterator(i3, i2, i1)
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
-    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
+    override def foreach[U](f: Int => U): Unit = { f(i1); f(i2); f(i3) }
+    override def foreachPair[U](f: (Int, Int) => U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
 
-    override def withFilter(p: Int ⇒ Boolean): IntArraySet = {
+    override def withFilter(p: Int => Boolean): IntArraySet = {
         if (p(i1)) {
             if (p(i2)) {
                 if (p(i3))
@@ -276,7 +276,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
             }
         }
     }
-    override def map(f: Int ⇒ Int): IntArraySet = {
+    override def map(f: Int => Int): IntArraySet = {
         val i1 = this.i1
         val newI1 = f(i1)
         val i2 = this.i2
@@ -291,7 +291,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def map(map: Array[Int]): IntArraySet = {
         IntArraySet3(map(i1), map(i2), map(i3))
     }
-    override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i1) ++ f(i2) ++ f(i3)
+    override def flatMap(f: Int => IntArraySet): IntArraySet = f(i1) ++ f(i2) ++ f(i3)
 
     override def -(i: Int): IntArraySet = {
         if (i1 == i) new IntArraySet2(i2, i3)
@@ -318,17 +318,17 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
             new IntArraySetN(Array[Int](i1, i2, i3, i))
     }
     override def contains(value: Int): Boolean = value == i1 || value == i2 || value == i3
-    override def exists(p: Int ⇒ Boolean): Boolean = p(i1) || p(i2) || p(i3)
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(f(f(z, i1), i2), i3)
-    override def forall(f: Int ⇒ Boolean): Boolean = f(i1) && f(i2) && f(i3)
+    override def exists(p: Int => Boolean): Boolean = p(i1) || p(i2) || p(i3)
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = f(f(f(z, i1), i2), i3)
+    override def forall(f: Int => Boolean): Boolean = f(i1) && f(i2) && f(i3)
 
-    override def toChain: Chain[Int] = i1 :&: i2 :&: i3 :&: Naught
+    override def toList: List[Int] = List(i1, i2, i3)
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntArraySet ⇒
+            case that: IntArraySet =>
                 that.size == 3 && this.i1 == that(0) && this.i2 == that(1) && this.i3 == that(2)
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -349,7 +349,7 @@ case class IntArraySetN private[immutable] (
     override def max: Int = is(is.length - 1)
     override def min: Int = is(0)
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int => U): Unit = {
         val max = is.length
         var i = 0
         while (i < max) {
@@ -357,7 +357,7 @@ case class IntArraySetN private[immutable] (
             i += 1
         }
     }
-    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {
+    override def foreachPair[U](f: (Int, Int) => U): Unit = {
         val max = is.length
         var i = 0
         while (i < max) {
@@ -370,11 +370,11 @@ case class IntArraySetN private[immutable] (
         }
     }
 
-    override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
+    override def withFilter(p: (Int) => Boolean): IntArraySet = {
         new FilteredIntArraySet(p, this)
     }
 
-    override def map(f: Int ⇒ Int): IntArraySet = {
+    override def map(f: Int => Int): IntArraySet = {
         // let's check if all values are mapped to their original values; if so return "this"
         val is = this.is
         val max = is.length
@@ -409,7 +409,7 @@ case class IntArraySetN private[immutable] (
         isb.result()
     }
 
-    override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = {
+    override def flatMap(f: Int => IntArraySet): IntArraySet = {
         foldLeft(EmptyIntArraySet: IntArraySet)(_ ++ f(_))
     }
 
@@ -418,10 +418,10 @@ case class IntArraySetN private[immutable] (
         if (index >= 0) {
             if (is.length == 4) {
                 index match {
-                    case 0 ⇒ new IntArraySet3(is(1), is(2), is(3))
-                    case 1 ⇒ new IntArraySet3(is(0), is(2), is(3))
-                    case 2 ⇒ new IntArraySet3(is(0), is(1), is(3))
-                    case 3 ⇒ new IntArraySet3(is(0), is(1), is(2))
+                    case 0 => new IntArraySet3(is(1), is(2), is(3))
+                    case 1 => new IntArraySet3(is(0), is(2), is(3))
+                    case 2 => new IntArraySet3(is(0), is(1), is(3))
+                    case 3 => new IntArraySet3(is(0), is(1), is(2))
                 }
             } else {
                 // the element is found
@@ -455,7 +455,7 @@ case class IntArraySetN private[immutable] (
         JArrays.binarySearch(is, 0, size, value) >= 0
     }
 
-    override def exists(p: Int ⇒ Boolean): Boolean = {
+    override def exists(p: Int => Boolean): Boolean = {
         var i = 0
         val data = this.is
         val max = data.length
@@ -463,7 +463,7 @@ case class IntArraySetN private[immutable] (
         false
     }
 
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = {
         var i = 0
         val data = this.is
         val max = data.length
@@ -472,7 +472,7 @@ case class IntArraySetN private[immutable] (
         r
     }
 
-    override def forall(p: Int ⇒ Boolean): Boolean = {
+    override def forall(p: Int => Boolean): Boolean = {
         var i = 0
         val data = this.is
         val max = data.length
@@ -491,16 +491,16 @@ case class IntArraySetN private[immutable] (
         def next(): Int = { val i = this.i; this.i = i - 1; is(i) }
     }
 
-    override def toChain: Chain[Int] = {
-        val cb = new Chain.ChainBuilder[Int]()
-        foreach((i: Int) ⇒ cb += i)
+    override def toList: List[Int] = {
+        val cb = List.newBuilder[Int]
+        foreach((i: Int) => cb += i)
         cb.result()
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntArraySet ⇒ that.size == this.size && this.subsetOf(that)
-            case _                 ⇒ false
+            case that: IntArraySet => that.size == this.size && this.subsetOf(that)
+            case _                 => false
         }
     }
 
@@ -509,7 +509,7 @@ case class IntArraySetN private[immutable] (
 
 // TODO Reduce to "FilterMonadic" methods.
 private[immutable] class FilteredIntArraySet(
-        p: Int ⇒ Boolean, origS: IntArraySetN
+        p: Int => Boolean, origS: IntArraySetN
 ) extends IntArraySet {
 
     @volatile private[this] var filteredS: IntArraySet = _
@@ -532,11 +532,11 @@ private[immutable] class FilteredIntArraySet(
                             index += 1
                         }
                         targetIsIndex match {
-                            case 0 ⇒ EmptyIntArraySet
-                            case 1 ⇒ new IntArraySet1(targetIs(0))
-                            case 2 ⇒ new IntArraySet2(targetIs(0), targetIs(1))
-                            case 3 ⇒ new IntArraySet3(targetIs(0), targetIs(1), targetIs(2))
-                            case _ ⇒
+                            case 0 => EmptyIntArraySet
+                            case 1 => new IntArraySet1(targetIs(0))
+                            case 2 => new IntArraySet2(targetIs(0), targetIs(1))
+                            case 3 => new IntArraySet3(targetIs(0), targetIs(1), targetIs(2))
+                            case _ =>
                                 if (targetIsIndex == max) // no value was filtered...
                                     origS
                                 else {
@@ -553,11 +553,11 @@ private[immutable] class FilteredIntArraySet(
 
     override def apply(index: Int): Int = getFiltered.apply(index)
 
-    override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
+    override def withFilter(p: (Int) => Boolean): IntArraySet = {
         if (filteredS ne null) {
             filteredS.withFilter(p)
         } else {
-            new FilteredIntArraySet((i: Int) ⇒ this.p(i) && p(i), origS)
+            new FilteredIntArraySet((i: Int) => this.p(i) && p(i), origS)
         }
     }
 
@@ -577,7 +577,7 @@ private[immutable] class FilteredIntArraySet(
         }
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int => U): Unit = {
         if (filteredS ne null) {
             filteredS.foreach(f)
         } else {
@@ -591,12 +591,12 @@ private[immutable] class FilteredIntArraySet(
             }
         }
     }
-    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = getFiltered.foreachPair(f)
+    override def foreachPair[U](f: (Int, Int) => U): Unit = getFiltered.foreachPair(f)
 
     override def contains(value: Int): Boolean = p(value) && origS.contains(value)
-    override def exists(p: Int ⇒ Boolean): Boolean = iterator.exists(p)
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = iterator.foldLeft(z)(f)
-    override def forall(p: Int ⇒ Boolean): Boolean = iterator.forall(p)
+    override def exists(p: Int => Boolean): Boolean = iterator.exists(p)
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = iterator.foldLeft(z)(f)
+    override def forall(p: Int => Boolean): Boolean = iterator.forall(p)
 
     override def size: Int = getFiltered.size
     override def isSingletonSet: Boolean = getFiltered.isSingletonSet
@@ -604,12 +604,12 @@ private[immutable] class FilteredIntArraySet(
     override def isEmpty: Boolean = getFiltered.isEmpty
     override def min: Int = getFiltered.min
     override def max: Int = getFiltered.max
-    override def map(f: Int ⇒ Int): IntArraySet = getFiltered.map(f)
+    override def map(f: Int => Int): IntArraySet = getFiltered.map(f)
     override def map(map: Array[Int]): IntArraySet = getFiltered.map(map)
-    override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = getFiltered.flatMap(f)
+    override def flatMap(f: Int => IntArraySet): IntArraySet = getFiltered.flatMap(f)
     override def -(i: Int): IntArraySet = getFiltered - i
     override def +(i: Int): IntArraySet = getFiltered + 1
-    override def toChain: Chain[Int] = iterator.toChain
+    override def toList: List[Int] = iterator.toList
     override def equals(other: Any): Boolean = getFiltered.equals(other)
     override def hashCode: Int = getFiltered.hashCode
 }
@@ -622,11 +622,11 @@ class IntArraySetBuilder private[immutable] (
     require(size <= is.length)
 
     // TODO implement sizeHint...
-    def this() { this(new Array[Int](4), 0) }
+    def this() = this(new Array[Int](4), 0)
 
-    def this(initialSize: Int) { this(new Array[Int](Math.max(initialSize, 4)), 0) }
+    def this(initialSize: Int) = this(new Array[Int](Math.max(initialSize, 4)), 0)
 
-    override def +=(elem: Int): this.type = {
+    override def addOne(elem: Int): this.type = {
         import System.arraycopy
         val index = JArrays.binarySearch(is, 0, size, elem)
         if (index < 0) {
@@ -655,11 +655,11 @@ class IntArraySetBuilder private[immutable] (
 
     override def result(): IntArraySet = {
         size match {
-            case 0 ⇒ EmptyIntArraySet
-            case 1 ⇒ new IntArraySet1(is(0))
-            case 2 ⇒ new IntArraySet2(is(0), is(1))
-            case 3 ⇒ new IntArraySet3(is(0), is(1), is(2))
-            case _ ⇒
+            case 0 => EmptyIntArraySet
+            case 1 => new IntArraySet1(is(0))
+            case 2 => new IntArraySet2(is(0), is(1))
+            case 3 => new IntArraySet3(is(0), is(1), is(2))
+            case _ =>
                 if (size == is.length)
                     new IntArraySetN(is)
                 else {
@@ -690,7 +690,7 @@ object IntArraySetBuilder {
         isb
     }
 
-    def apply(c: Chain[Int]): IntArraySetBuilder = {
+    def apply(c: List[Int]): IntArraySetBuilder = {
         val isb = new IntArraySetBuilder(new Array[Int](4), 0)
         c.foreach(isb.+=)
         isb
@@ -739,21 +739,21 @@ object IntArraySet {
      */
     def _UNSAFE_fromSorted(data: Array[Int]): IntArraySet = {
         data.length match {
-            case 0 ⇒ EmptyIntArraySet
-            case 1 ⇒ new IntArraySet1(data(0))
-            case 2 ⇒ new IntArraySet2(data(0), data(1))
-            case 3 ⇒ new IntArraySet3(data(0), data(1), data(2))
-            case _ ⇒ new IntArraySetN(data)
+            case 0 => EmptyIntArraySet
+            case 1 => new IntArraySet1(data(0))
+            case 2 => new IntArraySet2(data(0), data(1))
+            case 3 => new IntArraySet3(data(0), data(1), data(2))
+            case _ => new IntArraySetN(data)
         }
     }
 
     def _UNSAFE_from(data: Array[Int]): IntArraySet = {
         data.length match {
-            case 0 ⇒ EmptyIntArraySet
-            case 1 ⇒ new IntArraySet1(data(0))
-            case 2 ⇒ IntArraySet(data(0), data(1))
-            case 3 ⇒ IntArraySet(data(0), data(1), data(2))
-            case _ ⇒ { JArrays.parallelSort(data); new IntArraySetN(data) }
+            case 0 => EmptyIntArraySet
+            case 1 => new IntArraySet1(data(0))
+            case 2 => IntArraySet(data(0), data(1))
+            case 3 => IntArraySet(data(0), data(1), data(2))
+            case _ => { JArrays.parallelSort(data); new IntArraySetN(data) }
         }
     }
 

@@ -40,9 +40,9 @@ final class DynamicConstant(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case DynamicConstant(thatBSM, thatName, thatDescriptor) ⇒
+            case DynamicConstant(thatBSM, thatName, thatDescriptor) =>
                 (bsm ne null) && thatBSM == bsm && thatName == name && thatDescriptor == descriptor
-            case _ ⇒ false
+            case _ => false
         }
     }
 }

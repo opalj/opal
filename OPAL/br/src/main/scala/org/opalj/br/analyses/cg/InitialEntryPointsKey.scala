@@ -32,7 +32,7 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Michael Reif
  */
-object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], Nothing] {
+object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
     final val ConfigKey = ConfigKeyPrefix+"analysis"
@@ -53,7 +53,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
      * The instantiated class has to satisfy the interface and needs to provide a single
      * constructor parameterized over a Project.
      */
-    override def compute(project: SomeProject): Traversable[Method] = {
+    override def compute(project: SomeProject): Iterable[Method] = {
         val configuredAnalysis = project.config.as[Option[String]](ConfigKey)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {

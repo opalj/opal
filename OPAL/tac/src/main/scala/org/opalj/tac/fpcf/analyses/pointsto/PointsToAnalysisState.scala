@@ -42,15 +42,15 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] val getFields: ArrayBuffer[(Entity, Option[Field], ReferenceType ⇒ Boolean)] =
+    private[this] val getFields: ArrayBuffer[(Entity, Option[Field], ReferenceType => Boolean)] =
         ArrayBuffer.empty
     private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[Field])] = ArrayBuffer.empty
 
-    def addGetFieldEntity(fakeEntity: (Entity, Option[Field], ReferenceType ⇒ Boolean)): Unit = {
+    def addGetFieldEntity(fakeEntity: (Entity, Option[Field], ReferenceType => Boolean)): Unit = {
         getFields += fakeEntity
     }
 
-    def getFieldsIterator: Iterator[(Entity, Option[Field], ReferenceType ⇒ Boolean)] =
+    def getFieldsIterator: Iterator[(Entity, Option[Field], ReferenceType => Boolean)] =
         getFields.iterator
 
     def addPutFieldEntity(fakeEntity: (IntTrieSet, Option[Field])): Unit = {
@@ -59,17 +59,17 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def putFieldsIterator: Iterator[(IntTrieSet, Option[Field])] = putFields.iterator
 
-    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType ⇒ Boolean)] =
+    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType => Boolean)] =
         ArrayBuffer.empty
     private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
 
     def addArrayLoadEntity(
-        fakeEntity: (Entity, ArrayType, ReferenceType ⇒ Boolean)
+        fakeEntity: (Entity, ArrayType, ReferenceType => Boolean)
     ): Unit = {
         arrayLoads += fakeEntity
     }
 
-    def arrayLoadsIterator: Iterator[(Entity, ArrayType, ReferenceType ⇒ Boolean)] =
+    def arrayLoadsIterator: Iterator[(Entity, ArrayType, ReferenceType => Boolean)] =
         arrayLoads.iterator
 
     def addArrayStoreEntity(fakeEntity: (IntTrieSet, ArrayType)): Unit = {
@@ -103,7 +103,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     def includeSharedPointsToSet(
         e:           Entity,
         pointsToSet: PointsToSet,
-        typeFilter:  ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+        typeFilter:  ReferenceType => Boolean = PointsToSetLike.noFilter
     ): Unit = {
         if (_sharedPointsToSets.contains(e)) {
             val oldPointsToSet = _sharedPointsToSets(e)
@@ -115,9 +115,9 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     def includeSharedPointsToSets(
-        e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: ReferenceType ⇒ Boolean
+        e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: ReferenceType => Boolean
     ): Unit = {
-        pointsToSets.foreach(pointsToSet ⇒ includeSharedPointsToSet(e, pointsToSet, typeFilter))
+        pointsToSets.foreach(pointsToSet => includeSharedPointsToSet(e, pointsToSet, typeFilter))
     }
 
     def sharedPointsToSetsIterator: Iterator[(Entity, PointsToSet)] = {
@@ -129,7 +129,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     // TODO: should include PointsTo and Callees dependencies
-    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[(SomeEOptionP, ReferenceType ⇒ Boolean)]] = {
+    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[(SomeEOptionP, ReferenceType => Boolean)]] = {
         mutable.Map.empty
     }
 
@@ -141,19 +141,19 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     final def addDependee(
         depender:   Entity,
         dependee:   SomeEOptionP,
-        typeFilter: ReferenceType ⇒ Boolean
+        typeFilter: ReferenceType => Boolean
     ): Unit = {
         val dependeeEPK = dependee.toEPK
 
         assert(
             !_dependerToDependees.contains(depender) ||
-                !_dependerToDependees(depender).exists(other ⇒ other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
+                !_dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
         )
         assert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
         if (_dependerToDependees.contains(depender)) {
             _dependerToDependees(depender) += ((dependee, typeFilter))
         } else {
-            _dependerToDependees += (depender → mutable.Set((dependee, typeFilter)))
+            _dependerToDependees += (depender -> mutable.Set((dependee, typeFilter)))
         }
 
         if (!_dependees.contains(dependeeEPK))
@@ -171,13 +171,13 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     // IMPROVE: potentially inefficient exists check
     final def hasDependency(depender: Entity, dependee: SomeEPK): Boolean = {
         _dependerToDependees.contains(depender) &&
-            _dependerToDependees(depender).exists(other ⇒ other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
+            _dependerToDependees(depender).exists(other => other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
     }
 
     // IMPROVE: make it efficient
-    final def dependeesOf(depender: Entity): Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)] = {
+    final def dependeesOf(depender: Entity): Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)] = {
         assert(_dependerToDependees.contains(depender))
-        _dependerToDependees(depender).iterator.map(dependee ⇒ (dependee._1.toEPK, dependee)).toMap
+        _dependerToDependees(depender).iterator.map(dependee => (dependee._1.toEPK, dependee)).toMap
     }
 
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None

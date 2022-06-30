@@ -5,14 +5,14 @@ package checking
 
 import org.opalj.br.ConcreteSourceElement
 import org.opalj.bi.AccessFlagsMatcher
-import org.opalj.br.{Attributes ⇒ SourceElementAttributes}
+import org.opalj.br.{Attributes => SourceElementAttributes}
 
 /**
  * A predicate related to a specific source element.
  *
  * @author Michael Eichberg
  */
-trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S ⇒ Boolean) { left ⇒
+trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean) { left =>
 
     def and[T <: ConcreteSourceElement, X <: S with T](
         right: SourceElementPredicate[T]
@@ -64,7 +64,7 @@ case class Attributes(
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {
         //    sourceElement.attributes.size == this.attributes.size &&
-        this.attributes.forall(a ⇒ sourceElement.attributes.exists(_ == a))
+        this.attributes.forall(a => sourceElement.attributes.exists(_ == a))
     }
 
     def toDescription(): String = {

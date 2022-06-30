@@ -35,8 +35,8 @@ final case class PackageLocation[S](
 
     override def toString: String = {
         source match {
-            case Some(source) ⇒ s"$packageName\n$source"
-            case None         ⇒ packageName
+            case Some(source) => s"$packageName\n$source"
+            case None         => packageName
         }
     }
 }
@@ -58,8 +58,8 @@ final case class ClassFileLocation[S](
 
     override def toString: String = {
         source match {
-            case Some(source) ⇒ s"$classFileFQN\n$source"
-            case None         ⇒ classFileFQN
+            case Some(source) => s"$classFileFQN\n$source"
+            case None         => classFileFQN
         }
     }
 

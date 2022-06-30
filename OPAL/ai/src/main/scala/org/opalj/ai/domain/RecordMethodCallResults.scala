@@ -4,6 +4,7 @@ package ai
 package domain
 
 import scala.collection.Set
+import scala.collection.immutable
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
@@ -27,7 +28,7 @@ trait RecordMethodCallResults
     extends MethodCallResults
     with RecordReturnedValues
     with RecordThrownExceptions {
-    this: Domain ⇒
+    this: Domain =>
 
     type ThrownException <: Set[this.ExceptionValue]
 
@@ -103,15 +104,15 @@ trait RecordMethodCallResults
                     summarize(callerPC, returnedLocals).adapt(callerDomain, callerPC)
                 else
                     null
-            returnedParameters foreach { p ⇒
+            returnedParameters foreach { p =>
                 val nthParameter = passedParameters.nthValue { _ == p }
                 val originalParameter = originalOperands.reverse(nthParameter)
                 if (summarizedValue == null || summarizedValue == originalParameter) {
                     summarizedValue = originalParameter
                 } else {
                     summarizedValue.join(callerPC, originalParameter) match {
-                        case SomeUpdate(newSummarizedValue) ⇒ summarizedValue = newSummarizedValue
-                        case _                              ⇒ summarizedValue
+                        case SomeUpdate(newSummarizedValue) => summarizedValue = newSummarizedValue
+                        case _                              => summarizedValue
                     }
                 }
             }
@@ -126,25 +127,25 @@ trait RecordMethodCallResults
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
         } else {
-            var exceptionValuesPerType: Map[ObjectType, Set[ExceptionValue]] = Map.empty
+            var exceptionValuesPerType: Map[ObjectType, immutable.Set[ExceptionValue]] = Map.empty
 
             def handleExceptionValue(exceptionValue: ExceptionValue): Unit = {
                 exceptionValue.upperTypeBound match {
-                    case EmptyUpperTypeBound ⇒
+                    case EmptyUpperTypeBound =>
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             ObjectType.Throwable,
                             exceptionValuesPerType.getOrElse(
-                                ObjectType.Throwable, Set.empty
+                                ObjectType.Throwable, immutable.Set.empty
                             ) + exceptionValue
                         )
-                    case UIDSet1(exceptionType: ObjectType) ⇒
+                    case UIDSet1(exceptionType: ObjectType) =>
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
-                                exceptionType, Set.empty
+                                exceptionType, immutable.Set.empty
                             ) + exceptionValue
                         )
-                    case utb ⇒
+                    case utb =>
                         val exceptionType =
                             classHierarchy.joinObjectTypesUntilSingleUpperBound(
                                 utb.asInstanceOf[UIDSet[ObjectType]]
@@ -152,23 +153,23 @@ trait RecordMethodCallResults
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
-                                exceptionType, Set.empty
+                                exceptionType, immutable.Set.empty
                             ) + exceptionValue
                         )
                 }
             }
 
             for {
-                exceptionValuesPerInstruction ← allThrownExceptions.values
-                exceptionValues ← exceptionValuesPerInstruction
-                exceptionValue ← exceptionValues.allValues
+                exceptionValuesPerInstruction <- allThrownExceptions.values
+                exceptionValues <- exceptionValuesPerInstruction
+                exceptionValue <- exceptionValues.allValues
             } {
                 handleExceptionValue(exceptionValue)
             }
 
-            exceptionValuesPerType.values.map { exceptionValuesPerType ⇒
+            exceptionValuesPerType.values.map { exceptionValuesPerType =>
                 summarize(callerPC, exceptionValuesPerType)
-            }.map { exceptionValuePerType ⇒
+            }.map { exceptionValuePerType =>
                 exceptionValuePerType.adapt(target, callerPC).asInstanceOf[target.ExceptionValue]
             }
         }

@@ -1,31 +1,35 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.hermes.queries.jcg
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.da
-import org.opalj.ai.InterruptableAI
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.hermes.DefaultFeatureQuery
+import org.opalj.hermes.HermesConfig
+import org.opalj.hermes.InstructionLocation
+import org.opalj.hermes.LocationsContainer
+import org.opalj.hermes.ProjectConfiguration
+
 import org.opalj.bi.REF_invokeInterface
 import org.opalj.bi.REF_invokeSpecial
 import org.opalj.bi.REF_invokeStatic
 import org.opalj.bi.REF_invokeVirtual
 import org.opalj.bi.REF_newInvokeSpecial
-import org.opalj.br.MethodWithBody
 import org.opalj.br.InvokeSpecialMethodHandle
-import org.opalj.br.MethodCallMethodHandle
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.Method
+import org.opalj.br.MethodCallMethodHandle
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.ObjectType.LambdaMetafactory
-import org.opalj.br.instructions.ARETURN
 import org.opalj.br.instructions.AASTORE
-import org.opalj.hermes.HermesConfig
-import org.opalj.hermes.InstructionLocation
-import org.opalj.hermes.ProjectConfiguration
-import org.opalj.hermes.LocationsContainer
-import org.opalj.hermes.DefaultFeatureQuery
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.ObjectType.LambdaMetafactory
+import org.opalj.ai.Domain
+import org.opalj.ai.InterruptableAI
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 
 /**
  * This feature query corresponds to the Java8Invokedynamics.md test cases from the JCG call
@@ -51,29 +55,29 @@ class Java8Invokedynamics(
         * Note: Scala's method references use the same mechanism as Java 8 and are therefore not
         * covered within this query.
         * */
-        (1 to 7).map(num ⇒ s"MR$num") ++ (1 to 9).map(num ⇒ s"Lambda$num")
+        (1 to 7).map(num => s"MR$num") ++ (1 to 9).map(num => s"Lambda$num")
 
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         import org.opalj.br.reader.InvokedynamicRewriting._
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            m @ MethodWithBody(code) ← project.allMethodsWithBody
-            pcAndInvocation ← code collect {
-                case dynInv: INVOKEDYNAMIC ⇒ dynInv
-            }
+            m @ MethodWithBody(code) <- project.allMethodsWithBody
+            pcAndInvocation <- code collect ({
+                case dynInv: INVOKEDYNAMIC => dynInv
+            }: PartialFunction[Instruction, Instruction])
         } {
 
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(project.source(m.classFile).get, m, pc)
 
             val testCaseId = pcAndInvocation.value match {
-                case invDyn: INVOKEDYNAMIC ⇒
+                case invDyn: INVOKEDYNAMIC =>
                     {
 
                         if (isJava10StringConcatInvokedynamic(invDyn)) {
@@ -127,13 +131,13 @@ class Java8Invokedynamics(
             }
         }
 
-        locations
+        ArraySeq.unsafeWrapArray(locations)
     }
 
     private def handleJava8InvokeDynamic[S](m: Method, handle: MethodCallMethodHandle) = {
         handle.referenceKind match {
-            case REF_invokeInterface ⇒ 0 /* MR1*/
-            case REF_invokeStatic ⇒ {
+            case REF_invokeInterface => 0 /* MR1*/
+            case REF_invokeStatic => {
                 val InvokeStaticMethodHandle(_, _, name, descriptor) = handle
                 // this just the called method is defined in the same class..
                 // if there is a method in the same class with the same name and descriptor,
@@ -159,7 +163,7 @@ class Java8Invokedynamics(
                     8 /* Lambda2 */
                 }
             }
-            case REF_invokeSpecial ⇒ {
+            case REF_invokeSpecial => {
                 val InvokeSpecialMethodHandle(_, isInterface, name, methodDescriptor) = handle
                 val localMethod = m.classFile.findMethod(name, methodDescriptor)
                 val isLocal = localMethod.isDefined
@@ -168,9 +172,9 @@ class Java8Invokedynamics(
                     if (callee.isSynthetic) 2 /* MR3  */ else 1 /* MR2 */
                 } else /* something unexpected */ 10
             }
-            case REF_invokeVirtual    ⇒ 6 /* MR 7 */
-            case REF_newInvokeSpecial ⇒ 5 /* MR 6 */
-            case hk                   ⇒ throw new RuntimeException("Unexpected handle Kind."+hk)
+            case REF_invokeVirtual    => 6 /* MR 7 */
+            case REF_newInvokeSpecial => 5 /* MR 6 */
+            case hk                   => throw new RuntimeException("Unexpected handle Kind."+hk)
         }
     }
 }

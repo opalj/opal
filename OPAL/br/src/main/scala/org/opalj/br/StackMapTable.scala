@@ -26,7 +26,7 @@ case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
     def pcs: IntArraySet = {
         var pcs = IntArraySet.empty
         var previousOffset: Int = -1
-        stackMapFrames.foreach { f ⇒
+        stackMapFrames.foreach { f =>
             previousOffset = f.offset(previousOffset)
             pcs += previousOffset
         }

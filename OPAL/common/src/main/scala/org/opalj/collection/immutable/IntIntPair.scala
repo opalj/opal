@@ -14,7 +14,7 @@ final case class IntIntPair(_1: Int, _2: Int) {
     def key: Int = _1
     def value: Int = _2
 
-    def foreach(f: Int ⇒ Unit): Unit = { f(_1); f(_2) }
+    def foreach(f: Int => Unit): Unit = { f(_1); f(_2) }
 
     def incrementKey(increment: Int): IntIntPair = {
         new IntIntPair(_1 + increment, _2)

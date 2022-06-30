@@ -15,7 +15,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.collection.TypesSet
-import org.opalj.br.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
+import org.opalj.br.fpcf.properties.{ThrownExceptions => ThrownExceptionsProperty}
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
@@ -44,9 +44,9 @@ object ThrownExceptions extends ProjectAnalysisApplication {
             "[-suppressPerMethodReports]"
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
-            parameters.filter { p ⇒
+            parameters.filter { p =>
                 p != AnalysisLevelL0 && p != AnalysisLevelL1 && p != SuppressPerMethodReports
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
@@ -55,7 +55,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         var executionTime: Nanoseconds = Nanoseconds.None
         val ps: PropertyStore = time {
@@ -65,7 +65,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
                 val ps = project.get(PropertyStoreKey)
                 ps.setupPhase(Set.empty[PropertyKind]) // <= ALWAYS REQUIRED.
                 // We have to query the properties...
-                project.allMethods foreach { m ⇒ ps.force(m, ThrownExceptionsProperty.key) }
+                project.allMethods foreach { m => ps.force(m, ThrownExceptionsProperty.key) }
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
@@ -75,12 +75,12 @@ object ThrownExceptions extends ProjectAnalysisApplication {
                 )
                 ps
             }
-        } { t ⇒ executionTime = t }
+        } { t => executionTime = t }
 
-        val allMethods = ps.entities(ThrownExceptionsProperty.key).toIterable
+        val allMethods = ps.entities(ThrownExceptionsProperty.key).iterator.to(Iterable)
         val (epsNotThrowingExceptions, otherEPS) =
             allMethods.partition(_.ub.throwsNoExceptions)
-        val epsThrowingExceptions = otherEPS.filter(eps ⇒ eps.lb.types != TypesSet.SomeException)
+        val epsThrowingExceptions = otherEPS.filter(eps => eps.lb.types != TypesSet.SomeException)
 
         val methodsThrowingExceptions = epsThrowingExceptions.map(_.e.asInstanceOf[Method])
         val privateMethodsThrowingExceptionsCount = methodsThrowingExceptions.count(_.isPrivate)
@@ -93,10 +93,10 @@ object ThrownExceptions extends ProjectAnalysisApplication {
                 ""
             else {
                 val epsThrowingExceptionsByClassFile = epsThrowingExceptions groupBy (_.e.asInstanceOf[Method].classFile)
-                epsThrowingExceptionsByClassFile.map { e ⇒
+                epsThrowingExceptionsByClassFile.map { e =>
                     val (cf, epsThrowingExceptionsPerMethod) = e
                     cf.thisType.toJava+"{"+
-                        epsThrowingExceptionsPerMethod.map { eps: SomeEPS ⇒
+                        epsThrowingExceptionsPerMethod.map { eps: SomeEPS =>
                             val m: Method = eps.e.asInstanceOf[Method]
                             val ThrownExceptionsProperty(types) = eps.ub
                             m.descriptor.toJava(m.name)+" throws "+types.toString
@@ -106,7 +106,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
                 }.mkString("\n", "\n", "\n")
             }
 
-        val psStatistics = ps.statistics.map(e ⇒ e._1+": "+e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
+        val psStatistics = ps.statistics.map(e => e._1+": "+e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
 
         val analysisStatistics: String =
             "\nStatistics:\n"+

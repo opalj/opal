@@ -3,7 +3,6 @@ package org.opalj
 package bc
 
 import org.junit.runner.RunWith
-
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -15,14 +14,14 @@ import java.io.ByteArrayInputStream
 import java.io.DataOutputStream
 import java.util.zip.ZipFile
 import java.util.concurrent.atomic.AtomicInteger
-
-import scala.collection.JavaConverters._
-
+import scala.jdk.CollectionConverters._
 import org.opalj.io.FailAfterByteArrayOutputStream
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
+import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Tests the assembler by loading and writing a large number of class files and by
@@ -39,7 +38,7 @@ class AssemberTest extends AnyFlatSpec with Matchers {
     val jmodsFile =
         locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
-        file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
+        file <- JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
         if file.isFile
         if file.canRead
         if file.length() > 0
@@ -50,10 +49,10 @@ class AssemberTest extends AnyFlatSpec with Matchers {
             val entriesCount = new AtomicInteger(0)
 
             val Lock = new Object
-            var exceptions: List[Throwable] = Nil
+            var exceptions: List[Throwable] = List.empty[Throwable]
 
             val zipFile = new ZipFile(file)
-            zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze ⇒
+            zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze =>
                 val (classFile, raw) = {
                     val file = zipFile.getInputStream(ze)
                     val classFileSize = ze.getSize.toInt
@@ -71,16 +70,16 @@ class AssemberTest extends AnyFlatSpec with Matchers {
                     var segmentInformation: List[(String, Int)] = Nil
                     val reassembledClassFile: Array[Byte] =
                         try {
-                            Assembler(classFile, (s, w) ⇒ segmentInformation ::= ((s, w)))
+                            Assembler(classFile, (s, w) => segmentInformation ::= ((s, w)))
                         } catch {
-                            case t: Throwable ⇒
+                            case t: Throwable =>
                                 t.printStackTrace()
                                 throw t;
                         }
                     segmentInformation = segmentInformation.reverse
 
                     // let's check all bytes for similarity
-                    reassembledClassFile.zip(raw).zipWithIndex foreach { e ⇒
+                    reassembledClassFile.zip(raw).zipWithIndex foreach { e =>
                         val ((c, r), i) = e
                         if (c != r) {
                             val (succeeded, remaining) = segmentInformation.partition(_._2 < i)
@@ -92,10 +91,10 @@ class AssemberTest extends AnyFlatSpec with Matchers {
                                 Assembler.serialize(classFile)(
                                     Assembler.RichClassFile,
                                     new DataOutputStream(failAfterStream),
-                                    (s, i) ⇒ {}
+                                    (s, i) => {}
                                 )
                             } catch {
-                                case ioe: IOException ⇒ ioe.printStackTrace()
+                                case ioe: IOException => ioe.printStackTrace()
                             }
                             val successfullyReadBytes =
                                 s"(i.e., successfully read ${succeeded.last._2} bytes)"
@@ -112,10 +111,10 @@ class AssemberTest extends AnyFlatSpec with Matchers {
                     }
                     entriesCount.incrementAndGet()
                 } catch {
-                    case e: Exception ⇒
+                    case e: Exception =>
                         Lock.synchronized {
                             val details = e.getMessage + e.getClass.getSimpleName
-                            val message = s"failed: $ze(${classFile.thisType}); message:"+details
+                            val message = s"failed: $ze(${classFile.thisType}); message:$details"
                             val newException = new RuntimeException(message, e)
                             exceptions ::= newException
                         }

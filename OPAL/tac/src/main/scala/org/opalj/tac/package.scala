@@ -39,12 +39,12 @@ package object tac {
         stmts: Array[Stmt[V]],
         cfg:   CFG[Stmt[V], TACStmts[V]]
     ): Iterable[Node] = {
-        val (_, allNodes) = cfg.toDot { bb: BasicBlock ⇒
+        val (_, allNodes) = cfg.toDot { bb: BasicBlock =>
             val pcRange = bb.startPC to bb.endPC
             val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1).zip(pcRange)
-            val txtStmts = bbStmts.map { stmtPC ⇒
+            val txtStmts = bbStmts.map { stmtPC =>
                 val (stmt, pc) = stmtPC
-                pc+": "+ToTxt.toTxtStmt[V](stmt, false)
+                s"$pc: ${ToTxt.toTxtStmt[V](stmt, false)}"
             }
             txtStmts.mkString("", "\\l\\l", "\\l")
         }
@@ -109,10 +109,10 @@ package object tac {
             if (lastPC < oldStartPC) {
                 // the EH is totally dead... i.e., all code in the try block is dead
                 assert(
-                    (oldEH.startPC until oldEH.endPC) forall { tryPC ⇒
+                    (oldEH.startPC until oldEH.endPC) forall { tryPC =>
                         aiResult.domain.exceptionHandlerSuccessorsOf(tryPC).isEmpty
                     },
-                    s"exception handler collapsed: $oldEH ⇒ $newStartIndex"
+                    s"exception handler collapsed: $oldEH => $newStartIndex"
                 )
                 newStartIndex = -1
                 newEndIndex = -1
@@ -153,7 +153,7 @@ package object tac {
         val code = aiResult.code
         val exceptionHandlers = code.exceptionHandlers
 
-        exceptionHandlers map { oldEH ⇒
+        exceptionHandlers map { oldEH =>
             // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
             // included in the handler block, the endPC is equal to `(pc of last instruction) +
             // instruction.size`; however, this is already handled by the caller!
@@ -164,7 +164,7 @@ package object tac {
                 handlerPC = newIndexes(oldEH.handlerPC)
             )
             newEH
-        } filter { eh ⇒
+        } filter { eh =>
             // filter dead exception handlers...
             eh.endPC > eh.startPC
         }

@@ -3,7 +3,7 @@ package org.opalj.collection
 package immutable
 
 import org.opalj.collection.LongIterator
-import java.lang.Long.{hashCode ⇒ lHashCode}
+import java.lang.Long.{hashCode => lHashCode}
 
 /**
  * An immutable set of long values which maintains an additional list to enable
@@ -19,7 +19,7 @@ import java.lang.Long.{hashCode ⇒ lHashCode}
  * the trie uses a lookup table to determine the successor node w.r.t. the
  * next bits of a value; this requires an indirection which costs time.)
  */
-sealed abstract class LongTrieSetWithList extends LongLinkedSet { intSet ⇒
+sealed abstract class LongTrieSetWithList extends LongLinkedSet { intSet =>
 
     final type ThisSet = LongTrieSetWithList
 
@@ -50,18 +50,18 @@ private[immutable] case object LongTrieSetWithList0 extends LongTrieSetWithList 
     override def head: Long = throw new UnsupportedOperationException
     override def contains(value: Long): Boolean = false
 
-    override def forall(p: Long ⇒ Boolean): Boolean = true
-    override def foreach[U](f: Long ⇒ U): Unit = {}
+    override def forall(p: Long => Boolean): Boolean = true
+    override def foreach[U](f: Long => U): Unit = {}
     override def iterator: LongIterator = LongIterator.empty
-    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = z
-    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = { /*nothing to do*/ }
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = z
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = { /*nothing to do*/ }
 
     override def +(i: Long): LongTrieSetWithList1 = new LongTrieSetWithList1(i)
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: AnyRef ⇒ that eq this
-            case _            ⇒ false
+            case that: AnyRef => that eq this
+            case _            => false
         }
     }
     override def hashCode: Int = 0
@@ -79,11 +79,11 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
     override def contains(i: Long): Boolean = i == i1
     override def head: Long = i1
 
-    override def forall(p: Long ⇒ Boolean): Boolean = p(i1)
-    override def foreach[U](f: Long ⇒ U): Unit = f(i1)
+    override def forall(p: Long => Boolean): Boolean = p(i1)
+    override def foreach[U](f: Long => U): Unit = f(i1)
     override def iterator: LongIterator = LongIterator(i1)
-    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = op(z, i1)
-    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(z, i1)
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
         if (n == 0) return ;
         f(i1)
     }
@@ -99,8 +99,8 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongTrieSetWithList1 ⇒ (that eq this) || this.i1 == that.i1
-            case that                       ⇒ false
+            case that: LongTrieSetWithList1 => (that eq this) || this.i1 == that.i1
+            case that                       => false
         }
     }
     override def hashCode: Int = 31 + lHashCode(i1)
@@ -120,11 +120,11 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
     override def contains(i: Long): Boolean = i == i1 || i == i2
     override def head: Long = i1
 
-    override def forall(p: Long ⇒ Boolean): Boolean = { p(i1) && p(i2) }
-    override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2) }
+    override def forall(p: Long => Boolean): Boolean = { p(i1) && p(i2) }
+    override def foreach[U](f: Long => U): Unit = { f(i1); f(i2) }
     override def iterator: LongIterator = LongIterator(i1, i2)
-    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = op(op(z, i1), i2)
-    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(z, i1), i2)
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
         if (n == 0) return ;
         f(i1)
         if (n == 1) return ;
@@ -145,8 +145,8 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongTrieSetWithList2 ⇒ (that eq this) || this.i1 == that.i1 && this.i2 == that.i2
-            case that                       ⇒ false
+            case that: LongTrieSetWithList2 => (that eq this) || this.i1 == that.i1 && this.i2 == that.i2
+            case that                       => false
         }
     }
     override def hashCode: Int = 31 * (31 + lHashCode(i1)) + lHashCode(i2)
@@ -167,11 +167,11 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
     override def contains(i: Long): Boolean = i == i1 || i == i2 || i == i3
     override def head: Long = i1
 
-    override def forall(p: Long ⇒ Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
-    override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2); f(i3) }
+    override def forall(p: Long => Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
+    override def foreach[U](f: Long => U): Unit = { f(i1); f(i2); f(i3) }
     override def iterator: LongIterator = LongIterator(i1, i2, i3)
-    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = op(op(op(z, i1), i2), i3)
-    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = op(op(op(z, i1), i2), i3)
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
         if (n == 0) return ;
         f(i1)
         if (n == 1) return ;
@@ -190,17 +190,17 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
     private[this] def grow(i: Long, level: Int): LongTrieSetNode = {
         val l = new LongTrieSet1(i)
         var r: LongTrieSetNode = new LongTrieSetNode1(((i >> level) & 7L).toInt, l)
-        r = r + (i1, level)
-        r = r + (i2, level)
-        r = r + (i3, level)
+        r = r.add(i1, level)
+        r = r.add(i2, level)
+        r = r.add(i3, level)
         r
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongTrieSetWithList3 ⇒
+            case that: LongTrieSetWithList3 =>
                 (this eq that) || (i1 == that.i1 && i2 == that.i2 && i3 == that.i3)
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -221,24 +221,24 @@ private[immutable] final class LongTrieSetWithListN(
     override def isSingletonSet: Boolean = false
     override def contains(value: Long): Boolean = root.contains(value, value)
     override def head: Long = list.head
-    override def forall(p: Long ⇒ Boolean): Boolean = list.forall(p)
-    override def foreach[U](f: Long ⇒ U): Unit = list.foreach(f)
-    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = list.forFirstN(n)(f)
+    override def forall(p: Long => Boolean): Boolean = list.forall(p)
+    override def foreach[U](f: Long => U): Unit = list.foreach(f)
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = list.forFirstN(n)(f)
     override def iterator: LongIterator = list.iterator
-    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = list.foldLeft(z)(op)
+    override def foldLeft[B](z: B)(op: (B, Long) => B): B = list.foldLeft(z)(op)
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongTrieSetWithListN ⇒
+            case that: LongTrieSetWithListN =>
                 (that eq this) || (that.size == this.size && this.list == that.list)
-            case _ ⇒ false
+            case _ => false
         }
     }
     override def hashCode: Int = list.hashCode * 31 + size
 
     override def +(i: Long): LongTrieSetWithList = {
         val root = this.root
-        val newRoot = root + (i, 0)
+        val newRoot = root.add(i, 0)
         if (newRoot ne root) {
             new LongTrieSetWithListN(size + 1, newRoot, i +: list)
         } else {

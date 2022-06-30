@@ -4,9 +4,8 @@ package org.opalj
 import scala.language.experimental.macros
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox.Context
-
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Defines common control abstractions.
@@ -24,7 +23,7 @@ package object control {
     final def foreachNonNullValue[T <: AnyRef](
         a: Array[T]
     )(
-        f: (Int, T) ⇒ Unit
+        f: (Int, T) => Unit
     ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
 
     /**
@@ -35,7 +34,7 @@ package object control {
     final def foreachWithIndex[T <: AnyRef](
         a: Array[T]
     )(
-        f: (T, Int) ⇒ Unit
+        f: (T, Int) => Unit
     ): Unit = macro ControlAbstractionsImplementation.foreachWithIndex[T]
 
     /**
@@ -47,12 +46,12 @@ package object control {
     final def forFirstN[T <: AnyRef](
         l: List[T], n: Int
     )(
-        f: T ⇒ Unit
+        f: T => Unit
     ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
 
     /**
      * Evaluates the given expression `f` with type `T` the given number of
-     * `times` and stores the result in a [[org.opalj.collection.immutable.RefArray]].
+     * `times` and stores the result in a [[scala.collection.immutable.ArraySeq]].
      *
      * ==Example Usage==
      * {{{
@@ -72,14 +71,16 @@ package object control {
      *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
      *      returned.
      */
-    def fillRefArray[T <: AnyRef](
+    def fillArraySeq[T <: AnyRef](
         times: Int
     )(
-        f: ⇒ T
-    ): RefArray[T] = macro ControlAbstractionsImplementation.fillRefArray[T]
+        f: => T
+    )(implicit classTag: ClassTag[T]): ArraySeq[T] = ArraySeq.fill(times)(f)
+
+    // macro ControlAbstractionsImplementation.fillRefArray[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
-    //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
+    //        def repeat[T](times: Int)(f: => T): IndexedSeq[T] = {
     //            val array = new scala.collection.mutable.ArrayBuffer[T](times)
     //            var i = 0
     //            while (i < times) {
@@ -94,7 +95,7 @@ package object control {
 
     /**
      * Evaluates the given expression `f` the given number of
-     * `times` and stores the result in an [[org.opalj.collection.immutable.IntArray]].
+     * `times` and stores the result in an [[scala.collection.immutable.ArraySeq[Int]].
      *
      * ==Example Usage==
      * {{{
@@ -116,7 +117,7 @@ package object control {
         times: Int
     )(
         f: Int
-    ): IntArray = macro ControlAbstractionsImplementation.fillIntArray
+    ): ArraySeq[Int] = macro ControlAbstractionsImplementation.fillIntArray
 
     def fillArrayOfInt(
         times: Int
@@ -135,7 +136,7 @@ package object control {
     def iterateTo(
         from: Int, to: Int
     )(
-        f: Int ⇒ Unit
+        f: Int => Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateTo
 
     /**
@@ -147,7 +148,7 @@ package object control {
     def iterateUntil(
         from: Int, until: Int
     )(
-        f: Int ⇒ Unit
+        f: Int => Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateUntil
 
     /**
@@ -170,12 +171,12 @@ package object control {
      *          precisely specified.
      */
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: Array[T], comparable: Comparable[T]): Option[T] = {
+    def find[T <: AnyRef](data: ArraySeq[T], comparable: Comparable[T]): Option[T] = {
         find(data)(comparable.compareTo)
     }
 
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: Array[T])(compareTo: T ⇒ Int): Option[T] = {
+    def find[T <: AnyRef](data: ArraySeq[T])(compareTo: T => Int): Option[T] = {
         @tailrec @inline def find(low: Int, high: Int): Option[T] = {
             if (high < low)
                 return None;
@@ -210,7 +211,7 @@ package control {
         )(
             a: c.Expr[Array[T]]
         )(
-            f: c.Expr[(Int, T) ⇒ Unit]
+            f: c.Expr[(Int, T) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -231,7 +232,7 @@ package control {
         )(
             a: c.Expr[Array[T]]
         )(
-            f: c.Expr[(T, Int) ⇒ Unit]
+            f: c.Expr[(T, Int) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -252,7 +253,7 @@ package control {
         )(
             l: c.Expr[List[T]], n: c.Expr[Int]
         )(
-            f: c.Expr[T ⇒ Unit]
+            f: c.Expr[T => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -269,19 +270,19 @@ package control {
             }
         }
 
-        def fillRefArray[T <: AnyRef: c.WeakTypeTag](
+        def fillRefArray[T <: AnyRef: ClassTag](
             c: Context
         )(
             times: c.Expr[Int]
         )(
             f: c.Expr[T]
-        ): c.Expr[RefArray[T]] = {
+        ): c.Expr[ArraySeq[T]] = {
             import c.universe._
 
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    RefArray.empty[T]
+                    ArraySeq.empty[T]
                 } else {
                     val array = new Array[AnyRef](size)
                     var i = 0
@@ -290,18 +291,18 @@ package control {
                         array(i) = value
                         i += 1
                     }
-                    RefArray._UNSAFE_from[T](array)
+                    ArraySeq.unsafeWrapArray[T](array.asInstanceOf[Array[T]])
                 }
             }
         }
 
-        def fillIntArray(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[IntArray] = {
+        def fillIntArray(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[ArraySeq[Int]] = {
             import c.universe._
 
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    IntArray.empty
+                    ArraySeq.empty[Int]
                 } else {
                     val array = new Array[Int](size)
                     var i = 0
@@ -310,7 +311,7 @@ package control {
                         array(i) = value
                         i += 1
                     }
-                    IntArray._UNSAFE_from(array)
+                    ArraySeq.unsafeWrapArray(array)
                 }
             }
         }
@@ -321,7 +322,7 @@ package control {
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    IntArray.EmptyArrayOfInt
+                    Array.empty
                 } else {
                     val array = new Array[Int](size)
                     var i = 0
@@ -341,7 +342,7 @@ package control {
             from: c.Expr[Int],
             to:   c.Expr[Int]
         )(
-            f: c.Expr[(Int) ⇒ Unit]
+            f: c.Expr[(Int) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -361,7 +362,7 @@ package control {
             from:  c.Expr[Int],
             until: c.Expr[Int]
         )(
-            f: c.Expr[(Int) ⇒ Unit]
+            f: c.Expr[(Int) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 

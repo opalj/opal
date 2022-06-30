@@ -4,9 +4,10 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.{ObjectType, ReferenceType}
-import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.br.BootstrapMethod
+import org.opalj.br.MethodDescriptor
 
 /**
  * Most basic handling of method invocations that determines the value that is
@@ -24,7 +25,7 @@ import org.opalj.br.BootstrapMethod
  * @author Michael Eichberg
  */
 trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
-    domain: ReferenceValuesDomain with ValuesFactory with Configuration ⇒
+    domain: ReferenceValuesDomain with ValuesFactory with Configuration =>
 
     protected[this] def handleInstanceBasedInvoke(
         pc:               Int,
@@ -32,16 +33,16 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         operands:         Operands
     ): MethodCallResult = {
         refIsNull(pc, operands.last) match {
-            case Yes ⇒
+            case Yes =>
                 justThrows(VMNullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnMethodCall ⇒
+            case Unknown if throwNullPointerExceptionOnMethodCall =>
                 val returnType = methodDescriptor.returnType
                 val exceptionValue = Set(VMNullPointerException(pc))
                 if (returnType.isVoidType)
                     ComputationWithSideEffectOrException(exceptionValue)
                 else
                     ComputedValueOrException(TypedValue(pc, returnType), exceptionValue)
-            case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
+            case /*No or Unknown & DoNotThrowNullPointerException*/ _ =>
                 val returnType = methodDescriptor.returnType
                 if (returnType.isVoidType)
                     ComputationWithSideEffectOnly

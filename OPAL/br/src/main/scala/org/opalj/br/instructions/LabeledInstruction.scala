@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.ForeachRefIterator
-
 /**
  * An instruction where the jump targets are identified using `Symbols` associated with the
  * instructions which should be executed in case of a jump.
@@ -17,7 +15,7 @@ import org.opalj.collection.ForeachRefIterator
 trait LabeledInstruction extends InstructionLike {
 
     // TODO Rename to jumpTargets to clearly state that the "fall through case" is NOT covered!
-    def branchTargets: ForeachRefIterator[InstructionLabel]
+    def branchTargets: Iterator[InstructionLabel]
 
     /**
      * If this instruction uses `Symbol`s to mark jump targets then the targets are replaced

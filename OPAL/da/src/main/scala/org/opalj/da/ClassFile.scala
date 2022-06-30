@@ -7,7 +7,6 @@ import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Text
 import scala.xml.Unparsed
-
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.reader.Constant_PoolAbstractions
@@ -49,7 +48,7 @@ case class ClassFile(
             2 + // constant_pool_count
             {
                 val cpIt = constant_pool.iterator
-                cpIt.next // the first entry is always empty in the class file
+                cpIt.next() // the first entry is always empty in the class file
                 cpIt.
                     filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).
                     map(_.size).
@@ -93,7 +92,7 @@ case class ClassFile(
                 Seq(
                     Text("implements "),
                     asJavaObjectType(cp(interfaces.head).toString).asSpan("implements"),
-                    interfaces.tail.map { i ⇒
+                    interfaces.tail.map { i =>
                         Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements"))
                     }
                 )
@@ -108,7 +107,7 @@ case class ClassFile(
     def cpToXHTML: Node = {
         val cpEntries =
             for {
-                cpIndex ← 1 until constant_pool.length
+                cpIndex <- 1 until constant_pool.length
                 cpNode = cp(cpIndex)
                 if cpNode != null /* <= need for constant_double/_long entries */
             } yield {
@@ -120,15 +119,15 @@ case class ClassFile(
 
     def attributeToXHTML(attribute: Attribute): Node = {
         attribute match {
-            case ica: InnerClasses_attribute ⇒ ica.toXHTML(thisType)
-            case _                           ⇒ attribute.toXHTML(cp)
+            case ica: InnerClasses_attribute => ica.toXHTML(thisType)
+            case _                           => attribute.toXHTML(cp)
         }
     }
 
-    def fieldsToXHTML: Iterator[Node] = fields.iterator.map { field ⇒ field.toXHTML }
+    def fieldsToXHTML: Iterator[Node] = fields.iterator.map { field => field.toXHTML }
 
     def methodsToXHTML: Iterator[Node] = {
-        methods.iterator.zipWithIndex.map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
+        methods.iterator.zipWithIndex.map { mi => val (method, index) = mi; method.toXHTML(index) }
     }
 
     protected def accessFlags: Node = {
@@ -211,10 +210,8 @@ case class ClassFile(
     // (i.e. with the fields for the filter, but without the necessary logic)
     private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
 
-        val (sourceFileAttributes, attributes0) =
-            attributes.partitionByType(classOf[SourceFile_attribute])
-        val (signatureAttributes, attributes1) =
-            attributes0.partitionByType(classOf[Signature_attribute])
+        val (sourceFileAttributes, attributes0) = partitionByType(attributes, classOf[SourceFile_attribute])
+        val (signatureAttributes, attributes1) = partitionByType(attributes0, classOf[Signature_attribute])
 
         <div class="class_file">
             { if (source.isDefined) <div id="source">{ source.get }</div> }
@@ -229,7 +226,7 @@ case class ClassFile(
                 }
                 <br/>
                 {
-                    sourceFileAttributes.headOption.map { a ⇒
+                    sourceFileAttributes.headOption.map { a =>
                         Seq(
                             Text("Source file: "),
                             <span class="source_file">{ a.sourceFile } </span>,

@@ -2,8 +2,6 @@
 package org.opalj
 package fpcf
 
-import scala.language.higherKinds
-
 /**
  * Specifies the bounds of the properties that may be used/derived.
  *

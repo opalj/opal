@@ -5,6 +5,8 @@ package reader
 
 import org.opalj.bi.reader.BootstrapMethods_attributeReader
 
+import scala.reflect.ClassTag
+
 /**
  * Final bindings and factory methods for the ''BoostrapMethods'' attribute.
  *
@@ -18,8 +20,10 @@ trait BootstrapMethods_attributeBinding
     type BootstrapMethods_attribute = BootstrapMethodTable
 
     type BootstrapMethod = br.BootstrapMethod
+    override implicit val bootstrapMethodType = ClassTag(classOf[br.BootstrapMethod])
 
     type BootstrapArgument = br.BootstrapArgument
+    override implicit val bootstrapArgumentType = ClassTag(classOf[br.BootstrapArgument])
 
     def BootstrapMethods_attribute(
         cp:                  Constant_Pool,
@@ -46,14 +50,14 @@ trait BootstrapMethods_attributeBinding
         cp(constantPoolIndex).asBootstrapArgument(cp)
     }
 
-    registerAttributesPostProcessor { attributes ⇒
-        val bsmO = attributes collectFirst { case BootstrapMethodTable(bms) ⇒ bms }
+    registerAttributesPostProcessor { attributes =>
+        val bsmO = attributes collectFirst { case BootstrapMethodTable(bms) => bms }
         if (bsmO.isDefined) {
             val bootstrapMethods = bsmO.get
-            bootstrapMethods foreach { bsm ⇒
+            bootstrapMethods foreach { bsm =>
                 bsm.arguments foreach {
-                    case dc: DynamicConstant ⇒ dc.fillInBootstrapMethod(bootstrapMethods)
-                    case _                   ⇒
+                    case dc: DynamicConstant => dc.fillInBootstrapMethod(bootstrapMethods)
+                    case _                   =>
                 }
             }
         }

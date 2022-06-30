@@ -2,9 +2,6 @@
 package org.opalj
 package hermes
 
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
-
 /**
  * Represents the immutable results of a feature query.
  *
@@ -22,7 +19,7 @@ import org.opalj.collection.immutable.Chain
 abstract case class Feature[S] private (
         id:         String,
         count:      Int,
-        extensions: Chain[Location[S]]
+        extensions: List[Location[S]]
 ) {
     assert(count >= extensions.size)
 }
@@ -36,13 +33,13 @@ object Feature {
 
     def apply[S](
         id:         String,
-        count:      Int                = 0,
-        extensions: Chain[Location[S]] = Naught
+        count:      Int               = 0,
+        extensions: List[Location[S]] = List.empty
     )(
         implicit
         hermes: HermesConfig
     ): Feature[S] = {
-        new Feature(id, count, extensions.takeUpTo(hermes.MaxLocations)) {}
+        new Feature(id, count, extensions.take(hermes.MaxLocations)) {}
     }
 
     def apply[S](

@@ -4,12 +4,10 @@ package br
 package instructions
 
 import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntArray
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.ForeachRefIterator
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Access jump table by index and jump.
@@ -38,7 +36,7 @@ case class TABLESWITCH(
         defaultOffset: Int,
         low:           Int,
         high:          Int,
-        jumpOffsets:   IntArray
+        jumpOffsets:   ArraySeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
     final override def asTABLESWITCH: this.type = this
@@ -52,23 +50,23 @@ case class TABLESWITCH(
             InstructionLabel(currentPC + defaultOffset),
             low,
             high,
-            jumpOffsets.map(jumpOffset ⇒ InstructionLabel(currentPC + jumpOffset))
+            jumpOffsets.map(jumpOffset => InstructionLabel(currentPC + jumpOffset))
         )
     }
 
-    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
-        var caseValues = Chain.empty[Int]
+    def caseValueOfJumpOffset(jumpOffset: Int): (List[Int], Boolean) = {
+        var caseValues = List.empty[Int]
         var i = jumpOffsets.length - 1
         while (i >= 0) {
             if (jumpOffsets(i) == jumpOffset)
-                caseValues = high - i :&: caseValues
+                caseValues = high - i :: caseValues
             i -= 1
         }
         (caseValues, jumpOffset == defaultOffset)
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.upTo(low, high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+        IntIterator.upTo(low, high).filter(cv => jumpOffsets(cv - low) != defaultOffset)
     }
 
     final def nextInstructions(
@@ -78,15 +76,15 @@ case class TABLESWITCH(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         val defaultTarget = currentPC + defaultOffset
-        var pcs = Chain.singleton(defaultTarget)
+        var pcs = List(defaultTarget)
         var seen: IntArraySet = IntArraySet1(defaultTarget)
-        jumpOffsets foreach { offset ⇒
+        jumpOffsets foreach { offset =>
             val newPC = currentPC + offset
             if (!seen.contains(newPC)) {
                 seen += newPC
-                pcs :&:= newPC
+                pcs ::= newPC
             }
         }
         pcs
@@ -97,7 +95,7 @@ case class TABLESWITCH(
 
         code.instructions(otherPC) match {
 
-            case TABLESWITCH(otherDefaultOffset, `low`, `high`, otherJumpOffsets) ⇒
+            case TABLESWITCH(otherDefaultOffset, `low`, `high`, otherJumpOffsets) =>
                 (this.defaultOffset + paddingOffset == otherDefaultOffset) && {
                     val tIt = this.jumpOffsets.iterator
                     val oIt = otherJumpOffsets.iterator
@@ -110,24 +108,24 @@ case class TABLESWITCH(
                     doesMatch
                 }
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 
     override def toString: String = {
         s"TABLESWITCH($low -> $high; "+
-            (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
+            (low to high).zip(jumpOffsets).map(e => s"${e._1}⤼${e._2}").mkString(",")+
             ";default⤼"+defaultOffset+
             ")"
     }
 
     override def toString(pc: PC): String = {
         s"TABLESWITCH($low -> $high; "+
-            (low to high).zip(jumpOffsets).map { keyOffset ⇒
+            (low to high).zip(jumpOffsets).map { keyOffset =>
                 val (key, offset) = keyOffset
-                key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
-            }.mkString(", ")+
-            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
+                s"$key=${pc + offset}${if (offset >= 0) "↓" else "↑"}"
+            }.mkString(", ") +
+            s"; ifNoMatch=${defaultOffset + pc}${if (defaultOffset >= 0) "↓" else "↑"})"
     }
 
 }
@@ -152,7 +150,7 @@ object TABLESWITCH extends InstructionMetaInformation {
         defaultBranchTarget: InstructionLabel,
         low:                 Int,
         high:                Int,
-        branchTargets:       RefArray[InstructionLabel]
+        branchTargets:       ArraySeq[InstructionLabel]
     ): LabeledTABLESWITCH = {
         require(
             branchTargets.size == high - low + 1,
@@ -171,7 +169,7 @@ case class LabeledTABLESWITCH(
         defaultBranchTarget: InstructionLabel,
         low:                 Int,
         high:                Int,
-        jumpTargets:         RefArray[InstructionLabel]
+        jumpTargets:         ArraySeq[InstructionLabel]
 ) extends LabeledInstruction with TABLESWITCHLike {
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
@@ -180,27 +178,27 @@ case class LabeledTABLESWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
             low,
             high,
-            jumpTargets.map(target ⇒ asShortBranchoffset(pcs(target) - currentPC))
+            jumpTargets.map(target => asShortBranchoffset(pcs(target) - currentPC))
         )
     }
 
-    override def branchTargets: ForeachRefIterator[InstructionLabel] = {
-        jumpTargets.foreachIterator + defaultBranchTarget
+    override def branchTargets: Iterator[InstructionLabel] = {
+        jumpTargets.iterator ++ Iterator(defaultBranchTarget)
     }
 
-    def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (Chain[Int], Boolean) = {
-        var caseValues = Chain.empty[Int]
+    def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (List[Int], Boolean) = {
+        var caseValues = List.empty[Int]
         var i = jumpTargets.length - 1
         while (i >= 0) {
             if (jumpTargets(i) == jumpTarget)
-                caseValues :&:= high - i
+                caseValues ::= high - i
             i -= 1
         }
         (caseValues, jumpTarget == defaultBranchTarget)
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.upTo(low, high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+        IntIterator.upTo(low, high).filter(cv => jumpTargets(cv - low) != defaultBranchTarget)
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
@@ -209,9 +207,9 @@ case class LabeledTABLESWITCH(
     }
 
     override def toString(pc: Int): String = {
-        (low to high).zip(jumpTargets).map { keyOffset ⇒
+        (low to high).zip(jumpTargets).map { keyOffset =>
             val (key, target) = keyOffset
-            key+"="+target
+            s"$key=$target"
         }.mkString("TABLESWITCH(", ", ", "; ifNoMatch="+defaultBranchTarget+")")
     }
 }

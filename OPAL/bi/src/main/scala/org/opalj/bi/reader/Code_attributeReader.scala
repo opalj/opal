@@ -4,9 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Defines a template method to read in the code attribute.
@@ -22,7 +23,8 @@ trait Code_attributeReader extends AttributeReader {
     //
 
     type ExceptionTableEntry <: AnyRef
-    type ExceptionHandlers = RefArray[ExceptionTableEntry]
+    implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] // TODO: Replace in Scala 3 by `type ExceptionTableEntry : ClassTag`
+    type ExceptionHandlers = ArraySeq[ExceptionTableEntry]
 
     type Instructions
 
@@ -94,7 +96,7 @@ trait Code_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length = */ in.readInt()
         Code_attribute(
             cp,
@@ -104,7 +106,7 @@ trait Code_attributeReader extends AttributeReader {
             in.readUnsignedShort(),
             in.readUnsignedShort(),
             Instructions(cp, ap_name_index, ap_descriptor_index, in),
-            fillRefArray(in.readUnsignedShort()) { // "exception_table_length" times
+            fillArraySeq(in.readUnsignedShort()) { // "exception_table_length" times
                 ExceptionTableEntry(
                     cp,
                     in.readUnsignedShort, in.readUnsignedShort,
@@ -115,6 +117,6 @@ trait Code_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(CodeAttribute.Name → parserFactory())
+    registerAttributeReader(CodeAttribute.Name -> parserFactory())
 
 }

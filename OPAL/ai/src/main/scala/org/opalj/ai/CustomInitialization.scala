@@ -18,7 +18,7 @@ import org.opalj.collection.immutable.IntTrieSet
  *
  * @author Michael Eichberg
  */
-trait CustomInitialization { domain: ValuesDomain ⇒
+trait CustomInitialization { domain: ValuesDomain =>
 
     /**
      * Override this method to perform custom initialization steps.

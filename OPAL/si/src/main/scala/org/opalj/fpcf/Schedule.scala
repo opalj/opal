@@ -4,7 +4,6 @@ package fpcf
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.collection.immutable.Chain
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -17,9 +16,9 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 case class Schedule[A](
-        batches:            Chain[PhaseConfiguration[A]],
+        batches:            List[PhaseConfiguration[A]],
         initializationData: Map[ComputationSpecification[A], Any]
-) extends ((PropertyStore, Boolean, PropertyKindsConfiguration ⇒ Unit, Chain[ComputationSpecification[A]] ⇒ Unit) ⇒ List[(ComputationSpecification[A], A)]) {
+) extends ((PropertyStore, Boolean, PropertyKindsConfiguration => Unit, List[ComputationSpecification[A]] => Unit) => List[(ComputationSpecification[A], A)]) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
@@ -32,14 +31,14 @@ case class Schedule[A](
     def apply(
         ps:                   PropertyStore,
         trace:                Boolean                                   = false,
-        afterPhaseSetup:      PropertyKindsConfiguration ⇒ Unit = _ ⇒ (),
-        afterPhaseScheduling: Chain[ComputationSpecification[A]] ⇒ Unit = _ ⇒ ()
+        afterPhaseSetup:      PropertyKindsConfiguration => Unit = _ => (),
+        afterPhaseScheduling: List[ComputationSpecification[A]] => Unit = _ => ()
     ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
 
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
-        batches.toIterator.zipWithIndex foreach { batchId ⇒
+        batches.iterator.zipWithIndex foreach { batchId =>
             val (PhaseConfiguration(configuration, css), id) = batchId
 
             if (trace) {
@@ -52,12 +51,12 @@ case class Schedule[A](
 
                 var executedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
-                css.foreach(cs ⇒ cs.beforeSchedule(ps))
-                css.foreach { cs ⇒
+                css.foreach(cs => cs.beforeSchedule(ps))
+                css.foreach { cs =>
                     val a = cs.schedule(ps, initializationData(cs).asInstanceOf[cs.InitializationData])
                     executedAnalyses ::= ((cs, a))
                 }
-                executedAnalyses.foreach { csAnalysis ⇒
+                executedAnalyses.foreach { csAnalysis =>
                     val (cs, a) = csAnalysis
                     cs.afterPhaseScheduling(ps, a)
                 }
@@ -67,13 +66,13 @@ case class Schedule[A](
                 ps.waitOnPhaseCompletion()
                 assert(ps.isIdle, "the property store is not idle after phase completion")
 
-                executedAnalyses.foreach { csAnalysis ⇒
+                executedAnalyses.foreach { csAnalysis =>
                     val (cs, a) = csAnalysis
                     cs.afterPhaseCompletion(ps, a)
                 }
                 assert(ps.isIdle, "the property store is not idle after phase completion")
                 allExecutedAnalyses :::= executedAnalyses.reverse
-            } { t ⇒
+            } { t =>
                 if (trace)
                     info(
                         "analysis progress",

@@ -28,8 +28,8 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         import project.classHierarchy.getObjectType
 
@@ -39,35 +39,35 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
 
         // 1. create graph
         for {
-            classFile ← project.allProjectClassFiles
+            classFile <- project.allProjectClassFiles
             if !isInterrupted()
             classType = classFile.thisType
-            field ← classFile.fields
+            field <- classFile.fields
             fieldType = field.fieldType
         } {
             if (fieldType.isObjectType) {
-                g += (classType.id, fieldType.asObjectType.id)
+                g add (classType.id, fieldType.asObjectType.id)
             } else if (fieldType.isArrayType) {
                 val elementType = fieldType.asArrayType.elementType
                 if (elementType.isObjectType) {
-                    g += (classType.id, elementType.asObjectType.id)
+                    g add (classType.id, elementType.asObjectType.id)
                 }
             }
         }
 
         // 2. search for strongly connected components
         for {
-            scc ← g.sccs(filterSingletons = true)
+            scc <- g.sccs(filterSingletons = true)
             if !isInterrupted()
             /* An scc is never empty! */
             sccCategory = Math.min(scc.size, 5) - 1
-            objectTypeID ← scc
+            objectTypeID <- scc
             objectType = getObjectType(objectTypeID)
         } {
             locations(sccCategory) += ClassFileLocation(project, objectType)
         }
 
-        for { (locations, index) ← locations.iterator.zipWithIndex } yield {
+        for { (locations, index) <- locations.iterator.zipWithIndex } yield {
             Feature[S](featureIDs(index), locations)
         }
     }

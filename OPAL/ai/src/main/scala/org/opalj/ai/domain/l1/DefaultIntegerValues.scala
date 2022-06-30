@@ -15,7 +15,7 @@ import org.opalj.br.ComputationalTypeInt
  * @author Michael Eichberg
  */
 trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with IntegerValues {
-    domain: Configuration with ExceptionsFactory ⇒
+    domain: Configuration with ExceptionsFactory =>
 
     /**
      * Represents an unspecific, unknown Integer value.
@@ -38,8 +38,8 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: AnyRef ⇒ that eq this
-                case _            ⇒ false
+                case that: AnyRef => that eq this
+                case _            => false
             }
         }
 
@@ -54,14 +54,14 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
     /**
      * Represents a specific integer value in the range [`lowerBound`,`upperBound`].
      */
-    class TheIntegerValue(val value: Int) extends super.TheIntegerValue {
+    class ConcreteIntegerValue(val value: Int) extends super.TheIntegerValue {
 
         override def constantValue: Option[Int] = Some(value)
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue)
-                case that: TheIntegerValue ⇒
+                case AnIntegerValue => StructuralUpdate(AnIntegerValue)
+                case that: ConcreteIntegerValue =>
                     if (that.value == this.value)
                         NoUpdate
                     else
@@ -72,8 +72,8 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (
                 other match {
-                    case that: TheIntegerValue ⇒ this.value == that.value
-                    case _                     ⇒ false
+                    case that: ConcreteIntegerValue => this.value == that.value
+                    case _                          => false
                 }
             )
         }
@@ -88,8 +88,8 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: TheIntegerValue ⇒ this.value == that.value
-                case _                     ⇒ false
+                case that: ConcreteIntegerValue => this.value == that.value
+                case _                          => false
             }
         }
 
@@ -98,28 +98,28 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
     }
 
     override def BooleanValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
-    override def BooleanValue(origin: ValueOrigin, value: Boolean): TheIntegerValue = {
-        if (value) new TheIntegerValue(1) else new TheIntegerValue(0)
+    override def BooleanValue(origin: ValueOrigin, value: Boolean): ConcreteIntegerValue = {
+        if (value) new ConcreteIntegerValue(1) else new ConcreteIntegerValue(0)
     }
 
     override def ByteValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
-    override def ByteValue(origin: ValueOrigin, value: Byte): TheIntegerValue = {
-        new TheIntegerValue(value.toInt)
+    override def ByteValue(origin: ValueOrigin, value: Byte): ConcreteIntegerValue = {
+        new ConcreteIntegerValue(value.toInt)
     }
 
     override def ShortValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
-    override def ShortValue(origin: ValueOrigin, value: Short): TheIntegerValue = {
-        new TheIntegerValue(value.toInt)
+    override def ShortValue(origin: ValueOrigin, value: Short): ConcreteIntegerValue = {
+        new ConcreteIntegerValue(value.toInt)
     }
 
     override def CharValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
-    override def CharValue(origin: ValueOrigin, value: Char): TheIntegerValue = {
-        new TheIntegerValue(value.toInt)
+    override def CharValue(origin: ValueOrigin, value: Char): ConcreteIntegerValue = {
+        new ConcreteIntegerValue(value.toInt)
     }
 
     override def IntegerValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
-    override def IntegerValue(origin: ValueOrigin, value: Int): TheIntegerValue = {
-        new TheIntegerValue(value)
+    override def IntegerValue(origin: ValueOrigin, value: Int): ConcreteIntegerValue = {
+        new ConcreteIntegerValue(value)
     }
 
 }

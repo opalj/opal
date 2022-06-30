@@ -93,7 +93,7 @@ If you defined a `meet` method, you can simply implement it like this:
 ```scala
 override def checkIsEqualOrBetterThan(e: Entity, other: ClassImmutability): Unit = {
     if (meet(other) != other) {
-        throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 }
 ```
@@ -121,9 +121,9 @@ final val classImmutabilityKey: PropertyKey[ClassImmutability] = PropertyKey.cre
 
 final val instantiatedTypesKey: PropertyKey[InstantiatedTypes] = PropertyKey.create(
     "InstantiatedTypes",
-    (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-        case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ InstantiatedTypes(UIDSet.empty)
-        case _                                                ⇒ throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
+    (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+        case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => InstantiatedTypes(UIDSet.empty)
+        case _                                                => throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
     }
 )
 ```

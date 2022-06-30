@@ -9,7 +9,9 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypesPointsToTypeProvider
+import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
@@ -34,7 +36,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
 
     override protected[cg] def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         List(
             TypeBasedPointsToAnalysisScheduler,
             TypeBasedConfiguredMethodsPointsToAnalysisScheduler,
@@ -45,6 +47,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
         )
     }
 
-    override def getTypeProvider(project: SomeProject) = new TypesPointsToTypeProvider(project)
+    override def getTypeProvider(project: SomeProject): TypeProvider =
+        new TypeProvider(project) with TypesBasedPointsToTypeProvider with SimpleContextProvider
 
 }

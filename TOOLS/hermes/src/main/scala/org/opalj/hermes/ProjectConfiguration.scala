@@ -6,15 +6,17 @@ import java.io.File
 import java.net.URL
 
 import scala.collection.Map
+import scala.collection.immutable
 
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.GlobalLogContext
 import org.opalj.br
 import org.opalj.da
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
 import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
 
 /**
  * Meta-information about a project that belongs to a corpus.
@@ -30,7 +32,7 @@ case class ProjectConfiguration(
         libcp_defaults: Option[String]
 ) {
 
-    @volatile private[this] var theProjectStatistics: Map[String, Double] = Map.empty
+    @volatile private[this] var theProjectStatistics: immutable.Map[String, Double] = immutable.Map.empty
 
     /**
      * General statistics about a project.
@@ -72,7 +74,7 @@ case class ProjectConfiguration(
                 s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcp_defaults"
         )(GlobalLogContext)
 
-        val cpJARs = cp.split(File.pathSeparatorChar).flatMap { jar ⇒
+        val cpJARs = cp.split(File.pathSeparatorChar).flatMap { jar =>
             val jarFile = new File(jar)
             if (!jarFile.exists || !jarFile.canRead()) {
                 error("project configuration", s"invalid class path: $jarFile")(GlobalLogContext)
@@ -85,17 +87,17 @@ case class ProjectConfiguration(
         //
         // SETUP BR PROJECT
         //
-        val noBRClassFiles = Traversable.empty[(br.ClassFile, URL)]
-        val brProjectClassFiles = cpJARs.foldLeft(noBRClassFiles) { (classFiles, cpJAR) ⇒
+        val noBRClassFiles = Iterable.empty[(br.ClassFile, URL)]
+        val brProjectClassFiles = cpJARs.foldLeft(noBRClassFiles) { (classFiles, cpJAR) =>
             classFiles ++ JavaClassFileReader().ClassFiles(cpJAR)
         }
         val libcpJARs = {
             libcp match {
-                case None ⇒
+                case None =>
                     noBRClassFiles
-                case Some(libs) ⇒
+                case Some(libs) =>
                     val libcpJARs = libs.split(File.pathSeparatorChar)
-                    libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) ⇒
+                    libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) =>
                         val libcpJARFile = new File(libcpJAR)
                         if (!libcpJARFile.exists || !libcpJARFile.canRead()) {
                             error(
@@ -107,20 +109,20 @@ case class ProjectConfiguration(
                     }
             }
         }
-        val libraryClassFiles: Traversable[(br.ClassFile, URL)] = libcp_defaults match {
-            case None ⇒ libcpJARs
-            case Some(libraries) ⇒
-                var predefinedLibrariesClassFiles = Traversable.empty[(br.ClassFile, URL)]
+        val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcp_defaults match {
+            case None => libcpJARs
+            case Some(libraries) =>
+                var predefinedLibrariesClassFiles = Iterable.empty[(br.ClassFile, URL)]
                 var predefinedLibraries = libraries.split(File.pathSeparatorChar)
                 while (predefinedLibraries.nonEmpty) {
                     predefinedLibraries.head match {
-                        case "RTJar" ⇒
+                        case "RTJar" =>
                             predefinedLibrariesClassFiles ++=
                                 br.reader.readRTJarClassFiles()(reader = JavaLibraryClassFileReader)
-                        case "JRE" ⇒
+                        case "JRE" =>
                             predefinedLibrariesClassFiles ++=
                                 br.reader.readJREClassFiles()(reader = JavaLibraryClassFileReader)
-                        case unmatched ⇒
+                        case unmatched =>
                             error(
                                 "project configuration", s"unknown library: $unmatched"
                             )(GlobalLogContext)
@@ -132,14 +134,14 @@ case class ProjectConfiguration(
         }
         val brProject = Project(brProjectClassFiles, libraryClassFiles, true)
         this.synchronized {
-            theProjectStatistics ++= brProject.statistics.map { kv ⇒ val (k, v) = kv; (k, v.toDouble) }
+            theProjectStatistics ++= brProject.statistics.map { kv => val (k, v) = kv; (k, v.toDouble) }
         }
 
         //
         // SETUP DA CLASS FILE
         //
-        val noDAClassFiles = Traversable.empty[(da.ClassFile, URL)]
-        val daProjectClassFiles = cpJARs.foldLeft(noDAClassFiles) { (classFiles, cpJAR) ⇒
+        val noDAClassFiles = Iterable.empty[(da.ClassFile, URL)]
+        val daProjectClassFiles = cpJARs.foldLeft(noDAClassFiles) { (classFiles, cpJAR) =>
             classFiles ++ da.ClassFileReader.ClassFiles(cpJAR)
         }
 

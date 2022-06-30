@@ -8,8 +8,6 @@ import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of methods that override/implement an instance method.
@@ -25,14 +23,14 @@ object CountOverridingMethods extends AnalysisApplication {
         def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ) = {
             val overridingMethodsInfo =
                 project.overridingMethods.view.
-                    map(ms ⇒ (ms._1, ms._2 - ms._1)).
-                    filter(_._2.nonEmpty).map { ms ⇒
+                    map(ms => (ms._1, ms._2 - ms._1)).
+                    filter(_._2.nonEmpty).map { ms =>
                         val (method, allOverridingMethods) = ms
-                        val overridingMethods = allOverridingMethods.map(m ⇒ m.classFile.fqn)
+                        val overridingMethods = allOverridingMethods.map(m => m.classFile.fqn)
                         (method, (overridingMethods, overridingMethods.size))
                         val count = overridingMethods.size
                         method.toJava(

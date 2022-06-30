@@ -18,11 +18,11 @@ class AbstractClassImmutabilityMatcher(
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` ⇒ true
-            case _          ⇒ false
+            case `property` => true
+            case _          => false
         }) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -43,11 +43,11 @@ class MutableObjectMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (properties.exists {
-            case _: MutableObject ⇒ true
-            case _                ⇒ false
+            case _: MutableObject => true
+            case _                => false
         })
             Some(a.elementValuePairs.head.value.asStringValue.value)
         else

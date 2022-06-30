@@ -95,9 +95,10 @@
     <option name="SD_BLANK_LINE_AFTER_RETURN_COMMENTS" value="true" />
     <option name="SD_KEEP_BLANK_LINES_BETWEEN_TAGS" value="true" />
     <option name="SD_PRESERVE_SPACES_IN_TAGS" value="true" />
-    <option name="REPLACE_CASE_ARROW_WITH_UNICODE_CHAR" value="true" />
-    <option name="REPLACE_MAP_ARROW_WITH_UNICODE_CHAR" value="true" />
-    <option name="REPLACE_FOR_GENERATOR_ARROW_WITH_UNICODE_CHAR" value="true" />
+    <!-- Unicode arrows are not supported anymore since Scala 2.13 -->
+    <option name="REPLACE_CASE_ARROW_WITH_UNICODE_CHAR" value="false" />
+    <option name="REPLACE_MAP_ARROW_WITH_UNICODE_CHAR" value="false" />
+    <option name="REPLACE_FOR_GENERATOR_ARROW_WITH_UNICODE_CHAR" value="false" />
   </ScalaCodeStyleSettings>
   <codeStyleSettings language="JAVA">
     <option name="KEEP_FIRST_COLUMN_COMMENT" value="false" />

@@ -7,7 +7,7 @@ import scala.reflect.ClassTag
 
 import java.util.Arrays
 
-import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.{Set => SomeSet}
 import scala.collection.AbstractIterator
 
 import org.opalj.log.LogContext
@@ -51,7 +51,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         abnormalReturnNode:      ExitNode,
         catchNodes:              Seq[CatchNode],
         private val basicBlocks: Array[BasicBlock]
-) { cfg ⇒
+) { cfg =>
 
     if (CFG.Validate) {
         val allBBs = basicBlocks.filter(_ != null)
@@ -59,28 +59,28 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         // 1. Check that each basic block has a lower start pc than the end pc
         //    i.e., startPC <= endPC.
         check(
-            allBBs.forall(bb ⇒ bb.startPC <= bb.endPC),
-            allBBs.filter(bb ⇒ bb.startPC > bb.endPC).mkString
+            allBBs.forall(bb => bb.startPC <= bb.endPC),
+            allBBs.filter(bb => bb.startPC > bb.endPC).mkString
         )
 
         // 2. Check that each pc belonging to a basic block (bb) actually points to the respective bb
         //    i.e., pc in basicBlock : bb => basicBlock(pc) == bb.
         check(
-            allBBsSet.forall { bb ⇒
-                (bb.startPC to bb.endPC).forall { pc ⇒
+            allBBsSet.forall { bb =>
+                (bb.startPC to bb.endPC).forall { pc =>
                     (basicBlocks(pc) eq null) || (basicBlocks(pc) eq bb)
                 }
             },
             basicBlocks.zipWithIndex.filter(_._1 != null).
-                map(bb ⇒ s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").
+                map(bb => s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").
                 mkString("basic blocks mapping broken:\n\t", ",\n\t", "\n")
         )
 
         // 3. Check that the CFG is self-consistent; i.e., that no node references a node
         //    that does not occur in the BB.
         check(
-            allBBsSet.forall { bb ⇒
-                bb.successors.forall { successorBB ⇒
+            allBBsSet.forall { bb =>
+                bb.successors.forall { successorBB =>
                     (successorBB.isBasicBlock && {
                         val succBB = successorBB.asBasicBlock
                         (basicBlocks(succBB.startPC) eq succBB) && (basicBlocks(succBB.endPC) eq succBB)
@@ -90,12 +90,12 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 }
             },
             allBBs.
-                map(bb ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
+                map(bb => bb.toString+" => "+bb.successors.mkString(", ")).
                 mkString("unexpected successors:\n\t", "\n\t", "")
         )
         check(
-            allBBsSet.forall { bb ⇒
-                bb.predecessors.forall { predecessorBB ⇒
+            allBBsSet.forall { bb =>
+                bb.predecessors.forall { predecessorBB =>
                     (
                         predecessorBB.isBasicBlock && {
                             val predBB = predecessorBB.asBasicBlock
@@ -106,7 +106,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 }
             },
             basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).
-                map(bb ⇒ bb._1+":"+bb._2.toString+" predecessors: "+bb._2.predecessors.mkString(", ")).
+                map(bb => s"${bb._1}:${bb._2.toString} predecessors: ${bb._2.predecessors.mkString(", ")}").
                 mkString("unexpected predecessors:\n\t", "\n\t", s"\ncode:$code")
         )
 
@@ -114,33 +114,33 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         //     sequence of catch nodes
         check(
             allBBs.
-                filter(bb ⇒ bb.successors.exists { _.isCatchNode }).
-                flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
-                forall(catchBB ⇒ catchNodes.contains(catchBB)),
+                filter(bb => bb.successors.exists { _.isCatchNode }).
+                flatMap(bb => bb.successors.collect { case cn: CatchNode => cn }).
+                forall(catchBB => catchNodes.contains(catchBB)),
             catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
                 allBBs.collect {
-                    case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
-                        s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
+                    case bb if bb.successors.exists(succBB => succBB.isCatchNode && !catchNodes.contains(succBB)) =>
+                        s"$bb => ${bb.successors.collect { case cn: CatchNode => cn }.mkString(", ")}"
                 }.mkString("\n")
         )
 
         // 5.   Check that predecessors and successors are consistent.
         check(
             allBBsSet.
-                forall(bb ⇒ bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }),
+                forall(bb => bb.successors.forall { succBB => succBB.predecessors.contains(bb) }),
             "successors and predecessors are inconsistent; e.g., "+
                 allBBsSet.
-                find(bb ⇒ !bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }).
-                map(bb ⇒ bb.successors.find(succBB ⇒ !succBB.predecessors.contains(bb)).map(succBB ⇒
+                find(bb => !bb.successors.forall { succBB => succBB.predecessors.contains(bb) }).
+                map(bb => bb.successors.find(succBB => !succBB.predecessors.contains(bb)).map(succBB =>
                     s"$succBB is a successor of $bb, but does not list it as a predecessor").get).get
         )
         check(
             allBBsSet.
-                forall(bb ⇒ bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }),
+                forall(bb => bb.predecessors.forall { predBB => predBB.successors.contains(bb) }),
             "predecessors and successors are inconsistent; e.g., "+
                 allBBsSet.
-                find(bb ⇒ !bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }).
-                map(bb ⇒ bb.predecessors.find(predBB ⇒ !predBB.successors.contains(bb)).map(predBB ⇒
+                find(bb => !bb.predecessors.forall { predBB => predBB.successors.contains(bb) }).
+                map(bb => bb.predecessors.find(predBB => !predBB.successors.contains(bb)).map(predBB =>
                     s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
         )
     }
@@ -151,7 +151,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * @param seed The initial facts associated with the first instruction (pc = 0).
      *
      * @param t The transfer function which implements the analysis:
-     *        `(Facts, I, PC, CFG.SuccessorId) ⇒ Facts`.
+     *        `(Facts, I, PC, CFG.SuccessorId) => Facts`.
      *        The parameters are: 1. the current set of facts, 2. the current instruction,
      *        3. the program counter of the current instruction and 4. the id of the successor.
      *
@@ -164,8 +164,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      */
     final def performForwardDataFlowAnalysis[Facts >: Null <: AnyRef: ClassTag](
         seed: Facts,
-        t:    (Facts, I, PC, CFG.SuccessorId) ⇒ Facts,
-        join: (Facts, Facts) ⇒ Facts
+        t:    (Facts, I, PC, CFG.SuccessorId) => Facts,
+        join: (Facts, Facts) => Facts
     ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
 
         implicit val logContext: LogContext = GlobalLogContext
@@ -182,12 +182,12 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         workList.push(0)
 
         while (workList.nonEmpty) {
-            val pc = workList.pop
+            val pc = workList.pop()
             val instruction = instructions(pc)
             val facts = entryFacts(pc)
 
             foreachLogicalSuccessor(pc) {
-                case CFG.NormalReturnId ⇒
+                case CFG.NormalReturnId =>
                     val newFactsNoException = t(facts, instruction, pc, CFG.NormalReturnId)
                     normalReturnFacts =
                         if (normalReturnFacts == null) {
@@ -196,7 +196,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                             join(normalReturnFacts, newFactsNoException)
                         }
 
-                case CFG.AbnormalReturnId ⇒
+                case CFG.AbnormalReturnId =>
                     val newFactsException = t(facts, instruction, pc, CFG.AbnormalReturnId)
                     abnormalReturnFacts =
                         if (abnormalReturnFacts == null) {
@@ -205,7 +205,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                             join(abnormalReturnFacts, newFactsException)
                         }
 
-                case succId ⇒
+                case succId =>
                     val newFacts = t(facts, instruction, pc, succId)
                     val effectiveSuccPC = if (succId < 0) -succId else succId
                     val succPCFacts = entryFacts(effectiveSuccPC)
@@ -242,7 +242,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *        returns.
      *
      * @param t The transfer function which implements the analysis:
-     *        `(Facts, I, PC, CFG.PredecessorId) ⇒ Facts`.
+     *        `(Facts, I, PC, CFG.PredecessorId) => Facts`.
      *        The parameters are: 1. the current set of facts, 2. the current instruction,
      *        3. the program counter of the current instruction and 4. the id of the predecessor.
      *
@@ -260,8 +260,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      */
     final def performBackwardDataFlowAnalysis[Facts >: Null <: AnyRef: ClassTag](
         seed: Facts,
-        t:    (Facts, I, PC, CFG.PredecessorId) ⇒ Facts,
-        join: (Facts, Facts) ⇒ Facts
+        t:    (Facts, I, PC, CFG.PredecessorId) => Facts,
+        join: (Facts, Facts) => Facts
     ): (Array[Facts], /*init*/ Facts) = {
 
         implicit val logContext: LogContext = GlobalLogContext
@@ -271,12 +271,12 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
         val exitFacts = new Array[Facts](codeSize) // stores the facts after instruction evaluation
         val workList = new IntArrayStack(Math.min(codeSize, 10))
-        normalReturnNode.predecessors.foreach { predBB ⇒
+        normalReturnNode.predecessors.foreach { predBB =>
             val returnPC = predBB.asBasicBlock.endPC
             exitFacts(returnPC) = seed
             workList.push(returnPC)
         }
-        abnormalReturnNode.predecessors.foreach { predBB ⇒
+        abnormalReturnNode.predecessors.foreach { predBB =>
             val stmtPC = predBB.asBasicBlock.endPC
             exitFacts(stmtPC) = seed
             workList.push(stmtPC)
@@ -346,8 +346,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         }
 
         while (workList.nonEmpty) {
-            val pc = workList.pop
-            foreachPredecessor(pc) { predPC ⇒ handleTransition(pc, predPC) }
+            val pc = workList.pop()
+            foreachPredecessor(pc) { predPC => handleTransition(pc, predPC) }
             if (pc == 0) handleTransition(pc, -1)
         }
 
@@ -384,7 +384,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
             def hasNext: Boolean = currentBBPC < basicBlocks.length
 
-            def next: BasicBlock = {
+            def next(): BasicBlock = {
                 val basicBlocks = cfg.basicBlocks
                 val current = basicBlocks(currentBBPC)
                 currentBBPC = current.endPC + 1
@@ -424,9 +424,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var successorPCs = IntTrieSet.empty
             bb.successors foreach {
-                case bb: BasicBlock ⇒ successorPCs += bb.startPC
-                case cb: CatchNode  ⇒ successorPCs += cb.handlerPC
-                case _              ⇒
+                case bb: BasicBlock => successorPCs += bb.startPC
+                case cb: CatchNode  => successorPCs += cb.handlerPC
+                case _              =>
             }
             successorPCs
         }
@@ -438,7 +438,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * instruction. (E.g., relevant in case of a switch where multiple cases are handled in the
      * same way.)
      */
-    def foreachSuccessor(pc: Int)(f: PC ⇒ Unit): Unit = {
+    def foreachSuccessor(pc: Int)(f: PC => Unit): Unit = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
@@ -446,7 +446,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         } else {
             // the set of successors can be (at the same time) a RegularBB or an ExitNode
             var visited = IntTrieSet.empty
-            bb.successors foreach { bb ⇒
+            bb.successors foreach { bb =>
                 val nextPC =
                     if (bb.isBasicBlock) bb.asBasicBlock.startPC
                     else if (bb.isCatchNode) bb.asCatchNode.handlerPC
@@ -474,7 +474,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *  - `-(successorPC)` if the evaluation leads to an exception that is caught and where the
      *    first instruction of the handler has the given `successorPC`.
      */
-    def foreachLogicalSuccessor(pc: Int)(f: Int ⇒ Unit): Unit = {
+    def foreachLogicalSuccessor(pc: Int)(f: Int => Unit): Unit = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
@@ -483,19 +483,19 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             // The set of successors can be (at the same time) a RegularBB, a CatchBB or an ExitNode
             var visited = IntTrieSet.empty
             bb.successors foreach {
-                case bb: BasicBlock ⇒
+                case bb: BasicBlock =>
                     val nextPC = bb.startPC
                     if (!visited.contains(nextPC)) {
                         visited += nextPC
                         f(nextPC)
                     }
-                case cn: CatchNode ⇒
+                case cn: CatchNode =>
                     val nextPC = cn.handlerPC
                     if (!visited.contains(nextPC)) {
                         visited += nextPC
                         f(-nextPC)
                     }
-                case en: ExitNode ⇒
+                case en: ExitNode =>
                     f(if (en.normalReturn) CFG.NormalReturnId else CFG.AbnormalReturnId)
             }
         }
@@ -509,10 +509,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         if (bb.startPC == pc) {
             var predecessorPCs = IntTrieSet.empty
             bb.predecessors foreach {
-                case bb: BasicBlock ⇒
+                case bb: BasicBlock =>
                     predecessorPCs += bb.endPC
-                case cn: CatchNode ⇒
-                    cn.predecessors.foreach { bb ⇒
+                case cn: CatchNode =>
+                    cn.predecessors.foreach { bb =>
                         predecessorPCs += bb.asBasicBlock.endPC
                     }
             }
@@ -522,18 +522,18 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         }
     }
 
-    def foreachPredecessor(pc: Int)(f: Int ⇒ Unit): Unit = {
+    def foreachPredecessor(pc: Int)(f: Int => Unit): Unit = {
         if (pc == 0)
             return ;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
             var visited = IntTrieSet.empty
-            bb.predecessors foreach { bb ⇒
+            bb.predecessors foreach { bb =>
                 if (bb.isBasicBlock) {
                     f(bb.asBasicBlock.endPC)
                 } else if (bb.isCatchNode) {
-                    bb.asCatchNode.predecessors foreach { predBB ⇒
+                    bb.asCatchNode.predecessors foreach { predBB =>
                         val nextPC = predBB.asBasicBlock.endPC
                         if (!visited.contains(nextPC)) {
                             visited += nextPC
@@ -587,7 +587,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     def mapPCsToIndexes[NewI <: AnyRef, NewC <: CodeSequence[NewI]](
         newCode:              NewC,
         pcToIndex:            Array[Int /*PC*/ ],
-        singletonBBsExpander: Int /*PC*/ ⇒ Int,
+        singletonBBsExpander: Int /*PC*/ => Int,
         lastIndex:            Int
     ): CFG[NewI, NewC] = {
 
@@ -597,14 +597,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             basicBlocks.
                 filter(_ != null).
                 toSet.
-                map((bb: BasicBlock) ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
+                map((bb: BasicBlock) => bb.toString+" => "+bb.successors.mkString(", ")).
                 mkString("Successors:\n", "\n", "\n")
         )
         println(
             basicBlocks.
                 filter(_ != null).
                 toSet.
-                map((bb: BasicBlock) ⇒ bb.predecessors.mkString(", ")+" => "+bb.toString).
+                map((bb: BasicBlock) => bb.predecessors.mkString(", ")+" => "+bb.toString).
                 mkString("Predecessors:\n", "\n", "\n")
         )
         println(catchNodes.mkString("CatchNodes:", ",", "\n"))
@@ -684,7 +684,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
         // add the catch nodes
         val codeSize = code.instructions.length
-        catchNodes foreach { cn ⇒
+        catchNodes foreach { cn =>
             val newCN = cn.copy(
                 startPC = pcToIndex(cn.startPC),
                 endPC = if (cn.endPC == codeSize) lastIndex + 1 else pcToIndex(cn.endPC),
@@ -699,8 +699,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         bbMapping.put(abnormalReturnNode, newAbnormalReturnNode)
 
         // rewire the graph
-        bbMapping iterate { (oldBB, newBB) ⇒
-            oldBB.successors foreach { oldSuccBB ⇒
+        bbMapping iterate { (oldBB, newBB) =>
+            oldBB.successors foreach { oldSuccBB =>
                 val newSuccBB = bbMapping(oldSuccBB)
                 assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
                 newBB.addSuccessor(newSuccBB)
@@ -720,7 +720,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             val firstBB = newBasicBlocks(0)
             val secondBB = firstBB.successors.head.asBasicBlock
             val newFirstBB = secondBB.copy(startPC = 0, predecessors = Set.empty)
-            newFirstBB.successors.foreach(succBB ⇒ succBB.updatePredecessor(secondBB, newFirstBB))
+            newFirstBB.successors.foreach(succBB => succBB.updatePredecessor(secondBB, newFirstBB))
             Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
@@ -750,14 +750,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
         val bbIds: Map[CFGNode, Int] = cfgNodes.zipWithIndex.toMap
 
-        bbIds.map { bbId ⇒
+        bbIds.map { bbId =>
             val (bb, id) = bbId
             if (bb.isExitNode) {
                 s"BB_${id.toHexString}: $bb"
             } else {
                 bb.successors.
-                    map(succBB ⇒ "BB_"+bbIds(succBB).toHexString).
-                    mkString(s"BB_${id.toHexString}: $bb → {", ",", "}")
+                    map(succBB => "BB_"+bbIds(succBB).toHexString).
+                    mkString(s"BB_${id.toHexString}: $bb -> {", ",", "}")
             }
         }.toList.sorted.mkString("CFG(\n\t", "\n\t", "\n)")
     }
@@ -772,22 +772,22 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *         `('''Node for the start BB''', '''all Nodes (incl. the node for the start BB)''')`
      */
     def toDot(
-        f:                      BasicBlock ⇒ String,
-        includeAbnormalReturns: Boolean             = true
+        f:                      BasicBlock => String,
+        includeAbnormalReturns: Boolean              = true
     ): (Node, Iterable[Node]) = {
         // 1. create a node foreach cfg node
         val bbsIterator = allBBs
         val startBB = bbsIterator.next()
-        val startNodeVisualProperties = Map("fillcolor" → "green", "style" → "filled", "shape" → "box")
+        val startNodeVisualProperties = Map("fillcolor" -> "green", "style" -> "filled", "shape" -> "box")
         val startBBNode = new DefaultMutableNode(
             f(startBB),
             theVisualProperties = startNodeVisualProperties
         )
-        var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] = Map(startBB → startBBNode)
-        cfgNodeToGNodes ++= bbsIterator.map(bb ⇒ (bb, new DefaultMutableNode(f(bb))))
-        cfgNodeToGNodes ++= catchNodes.map(cn ⇒ (cn, new DefaultMutableNode(cn.toString)))
+        var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] = Map(startBB -> startBBNode)
+        cfgNodeToGNodes ++= bbsIterator.map(bb => (bb, new DefaultMutableNode(f(bb))))
+        cfgNodeToGNodes ++= catchNodes.map(cn => (cn, new DefaultMutableNode(cn.toString)))
         cfgNodeToGNodes += (
-            abnormalReturnNode → {
+            abnormalReturnNode -> {
                 if (includeAbnormalReturns)
                     new DefaultMutableNode(
                         "abnormal return", theVisualProperties = abnormalReturnNode.visualProperties
@@ -797,17 +797,17 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             }
         )
         cfgNodeToGNodes += (
-            normalReturnNode →
+            normalReturnNode ->
             new DefaultMutableNode(
                 "return", theVisualProperties = normalReturnNode.visualProperties
             )
         )
 
         // 2. reconnect nodes
-        cfgNodeToGNodes foreach { cfgNodeToGNode ⇒
+        cfgNodeToGNodes foreach { cfgNodeToGNode =>
             val (cfgNode, gNode) = cfgNodeToGNode
             if (gNode != null)
-                cfgNode.successors foreach { cfgNode ⇒
+                cfgNode.successors foreach { cfgNode =>
                     val targetGNode = cfgNodeToGNodes(cfgNode)
                     if (targetGNode != null) gNode.addChild(targetGNode)
                 }

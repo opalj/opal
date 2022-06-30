@@ -5,13 +5,14 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-
-import scala.collection.JavaConverters._
-import org.opalj.collection.immutable.ConstArray
+import scala.jdk.CollectionConverters._
 import org.opalj.br.instructions.LDCString
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC_W
+
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 
 /**
  * The ''key'' object to get information about all string constants found in the project's code.
@@ -36,20 +37,20 @@ object StringConstantsInformationKey
      * @note  This analysis is internally parallelized. I.e., it is advantageous to run this
      *        analysis in isolation.
      */
-    override def compute(project: SomeProject): Map[String, ConstArray[PCInMethod]] = {
+    override def compute(project: SomeProject): mutable.Map[String, ArraySeq[PCInMethod]] = {
 
         val estimatedSize = project.methodsCount
         val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[PCInMethod]](estimatedSize)
 
-        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo =>
             val method = methodInfo.method
 
-            method.body.get foreach { i: PCAndInstruction ⇒
+            method.body.get foreach { i: PCAndInstruction =>
                 val pc = i.pc
                 val instruction = i.instruction
                 if (instruction.opcode == LDC.opcode || instruction.opcode == LDC_W.opcode) {
                     instruction match {
-                        case LDCString(value) ⇒
+                        case LDCString(value) =>
                             var list: ConcurrentLinkedQueue[PCInMethod] = map.get(value)
                             if (list eq null) {
                                 list = new ConcurrentLinkedQueue[PCInMethod]()
@@ -57,16 +58,16 @@ object StringConstantsInformationKey
                                 if (previousList != null) list = previousList
                             }
                             list.add(PCInMethod(method, pc))
-                        case _ ⇒ /*other type of constant*/
+                        case _ => /*other type of constant*/
                     }
                 }
             }
         }
 
-        var result: Map[String, ConstArray[PCInMethod]] = Map.empty
-        map.asScala foreach { kv ⇒
+        val result: mutable.Map[String, ArraySeq[PCInMethod]] = mutable.Map.empty
+        map.asScala foreach { kv =>
             val (name, locations) = kv
-            result += ((name, ConstArray._UNSAFE_from(locations.asScala.toArray)))
+            result += ((name, ArraySeq.unsafeWrapArray(locations.asScala.toArray)))
         }
         result
     }

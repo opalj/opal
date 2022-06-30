@@ -35,7 +35,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
     }
 
     val pks: Array[PropertyKind] = new Array[PropertyKind](12)
-    (0 to 11).foreach { i ⇒ pks(i) = PropertyKey.create[Null, Null]("p"+(i)) }
+    (0 to 11).foreach { i => pks(i) = PropertyKey.create[Null, Null]("p"+(i)) }
 
     val c1 = BasicComputationSpecification(
         "c1",
@@ -53,7 +53,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
         it("should be possible to create an empty schedule") {
             val ps = new PropertyStoreConfigurationRecorder()
             val batches = AnalysisScenario(Set(), ps).computeSchedule(ps).batches
-            batches should be('empty)
+            batches should be(Symbol("Empty"))
         }
 
         describe("the scheduling of mixed eager and lazy property computations") {
@@ -63,7 +63,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)
                 /*smoke test: */ schedule(ps, trace = false)
-                schedule.batches should be('empty)
+                schedule.batches should be(Symbol("Empty"))
                 ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
             }
 

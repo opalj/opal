@@ -13,13 +13,15 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.isCurrentJREAtLeastJava11
 import org.opalj.bi.isCurrentJREAtLeastJava16
 import org.opalj.bi.isCurrentJREAtLeastJava17
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java17Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java17Framework.{ClassFile => ClassFileReader}
 import org.opalj.bc.Assembler
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and
@@ -52,12 +54,36 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
             thisType = "ConcreteClass",
             superclassType = Some("org/opalj/bc/AbstractClass"),
-            interfaceTypes = RefArray("MarkerInterface1", "MarkerInterface2"),
-            attributes = RefArray(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
+            interfaceTypes = ArraySeq("MarkerInterface1", "MarkerInterface2"),
+            attributes = ArraySeq(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
         ).toDA()
 
-    val recordAttribute = br.Record(RefArray(
-        br.RecordComponent("component", IntegerType, RefArray.empty)
+    val nestedClassOuterType = br.ObjectType("NestedClassOuter")
+    val nestedClassHostAttribute = br.NestHost(nestedClassOuterType)
+    val (nestedClassInner, _) =
+        CLASS[Nothing](
+            version = UShortPair(0, 55),
+            accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
+            thisType = "NestedClassInner",
+            superclassType = Some("java/lang/Object"),
+            attributes = ArraySeq(nestedClassHostAttribute)
+        ).toDA()
+
+    val nestedClassInnerType = br.ObjectType("NestedClassInner")
+
+    val nestedClassesAttribute = br.NestMembers(ArraySeq(nestedClassInnerType))
+
+    val (nestedClassOuter, _) =
+        CLASS[Nothing](
+            version = UShortPair(0, 55),
+            accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
+            thisType = "NestedClassOuter",
+            superclassType = Some("java/lang/Object"),
+            attributes = ArraySeq(nestedClassesAttribute, br.Synthetic)
+        ).toDA()
+
+    val recordAttribute = br.Record(ArraySeq(
+        br.RecordComponent("component", IntegerType, ArraySeq.empty)
     ))
     val (recordClass, _) =
         CLASS[Nothing](
@@ -65,7 +91,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
             thisType = "RecordClass",
             superclassType = Some("java/lang/Record"),
-            attributes = RefArray(recordAttribute, br.Synthetic)
+            attributes = ArraySeq(recordAttribute, br.Synthetic)
         ).toDA()
 
     val (sealedClassSubclass, _) =
@@ -78,7 +104,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
 
     val sealedClassSubclassType = br.ObjectType("SealedClassSubclass")
 
-    val permittedSubclassesAttribute = br.PermittedSubclasses(RefArray(sealedClassSubclassType))
+    val permittedSubclassesAttribute = br.PermittedSubclasses(ArraySeq(sealedClassSubclassType))
 
     val (sealedClass, _) =
         CLASS[Nothing](
@@ -86,31 +112,36 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             accessModifiers = PUBLIC.SUPER.SYNTHETIC,
             thisType = "SealedClass",
             superclassType = Some("java/lang/Object"),
-            attributes = RefArray(permittedSubclassesAttribute, br.Synthetic)
+            attributes = ArraySeq(permittedSubclassesAttribute, br.Synthetic)
         ).toDA()
 
     val abstractAsm = Assembler(abstractClass)
     val concreteAsm = Assembler(simpleConcreteClass)
     val recordAsm = Assembler(recordClass)
-
+    val nestedClassInnerAsm = Assembler(nestedClassInner)
+    val nestedClassOuterAsm = Assembler(nestedClassOuter)
     val sealedClassAsm = Assembler(sealedClass)
     val sealedClassSubclassAsm = Assembler(sealedClassSubclass)
 
-    val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
-    val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
-    val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
-    val sealedClassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassAsm)).head
-    val sealedClassSubclassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassSubclassAsm)).head
+    val abstractBRClassFile = ClassFileReader(() => new ByteArrayInputStream(abstractAsm)).head
+    val concreteBRClassFile = ClassFileReader(() => new ByteArrayInputStream(concreteAsm)).head
+    val nestedClassInnerBRClassFile = ClassFileReader(() => new ByteArrayInputStream(nestedClassInnerAsm)).head
+    val nestedClassOuterBRClassFile = ClassFileReader(() => new ByteArrayInputStream(nestedClassOuterAsm)).head
+    val recordBRClassFile = ClassFileReader(() => new ByteArrayInputStream(recordAsm)).head
+    val sealedClassBRClassFile = ClassFileReader(() => new ByteArrayInputStream(sealedClassAsm)).head
+    val sealedClassSubclassBRClassFile = ClassFileReader(() => new ByteArrayInputStream(sealedClassSubclassAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
-            "MarkerInterface1" → Assembler(markerInterface1),
-            "MarkerInterface2" → Assembler(markerInterface2),
-            "org.opalj.bc.AbstractClass" → abstractAsm,
-            "ConcreteClass" → concreteAsm,
-            "RecordClass" → recordAsm,
-            "SealedClass" → sealedClassAsm,
-            "SealedClassSubclass" → sealedClassSubclassAsm
+            "MarkerInterface1" -> Assembler(markerInterface1),
+            "MarkerInterface2" -> Assembler(markerInterface2),
+            "org.opalj.bc.AbstractClass" -> abstractAsm,
+            "ConcreteClass" -> concreteAsm,
+            "NestedClassOuter" -> nestedClassOuterAsm,
+            "NestedClassInner" -> nestedClassInnerAsm,
+            "RecordClass" -> recordAsm,
+            "SealedClass" -> sealedClassAsm,
+            "SealedClassSubclass" -> sealedClassSubclassAsm
         ),
         this.getClass.getClassLoader
     )
@@ -122,13 +153,19 @@ class ClassFileBuilderTest extends AnyFlatSpec {
         assert("MarkerInterface2" == loadClass("MarkerInterface2").getSimpleName)
         assert("org.opalj.bc.AbstractClass" == loadClass("org.opalj.bc.AbstractClass").getName)
         assert("ConcreteClass" == loadClass("ConcreteClass").getSimpleName)
+        if (isCurrentJREAtLeastJava11)
+            assert("NestedClassOuter" == loadClass("NestedClassOuter").getSimpleName)
         if (isCurrentJREAtLeastJava16)
             assert("RecordClass" == loadClass("RecordClass").getSimpleName)
         if (isCurrentJREAtLeastJava17)
             assert("SealedClass" == loadClass("SealedClass").getSimpleName)
+
     }
 
     "the generated classes" should "have their attributes preserved" in {
+        assert(nestedClassOuterBRClassFile.attributes.contains(nestedClassesAttribute))
+        assert(nestedClassOuterBRClassFile.attributes.contains(br.Synthetic))
+        assert(nestedClassInnerBRClassFile.attributes.contains(nestedClassHostAttribute))
         assert(concreteBRClassFile.attributes.length == 2)
         assert(concreteBRClassFile.attributes.contains(br.SourceFile("ClassFileBuilderTest.scala")))
         assert(concreteBRClassFile.attributes.contains(br.Synthetic))
@@ -156,8 +193,8 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     }
 
     it should "implement MarkerInterface1 and MarkerInterface2" in {
-        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface1"))
-        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface2"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i => i.fqn).contains("MarkerInterface1"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i => i.fqn).contains("MarkerInterface2"))
     }
 
     it should "be public final synthetic (super)" in {
