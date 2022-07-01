@@ -9,7 +9,7 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.{Collections, Collection => JCollection, List => JList, Set => JSet}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * A backward ICFG for Heros analyses.

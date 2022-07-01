@@ -3,11 +3,13 @@ package org.opalj.tac.fpcf.analyses.heros.analyses
 
 import java.io.File
 import java.net.URL
-import scala.collection.JavaConverters._
+
+import scala.jdk.CollectionConverters._
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import heros.solver.IFDSSolver
-import org.opalj.BaseConfig
+
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
@@ -22,6 +24,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.BaseConfig
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -31,7 +34,7 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.New
 import org.opalj.tac.Return
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.fpcf.analyses.ifds.old.{CalleeType, IFDSBasedVariableTypeAnalysisScheduler, VTAFact, VTANullFact, VTAResult, VariableType}
+import org.opalj.tac.fpcf.analyses.ifds.old.{CalleeType, IFDSBasedVariableTypeAnalysisScheduler, VariableType, VTAFact, VTANullFact, VTAResult}
 
 object VTAEquality {
 

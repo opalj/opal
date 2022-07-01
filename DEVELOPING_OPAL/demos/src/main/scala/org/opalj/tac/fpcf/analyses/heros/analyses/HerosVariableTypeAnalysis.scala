@@ -20,7 +20,7 @@ import java.io.File
 import java.util
 import java.util.Collections
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * An implementation of the IFDSBasedVariableTypeAnalysis in the Heros framework.

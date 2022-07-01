@@ -5,13 +5,15 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
+
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.old._
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, Variable}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, TaintFact, Variable}
 import org.opalj.tac.fpcf.analyses.ifds._
 import org.opalj.tac.fpcf.properties.OldTaint
-
 import java.io.File
+
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 
 /**
  * A forward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,
@@ -25,7 +27,7 @@ class ForwardClassForNameTaintAnalysis$Scheduler private (implicit val project: 
     extends ForwardIFDSAnalysis(new ForwardClassForNameTaintProblem(project), OldTaint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
-    extends old.taint.ForwardTaintProblem(project) with old.taint.TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, TaintFact] {
+    extends old.taint.ForwardTaintProblem(project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, TaintFact] {
 
     /**
      * The string parameters of all public methods are entry points.
@@ -46,7 +48,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = Set.empty
+    override protected def sanitizesParameter(call: DeclaredMethodJavaStatement, in: TaintFact): Boolean = false
 
     /**
      * This analysis does not create new taints on the fly.

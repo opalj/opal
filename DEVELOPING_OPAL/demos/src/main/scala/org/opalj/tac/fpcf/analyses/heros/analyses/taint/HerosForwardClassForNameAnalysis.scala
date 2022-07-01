@@ -19,7 +19,7 @@ import org.opalj.util.Milliseconds
 import java.io.File
 import java.util
 import java.util.Collections
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * An implementation of the ForwardClassForNameAnalysis in the Heros framework.
@@ -270,7 +270,7 @@ class HerosForwardClassForNameAnalysis(
                                 .toSet
 
                         case sf: StaticField => Set(sf)
-                        case FlowFact(flow) if !flow.contains(stmt.method) =>
+                        case FlowFact(flow) =>
                             val flowFact = FlowFact(JavaMethod(stmt.method) +: flow)
                             if (initialMethods.contains(stmt.method))
                                 flowFacts = flowFacts.updated(

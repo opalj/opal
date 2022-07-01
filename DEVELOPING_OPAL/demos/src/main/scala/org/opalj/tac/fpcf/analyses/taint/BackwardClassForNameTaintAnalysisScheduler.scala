@@ -43,7 +43,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizeParameters(call: DeclaredMethodJavaStatement, in: Set[TaintFact]): Set[TaintFact] = Set.empty
+    override protected def sanitizesParameter(call: DeclaredMethodJavaStatement, in: TaintFact): Boolean = false
 
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.

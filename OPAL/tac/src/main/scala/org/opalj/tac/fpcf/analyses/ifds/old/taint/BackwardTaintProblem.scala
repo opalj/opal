@@ -9,6 +9,19 @@ import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem => NewJavaIFDSProblem}
 import org.opalj.tac.fpcf.analyses.ifds.old.{JavaBackwardIFDSProblem, DeclaredMethodJavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 
+import org.opalj.tac.fpcf.analyses.ifds.old.UnbalancedReturnFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+
+/**
+ * The unbalanced return fact of this analysis.
+ *
+ * @param index The index, at which the analyzed method is called by some caller.
+ * @param innerFact The fact, which will hold in the caller context after the call.
+ * @param callChain The current call chain from the sink.
+ */
+case class UnbalancedTaintFact(index: Int, innerFact: TaintFact, callChain: Seq[Method])
+    extends UnbalancedReturnFact[TaintFact] with TaintFact
+
 abstract class BackwardTaintProblem(project: SomeProject) extends JavaBackwardIFDSProblem[TaintFact, UnbalancedTaintFact](project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, TaintFact] {
     override def nullFact: TaintFact = TaintNullFact
 

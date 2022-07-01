@@ -4,7 +4,7 @@ package org.opalj.tac.fpcf.analyses.heros.cfg
 import java.util.{List => JList}
 import java.util.{Collection => JCollection}
 import java.util.{Set => JSet}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import heros.InterproceduralCFG
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
@@ -95,7 +95,7 @@ abstract class OpalICFG(project: SomeProject) extends InterproceduralCFG[JavaSta
         val FinalEP(_, callers) = ps(declaredMethod, Callers.key)
         callers
             .callers(declaredMethod)
-            .flatMap {
+            .iterator.flatMap {
                 case (method, pc, true) =>
                     val TACode(_, code, pcToIndex, cfg, _) = tacai(method.definedMethod)
                     val index = pcToIndex(pc)

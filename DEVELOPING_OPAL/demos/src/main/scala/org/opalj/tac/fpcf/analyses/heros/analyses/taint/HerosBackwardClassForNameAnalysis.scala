@@ -3,7 +3,7 @@ package org.opalj.tac.fpcf.analyses.heros.analyses.taint
 
 import java.io.File
 import java.util
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import heros.FlowFunction
 import heros.FlowFunctions
 import heros.flowfunc.Identity
