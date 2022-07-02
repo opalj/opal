@@ -1,15 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ifds.old
 
+import org.opalj.ifds.AbstractIFDSFact
+
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ifds.SubsumableFact
 
 /**
  * An IFDS analysis, which implements subsuming.
  *
  * @author Mario Trageser
  */
-trait Subsuming[S, IFDSFact <: SubsumableFact] extends Subsumable[S, IFDSFact] {
+trait Subsuming[S, IFDSFact <: AbstractIFDSFact] extends Subsumable[S, IFDSFact] {
 
     val numberOfSubsumptions = new NumberOfSubsumptions
 

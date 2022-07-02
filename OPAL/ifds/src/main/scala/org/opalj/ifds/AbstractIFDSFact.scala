@@ -4,20 +4,9 @@ package org.opalj.ifds
 import org.opalj.br.analyses.SomeProject
 
 /**
- * The supertype of all IFDS facts.
+ * The supertype of all IFDS facts, may implement "subsumes" to enable subsuming.
  */
-trait AbstractIFDSFact
-
-/**
- * The super type of all null facts.
- */
-trait AbstractIFDSNullFact extends AbstractIFDSFact
-
-/**
- * The supertype of all IFDS facts, which can subsume another fact.
- */
-trait SubsumableFact extends AbstractIFDSFact {
-
+trait AbstractIFDSFact {
     /**
      * Checks, if this fact subsumes an `other` fact.
      *
@@ -25,16 +14,10 @@ trait SubsumableFact extends AbstractIFDSFact {
      * @param project The analyzed project.
      * @return True, if this fact subsumes the `other`fact
      */
-    def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean
+    def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean = false
 }
 
 /**
- * The null fact for subsumable facts.
+ * The super type of all null facts.
  */
-trait SubsumableNullFact extends SubsumableFact with AbstractIFDSNullFact {
-
-    /**
-     * The null fact cannot subsume another fact.
-     */
-    override def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean = false
-}
+trait AbstractIFDSNullFact extends AbstractIFDSFact

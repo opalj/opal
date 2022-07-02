@@ -4,15 +4,17 @@ package org.opalj.tac.fpcf.analyses.ifds.old
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.ifds.{AbstractIFDSFact, SubsumableFact, SubsumableNullFact}
+import org.opalj.ifds.AbstractIFDSFact
+
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem => NewJavaIFDSProblem}
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
-
 import scala.annotation.tailrec
 
-trait VTAFact extends SubsumableFact
-case object VTANullFact extends VTAFact with SubsumableNullFact
+import org.opalj.ifds.AbstractIFDSNullFact
+
+trait VTAFact extends AbstractIFDSFact
+case object VTANullFact extends VTAFact with AbstractIFDSNullFact
 
 /**
  * A possible run time type of a variable.

@@ -44,7 +44,7 @@ object Dependees {
  * that is the fact reaches the statement as an input.
  * Source fact is the fact within the analysis entity.
  */
-case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C]() {
+case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: AnyRef](subsumes: (Set[IFDSFact], IFDSFact) => Boolean) {
     var edges = Map.empty[S, Either[Set[IFDSFact], Map[S, Set[IFDSFact]]]]
 
     /**
@@ -56,7 +56,6 @@ case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C]
      * @return whether the edge was new
      */
     def add(statement: S, fact: IFDSFact, predecessor: Option[S] = None): Boolean = {
-        // TODO: subsuming
         edges.get(statement) match {
             case None =>
                 predecessor match {
@@ -91,7 +90,9 @@ case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C]
         }
     }
 
-    private def isNew(existingFacts: Set[IFDSFact], newFact: IFDSFact): Boolean = !existingFacts.contains(newFact)
+    private def isNew(existingFacts: Set[IFDSFact], newFact: IFDSFact): Boolean = {
+        !existingFacts.contains(newFact) && !subsumes(existingFacts, newFact)
+    }
 
     /**
      * @param statement
@@ -112,15 +113,17 @@ case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C]
  * The state of the analysis. For each method and source fact, there is a separate state.
  *
  * @param source The callable and input fact for which the callable is analyzed.
- * @param endSummaries Output facts of the analyzed callable as pairs of exit statement and fact
+ * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
 protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], Work](
-        val source:        (C, IFDSFact),
-        val dependees:     Dependees[Work]           = Dependees[Work](),
-        val pathEdges:     PathEdges[IFDSFact, S, C] = PathEdges[IFDSFact, S, C](),
-        var endSummaries:  Set[(S, IFDSFact)]        = Set.empty[(S, IFDSFact)],
-        var selfDependees: Set[Work]                 = Set.empty[Work]
-)
+        val source: (C, IFDSFact),
+        subsumes:   (Set[IFDSFact], IFDSFact) => Boolean
+) {
+    val dependees: Dependees[Work] = Dependees[Work]()
+    val pathEdges: PathEdges[IFDSFact, S, C] = PathEdges[IFDSFact, S, C](subsumes)
+    var endSummaries: Set[(S, IFDSFact)] = Set.empty[(S, IFDSFact)]
+    var selfDependees: Set[Work] = Set.empty[Work]
+}
 
 /**
  * Contains int variables, which count, how many times some method was called.
@@ -130,6 +133,8 @@ class Statistics {
     var callFlow = 0
     var returnFlow = 0
     var callToReturnFlow = 0
+    var subsumeTries = 0
+    var subsumptions = 0
 }
 
 protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalysis
@@ -165,7 +170,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <
         val (function, sourceFact) = entity
 
         // Start processing at the start of the icfg with the given source fact
-        implicit val state: State = new IFDSState[IFDSFact, C, S, Work](entity)
+        implicit val state: State = new IFDSState[IFDSFact, C, S, Work](entity, subsumes)
         implicit val queue: Worklist = mutable.Queue
             .empty[Work]
         icfg.startStatements(function).foreach { start =>
@@ -410,6 +415,14 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <
         if (ifdsProblem.automaticallyPropagateNullFactInFlowFunctions && in == ifdsProblem.nullFact)
             out + ifdsProblem.nullFact
         else out
+    }
+
+    private def subsumes(existingFacts: Set[IFDSFact], newFact: IFDSFact)(implicit project: SomeProject): Boolean = {
+        statistics.subsumeTries += 1
+        if (ifdsProblem.subsumeFacts && existingFacts.exists(_.subsumes(newFact, project))) {
+            statistics.subsumptions += 1
+            true
+        } else false
     }
 }
 

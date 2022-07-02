@@ -4,13 +4,14 @@ package org.opalj.tac.fpcf.analyses.ifds
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.ifds.{AbstractIFDSFact, SubsumableFact, SubsumableNullFact}
+import org.opalj.ifds.AbstractIFDSFact
 
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem => NewJavaIFDSProblem}
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
 import scala.annotation.tailrec
 
+import org.opalj.ifds.AbstractIFDSNullFact
 import org.opalj.ifds.Dependees.Getter
 
 import org.opalj.fpcf.FinalEP
@@ -18,8 +19,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.properties.cg.Callers
 
-trait VTAFact extends SubsumableFact
-case object VTANullFact extends VTAFact with SubsumableNullFact
+trait VTAFact extends AbstractIFDSFact
+case object VTANullFact extends VTAFact with AbstractIFDSNullFact
 
 /**
  * A possible run time type of a variable.
@@ -65,7 +66,7 @@ case class CalleeType(line: Int, t: ReferenceType, upperBound: Boolean) extends 
     }
 }
 
-class VariableTypeProblem(project: SomeProject) extends JavaIFDSProblem[VTAFact](project) {
+class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boolean = false) extends JavaIFDSProblem[VTAFact](project) {
     val propertyStore = project.get(PropertyStoreKey)
     val declaredMethods = project.get(DeclaredMethodsKey)
 

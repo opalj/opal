@@ -25,6 +25,11 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
     def automaticallyPropagateNullFactInFlowFunctions: Boolean = true
 
     /**
+     * @return Whether to try to subsume new facts under existing facts and save graph edges
+     */
+    def subsumeFacts: Boolean = false
+
+    /**
      * The entry points of this analysis.
      */
     def entryPoints: Seq[(C, IFDSFact)]

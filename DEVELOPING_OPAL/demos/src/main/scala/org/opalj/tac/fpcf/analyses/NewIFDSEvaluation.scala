@@ -26,6 +26,7 @@ object NewIFDSEvaluation {
         old.IFDSBasedVariableTypeAnalysisRunner.main(Array("-seq", "-l2", "-f", dir+"OldIFDSBasedVariableTypeAnalysis.txt"))
         HerosVariableTypeAnalysisRunner.main(Array("-f", dir+"HerosVariableTypeAnalysis.txt"))
         IFDSBasedVariableTypeAnalysisRunner.main(Array("-seq", "-l2", "-f", dir+"IFDSBasedVariableTypeAnalysis.txt"))
+        IFDSBasedVariableTypeAnalysisRunner.main(Array("-seq", "-l2", "-subsumeFacts", "-f", dir+"IFDSBasedVariableTypeAnalysisSubsuming.txt"))
     }
 
 }

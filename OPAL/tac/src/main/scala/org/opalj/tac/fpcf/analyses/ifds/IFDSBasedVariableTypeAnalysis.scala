@@ -3,7 +3,6 @@ package org.opalj.tac.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
-import org.opalj.ifds.old.{NumberOfSubsumptions, Subsuming}
 import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 
 import org.opalj.tac.fpcf.properties.TACAI
@@ -12,6 +11,7 @@ import java.io.{File, PrintWriter}
 
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.Statistics
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -28,11 +28,11 @@ import org.opalj.tac.cg.TypeProviderKey
  * @param project The analyzed project.
  * @author Mario Trageser
  */
-class IFDSBasedVariableTypeAnalysis(project: SomeProject)
-    extends IFDSAnalysis()(project, new VariableTypeProblem(project), VTAResult)
+class IFDSBasedVariableTypeAnalysis(project: SomeProject, subsumeFacts: Boolean = false)
+    extends IFDSAnalysis()(project, new VariableTypeProblem(project, subsumeFacts), VTAResult)
 
-object IFDSBasedVariableTypeAnalysisScheduler extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement] {
-    override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p)
+class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement] {
+    override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeProviderKey, PropertyStoreKey)
@@ -59,26 +59,23 @@ object VTAResult extends IFDSPropertyMetaInformation[JavaStatement, VTAFact] {
     val key: PropertyKey[VTAResult] = PropertyKey.create("VTAnew", new VTAResult(Map.empty))
 }
 
-class IFDSBasedVariableTypeAnalysisRunner extends EvaluationRunner {
+class IFDSBasedVariableTypeAnalysisRunner(subsumeFacts: Boolean = false) extends EvaluationRunner {
 
-    override def analysisClass: IFDSBasedVariableTypeAnalysisScheduler.type = IFDSBasedVariableTypeAnalysisScheduler
+    override def analysisClass: IFDSBasedVariableTypeAnalysisScheduler = new IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts)
 
     override protected def additionalEvaluationResult(
         analysis: IFDSAnalysis[_, _, _]
     ): Option[Object] =
-        analysis match {
-            case subsuming: Subsuming[_, _] => Some(subsuming.numberOfSubsumptions)
-            case _                          => None
-        }
+        if (analysis.ifdsProblem.subsumeFacts) Some(analysis.statistics) else None
 
     override protected def writeAdditionalEvaluationResultsToFile(
         writer:                      PrintWriter,
         additionalEvaluationResults: Seq[Object]
     ): Unit = {
-        val numberOfSubsumptions = additionalEvaluationResults.map(_.asInstanceOf[NumberOfSubsumptions])
+        val numberOfSubsumptions = additionalEvaluationResults.map(_.asInstanceOf[Statistics])
         val length = additionalEvaluationResults.length
-        val tries = numberOfSubsumptions.map(_.triesToSubsume).sum / length
-        val successes = numberOfSubsumptions.map(_.successfulSubsumes).sum / length
+        val tries = numberOfSubsumptions.map(_.subsumeTries).sum / length
+        val successes = numberOfSubsumptions.map(_.subsumptions).sum / length
         writer.println(s"Average tries to subsume: $tries")
         writer.println(s"Average successful subsumes: $successes")
     }
@@ -93,10 +90,11 @@ object IFDSBasedVariableTypeAnalysisRunner {
             println(" -delay (for a three seconds delay before the taint flow analysis is started)")
             println(" -debug (for debugging mode in the property store)")
             println(" -evalSchedulingStrategies (evaluates all available scheduling strategies)")
+            println(" -subsumeFacts (enables subsuming)")
             println(" -f <file> (Stores the average runtime to this file)")
         } else {
             val fileIndex = args.indexOf("-f")
-            new IFDSBasedVariableTypeAnalysisRunner().run(
+            new IFDSBasedVariableTypeAnalysisRunner(args.contains("-subsumeFacts")).run(
                 args.contains("-debug"),
                 args.contains("-l2"),
                 args.contains("-delay"),
