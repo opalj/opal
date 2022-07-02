@@ -68,17 +68,19 @@ case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C]
                 true
             case Some(Left(existingFacts)) =>
                 if (predecessor.isDefined) throw new IllegalArgumentException(s"${statement} does not accept a predecessor")
-                val isNew = !existingFacts.contains(fact)
-                edges = edges.updated(statement, Left(existingFacts + fact))
-                isNew
+                if (isNew(existingFacts, fact)) {
+                    edges = edges.updated(statement, Left(existingFacts + fact))
+                    true
+                } else false
             case Some(Right(existingFacts)) =>
                 predecessor match {
                     case None => throw new IllegalArgumentException(s"${statement} requires a predecessor")
                     case Some(predecessor) => existingFacts.get(statement) match {
                         case Some(existingPredecessorFacts) => {
-                            val isNew = !existingPredecessorFacts.contains(fact)
-                            edges = edges.updated(statement, Right(existingFacts.updated(predecessor, existingPredecessorFacts + fact)))
-                            isNew
+                            if (isNew(existingPredecessorFacts, fact)) {
+                                edges = edges.updated(statement, Right(existingFacts.updated(predecessor, existingPredecessorFacts + fact)))
+                                true
+                            } else false
                         }
                         case None => {
                             edges = edges.updated(statement, Right(existingFacts.updated(predecessor, Set(fact))))
@@ -88,6 +90,8 @@ case class PathEdges[IFDSFact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C]
                 }
         }
     }
+
+    private def isNew(existingFacts: Set[IFDSFact], newFact: IFDSFact): Boolean = !existingFacts.contains(newFact)
 
     /**
      * @param statement
@@ -121,7 +125,7 @@ protected class IFDSState[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statem
 /**
  * Contains int variables, which count, how many times some method was called.
  */
-protected class Statistics {
+class Statistics {
     var normalFlow = 0
     var callFlow = 0
     var returnFlow = 0

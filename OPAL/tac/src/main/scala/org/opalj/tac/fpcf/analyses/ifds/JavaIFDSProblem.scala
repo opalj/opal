@@ -47,6 +47,9 @@ object JavaStatement {
 
 abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
     extends IFDSProblem[Fact, Method, JavaStatement](new ForwardICFG()(project)) {
+
+    override def needsPredecessor(statement: JavaStatement): Boolean = false
+
     /**
      * Gets the call object for a statement that contains a call.
      *
