@@ -115,7 +115,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         in:           TaintFact,
         nativeCallee: Method
     ): Set[NativeTaintFact] = {
-        val callObject = asCall(call.stmt)
+        val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
         val allParamsWithIndices = allParams.zipWithIndex
         in match {
@@ -172,26 +172,13 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         nativeCallee: Method,
         successor:    JavaStatement
     ): Set[TaintFact] = {
-        /**
-         * Checks whether the callee's formal parameter is of a reference type.
-         */
-        def isRefTypeParam(index: Int): Boolean =
-            if (index == -1) true
-            else {
-                val parameterOffset = if (nativeCallee.isStatic) 0 else 1
-                nativeCallee.descriptor.parameterType(
-                    JavaIFDSProblem.switchParamAndVariableIndex(index, nativeCallee.isStatic)
-                        - parameterOffset
-                ).isReferenceType
-            }
-
         if (sanitizesReturnValue(nativeCallee)) return Set.empty
-        val callStatement = asCall(call.stmt)
+        val callStatement = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callStatement.allParams
         var flows: Set[TaintFact] = Set.empty
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case JavaVariable(index) if index < 0 && index > -100 && isRefTypeParam(index) =>
+            case JavaVariable(index) if index < 0 && index > -100 && JavaIFDSProblem.isRefTypeParam(nativeCallee, index) =>
                 val param = allParams(
                     JavaIFDSProblem.switchParamAndVariableIndex(index, nativeCallee.isStatic)
                 )

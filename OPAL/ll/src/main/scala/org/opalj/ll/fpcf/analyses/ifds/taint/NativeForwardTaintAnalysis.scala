@@ -4,7 +4,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
 import org.opalj.ifds.IFDSPropertyMetaInformation
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Function
 import org.opalj.tac.fpcf.properties.Taint
@@ -19,8 +19,8 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * The sanitize method is a sanitizer.
      */
-    override protected def sanitizesReturnValue(callee: LLVMFunction): Boolean =
-        callee.function.name == "sanitize"
+    override protected def sanitizesReturnValue(callee: NativeFunction): Boolean =
+        callee.name == "sanitize"
 
     /**
      * We do not sanitize parameters.
@@ -31,7 +31,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
      * Creates a new variable fact for the callee, if the source was called.
      */
     protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeTaintFact] =
-        if (callee.name == "source") Set.empty //TODO Set(NativeVariable())
+        if (callee.name == "source") Set(NativeVariable(call.instruction))
         else Set.empty
 
     /**

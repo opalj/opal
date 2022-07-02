@@ -75,7 +75,7 @@ class ForwardICFG(implicit project: SomeProject)
     }
 
     private def getCallees(statement: JavaStatement): collection.Set[Method] = {
-        val pc = statement.code(statement.index).pc
+        val pc = statement.stmt.pc
         val caller = declaredMethods(statement.callable)
         val ep = propertyStore(caller, Callees.key)
         ep match {

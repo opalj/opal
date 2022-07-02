@@ -61,7 +61,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * edges will be created.
      */
     override def callFlow(call: JavaStatement, callee: Method, in: TaintFact): Set[TaintFact] = {
-        val callObject = asCall(call.stmt)
+        val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
 
         val allParamsWithIndices = allParams.zipWithIndex
@@ -122,26 +122,13 @@ abstract class ForwardTaintProblem(project: SomeProject)
         if (!isPossibleReturnFlow(exit, successor)) return Set.empty
 
         val callee = exit.callable
-        /**
-         * Checks whether the callee's formal parameter is of a reference type.
-         */
-        def isRefTypeParam(index: Int): Boolean =
-            if (index == -1) true
-            else {
-                val parameterOffset = if (callee.isStatic) 0 else 1
-                callee.descriptor.parameterType(
-                    JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
-                        - parameterOffset
-                ).isReferenceType
-            }
-
         if (sanitizesReturnValue(callee)) return Set.empty
-        val callStatement = asCall(call.stmt)
+        val callStatement = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callStatement.allParams
         var flows: Set[TaintFact] = Set.empty
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) =>
+            case Variable(index) if index < 0 && index > -100 && JavaIFDSProblem.isRefTypeParam(callee, index) =>
                 val param = allParams(
                     JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                 )
@@ -227,7 +214,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         super.outsideAnalysisContext(callee) match {
             case Some(_) => Some(((call: JavaStatement, successor: JavaStatement, in: TaintFact, _: Getter) => {
-                val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
+                val allParams = JavaIFDSProblem.asCall(call.stmt).receiverOption ++ JavaIFDSProblem.asCall(call.stmt).params
                 if (call.stmt.astID == Assignment.ASTID && (in match {
                     case Variable(index) =>
                         allParams.zipWithIndex.exists {

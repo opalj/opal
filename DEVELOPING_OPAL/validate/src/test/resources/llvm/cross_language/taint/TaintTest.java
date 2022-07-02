@@ -18,6 +18,12 @@ public class TaintTest {
         public static void main (String[] args)
         {
             TaintTest demo = new TaintTest();
+            // force call graph analysis of indirect methods
+            // otherwise their callees are not analyzed,
+            // as they are only reachable through native code
+            // TODO: trigger cga from within other analysis
+            demo.indirect_sink(demo.indirect_sanitize(demo.indirect_source()));
+
             demo.test_java_flow();
             demo.test_java_sanitize_no_flow();
             demo.test_java_untainted_no_flow();

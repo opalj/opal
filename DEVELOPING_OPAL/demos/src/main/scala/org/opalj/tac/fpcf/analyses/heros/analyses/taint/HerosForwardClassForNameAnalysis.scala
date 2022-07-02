@@ -224,26 +224,13 @@ class HerosForwardClassForNameAnalysis(
                 exit:   JavaStatement,
                 succ:   JavaStatement
             ): FlowFunction[TaintFact] = {
-
-                def isRefTypeParam(index: Int): Boolean =
-                    if (index == -1) true
-                    else {
-                        val parameterOffset = if (callee.isStatic) 0 else 1
-                        callee.descriptor
-                            .parameterType(
-                                JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
-                                    - parameterOffset
-                            )
-                            .isReferenceType
-                    }
-
                 val callStatement = asCall(stmt.stmt)
                 val allParams = callStatement.allParams
 
                 source: TaintFact => {
                     val paramFacts = source match {
 
-                        case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) =>
+                        case Variable(index) if index < 0 && index > -100 && JavaIFDSProblem.isRefTypeParam(callee, index) =>
                             val params = allParams(
                                 JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                             )

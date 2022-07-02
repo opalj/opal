@@ -133,7 +133,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         in:     VTAFact
     ): Set[VTAFact] = {
         val inSet = Set(in)
-        val callObject = asCall(call.stmt)
+        val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
         // Iterate over all input facts and over all parameters of the call.
         val flow = scala.collection.mutable.Set.empty[VTAFact]
@@ -170,7 +170,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
     ): Set[VTAFact] = {
         val inSet = Set(in)
         // Check, to which variables the callee may refer
-        val calleeDefinitionSites = asCall(call.stmt).receiverOption
+        val calleeDefinitionSites = JavaIFDSProblem.asCall(call.stmt).receiverOption
             .map(callee => callee.asVar.definedBy)
             .getOrElse(EmptyIntTrieSet)
         val calleeTypeFacts = inSet.collect {
