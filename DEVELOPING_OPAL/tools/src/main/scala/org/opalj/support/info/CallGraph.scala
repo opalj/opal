@@ -165,7 +165,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
                 (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
-        }
+        }.to(Iterable)
 
         var propertyStoreTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
@@ -232,7 +232,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
         }
 
-        val reachableContexts = cg.reachableMethods()
+        val reachableContexts = cg.reachableMethods().to(Iterable)
         val reachableMethods = reachableContexts.map(_.method).toSet
 
         val numEdges = cg.numEdges
