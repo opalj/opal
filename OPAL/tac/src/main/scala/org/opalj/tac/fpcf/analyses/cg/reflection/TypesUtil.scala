@@ -251,7 +251,13 @@ object TypesUtil {
                     expr.asStaticFunctionCall.params(1).asVar
 
             possibleTypes ++= getPossibleForNameClasses(
-                className, context, (depender, className), stmts, project, failure, onlyObjectTypes
+                className,
+                context,
+                (depender, className, stmts),
+                stmts,
+                project,
+                failure,
+                onlyObjectTypes
             )
         } else if (isGetClass(expr)) {
             val typesOfVarOpt = getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar)

@@ -41,11 +41,10 @@ import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
  * In a library analysis scenario, this analysis complements the call graph by marking public
  * methods of instantiated types reachable by unknown callers from outside the library.
  *
- * This analysis is adapted from the RTA version. RTA only adds types to a single type set attached
- * to the Project object, which is known in advance. Because of this, the RTA version can be eager.
- * On the contrary, the XTA/... version is triggered since there are many entities with type sets
- * and the concrete entities are unknown in advance. Similarly, since a type can be added to more
- * than one type set, already processed types are remembered globally so that they are not processed twice.
+ * While for RTA, the single type set attached to the Project is known in advance, there are many
+ * entities with type sets and the concrete entities are unknown in advance. Thus, this analysis is
+ * triggered. Similarly, since a type can be added to more than one type set, already processed
+ * types are remembered globally so that they are not processed twice.
  *
  * @author Dominik Helm
  * @author Andreas Bauer

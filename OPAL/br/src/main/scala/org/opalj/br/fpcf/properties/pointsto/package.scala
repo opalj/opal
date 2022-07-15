@@ -15,7 +15,7 @@ package object pointsto {
         tpe:          ReferenceType,
         isEmptyArray: Boolean       = false
     ): Long = {
-        val contextId = context.id
+        val contextId = if (context eq NoContext) 0x7FFFFFF else context.id
         val typeId = tpe.id
         val emptyArray = if (isEmptyArray) 1L else 0L
         assert(pc >= 0 && pc <= 0xFFFF)

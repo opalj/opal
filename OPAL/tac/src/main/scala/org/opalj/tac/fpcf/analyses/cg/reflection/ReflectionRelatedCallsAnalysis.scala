@@ -507,8 +507,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 )
             }
 
-        AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
-            eps, state.callContext, data => (data._2, data._1._5),
+        AllocationsUtil.continuationForAllocation[(classDependerType, V, Array[Stmt[V]]), ContextType](
+            eps, state.callContext, data => (data._2, data._3),
             _.isInstanceOf[(_, _)], data => failure(data._1._1, data._1._3)
         ) { (data, _, allocationIndex, stmts) =>
                 val classOpt = TypesUtil.getPossibleForNameClass(
@@ -775,8 +775,8 @@ class MethodInvokeAnalysis private[analyses] (
                 addCalls(state.callContext, data._1, _ => data._2, data._3, matchers)
             }
 
-        AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
-            eps, state.callContext, data => (data._2, data._1._6),
+        AllocationsUtil.continuationForAllocation[(classDependerType, V, Array[Stmt[V]]), ContextType](
+            eps, state.callContext, data => (data._2, data._3),
             _.isInstanceOf[(_, _)], data => failure(data._1._1, data._1._2, data._1._3, data._1._4)
         ) { (data, _, allocationIndex, stmts) =>
                 val classOpt = TypesUtil.getPossibleForNameClass(
@@ -1073,8 +1073,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 addCalls(state.callContext, data._1, matchers, data._3)
             }
 
-        AllocationsUtil.continuationForAllocation[(classDependerType, V), ContextType](
-            eps, state.callContext, data => (data._2, data._1._6),
+        AllocationsUtil.continuationForAllocation[(classDependerType, V, Array[Stmt[V]]), ContextType](
+            eps, state.callContext, data => (data._2, data._3),
             _.isInstanceOf[(_, _)], data => failure(data._1._1, data._1._3, data._1._4)
         ) { (data, _, allocationIndex, stmts) =>
                 val classOpt = TypesUtil.getPossibleForNameClass(
@@ -1240,7 +1240,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 val (refc, name, methodType, isVirtual, isStatic, isConstructor) = methodHandleData.get
                 matchers += (if (isStatic) StaticMethodMatcher else NonStaticMethodMatcher)
                 matchers += retrieveDescriptorBasedMethodMatcher(
-                    descriptorOpt, methodType, isStatic, isConstructor, stmts, project
+                    descriptorOpt, methodType, isConstructor, stmts, project
                 )
                 if (!matchers.contains(NoMethodsMatcher))
                     matchers +=
