@@ -24,31 +24,31 @@ class TypeTest extends AnyFunSpec {
         it("should remove all non-predefined types on flush") {
 
             ObjectType.flushTypeCache()
-            assert(ObjectType.objectTypesCount == ObjectType.HighestPredefinedTypId + 1)
+            assert(ObjectType.objectTypesCount == ObjectType.HighestPredefinedTypeId + 1)
 
             // Create 100 dummy OTs and assert their ID assignment is correct
             for(i <- 1 to 100){
                 val t = ObjectType(s"some/type/name$i")
-                assert(t.id == ObjectType.HighestPredefinedTypId + i, "invalid id for newly constructed type")
+                assert(t.id == ObjectType.HighestPredefinedTypeId + i, "invalid id for newly constructed type")
             }
 
             // Check that highest OT ID is in fact present and can be looked up
             try {
-                ObjectType.lookup(ObjectType.HighestPredefinedTypId + 99)
+                ObjectType.lookup(ObjectType.HighestPredefinedTypeId + 99)
             } catch {
-                case _: Exception => fail(s"defined type with id ${ObjectType.HighestPredefinedTypId + 99} was not found in cache")
+                case _: Exception => fail(s"defined type with id ${ObjectType.HighestPredefinedTypeId + 99} was not found in cache")
             }
 
             // Flush OT cache and assert ID counter is reset
             ObjectType.flushTypeCache()
-            assert(ObjectType.objectTypesCount == ObjectType.HighestPredefinedTypId + 1)
+            assert(ObjectType.objectTypesCount == ObjectType.HighestPredefinedTypeId + 1)
 
             // Assert ID was properly reset and new OTs are assigned an id starting from the predefined types
             val newType = ObjectType("some/other/type")
-            assert(newType.id == ObjectType.HighestPredefinedTypId + 1, "invalid id for newly constructed type after flush")
+            assert(newType.id == ObjectType.HighestPredefinedTypeId + 1, "invalid id for newly constructed type after flush")
 
             // Assert pre-flush IDs are no longer valid
-            assertThrows[IllegalArgumentException](ObjectType.lookup(ObjectType.HighestPredefinedTypId + 99))
+            assertThrows[IllegalArgumentException](ObjectType.lookup(ObjectType.HighestPredefinedTypeId + 99))
         }
 
         it("should not remove predefined types on flush"){
@@ -58,7 +58,7 @@ class TypeTest extends AnyFunSpec {
             val obj = ObjectType.lookup(ObjectType.ObjectId)
             assert(obj.fqn.equals("java/lang/Object"))
 
-            val oop = ObjectType.lookup(ObjectType.HighestPredefinedTypId)
+            val oop = ObjectType.lookup(ObjectType.HighestPredefinedTypeId)
             assert(oop.fqn.equals("java/io/ObjectOutputStream"))
         }
     }
@@ -70,25 +70,25 @@ class TypeTest extends AnyFunSpec {
             // Create dummy ATs and assert their IDs are correct
             // Note: Use dimensions = 1 here, otherwise the apply function will internally create more ATs
             val objAT = ArrayType(1, ObjectType("some/type/name"))
-            assert(objAT.id == ArrayType.LowestPredefinedTypId - 1)
+            assert(objAT.id == ArrayType.LowestPredefinedTypeId - 1)
 
             val intAT = ArrayType(1, ObjectType.Integer)
-            assert(intAT.id == ArrayType.LowestPredefinedTypId - 2)
+            assert(intAT.id == ArrayType.LowestPredefinedTypeId - 2)
 
             // Check that highest AT ID is in fact present and can be looked up
-            try { ArrayType.lookup(ArrayType.LowestPredefinedTypId - 2) }
+            try { ArrayType.lookup(ArrayType.LowestPredefinedTypeId - 2) }
             catch { case _: Exception =>
-                fail(s"defined AT with id ${ ArrayType.LowestPredefinedTypId - 2 } was not found in cache")}
+                fail(s"defined AT with id ${ ArrayType.LowestPredefinedTypeId - 2 } was not found in cache")}
 
             // Flush AT Cache
             ArrayType.flushTypeCache()
 
             // Assert ID was properly reset and new ATs are assigned an id starting from the predefined types
             val newAT = ArrayType(1, ObjectType("some/other/name"))
-            assert(newAT.id == ArrayType.LowestPredefinedTypId - 1)
+            assert(newAT.id == ArrayType.LowestPredefinedTypeId - 1)
 
             // Assert pre-flush IDs are no longer valid
-            assertThrows[IllegalArgumentException](ArrayType.lookup(ArrayType.LowestPredefinedTypId - 2))
+            assertThrows[IllegalArgumentException](ArrayType.lookup(ArrayType.LowestPredefinedTypeId - 2))
         }
         it("should not remove predefined types on flush"){
             ArrayType.flushTypeCache()

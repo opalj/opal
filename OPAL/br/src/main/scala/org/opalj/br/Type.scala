@@ -3,13 +3,16 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
+
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import java.util.{Arrays => JArrays}
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+
 import scala.collection.{SortedSet, mutable}
 import scala.math.Ordered
+
 import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet2
@@ -1068,7 +1071,7 @@ object ObjectType {
             val keysToRemove = mutable.HashSet[String]()
 
             this.cache.forEach { case (key: String, obj: WeakReference[ObjectType]) =>
-                if( obj.get().id > HighestPredefinedTypId ){
+                if( obj.get().id > HighestPredefinedTypeId ){
                     keysToRemove.add(key)
                 }
             }
@@ -1077,10 +1080,10 @@ object ObjectType {
             keysToRemove.foreach { cache.remove }
 
             // Truncate the ObjectType cache array to loose all not-predefined ObjectTypes are removed
-           this.objectTypes = JArrays.copyOf( this.objectTypes, HighestPredefinedTypId)
+           this.objectTypes = JArrays.copyOf( this.objectTypes, HighestPredefinedTypeId)
 
             // Reset ID counter to highest id in the cache
-            this.nextId.set( HighestPredefinedTypId + 1 )
+            this.nextId.set( HighestPredefinedTypeId + 1 )
         } finally {
             writeLock.unlock()
         }
@@ -1364,7 +1367,7 @@ object ObjectType {
     final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
     final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
 
-    private[br] final val HighestPredefinedTypId = ObjectOutputStream.id
+    private[br] final val HighestPredefinedTypeId = nextId.get() - 1
 
     /**
      * Implicit mapping from a wrapper type to its primitive type.
@@ -1561,16 +1564,16 @@ object ArrayType {
             val keysToRemove = mutable.HashSet[FieldType]()
 
             this.cache.forEach { case (compT: FieldType, refAT: WeakReference[ArrayType]) =>
-                if( refAT.get().id < LowestPredefinedTypId ){
+                if( refAT.get().id < LowestPredefinedTypeId ){
                     keysToRemove.add(compT)
                 }
             }
 
             keysToRemove.foreach { cache.remove }
 
-            this.arrayTypes = JArrays.copyOf( this.arrayTypes , -LowestPredefinedTypId + 1)
+            this.arrayTypes = JArrays.copyOf( this.arrayTypes , -LowestPredefinedTypeId + 1)
 
-            this.nextId.set( LowestPredefinedTypId - 1 )
+            this.nextId.set( LowestPredefinedTypeId - 1 )
 
         }
     }
@@ -1665,7 +1668,7 @@ object ArrayType {
     final val ArrayOfObject = ArrayType(ObjectType.Object)
     final val ArrayOfMethodHandle = ArrayType(ObjectType.MethodHandle)
 
-    private[br] final val LowestPredefinedTypId = ArrayOfMethodHandle.id
+    private[br] final val LowestPredefinedTypeId = nextId.get() + 1
 }
 
 /**
