@@ -255,8 +255,10 @@ class InstantiatedTypesAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey,
-        ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey, InitialInstantiatedTypesKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        TypeProviderKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
+        InitialInstantiatedTypesKey
+    )
 
     override type InitializationData = Null
 
