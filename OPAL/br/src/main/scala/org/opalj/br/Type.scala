@@ -3,16 +3,13 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import java.util.{Arrays => JArrays}
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
-import scala.collection.SortedSet
+import scala.collection.{SortedSet, mutable}
 import scala.math.Ordered
-
 import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet2
@@ -1056,6 +1053,40 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ObjectType {
 
+    /**
+     * Flush the ObjectType caches (not including the predefined types to keep performance benefits of final vals)
+     */
+    def flushTypeCache(): Unit = {
+        // First we need to write all cached new types to the actual array, otherwise we might delete the predefined types
+        updateObjectTypes()
+
+        val writeLock = cacheRWLock.writeLock()
+
+        writeLock.lock()
+        try {
+            // Find all keys in the Cache-Map that belong to ObjectTypes that are not predefined
+            val keysToRemove = mutable.HashSet[String]()
+
+            this.cache.forEach { case (key: String, obj: WeakReference[ObjectType]) =>
+                if( obj.get().id > HighestPredefinedTypId ){
+                    keysToRemove.add(key)
+                }
+            }
+
+            // Remove all ObjectTypes that are not predefined
+            keysToRemove.foreach { cache.remove }
+
+            // Truncate the ObjectType cache array to loose all not-predefined ObjectTypes are removed
+           this.objectTypes = JArrays.copyOf( this.objectTypes, HighestPredefinedTypId)
+
+            // Reset ID counter to highest id in the cache
+            this.nextId.set( HighestPredefinedTypId + 1 )
+        } finally {
+            writeLock.unlock()
+        }
+
+    }
+
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
     @volatile private[this] var objectTypes: Array[ObjectType] = new Array[ObjectType](0)
 
@@ -1333,6 +1364,8 @@ object ObjectType {
     final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
     final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
 
+    private[br] final val HighestPredefinedTypId = ObjectOutputStream.id
+
     /**
      * Implicit mapping from a wrapper type to its primitive type.
      * @example
@@ -1519,6 +1552,29 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ArrayType {
 
+    def flushTypeCache(): Unit = {
+        // First we need to write all cached new types to the actual array, otherwise we might delete the predefined types
+        updateArrayTypes()
+
+        cache.synchronized {
+
+            val keysToRemove = mutable.HashSet[FieldType]()
+
+            this.cache.forEach { case (compT: FieldType, refAT: WeakReference[ArrayType]) =>
+                if( refAT.get().id < LowestPredefinedTypId ){
+                    keysToRemove.add(compT)
+                }
+            }
+
+            keysToRemove.foreach { cache.remove }
+
+            this.arrayTypes = JArrays.copyOf( this.arrayTypes , -LowestPredefinedTypId + 1)
+
+            this.nextId.set( LowestPredefinedTypId - 1 )
+
+        }
+    }
+
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
     @volatile private[this] var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
 
@@ -1608,6 +1664,8 @@ object ArrayType {
 
     final val ArrayOfObject = ArrayType(ObjectType.Object)
     final val ArrayOfMethodHandle = ArrayType(ObjectType.MethodHandle)
+
+    private[br] final val LowestPredefinedTypId = ArrayOfMethodHandle.id
 }
 
 /**
