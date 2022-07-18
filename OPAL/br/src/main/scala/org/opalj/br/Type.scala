@@ -10,7 +10,9 @@ import java.util.{Arrays => JArrays}
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import scala.collection.{SortedSet, mutable}
+import scala.collection.mutable
+import scala.collection.SortedSet
+
 import scala.math.Ordered
 
 import org.opalj.collection.UIDValue
@@ -1057,10 +1059,12 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 object ObjectType {
 
     /**
-     * Flush the ObjectType caches (not including the predefined types to keep performance benefits of final vals)
+     *  Flushes the global cache for ObjectType instances. This does not include the predefined types,
+     *  which are kept in memory for performance reasons.
      */
     def flushTypeCache(): Unit = {
-        // First we need to write all cached new types to the actual array, otherwise we might delete the predefined types
+        // First we need to write all cached new types to the actual array, otherwise
+        // we might delete the predefined types
         updateObjectTypes()
 
         val writeLock = cacheRWLock.writeLock()
@@ -1070,20 +1074,21 @@ object ObjectType {
             // Find all keys in the Cache-Map that belong to ObjectTypes that are not predefined
             val keysToRemove = mutable.HashSet[String]()
 
-            this.cache.forEach { case (key: String, obj: WeakReference[ObjectType]) =>
-                if( obj.get().id > HighestPredefinedTypeId ){
-                    keysToRemove.add(key)
-                }
+            this.cache.forEach {
+                case (key: String, obj: WeakReference[ObjectType]) =>
+                    if (obj.get().id > HighestPredefinedTypeId) {
+                        keysToRemove.add(key)
+                    }
             }
 
             // Remove all ObjectTypes that are not predefined
             keysToRemove.foreach { cache.remove }
 
-            // Truncate the ObjectType cache array to loose all not-predefined ObjectTypes are removed
-           this.objectTypes = JArrays.copyOf( this.objectTypes, HighestPredefinedTypeId)
+            // Truncate the ObjectType cache array to loose all not-predefined ObjectTypes
+            this.objectTypes = JArrays.copyOf(this.objectTypes, HighestPredefinedTypeId)
 
             // Reset ID counter to highest id in the cache
-            this.nextId.set( HighestPredefinedTypeId + 1 )
+            this.nextId.set(HighestPredefinedTypeId + 1)
         } finally {
             writeLock.unlock()
         }
@@ -1555,25 +1560,35 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ArrayType {
 
+    /**
+     *  Flushes the global cache for ArrayType instances. This does not include the predefined types,
+     *  which are kept in memory for performance reasons.
+     */
     def flushTypeCache(): Unit = {
-        // First we need to write all cached new types to the actual array, otherwise we might delete the predefined types
+        // First we need to write all cached new types to the actual array, otherwise
+        // we might delete the predefined types
         updateArrayTypes()
 
         cache.synchronized {
 
+            // Collect all keys of ATs that are not predefined
             val keysToRemove = mutable.HashSet[FieldType]()
 
-            this.cache.forEach { case (compT: FieldType, refAT: WeakReference[ArrayType]) =>
-                if( refAT.get().id < LowestPredefinedTypeId ){
-                    keysToRemove.add(compT)
-                }
+            this.cache.forEach {
+                case (compT: FieldType, refAT: WeakReference[ArrayType]) =>
+                    if (refAT.get().id < LowestPredefinedTypeId) {
+                        keysToRemove.add(compT)
+                    }
             }
 
+            // Remove all non-predefined ATs from cache
             keysToRemove.foreach { cache.remove }
 
-            this.arrayTypes = JArrays.copyOf( this.arrayTypes , -LowestPredefinedTypeId + 1)
+            // Reset array to only contain predefined ATs
+            this.arrayTypes = JArrays.copyOf(this.arrayTypes, -LowestPredefinedTypeId + 1)
 
-            this.nextId.set( LowestPredefinedTypeId - 1 )
+            // Reset id counter
+            this.nextId.set(LowestPredefinedTypeId - 1)
 
         }
     }

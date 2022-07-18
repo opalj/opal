@@ -27,7 +27,7 @@ class TypeTest extends AnyFunSpec {
             assert(ObjectType.objectTypesCount == ObjectType.HighestPredefinedTypeId + 1)
 
             // Create 100 dummy OTs and assert their ID assignment is correct
-            for(i <- 1 to 100){
+            for (i <- 1 to 100) {
                 val t = ObjectType(s"some/type/name$i")
                 assert(t.id == ObjectType.HighestPredefinedTypeId + i, "invalid id for newly constructed type")
             }
@@ -36,7 +36,8 @@ class TypeTest extends AnyFunSpec {
             try {
                 ObjectType.lookup(ObjectType.HighestPredefinedTypeId + 99)
             } catch {
-                case _: Exception => fail(s"defined type with id ${ObjectType.HighestPredefinedTypeId + 99} was not found in cache")
+                case _: Exception =>
+                    fail(s"defined type with id ${ObjectType.HighestPredefinedTypeId + 99} was not found in cache")
             }
 
             // Flush OT cache and assert ID counter is reset
@@ -45,13 +46,14 @@ class TypeTest extends AnyFunSpec {
 
             // Assert ID was properly reset and new OTs are assigned an id starting from the predefined types
             val newType = ObjectType("some/other/type")
-            assert(newType.id == ObjectType.HighestPredefinedTypeId + 1, "invalid id for newly constructed type after flush")
+            assert(newType.id == ObjectType.HighestPredefinedTypeId + 1,
+                "invalid id for newly constructed type after flush")
 
             // Assert pre-flush IDs are no longer valid
             assertThrows[IllegalArgumentException](ObjectType.lookup(ObjectType.HighestPredefinedTypeId + 99))
         }
 
-        it("should not remove predefined types on flush"){
+        it("should not remove predefined types on flush") {
             ObjectType.flushTypeCache()
 
             // Check that first and last predefined OT are still present after flush
@@ -77,8 +79,10 @@ class TypeTest extends AnyFunSpec {
 
             // Check that highest AT ID is in fact present and can be looked up
             try { ArrayType.lookup(ArrayType.LowestPredefinedTypeId - 2) }
-            catch { case _: Exception =>
-                fail(s"defined AT with id ${ ArrayType.LowestPredefinedTypeId - 2 } was not found in cache")}
+            catch {
+                case _: Exception =>
+                    fail(s"defined AT with id ${ArrayType.LowestPredefinedTypeId - 2} was not found in cache")
+            }
 
             // Flush AT Cache
             ArrayType.flushTypeCache()
@@ -90,7 +94,7 @@ class TypeTest extends AnyFunSpec {
             // Assert pre-flush IDs are no longer valid
             assertThrows[IllegalArgumentException](ArrayType.lookup(ArrayType.LowestPredefinedTypeId - 2))
         }
-        it("should not remove predefined types on flush"){
+        it("should not remove predefined types on flush") {
             ArrayType.flushTypeCache()
 
             // Check that both predefined ATs are still present after flush
