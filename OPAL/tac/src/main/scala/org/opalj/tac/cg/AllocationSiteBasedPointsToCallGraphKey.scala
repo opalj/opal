@@ -12,6 +12,7 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
@@ -36,6 +37,9 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
     override protected[cg] def callGraphSchedulers(
         project: SomeProject
     ): Iterable[FPCFAnalysisScheduler] = {
+        val isLibrary =
+            project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
+                "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
         List(
             AllocationSiteBasedPointsToAnalysisScheduler,
             AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler,
@@ -44,7 +48,7 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
             AllocationSiteBasedUnsafePointsToAnalysisScheduler,
             ReflectionAllocationsAnalysisScheduler,
             AllocationSiteBasedNewInstanceAnalysisScheduler
-        )
+        ) ::: (if (isLibrary) List(AllocationSiteBasedLibraryPointsToAnalysisScheduler) else Nil)
     }
     override def getTypeProvider(project: SomeProject) =
         new AllocationSitesPointsToTypeProvider(project)
