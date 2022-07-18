@@ -45,7 +45,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     )
 
     allBIProjects(
-        config = ConfigFactory.load("LibraryProject.conf")
+        config = ConfigFactory.load("CommandLineProject.conf")
     ) foreach { biProject =>
             val (name, projectFactory) = biProject
             if (!ignoredProjects.contains(name))
