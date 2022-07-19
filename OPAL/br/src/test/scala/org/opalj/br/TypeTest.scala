@@ -46,8 +46,10 @@ class TypeTest extends AnyFunSpec {
 
             // Assert ID was properly reset and new OTs are assigned an id starting from the predefined types
             val newType = ObjectType("some/other/type")
-            assert(newType.id == ObjectType.highestPredefinedTypeId + 1,
-                "invalid id for newly constructed type after flush")
+            assert(
+                newType.id == ObjectType.highestPredefinedTypeId + 1,
+                "invalid id for newly constructed type after flush"
+            )
 
             // Assert pre-flush IDs are no longer valid
             assertThrows[IllegalArgumentException](ObjectType.lookup(ObjectType.highestPredefinedTypeId + 99))

@@ -1127,7 +1127,7 @@ object ObjectType {
         try {
             // Remove all non-predefined OTs from the cache
             Range(highestPredefinedTypeId + 1, objectTypes.length)
-              .foreach( i => cache.remove(objectTypes(i).fqn) )
+                .foreach(i => cache.remove(objectTypes(i).fqn))
 
             // Truncate the ObjectType cache array to lose all not-predefined ObjectTypes
             objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
@@ -1617,7 +1617,7 @@ object ArrayType {
 
             // Remove all non-predefined ATs from the cache
             Range(-lowestPredefinedTypeId + 1, arrayTypes.length)
-              .foreach( i => cache.remove(arrayTypes(i).componentType) )
+                .foreach(i => cache.remove(arrayTypes(i).componentType))
 
             // Reset array to only contain predefined ATs
             arrayTypes = JArrays.copyOf(arrayTypes, -lowestPredefinedTypeId + 1)
