@@ -10,7 +10,6 @@ import java.util.{Arrays => JArrays}
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import scala.collection.mutable
 import scala.collection.SortedSet
 import scala.math.Ordered
 
@@ -1117,29 +1116,21 @@ object ObjectType {
      *  which are kept in memory for performance reasons.
      */
     def flushTypeCache(): Unit = {
+
+        val writeLock = cacheRWLock.writeLock()
+        writeLock.lock()
+
         // First we need to write all cached new types to the actual array, otherwise
         // we might delete the predefined types
         updateObjectTypes()
 
-        val writeLock = cacheRWLock.writeLock()
-
-        writeLock.lock()
         try {
-            // Find all keys in the Cache-Map that belong to ObjectTypes that are not predefined
-            val keysToRemove = mutable.Set[String]()
-
-            cache.forEach {
-                case (key: String, obj: WeakReference[ObjectType]) =>
-                    if (obj.get().id > highestPredefinedTypeId) {
-                        keysToRemove.add(key)
-                    }
-            }
-
-            // Remove all ObjectTypes that are not predefined
-            keysToRemove.foreach { cache.remove }
+            // Remove all non-predefined OTs from the cache
+            Range(highestPredefinedTypeId + 1, objectTypes.length)
+              .foreach( i => cache.remove(objectTypes(i).fqn) )
 
             // Truncate the ObjectType cache array to lose all not-predefined ObjectTypes
-            objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId)
+            objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
 
             // Reset ID counter to highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
@@ -1617,24 +1608,16 @@ object ArrayType {
      *  which are kept in memory for performance reasons.
      */
     def flushTypeCache(): Unit = {
-        // First we need to write all cached new types to the actual array, otherwise
-        // we might delete the predefined types
-        updateArrayTypes()
 
         cache.synchronized {
 
-            // Collect all keys of ATs that are not predefined
-            val keysToRemove = mutable.Set[FieldType]()
+            // First we need to write all cached new types to the actual array, otherwise
+            // we might delete the predefined types
+            updateArrayTypes()
 
-            cache.forEach {
-                case (compT: FieldType, refAT: WeakReference[ArrayType]) =>
-                    if (refAT.get().id < lowestPredefinedTypeId) {
-                        keysToRemove.add(compT)
-                    }
-            }
-
-            // Remove all non-predefined ATs from cache
-            keysToRemove.foreach { cache.remove }
+            // Remove all non-predefined ATs from the cache
+            Range(-lowestPredefinedTypeId + 1, arrayTypes.length)
+              .foreach( i => cache.remove(arrayTypes(i).componentType) )
 
             // Reset array to only contain predefined ATs
             arrayTypes = JArrays.copyOf(arrayTypes, -lowestPredefinedTypeId + 1)
