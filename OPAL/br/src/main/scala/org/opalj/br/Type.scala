@@ -402,6 +402,15 @@ object ReferenceType {
     }
 
     /**
+     * Flushes the global caches for all ReferenceType instances. This does not include predefined
+     * types, which are kept in memory for performance reasons.
+     */
+    def flushTypeCache(): Unit = {
+        ObjectType.flushTypeCache()
+        ArrayType.flushTypeCache()
+    }
+
+    /**
      * Creates a representation of the described [[ReferenceType]].
      *
      * @param   rt A string as passed to `java.lang.Class.forName(...)` but in binary notation.
@@ -1102,6 +1111,35 @@ object ObjectType {
         }
     }
 
+    /**
+     *  Flushes the global cache for ObjectType instances. This does not include the predefined types,
+     *  which are kept in memory for performance reasons.
+     */
+    def flushTypeCache(): Unit = {
+
+        val writeLock = cacheRWLock.writeLock()
+        writeLock.lock()
+
+        // First we need to write all cached new types to the actual array, otherwise
+        // we might delete the predefined types
+        updateObjectTypes()
+
+        try {
+            // Remove all non-predefined OTs from the cache
+            Range(highestPredefinedTypeId + 1, objectTypes.length)
+                .foreach(i => cache.remove(objectTypes(i).fqn))
+
+            // Truncate the ObjectType cache array to lose all not-predefined ObjectTypes
+            objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
+
+            // Reset ID counter to highest id in the cache
+            nextId.set(highestPredefinedTypeId + 1)
+        } finally {
+            writeLock.unlock()
+        }
+
+    }
+
     private[this] val nextId = new AtomicInteger(0)
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
@@ -1333,6 +1371,8 @@ object ObjectType {
     final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
     final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
 
+    private[br] final val highestPredefinedTypeId = nextId.get() - 1
+
     /**
      * Implicit mapping from a wrapper type to its primitive type.
      * @example
@@ -1563,6 +1603,31 @@ object ArrayType {
         }
     }
 
+    /**
+     *  Flushes the global cache for ArrayType instances. This does not include the predefined types,
+     *  which are kept in memory for performance reasons.
+     */
+    def flushTypeCache(): Unit = {
+
+        cache.synchronized {
+
+            // First we need to write all cached new types to the actual array, otherwise
+            // we might delete the predefined types
+            updateArrayTypes()
+
+            // Remove all non-predefined ATs from the cache
+            Range(-lowestPredefinedTypeId + 1, arrayTypes.length)
+                .foreach(i => cache.remove(arrayTypes(i).componentType))
+
+            // Reset array to only contain predefined ATs
+            arrayTypes = JArrays.copyOf(arrayTypes, -lowestPredefinedTypeId + 1)
+
+            // Reset id counter
+            nextId.set(lowestPredefinedTypeId - 1)
+
+        }
+    }
+
     private[this] val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
 
     private[this] val nextId = new AtomicInteger(-1)
@@ -1608,6 +1673,8 @@ object ArrayType {
 
     final val ArrayOfObject = ArrayType(ObjectType.Object)
     final val ArrayOfMethodHandle = ArrayType(ObjectType.MethodHandle)
+
+    private[br] final val lowestPredefinedTypeId = nextId.get() + 1
 }
 
 /**
