@@ -1125,12 +1125,16 @@ object ObjectType {
         updateObjectTypes()
 
         try {
-            // Remove all non-predefined OTs from the cache
-            Range(highestPredefinedTypeId + 1, objectTypes.length)
-                .foreach(i => cache.remove(objectTypes(i).fqn))
+            // Clear the entire cache
+            cache.clear()
 
             // Truncate the ObjectType cache array to lose all not-predefined ObjectTypes
             objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
+
+            // Refill the cache using the objectTypes array
+            objectTypes.foreach { ot =>
+                cache.put(ot.fqn, new WeakReference[ObjectType](ot))
+            }
 
             // Reset ID counter to highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
@@ -1615,12 +1619,19 @@ object ArrayType {
             // we might delete the predefined types
             updateArrayTypes()
 
-            // Remove all non-predefined ATs from the cache
-            Range(-lowestPredefinedTypeId + 1, arrayTypes.length)
-                .foreach(i => cache.remove(arrayTypes(i).componentType))
+            // Clear the entire cache
+            cache.clear()
 
             // Reset array to only contain predefined ATs
             arrayTypes = JArrays.copyOf(arrayTypes, -lowestPredefinedTypeId + 1)
+
+            // Refill the cache using the arrayTypes array
+            arrayTypes.foreach { at =>
+                // arrayTypes(0) is gonna be null, so we need this guard
+                if (at != null) {
+                    cache.put(at.componentType, new WeakReference[ArrayType](at))
+                }
+            }
 
             // Reset id counter
             nextId.set(lowestPredefinedTypeId - 1)
