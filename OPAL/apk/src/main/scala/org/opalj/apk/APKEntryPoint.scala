@@ -9,6 +9,6 @@ package org.opalj.apk
  * 
  * @author Nicolas Gross
  */
-class APKEntry {
+class APKEntryPoint {
   
 }
