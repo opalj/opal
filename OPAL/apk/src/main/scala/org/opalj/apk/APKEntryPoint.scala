@@ -1,6 +1,5 @@
 package org.opalj.apk
 
-
 /**
  * Entry point of an APK.
  * 
@@ -9,6 +8,4 @@ package org.opalj.apk
  * 
  * @author Nicolas Gross
  */
-class APKEntryPoint {
-  
-}
+class APKEntryPoint(val function: String, val triggers: Seq[String])

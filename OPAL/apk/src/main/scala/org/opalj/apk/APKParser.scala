@@ -1,5 +1,10 @@
 package org.opalj.apk
 
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
+import sys.process._
 
 /**
  * Parses an APK file and generates a [[org.opalj.br.analyses.Project]] for it.
@@ -9,14 +14,21 @@ package org.opalj.apk
  * 
  * Following external tools are utilized:
  *   - unzip (for unzipping the APK)
- *   - enjarify (for creating .jar from .dex)
+ *   - enjarify or dex2jar(for creating .jar from .dex)
  *   - RetDec (for lifting native code to LLVM IR)
  * 
  * @author Nicolas Gross
  */
-class APKParser(val path: String) {
+class APKParser(val apkPath: String) {
 
-  //private var unzipTmpDir: Option[String] = None
+  // only temporary
+  val enjarifyPath = "/home/nicolas/git/enjarify/enjarify.sh"
+  val dex2jarPath = "/home/nicolas/Downloads/dex2jar-2.1/dex-tools-2.1/d2j-dex2jar.sh"
+  val retdecPath = "/home/nicolas/bin/retdec/bin/retdec-decompiler.py"
+  // only temporary
+
+
+  private var unzipTmpDir: Option[File] = None
 
   /**
    * Parses the entry points of the APK.
@@ -24,6 +36,8 @@ class APKParser(val path: String) {
    * @return a Seq of [[APKEntryPoint]]
    */
   def parseEntryPoints: Seq[APKEntryPoint] = {
+    // TODO
+    // currently only class names, needs function names
     List.empty
   }
 
@@ -32,9 +46,11 @@ class APKParser(val path: String) {
    * 
    * Uses enjarify to create .jar files from .dex files.
    * 
+   * @param useEnjarify: defaults to true, uses dex2jar if set to false
    * @return (directory containing all .jar files, Seq of every single .jar file)
    */
-  def parseDexCode: (String, Seq[String]) = {
+  def parseDexCode(useEnjarify: Boolean = true): (String, Seq[String]) = {
+    unzipAPK()
     ("", List.empty)
   }
 
@@ -46,6 +62,47 @@ class APKParser(val path: String) {
    * @return (directory containing all .bc files, Seq of every single .bc file)
    */
   def parseNativeCode: (String, Seq[String]) = {
+    unzipAPK()
     ("", List.empty)
+  }
+
+  /**
+   * Cleans up temporary files/directories used for unzipping the APK and
+   * generating .jar and .bc files.
+   * 
+   * You should call this when you are done to not clutter up tmpfs.
+   */
+  def close() = unzipTmpDir match {
+    case Some(tmpDirPath) => {
+      APKParser.runCmd("rm -r " + tmpDirPath)
+      unzipTmpDir = None
+    }
+    case None =>
+  }
+
+  private[this] def unzipAPK() = unzipTmpDir match {
+    case Some(_) =>
+    case None => {
+      val fileName = Paths.get(apkPath).getFileName
+      unzipTmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
+      if (APKParser.runCmd("unzip -d " + unzipTmpDir.get + "/apk_contents " + apkPath)._1 != 0) {
+        close()
+        throw new APKParserException("could not unzip the APK file")
+      }
+    }
+  }
+}
+
+object APKParser {
+
+  /**
+   * Runs an external command.
+   * 
+   * @return (return value, stdout)
+   */
+  def runCmd(cmd: String): (Int, ByteArrayOutputStream) = {
+    val cmd_stdout = new ByteArrayOutputStream
+    val cmd_result = (cmd #> cmd_stdout).!
+    return (cmd_result, cmd_stdout)
   }
 }
