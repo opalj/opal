@@ -32,7 +32,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     private[this] var definitionSitesDependees: Map[(Context, DefinitionSiteLike), (EOptionP[(Context, DefinitionSiteLike), EscapeProperty], Boolean)] = Map.empty
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
     private[this] var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
-    private[this] var calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
+    private[this] val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
 
     var tacFieldAccessPCs: Map[Method, PCs] = Map.empty
     var potentialCloneCallers: Set[Method] = Set.empty
@@ -88,7 +88,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
         ep:                   EOptionP[(Context, DefinitionSiteLike), EscapeProperty],
         isGetFieldOfReceiver: Boolean
     ): Unit = {
-        definitionSitesDependees += ep.e → ((ep, isGetFieldOfReceiver))
+        definitionSitesDependees += ep.e -> ((ep, isGetFieldOfReceiver))
     }
 
     def removeDefinitionSiteDependee(
@@ -110,12 +110,12 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     }
 
     def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
-        tacDependees += ep.e → ep
+        tacDependees += ep.e -> ep
     }
 
     def addTACDependee(ep: EOptionP[Method, TACAI], pcs: PCs): Unit = {
-        tacDependees += ep.e → ep
-        tacFieldAccessPCs += ep.e → (tacFieldAccessPCs.getOrElse(ep.e, IntTrieSet.empty) ++ pcs)
+        tacDependees += ep.e -> ep
+        tacFieldAccessPCs += ep.e -> (tacFieldAccessPCs.getOrElse(ep.e, IntTrieSet.empty) ++ pcs)
     }
 
     def getTACDependee(m: Method): EOptionP[Method, TACAI] = {
@@ -123,13 +123,13 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     }
 
     def addCallersDependee(ep: EOptionP[DeclaredMethod, Callers]): Unit = {
-        callerDependees += ep.e → ep
+        callerDependees += ep.e -> ep
     }
 
     def addCallersDependee(ep: EOptionP[DeclaredMethod, Callers], pcs: PCs): Unit = {
-        callerDependees += ep.e → ep
+        callerDependees += ep.e -> ep
         tacFieldAccessPCs +=
-            ep.e.definedMethod →
+            ep.e.definedMethod ->
             (tacFieldAccessPCs.getOrElse(ep.e.definedMethod, IntTrieSet.empty) ++ pcs)
     }
 

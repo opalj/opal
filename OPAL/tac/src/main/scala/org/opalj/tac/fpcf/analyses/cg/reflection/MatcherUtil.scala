@@ -24,7 +24,7 @@ object MatcherUtil {
     private[reflection] def retrieveSuitableMatcher[A](
         v:       Option[A],
         pc:      Int,
-        factory: A ⇒ MethodMatcher
+        factory: A => MethodMatcher
     )(
         implicit
         incompleteCallSites: IncompleteCallSites,
@@ -49,7 +49,7 @@ object MatcherUtil {
      */
     private[reflection] def retrieveSuitableNonEssentialMatcher[A](
         v: Option[A],
-        f: A ⇒ MethodMatcher
+        f: A => MethodMatcher
     ): MethodMatcher = {
         if (v.isEmpty) {
             AllMethodsMatcher
@@ -71,7 +71,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[FieldTypes](
             paramTypesO,
             pc,
-            v ⇒ new ParameterTypesBasedMethodMatcher(v)
+            v => new ParameterTypesBasedMethodMatcher(v)
         )
     }
 
@@ -87,7 +87,7 @@ object MatcherUtil {
         depender: Entity,
         pc:       Int,
         stmts:    Array[Stmt[V]],
-        failure:  () ⇒ Unit
+        failure:  () => Unit
     )(
         implicit
         typeIterator:        TypeIterator,
@@ -100,7 +100,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[Set[String]](
             Some(names),
             pc,
-            v ⇒ new NameBasedMethodMatcher(v)
+            v => new NameBasedMethodMatcher(v)
         )
     }
 
@@ -122,7 +122,7 @@ object MatcherUtil {
         pc:                        Int,
         stmts:                     Array[Stmt[V]],
         project:                   SomeProject,
-        failure:                   () ⇒ Unit,
+        failure:                   () => Unit,
         onlyMethodsExactlyInClass: Boolean,
         onlyObjectTypes:           Boolean        = false,
         considerSubclasses:        Boolean        = false
@@ -136,7 +136,7 @@ object MatcherUtil {
     ): MethodMatcher = {
         val typesOpt = Some(TypesUtil.getPossibleClasses(
             context, ref, depender, stmts, project, failure, onlyObjectTypes
-        ).flatMap { tpe ⇒
+        ).flatMap { tpe =>
             if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
             else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
         })
@@ -144,7 +144,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,
             pc,
-            v ⇒ new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
+            v => new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
         )
     }
 

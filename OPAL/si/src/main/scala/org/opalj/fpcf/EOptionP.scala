@@ -148,7 +148,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     @throws[IllegalArgumentException]("if the given eps is not a valid update")
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit
 
 }
@@ -223,7 +223,7 @@ object EPS {
             InterimELUBP(e, lb, ub)
     }
 
-    def unapply[E <: Entity](eps: EPS[E, _]): Some[E] = Some(eps.e)
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
 }
 
 /**
@@ -246,7 +246,7 @@ object LBPS {
      * @note Using LBPS to extract a property for which no lower bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, Boolean)] = {
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = {
         Some((eps.lb, eps.isFinal))
     }
 
@@ -260,7 +260,7 @@ object UBPS {
      * @note Using UBPS to extract a property for which no upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, Boolean)] = {
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, Boolean)] = {
         Some((eps.ub, eps.isFinal))
     }
 }
@@ -273,7 +273,7 @@ object LUBPS {
      * @note Using LUBPS to extract a property for which no lower or upper bound was computed
      *       will (deliberately) result in an exception!
      */
-    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, P, Boolean)] = {
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, P, Boolean)] = {
         Some((eps.lb, eps.ub, eps.isFinal))
     }
 
@@ -417,15 +417,15 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
 
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit = {
         throw new IllegalArgumentException("already final")
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FinalEP[_, _] ⇒ (this eq that) || (that.e == this.e && this.p == that.p)
-            case _                   ⇒ false
+            case that: FinalEP[_, _] => (this eq that) || (that.e == this.e && this.p == that.p)
+            case _                   => false
         }
     }
 
@@ -467,7 +467,7 @@ object FinalP {
 
 object FinalE {
 
-    def unapply[E <: Entity](eps: FinalEP[E, _]): Some[E] = Some(eps.e)
+    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Some[E] = Some(eps.e)
 
 }
 
@@ -492,7 +492,7 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit = {
         try {
             if (eps.isRefinable && (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP)) {
@@ -506,7 +506,7 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
                 checkIsValidUBPropertyUpdate(eps)
             }
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
                     newDependees.mkString("newDependees={", ", ", "}; cause=") + t.getMessage
                 throw new IllegalArgumentException(m, t)
@@ -522,7 +522,7 @@ object InterimE {
      * @note When we just have an InterimP object, we don't know which properties (ub, lb or both)
      *       are available.
      */
-    def unapply[E <: Entity](interimP: InterimEP[E, _]): Some[E] = Some(interimP.e)
+    def unapply[E <: Entity, P <: Property](interimP: InterimEP[E, P]): Some[E] = Some(interimP.e)
 
 }
 
@@ -561,9 +561,9 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimELUBP[_, _] ⇒
+            case that: InterimELUBP[_, _] =>
                 (this eq that) || (e == that.e && lb == that.lb && ub == that.ub)
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -618,9 +618,9 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimEUBP[_, _] ⇒
+            case that: InterimEUBP[_, _] =>
                 (this eq that) || (this.e == that.e && this.ub == that.ub)
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -655,7 +655,7 @@ object InterimEUBP {
  */
 object InterimEUB {
 
-    def unapply[E <: Entity](eps: InterimEP[E, _]): Some[E] = {
+    def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[E] = {
         if (!eps.hasUBP)
             throw new IllegalArgumentException(s"$eps does not define an upper bound property");
 
@@ -706,7 +706,7 @@ object NoUBP {
 
 object InterimUBP {
 
-    def unapply[P <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
+    def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -734,9 +734,9 @@ final class InterimELBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimELBP[_, _] ⇒
+            case that: InterimELBP[_, _] =>
                 (this eq that) || (this.lb == that.lb && this.e == that.e)
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -766,7 +766,7 @@ object InterimELBP {
 
 object InterimLBP {
 
-    def unapply[P >: Null <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -817,13 +817,13 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit = {}
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EPK[_, _] ⇒ (this eq that) || (this.pk == that.pk && that.e == this.e)
-            case _               ⇒ false
+            case that: EPK[_, _] => (this eq that) || (this.pk == that.pk && that.e == this.e)
+            case _               => false
         }
     }
 

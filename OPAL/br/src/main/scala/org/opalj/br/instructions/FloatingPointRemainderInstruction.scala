@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that calculates the remainder of two primitive floating point values.
  *
@@ -23,8 +21,8 @@ abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 
 }

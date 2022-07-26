@@ -10,7 +10,7 @@ package instructions
  */
 abstract class FieldWriteAccess extends FieldAccess {
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def expressionResult: NoExpression.type = NoExpression
 }

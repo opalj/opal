@@ -44,7 +44,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
  */
 abstract class NewInstanceAnalysis private[analyses] (
         final val project: SomeProject
-) extends PointsToAnalysisBase { self ⇒
+) extends PointsToAnalysisBase { self =>
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -152,16 +152,16 @@ abstract class NewInstanceMethodAnalysis(
 
     override def continuationForShared(
         e:         Entity,
-        dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
+        dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         state:     PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case UBP(callees: Callees) ⇒
+            case UBP(callees: Callees) =>
                 val newDependees = updatedDependees(eps, dependees)
 
                 val defSite = e match {
-                    case ds: DefinitionSite               ⇒ ds
-                    case (_: Context, ds: DefinitionSite) ⇒ ds
+                    case ds: DefinitionSite               => ds
+                    case (_: Context, ds: DefinitionSite) => ds
                 }
 
                 val pointsToSet = handleCallees(callees, state.callContext, defSite.pc, defSite)
@@ -170,18 +170,18 @@ abstract class NewInstanceMethodAnalysis(
                     e,
                     pointsToSet,
                     newDependees,
-                    { old ⇒ old.included(pointsToSet) },
+                    { old => old.included(pointsToSet) },
                     true
                 )(state)
 
                 Results(results)
-            case _ ⇒ super.continuationForShared(e, dependees, state)(eps)
+            case _ => super.continuationForShared(e, dependees, state)(eps)
         }
     }
 
     def handleCallees(callees: Callees, callerContext: ContextType, pc: Int, defSite: Entity): PointsToSet = {
         var pointsToSet = emptyPointsToSet
-        for (callee ← callees.indirectCallees(callerContext, pc) if callee.method.name == "<init>") {
+        for (callee <- callees.indirectCallees(callerContext, pc) if callee.method.name == "<init>") {
             pointsToSet = pointsToSet.included(
                 createPointsToSet(
                     pc,
@@ -197,7 +197,7 @@ abstract class NewInstanceMethodAnalysis(
 
 trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
-    def createAnalysis: SomeProject ⇒ NewInstanceAnalysis
+    def createAnalysis: SomeProject => NewInstanceAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, DefinitionSitesKey, TypeIteratorKey)
@@ -217,13 +217,13 @@ trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
 object TypeBasedNewInstanceAnalysisScheduler extends NewInstanceAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ NewInstanceAnalysis =
+    override val createAnalysis: SomeProject => NewInstanceAnalysis =
         new NewInstanceAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedNewInstanceAnalysisScheduler extends NewInstanceAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalysis: SomeProject ⇒ NewInstanceAnalysis =
+    override val createAnalysis: SomeProject => NewInstanceAnalysis =
         new NewInstanceAnalysis(_) with AllocationSiteBasedAnalysis
 }
 

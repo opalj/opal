@@ -5,12 +5,6 @@ package domain
 package l1
 
 import java.net.URL
-
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-import scala.Iterable
 import org.opalj.ai.domain
 import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.Method
@@ -24,6 +18,8 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -85,11 +81,11 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
             theReturnedValue match {
                 case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`)) if (
                     rv.isNull.isUnknown && !rv.isPrecise
-                ) ⇒
+                ) =>
                     // the return type will not be more precise than the original type
                     ai.interrupt()
 
-                case _ ⇒ /*go on*/
+                case _ => /*go on*/
             }
 
             isUpdated
@@ -104,12 +100,12 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         val methodsWithRefinedReturnTypes = time {
             for {
-                classFile ← theProject.allClassFiles.par
-                method ← classFile.methods
+                classFile <- theProject.allClassFiles.par
+                method <- classFile.methods
                 if method.body.isDefined
                 originalType = method.returnType
                 if method.returnType.isReferenceType
@@ -123,7 +119,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
             } yield {
                 RefinedReturnType(method, domain.returnedValue)
             }
-        } { ns ⇒ println(s"the analysis took ${ns.toSeconds}") }
+        } { ns => println(s"the analysis took ${ns.toSeconds}") }
 
         BasicReport(
             methodsWithRefinedReturnTypes.mkString(

@@ -35,14 +35,14 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
 
     def +=(tpe: ObjectType): Unit = {
         if (!theConcreteTypes.contains(tpe) &&
-            !theUpperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb))) {
+            !theUpperTypeBounds.exists(utb => isSubtypeOf(tpe, utb))) {
             theConcreteTypes += tpe
         }
     }
 
-    def ++=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { += }
+    def ++=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { += }
 
-    def ++<:=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { +<:= }
+    def ++<:=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { +<:= }
 
     /**
      * Adds the given upper type bound to this `TypesSet` unless a supertype
@@ -54,17 +54,17 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
         if (theConcreteTypes.contains(tpe)) {
             theConcreteTypes -= tpe
             theUpperTypeBounds =
-                theUpperTypeBounds.filter(utb ⇒ !isSubtypeOf(utb, tpe)) + tpe
+                theUpperTypeBounds.filter(utb => !isSubtypeOf(utb, tpe)) + tpe
         } else {
             var doNotAddTPE: Boolean = false
-            var newUpperTypeBounds = theUpperTypeBounds.filter { utb ⇒
+            var newUpperTypeBounds = theUpperTypeBounds.filter { utb =>
                 val keepExistingUTB = !isSubtypeOf(utb, tpe)
                 if (keepExistingUTB && !doNotAddTPE && isSubtypeOf(tpe, utb)) {
                     doNotAddTPE = true
                 }
                 keepExistingUTB
             }
-            theConcreteTypes = theConcreteTypes.filter { ct ⇒ !isSubtypeOf(ct, tpe) }
+            theConcreteTypes = theConcreteTypes.filter { ct => !isSubtypeOf(ct, tpe) }
             if (!doNotAddTPE) newUpperTypeBounds += tpe
             theUpperTypeBounds = newUpperTypeBounds
         }

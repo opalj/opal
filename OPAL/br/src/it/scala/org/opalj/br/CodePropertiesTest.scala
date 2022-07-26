@@ -29,9 +29,10 @@
 package org.opalj.br
 
 import org.scalatest.funsuite.AnyFunSuite
-import java.util.concurrent.atomic.AtomicInteger
-import java.lang.{Boolean ⇒ JBoolean}
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.lang.{Boolean => JBoolean}
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
@@ -59,7 +60,7 @@ class CodePropertiesTest extends AnyFunSuite {
             val (t, analyzedMethodsCount) = timed { doAnalyzeMaxStackAndLocals(project) }
             s"computing max stack/locals for all $analyzedMethodsCount methods took ${t.toSeconds}"
         } catch {
-            case ce: ConcurrentExceptions ⇒
+            case ce: ConcurrentExceptions =>
                 ce.getSuppressed.foreach(_.printStackTrace(Console.err))
                 throw ce
         }
@@ -71,7 +72,7 @@ class CodePropertiesTest extends AnyFunSuite {
         val TyperTyperType = ObjectType("scala/tools/nsc/typechecker/Typers$Typer")
 
         val analyzedMethodsCount = new AtomicInteger(0)
-        project.parForeachMethodWithBody() { m ⇒
+        project.parForeachMethodWithBody() { m =>
 
             val MethodInfo(src, method) = m
             val declaringClassType = method.declaringClassFile.thisType
@@ -84,12 +85,12 @@ class CodePropertiesTest extends AnyFunSuite {
 
             val liveVariables = code.liveVariables(ch)
             assert(
-                code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
+                code.programCounters.forall(pc => liveVariables(pc) ne null),
                 s"computation of liveVariables fails for ${method.toJava}"
             )
 
             for {
-                PCAndInstruction(pc, instruction) ← code
+                PCAndInstruction(pc, instruction) <- code
                 if instruction.isReturnInstruction
                 // The bytecode of the scala...typechecker.Typers$Typer.$deserializeLambda$ method
                 // is invalid. The "primary" code is duplicated in an exception handler and the
@@ -111,7 +112,7 @@ class CodePropertiesTest extends AnyFunSuite {
                 }
             }
 
-            for { PCAndInstruction(pc, LocalVariableAccess(i, isRead)) ← code } {
+            for { PCAndInstruction(pc, LocalVariableAccess(i, isRead)) <- code } {
                 val isLive = liveVariables(pc).contains(i)
                 if (isRead)
                     assert(isLive, s"$i is not live at $pc in ${method.toJava}")
@@ -149,7 +150,7 @@ class CodePropertiesTest extends AnyFunSuite {
     def doAnalyzeStackMapTablePCs(project: SomeProject): Int = {
         implicit val ch = project.classHierarchy
         val analyzedMethodsCount = new AtomicInteger(0)
-        project.parForeachMethodWithBody(() ⇒ false) { mi ⇒
+        project.parForeachMethodWithBody(() => false) { mi =>
             if (mi.classFile.version.major > 49) {
                 analyzedMethodsCount.incrementAndGet()
                 val code = mi.method.body.get
@@ -180,7 +181,7 @@ class CodePropertiesTest extends AnyFunSuite {
     // Configuration of the tested projects
     //
 
-    allBIProjects() foreach { biProject ⇒
+    allBIProjects() foreach { biProject =>
         val (name, createProject) = biProject
         test(s"computation of maxStack/maxLocals for all methods of $name") {
             val count = analyzeMaxStackAndLocals(createProject())
@@ -199,7 +200,8 @@ class CodePropertiesTest extends AnyFunSuite {
             BaseConfig
                 .withValue(logOptimizationsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE))
                 .withValue(optimizationConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
-        class Reader extends { override val config = theConfig } with Java9Framework {
+        class Reader extends Java9Framework {
+            override def defaultConfig: Config = theConfig
             override def loadsInterfacesOnly: Boolean = false
         }
         val reader = new Reader()

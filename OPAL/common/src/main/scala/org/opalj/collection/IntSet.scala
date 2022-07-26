@@ -3,14 +3,13 @@ package org.opalj
 package collection
 
 import scala.collection.mutable.Builder
-import org.opalj.collection.immutable.Chain
 
 /**
  * A set of integer values.
  *
  * @author Michael Eichberg
  */
-trait IntSet[T <: IntSet[T]] { intSet: T ⇒
+trait IntSet[T <: IntSet[T]] { intSet: T =>
 
     def isEmpty: Boolean
     def nonEmpty: Boolean = !isEmpty
@@ -25,34 +24,34 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
      */
     def size: Int
 
-    def foreach[U](f: Int ⇒ U): Unit
-    def withFilter(p: Int ⇒ Boolean): T
-    def map(f: Int ⇒ Int): T
+    def foreach[U](f: Int => U): Unit
+    def withFilter(p: Int => Boolean): T
+    def map(f: Int => Int): T
     /**
      * Uses the keys of this set to map them to the value found in the given array at the respective index.
      */
     def map(map: Array[Int]): T
-    def map[A <: AnyRef](f: Int ⇒ A): Set[A] = foldLeft(Set.empty[A])(_ + f(_)) // IMPROVE Consider using SetBuilder to set the initial "expected" (maximum) size
-    def flatMap(f: Int ⇒ T): T
+    def map[A <: AnyRef](f: Int => A): Set[A] = foldLeft(Set.empty[A])(_ + f(_)) // IMPROVE Consider using SetBuilder to set the initial "expected" (maximum) size
+    def flatMap(f: Int => T): T
 
-    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
+    def foldLeft[B](z: B)(f: (B, Int) => B): B
 
     def head: Int
     def contains(value: Int): Boolean
-    def exists(p: Int ⇒ Boolean): Boolean
-    def forall(f: Int ⇒ Boolean): Boolean
+    def exists(p: Int => Boolean): Boolean
+    def forall(f: Int => Boolean): Boolean
 
     def -(i: Int): T
     def +(i: Int): T
 
-    final def --(is: TraversableOnce[Int]): T = {
+    final def --(is: IterableOnce[Int]): T = {
         var r = this
-        is.foreach { i ⇒ r -= i }
+        is.iterator.foreach { i => r -= i }
         r
     }
     final def --(is: IntSet[_]): T = {
         var r = this
-        is.foreach { i ⇒ r -= i }
+        is.foreach { i => r -= i }
         r
     }
 
@@ -63,16 +62,16 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
             this.foldLeft(that)(_ + _) // we expand `that`
     }
 
-    final def ++(that: TraversableOnce[Int]): T = that.foldLeft(this)(_ + _)
+    final def ++(that: IterableOnce[Int]): T = that.iterator.foldLeft(this)(_ + _)
 
     final def ++(that: IntIterator): T = that.foldLeft(this)(_ + _)
 
     def iterator: IntIterator
 
-    def toChain: Chain[Int]
+    def toList: List[Int]
 
-    final def transform[B, To](f: Int ⇒ B, b: Builder[B, To]): To = {
-        foreach(i ⇒ b += f(i))
+    final def transform[B, To](f: Int => B, b: Builder[B, To]): To = {
+        foreach(i => b += f(i))
         b.result()
     }
 

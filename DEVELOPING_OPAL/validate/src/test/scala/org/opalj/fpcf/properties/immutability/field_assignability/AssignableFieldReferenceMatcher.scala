@@ -32,7 +32,7 @@ class AssignableFieldReferenceMatcher extends AbstractPropertyMatcher {
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
 
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         if (!analyses.exists(as.contains)) return false;
         true
@@ -44,8 +44,8 @@ class AssignableFieldReferenceMatcher extends AbstractPropertyMatcher {
         /*   if (prematurelyRead) {
             val propertyStore = p.get(PropertyStoreKey)
             propertyStore(entity, FieldPrematurelyRead.key) match {
-                case FinalP(PrematurelyReadField) ⇒ true
-                case _                            ⇒ false
+                case FinalP(PrematurelyReadField) => true
+                case _                            => false
             }
         } else {
             true
@@ -59,7 +59,7 @@ class AssignableFieldReferenceMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(p ⇒ p == property)) {
+        if (!properties.exists(p => p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {

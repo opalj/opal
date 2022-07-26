@@ -5,7 +5,8 @@ package ba
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for a list of [[org.opalj.br.MethodTemplate]]s.
@@ -13,7 +14,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-case class METHODS[T](methods: RefArray[METHOD[T]]) {
+case class METHODS[T](methods: ArraySeq[METHOD[T]]) {
 
     /**
      * Returns the build [[org.opalj.br.MethodTemplate]]s and their code annotations.
@@ -24,8 +25,8 @@ case class METHODS[T](methods: RefArray[METHOD[T]]) {
     )(
         implicit
         classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
-    ): RefArray[(br.MethodTemplate, Option[T])] = {
-        methods.map[(br.MethodTemplate, Option[T])](m ⇒
+    ): ArraySeq[(br.MethodTemplate, Option[T])] = {
+        methods.map[(br.MethodTemplate, Option[T])](m =>
             m.result(classFileVersion, declaringClassType))
     }
 
@@ -34,7 +35,7 @@ case class METHODS[T](methods: RefArray[METHOD[T]]) {
 object METHODS {
 
     def apply[T](methods: METHOD[T]*): METHODS[T] = {
-        new METHODS(RefArray._UNSAFE_from(methods.toArray))
+        new METHODS(ArraySeq.unsafeWrapArray(methods.toArray))
     }
 
 }

@@ -59,17 +59,17 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredMethods.reader.read(
             p.config, configKey
-        ).nativeMethods.map { v ⇒ (v.method, v.methodInvocations) }.toMap
+        ).nativeMethods.map { v => (v.method, v.methodInvocations) }.toMap
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
         val callers = propertyStore(dm, Callers.key)
         (callers: @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -111,9 +111,9 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         val callers = eOptP.ub
 
         var results: Iterator[PartialResult[_, _ >: Null <: Property]] = Iterator.empty
-        callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext ⇒
+        callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
             val directCalls = new DirectCalls()
-            for (tgt ← tgts) {
+            for (tgt <- tgts) {
                 val tgtMethod = tgt.method(declaredMethods)
                 directCalls.addCall(
                     calleeContext, 0, typeIterator.expandContext(calleeContext, tgtMethod, 0)

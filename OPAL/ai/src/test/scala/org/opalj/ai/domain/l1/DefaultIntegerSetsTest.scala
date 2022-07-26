@@ -144,7 +144,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerSet(SortedSet[Int](-1, 1))
                 val v2 = IntegerSet(SortedSet[Int](-1, 1))
 
-                v1.join(-1, v2) should be('isMetaInformationUpdate)
+                v1.join(-1, v2) should be(Symbol("isMetaInformationUpdate"))
             }
         }
 
@@ -294,8 +294,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerSet(SortedSet[Int](8, 19))
 
-                ior(-1, v1, v2) should be(AnIntegerValue)
-                ior(-1, v2, v1) should be(AnIntegerValue)
+                ior(-1, v1, v2) should be(AnIntegerValue())
+                ior(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("{Int.MinValue,Int.MaxValue} | {8,19} => {Int.MinValue+8, Int.MinValue+19, Int.MaxValue}") {
@@ -385,8 +385,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerSet(SortedSet[Int](8, 19))
 
-                ixor(-1, v1, v2) should be(AnIntegerValue)
-                ixor(-1, v2, v1) should be(AnIntegerValue)
+                ixor(-1, v1, v2) should be(AnIntegerValue())
+                ixor(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("{Int.MinValue,Int.MaxValue} ^ {8,19} => {Int.MinValue+8,Int.MinValue+19,Int.MaxValue-19,Int.MaxValue-8}") {
@@ -492,8 +492,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerSet(SortedSet[Int](0))
                 val v2 = AnIntegerValue()
 
-                iadd(-1, v1, v2) should be(AnIntegerValue)
-                iadd(-1, v2, v1) should be(AnIntegerValue)
+                iadd(-1, v1, v2) should be(AnIntegerValue())
+                iadd(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("{Int.MinValue,3} + {2,3} => {Int.MinValue+2,Int.MinValue+3,5,6}") {
@@ -540,14 +540,14 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerSet(SortedSet[Int](0))
                 val v2 = AnIntegerValue()
 
-                isub(-1, v1, v2) should be(AnIntegerValue)
+                isub(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("AnIntegerValue - {0} => AnIntegerValue") {
                 val v1 = IntegerSet(SortedSet[Int](0))
                 val v2 = AnIntegerValue()
 
-                isub(-1, v2, v1) should be(AnIntegerValue)
+                isub(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("{Int.MinValue,3} - {2,3} => {0,1,Int.MinValue-2,Int.MinValue-3}") {
@@ -588,8 +588,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -607,8 +607,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -617,10 +617,10 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v2 = AnIntegerValue()
 
                 val result = idiv(SomePC, v1, v2)
-                result.result should be { AnIntegerValue }
+                result.result should be { AnIntegerValue() }
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -629,10 +629,10 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v2 = AnIntegerValue()
 
                 val result = idiv(SomePC, v1, v2)
-                result.result should be { AnIntegerValue }
+                result.result should be { AnIntegerValue() }
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -658,10 +658,10 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v2 = AnIntegerValue()
 
                 val result = irem(SomePC, v1, v2)
-                result.result should be { AnIntegerValue }
+                result.result should be { AnIntegerValue() }
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -672,8 +672,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -684,8 +684,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -694,7 +694,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v2 = IntegerSet(SortedSet[Int](2))
 
                 val result = irem(SomePC, v1, v2)
-                result.result should be(AnIntegerValue)
+                result.result should be(AnIntegerValue())
                 result.throwsException should be(false)
             }
 
@@ -766,19 +766,19 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
             }
 
             it("AnIntegerValue & {2} => AnIntegerValue") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerSet(SortedSet[Int](2))
 
-                iand(-1, v1, v2) should be(AnIntegerValue)
-                iand(-1, v2, v1) should be(AnIntegerValue)
+                iand(-1, v1, v2) should be(AnIntegerValue())
+                iand(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("{-2} & AnIntegerValue  => AnIntegerValue") {
                 val v1 = IntegerSet(SortedSet[Int](-2))
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
-                iand(-1, v1, v2) should be(AnIntegerValue)
-                iand(-1, v2, v1) should be(AnIntegerValue)
+                iand(-1, v1, v2) should be(AnIntegerValue())
+                iand(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("The result of the and of a set s and {-1} should be s itself; {2,4} & {-1} => {2,4}") {
@@ -790,7 +790,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value & {0} should be {0}") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerSet(SortedSet[Int](0))
 
                 iand(-1, v1, v2) should be(IntegerSet(SortedSet[Int](0)))
@@ -801,17 +801,17 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
         describe("the behavior of ishl") {
 
             it("AnIntegerValue << {2} => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerSet(SortedSet[Int](2))
 
-                ishl(-1, v, s) should be(AnIntegerValue)
+                ishl(-1, v, s) should be(AnIntegerValue())
             }
 
             it("{2} << AnIntegerValue => AnIntegerValue") {
                 val v = IntegerSet(SortedSet[Int](2))
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ishl(-1, v, s) should be(AnIntegerValue)
+                ishl(-1, v, s) should be(AnIntegerValue())
             }
 
             it("{-1,1} << {2} => {-4,4}") {
@@ -889,17 +889,17 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
         describe("the behavior of ishr") {
 
             it("AnIntegerValue >> {2} => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerSet(SortedSet[Int](2))
 
-                ishr(-1, v, s) should be(AnIntegerValue)
+                ishr(-1, v, s) should be(AnIntegerValue())
             }
 
             it("{2} >> AnIntegerValue => AnIntegerValue") {
                 val v = IntegerSet(SortedSet[Int](2))
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ishr(-1, v, s) should be(AnIntegerValue)
+                ishr(-1, v, s) should be(AnIntegerValue())
             }
 
             it("{-1,1} >> {2} => {-1,0}") {
@@ -990,7 +990,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
         describe("the behavior of the i2s cast operator") {
 
             it("(short)AnIntegerValue => AnIntegerValue") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 i2s(-1, v1) should be(ShortValue(IrrelevantPC))
             }
 
@@ -1070,14 +1070,14 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (>=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsGreaterThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
             }
 
             describe("the behavior of the greater or equal than (<=) operator") {
                 it("a specific (but unknown) value compared (<=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsLessThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
             }
@@ -1134,7 +1134,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (>) with itself should be No") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsGreaterThan(IrrelevantPC, p, p) should be(No)
                 }
             }
@@ -1142,7 +1142,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
             describe("the behavior of the small than (<) operator") {
 
                 it("a specific (but unknown) value compared (<) with itself should be No") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsLessThan(IrrelevantPC, p, p) should be(No)
                 }
 
@@ -1201,7 +1201,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (==) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intAreEqual(IrrelevantPC, p, p) should be(Yes)
                 }
             }
@@ -1209,7 +1209,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
             describe("the behavior of the not equals (!=) operator") {
 
                 it("a specific (but unknown) value compared (!=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intAreNotEqual(IrrelevantPC, p, p) should be(No)
                 }
 
@@ -1312,7 +1312,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val result = BaseAI(method, domain)
 
                     if (result.operandsArray(37) != null) {
-                        result.operandsArray(37).head should be(domain.AnIntegerValue)
+                        result.operandsArray(37).head should be(domain.AnIntegerValue())
                         result.operandsArray(41).head should be(domain.IntegerSet(SortedSet[Int](0)))
                     } else {
                         // OK - the code is dead, however, we cannot identify this, but the
@@ -1326,7 +1326,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val result = BaseAI(method, domain)
 
                     if (result.operandsArray(37) != null) {
-                        result.operandsArray(37).head should be(domain.AnIntegerValue)
+                        result.operandsArray(37).head should be(domain.AnIntegerValue())
                         result.operandsArray(41).head should be(domain.IntegerSet(SortedSet[Int](0)))
                     } else {
                         // OK - the code is dead, however, we cannot identify this, but the
@@ -1340,7 +1340,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val result = BaseAI(method, domain)
 
                     if (result.operandsArray(38) != null) {
-                        result.operandsArray(38).head should be(domain.AnIntegerValue)
+                        result.operandsArray(38).head should be(domain.AnIntegerValue())
                         result.operandsArray(42).head should be(domain.IntegerSet(SortedSet[Int](0)))
                     } else {
                         // OK - the code is dead, however, we cannot identify this, but the
@@ -1352,7 +1352,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues2").head
                     val result = BaseAI(method, domain)
-                    result.operandsArray(38).head should be(domain.AnIntegerValue)
+                    result.operandsArray(38).head should be(domain.AnIntegerValue())
                     result.operandsArray(42).head should be(domain.IntegerSet(SortedSet[Int](0)))
                 }
 
@@ -1360,7 +1360,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues3").head
                     val result = BaseAI(method, domain)
-                    result.operandsArray(45).head should be(domain.AnIntegerValue)
+                    result.operandsArray(45).head should be(domain.AnIntegerValue())
                     result.operandsArray(49).head should be(domain.IntegerSet(SortedSet[Int](0)))
                 }
 
@@ -1369,8 +1369,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val method = IntegerValues.findMethod("cfDependentValues4").head
                     val result = BaseAI(method, domain)
                     result.operandsArray(46).head should be(domain.IntegerSet(SortedSet[Int](2)))
-                    result.operandsArray(50).head should be(domain.AnIntegerValue)
-                    result.operandsArray(54).head should be(domain.AnIntegerValue)
+                    result.operandsArray(50).head should be(domain.AnIntegerValue())
+                    result.operandsArray(54).head should be(domain.AnIntegerValue())
                     if (result.operandsArray(50).head eq result.operandsArray(54).head)
                         fail("unequal values are made equal")
                 }
@@ -1381,7 +1381,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val result = BaseAI(method, domain)
                     result.operandsArray(47).head should be(domain.IntegerSet(SortedSet[Int](2)))
                     result.operandsArray(51).head should be(domain.IntegerSet(SortedSet[Int](0, 1)))
-                    result.operandsArray(55).head should be(domain.AnIntegerValue)
+                    result.operandsArray(55).head should be(domain.AnIntegerValue())
                 }
 
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
@@ -1390,17 +1390,17 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val result = BaseAI(method, domain)
 
                     result.operandsArray(77).head should be(domain.IntegerSet(SortedSet[Int](0)))
-                    result.operandsArray(81).head should be(domain.AnIntegerValue)
-                    result.operandsArray(85).head should be(domain.AnIntegerValue)
+                    result.operandsArray(81).head should be(domain.AnIntegerValue())
+                    result.operandsArray(85).head should be(domain.AnIntegerValue())
                     result.operandsArray(89).head should be(domain.IntegerSet(SortedSet[Int](0)))
 
-                    result.operandsArray(97).head should be(domain.AnIntegerValue)
+                    result.operandsArray(97).head should be(domain.AnIntegerValue())
                     result.operandsArray(101).head should be(domain.IntegerSet(SortedSet[Int](0)))
-                    result.operandsArray(105).head should be(domain.AnIntegerValue)
+                    result.operandsArray(105).head should be(domain.AnIntegerValue())
                     result.operandsArray(109).head should be(domain.IntegerSet(SortedSet[Int](0)))
 
-                    result.operandsArray(117).head should be(domain.AnIntegerValue)
-                    result.operandsArray(121).head should be(domain.AnIntegerValue)
+                    result.operandsArray(117).head should be(domain.AnIntegerValue())
+                    result.operandsArray(121).head should be(domain.AnIntegerValue())
                     result.operandsArray(125).head should be(domain.IntegerSet(SortedSet[Int](0)))
                     result.operandsArray(129).head should be(domain.IntegerSet(SortedSet[Int](0)))
                 }
@@ -1421,7 +1421,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val method = IntegerValues.findMethod("moreComplexAliasing").head
                     val result = BaseAI(method, domain)
 
-                    result.operandsArray(20).head should be(domain.AnIntegerValue)
+                    result.operandsArray(20).head should be(domain.AnIntegerValue())
                 }
             }
         }

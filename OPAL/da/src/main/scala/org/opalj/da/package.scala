@@ -5,12 +5,11 @@ import scala.annotation.switch
 import scala.xml.Node
 import scala.xml.Text
 import scala.xml.NodeSeq
-
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.IntArray
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContext
 import org.opalj.bi.VisibilityModifier
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines convenience methods related to representing certain class file elements.
@@ -23,55 +22,55 @@ package object da {
     type Constant_Pool_Index = ClassFileReader.Constant_Pool_Index
     type Constant_Pool = ClassFileReader.Constant_Pool
 
-    type Interfaces = IntArray // <=> Array of Constant_Pool_Index
-    def NoInterfaces: Interfaces = IntArray.empty
+    type Interfaces = ArraySeq[Constant_Pool_Index]
+    def NoInterfaces: Interfaces = ArraySeq.empty
 
-    type Methods = RefArray[Method_Info]
-    def NoMethods: Methods = RefArray.empty
+    type Methods = ArraySeq[Method_Info]
+    def NoMethods: Methods = ArraySeq.empty
 
-    type MethodParameters = RefArray[MethodParameter]
+    type MethodParameters = ArraySeq[MethodParameter]
 
-    type Fields = RefArray[Field_Info]
-    def NoFields: Fields = RefArray.empty
+    type Fields = ArraySeq[Field_Info]
+    def NoFields: Fields = ArraySeq.empty
 
-    type Attributes = RefArray[Attribute]
-    def NoAttributes: Attributes = RefArray.empty
+    type Attributes = ArraySeq[Attribute]
+    def NoAttributes: Attributes = ArraySeq.empty
 
-    type ExceptionIndexTable = IntArray // <=> Array of Constant_Pool_Indexes identifying the types of the method's thrown exceptions
+    type ExceptionIndexTable = ArraySeq[Constant_Pool_Index]
 
-    type ExceptionTable = RefArray[ExceptionTableEntry]
-    def NoExceptionTable: ExceptionTable = RefArray.empty
+    type ExceptionTable = ArraySeq[ExceptionTableEntry]
+    def NoExceptionTable: ExceptionTable = ArraySeq.empty
 
-    type ElementValuePairs = RefArray[ElementValuePair]
-    def NoElementValuePairs: ElementValuePairs = RefArray.Empty
+    type ElementValuePairs = ArraySeq[ElementValuePair]
+    def NoElementValuePairs: ElementValuePairs = ArraySeq.empty
 
-    type Annotations = RefArray[da.Annotation]
+    type Annotations = ArraySeq[da.Annotation]
     type ParameterAnnotations = Annotations
-    type ParametersAnnotations = RefArray[ParameterAnnotations]
+    type ParametersAnnotations = ArraySeq[ParameterAnnotations]
 
-    type TypeAnnotations = RefArray[TypeAnnotation]
+    type TypeAnnotations = ArraySeq[TypeAnnotation]
 
-    type StackMapFrames = RefArray[StackMapFrame]
-    type TypeAnnotationPathElementsTable = RefArray[TypeAnnotationPathElement]
+    type StackMapFrames = ArraySeq[StackMapFrame]
+    type TypeAnnotationPathElementsTable = ArraySeq[TypeAnnotationPathElement]
 
-    type LocalvarTable = RefArray[LocalvarTableEntry]
+    type LocalvarTable = ArraySeq[LocalvarTableEntry]
 
-    type VerificationTypeInfos = RefArray[VerificationTypeInfo]
+    type VerificationTypeInfos = ArraySeq[VerificationTypeInfo]
 
-    type PackageIndexTable = IntArray // Array[Constant_Pool_Index]
+    type PackageIndexTable = ArraySeq[Constant_Pool_Index]
 
-    type Requires = RefArray[RequiresEntry]
-    type Exports = RefArray[ExportsEntry]
-    type ExportsToIndexTable = IntArray // Array[CONSTANT_Module_Index]
-    type Opens = RefArray[OpensEntry]
-    type OpensToIndexTable = IntArray // Array[CONSTANT_Module_Index]
-    type Uses = IntArray // Array[CONSTANT_Class_Index]
-    type Provides = RefArray[ProvidesEntry]
-    type ProvidesWithIndexTable = IntArray // Array[CONSTANT_Class_Index]
+    type Requires = ArraySeq[RequiresEntry]
+    type Exports = ArraySeq[ExportsEntry]
+    type ExportsToIndexTable = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Module_Index]
+    type Opens = ArraySeq[OpensEntry]
+    type OpensToIndexTable = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Module_Index]
+    type Uses = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Class_Index]
+    type Provides = ArraySeq[ProvidesEntry]
+    type ProvidesWithIndexTable = ArraySeq[Constant_Pool_Index] // Array[CONSTANT_Class_Index]
 
-    type ClassesArray = IntArray // Array[Constant_Pool_Index]
+    type ClassesArray = ArraySeq[Constant_Pool_Index] // Array[Constant_Pool_Index]
 
-    type RecordComponents = RefArray[RecordComponent]
+    type RecordComponents = ArraySeq[RecordComponent]
 
     /**
      * A node representing the context's access flags and a string that can be used
@@ -84,8 +83,8 @@ package object da {
 
         val explicitAccessFlags =
             VisibilityModifier.get(access_flags) match {
-                case None ⇒ if (accessFlags.length() == 0) "default" else accessFlags+" default"
-                case _    ⇒ accessFlags
+                case None => if (accessFlags.length() == 0) "default" else accessFlags+" default"
+                case _    => accessFlags
             }
 
         (
@@ -150,25 +149,25 @@ package object da {
      */
     def parseFieldType(descriptor: String): FieldTypeInfo = {
         (descriptor.charAt(0): @scala.annotation.switch) match {
-            case 'B' ⇒ ByteTypeInfo
-            case 'C' ⇒ CharTypeInfo
-            case 'D' ⇒ DoubleTypeInfo
-            case 'F' ⇒ FloatTypeInfo
-            case 'I' ⇒ IntTypeInfo
-            case 'J' ⇒ LongTypeInfo
-            case 'S' ⇒ ShortTypeInfo
-            case 'Z' ⇒ BooleanTypeInfo
-            case 'L' ⇒ asJavaObjectType(descriptor.substring(1, descriptor.length - 1))
-            case '[' ⇒
+            case 'B' => ByteTypeInfo
+            case 'C' => CharTypeInfo
+            case 'D' => DoubleTypeInfo
+            case 'F' => FloatTypeInfo
+            case 'I' => IntTypeInfo
+            case 'J' => LongTypeInfo
+            case 'S' => ShortTypeInfo
+            case 'Z' => BooleanTypeInfo
+            case 'L' => asJavaObjectType(descriptor.substring(1, descriptor.length - 1))
+            case '[' =>
                 val componentType = descriptor.substring(1)
                 parseFieldType(componentType) match {
-                    case ArrayTypeInfo(elementType, dimensions, elementTypeIsBaseType) ⇒
+                    case ArrayTypeInfo(elementType, dimensions, elementTypeIsBaseType) =>
                         ArrayTypeInfo(elementType, dimensions + 1, elementTypeIsBaseType)
-                    case TypeInfo(elementType, elementTypeIsBaseType) ⇒
+                    case TypeInfo(elementType, elementTypeIsBaseType) =>
                         ArrayTypeInfo(elementType, 1, elementTypeIsBaseType)
                 }
 
-            case _ ⇒
+            case _ =>
                 val message = s"$descriptor is not a valid field type descriptor"
                 throw new IllegalArgumentException(message)
         }
@@ -213,14 +212,14 @@ package object da {
                 if (parameters.nonEmpty) {
                     val spanParameters: Seq[Node] =
                         if (methodParameters.isEmpty) {
-                            parameters map { p ⇒ p.asSpan("parameter") }
+                            parameters map { p => p.asSpan("parameter") }
                         } else {
-                            parameters.zip(methodParameters.get) map { parameter ⇒
+                            parameters.zip(methodParameters.get) map { parameter =>
                                 val (fti, methodParameter) = parameter
                                 methodParameter.toXHTML(fti)
                             }
                         }
-                    spanParameters.tail.foldLeft(List(spanParameters.head)) { (r, n) ⇒
+                    spanParameters.tail.foldLeft(List(spanParameters.head)) { (r, n) =>
                         r ++ List(Text(", "), n)
                     }
                 } else {
@@ -236,15 +235,15 @@ package object da {
     private[da] def parseParameterType(md: String, startIndex: Int): (FieldTypeInfo, Int) = {
         val td = md.charAt(startIndex)
         (td: @switch) match {
-            case 'L' ⇒
+            case 'L' =>
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
                     ObjectTypeInfo(md.substring(startIndex + 1, endIndex).replace('/', '.')),
                     endIndex + 1
                 )
-            case '[' ⇒
+            case '[' =>
                 parseParameterType(md, startIndex + 1) match {
-                    case (ati: ArrayTypeInfo, index) ⇒
+                    case (ati: ArrayTypeInfo, index) =>
                         (
                             ArrayTypeInfo(
                                 ati.elementTypeAsJava,
@@ -253,10 +252,10 @@ package object da {
                             ),
                                 index
                         )
-                    case (t, index) ⇒
+                    case (t, index) =>
                         (ArrayTypeInfo(t.asJava, 1, t.elementTypeIsBaseType), index)
                 }
-            case _ ⇒
+            case _ =>
                 (
                     parseFieldType(td.toString),
                     startIndex + 1
@@ -272,6 +271,6 @@ package object da {
     }
 
     def byteArrayToNode(info: Array[Byte]): Node = {
-        <pre>{ info.map(b ⇒ f"$b%02x").grouped(32).map(_.mkString("", " ", "\n")).mkString }</pre>
+        <pre>{ info.map(b => f"$b%02x").grouped(32).map(_.mkString("", " ", "\n")).mkString }</pre>
     }
 }

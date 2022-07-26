@@ -11,7 +11,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.biProject
@@ -103,7 +102,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         with l0.TypeLevelDynamicLoads
         with l1.DefaultReferenceValuesBinding
         with l1.DefaultIntegerRangeValues {
-        domain: Configuration ⇒
+        domain: Configuration =>
     }
 
     abstract class SharedInvocationDomain(
@@ -138,13 +137,13 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             method:                             Method,
             val frequentEvaluationWarningLevel: Int                   = 10
     ) extends SharedInvocationDomain(project, method) {
-        callingDomain ⇒
+        callingDomain =>
 
         lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
             val operands =
                 mapOperands(
-                    localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) ⇒
-                        if (n ne null) n :&: l else l),
+                    localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
+                        if (n ne null) n :: l else l),
                     coordinatingDomain
                 )
 
@@ -179,7 +178,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             method:           Method,
             val callerDomain: SharedInvocationDomain
     ) extends SharedInvocationDomain(project, method)
-        with ChildPerformInvocationsWithRecursionDetection { callingDomain ⇒
+        with ChildPerformInvocationsWithRecursionDetection { callingDomain =>
 
         final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
 

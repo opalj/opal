@@ -3,8 +3,9 @@ package org.opalj
 package collection
 package mutable
 
+import scala.collection.SeqFactory
+import scala.collection.SpecificIterableFactory
 import scala.collection.mutable
-import scala.collection.generic
 
 /**
  * An array based implementation of a mutable stack of `int` values which has a
@@ -19,16 +20,14 @@ final class IntArrayStack private (
         private var data:  Array[Int],
         private var size0: Int
 ) extends mutable.IndexedSeq[Int]
-    with mutable.IndexedSeqLike[Int, IntArrayStack]
+    with mutable.IndexedSeqOps[Int, mutable.Stack, IntArrayStack]
     with mutable.Cloneable[IntArrayStack]
-    with Serializable { stack ⇒
+    with Serializable { stack =>
 
-    def this(initialSize: Int = 4) { this(new Array[Int](initialSize), 0) }
+    def this(initialSize: Int = 4) = this(new Array[Int](initialSize), 0)
 
-    override def size: Int = size0
     override def length: Int = size0
     override def isEmpty: Boolean = size0 == 0
-    override def nonEmpty: Boolean = size0 > 0
 
     override def apply(index: Int): Int = {
         val size0 = this.size0
@@ -39,9 +38,12 @@ final class IntArrayStack private (
         data(valueIndex)
     }
 
-    override def update(index: Int, v: Int): Unit = data(size0 - 1 - index) = v
+    override def empty: IntArrayStack = IntArrayStack.empty
+    override def iterableFactory: SeqFactory[mutable.Stack] = mutable.Stack(this).iterableFactory
+    override def fromSpecific(coll: IterableOnce[Int]): IntArrayStack = IntArrayStack.fromSpecific(coll)
+    override protected def newSpecificBuilder: mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
 
-    override def newBuilder: mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
+    override def update(index: Int, v: Int): Unit = data(size0 - 1 - index) = v
 
     override def reverse: IntArrayStack = {
         val newData = new Array[Int](size0)
@@ -146,7 +148,7 @@ final class IntArrayStack private (
         this.data(0)
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int => U): Unit = {
         val data = this.data
         var i = this.size0 - 1
         while (i >= 0) {
@@ -155,7 +157,7 @@ final class IntArrayStack private (
         }
     }
 
-    def foreachReverse[U](f: Int ⇒ U): Unit = {
+    def foreachReverse[U](f: Int => U): Unit = {
         val data = this.data
         val max = this.size0 - 1
         var i = 0
@@ -165,7 +167,7 @@ final class IntArrayStack private (
         }
     }
 
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = {
         val data = this.data
         var v = z
         var i = this.size0 - 1
@@ -200,39 +202,46 @@ final class IntArrayStack private (
     override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
 
     override def toString: String = {
-        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
+        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "->")})"
     }
 }
 
 /**
  * Factory to create [[IntArrayStack]]s.
  */
-object IntArrayStack {
+object IntArrayStack extends SpecificIterableFactory[Int, IntArrayStack] {
 
-    implicit def canBuildFrom: generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] = {
-        new generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] {
-            def apply(): mutable.Builder[Int, IntArrayStack] = newBuilder
-            def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder
+    class IntArrayStackBuilder(var stack: IntArrayStack) extends mutable.Builder[Int, IntArrayStack] {
+        override def addOne(elem: Int): this.type = {
+            stack += elem
+            this
         }
+        override def clear(): Unit = stack = empty
+        override def result(): IntArrayStack = stack
     }
 
-    def newBuilder: mutable.Builder[Int, IntArrayStack] = {
-        new mutable.ArrayBuffer[Int] mapResult fromSeq
+    override def empty: IntArrayStack = new IntArrayStack
+
+    override def fromSpecific(it: IterableOnce[Int]): IntArrayStack = {
+        val builder = newBuilder
+        val iterator = it.iterator
+        while (iterator.hasNext)
+            builder.addOne(iterator.next())
+        builder.result()
     }
+
+    override def newBuilder =
+        new IntArrayStackBuilder(empty)
 
     /**
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq(seq: TraversableOnce[Int]): IntArrayStack = {
-        seq.foldLeft(new IntArrayStack(8))(_ += _)
-    }
+    def fromSeq(seq: IterableOnce[Int]): IntArrayStack = fromSpecific(seq)
 
     def apply(value: Int): IntArrayStack = {
         val initialArray = new Array[Int](10)
         initialArray(0) = value
         new IntArrayStack(initialArray, 1)
     }
-
-    def empty: IntArrayStack = new IntArrayStack
 }

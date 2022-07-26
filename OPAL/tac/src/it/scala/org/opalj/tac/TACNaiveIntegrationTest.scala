@@ -8,11 +8,12 @@ import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
-import java.io.File
 
-import org.opalj.bi.TestResources.locateTestResources
+import java.io.File
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.
@@ -33,15 +34,15 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val mutex = new Object
         for {
-            file ← folder.listFiles()
+            file <- folder.listFiles()
             if !Thread.currentThread().isInterrupted
             if file.isFile && file.canRead && file.getName.endsWith(".jar")
             project = Project(file)
             ch = project.classHierarchy
-            cf ← project.allProjectClassFiles.par
+            cf <- project.allProjectClassFiles.par
             if !Thread.currentThread().isInterrupted
-            m ← cf.methods
-            body ← m.body
+            m <- cf.methods
+            body <- m.body
         } {
             try {
                 // without using AIResults
@@ -52,7 +53,7 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
                 )
                 ToTxt(params, tacNaiveCode, cfg, true, true, true)
             } catch {
-                case e: Throwable ⇒ this.synchronized {
+                case e: Throwable => this.synchronized {
                     val methodSignature = m.toJava
                     mutex.synchronized {
                         println(methodSignature+" - size: "+body.instructions.length)
@@ -71,7 +72,7 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
                         println(
                             body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
                         )
-                        errors ::= ((file+":"+methodSignature, e))
+                        errors = (s"$file:$methodSignature", e) :: errors
                     }
                 }
             }
@@ -96,13 +97,13 @@ class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
         it("it should be able to convert all methods of the JDK") {
             time {
                 checkFolder(jreLibFolder)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            } { t => info(s"conversion took ${t.toSeconds}") }
         }
 
         it("it should be able to convert all methods of the set of collected class files") {
             time {
                 checkFolder(biClassfilesFolder)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            } { t => info(s"conversion took ${t.toSeconds}") }
         }
 
     }

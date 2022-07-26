@@ -59,24 +59,24 @@ object ObjectTypes {
             e1.time('match) {
                 result += (
                     testType match {
-                        case ObjectType.Boolean ⇒ (time % 10000).toInt
-                        case ObjectType.Byte    ⇒ (time % 20000).toInt
-                        case ObjectType.Char    ⇒ (time % 30000).toInt
-                        case ObjectType.Short   ⇒ (time % 40000).toInt
-                        case ObjectType.Integer ⇒ (time % 50000).toInt
-                        case ObjectType.Long    ⇒ (time % 60000).toInt
-                        case ObjectType.Float   ⇒ (time % 70000).toInt
-                        case ObjectType.Double  ⇒ (time % 80000).toInt
+                        case ObjectType.Boolean => (time % 10000).toInt
+                        case ObjectType.Byte    => (time % 20000).toInt
+                        case ObjectType.Char    => (time % 30000).toInt
+                        case ObjectType.Short   => (time % 40000).toInt
+                        case ObjectType.Integer => (time % 50000).toInt
+                        case ObjectType.Long    => (time % 60000).toInt
+                        case ObjectType.Float   => (time % 70000).toInt
+                        case ObjectType.Double  => (time % 80000).toInt
 
-                        case _                          ⇒ 0
+                        case _                          => 0
                     }
                 )
             }
             i += 1
         }
         "After "+i+" runs the result is :"+result
-    }) { (avg, t, ts) ⇒
-        val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+    }) { (avg, t, ts) =>
+        val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
         println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
     }
     println(e1.getTime('setup))
@@ -85,15 +85,15 @@ object ObjectTypes {
     val e2 = new PerformanceEvaluation()
 
     val matcher = ObjectType.primitiveTypeWrapperMatcher[(Long), Int](
-        (v: Long) ⇒ (v % 10000).toInt,
-        (v: Long) ⇒ (v % 20000).toInt,
-        (v: Long) ⇒ (v % 30000).toInt,
-        (v: Long) ⇒ (v % 40000).toInt,
-        (v: Long) ⇒ (v % 50000).toInt,
-        (v: Long) ⇒ (v % 60000).toInt,
-        (v: Long) ⇒ (v % 70000).toInt,
-        (v: Long) ⇒ (v % 80000).toInt,
-        (v: Long) ⇒ 0)
+        (v: Long) => (v % 10000).toInt,
+        (v: Long) => (v % 20000).toInt,
+        (v: Long) => (v % 30000).toInt,
+        (v: Long) => (v % 40000).toInt,
+        (v: Long) => (v % 50000).toInt,
+        (v: Long) => (v % 60000).toInt,
+        (v: Long) => (v % 70000).toInt,
+        (v: Long) => (v % 80000).toInt,
+        (v: Long) => 0)
     time(1, 2, 5, {
 
         var result = 0
@@ -117,8 +117,8 @@ object ObjectTypes {
             i += 1
         }
         "After "+i+"runs the result is :"+result
-    }) { (avg, t, ts) ⇒
-        val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+    }) { (avg, t, ts) =>
+        val sTs = ts.map(t => f"${ns2sec(t)}%1.4f").mkString(", ")
         println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
     }
 

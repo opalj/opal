@@ -16,8 +16,8 @@ case class LLOAD(lvIndex: Int) extends LLoadInstruction with ExplicitLocalVariab
 
     override def equals(other: Any): Boolean =
         other match {
-            case that: LLOAD ⇒ that.lvIndex == this.lvIndex
-            case _           ⇒ false
+            case that: LLOAD => that.lvIndex == this.lvIndex
+            case _           => false
         }
 
     override def hashCode: Int = LLOAD.opcode * 233 + lvIndex
@@ -31,11 +31,11 @@ object LLOAD extends InstructionMetaInformation {
 
     def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction =
         (lvIndex: @scala.annotation.switch) match {
-            case 0 ⇒ LLOAD_0
-            case 1 ⇒ LLOAD_1
-            case 2 ⇒ LLOAD_2
-            case 3 ⇒ LLOAD_3
-            case _ ⇒ new LLOAD(lvIndex)
+            case 0 => LLOAD_0
+            case 1 => LLOAD_1
+            case 2 => LLOAD_2
+            case 3 => LLOAD_3
+            case _ => new LLOAD(lvIndex)
         }
 
 }

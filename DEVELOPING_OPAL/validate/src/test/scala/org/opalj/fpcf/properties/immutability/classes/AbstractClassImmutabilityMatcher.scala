@@ -26,7 +26,7 @@ class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends 
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
     }
@@ -40,16 +40,16 @@ class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends 
     ): Option[String] = {
         import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 
-        if (!properties.exists(p ⇒ p match {
-            case DependentlyImmutableClass(_) ⇒
+        if (!properties.exists(p => p match {
+            case DependentlyImmutableClass(_) =>
                 val annotationType = a.annotationType.asFieldType.asObjectType
                 val parameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x ⇒ x.asStringValue.value)
+                        asArrayValue.values.map(x => x.asStringValue.value)
                 property.isInstanceOf[classes.DependentlyImmutableClass] &&
                     p.asInstanceOf[classes.DependentlyImmutableClass].parameter.size == parameters.size &&
-                    parameters.toList.forall(param ⇒ p.asInstanceOf[classes.DependentlyImmutableClass].parameter.contains(param))
-            case _ ⇒ p == property
+                    parameters.toList.forall(param => p.asInstanceOf[classes.DependentlyImmutableClass].parameter.contains(param))
+            case _ => p == property
         })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -76,8 +76,8 @@ class MutableClassMatcher extends AbstractPropertyMatcher {
         properties: Traversable[Property]
     ): Option[String] = {
         if (properties.exists {
-            case _: MutableClass ⇒ true
-            case _               ⇒ false
+            case _: MutableClass => true
+            case _               => false
         })
             Some(a.elementValuePairs.head.value.asStringValue.value)
         else

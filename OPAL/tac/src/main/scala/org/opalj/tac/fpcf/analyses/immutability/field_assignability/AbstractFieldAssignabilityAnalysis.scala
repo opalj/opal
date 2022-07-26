@@ -84,32 +84,6 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         def hasDependees: Boolean = {
             escapeDependees.nonEmpty || tacDependees.valuesIterator.exists(_.isRefinable) ||
-              callerDependees.valuesIterator.exists(_.isRefinable) ||
-              fieldAssignabilityDependees.nonEmpty || purityDependees.nonEmpty
-        }
-
-        def dependees: Set[SomeEOptionP] = {
-            (escapeDependees ++ callerDependees.valuesIterator.filter(_.isRefinable) ++
-              purityDependees ++ fieldAssignabilityDependees ++
-              tacDependees.valuesIterator.filter(_.isRefinable)).toSet
-        }
-    }
-
-    trait AbstractFieldAssignabilityAnalysisState {
-
-        val field: Field
-        var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
-        var fieldAssignability: FieldAssignability = NonAssignable
-        var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
-        var tacPCs: Map[Method, PCs] = Map.empty
-        var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
-        var fieldAssignabilityDependees: Set[EOptionP[Field, FieldAssignability]] = Set.empty
-        var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
-        var lazyInitInvocation: Option[(DeclaredMethod, PC)] = None
-        var purityDependees: Set[EOptionP[Context, Purity]] = Set.empty
-
-        def hasDependees: Boolean = {
-            escapeDependees.nonEmpty || tacDependees.valuesIterator.exists(_.isRefinable) ||
                 callerDependees.valuesIterator.exists(_.isRefinable) ||
                 fieldAssignabilityDependees.nonEmpty || purityDependees.nonEmpty
         }
@@ -132,9 +106,9 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
     def doDetermineFieldAssignability(entity: Entity): PropertyComputationResult = {
         entity match {
-            case field: Field ⇒
+            case field: Field =>
                 determineFieldAssignability(field)
-            case _ ⇒
+            case _ =>
                 val m = entity.getClass.getSimpleName+" is not an org.opalj.br.Field"
                 throw new IllegalArgumentException(m)
         }
@@ -186,8 +160,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             }
         }
         for {
-            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            (taCode, callers) ← getTACAIAndCallers(method, pcs) //TODO field accesses via this
+            (method, pcs) <- fieldAccessInformation.writeAccesses(field)
+            (taCode, callers) <- getTACAIAndCallers(method, pcs) //TODO field accesses via this
         } {
             if (methodUpdatesField(method, taCode, callers, pcs))
                 return Result(field, Assignable);
@@ -215,26 +189,26 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     def handleEscapeProperty(
         ep: EOptionP[(Context, DefinitionSite), EscapeProperty]
     )(implicit state: AnalysisState): Boolean = ep match {
-        case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) =>
             false
 
-        case FinalP(AtMost(_)) ⇒
+        case FinalP(AtMost(_)) =>
             true
 
-        case _: FinalEP[(Context, DefinitionSite), EscapeProperty] ⇒
+        case _: FinalEP[(Context, DefinitionSite), EscapeProperty] =>
             true // Escape state is worse than via return
 
-        case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) =>
             state.escapeDependees += ep
             false
 
-        case InterimUBP(AtMost(_)) ⇒
+        case InterimUBP(AtMost(_)) =>
             true
 
-        case _: SomeInterimEP ⇒
+        case _: SomeInterimEP =>
             true // Escape state is worse than via return
 
-        case _ ⇒
+        case _ =>
             state.escapeDependees += ep
             false
     }
@@ -249,7 +223,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         callers: Callers
     )(implicit state: AnalysisState): Boolean = {
         val dm = declaredMethods(method)
-        ref.definedBy.forall { defSite ⇒
+        ref.definedBy.forall { defSite =>
             if (defSite < 0) false // Must be locally created
             else {
                 val definition = stmts(defSite).asAssignment
@@ -258,7 +232,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 else if (!definition.expr.isNew) false
                 else {
                     var hasEscaped = false
-                    callers.forNewCalleeContexts(null, dm) { context ⇒
+                    callers.forNewCalleeContexts(null, dm) { context =>
                         val entity = (context, definitionSites(method, definition.pc))
                         val escapeProperty = propertyStore(entity, EscapeProperty.key)
                         hasEscaped ||= handleEscapeProperty(escapeProperty)
@@ -275,24 +249,24 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
      */
     def c(eps: SomeEPS)(implicit state: AnalysisState): ProperPropertyComputationResult = {
         val isNonFinal = eps.pk match {
-            case EscapeProperty.key ⇒
+            case EscapeProperty.key =>
                 val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
                 state.escapeDependees = state.escapeDependees.filter(_.e != eps.e)
                 handleEscapeProperty(newEP)
-            case TACAI.key ⇒
+            case TACAI.key =>
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = newEP.e
                 val pcs = state.tacPCs(method)
-                state.tacDependees += method → newEP
+                state.tacDependees += method -> newEP
                 val callersProperty = state.callerDependees(declaredMethods(method))
                 if (callersProperty.hasUBP)
                     methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, pcs)
                 else false
-            case Callers.key ⇒
+            case Callers.key =>
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]]
                 val method = newEP.e.definedMethod
                 val pcs = state.tacPCs(method)
-                state.callerDependees += newEP.e → newEP
+                state.callerDependees += newEP.e -> newEP
                 val tacProperty = state.tacDependees(method)
                 if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined)
                     methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, pcs)
@@ -329,8 +303,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     )(implicit state: AnalysisState): Option[(TACode[TACMethodParameter, V], Callers)] = {
         val tacEOptP = propertyStore(method, TACAI.key)
         val tac = if (tacEOptP.hasUBP) tacEOptP.ub.tac else None
-        state.tacDependees += method → tacEOptP
-        state.tacPCs += method → pcs
+        state.tacDependees += method -> tacEOptP
+        state.tacPCs += method -> pcs
 
         val declaredMethod: DeclaredMethod = declaredMethods(method)
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
@@ -349,13 +323,13 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         state: AnalysisState
     ): Boolean = {
         calleesEOP match {
-            case FinalP(callees) ⇒
+            case FinalP(callees) =>
                 state.calleesDependee = None
                 handleCallees(callees)
-            case InterimUBP(callees: Callees) ⇒
+            case InterimUBP(callees: Callees) =>
                 state.calleesDependee = Some(calleesEOP)
                 handleCallees(callees)
-            case _ ⇒
+            case _ =>
                 state.calleesDependee = Some(calleesEOP)
                 false
         }
@@ -363,13 +337,13 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
     def handleCallees(callees: Callees)(implicit state: AnalysisState): Boolean = {
         val pc = state.lazyInitInvocation.get._2
-        callees.callerContexts.exists { callerContext ⇒
+        callees.callerContexts.exists { callerContext =>
             if (callees.isIncompleteCallSite(callerContext, pc)) {
                 state.fieldAssignability = Assignable
                 true
             } else {
-                val targets = callees.callees(callerContext, pc).toTraversable
-                if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
+                val targets = callees.callees(callerContext, pc).to(Iterable)
+                if (targets.exists(target => isNonDeterministic(propertyStore(target, Purity.key)))) {
                     state.fieldAssignability = Assignable
                     true
                 } else false
@@ -385,9 +359,9 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     def isNonDeterministic(
         eop: EOptionP[Context, Purity]
     )(implicit state: AnalysisState): Boolean = eop match {
-        case LBP(p: Purity) if p.isDeterministic  ⇒ false
-        case UBP(p: Purity) if !p.isDeterministic ⇒ true
-        case _ ⇒
+        case LBP(p: Purity) if p.isDeterministic  => false
+        case UBP(p: Purity) if !p.isDeterministic => true
+        case _ =>
             state.purityDependees += eop
             false
     }
@@ -399,9 +373,9 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     def isNotAssignableField(
         eop: EOptionP[Field, FieldAssignability]
     )(implicit state: AnalysisState): Boolean = eop match {
-        case LBP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒ true
-        case UBP(Assignable | UnsafelyLazilyInitialized)                       ⇒ false
-        case _ ⇒
+        case LBP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) => true
+        case UBP(Assignable | UnsafelyLazilyInitialized)                       => false
+        case _ =>
             state.fieldAssignabilityDependees += eop
             true
     }
@@ -410,19 +384,19 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
      * Returns the initialization value of a given type.
      */
     def getDefaultValues()(implicit state: AnalysisState): Set[Any] = state.field.fieldType match {
-        case FloatType | ObjectType.Float     ⇒ Set(0.0f)
-        case DoubleType | ObjectType.Double   ⇒ Set(0.0d)
-        case LongType | ObjectType.Long       ⇒ Set(0L)
-        case CharType | ObjectType.Character  ⇒ Set('\u0000')
-        case BooleanType | ObjectType.Boolean ⇒ Set(false)
+        case FloatType | ObjectType.Float     => Set(0.0f)
+        case DoubleType | ObjectType.Double   => Set(0.0d)
+        case LongType | ObjectType.Long       => Set(0L)
+        case CharType | ObjectType.Character  => Set('\u0000')
+        case BooleanType | ObjectType.Boolean => Set(false)
         case IntegerType |
             ObjectType.Integer |
             ByteType |
             ObjectType.Byte |
             ShortType |
-            ObjectType.Short ⇒ Set(0)
-        case ObjectType.String ⇒ Set("", null)
-        case _: ReferenceType  ⇒ Set(null)
+            ObjectType.Short => Set(0)
+        case ObjectType.String => Set("", null)
+        case _: ReferenceType  => Set(null)
     }
 
 }

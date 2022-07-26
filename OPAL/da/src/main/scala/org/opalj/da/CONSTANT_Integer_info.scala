@@ -46,7 +46,7 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
 
     override def toString(implicit cp: Constant_Pool): String = {
         if (value < 0 || value >= 10) {
-            var r = value+" (= 0x"+value.toHexString
+            var r = s"$value (= 0x${value.toHexString}"
             if (value == Int.MinValue)
                 r += " = Int.Min"
             else if (value == Int.MaxValue)

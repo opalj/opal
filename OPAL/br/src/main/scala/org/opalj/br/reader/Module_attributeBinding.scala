@@ -4,7 +4,9 @@ package br
 package reader
 
 import org.opalj.bi.reader.Module_attributeReader
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * The factory method to create the "class level" `Module` attribute (Java 9).
@@ -19,17 +21,22 @@ trait Module_attributeBinding
     type Module_attribute = br.Module
 
     type RequiresEntry = br.Requires
+    override implicit val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[br.Requires])
 
     type ExportsEntry = br.Exports
+    override implicit val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[br.Exports])
     type ExportsToIndexEntry = String
 
     type OpensEntry = br.Opens
+    override implicit val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[br.Opens])
 
     type OpensToIndexEntry = String // module name
 
     type UsesEntry = ObjectType
 
     type ProvidesEntry = br.Provides
+    override implicit val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[br.Provides])
+
     type ProvidesWithIndexEntry = ObjectType
 
     override def Module_attribute(
@@ -53,7 +60,7 @@ trait Module_attributeBinding
             requires,
             exports,
             opens,
-            RefArray.mapFrom(uses)(cp(_).asObjectType(cp)),
+            ArraySeq.from(uses).map(cp(_).asObjectType(cp)),
             provides
         )
     }
@@ -80,7 +87,7 @@ trait Module_attributeBinding
         br.Exports(
             cp(exports_index).asPackageIdentifier(cp),
             exports_flags,
-            RefArray.mapFrom(exports_to_index_table)(cp(_).asModuleIdentifier(cp))
+            ArraySeq.from(exports_to_index_table).map(cp(_).asModuleIdentifier(cp))
         )
     }
 
@@ -93,7 +100,7 @@ trait Module_attributeBinding
         br.Opens(
             cp(opens_index).asPackageIdentifier(cp),
             opens_flags,
-            RefArray.mapFrom(opens_to_index_table)(cp(_).asModuleIdentifier(cp))
+            ArraySeq.from(opens_to_index_table).map(cp(_).asModuleIdentifier(cp))
         )
     }
 
@@ -104,7 +111,7 @@ trait Module_attributeBinding
     ): ProvidesEntry = {
         br.Provides(
             cp(provides_index).asObjectType(cp),
-            RefArray.mapFrom(provides_with_index_table)(cp(_).asObjectType(cp))
+            ArraySeq.from(provides_with_index_table).map(cp(_).asObjectType(cp))
         )
     }
 

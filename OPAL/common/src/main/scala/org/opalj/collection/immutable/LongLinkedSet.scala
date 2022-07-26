@@ -11,7 +11,7 @@ trait LongLinkedSet extends LongSet {
 
     type ThisSet <: LongLinkedSet
 
-    def forFirstN[U](n: Int)(f: Long ⇒ U): Unit
+    def forFirstN[U](n: Int)(f: Long => U): Unit
 
     def head: Long
 

@@ -48,7 +48,7 @@ package object cg {
     }
 
     final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
-        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) ⇒
+        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) =>
             if (ai.underlyingPC(pc) < 0)
                 origins + pc // parameter
             else if (pc >= 0 && pcToIndex(pc) >= 0)

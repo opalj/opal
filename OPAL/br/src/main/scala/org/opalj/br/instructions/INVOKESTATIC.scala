@@ -33,7 +33,7 @@ case class INVOKESTATIC(
 
     final def isInstanceMethod: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
         methodDescriptor.parametersCount
     }
 

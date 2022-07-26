@@ -58,7 +58,7 @@ class FieldLocalityTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            _ ⇒ Set(classOf[DefaultDomainWithCFGAndDefUse[URL]])
+            _ => Set(classOf[DefaultDomainWithCFGAndDefUse[URL]])
         }
         p.get(RTACallGraphKey)
     }

@@ -51,7 +51,7 @@ package object fpcf {
             // when we reach this point assertions are turned off
             info(FrameworkName, "Production Build")
         } catch {
-            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
+            case _: AssertionError => info(FrameworkName, "Development Build with Assertions")
         }
     }
 
@@ -76,7 +76,7 @@ package object fpcf {
 
     final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
 
-    final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ Option[InterimEP[E, P]]
+    final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] => Option[InterimEP[E, P]]
 
     final type SomeUpdateComputation = UpdateComputation[_ <: Entity, _ <: Property]
 
@@ -93,26 +93,26 @@ package object fpcf {
      *       that processes entire classes to compute the properties of some fields. This scenario
      *       is, however, only supported by eager analyses.
      */
-    final type PropertyComputation[E <: Entity] = E ⇒ PropertyComputationResult
+    final type PropertyComputation[E <: Entity] = E => PropertyComputationResult
 
     final type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    final type ProperPropertyComputation[E <: Entity] = E ⇒ ProperPropertyComputationResult
+    final type ProperPropertyComputation[E <: Entity] = E => ProperPropertyComputationResult
 
     final type SomeProperPropertyComputation = ProperPropertyComputation[_ <: Entity]
 
-    final type OnUpdateContinuation = SomeEPS ⇒ PropertyComputationResult
+    final type OnUpdateContinuation = SomeEPS => PropertyComputationResult
 
-    final type ProperOnUpdateContinuation = SomeEPS ⇒ ProperPropertyComputationResult
+    final type ProperOnUpdateContinuation = SomeEPS => ProperPropertyComputationResult
 
-    final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ ProperPropertyComputationResult
+    final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] = EOptionP[E, P] => ProperPropertyComputationResult
 
     /**
      * The [[FallbackReason]] specifies the reason why a fallback property is required. This
      * information can be used to handle situations where the fallback should be different
      * based on the information whether a corresponding analysis was executed or not.
      */
-    final type FallbackPropertyComputation[E <: Entity, P <: Property] = (PropertyStore, FallbackReason, E) ⇒ P
+    final type FallbackPropertyComputation[E <: Entity, P <: Property] = (PropertyStore, FallbackReason, E) => P
 
     final type SomeFallbackPropertyComputation = FallbackPropertyComputation[_ <: Entity, _ <: Property]
 
@@ -120,7 +120,7 @@ package object fpcf {
      * A function that continues the computation of a property. It takes
      * the entity and property of the entity on which the computation depends.
      */
-    final type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
+    final type Continuation[P <: Property] = (Entity, P) => PropertyComputationResult
 
     // final type SomeContinuation = Continuation[_ <: Property]
 
@@ -129,7 +129,7 @@ package object fpcf {
     /**
      * The result of a computation if the computation derives multiple properties at the same time.
      */
-    final type ComputationResults = TraversableOnce[SomeFinalEP]
+    final type ComputationResults = IterableOnce[SomeFinalEP]
 
     private[fpcf] final val AnalysisKeyName = "<internal>opalj.PartialResultUpdateComputation"
 

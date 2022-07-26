@@ -5,13 +5,13 @@ package queries
 package util
 
 import scala.collection.mutable
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
+
+import org.opalj.da.ClassFile
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.da.ClassFile
 
 /**
  * A predefined query for finding simple API features. It supports - in particular -
@@ -42,12 +42,12 @@ import org.opalj.da.ClassFile
  */
 abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    def apiFeatures: Chain[APIFeature]
+    def apiFeatures: List[APIFeature]
 
     /**
      * The unique ids of the computed features.
      */
-    override lazy val featureIDs: Seq[String] = apiFeatures.map(_.featureID).toSeq
+    override lazy val featureIDs: Seq[String] = apiFeatures.map(_.featureID)
 
     /**
      * Returns the set of all relevant receiver types.
@@ -65,8 +65,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
@@ -74,18 +74,18 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
 
         def getClassFileLocation(objectType: ObjectType): Option[ClassFileLocation[S]] = {
             val classFile = project.classFile(objectType)
-            classFile.flatMap { cf ⇒ project.source(cf).map(src ⇒ ClassFileLocation(src, cf)) }
+            classFile.flatMap { cf => project.source(cf).map(src => ClassFileLocation(src, cf)) }
         }
 
         var occurrencesCount = apiFeatures.foldLeft(Map.empty[String, Int])(
-            (result, feature) ⇒ result + ((feature.featureID, 0))
+            (result, feature) => result + ((feature.featureID, 0))
         )
 
         // TODO Use LocationsContainer
-        val locations = mutable.Map.empty[String, Chain[Location[S]]]
+        val locations = mutable.Map.empty[String, List[Location[S]]]
 
         for {
-            classFeature ← apiFeatures.collect { case ce: ClassExtension ⇒ ce }
+            classFeature <- apiFeatures.collect { case ce: ClassExtension => ce }
             featureID = classFeature.featureID
             subtypes = allSubtypes(classFeature.declClass, reflexive = false).filter(isProjectType)
             size = subtypes.size
@@ -95,13 +95,13 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             occurrencesCount += ((featureID, count))
 
             for {
-                subtype ← subtypes
+                subtype <- subtypes
                 if project.isProjectType(subtype)
-                classFileLocation ← getClassFileLocation(subtype)
+                classFileLocation <- getClassFileLocation(subtype)
             } {
                 locations += ((
                     featureID,
-                    classFileLocation :&: locations.getOrElse(featureID, Naught)
+                    classFileLocation :: locations.getOrElse(featureID, List.empty)
                 ))
             }
         }
@@ -109,33 +109,33 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
         // Checking method API features
 
         for {
-            cf ← project.allProjectClassFiles
+            cf <- project.allProjectClassFiles
             if !isInterrupted()
-            source ← project.source(cf)
-            m @ MethodWithBody(code) ← cf.methods
-            pcAndInvocation ← code collect { case mii: MethodInvocationInstruction ⇒ mii }
+            source <- project.source(cf)
+            m @ MethodWithBody(code) <- cf.methods
+            pcAndInvocation <- code collect ({ case mii: MethodInvocationInstruction => mii }: PartialFunction[Instruction, MethodInvocationInstruction])
             pc = pcAndInvocation.pc
             mii = pcAndInvocation.value
             declClass = mii.declaringClass
             if declClass.isObjectType
             if apiTypes.contains(declClass.asObjectType)
-            apiFeature ← apiFeatures
+            apiFeature <- apiFeatures
             featureID = apiFeature.featureID
-            APIMethod ← apiFeature.apiMethods
+            APIMethod <- apiFeature.apiMethods
             if APIMethod.matches(mii)
         } {
             val l = InstructionLocation(source, m, pc)
-            locations += ((featureID, l :&: locations.getOrElse(featureID, Naught)))
+            locations += ((featureID, l :: locations.getOrElse(featureID, List.empty)))
             val count = occurrencesCount(featureID) + 1
             occurrencesCount = occurrencesCount + ((featureID, count))
         }
 
-        apiFeatures.map { apiFeature ⇒
+        apiFeatures.map { apiFeature =>
             val featureID = apiFeature.featureID
             Feature(
                 featureID,
                 occurrencesCount(featureID),
-                locations.getOrElse(featureID, Naught)
+                locations.getOrElse(featureID, List.empty)
             )
         }
     }

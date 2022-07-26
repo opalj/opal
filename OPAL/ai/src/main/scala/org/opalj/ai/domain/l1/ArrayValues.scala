@@ -17,7 +17,7 @@ import org.opalj.br.ArrayType
  * @author   Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues ⇒
+    domain: CorrelationalDomain with ConcreteIntegerValues =>
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have
@@ -37,7 +37,7 @@ trait ArrayValues extends l1.ReferenceValues {
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION FOR AlL DIMENSIONS BEYOND THE FIRST ONE;
     // WE ARE NOT TRACKING THE ESCAPE STATE!
-    trait InitializedArrayValue extends ArrayValue { this: DomainInitializedArrayValue ⇒
+    trait InitializedArrayValue extends ArrayValue { this: DomainInitializedArrayValue =>
 
         /**
          * The size of the first dimension of the array. (The size of this dimension is immutable!)
@@ -66,7 +66,7 @@ trait ArrayValues extends l1.ReferenceValues {
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainInitializedArrayValueTag(that) ⇒
+                case DomainInitializedArrayValueTag(that) =>
                     if (this.theUpperTypeBound eq that.theUpperTypeBound) {
                         if (that.theLength == this.theLength) {
                             if (this.refId == that.refId)
@@ -80,16 +80,16 @@ trait ArrayValues extends l1.ReferenceValues {
                         }
                     } else {
                         classHierarchy.joinArrayTypes(this.theUpperTypeBound, that.theUpperTypeBound) match {
-                            case Left(newType) ⇒
+                            case Left(newType) =>
                                 StructuralUpdate(ArrayValue(origin, No, isPrecise = false, newType, nextRefId()))
-                            case Right(utb) ⇒
+                            case Right(utb) =>
                                 StructuralUpdate(ObjectValue(origin, No, utb, nextRefId()))
                         }
                     }
 
-                case _ ⇒
+                case _ =>
                     super.doJoinWithNonNullValueWithSameOrigin(joinPC, other) match {
-                        case NoUpdate ⇒
+                        case NoUpdate =>
                             // => This array and the other array have a corresponding
                             //    abstract representation (w.r.t. the next abstraction level!)
                             //    but we still need to drop the concrete information about the
@@ -97,7 +97,7 @@ trait ArrayValues extends l1.ReferenceValues {
                             val thisRefId = this.refId
                             val newRefId = if (other.refId == thisRefId) thisRefId else nextRefId()
                             StructuralUpdate(ArrayValue(origin, No, true, theUpperTypeBound, newRefId))
-                        case answer ⇒
+                        case answer =>
                             answer
                     }
             }
@@ -108,35 +108,35 @@ trait ArrayValues extends l1.ReferenceValues {
                 return true;
 
             other match {
-                case that: InitializedArrayValue ⇒
+                case that: InitializedArrayValue =>
                     theLength == that.theLength && (theUpperTypeBound eq that.theUpperTypeBound)
 
-                case _ ⇒
+                case _ =>
                     false
             }
         }
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             val adaptedValue = target match {
-                case av: l1.ArrayValues ⇒
+                case av: l1.ArrayValues =>
                     av.InitializedArrayValue(vo, theUpperTypeBound, theLength)
-                case rv: l1.ReferenceValues ⇒
+                case rv: l1.ReferenceValues =>
                     rv.ArrayValue(vo, No, isPrecise = true, theUpperTypeBound, rv.nextRefId())
-                case _ ⇒
+                case _ =>
                     target.ReferenceValue(vo, theUpperTypeBound)
             }
             adaptedValue.asInstanceOf[target.DomainValue]
         }
 
         override def equals(other: Any): Boolean = other match {
-            case DomainInitializedArrayValueTag(that) ⇒
+            case DomainInitializedArrayValueTag(that) =>
                 (that eq this) || (
                     (that canEqual this) &&
                     this.origin == that.origin &&
                     this.theLength == that.theLength &&
                     (this.theUpperTypeBound eq that.theUpperTypeBound)
                 )
-            case _ ⇒
+            case _ =>
                 false
         }
 
@@ -158,7 +158,7 @@ trait ArrayValues extends l1.ReferenceValues {
         length:    DomainValue,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        this.intValue(length) { length ⇒
+        this.intValue(length) { length =>
             InitializedArrayValue(pc, arrayType, length)
         } {
             super.NewArray(pc, length, arrayType)
@@ -167,14 +167,14 @@ trait ArrayValues extends l1.ReferenceValues {
 
     /**
      * The lengths per dimension are found in the following order:
-     * `..., count1, [count2, ...] →`
+     * `..., count1, [count2, ...] ->`
      */
     override def NewArray(
         pc:        Int,
         lengths:   Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        intValue(lengths.last) { length ⇒
+        intValue(lengths.last) { length =>
             InitializedArrayValue(pc, arrayType, length)
         } {
             super.NewArray(pc, lengths, arrayType)

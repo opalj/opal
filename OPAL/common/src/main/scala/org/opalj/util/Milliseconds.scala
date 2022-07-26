@@ -31,7 +31,7 @@ class Milliseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
     def toString(withUnit: Boolean): String = {
         if (withUnit) {
-            timeSpan+" ms"
+            s"$timeSpan ms"
         } else {
             timeSpan.toString
         }

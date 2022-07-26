@@ -195,7 +195,7 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
             val p = JavaFixtureProject(r)
             val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
             val inMemoryClassLoader =
-                new InMemoryClassLoader(Map(testClassType.toJava → Assembler(ba.toDA(cf))))
+                new InMemoryClassLoader(Map(testClassType.toJava -> Assembler(ba.toDA(cf))))
             val fixtureClassLoader = new URLClassLoader(Array(r.toURI.toURL))
 
             it("simpleConcat should concatenate strings correctly") {
@@ -292,7 +292,7 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
             val p = JavaFixtureProject(r)
             val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
             val inMemoryClassLoader =
-                new InMemoryClassLoader(Map(testClassType.toJava → Assembler(ba.toDA(cf))))
+                new InMemoryClassLoader(Map(testClassType.toJava -> Assembler(ba.toDA(cf))))
             val fixtureClassLoader = new URLClassLoader(Array(r.toURI.toURL))
 
             it("should provide toString as expected") {

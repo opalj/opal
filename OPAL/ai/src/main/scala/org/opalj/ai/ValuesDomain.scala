@@ -2,7 +2,6 @@
 package org.opalj
 package ai
 
-import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 import org.opalj.value.IsIllegalValue
@@ -23,7 +22,7 @@ import org.opalj.br.Type
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait ValuesDomain { domain ⇒
+trait ValuesDomain { domain =>
 
     /**
      * This project's class hierarchy.
@@ -152,7 +151,7 @@ trait ValuesDomain { domain ⇒
      *      If values need to be compared across domains, they need to be adapted
      *      to a target domain first.
      */
-    trait Value extends ValueInformation { this: DomainValue ⇒
+    trait Value extends ValueInformation { this: DomainValue =>
 
         @inline final def PCIndependent: Int = Int.MinValue
 
@@ -319,14 +318,14 @@ trait ValuesDomain { domain ⇒
                 return false;
 
             other.join(PCIndependent, this).updateType match {
-                case StructuralUpdateType ⇒
+                case StructuralUpdateType =>
                     // ... i.e., either this value abstracts over the other value or
                     // this and the other value are not in a more/less precise relation.
                     false
                 case NoUpdateType
                     // ... if the other value abstracts over this value or equals this value.
                     | MetaInformationUpdateType // ... if the other value is equal to this value or is un-comparable.
-                    ⇒
+                    =>
                     // We have to check that the other is NOT more precise than this!
                     this.join(PCIndependent, other).isStructuralUpdate
             }
@@ -377,7 +376,7 @@ trait ValuesDomain { domain ⇒
     type DomainTypedValue[+T <: Type] >: Null <: DomainValue
 
     trait TypedValue[+T <: Type] extends Value with KnownTypedValue {
-        this: DomainTypedValue[T] ⇒
+        this: DomainTypedValue[T] =>
 
         /**
          * The type kind of the values, if the value has a specific type kind; `None` if and
@@ -407,18 +406,18 @@ trait ValuesDomain { domain ⇒
     val DomainReferenceValueTag: ClassTag[DomainReferenceValue]
 
     trait ReferenceValue extends TypedValue[ReferenceType] with IsReferenceValue {
-        this: domain.DomainReferenceValue ⇒
+        this: domain.DomainReferenceValue =>
 
         override def isPrecise: Boolean = {
             leastUpperType match {
-                case None    ⇒ true // the value is null
-                case Some(t) ⇒ classHierarchy.isKnownToBeFinal(t)
+                case None    => true // the value is null
+                case Some(t) => classHierarchy.isKnownToBeFinal(t)
             }
         }
 
-        override def baseValues: Traversable[domain.DomainReferenceValue]
+        override def baseValues: Iterable[domain.DomainReferenceValue]
 
-        override def allValues: Traversable[domain.DomainReferenceValue]
+        override def allValues: Iterable[domain.DomainReferenceValue]
 
         /*
         /**
@@ -476,7 +475,7 @@ trait ValuesDomain { domain ⇒
      * @see [[org.opalj.ai.Domain.Value]] for further details.
      */
     protected class IllegalValue extends Value with IsIllegalValue {
-        this: DomainIllegalValue ⇒
+        this: DomainIllegalValue =>
 
         @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
@@ -534,7 +533,7 @@ trait ValuesDomain { domain ⇒
     }
 
     // an implementation trait for return addresses
-    trait RETValue extends Value with IsReturnAddressValue { this: DomainValue ⇒
+    trait RETValue extends Value with IsReturnAddressValue { this: DomainValue =>
 
         @throws[DomainException]("summarize(...) is not supported by RETValue")
         override def summarize(pc: Int): DomainValue = {
@@ -547,12 +546,12 @@ trait ValuesDomain { domain ⇒
      * join the executions of subroutines.
      */
     class ReturnAddressValues extends RETValue {
-        this: DomainReturnAddressValues ⇒
+        this: DomainReturnAddressValues =>
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: RETValue ⇒ NoUpdate
-                case _           ⇒ MetaInformationUpdateIllegalValue
+                case _: RETValue => NoUpdate
+                case _           => MetaInformationUpdateIllegalValue
                 // The superclass "Value" handles the case where this value is joined with itself.
             }
         }
@@ -582,14 +581,14 @@ trait ValuesDomain { domain ⇒
      *      the point-of-view of OPAL-AI – just throw an `UnsupportedOperationException`
      *      as these additional methods will never be called by the OPAL-AI.
      */
-    class ReturnAddressValue(val address: Int) extends RETValue { this: DomainReturnAddressValue ⇒
+    class ReturnAddressValue(val address: Int) extends RETValue { this: DomainReturnAddressValue =>
 
         private[ai] final override def asReturnAddressValue: Int = address
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: RETValue ⇒ StructuralUpdate(TheReturnAddressValues)
-                case _           ⇒ MetaInformationUpdateIllegalValue
+                case _: RETValue => StructuralUpdate(TheReturnAddressValues)
+                case _           => MetaInformationUpdateIllegalValue
                 // The super class "Value" handles the case where this value is joined with itself.
 
             }
@@ -640,8 +639,8 @@ trait ValuesDomain { domain ⇒
             return v1;
 
         v1.join(pc, v2) match {
-            case NoUpdate      ⇒ v1
-            case SomeUpdate(v) ⇒ v
+            case NoUpdate      => v1
+            case SomeUpdate(v) => v
         }
     }
 
@@ -661,11 +660,11 @@ trait ValuesDomain { domain ⇒
     def summarize(pc: Int, values: Iterable[DomainValue]): DomainValue = {
         val valuesIterator = values.iterator
         var summary = valuesIterator.next().summarize(pc)
-        valuesIterator foreach { value ⇒
+        valuesIterator foreach { value =>
             if (summary ne value) {
                 summary.join(pc, value.summarize(pc)) match {
-                    case NoUpdate               ⇒ /*nothing to do*/
-                    case SomeUpdate(newSummary) ⇒ summary = newSummary.summarize(pc)
+                    case NoUpdate               => /*nothing to do*/
+                    case SomeUpdate(newSummary) => summary = newSummary.summarize(pc)
                 }
             }
         }
@@ -687,7 +686,7 @@ trait ValuesDomain { domain ⇒
      */
     def properties(
         pc:               PC,
-        propertyToString: AnyRef ⇒ String = p ⇒ p.toString
+        propertyToString: AnyRef => String = p => p.toString
     ): Option[String] = {
         None
     }

@@ -78,7 +78,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
             val aliasInformation = new IdentityHashMap[DomainValue, Integer]()
 
             var opi = -1;
-            oldOperands.foreach { op ⇒
+            oldOperands.foreach { op =>
                 val previousLocation = aliasInformation.get(op)
                 if (previousLocation == null)
                     aliasInformation.put(op, opi)
@@ -92,7 +92,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
             }
 
             var li = 0;
-            oldLocals.foreach { l ⇒
+            oldLocals.foreach { l =>
                 if ((l ne null) && (l ne TheIllegalValue)) {
                     val previousLocation = aliasInformation.get(l)
                     if (previousLocation == null)

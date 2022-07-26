@@ -42,10 +42,10 @@ trait Deprecated_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt
         Deprecated_attribute(cp, ap_name_index, ap_descriptor_index, attribute_name_index)
     }
 
-    registerAttributeReader(DeprecatedAttribute.Name → parserFactory())
+    registerAttributeReader(DeprecatedAttribute.Name -> parserFactory())
 }

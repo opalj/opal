@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
 import org.opalj.value.ValueInformation
 import org.opalj.br.Attribute
@@ -43,7 +43,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
      */
     def params: Parameters[P]
 
-    def stmts: Array[Stmt[V]] // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+    def stmts: Array[Stmt[V]]
     /**
      * The mapping between the pcs of the original bytecode instructions to the
      * index of the first statement that was generated for the bytecode instruction -
@@ -79,7 +79,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: TACode[_, _] ⇒
+            case that: TACode[_, _] =>
                 // Recall that the CFG is derived from the stmts and therefore necessarily
                 // equal when the statements are equal; this is true independent of the
                 // concrete of 3-address code that we have!
@@ -90,7 +90,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
                     JArrays.equals(this.pcToIndex, that.pcToIndex) &&
                     this.exceptionHandlers == that.exceptionHandlers
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -105,7 +105,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
 
     protected[this] def toString(taCodeType: String, additionalParameters: String): String = {
         val txtParams = s"params=($params)"
-        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e ⇒ val (s, i) = e; s"$i: $s" }
+        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e => val (s, i) = e; s"$i: $s" }
         val txtStmts = stmtsWithIndex.mkString("stmts=(\n\t", ",\n\t", "\n)")
         val txtExceptionHandlers =
             if (exceptionHandlers.nonEmpty)
@@ -169,7 +169,7 @@ object TACode {
 
 final class AITACode[P <: AnyRef, VI <: ValueInformation](
         val params:            Parameters[P],
-        val stmts:             Array[Stmt[DUVar[VI]]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+        val stmts:             Array[Stmt[DUVar[VI]]],
         val pcToIndex:         Array[Int],
         val cfg:               CFG[Stmt[DUVar[VI]], TACStmts[DUVar[VI]]],
         val exceptionHandlers: ExceptionHandlers
@@ -213,7 +213,7 @@ object AITACode {
 
 final class NaiveTACode[P <: AnyRef](
         val params:            Parameters[P],
-        val stmts:             Array[Stmt[IdBasedVar]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+        val stmts:             Array[Stmt[IdBasedVar]],
         val pcToIndex:         Array[Int],
         val cfg:               CFG[Stmt[IdBasedVar], TACStmts[IdBasedVar]],
         val exceptionHandlers: ExceptionHandlers

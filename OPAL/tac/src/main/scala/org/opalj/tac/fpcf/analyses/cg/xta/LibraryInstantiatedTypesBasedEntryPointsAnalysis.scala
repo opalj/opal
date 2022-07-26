@@ -8,7 +8,6 @@ package xta
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.opalj.collection.RefIterator
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEP
@@ -42,11 +41,10 @@ import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
  * In a library analysis scenario, this analysis complements the call graph by marking public
  * methods of instantiated types reachable by unknown callers from outside the library.
  *
- * This analysis is adapted from the RTA version. RTA only adds types to a single type set attached
- * to the Project object, which is known in advance. Because of this, the RTA version can be eager.
- * On the contrary, the XTA/... version is triggered since there are many entities with type sets
- * and the concrete entities are unknown in advance. Similarly, since a type can be added to more
- * than one type set, already processed types are remembered globally so that they are not processed twice.
+ * While for RTA, the single type set attached to the Project is known in advance, there are many
+ * entities with type sets and the concrete entities are unknown in advance. Thus, this analysis is
+ * triggered. Similarly, since a type can be added to more than one type set, already processed
+ * types are remembered globally so that they are not processed twice.
  *
  * @author Dominik Helm
  * @author Andreas Bauer
@@ -71,13 +69,13 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         numProcessedTypes: Int
     ): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
-            case UBPS(initialTypes: InstantiatedTypes, isFinal) ⇒
+            case UBPS(initialTypes: InstantiatedTypes, isFinal) =>
                 (
                     analyzeTypes(initialTypes.dropOldest(numProcessedTypes)),
                     isFinal,
                     initialTypes.types.size
                 )
-            case _ ⇒ (Iterator.empty, false, 0)
+            case _ => (Iterator.empty, false, 0)
         }
 
         val c = if (!isFinal)
@@ -98,40 +96,40 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         eps: SomeEPS
     ): PropertyComputationResult = {
         eps match {
-            case UBP(_: InstantiatedTypes) ⇒
+            case UBP(_: InstantiatedTypes) =>
                 handleInstantiatedTypes(
                     eps.asInstanceOf[EOptionP[TypeSetEntity, InstantiatedTypes]],
                     numProcessedTypes
                 )
-            case _ ⇒ throw new UnknownError("Unexpected update: "+eps)
+            case _ => throw new UnknownError("Unexpected update: "+eps)
         }
     }
 
     def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = {
         types.flatMap {
-            case ot: ObjectType if !globallySeenTypes.containsKey(ot) ⇒
+            case ot: ObjectType if !globallySeenTypes.containsKey(ot) =>
                 globallySeenTypes.put(ot, true)
-                project.classFile(ot).map { cf ⇒
-                    cf.methodsWithBody.filter(m ⇒ !m.isStatic && m.isPublic)
-                }.getOrElse(RefIterator.empty)
-            case _ ⇒ RefIterator.empty
+                project.classFile(ot).map { cf =>
+                    cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic)
+                }.getOrElse(Iterator.empty)
+            case _ => Iterator.empty
         }.map(declaredMethods(_))
     }
 
     def resultsForReachableMethods(
         reachableMethods: Iterator[DeclaredMethod]
     ): Iterator[ProperPropertyComputationResult] = {
-        reachableMethods.map { method ⇒
+        reachableMethods.map { method =>
             PartialResult[DeclaredMethod, Callers](method, Callers.key, {
-                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext ⇒
+                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
                     Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
 
-                case _: InterimEP[_, _] ⇒ None
+                case _: InterimEP[_, _] => None
 
-                case _: EPK[_, _] ⇒
+                case _: EPK[_, _] =>
                     Some(InterimEUBP(method, OnlyCallersWithUnknownContext))
 
-                case r ⇒
+                case r =>
                     throw new IllegalStateException(s"unexpected previous result $r")
             })
         }

@@ -17,15 +17,15 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  *  This key is intended to be set up by a corresponding [[org.opalj.tac.cg.CallGraphKey]].
  */
 object TypeIteratorKey
-    extends ProjectInformationKey[TypeIterator, () ⇒ TypeIterator] {
+    extends ProjectInformationKey[TypeIterator, () => TypeIterator] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Nil
 
     override def compute(project: SomeProject): TypeIterator = {
         project.getProjectInformationKeyInitializationData(this) match {
-            case Some(init) ⇒
+            case Some(init) =>
                 init()
-            case None ⇒
+            case None =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.warn(
                     "analysis configuration",

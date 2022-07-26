@@ -53,13 +53,13 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             var isExtensible = project.get(TypeExtensibilityKey)
 
             var relevantTypes = for {
-                cf ← project.allClassFiles if (isDirectlyExtensible(cf.thisType).isYes)
+                cf <- project.allClassFiles if (isDirectlyExtensible(cf.thisType).isYes)
             } yield cf.thisType
 
             if (relevantTypes.isEmpty)
                 fail("No directly extensible types found!")
 
-            relevantTypes.foreach { objectType ⇒
+            relevantTypes.foreach { objectType =>
                 isExtensible(objectType) should be(Yes)
             }
 
@@ -69,13 +69,13 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible = project.get(TypeExtensibilityKey)
 
             relevantTypes = for {
-                cf ← project.allClassFiles if (isDirectlyExtensible(cf.thisType).isYes)
+                cf <- project.allClassFiles if (isDirectlyExtensible(cf.thisType).isYes)
             } yield cf.thisType
 
             if (relevantTypes.isEmpty)
                 fail("No directly extensible types found!")
 
-            relevantTypes.foreach { objectType ⇒ isExtensible(objectType) should be(Yes) }
+            relevantTypes.foreach { objectType => isExtensible(objectType) should be(Yes) }
         }
     }
 

@@ -31,8 +31,8 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BIPUSH ⇒ this eq that
-            case _            ⇒ false
+            case that: BIPUSH => this eq that
+            case _            => false
         }
     }
 
@@ -47,7 +47,7 @@ object BIPUSH extends InstructionMetaInformation {
 
     private[this] val bipushes = {
         val bipushes = new Array[BIPUSH](256)
-        for (i ← -128 to 127) { bipushes(i + 128) = new BIPUSH(i) }
+        for (i <- -128 to 127) { bipushes(i + 128) = new BIPUSH(i) }
         bipushes
     }
 

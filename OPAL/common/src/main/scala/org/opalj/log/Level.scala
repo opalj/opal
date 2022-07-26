@@ -76,7 +76,7 @@ case object Error extends Level {
         try {
             new ExceptionLogMessage(Error, Some(category), info, t)
         } catch {
-            case it: Throwable ⇒
+            case it: Throwable =>
                 Console.err.println(
                     s"[fatal][OPAL] logging [error][$category] $info: ${t.getMessage} failed:"
                 )

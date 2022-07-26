@@ -33,14 +33,14 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     // Setup
     //
     val jlsCHFile = "ClassHierarchyJLS.ths"
-    val jlsCHCreator = List(() ⇒ getClass.getResourceAsStream(jlsCHFile))
-    val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
+    val jlsCHCreator = List(() => getClass.getResourceAsStream(jlsCHFile))
+    val jlsCH = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
-    val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
+    val javaLangCHCreator = List(() => getClass.getResourceAsStream(javaLangCHFile))
+    val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -292,7 +292,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "the default ClassHierarchy's leafTypes method"
 
     it should "return all leaf types" in {
-        jlsCH.leafTypes.toSet should be(Set(
+        jlsCH.leafTypes should be(UIDSet(
             ObjectType("java/lang/String"),
             ObjectType("java/lang/Class"),
             ObjectType("java/lang/Cloneable"),
@@ -492,7 +492,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val typesProject =
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             true
         )
 
@@ -745,8 +745,8 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     val apacheANTCH =
         ClassHierarchy(
-            Traversable.empty,
-            List(() ⇒ getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
+            Iterable.empty,
+            List(() => getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
         )(GlobalLogContext)
 
     it should "be possible to get all supertypes, even if not all information is available" in {
@@ -769,7 +769,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     final val clusteringProject = {
         val classFiles = ClassFiles(locateTestResources("classfiles/ClusteringTestProject.jar", "bi"))
-        Project(classFiles, Traversable.empty, true)
+        Project(classFiles, Iterable.empty, true)
     }
 
     behavior of "the ClassHierarchy's method to traverse the class hierarchy"
@@ -795,24 +795,24 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
                 s"Window >: ${classHierarchy.allSubtypes(window, false)}\n"+
                 classHierarchy.asTSV)
 
-        clusteringProject.classFile(simpleWindow).get.methods find { method ⇒
+        clusteringProject.classFile(simpleWindow).get.methods find { method =>
             method.name == "draw" && method.descriptor == NoArgsAndReturnVoid
-        } should be('defined)
+        } should be(Symbol("defined"))
 
         import clusteringProject.resolveInterfaceMethodReference
-        resolveInterfaceMethodReference(window, "draw", NoArgsAndReturnVoid) should be('nonEmpty)
+        resolveInterfaceMethodReference(window, "draw", NoArgsAndReturnVoid) should be(Symbol("nonEmpty"))
     }
 
     val jvmFeaturesProject =
         Project(
             ClassFiles(locateTestResources("jvm_features-1.8-g-parameters-genericsignature.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             true
         )
 
     it should "correctly iterate over all suptypes of Object, even without the JDK included" in {
         var foundSomeEnumerationClass = false
-        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ObjectType.Object, false) { subTypeCF ⇒
+        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ObjectType.Object, false) { subTypeCF =>
             val subType = subTypeCF.thisType
             if (subType == ObjectType("class_types/SomeEnumeration")) {
                 foundSomeEnumerationClass = true
@@ -829,6 +829,6 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 object ClassHierarchyTest {
 
     val generics = locateTestResources("generictypes.jar", "bi")
-    val genericProject = Project(ClassFiles(generics), Traversable.empty, true)
+    val genericProject = Project(ClassFiles(generics), Iterable.empty, true)
 
 }

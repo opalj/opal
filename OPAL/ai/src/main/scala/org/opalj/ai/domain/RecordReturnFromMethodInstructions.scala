@@ -22,7 +22,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain =>
 
     @volatile private[this] var returnFromMethodInstructions: PCs = NoPCs
 

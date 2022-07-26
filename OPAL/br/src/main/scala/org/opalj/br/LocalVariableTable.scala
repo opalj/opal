@@ -13,8 +13,8 @@ case class LocalVariableTable(localVariables: LocalVariables) extends CodeAttrib
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: LocalVariableTable ⇒ this.similar(that)
-            case _                        ⇒ false
+            case that: LocalVariableTable => this.similar(that)
+            case _                        => false
         }
     }
 
@@ -24,7 +24,7 @@ case class LocalVariableTable(localVariables: LocalVariables) extends CodeAttrib
             this.localVariables.forall(other.localVariables.contains)
     }
 
-    override def remapPCs(codeSize: Int, f: PC ⇒ PC): CodeAttribute = {
+    override def remapPCs(codeSize: Int, f: PC => PC): CodeAttribute = {
         val newLocalVariables = localVariables.flatMap[LocalVariable](_.remapPCs(codeSize, f))
         LocalVariableTable(newLocalVariables)
     }

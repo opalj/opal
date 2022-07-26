@@ -50,7 +50,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
         BasicReport(result)
@@ -63,7 +63,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         project.get(RTACallGraphKey)
 
-        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
         }
 
@@ -83,7 +83,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 )
                 ._1
             propertyStore.waitOnPhaseCompletion();
-        } { t ⇒
+        } { t =>
             analysisTime = t.toSeconds
         }
 
@@ -91,11 +91,11 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val groupedResults = propertyStore
             .entities(FieldImmutability.key)
-            .filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
+            .filter(field => allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
             .toTraversable
             .groupBy(_.toFinalEP.p)
 
-        val order = (eps1: EPS[Entity, FieldImmutability], eps2: EPS[Entity, FieldImmutability]) ⇒
+        val order = (eps1: EPS[Entity, FieldImmutability], eps2: EPS[Entity, FieldImmutability]) =>
             eps1.e.toString < eps2.e.toString
         val mutableFields = groupedResults.getOrElse(MutableField, Seq.empty).toSeq.sortWith(order)
         val nonTransitivelyImmutableFields =
@@ -141,7 +141,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             bw.write(output)
             bw.close()
         } catch {
-            case e: IOException ⇒
+            case e: IOException =>
                 println(
                     s""" Could not write file: ${file.getName}
                | ${e.getMessage}

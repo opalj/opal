@@ -5,7 +5,7 @@ package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -45,19 +45,19 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
      */
     protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler]
+    ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
         project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
-            case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator ⇒
+            case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.error(
                     "analysis configuration",
                     s"must not configure multiple type iterators"
                 )
                 throw new IllegalArgumentException()
-            case Some(_) ⇒ () ⇒ this.typeIterator
-            case None ⇒ () ⇒ {
+            case Some(_) => () => this.typeIterator
+            case None => () => {
                 this.typeIterator = getTypeIterator(project)
                 this.typeIterator
             }
@@ -76,7 +76,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             registeredAnalyses(project).flatMap(_.requiredProjectInformation)
     }
 
-    protected[this] def registeredAnalyses(project: SomeProject): Seq[FPCFAnalysisScheduler] = {
+    protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
         implicit val logContext: LogContext = project.logContext
         val config = project.config
 
@@ -107,14 +107,14 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val cg = new CallGraph()
 
         project.updateProjectInformationKeyInitializationData(CallGraphKey) {
-            case Some(_) ⇒
+            case Some(_) =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.error(
                     "analysis configuration",
                     s"must not compute multiple call graphs"
                 )
                 throw new IllegalArgumentException()
-            case None ⇒ cg
+            case None => cg
         }
 
         cg
@@ -129,10 +129,10 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             import mirror.reflectModule
             Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
         } catch {
-            case sre: ScalaReflectionException ⇒
+            case sre: ScalaReflectionException =>
                 error("call graph", s"cannot find analysis scheduler $className", sre)
                 None
-            case cce: ClassCastException ⇒
+            case cce: ClassCastException =>
                 error("call graph", "analysis scheduler class is invalid", cce)
                 None
         }
@@ -157,9 +157,9 @@ object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
     override def compute(project: SomeProject): CallGraph = {
 
         project.getProjectInformationKeyInitializationData(this) match {
-            case Some(cg) ⇒
+            case Some(cg) =>
                 cg
-            case None ⇒
+            case None =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.error(
                     "analysis configuration",

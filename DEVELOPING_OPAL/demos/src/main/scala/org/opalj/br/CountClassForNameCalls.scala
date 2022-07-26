@@ -3,11 +3,12 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.INVOKESTATIC
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Counts the number of `Class.forName` calls.
@@ -21,7 +22,7 @@ object CountClassForNameCalls extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         import ObjectType.{String, Class}
@@ -34,11 +35,11 @@ object CountClassForNameCalls extends ProjectAnalysisApplication {
             for {
                 // Let's traverse all methods of all class files that have a
                 // concrete (non-native) implementation.
-                classFile ← project.allProjectClassFiles.par
-                method @ MethodWithBody(code) ← classFile.methods
+                classFile <- project.allProjectClassFiles.par
+                method @ MethodWithBody(code) <- classFile.methods
                 // Match all invocations of the method:
                 // Class.forName(String) : Class<?>
-                PCAndInstruction(pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← code
+                PCAndInstruction(pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) <- code
             } yield {
                 method.toJava(s"pc=$pc")
             }

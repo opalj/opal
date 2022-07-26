@@ -15,7 +15,7 @@ package org.opalj.collection.mutable
  */
 final class RefAccumulator[A <: AnyRef] private (
         private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
-) extends {
+) {
 
     def isEmpty: Boolean = data.isEmpty
     def nonEmpty: Boolean = data.nonEmpty
@@ -24,12 +24,12 @@ final class RefAccumulator[A <: AnyRef] private (
         data ::= i
     }
 
-    def ++=(is: TraversableOnce[A]): Unit = {
+    def ++=(is: IterableOnce[A]): Unit = {
         is match {
-            case it: Iterator[A] ⇒
+            case it: Iterator[A] =>
                 if (it.hasNext) data ::= it
-            case is /*not a traversable once...*/ ⇒
-                if (is.nonEmpty) data ::= is.toIterator
+            case is /*not a traversable once...*/ =>
+                if (is.iterator.nonEmpty) data ::= is.iterator
         }
     }
 
@@ -38,13 +38,14 @@ final class RefAccumulator[A <: AnyRef] private (
      */
     def pop(): A = {
         data.head match {
-            case it: Iterator[A @unchecked] ⇒
+            case it: Iterator[A @unchecked] =>
                 val v = it.next()
                 if (!it.hasNext) data = data.tail
                 v
-            case v: A @unchecked ⇒
+            case v: A @unchecked =>
                 data = data.tail
                 v
+            case _ => throw new Exception("Unrecognized type")
         }
     }
 

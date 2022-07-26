@@ -32,7 +32,7 @@ case class INVOKESPECIAL(
 
     final def isInstanceMethod: Boolean = true
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
         methodDescriptor.parametersCount + 1
     }
 

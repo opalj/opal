@@ -3,8 +3,6 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
@@ -18,9 +16,6 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     //
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
-
-    type Constant_Pool_Entry <: ConstantPoolEntry
-    implicit val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry]
 
     type CONSTANT_Class_info <: Constant_Pool_Entry
     type CONSTANT_Fieldref_info <: Constant_Pool_Entry
@@ -78,7 +73,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    def registerDeferredAction(cp: Constant_Pool)(deferredAction: ClassFile ⇒ ClassFile): Unit = {
+    def registerDeferredAction(cp: Constant_Pool)(deferredAction: ClassFile => ClassFile): Unit = {
         val store = cp(0).asInstanceOf[DeferredActionsStore]
         store.synchronized { store += deferredAction }
     }
@@ -86,7 +81,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     override def applyDeferredActions(cp: Constant_Pool, classFile: ClassFile): ClassFile = {
         var transformedClassFile = classFile
         val das = cp(0).asInstanceOf[DeferredActionsStore]
-        das.foreach { deferredAction ⇒ transformedClassFile = deferredAction(transformedClassFile) }
+        das.foreach { deferredAction => transformedClassFile = deferredAction(transformedClassFile) }
         das.clear()
         transformedClassFile
     }
@@ -123,37 +118,37 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
         while (i < constant_pool_count) {
             val tag = in.readUnsignedByte
             constant_pool_entries(i) = (tag: @scala.annotation.switch) match {
-                case CONSTANT_Class_ID ⇒
+                case CONSTANT_Class_ID =>
                     i += 1
                     CONSTANT_Class_info(in.readUnsignedShort)
-                case CONSTANT_Fieldref_ID ⇒
+                case CONSTANT_Fieldref_ID =>
                     i += 1
                     CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
-                case CONSTANT_Methodref_ID ⇒
+                case CONSTANT_Methodref_ID =>
                     i += 1
                     CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
-                case CONSTANT_InterfaceMethodref_ID ⇒
+                case CONSTANT_InterfaceMethodref_ID =>
                     i += 1
                     CONSTANT_InterfaceMethodref_info(in.readUnsignedShort, in.readUnsignedShort)
-                case CONSTANT_String_ID ⇒
+                case CONSTANT_String_ID =>
                     i += 1
                     CONSTANT_String_info(in.readUnsignedShort)
-                case CONSTANT_Integer_ID ⇒
+                case CONSTANT_Integer_ID =>
                     i += 1
                     CONSTANT_Integer_info(in.readInt)
-                case CONSTANT_Float_ID ⇒
+                case CONSTANT_Float_ID =>
                     i += 1
                     CONSTANT_Float_info(in.readFloat)
-                case CONSTANT_Long_ID ⇒
+                case CONSTANT_Long_ID =>
                     i += 2
                     CONSTANT_Long_info(in.readLong)
-                case CONSTANT_Double_ID ⇒
+                case CONSTANT_Double_ID =>
                     i += 2
                     CONSTANT_Double_info(in.readDouble)
-                case CONSTANT_NameAndType_ID ⇒
+                case CONSTANT_NameAndType_ID =>
                     i += 1
                     CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
-                case CONSTANT_Utf8_ID ⇒
+                case CONSTANT_Utf8_ID =>
                     i += 1
                     if (in.markSupported()) {
                         in.mark(UShort.MaxValue + 2)
@@ -175,28 +170,28 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                         CONSTANT_Utf8_info(raw, tin.readUTF)
                     }
 
-                case CONSTANT_MethodHandle_ID ⇒
+                case CONSTANT_MethodHandle_ID =>
                     i += 1
                     CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
-                case CONSTANT_MethodType_ID ⇒
+                case CONSTANT_MethodType_ID =>
                     i += 1
                     CONSTANT_MethodType_info(in.readUnsignedShort)
-                case CONSTANT_InvokeDynamic_ID ⇒
+                case CONSTANT_InvokeDynamic_ID =>
                     i += 1
                     CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
 
-                case CONSTANT_Module_ID ⇒
+                case CONSTANT_Module_ID =>
                     i += 1
                     CONSTANT_Module_info(in.readUnsignedShort)
-                case CONSTANT_Package_ID ⇒
+                case CONSTANT_Package_ID =>
                     i += 1
                     CONSTANT_Package_info(in.readUnsignedShort)
 
-                case CONSTANT_Dynamic_ID ⇒
+                case CONSTANT_Dynamic_ID =>
                     i += 1
                     CONSTANT_Dynamic_info(in.readUnsignedShort, in.readUnsignedShort)
 
-                case _ ⇒
+                case _ =>
                     val header = s"wrong constant pool tag: $tag (entry: $i/$constant_pool_count); "
                     val message =
                         constant_pool_entries.iterator.zipWithIndex.slice(1, i).map(_.swap).

@@ -14,7 +14,7 @@ import org.opalj.bytecode.RTJar
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.reader.readJREClassFiles
 import org.opalj.br.reader.readRTJarClassFiles
-import org.opalj.br.reader.{ClassFileBinding ⇒ ClassFileReader}
+import org.opalj.br.reader.{ClassFileBinding => ClassFileReader}
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.reader.Java11FrameworkWithCaching
@@ -37,9 +37,9 @@ object TestSupport {
         new Java11FrameworkWithCaching(new BytecodeInstructionsCache)
     }
 
-    def createJREProject(): Project[URL] = Project(readJREClassFiles(), Traversable.empty, true)
+    def createJREProject(): Project[URL] = Project(readJREClassFiles(), Iterable.empty, true)
 
-    def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
+    def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Iterable.empty, true)
 
     def biProjectWithJDK(projectJARName: String, jdkAPIOnly: Boolean = false): Project[URL] = {
         val resources = locateTestResources(projectJARName, "bi")
@@ -82,7 +82,7 @@ object TestSupport {
         projectReader: ClassFileReader         = DefaultJava11Reader,
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework),
         config:        Config                  = BaseConfig
-    ): Iterator[(String, () ⇒ Project[URL])] = {
+    ): Iterator[(String, () => Project[URL])] = {
 
         // Test fixtures don't contain main methods, but tests may rely on a reasonable
         // call graph and thus entry points
@@ -101,20 +101,20 @@ object TestSupport {
         }
 
         jreReader match {
-            case Some(jreReader) ⇒
+            case Some(jreReader) =>
                 val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
                 val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
-                (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProject ⇒
+                (allBITestJARs().iterator ++ allBITestProjectFolders().iterator) map { biProject =>
                     val projectClassFiles = projectReader.ClassFiles(biProject)
                     implicit val actualConfig: Config = configForProject(biProject)
                     val readerFactory =
-                        () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly, Traversable.empty)
+                        () => Project(projectClassFiles, jreCFs, jrePublicAPIOnly, Iterable.empty)
                     (biProject.getName, readerFactory)
                 }
-            case None ⇒
-                (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProjectJAR ⇒
+            case None =>
+                (allBITestJARs().iterator ++ allBITestProjectFolders().iterator) map { biProjectJAR =>
                     val readerFactory =
-                        () ⇒ Project(biProjectJAR, GlobalLogContext, configForProject(biProjectJAR))
+                        () => Project(biProjectJAR, GlobalLogContext, configForProject(biProjectJAR))
                     (biProjectJAR.getName, readerFactory)
                 }
         }
@@ -123,12 +123,12 @@ object TestSupport {
     def allManagedBITestProjects(
         projectReader: ClassFileReader = DefaultJava11Reader,
         jreReader:     ClassFileReader = Java9LibraryFramework
-    ): Iterator[(String, () ⇒ Project[URL])] = {
+    ): Iterator[(String, () => Project[URL])] = {
         val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
         val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
-        allManagedBITestJARs().toIterator map { biProject ⇒
+        allManagedBITestJARs().iterator map { biProject =>
             val projectClassFiles = projectReader.ClassFiles(biProject)
-            val readerFactory = () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
+            val readerFactory = () => Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
             (biProject.getName, readerFactory)
         }
     }
@@ -142,11 +142,11 @@ object TestSupport {
         projectReader: ClassFileReader         = DefaultJava11Reader,
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
     )(
-        f: (String, Project[URL]) ⇒ Unit
+        f: (String, Project[URL]) => Unit
     ): Unit = {
         val it = allBIProjects(projectReader, jreReader)
         while (it.hasNext) {
-            val (name, project) = it.next
+            val (name, project) = it.next()
             f(name, project())
             gc()
         }

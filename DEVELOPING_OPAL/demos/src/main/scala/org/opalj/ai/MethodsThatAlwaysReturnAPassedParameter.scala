@@ -3,12 +3,13 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.ai.domain.Origins
+
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
  * A very small analysis that identifies those methods that always return a value
@@ -28,12 +29,12 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val methods = for {
-            classFile ← theProject.allClassFiles.par
-            method ← classFile.methods
+            classFile <- theProject.allClassFiles.par
+            method <- classFile.methods
             if method.body.isDefined
             if method.descriptor.returnType.isReferenceType
             if (
@@ -46,14 +47,14 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
                 new domain.l1.DefaultDomain(theProject, method) with RecordLastReturnedValues
             )
             if result.domain.allReturnedValues.forall {
-                case (_, Origins(os)) if os.forall(_ < 0) ⇒ true
-                case _                                    ⇒ false
+                case (_, Origins(os)) if os.forall(_ < 0) => true
+                case _                                    => false
             }
         } yield {
             // collect the origin information
             val origins =
                 result.domain.allReturnedValues.values.
-                    map(result.domain.originsIterator(_).toChain).flatten.toSet
+                    map(result.domain.originsIterator(_).toList).flatten.toSet
 
             method.toJava + (
                 if (origins.nonEmpty)

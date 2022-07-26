@@ -36,7 +36,7 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
     def doAnalyze(
         project:       SomeProject,
         parameters:    Seq[String]  = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 
         // For each method doing INVOKESPECIAL followed by INVOKEVIRTUAL on the same
@@ -64,10 +64,10 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
 
         var result: List[LineAndColumnBasedReport[Source]] = List.empty
         for {
-            classFile ← project.allProjectClassFiles
+            classFile <- project.allProjectClassFiles
             if classFile.majorVersion >= 49
             if !project.isLibraryType(classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
         } {
             val instructions = body.instructions
             val max_pc = body.instructions.length
@@ -78,13 +78,13 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
             while (next_pc < max_pc) {
                 if (pc + 3 == next_pc) {
                     instructions(pc) match {
-                        case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) ⇒
+                        case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) =>
                             instructions(next_pc) match {
                                 case INVOKEVIRTUAL(
                                     `receiver1`,
                                     name,
                                     NoArgumentMethodDescriptor(returnType: BaseType)
-                                    ) if ((returnType ne parameterType) && (theTypes.contains(receiver1) && theMethods.contains(name))) ⇒
+                                    ) if ((returnType ne parameterType) && (theTypes.contains(receiver1) && theMethods.contains(name))) =>
                                     {
                                         result =
                                             LineAndColumnBasedReport(
@@ -100,12 +100,12 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
                                         // we have matched the sequence
                                         pc = body.pcOfNextInstruction(next_pc)
                                     }
-                                case _ ⇒
+                                case _ =>
                                     pc = next_pc
                                     next_pc = body.pcOfNextInstruction(pc)
 
                             }
-                        case _ ⇒
+                        case _ =>
                             pc = next_pc
                             next_pc = body.pcOfNextInstruction(pc)
                     }

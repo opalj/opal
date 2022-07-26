@@ -42,7 +42,7 @@ trait ModulePackages_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt
         val packageCount = in.readUnsignedShort()
         if (packageCount > 0 || reifyEmptyAttributes) {
@@ -59,6 +59,6 @@ trait ModulePackages_attributeReader extends AttributeReader {
         }
     }: ModulePackages_attribute
 
-    registerAttributeReader(ModulePackagesAttribute.Name → parserFactory())
+    registerAttributeReader(ModulePackagesAttribute.Name -> parserFactory())
 
 }

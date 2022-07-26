@@ -49,7 +49,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
         BasicReport(result)
@@ -80,17 +80,17 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
 
             propertyStore.waitOnPhaseCompletion()
 
-        } { t ⇒
+        } { t =>
             analysisTime = t.toSeconds
         }
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
 
         val groupedResults = propertyStore.entities(FieldAssignability.key).
-            filter(field ⇒ allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
+            filter(field => allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
             toTraversable.groupBy(_.toFinalEP.p)
 
-        val order = (eps1: EPS[Entity, FieldAssignability], eps2: EPS[Entity, FieldAssignability]) ⇒
+        val order = (eps1: EPS[Entity, FieldAssignability], eps2: EPS[Entity, FieldAssignability]) =>
             eps1.e.toString < eps2.e.toString
         val assignableFields = groupedResults(Assignable).toSeq.sortWith(order)
         val notThreadSafeLazyInitializedFieldReferences = groupedResults(UnsafelyLazilyInitialized).
@@ -136,7 +136,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
             bw.write(output)
             bw.close()
         } catch {
-            case e: IOException ⇒ println(
+            case e: IOException => println(
                 s""" Could not write file: ${file.getName}
                | ${e.getMessage}
                |""".stripMargin

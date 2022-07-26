@@ -14,7 +14,7 @@ import org.opalj.br.instructions.ReturnInstruction
  */
 trait SimpleBooleanPropertyTracing
     extends PropertyTracing
-    with RecordReturnFromMethodInstructions { domain: Domain with TheCode ⇒
+    with RecordReturnFromMethodInstructions { domain: Domain with TheCode =>
 
     /**
      * A name associated with the property. Used for debugging purposes only.
@@ -26,8 +26,8 @@ trait SimpleBooleanPropertyTracing
 
         def join(otherProperty: DomainProperty): Update[DomainProperty] =
             this.state & otherProperty.state match {
-                case `state`  ⇒ NoUpdate
-                case newState ⇒ StructuralUpdate(new BooleanProperty(newState))
+                case `state`  => NoUpdate
+                case newState => StructuralUpdate(new BooleanProperty(newState))
             }
 
         override def toString: String = domain.propertyName+"("+state+")"
@@ -44,11 +44,11 @@ trait SimpleBooleanPropertyTracing
     def initialPropertyValue(): DomainProperty = new BooleanProperty(false)
 
     def hasPropertyOnExit: Boolean = {
-        allReturnFromMethodInstructions forall { pc ⇒ getProperty(pc).state }
+        allReturnFromMethodInstructions forall { pc => getProperty(pc).state }
     }
 
     def hasPropertyOnNormalReturn: Boolean = {
-        allReturnFromMethodInstructions forall { pc ⇒
+        allReturnFromMethodInstructions forall { pc =>
             !code.instructions(pc).isInstanceOf[ReturnInstruction] || getProperty(pc).state
         }
     }

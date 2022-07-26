@@ -34,7 +34,7 @@ class FieldAssignabilityTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
 
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             import org.opalj.ai.domain.l1
             Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }

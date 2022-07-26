@@ -33,7 +33,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIte
     def calleesOf(m: DeclaredMethod): Iterator[(Int, Iterator[Context])] = {
         // IMPROVE: avoid inefficient boxing operations
         val callees = ps(m, Callees.key).ub
-        callees.callerContexts.flatMap(callees.callSites(_).toIterator)
+        callees.callerContexts.flatMap(callees.callSites(_).iterator)
     }
 
     def calleesPropertyOf(m: DeclaredMethod): Callees = {
@@ -64,7 +64,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIte
      * For the given method it returns all callers, including the pc of the call-site and a flag,
      * indicating whether the call was direct (true) or indirect (false).
      */
-    def callersOf(m: DeclaredMethod): TraversableOnce[(DeclaredMethod, Int, Boolean)] = {
+    def callersOf(m: DeclaredMethod): IterableOnce[(DeclaredMethod, Int, Boolean)] = {
         ps(m, Callers.key).ub.callers(m)
     }
 
@@ -83,17 +83,17 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIte
     def reachableMethods(): Iterator[Context] = {
         val callersProperties = ps.entities(Callers.key)
         callersProperties.flatMap {
-            case EUBP(m: DeclaredMethod, ub: Callers) if ub ne NoCallers ⇒
-                ub.calleeContexts(m).map { context ⇒
+            case EUBP(m: DeclaredMethod, ub: Callers) if ub ne NoCallers =>
+                ub.calleeContexts(m).iterator.map { context =>
                     if (context.hasContext) context
                     else typeIterator.newContext(m)
                 }
-            case _ ⇒
+            case _ =>
                 Iterator.empty
         }
     }
 
     lazy val numEdges: Int = {
-        ps.entities(Callers.key).map { cs ⇒ cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).size }.sum
+        ps.entities(Callers.key).map { cs => cs.ub.callers(cs.e.asInstanceOf[DeclaredMethod]).iterator.size }.sum
     }
 }

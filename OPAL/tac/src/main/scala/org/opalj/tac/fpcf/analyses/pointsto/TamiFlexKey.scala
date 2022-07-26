@@ -132,11 +132,11 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         if (project.config.hasPath(configKey)) {
             val logName = project.config.getString(configKey)
             OPALLogger.info("analysis configuration", s"Using tamiflex log file: $logName")(project.logContext)
-            Source.fromFile(logName).getLines().foreach { line ⇒
+            Source.fromFile(logName).getLines().foreach { line =>
                 val entries = line.split(";", -1)
                 entries match {
                     case Array("Array.newInstance" | "Array.get*" | "Array.set*",
-                        arrayType, sourceMethod, sourceLine, _, _) ⇒
+                        arrayType, sourceMethod, sourceLine, _, _) =>
                         addClassType(arrayType, sourceMethod, entries.head, sourceLine)
 
                     case Array("Class.forName" |
@@ -144,19 +144,19 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         "Class.getDeclaredFields" | "Class.getFields" |
                         "Class.getDeclaredMethods" | "Class.getMethods" |
                         "Class.getModifiers",
-                        classType, sourceMethod, sourceLine, _, _) ⇒
+                        classType, sourceMethod, sourceLine, _, _) =>
                         addClassType(classType, sourceMethod, entries.head, sourceLine)
 
                     case Array("Class.getDeclaredField" | "Class.getField",
-                        fieldDesc, sourceMethod, sourceLine, _, _) ⇒
+                        fieldDesc, sourceMethod, sourceLine, _, _) =>
                         addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
                     case Array("Class.getDeclaredConstructor" | "Class.getConstructor" |
                         "Class.getDeclaredMethod" | "Class.getMethod",
-                        methodDesc, sourceMethod, sourceLine, _, _) ⇒
+                        methodDesc, sourceMethod, sourceLine, _, _) =>
                         addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Class.newInstance", instantiatedTypeDesc, sourceMethod, sourceLine, _, _) ⇒
+                    case Array("Class.newInstance", instantiatedTypeDesc, sourceMethod, sourceLine, _, _) =>
                         val line = if (sourceLine == "") -1 else sourceLine.toInt
                         val instantiatedType = FieldType(toJVMType(instantiatedTypeDesc)).asObjectType
                         val oldSet =
@@ -172,10 +172,10 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         )
                         oldInvokes.add(constructor)
 
-                    case Array("Constructor.getModifiers", constructorDesc, sourceMethod, sourceLine, _, _) ⇒
+                    case Array("Constructor.getModifiers", constructorDesc, sourceMethod, sourceLine, _, _) =>
                         addMethod(constructorDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Constructor.newInstance", constructorDesc, sourceMethod, sourceLine, _, _) ⇒
+                    case Array("Constructor.newInstance", constructorDesc, sourceMethod, sourceLine, _, _) =>
                         val line = if (sourceLine == "") -1 else sourceLine.toInt
                         val constructor = toDeclaredMethod(constructorDesc)
                         val oldSet = classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
@@ -185,15 +185,15 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
                     case Array("Field.getDeclaringClass" | "Field.getModifiers" | "Field.getName" |
                         "Field.get*" | "Field.set*",
-                        fieldDesc, sourceMethod, sourceLine, _, _) ⇒
+                        fieldDesc, sourceMethod, sourceLine, _, _) =>
                         addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
                     case Array("Method.getDeclaringClass" | "Method.getModifiers" |
                         "Method.getName" | "Method.invoke",
-                        methodDesc, sourceMethod, sourceLine, _, _) ⇒
+                        methodDesc, sourceMethod, sourceLine, _, _) =>
                         addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
-                    case e ⇒ throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
+                    case e => throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
 
                 }
             }
@@ -207,16 +207,16 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         val trimmedType = javaType.trim
         if (trimmedType.endsWith("[]")) "["+toJVMType(trimmedType.substring(0, trimmedType.length - 2))
         else trimmedType match {
-            case "void"    ⇒ "V"
-            case "byte"    ⇒ "B"
-            case "char"    ⇒ "C"
-            case "double"  ⇒ "D"
-            case "float"   ⇒ "F"
-            case "int"     ⇒ "I"
-            case "long"    ⇒ "J"
-            case "short"   ⇒ "S"
-            case "boolean" ⇒ "Z"
-            case _         ⇒ "L"+trimmedType.replace('.', '/')+";"
+            case "void"    => "V"
+            case "byte"    => "B"
+            case "char"    => "C"
+            case "double"  => "D"
+            case "float"   => "F"
+            case "int"     => "I"
+            case "long"    => "J"
+            case "short"   => "S"
+            case "boolean" => "Z"
+            case _         => "L"+trimmedType.replace('.', '/')+";"
         }
     }
 
@@ -225,7 +225,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
     )(implicit declaredMethods: DeclaredMethods): DeclaredMethod = {
         val regex = "<([^:]+): ([^ ]+) ([^(]+)\\(([^)]*)\\)>".r
         methodDesc match {
-            case regex(declaringClass, returnType, name, parameterTypes) ⇒
+            case regex(declaringClass, returnType, name, parameterTypes) =>
                 val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
                 val jvmSignature = parameterTypes.split(',').map(toJVMType).mkString("(", "", ")"+toJVMType(returnType))
                 declaredMethods(declaringClassType, declaringClassType.packageName, declaringClassType, name, MethodDescriptor(jvmSignature))
@@ -236,7 +236,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
     private[this] def toField(fieldDesc: String, project: SomeProject): Option[Field] = {
         val regex = "<([^:]+): ([^ ]+) ([^>]+)>".r
         fieldDesc match {
-            case regex(declaringClass, fieldTypeDesc, name) ⇒
+            case regex(declaringClass, fieldTypeDesc, name) =>
                 val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
                 val fieldType = FieldType(toJVMType(fieldTypeDesc))
                 project.resolveFieldReference(declaringClassType, name, fieldType)

@@ -16,10 +16,10 @@ object NativeMethodsCounter extends ProjectAnalysisApplication {
 
     override def description: String = "Counts the number of native methods."
 
-    def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+    def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () => Boolean): BasicReport = {
         val nativeMethods = p.allClassFiles.flatMap(_.methods.filter(_.isNative).map(_.toJava))
         BasicReport(
-            nativeMethods.mkString(nativeMethods.size+" native methods found:\n\t", "\n\t", "\n")
+            nativeMethods.mkString(s"${nativeMethods.size} native methods found:\n\t", "\n\t", "\n")
         )
     }
 }

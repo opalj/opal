@@ -47,7 +47,7 @@ trait HermesConfig {
             val config = ConfigFactory.parseFile(configFile).withFallback(baseConfig)
             setConfig(config)
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
                 System.exit(3)
                 //... if System.exit does not terminate the app; this will at least kill the
@@ -69,7 +69,7 @@ trait HermesConfig {
     }
 
     private[this] def validateInitialized[@specialized(Int, Boolean, Long, Double, Float) T](
-        f: ⇒ T
+        f: => T
     ): T = {
         if (!isInitialized)
             throw new IllegalStateException("configuration is not yet set")

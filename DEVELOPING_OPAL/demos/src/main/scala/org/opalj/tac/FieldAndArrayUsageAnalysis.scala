@@ -46,7 +46,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         var putFields = 0
@@ -70,63 +70,63 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
         val (defSites, ass) = time {
             val defSites = project.get(DefinitionSitesKey)
             (defSites, defSites.getAllocationSites)
-        } { t ⇒ info("progress", s"allocationSites took ${t.toSeconds}") }
+        } { t => info("progress", s"allocationSites took ${t.toSeconds}") }
 
         val propertyStore = time {
             project.get(PropertyStoreKey)
-        } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
+        } { t => info("progress", s"initialization of property store took ${t.toSeconds}") }
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 EagerSimpleEscapeAnalysis,
                 LazyL0BaseAIAnalysis,
                 TACAITransformer /* LazyL0TACAIAnalysis */ )
-        } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
+        } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
-            as ← ass
+            as <- ass
             pc = as.pc
             m = as.method
             body = m.body.get
             FinalP(tacai) = propertyStore(m, org.opalj.tac.fpcf.properties.TACAI.key)
             code = tacai.tac.get
             stmts = code.stmts
-            index = stmts indexWhere { stmt ⇒ stmt.pc == pc }
+            index = stmts indexWhere { stmt => stmt.pc == pc }
             if index != -1
         } {
             allocations += 1
             stmts(index) match {
-                case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
+                case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) =>
                     nonDeadAllocations += 1
-                    for (use ← uses) {
+                    for (use <- uses) {
                         stmts(use) match {
-                            case PutField(_, _, name, _, objRef, value) ⇒
+                            case PutField(_, _, name, _, objRef, value) =>
                                 if (value.isVar && value.asVar.definedBy.contains(index)) {
                                     putFields += 1
                                     if (objRef.isVar && objRef.asVar.definedBy != IntTrieSet(-1)) {
                                         val defSitesOfObjRef = objRef.asVar.definedBy
-                                        if (defSitesOfObjRef.exists { defSite ⇒
+                                        if (defSitesOfObjRef.exists { defSite =>
                                             if (defSite > 0) {
                                                 stmts(defSite) match {
-                                                    case Assignment(_, _, New(_, _)) ⇒ true
-                                                    case _                           ⇒ false
+                                                    case Assignment(_, _, New(_, _)) => true
+                                                    case _                           => false
                                                 }
                                             } else false
                                         }) {
                                             putFieldsOfAllocation += 1
-                                            for (stmt ← stmts) {
+                                            for (stmt <- stmts) {
                                                 stmt match {
-                                                    case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2)) if objRef2.isVar ⇒
+                                                    case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2)) if objRef2.isVar =>
                                                         if (objRef2.asVar.definedBy.exists(defSitesOfObjRef.contains)) {
                                                             getFields += 1
                                                         }
 
-                                                    case _ ⇒
+                                                    case _ =>
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            case arrayStore @ ArrayStore(pcOfStore, arrayRef, _, value) ⇒
+                            case arrayStore @ ArrayStore(pcOfStore, arrayRef, _, value) =>
                                 if (value.isVar && value.asVar.definedBy.contains(index)) {
                                     arrayStores += 1
 
@@ -134,40 +134,40 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                         val defSitesOfArray = arrayRef.asVar.definedBy
 
                                         // nesting filter and map as collect is not available
-                                        val pcsOfNewArrays = defSitesOfArray withFilter { defSite ⇒
+                                        val pcsOfNewArrays = defSitesOfArray withFilter { defSite =>
                                             defSite > 0 && (stmts(defSite) match {
-                                                case Assignment(_, _, NewArray(_, _, _)) ⇒ true
-                                                case _                                   ⇒ false
+                                                case Assignment(_, _, NewArray(_, _, _)) => true
+                                                case _                                   => false
                                             })
                                         } map {
                                             stmts(_) match {
-                                                case Assignment(pc, _, _) ⇒ pc
-                                                case _                    ⇒ throw new RuntimeException()
+                                                case Assignment(pc, _, _) => pc
+                                                case _                    => throw new RuntimeException()
                                             }
                                         }
 
                                         if (pcsOfNewArrays.nonEmpty) {
                                             arrayStoresOfAllocation += 1
-                                            for (pc ← pcsOfNewArrays) {
+                                            for (pc <- pcsOfNewArrays) {
                                                 val as = defSites(m, pc)
                                                 propertyStore(as, EscapeProperty.key) match {
-                                                    case FinalP(NoEscape | AtMost(NoEscape)) ⇒
+                                                    case FinalP(NoEscape | AtMost(NoEscape)) =>
                                                         maybeNoEscapingArrays += 1
-                                                    case FinalP(EscapeInCallee | AtMost(EscapeInCallee)) ⇒
+                                                    case FinalP(EscapeInCallee | AtMost(EscapeInCallee)) =>
                                                         maybeInCalleeArrays += 1
-                                                    case FinalP(EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
+                                                    case FinalP(EscapeViaParameter | AtMost(EscapeViaParameter)) =>
                                                         maybeViaParamArrays += 1
-                                                    case FinalP(EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
+                                                    case FinalP(EscapeViaReturn | AtMost(EscapeViaReturn)) =>
                                                         maybeViaReturn += 1
-                                                    case FinalP(EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
+                                                    case FinalP(EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) =>
                                                         maybeViaAbnormal += 1
-                                                    case FinalP(p) if p.isBottom ⇒ globalArrays += 1
-                                                    case _                       ⇒ maybeInCallerArrays += 1
+                                                    case FinalP(p) if p.isBottom => globalArrays += 1
+                                                    case _                       => maybeInCallerArrays += 1
                                                 }
                                             }
 
                                             for {
-                                                Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) ← stmts
+                                                Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) <- stmts
                                                 if arrayRef2.isVar
                                                 if arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)
                                             } {
@@ -183,10 +183,10 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                         }
                                     }
                                 }
-                            case _ ⇒
+                            case _ =>
                         }
                     }
-                case _ ⇒
+                case _ =>
             }
         }
 

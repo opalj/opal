@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that negates a primitive value.
  *
@@ -20,9 +18,9 @@ abstract class NegateInstruction
 
     final def isShiftInstruction: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = 0
 
@@ -37,7 +35,7 @@ abstract class NegateInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
+    ): List[PC] = {
+        List(indexOfNextInstruction(currentPC))
     }
 }

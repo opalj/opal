@@ -25,7 +25,7 @@ import org.opalj.ai.Domain
  *
  * @author Michael Eichberg
  */
-object LazyDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse] {
+object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
 
     /**
      * TACAI code has no special prerequisites.
@@ -41,10 +41,10 @@ object LazyDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse
      */
     override def compute(
         project: SomeProject
-    ): Method ⇒ AITACode[TACMethodParameter, ValueInformation] = {
+    ): Method => AITACode[TACMethodParameter, ValueInformation] = {
         val domainFactory = project.
             getProjectInformationKeyInitializationData(this).
-            getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
+            getOrElse((m: Method) => new DefaultDomainWithCFGAndDefUse(project, m))
 
         val taCodes = TrieMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
@@ -55,21 +55,21 @@ object LazyDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse
             // well... the following cast safe is safe, because the underlying
             // data-structure is actually, conceptually immutable
             val taCode = code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
-            taCode.detach
+            taCode.detach()
             taCodes.put(m, taCode)
             taCode
         }
 
-        (m: Method) ⇒ taCodes.get(m) match {
-            case Some(taCode) ⇒ taCode
-            case None ⇒
+        (m: Method) => taCodes.get(m) match {
+            case Some(taCode) => taCode
+            case None =>
                 val brCode = m.body.get
                 // Basically, we use double checked locking; we really don't want to
                 // transform the code more than once!
                 brCode.synchronized {
                     taCodes.get(m) match {
-                        case Some(taCode) ⇒ taCode
-                        case None         ⇒ computeAndCacheTAC(m)
+                        case Some(taCode) => taCode
+                        case None         => computeAndCacheTAC(m)
                     }
                 }
         }

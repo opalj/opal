@@ -53,22 +53,22 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
     val defaultTransitivelyImmutableTypes = project.config.getStringList(
         "org.opalj.fpcf.analyses.TypeImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
-    ).toArray().toList.map(s ⇒ ObjectType(s.asInstanceOf[String])).toSet
+    ).toArray().toList.map(s => ObjectType(s.asInstanceOf[String])).toSet
 
     def doDetermineTypeImmutability(
-        typeExtensibility: ObjectType ⇒ Answer
+        typeExtensibility: ObjectType => Answer
     )(
         e: Entity
     ): ProperPropertyComputationResult = e match {
-        case t: ObjectType ⇒ step1(typeExtensibility)(t)
-        case _             ⇒ throw new IllegalArgumentException(s"$e is not an ObjectType")
+        case t: ObjectType => step1(typeExtensibility)(t)
+        case _             => throw new IllegalArgumentException(s"$e is not an ObjectType")
     }
 
     /**
      * @param t An object type which is not `java.lang.Object`.
      */
     def step1(
-        typeExtensibility: ObjectType ⇒ Answer
+        typeExtensibility: ObjectType => Answer
     )(
         t: ObjectType
     ): ProperPropertyComputationResult =
@@ -76,8 +76,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
                 return Result(t, TransitivelyImmutableType)
             typeExtensibility(t) match {
-                case Yes | Unknown ⇒ Result(t, MutableType)
-                case No            ⇒ step2(t)
+                case Yes | Unknown => Result(t, MutableType)
+                case No            => step2(t)
             }
         }
 
@@ -87,31 +87,32 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
         val cf = project.classFile(t)
         if (cf.exists(_.isFinal) || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
-            val c = new ProperOnUpdateContinuation { c ⇒
+            val c = new ProperOnUpdateContinuation { c =>
                 def apply(eps: SomeEPS): ProperPropertyComputationResult = {
                     eps match {
-                        case ELUBP(_, lb: ClassImmutability, ub: ClassImmutability) ⇒
+                        case ELUBP(_, lb: ClassImmutability, ub: ClassImmutability) =>
                             val thisLB = lb.correspondingTypeImmutability
                             val thisUB = ub.correspondingTypeImmutability
                             if (eps.isFinal)
                                 Result(t, thisUB)
                             else
                                 InterimResult(t, thisLB, thisUB, Set(eps), c)
+
+                        case _ => throw new MatchError(eps) // TODO: Pattern match not exhaustive
                     }
                 }
             }
 
             ps(t, ClassImmutability.key) match {
-
-                case FinalP(p) ⇒
+                case FinalP(p) =>
                     Result(t, p.correspondingTypeImmutability);
 
-                case eps @ InterimLUBP(lb, ub) ⇒
+                case eps @ InterimLUBP(lb, ub) =>
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
                     InterimResult(t, thisLB, thisUB, Set(eps), c)
 
-                case epk ⇒
+                case epk =>
                     InterimResult(t, MutableType, TransitivelyImmutableType, Set(epk), c)
             }
         } else {
@@ -120,48 +121,48 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             var maxImmutability: TypeImmutability = TransitivelyImmutableType
 
             ps(t, ClassImmutability.key) match {
-                case FinalP(TransitivelyImmutableClass) ⇒
-                case FinalP(MutableClass) ⇒
+                case FinalP(TransitivelyImmutableClass) =>
+                case FinalP(MutableClass) =>
                     return Result(t, MutableType);
-                case FinalP(NonTransitivelyImmutableClass) ⇒
+                case FinalP(NonTransitivelyImmutableClass) =>
                     joinedImmutability = NonTransitivelyImmutableType
                     maxImmutability = NonTransitivelyImmutableType
-                case FinalP(DependentlyImmutableClass(parameter)) ⇒
+                case FinalP(DependentlyImmutableClass(parameter)) =>
                     joinedImmutability = DependentlyImmutableType(parameter)
                     if (maxImmutability != NonTransitivelyImmutableType)
                         maxImmutability = DependentlyImmutableType(parameter)
 
-                case eps @ InterimLUBP(lb, ub) ⇒
+                case eps @ InterimLUBP(lb, ub) =>
                     joinedImmutability = lb.correspondingTypeImmutability
                     maxImmutability = ub.correspondingTypeImmutability
                     dependencies += (t -> eps)
 
-                case eOptP ⇒
+                case eOptP =>
                     joinedImmutability = MutableType
                     dependencies += (t -> eOptP)
             }
 
-            directSubtypes foreach { subtype ⇒
+            directSubtypes foreach { subtype =>
                 ps(subtype, TypeImmutability.key) match {
-                    case FinalP(TransitivelyImmutableType) ⇒
-                    case UBP(MutableType) ⇒
+                    case FinalP(TransitivelyImmutableType) =>
+                    case UBP(MutableType) =>
                         return Result(t, MutableType);
 
-                    case FinalP(NonTransitivelyImmutableType) ⇒
+                    case FinalP(NonTransitivelyImmutableType) =>
                         joinedImmutability = joinedImmutability.meet(NonTransitivelyImmutableType)
                         maxImmutability = NonTransitivelyImmutableType
 
-                    case FinalP(DependentlyImmutableType(parameter)) ⇒
+                    case FinalP(DependentlyImmutableType(parameter)) =>
                         joinedImmutability = joinedImmutability.meet(DependentlyImmutableType(parameter))
                         if (maxImmutability != NonTransitivelyImmutableType)
                             maxImmutability = DependentlyImmutableType(parameter)
 
-                    case eps @ InterimLUBP(subtypeLB, subtypeUB) ⇒
+                    case eps @ InterimLUBP(subtypeLB, subtypeUB) =>
                         joinedImmutability = joinedImmutability.meet(subtypeLB)
                         maxImmutability = maxImmutability.meet(subtypeUB)
                         dependencies += ((subtype, eps))
 
-                    case epk ⇒
+                    case epk =>
                         joinedImmutability = MutableType
                         dependencies += ((subtype, epk))
                 }
@@ -193,9 +194,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 val n = depIt.next()
                                 if (n.hasLBP)
                                     n.lb match {
-                                        case lb: TypeImmutability ⇒
+                                        case lb: TypeImmutability =>
                                             joinedImmutability = joinedImmutability.meet(lb)
-                                        case lb: ClassImmutability ⇒
+                                        case lb: ClassImmutability =>
                                             joinedImmutability =
                                                 joinedImmutability.meet(lb.correspondingTypeImmutability)
                                     }
@@ -220,36 +221,36 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     }
 
                     (eps: @unchecked) match {
-                        case FinalEP(e, TransitivelyImmutableType | TransitivelyImmutableClass) ⇒
+                        case FinalEP(e, TransitivelyImmutableType | TransitivelyImmutableClass) =>
                             dependencies = dependencies - e
                             nextResult()
 
-                        case UBP(x) if x == MutableType || x == MutableClass ⇒
+                        case UBP(x) if x == MutableType || x == MutableClass =>
                             Result(t, MutableType) //MutableType)
 
-                        case FinalEP(e, x) if x == NonTransitivelyImmutableType || x == NonTransitivelyImmutableClass ⇒
+                        case FinalEP(e, x) if x == NonTransitivelyImmutableType || x == NonTransitivelyImmutableClass =>
                             maxImmutability = NonTransitivelyImmutableType
                             dependencies = dependencies - e
                             nextResult()
 
-                        case FinalEP(e, DependentlyImmutableClass(parameter)) ⇒
+                        case FinalEP(e, DependentlyImmutableClass(parameter)) =>
                             if (maxImmutability != NonTransitivelyImmutableType)
                                 maxImmutability = DependentlyImmutableType(parameter)
                             dependencies = dependencies - e
                             nextResult()
 
-                        case FinalEP(e, DependentlyImmutableType(parameter)) ⇒
+                        case FinalEP(e, DependentlyImmutableType(parameter)) =>
                             if (maxImmutability != NonTransitivelyImmutableType)
                                 maxImmutability = DependentlyImmutableType(parameter)
                             dependencies = dependencies - e
                             nextResult()
 
-                        case eps @ InterimEUBP(e, subtypeP) ⇒
+                        case eps @ InterimEUBP(e, subtypeP) =>
                             dependencies = dependencies.updated(e, eps)
                             subtypeP match {
-                                case subtypeP: TypeImmutability ⇒
+                                case subtypeP: TypeImmutability =>
                                     maxImmutability = maxImmutability.meet(subtypeP)
-                                case subtypeP: ClassImmutability ⇒
+                                case subtypeP: ClassImmutability =>
                                     maxImmutability = maxImmutability.meet(subtypeP.correspondingTypeImmutability)
                             }
                             nextResult()
