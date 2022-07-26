@@ -48,8 +48,8 @@ object StringUtil {
         failure:  () => Unit
     )(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Set[String] = {
         var strings = Set.empty[String]

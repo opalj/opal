@@ -31,7 +31,7 @@ import org.opalj.br.IntegerType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -254,7 +254,7 @@ trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 

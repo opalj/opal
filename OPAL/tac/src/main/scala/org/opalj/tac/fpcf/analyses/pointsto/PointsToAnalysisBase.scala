@@ -77,7 +77,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
     @inline protected[this] def getDefSite(pc: Int)(implicit state: State): Entity = {
         val defSite = definitionSites(state.callContext.method.definedMethod, pc)
-        typeProvider match {
+        typeIterator match {
             case _: SimpleContextProvider => defSite
             case _                        => (state.callContext, defSite)
         }
@@ -87,7 +87,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         index: Int, formalParameters: ArraySeq[VirtualFormalParameter], context: Context
     ): Entity = {
         val fp = formalParameters(index)
-        typeProvider match {
+        typeIterator match {
             case _: SimpleContextProvider => fp
             case _                        => (context, fp)
         }

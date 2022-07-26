@@ -19,7 +19,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 class CGState[ContextType <: Context](
         override val callContext:                  ContextType,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends BaseAnalysisState with TypeProviderState with TACAIBasedAnalysisState[ContextType] {
+) extends BaseAnalysisState with TypeIteratorState with TACAIBasedAnalysisState[ContextType] {
 
     // maps a definition site to the receiver var
     private[this] val _virtualCallSites: mutable.Map[CallSite, (V, Set[ReferenceType])] =

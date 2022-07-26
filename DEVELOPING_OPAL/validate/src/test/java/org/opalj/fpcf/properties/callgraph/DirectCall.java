@@ -2,7 +2,7 @@
 package org.opalj.fpcf.properties.callgraph;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider;
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Repeatable;
@@ -57,5 +57,5 @@ public @interface DirectCall {
      * If the list is empty, we assume the annotation applies to any call graph
      * algorithm.
      */
-    Class<? extends TypeProvider>[] analyses() default {};
+    Class<? extends TypeIterator>[] analyses() default {};
 }

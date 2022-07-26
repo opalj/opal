@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
@@ -121,7 +121,7 @@ class ThreadStartAnalysis private[cg] (
                     state.tac.properStmtIndexForPC(callPC)
                 ).asInstanceMethodCall.receiver.asVar
 
-                typeProvider.continuationForAllocations(
+                typeIterator.continuationForAllocations(
                     receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]
                 ) { (tpe, allocationContext, allocationPC) =>
                     val hasRunnable = handleTypeAndHasRunnable(
@@ -189,11 +189,11 @@ class ThreadStartAnalysis private[cg] (
             indirectCalls
         )
 
-        val types = typeProvider.typesProperty(
+        val types = typeIterator.typesProperty(
             receiver, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
         )
 
-        typeProvider.foreachAllocation(receiver, callContext, state.tac.stmts, types) {
+        typeIterator.foreachAllocation(receiver, callContext, state.tac.stmts, types) {
             (tpe, method, pc) =>
                 val hasRunnable = handleTypeAndHasRunnable(
                     tpe, callContext, callPC, state.tac.stmts, receiver, indirectCalls
@@ -374,7 +374,7 @@ class ThreadStartAnalysis private[cg] (
             indirectCalls.addCall(
                 callContext,
                 callPC,
-                typeProvider.expandContext(callContext, declaredMethods(target.value), callPC),
+                typeIterator.expandContext(callContext, declaredMethods(target.value), callPC),
                 Seq.empty,
                 persistentReceiver
             )
@@ -389,7 +389,7 @@ class ThreadStartAnalysis private[cg] (
                 indirectCalls.addCall(
                     callContext,
                     callPC,
-                    typeProvider.expandContext(callContext, declTgt, callPC),
+                    typeIterator.expandContext(callContext, declTgt, callPC),
                     Seq.empty,
                     persistentReceiver
                 )
@@ -439,7 +439,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         // ensures, that we only add new vm reachable methods
         val vmReachableMethods = new VMReachableMethods()
 
-        typeProvider.continuation(receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
+        typeIterator.continuation(receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
             handleType(newType, state.callContext, pc, vmReachableMethods)
         }(state)
 
@@ -480,9 +480,9 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         callPC:             Int,
         vmReachableMethods: VMReachableMethods
     )(implicit state: CGState[ContextType]): Unit = {
-        typeProvider.foreachType(
+        typeIterator.foreachType(
             receiver,
-            typeProvider.typesProperty(
+            typeIterator.typesProperty(
                 receiver, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
             )
         ) { tpe => handleType(tpe, callContext, callPC, vmReachableMethods) }
@@ -591,13 +591,13 @@ class ThreadRelatedCallsAnalysis private[cg] (
 object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callees, Callers, TACAI)
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeProviderKey).usedPropertyKinds
+        p.get(TypeIteratorKey).usedPropertyKinds
     }
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callees, Callers)

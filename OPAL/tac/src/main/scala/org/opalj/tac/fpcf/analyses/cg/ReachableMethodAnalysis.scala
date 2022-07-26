@@ -91,7 +91,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
         eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
             val theCalleeContext =
                 if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
-                else typeProvider.newContext(eOptP.e)
+                else typeIterator.newContext(eOptP.e)
             results ::= processMethod(theCalleeContext, tacEP)
         }
 

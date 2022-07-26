@@ -17,8 +17,8 @@ import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callees
 
 import scala.collection.immutable.ArraySeq
@@ -84,7 +84,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
             return None;
 
         implicit val ps: PropertyStore = p.get(PropertyStoreKey)
-        implicit val typeProvider: TypeProvider = p.get(TypeProviderKey)
+        implicit val typeIterator: TypeIterator = p.get(TypeIteratorKey)
 
         val calleesP = {
             properties.find(_.isInstanceOf[Callees]) match {
