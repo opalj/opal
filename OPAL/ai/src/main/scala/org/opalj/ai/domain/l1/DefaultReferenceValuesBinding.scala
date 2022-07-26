@@ -15,11 +15,11 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExceptionsFactory {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
     // Let's fix the type hierarchy
 
-    type AReferenceValue = ReferenceValue
+    type AReferenceValue = TheReferenceValue
     final val AReferenceValueTag: ClassTag[AReferenceValue] = implicitly
     type DomainReferenceValue = AReferenceValue
     final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly

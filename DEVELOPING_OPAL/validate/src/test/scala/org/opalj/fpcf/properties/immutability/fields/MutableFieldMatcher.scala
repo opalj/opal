@@ -28,7 +28,7 @@ class MutableFieldMatcher extends AbstractPropertyMatcher {
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         if (!analyses.exists(as.contains))
             return false;
@@ -39,8 +39,8 @@ class MutableFieldMatcher extends AbstractPropertyMatcher {
         if (prematurelyRead) {
             val propertyStore = p.get(PropertyStoreKey)
             propertyStore(e, FieldPrematurelyRead.key) match {
-                case FinalP(PrematurelyReadField) ⇒ true
-                case _                            ⇒ false
+                case FinalP(PrematurelyReadField) => true
+                case _                            => false
             }
         } else {
             true
@@ -52,11 +52,11 @@ class MutableFieldMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         import org.opalj.br.fpcf.properties.immutability.FieldImmutability
         import org.opalj.br.fpcf.properties.immutability.MutableField
-        if (properties.forall(p ⇒ p == MutableField || p.key != FieldImmutability.key))
+        if (properties.forall(p => p == MutableField || p.key != FieldImmutability.key))
             None
         else {
             Some(a.elementValuePairs.head.value.toString)

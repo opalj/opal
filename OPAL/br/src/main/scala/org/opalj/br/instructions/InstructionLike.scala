@@ -111,7 +111,7 @@ trait InstructionLike {
      *          the operand stack has index '0' and may occupy one (for category 1 values)
      *          or two stack slots (for category 2 values.)
      */
-    def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
+    def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int
 
     /**
      * The number of values that are put onto the operand stack. Here, long and
@@ -130,7 +130,7 @@ trait InstructionLike {
      *          the operand stack has index '0' and may occupy one (for category 1 values)
      *          or two stack slots (for category 2 values.)
      */
-    def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
+    def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int
 
     /**
      * The number of stack slots pushed or popped by this instruction.

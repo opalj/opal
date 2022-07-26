@@ -273,10 +273,10 @@ sealed class ConcreteCallees(
         propertyStore: PropertyStore,
         typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = {
-        var res = IntMap(directCallSites(callerContext).toStream: _*)
+        var res = IntMap(directCallSites(callerContext).to(LazyList): _*)
 
-        for ((pc, indirect) ← indirectCallSites(callerContext)) {
-            res = res.updateWith(pc, indirect, (direct, indirect) ⇒ direct ++ indirect)
+        for ((pc, indirect) <- indirectCallSites(callerContext)) {
+            res = res.updateWith(pc, indirect, (direct, indirect) => direct ++ indirect)
         }
 
         res
@@ -288,9 +288,9 @@ sealed class ConcreteCallees(
         typeIterator:  TypeIterator
     ): Map[Int, Iterator[Context]] = {
         if (directCalleesIds.contains(callerContext.id))
-            directCalleesIds(callerContext.id).mapValues { calleeIds ⇒
+            directCalleesIds(callerContext.id).view.mapValues { calleeIds =>
                 calleeIds.iterator.map[Context](typeIterator.contextFromId)
-            }
+            }.toMap
         else Map.empty
     }
 
@@ -300,9 +300,9 @@ sealed class ConcreteCallees(
         typeIterator:  TypeIterator
     ): Map[Int, Iterator[Context]] = {
         if (indirectCalleesIds.contains(callerContext.id))
-            indirectCalleesIds(callerContext.id).mapValues { calleeIds ⇒
+            indirectCalleesIds(callerContext.id).view.mapValues { calleeIds =>
                 calleeIds.iterator.map[Context](typeIterator.contextFromId)
-            }
+            }.toMap
         else Map.empty
     }
 
@@ -332,25 +332,25 @@ sealed class ConcreteCallees(
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]
     ): Callees = {
         val cId = callerContext.id
-        directCalleesIds.updateWith(cId, directCallees, (o, n) ⇒ o.unionWith(n, (_, l, r) ⇒ l ++ r))
+        directCalleesIds.updateWith(cId, directCallees, (o, n) => o.unionWith(n, (_, l, r) => l ++ r))
         new ConcreteCallees(
             directCalleesIds.updateWith(
-                cId, directCallees, (o, n) ⇒ o.unionWith(n, (_, l, r) ⇒ l ++ r)
+                cId, directCallees, (o, n) => o.unionWith(n, (_, l, r) => l ++ r)
             ),
             indirectCalleesIds.updateWith(
-                cId, indirectCallees, (o, n) ⇒ o.unionWith(n, (_, l, r) ⇒ l ++ r)
+                cId, indirectCallees, (o, n) => o.unionWith(n, (_, l, r) => l ++ r)
             ),
-            _incompleteCallSites.updateWith(cId, incompleteCallSites, (o, n) ⇒ o ++ n),
+            _incompleteCallSites.updateWith(cId, incompleteCallSites, (o, n) => o ++ n),
             _indirectCallReceivers.updateWith(
                 cId,
                 indirectCallReceivers,
-                (o, n) ⇒
+                (o, n) =>
                     o.unionWith(
                         n,
-                        (_, l, r) ⇒ {
+                        (_, l, r) => {
                             r.unionWith(
                                 l,
-                                (_, vl, vr) ⇒
+                                (_, vl, vr) =>
                                     if (vl == vr) vl
                                     else throw new UnknownError("Incompatible receivers for indirect call")
                             )
@@ -360,13 +360,13 @@ sealed class ConcreteCallees(
             _indirectCallParameters.updateWith(
                 cId,
                 indirectCallParameters,
-                (o, n) ⇒
+                (o, n) =>
                     o.unionWith(
                         n,
-                        (_, l, r) ⇒ {
+                        (_, l, r) => {
                             r.unionWith(
                                 l,
-                                (_, vl, vr) ⇒
+                                (_, vl, vr) =>
                                     if (vl == vr) vl
                                     else throw new UnknownError("Incompatible receivers for indirect call")
                             )
@@ -410,11 +410,11 @@ object ConcreteCallees {
     ): ConcreteCallees = {
         val cId = callerContext.id
         new ConcreteCallees(
-            IntMap(cId → directCallees),
-            IntMap(cId → indirectCallees),
-            IntMap(cId → incompleteCallSites),
-            IntMap(cId → indirectCallReceivers),
-            IntMap(cId → indirectCallParameters)
+            IntMap(cId -> directCallees),
+            IntMap(cId -> indirectCallees),
+            IntMap(cId -> incompleteCallSites),
+            IntMap(cId -> indirectCallReceivers),
+            IntMap(cId -> indirectCallParameters)
         )
     }
 
@@ -619,10 +619,10 @@ object Callees extends CalleesPropertyMetaInformation {
         val name = "opalj.Callees"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
                     NoCalleesDueToNotReachableMethod
-                case _ ⇒
+                case _ =>
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
         )

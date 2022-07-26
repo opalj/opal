@@ -12,7 +12,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait DefaultExceptionsFactory extends ExceptionsFactory {
-    this: ValuesDomain with ReferenceValuesFactory ⇒
+    this: ValuesDomain with ReferenceValuesFactory =>
 
     final override def Throwable(origin: ValueOrigin): ExceptionValue = {
         InitializedObjectValue(origin, ObjectType.Throwable)

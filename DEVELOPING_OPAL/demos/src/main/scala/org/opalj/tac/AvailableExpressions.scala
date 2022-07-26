@@ -46,10 +46,10 @@ object AvailableExpressions extends MethodAnalysisApplication {
             // Recall that we work on an SSA like representation which typically does not have
             // simple alias creating statements of the form x_1 = x_0!
             stmt match {
-                case Assignment(_, _, BinaryExpr(_, _, op, UVar(_, l), UVar(_, r))) if succId >= 0 ⇒
+                case Assignment(_, _, BinaryExpr(_, _, op, UVar(_, l), UVar(_, r))) if succId >= 0 =>
                     inFacts + ((op, l, r))
 
-                case _ ⇒ inFacts
+                case _ => inFacts
             }
         }
 
@@ -75,7 +75,7 @@ object AvailableExpressions extends MethodAnalysisApplication {
         val (taCode, stmtFacts, normalRetFacts, abnormalRetFacts) = r
 
         def factsToString(f: Facts): Iterable[String] = {
-            f.map { e ⇒
+            f.map { e =>
                 val (op, l, r) = e
                 val lUVar = DefSites.toString(l).mkString("{", ",", "}")
                 val rUVar = DefSites.toString(r).mkString("{", ",", "}")
@@ -87,7 +87,7 @@ object AvailableExpressions extends MethodAnalysisApplication {
             stmtFacts
             .map(factsToString)
             .zipWithIndex
-            .map(e ⇒ { val (f, index) = e; s"$index: $f" })
+            .map(e => { val (f, index) = e; s"$index: $f" })
             .mkString("Available expressions:\n\t", "\n\t", "\n\n")+
             "\tNormal return(s): "+
             (if (normalRetFacts != null) factsToString(normalRetFacts) else "N/A")+"\n"+

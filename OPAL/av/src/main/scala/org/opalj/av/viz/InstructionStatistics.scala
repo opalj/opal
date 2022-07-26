@@ -5,8 +5,11 @@ package viz
 
 import java.net.URL
 
-import br._
-import br.analyses.{OneStepAnalysis, AnalysisApplication, BasicReport, Project}
+import org.opalj.br._
+import org.opalj.br.analyses.AnalysisApplication
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of instructions aggregated per package.
@@ -25,18 +28,19 @@ object InstructionStatistics extends AnalysisApplication {
         def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ): BasicReport = {
 
-            import scala.collection.mutable.{HashSet, HashMap}
+            import scala.collection.mutable.HashMap
+            import scala.collection.mutable.HashSet
 
             // Collect the number of instructions per package
             // FQPN = FullyQualifiedPackageName
             val instructionsPerFQPN = HashMap.empty[String, Int]
             for {
-                classFile ← project.allClassFiles
+                classFile <- project.allClassFiles
                 packageName = classFile.thisType.packageName
-                MethodWithBody(body) ← classFile.methods
+                MethodWithBody(body) <- classFile.methods
             } {
                 instructionsPerFQPN.update(
                     packageName,
@@ -56,7 +60,7 @@ object InstructionStatistics extends AnalysisApplication {
 
                 if (childPNs.nonEmpty) {
                     val childPackages =
-                        for { childPN ← childPNs } yield {
+                        for { childPN <- childPNs } yield {
                             processPackage(
                                 childPN,
                                 (
@@ -86,14 +90,14 @@ object InstructionStatistics extends AnalysisApplication {
                 // packages have only one subpackage.
                 val childPNs = HashSet.empty[String]
                 for {
-                    fqpn ← instructionsPerFQPN.keys
+                    fqpn <- instructionsPerFQPN.keys
                     if fqpn.length > rootFQPN.length()
                     if fqpn.startsWith(rootFQPN)
                     if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java..
                 } {
                     val pnsToRemove = HashSet.empty[String]
                     var pnNeedToBeAdded = true
-                    for (childPN ← childPNs) {
+                    for (childPN <- childPNs) {
                         if (childPN.startsWith(fqpn)) {
                             pnsToRemove += childPN
                         } else if (fqpn.startsWith(childPN)) {

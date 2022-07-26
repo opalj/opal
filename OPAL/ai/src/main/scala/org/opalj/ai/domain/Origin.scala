@@ -31,7 +31,8 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
  *       an exception) must be the same!
  * @author Michael Eichberg
  */
-trait Origin { domain: ValuesDomain ⇒
+trait Origin { domain: ValuesDomain =>
+    import Origin._
 
     /**
      * Implementers are expected to "override" this method and to call
@@ -43,6 +44,48 @@ trait Origin { domain: ValuesDomain ⇒
     implicit object SingleOriginValueOrdering extends Ordering[SingleOriginValue] {
         def compare(x: SingleOriginValue, y: SingleOriginValue): Int = x.origin - y.origin
     }
+
+    /**
+     * Returns the origin(s) of the given value if the information is available.
+     *
+     * @return The source(s) of the given value if the information is available.
+     *      Whether the information is available depends on the concrete domains.
+     *      This trait only defines a general contract how to get access to a
+     *      value's origin (I.e., the origin of the instruction which created the
+     *      respective value.)
+     *      By default this method returns an empty `Iterable`.
+     */
+    def originsIterator(value: DomainValue): ValueOriginsIterator = {
+        value match {
+            case vo: ValueWithOriginInformation => vo.originsIterator
+            case _                              => IntIterator.empty
+        }
+    }
+
+    /**
+     * Iterates over the origin(s) of the given value if the information is available.
+     */
+    def foreachOrigin(value: DomainValue, f: (ValueOrigin) => Unit): Unit = {
+        value match {
+            case sov: SingleOriginValue    => f(sov.origin)
+            case mov: MultipleOriginsValue => mov.originsIterator.foreach(f)
+            case _                         => /* nothing to do */
+        }
+    }
+
+    /**
+     * Returns the origin(s) of the given value if the information is available.
+     */
+    def origins(value: DomainValue): ValueOrigins = {
+        value match {
+            case vo: ValueWithOriginInformation => vo.origins
+            case _                              => EmptyIntTrieSet
+        }
+    }
+
+}
+
+object Origin {
 
     /**
      *  Common supertrait of all domain values which provide comprehensive origin information.
@@ -73,59 +116,18 @@ trait Origin { domain: ValuesDomain ⇒
      */
     trait MultipleOriginsValue extends ValueWithOriginInformation
 
-    /**
-     * Returns the origin(s) of the given value if the information is available.
-     *
-     * @return The source(s) of the given value if the information is available.
-     *      Whether the information is available depends on the concrete domains.
-     *      This trait only defines a general contract how to get access to a
-     *      value's origin (I.e., the origin of the instruction which created the
-     *      respective value.)
-     *      By default this method returns an empty `Iterable`.
-     */
-    def originsIterator(value: DomainValue): ValueOriginsIterator = {
-        value match {
-            case vo: ValueWithOriginInformation ⇒ vo.originsIterator
-            case _                              ⇒ IntIterator.empty
-        }
-    }
-
-    /**
-     * Iterates over the origin(s) of the given value if the information is available.
-     */
-    def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
-        value match {
-            case sov: SingleOriginValue    ⇒ f(sov.origin)
-            case mov: MultipleOriginsValue ⇒ mov.originsIterator.foreach(f)
-            case _                         ⇒ /* nothing to do */
-        }
-    }
-
-    /**
-     * Returns the origin(s) of the given value if the information is available.
-     */
-    def origins(value: DomainValue): ValueOrigins = {
-        value match {
-            case vo: ValueWithOriginInformation ⇒ vo.origins
-            case _                              ⇒ EmptyIntTrieSet
-        }
-    }
-
-}
-
-@deprecated("introduces unnecessary (un)boxing; use the domain's (foreach)origin", "OPAL 1.1.0")
-object Origin {
-    def unapply(value: Origin#SingleOriginValue): Some[Int] = Some(value.origin)
+    @deprecated("introduces unnecessary (un)boxing; use the domain's (foreach)origin", "OPAL 1.1.0")
+    def unapply(value: SingleOriginValue): Some[Int] = Some(value.origin)
 }
 
 object OriginsIterator {
-    def unapply(value: Origin#ValueWithOriginInformation): Some[ValueOriginsIterator] = {
+    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOriginsIterator] = {
         Some(value.originsIterator)
     }
 }
 
 object Origins {
-    def unapply(value: Origin#ValueWithOriginInformation): Some[ValueOrigins] = {
+    def unapply(value: Origin.ValueWithOriginInformation): Some[ValueOrigins] = {
         Some(value.origins)
     }
 }

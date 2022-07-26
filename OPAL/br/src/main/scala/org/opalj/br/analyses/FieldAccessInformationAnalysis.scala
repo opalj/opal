@@ -37,7 +37,7 @@ import org.opalj.collection.immutable.IntTrieSetBuilder
  */
 object FieldAccessInformationAnalysis {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): FieldAccessInformation = {
+    def doAnalyze(project: SomeProject, isInterrupted: () => Boolean): FieldAccessInformation = {
         import project.resolveFieldReference
         import project.logContext
 
@@ -48,21 +48,21 @@ object FieldAccessInformationAnalysis {
         // we don't want to report unresolvable field references multiple times
         val reportedFieldAccesses = ConcurrentHashMap.newKeySet[Instruction]()
 
-        project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
+        project.parForeachMethodWithBody(isInterrupted) { methodInfo =>
             val method = methodInfo.method
 
             val readAccesses = AnyRefMap.empty[Field, IntTrieSetBuilder]
             val writeAccesses = AnyRefMap.empty[Field, IntTrieSetBuilder]
             var unresolved = IntTrieSet.empty
-            method.body.get iterate { (pc, instruction) ⇒
+            method.body.get iterate { (pc, instruction) =>
                 instruction.opcode match {
 
-                    case GETFIELD.opcode | GETSTATIC.opcode ⇒
+                    case GETFIELD.opcode | GETSTATIC.opcode =>
                         val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
                         resolveFieldReference(fieldReadAccess) match {
-                            case Some(field) ⇒
+                            case Some(field) =>
                                 readAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
-                            case None ⇒
+                            case None =>
                                 if (reportedFieldAccesses.add(instruction)) {
                                     val message = s"cannot resolve field read access: $instruction"
                                     OPALLogger.warn("project configuration", message)
@@ -70,12 +70,12 @@ object FieldAccessInformationAnalysis {
                                 unresolved += pc
                         }
 
-                    case PUTFIELD.opcode | PUTSTATIC.opcode ⇒
+                    case PUTFIELD.opcode | PUTSTATIC.opcode =>
                         val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
                         resolveFieldReference(fieldWriteAccess) match {
-                            case Some(field) ⇒
+                            case Some(field) =>
                                 writeAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
-                            case None ⇒
+                            case None =>
                                 if (reportedFieldAccesses.add(instruction)) {
                                     val message = s"cannot resolve field write access: $instruction"
                                     OPALLogger.warn("project configuration", message)
@@ -83,12 +83,12 @@ object FieldAccessInformationAnalysis {
                                 unresolved += pc
                         }
 
-                    case _ ⇒ /*nothing to do*/
+                    case _ => /*nothing to do*/
                 }
             }
 
             // merge with the global store
-            readAccesses foreach { e ⇒
+            readAccesses foreach { e =>
                 val (key @ field, pcs) = e
                 field.synchronized {
                     val currentAccesses = allReadAccesses.get(key)
@@ -98,7 +98,7 @@ object FieldAccessInformationAnalysis {
                         allReadAccesses.put(key, (method, pcs.result()) :: currentAccesses)
                 }
             }
-            writeAccesses foreach { e ⇒
+            writeAccesses foreach { e =>
                 val (key @ field, pcs) = e
                 field.synchronized {
                     val currentAccesses = allWriteAccesses.get(key)
@@ -112,7 +112,7 @@ object FieldAccessInformationAnalysis {
             if (unresolved.nonEmpty) allUnresolved.add((method, unresolved))
         }
 
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         val ra = new AnyRefMap(allReadAccesses.size * 2) ++= allReadAccesses.asScala
         ra.repack()
         val wa = new AnyRefMap(allReadAccesses.size * 2) ++= allWriteAccesses.asScala

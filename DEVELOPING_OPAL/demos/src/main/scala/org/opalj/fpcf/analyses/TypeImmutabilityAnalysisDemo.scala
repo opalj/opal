@@ -50,7 +50,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         val result = analyze(project)
         BasicReport(result)
@@ -84,16 +84,16 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
             propertyStore.waitOnPhaseCompletion();
 
-        } { t ⇒
+        } { t =>
             analysisTime = t.toSeconds
         }
 
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
         val groupedResults = propertyStore.entities(TypeImmutability.key).
-            filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
+            filter(x => allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
 
-        val order = (eps1: EPS[Entity, TypeImmutability], eps2: EPS[Entity, TypeImmutability]) ⇒
+        val order = (eps1: EPS[Entity, TypeImmutability], eps2: EPS[Entity, TypeImmutability]) =>
             eps1.e.toString < eps2.e.toString
 
         val mutableTypes = groupedResults(MutableType).toSeq.sortWith(order)
@@ -139,7 +139,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             bw.write(output)
             bw.close()
         } catch {
-            case e: IOException ⇒ println(
+            case e: IOException => println(
                 s""" Could not write file: ${file.getName}
                | ${e.getMessage}
                |""".stripMargin

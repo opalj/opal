@@ -47,7 +47,7 @@ case class Code_attribute(
                 code.toXHTML(
                     methodIndex,
                     exceptionTable,
-                    attributes collectFirst { case LineNumberTable_attribute(_, lnt) ⇒ lnt }
+                    attributes collectFirst { case LineNumberTable_attribute(_, lnt) => lnt }
                 )
             }
             { exception_handlersAsXHTML }

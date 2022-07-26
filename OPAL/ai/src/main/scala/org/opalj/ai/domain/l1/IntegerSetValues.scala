@@ -26,7 +26,7 @@ trait IntegerSetValues
     extends IntegerValuesDomain
     with ConcreteIntegerValues
     with IntegerRangeValuesFactory {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -55,7 +55,7 @@ trait IntegerSetValues
     abstract class IntegerLikeValue
         extends TypedValue[CTIntType]
         with IsIntegerValue {
-        this: DomainTypedValue[CTIntType] ⇒
+        this: DomainTypedValue[CTIntType] =>
 
         final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
@@ -66,8 +66,8 @@ trait IntegerSetValues
      *
      * Models the top value of this domain's lattice.
      */
-    abstract class AnIntegerValue extends IntegerLikeValue {
-        this: DomainTypedValue[CTIntType] ⇒
+    abstract class AnIntegerValueLike extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] =>
 
         final override def lowerBound: Int = Int.MinValue
         final override def upperBound: Int = Int.MaxValue
@@ -77,8 +77,8 @@ trait IntegerSetValues
     /**
      * Represents a set of integer values.
      */
-    abstract class IntegerSet extends IntegerLikeValue {
-        this: DomainTypedValue[CTIntType] ⇒
+    abstract class IntegerSetLike extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] =>
 
         val values: SortedSet[Int]
 
@@ -90,106 +90,106 @@ trait IntegerSetValues
     }
 
     /**
-     * Creates a new [[IntegerSet]] value containing the given value.
+     * Creates a new [[IntegerSetLike]] value containing the given value.
      */
     def IntegerSet(value: Int): DomainTypedValue[CTIntType] = IntegerSet(SortedSet(value))
 
     /**
-     * Creates a new [[IntegerSet]] value using the given set unless the set exceeds the
+     * Creates a new [[IntegerSetLike]] value using the given set unless the set exceeds the
      * maximum cardinality.
      */
     // IMPROVE Use optimized collection (without (un)boxing).
     def IntegerSet(values: SortedSet[Int]): DomainTypedValue[CTIntType]
 
-    type DomainBaseTypesBasedSet <: BaseTypesBasedSet with DomainValue
+    type DomainBaseTypesBasedSet <: BaseTypesBasedSetLike with DomainValue
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet]
 
-    trait BaseTypesBasedSet extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
+    trait BaseTypesBasedSetLike extends IntegerLikeValue { this: DomainTypedValue[CTIntType] =>
 
-        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue
+        def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue
 
         def newInstance: DomainBaseTypesBasedSet
     }
 
     def U7BitSet(): DomainTypedValue[CTIntType]
 
-    abstract class U7BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+    abstract class U7BitSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
 
         final override def lowerBound: Int = 0
         final override def upperBound: Int = Byte.MaxValue
 
-        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+        def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
             other match {
-                case _: U7BitSet  ⇒ U7BitSet()
-                case _: U15BitSet ⇒ U15BitSet()
-                case _: CharSet   ⇒ CharValue(pc)
-                case _: ByteSet   ⇒ ByteValue(pc)
-                case _: ShortSet  ⇒ ShortValue(pc)
-                case _            ⇒ IntegerValue(pc)
+                case _: U7BitSetLike  => U7BitSet()
+                case _: U15BitSetLike => U15BitSet()
+                case _: CharSetLike   => CharValue(pc)
+                case _: ByteSetLike   => ByteValue(pc)
+                case _: ShortSetLike  => ShortValue(pc)
+                case _                => IntegerValue(pc)
             }
         }
     }
 
     def U15BitSet(): DomainTypedValue[CTIntType]
 
-    abstract class U15BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+    abstract class U15BitSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
 
         final override def lowerBound: Int = 0
         final override def upperBound: Int = Short.MaxValue
 
-        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+        def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
             other match {
-                case _: U7BitSet | _: U15BitSet ⇒ U15BitSet()
-                case _: CharSet                 ⇒ CharValue(pc)
-                case _: ByteSet                 ⇒ ShortValue(pc)
-                case _: ShortSet                ⇒ ShortValue(pc)
-                case _                          ⇒ IntegerValue(pc)
+                case _: U7BitSetLike | _: U15BitSetLike => U15BitSet()
+                case _: CharSetLike                     => CharValue(pc)
+                case _: ByteSetLike                     => ShortValue(pc)
+                case _: ShortSetLike                    => ShortValue(pc)
+                case _                                  => IntegerValue(pc)
             }
         }
     }
 
-    abstract class CharSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+    abstract class CharSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
 
         final override def lowerBound: Int = 0 // Char.MinValue
         final override def upperBound: Int = Char.MaxValue
 
-        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+        def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
             other match {
-                case _: U7BitSet | _: U15BitSet | _: CharSet ⇒ CharValue(pc)
-                case _                                       ⇒ IntegerValue(pc)
+                case _: U7BitSetLike | _: U15BitSetLike | _: CharSetLike => CharValue(pc)
+                case _                                                   => IntegerValue(pc)
             }
         }
     }
 
-    abstract class ByteSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+    abstract class ByteSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
         final override def lowerBound: Int = Byte.MinValue
         final override def upperBound: Int = Byte.MaxValue
-        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+        def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
             other match {
-                case _: U7BitSet  ⇒ ByteValue(pc)
-                case _: U15BitSet ⇒ ShortValue(pc)
-                case _: ByteSet   ⇒ ByteValue(pc)
-                case _: ShortSet  ⇒ ShortValue(pc)
-                case _            ⇒ IntegerValue(pc)
+                case _: U7BitSetLike  => ByteValue(pc)
+                case _: U15BitSetLike => ShortValue(pc)
+                case _: ByteSetLike   => ByteValue(pc)
+                case _: ShortSetLike  => ShortValue(pc)
+                case _                => IntegerValue(pc)
             }
         }
     }
 
-    abstract class ShortSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+    abstract class ShortSetLike extends BaseTypesBasedSetLike { this: DomainTypedValue[CTIntType] =>
         final override def lowerBound: Int = Short.MinValue
         final override def upperBound: Int = Short.MaxValue
-        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+        def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
             assert(this ne other)
             other match {
-                case _: U7BitSet  ⇒ ShortValue(pc)
-                case _: U15BitSet ⇒ ShortValue(pc)
-                case _: ByteSet   ⇒ ShortValue(pc)
-                case _: ShortSet  ⇒ ShortValue(pc)
-                case _            ⇒ IntegerValue(pc)
+                case _: U7BitSetLike  => ShortValue(pc)
+                case _: U15BitSetLike => ShortValue(pc)
+                case _: ByteSetLike   => ShortValue(pc)
+                case _: ShortSetLike  => ShortValue(pc)
+                case _                => IntegerValue(pc)
             }
         }
     }
@@ -243,7 +243,7 @@ trait IntegerSetValues
     /**
      * Extractor for `IntegerSet` values.
      */
-    object IntegerSet { def unapply(v: IntegerSet): Some[SortedSet[Int]] = Some(v.values) }
+    object IntegerSetLike { def unapply(v: IntegerSetLike): Some[SortedSet[Int]] = Some(v.values) }
 
     // -----------------------------------------------------------------------------------
     //
@@ -258,32 +258,32 @@ trait IntegerSetValues
     @inline final override def intValue[T](
         value: DomainValue
     )(
-        f: Int ⇒ T
+        f: Int => T
     )(
-        orElse: ⇒ T
+        orElse: => T
     ): T = {
         value match {
-            case IntegerSet(values) if values.size == 1 ⇒ f(values.head)
-            case _                                      ⇒ orElse
+            case IntegerSetLike(values) if values.size == 1 => f(values.head)
+            case _                                          => orElse
         }
     }
 
     @inline final override def intValueOption(value: DomainValue): Option[Int] = {
         value match {
-            case IntegerSet(values) if values.size == 1 ⇒ Some(values.head)
-            case _                                      ⇒ None
+            case IntegerSetLike(values) if values.size == 1 => Some(values.head)
+            case _                                          => None
         }
     }
 
     @inline protected final def intValues[T](
         value1: DomainValue, value2: DomainValue
     )(
-        f: (Int, Int) ⇒ T
+        f: (Int, Int) => T
     )(
-        orElse: ⇒ T
+        orElse: => T
     ): T = {
         intValue(value1) {
-            v1 ⇒ intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
+            v1 => intValue(value2) { v2 => f(v1, v2) } { orElse }
         } {
             orElse
         }
@@ -296,7 +296,7 @@ trait IntegerSetValues
             return Yes;
 
         (value1, value2) match {
-            case (IntegerSet(v1s), IntegerSet(v2s)) ⇒
+            case (IntegerSetLike(v1s), IntegerSetLike(v2s)) =>
                 if (v1s.size == 1 && v2s.size == 1)
                     Answer(v1s.head == v2s.head)
                 else if (v1s.intersect(v2s).isEmpty)
@@ -304,19 +304,19 @@ trait IntegerSetValues
                 else
                     Unknown
 
-            case (IntegerSet(vs), DomainBaseTypesBasedSet(btbs)) ⇒
-                if (vs forall { v ⇒ v < btbs.lowerBound || v > btbs.upperBound })
+            case (IntegerSetLike(vs), DomainBaseTypesBasedSet(btbs)) =>
+                if (vs forall { v => v < btbs.lowerBound || v > btbs.upperBound })
                     No
                 else
                     Unknown
 
-            case (DomainBaseTypesBasedSet(btbs), IntegerSet(vs)) ⇒
-                if (vs forall { v ⇒ v < btbs.lowerBound || v > btbs.upperBound })
+            case (DomainBaseTypesBasedSet(btbs), IntegerSetLike(vs)) =>
+                if (vs forall { v => v < btbs.lowerBound || v > btbs.upperBound })
                     No
                 else
                     Unknown
 
-            case _ ⇒
+            case _ =>
                 Unknown
         }
     }
@@ -331,16 +331,16 @@ trait IntegerSetValues
             return Yes;
 
         value match {
-            case IntegerSet(values) ⇒
+            case IntegerSetLike(values) =>
                 Answer(
                     values.lastKey >= lowerBound && values.firstKey <= upperBound &&
-                        values.exists(value ⇒ value >= lowerBound && value <= upperBound)
+                        values.exists(value => value >= lowerBound && value <= upperBound)
                 )
 
-            case DomainBaseTypesBasedSet(value) ⇒
+            case DomainBaseTypesBasedSet(value) =>
                 Answer(lowerBound <= value.upperBound && upperBound >= value.lowerBound)
 
-            case _ ⇒ Unknown
+            case _ => Unknown
         }
     }
 
@@ -354,13 +354,13 @@ trait IntegerSetValues
             return No;
 
         value match {
-            case IntegerSet(values) ⇒
+            case IntegerSetLike(values) =>
                 Answer(values.firstKey < lowerBound || values.lastKey > upperBound)
 
-            case DomainBaseTypesBasedSet(value) ⇒
+            case DomainBaseTypesBasedSet(value) =>
                 Answer(value.lowerBound < lowerBound || value.upperBound > upperBound)
 
-            case _ ⇒ Unknown
+            case _ => Unknown
         }
     }
 
@@ -371,12 +371,12 @@ trait IntegerSetValues
             return No;
 
         right match {
-            case IntegerSet(rightValues) ⇒
+            case IntegerSetLike(rightValues) =>
                 if (rightValues.lastKey == Int.MinValue)
                     // the right value is the smallest possible value...
                     No
                 else left match {
-                    case IntegerSet(leftValues) ⇒
+                    case IntegerSetLike(leftValues) =>
                         if (leftValues.lastKey < rightValues.firstKey)
                             Yes
                         else if (leftValues.firstKey >= rightValues.lastKey ||
@@ -387,7 +387,7 @@ trait IntegerSetValues
                             No
                         else
                             Unknown
-                    case DomainBaseTypesBasedSet(left) ⇒
+                    case DomainBaseTypesBasedSet(left) =>
                         if (left.upperBound < rightValues.firstKey)
                             Yes
                         else if (rightValues.lastKey <= left.lowerBound)
@@ -396,13 +396,13 @@ trait IntegerSetValues
                         else
                             Unknown
 
-                    case _ ⇒
+                    case _ =>
                         Unknown
                 }
 
-            case DomainBaseTypesBasedSet(right) ⇒
+            case DomainBaseTypesBasedSet(right) =>
                 left match {
-                    case IntegerSet(leftValues) ⇒
+                    case IntegerSetLike(leftValues) =>
                         if (leftValues.lastKey < right.lowerBound)
                             Yes
                         else if (leftValues.firstKey >= right.upperBound)
@@ -410,10 +410,10 @@ trait IntegerSetValues
                         else
                             Unknown
 
-                    case _ ⇒ Unknown
+                    case _ => Unknown
                 }
 
-            case _ ⇒ Unknown
+            case _ => Unknown
         }
     }
 
@@ -428,11 +428,11 @@ trait IntegerSetValues
             return Yes;
 
         right match {
-            case IntegerSet(rightValues) ⇒
+            case IntegerSetLike(rightValues) =>
                 if (rightValues.firstKey == Int.MaxValue)
                     Yes
                 else left match {
-                    case IntegerSet(leftValues) ⇒
+                    case IntegerSetLike(leftValues) =>
                         if (leftValues.lastKey <= rightValues.firstKey)
                             Yes
                         else if (leftValues.firstKey > rightValues.lastKey)
@@ -440,7 +440,7 @@ trait IntegerSetValues
                         else
                             Unknown
 
-                    case DomainBaseTypesBasedSet(left) ⇒
+                    case DomainBaseTypesBasedSet(left) =>
                         if (left.upperBound <= rightValues.firstKey)
                             Yes
                         else if (left.lowerBound > rightValues.lastKey)
@@ -448,12 +448,12 @@ trait IntegerSetValues
                         else
                             Unknown
 
-                    case _ ⇒ Unknown
+                    case _ => Unknown
                 }
 
-            case DomainBaseTypesBasedSet(right) ⇒
+            case DomainBaseTypesBasedSet(right) =>
                 left match {
-                    case IntegerSet(leftValues) ⇒
+                    case IntegerSetLike(leftValues) =>
                         if (leftValues.lastKey <= right.lowerBound)
                             Yes
                         else if (leftValues.firstKey > right.upperBound)
@@ -461,18 +461,18 @@ trait IntegerSetValues
                         else
                             Unknown
 
-                    case _ ⇒ Unknown
+                    case _ => Unknown
                 }
 
-            case _ ⇒
+            case _ =>
                 left match {
-                    case IntegerSet(leftValues) ⇒
+                    case IntegerSetLike(leftValues) =>
                         if (leftValues.lastKey == Int.MinValue)
                             Yes
                         else
                             Unknown
 
-                    case _ ⇒
+                    case _ =>
                         Unknown
                 }
         }
@@ -492,9 +492,9 @@ trait IntegerSetValues
         locals:   Locals
     ): (Operands, Locals) = {
         value match {
-            case IntegerSet(values) if values.size == 1 && values.head == theValue ⇒
+            case IntegerSetLike(values) if values.size == 1 && values.head == theValue =>
                 (operands, locals)
-            case _ ⇒
+            case _ =>
                 updateMemoryLayout(value, IntegerSet(theValue), operands, locals)
         }
     }
@@ -511,18 +511,18 @@ trait IntegerSetValues
             return (operands, locals);
 
         value1 match {
-            case IntegerSet(leftValues) ⇒
+            case IntegerSetLike(leftValues) =>
                 value2 match {
 
-                    case IntegerSet(rightValues) ⇒
+                    case IntegerSetLike(rightValues) =>
                         val newValue = IntegerSet(pc, leftValues.intersect(rightValues))
                         val (operands1, locals1) =
                             updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, operands1, locals1)
 
-                    case DomainBaseTypesBasedSet(value2) ⇒
+                    case DomainBaseTypesBasedSet(value2) =>
                         // all matching values from value1
-                        val filtered = leftValues.filter { v ⇒
+                        val filtered = leftValues.filter { v =>
                             v >= value2.lowerBound && v <= value2.upperBound
                         }
                         val newValue =
@@ -536,20 +536,20 @@ trait IntegerSetValues
                         else
                             (newOperands, newLocals)
 
-                    case _ ⇒
+                    case _ =>
                         // value1 is unchanged (an IntegerSet value is always more precise)
                         updateMemoryLayout(oldValue = value2, value1, operands, locals)
                 }
-            case DomainBaseTypesBasedSet(value1) ⇒
+            case DomainBaseTypesBasedSet(value1) =>
                 value2 match {
-                    case DomainBaseTypesBasedSet(value2) ⇒
+                    case DomainBaseTypesBasedSet(value2) =>
                         val newValue = value1.fuse(pc, value2)
                         val (os1, ls1) = updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, os1, ls1)
 
-                    case IntegerSet(rightValues) ⇒
+                    case IntegerSetLike(rightValues) =>
                         // all matching values from value2
-                        val filtered = rightValues.filter { v ⇒
+                        val filtered = rightValues.filter { v =>
                             v >= value1.lowerBound && v <= value1.upperBound
                         }
                         val newValue =
@@ -563,12 +563,12 @@ trait IntegerSetValues
                         else
                             (newOperands, newLocals)
 
-                    case _ /*AnIntegerValue*/ ⇒
+                    case _ /*AnIntegerValue*/ =>
                         // value1 is unchanged (an IntegerSet value is always more precise)
                         updateMemoryLayout(oldValue = value2, value1, operands, locals)
                 }
 
-            case _ /*AnIntegerValue*/ ⇒
+            case _ /*AnIntegerValue*/ =>
                 // value2 is unchanged
                 updateMemoryLayout(oldValue = value1, value2, operands, locals)
         }
@@ -583,19 +583,19 @@ trait IntegerSetValues
     ): (Operands, Locals) = {
         assert(value1 ne value2, "the values are definitively equal; impossible refinement \"!=\"")
 
-        intValue(value1) { v1 ⇒
+        intValue(value1) { v1 =>
             value2 match {
-                case IntegerSet(values) ⇒
+                case IntegerSetLike(values) =>
                     updateMemoryLayout(value2, IntegerSet(pc, values - v1), operands, locals)
-                case _ ⇒
+                case _ =>
                     (operands, locals)
             }
         } {
-            intValue(value2) { v2 ⇒
+            intValue(value2) { v2 =>
                 value1 match {
-                    case IntegerSet(values) ⇒
+                    case IntegerSetLike(values) =>
                         updateMemoryLayout(value1, IntegerSet(pc, values - v2), operands, locals)
-                    case _ ⇒
+                    case _ =>
                         (operands, locals)
                 }
             } {
@@ -612,12 +612,12 @@ trait IntegerSetValues
         locals:   Locals
     ): (Operands, Locals) = {
         //        println("intEstablishIsLessThan"+System.identityHashCode(left).toHexString + left+" .... "+System.identityHashCode(right).toHexString + right)
-        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
+        //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
 
         assert(left ne right, "the values are definitively equal; impossible refinement \"<\"")
 
         val result = (left, right) match {
-            case (IntegerSet(ls), IntegerSet(rs)) ⇒
+            case (IntegerSetLike(ls), IntegerSetLike(rs)) =>
                 val rsMax = rs.lastKey
                 val newLs = ls.filter(_ < rsMax)
                 val (operands1, locals1) =
@@ -639,29 +639,29 @@ trait IntegerSetValues
                     (operands1, locals1)
                 }
 
-            case (IntegerSet(ls), DomainBaseTypesBasedSet(right)) ⇒
+            case (IntegerSetLike(ls), DomainBaseTypesBasedSet(right)) =>
                 val newLs = ls.filter(_ < right.upperBound)
                 updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
 
-            case (DomainBaseTypesBasedSet(left), IntegerSet(rs)) ⇒
+            case (DomainBaseTypesBasedSet(left), IntegerSetLike(rs)) =>
                 val newIntValue = approximateSet(pc, left.lowerBound, rs.lastKey - 1)
                 updateMemoryLayout(left, newIntValue, operands, locals)
 
-            case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) ⇒
+            case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) =>
                 val newIntValue = approximateSet(pc, left.lowerBound, right.upperBound)
                 updateMemoryLayout(left, newIntValue, operands, locals)
 
-            case (_, DomainBaseTypesBasedSet(right)) ⇒
+            case (_, DomainBaseTypesBasedSet(right)) =>
                 updateMemoryLayout(left, right.newInstance, operands, locals)
 
-            case (_, IntegerSet(rs)) ⇒
+            case (_, IntegerSetLike(rs)) =>
                 val newIntValue = approximateSet(pc, rs.firstKey - 1, rs.lastKey - 1)
                 updateMemoryLayout(left, newIntValue, operands, locals)
 
-            case _ ⇒
+            case _ =>
                 (operands, locals)
         }
-        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
+        //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
         result
     }
 
@@ -673,11 +673,11 @@ trait IntegerSetValues
         locals:   Locals
     ): (Operands, Locals) = {
         //        println("intEstablishIsLessThanOrEqualTo"+System.identityHashCode(left).toHexString + left+" .... "+System.identityHashCode(right).toHexString + right)
-        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
+        //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
 
         val result =
             (left, right) match {
-                case (IntegerSet(ls), IntegerSet(rs)) ⇒
+                case (IntegerSetLike(ls), IntegerSetLike(rs)) =>
                     val rsMax = rs.lastKey
                     val newLs = ls.filter(_ <= rsMax)
                     val (operands1, locals1) =
@@ -697,29 +697,29 @@ trait IntegerSetValues
                         }
                     newMemoryLayout
 
-                case (IntegerSet(ls), DomainBaseTypesBasedSet(right)) ⇒
+                case (IntegerSetLike(ls), DomainBaseTypesBasedSet(right)) =>
                     val newLs = ls.filter(_ <= right.upperBound)
                     updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
 
-                case (DomainBaseTypesBasedSet(left), IntegerSet(rs)) ⇒
+                case (DomainBaseTypesBasedSet(left), IntegerSetLike(rs)) =>
                     val newDomainValue = approximateSet(pc, left.lowerBound, rs.lastKey)
                     updateMemoryLayout(left, newDomainValue, operands, locals)
 
-                case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) ⇒
+                case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) =>
                     val newIntValue = approximateSet(pc, left.lowerBound, right.upperBound)
                     updateMemoryLayout(left, newIntValue, operands, locals)
 
-                case (_, DomainBaseTypesBasedSet(right)) ⇒
+                case (_, DomainBaseTypesBasedSet(right)) =>
                     updateMemoryLayout(left, right.newInstance, operands, locals)
 
-                case (_, IntegerSet(rs)) ⇒
+                case (_, IntegerSetLike(rs)) =>
                     val newIntValue = approximateSet(pc, rs.firstKey, rs.lastKey)
                     updateMemoryLayout(left, newIntValue, operands, locals)
 
-                case _ ⇒
+                case _ =>
                     (operands, locals)
             }
-        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
+        //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
         result
     }
 
@@ -734,9 +734,9 @@ trait IntegerSetValues
     //
     /*override*/ def ineg(pc: PC, value: DomainValue): DomainValue = {
         value match {
-            case IntegerSet(SingletonSet(Int.MinValue)) ⇒ value
-            case IntegerSet(values)                     ⇒ IntegerSet(pc, values.map(-_))
-            case _                                      ⇒ IntegerValue(origin = pc)
+            case IntegerSetLike(SingletonSet(Int.MinValue)) => value
+            case IntegerSetLike(values)                     => IntegerSet(pc, values.map(-_))
+            case _                                          => IntegerValue(origin = pc)
         }
     }
 
@@ -746,67 +746,67 @@ trait IntegerSetValues
 
     /*override*/ def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
                 // {1,2,3}+{0,1} => {1,2,3,4}
                 val results =
-                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
                         leftValue + rightValue
                     }
                 IntegerSet(pc, results)
-            case _ ⇒
+            case _ =>
                 IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = {
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(values.map(_ + increment))
-            case _                  ⇒ IntegerValue(origin = pc)
+            case IntegerSetLike(values) => IntegerSet(values.map(_ + increment))
+            case _                      => IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         (left, right) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
                 val results =
-                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
                         leftValue - rightValue
                     }
                 IntegerSet(pc, results)
-            case _ ⇒
+            case _ =>
                 IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
-            case (IntegerSet(leftValues)) ⇒
+            case (IntegerSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == 0)
                     value1
                 else if (leftValues.size == 1 && leftValues.head == 1)
                     value2
                 else value2 match {
-                    case (IntegerSet(rightValues)) ⇒
+                    case (IntegerSetLike(rightValues)) =>
                         val results =
-                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
                                 leftValue * rightValue
                             }
                         IntegerSet(pc, results)
 
-                    case _ ⇒
+                    case _ =>
                         IntegerValue(origin = pc)
 
                 }
-            case _ ⇒
+            case _ =>
                 value2 match {
-                    case (IntegerSet(rightValues)) ⇒
+                    case (IntegerSetLike(rightValues)) =>
                         if (rightValues.size == 1 && rightValues.head == 0)
                             value2
                         else if (rightValues.size == 1 && rightValues.head == 1)
                             value1
                         else
                             IntegerValue(origin = pc)
-                    case _ ⇒
+                    case _ =>
                         IntegerValue(origin = pc)
                 }
         }
@@ -837,10 +837,10 @@ trait IntegerSetValues
         denominator: DomainValue
     ): IntegerValueOrArithmeticException = {
         (numerator, denominator) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
                 var results: SortedSet[Int] = SortedSet.empty
                 var exception: Boolean = false
-                for (leftValue ← leftValues; rightValue ← rightValues) {
+                for (leftValue <- leftValues; rightValue <- rightValues) {
                     if (rightValue == 0)
                         exception = true
                     else
@@ -848,7 +848,7 @@ trait IntegerSetValues
                 }
                 createIntegerValueOrArithmeticException(pc, exception, results)
 
-            case (_, IntegerSet(rightValues)) ⇒
+            case (_, IntegerSetLike(rightValues)) =>
                 if (rightValues contains (0)) {
                     if (rightValues.size == 1)
                         ThrowsException(VMArithmeticException(pc))
@@ -857,7 +857,7 @@ trait IntegerSetValues
                 } else
                     ComputedValue(IntegerValue(origin = pc))
 
-            case _ ⇒
+            case _ =>
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else
@@ -872,10 +872,10 @@ trait IntegerSetValues
     ): IntegerValueOrArithmeticException = {
 
         (left, right) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
                 var results: SortedSet[Int] = SortedSet.empty
                 var exception: Boolean = false
-                for (leftValue ← leftValues; rightValue ← rightValues) {
+                for (leftValue <- leftValues; rightValue <- rightValues) {
                     if (rightValue == 0)
                         exception = true
                     else
@@ -883,7 +883,7 @@ trait IntegerSetValues
                 }
                 createIntegerValueOrArithmeticException(pc, exception, results)
 
-            case (_, IntegerSet(rightValues)) ⇒
+            case (_, IntegerSetLike(rightValues)) =>
                 if (rightValues contains (0)) {
                     if (rightValues.size == 1)
                         ThrowsException(VMArithmeticException(pc))
@@ -892,7 +892,7 @@ trait IntegerSetValues
                 } else
                     ComputedValue(IntegerValue(origin = pc))
 
-            case _ ⇒
+            case _ =>
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else
@@ -902,33 +902,33 @@ trait IntegerSetValues
 
     /*override*/ def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
-            case (IntegerSet(leftValues)) ⇒
+            case (IntegerSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == -1)
                     value2
                 else if (leftValues.size == 1 && leftValues.head == 0)
                     value1
                 else value2 match {
-                    case (IntegerSet(rightValues)) ⇒
+                    case (IntegerSetLike(rightValues)) =>
                         val results =
-                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
                                 leftValue & rightValue
                             }
                         IntegerSet(pc, results)
 
-                    case _ ⇒
+                    case _ =>
                         IntegerValue(origin = pc)
 
                 }
-            case _ ⇒
+            case _ =>
                 value2 match {
-                    case (IntegerSet(rightValues)) ⇒
+                    case (IntegerSetLike(rightValues)) =>
                         if (rightValues.size == 1 && rightValues.head == -1)
                             value1
                         else if (rightValues.size == 1 && rightValues.head == 0)
                             value2
                         else
                             IntegerValue(origin = pc)
-                    case _ ⇒
+                    case _ =>
                         IntegerValue(origin = pc)
                 }
         }
@@ -936,25 +936,25 @@ trait IntegerSetValues
 
     /*override*/ def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
-            case (IntegerSet(leftValues)) ⇒
+            case (IntegerSetLike(leftValues)) =>
                 if (leftValues.size == 1 && leftValues.head == -1)
                     value1
                 else if (leftValues.size == 1 && leftValues.head == 0)
                     value2
                 else value2 match {
-                    case (IntegerSet(rightValues)) ⇒
+                    case (IntegerSetLike(rightValues)) =>
                         val results =
-                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
                                 leftValue | rightValue
                             }
                         IntegerSet(pc, results)
 
-                    case _ ⇒
+                    case _ =>
                         IntegerValue(origin = pc)
                 }
-            case _ ⇒
+            case _ =>
                 value2 match {
-                    case (IntegerSet(rightValues)) ⇒
+                    case (IntegerSetLike(rightValues)) =>
                         if (rightValues.size == 1 && rightValues.head == -1)
                             value2
                         else if (rightValues.size == 1 && rightValues.head == 0)
@@ -962,7 +962,7 @@ trait IntegerSetValues
                         else
                             IntegerValue(origin = pc)
 
-                    case _ ⇒
+                    case _ =>
                         IntegerValue(origin = pc)
                 }
         }
@@ -970,54 +970,54 @@ trait IntegerSetValues
 
     /*override*/ def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
-                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+                val results = for (leftValue <- leftValues; rightValue <- rightValues) yield {
                     leftValue << rightValue
                 }
                 IntegerSet(pc, results)
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
-                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
+                val results = for (leftValue <- leftValues; rightValue <- rightValues) yield {
                     leftValue >> rightValue
                 }
                 IntegerSet(pc, results)
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
                 val results =
-                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
                         leftValue >>> rightValue
                     }
                 IntegerSet(pc, results)
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+            case (IntegerSetLike(leftValues), IntegerSetLike(rightValues)) =>
                 val results =
-                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
                         leftValue ^ rightValue
                     }
                 IntegerSet(pc, results)
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(origin = pc)
         }
     }
@@ -1028,20 +1028,20 @@ trait IntegerSetValues
 
     /*override*/ def i2b(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toByte.toInt))
-            case _                  ⇒ ByteValue(origin = pc)
+            case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toByte.toInt))
+            case _                      => ByteValue(origin = pc)
         }
 
     /*override*/ def i2c(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toChar.toInt))
-            case _                  ⇒ CharValue(origin = pc)
+            case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toChar.toInt))
+            case _                      => CharValue(origin = pc)
         }
 
     /*override*/ def i2s(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toShort.toInt))
-            case _                  ⇒ ShortValue(origin = pc)
+            case IntegerSetLike(values) => IntegerSet(pc, values.map(_.toShort.toInt))
+            case _                      => ShortValue(origin = pc)
         }
 
 }

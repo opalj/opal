@@ -32,7 +32,7 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
     }
@@ -45,16 +45,16 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         properties: Traversable[Property]
     ): Option[String] = {
         import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
-        if (!properties.exists(p ⇒ p match {
-            case DependentlyImmutableField(_) ⇒
+        if (!properties.exists(p => p match {
+            case DependentlyImmutableField(_) =>
                 val annotationType = a.annotationType.asFieldType.asObjectType
                 val parameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x ⇒ x.asStringValue.value)
+                        asArrayValue.values.map(x => x.asStringValue.value)
                 property.isInstanceOf[DependentlyImmutableField] &&
                     p.asInstanceOf[DependentlyImmutableField].parameter.size == parameters.size &&
-                    parameters.toList.forall(param ⇒ p.asInstanceOf[DependentlyImmutableField].parameter.contains(param))
-            case _ ⇒ p == property
+                    parameters.toList.forall(param => p.asInstanceOf[DependentlyImmutableField].parameter.contains(param))
+            case _ => p == property
         })) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)

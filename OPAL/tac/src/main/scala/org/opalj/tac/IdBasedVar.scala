@@ -23,8 +23,8 @@ sealed trait IdBasedVar extends Var[IdBasedVar] {
      */
     final def hasSameLocation(that: IdBasedVar): Boolean = {
         that match {
-            case that: IdBasedVar ⇒ this.id == that.id
-            case _                ⇒ false
+            case that: IdBasedVar => this.id == that.id
+            case _                => false
         }
     }
 
@@ -75,7 +75,7 @@ object OperandVar {
      * Creates a new operand variable to store a value of the given type.
      */
     def apply(cTpe: ComputationalType, stack: List[IdBasedVar]): SimpleVar = {
-        val id = stack.foldLeft(0)((c, n) ⇒ c + n.cTpe.operandSize)
+        val id = stack.foldLeft(0)((c, n) => c + n.cTpe.operandSize)
         SimpleVar(id, cTpe)
     }
 

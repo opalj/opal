@@ -103,13 +103,13 @@ object Immutability {
         import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 
         val classFiles = projectDir match {
-            case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-            case None      ⇒ JavaClassFileReader().ClassFiles(cp)
+            case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
+            case None      => JavaClassFileReader().ClassFiles(cp)
         }
 
         val libFiles = libDir match {
-            case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-            case None      ⇒ Traversable.empty
+            case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
+            case None      => Traversable.empty
         }
 
         val JDKFiles =
@@ -144,7 +144,7 @@ object Immutability {
                 libraryClassFilesAreInterfacesOnly = false,
                 Traversable.empty
             )
-        } { t ⇒
+        } { t =>
             projectTime = t.toSeconds
         }
 
@@ -167,7 +167,7 @@ object Immutability {
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
-        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
                 Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
             else if (level == 1)
@@ -180,7 +180,7 @@ object Immutability {
 
         project.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+            (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = project.logContext
                 if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
@@ -199,58 +199,58 @@ object Immutability {
             analysesManager.runAll(
                 dependencies, {
 
-                css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                css: Chain[ComputationSpecification[FPCFAnalysis]] =>
                     analysis match {
-                        case Assignability ⇒
+                        case Assignability =>
                             import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL2FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f ⇒ propertyStore.force(f, immutability.FieldAssignability.key)
+                                    f => propertyStore.force(f, immutability.FieldAssignability.key)
                                 )
-                        case Fields ⇒
+                        case Fields =>
                             import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f ⇒ propertyStore.force(f, immutability.FieldImmutability.key)
+                                    f => propertyStore.force(f, immutability.FieldImmutability.key)
                                 )
-                        case Classes ⇒
+                        case Classes =>
 
                             import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyClassImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c ⇒ propertyStore.force(c, immutability.ClassImmutability.key)
+                                    c => propertyStore.force(c, immutability.ClassImmutability.key)
                                 )
-                        case Types ⇒
+                        case Types =>
                             import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyTypeImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c ⇒ propertyStore.force(c, immutability.TypeImmutability.key)
+                                    c => propertyStore.force(c, immutability.TypeImmutability.key)
                                 )
-                        case All ⇒
+                        case All =>
                             import org.opalj.br.fpcf.properties.immutability
                             import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL2FieldAssignabilityAnalysis))
-                                allFieldsInProjectClassFiles.foreach(f ⇒ {
+                                allFieldsInProjectClassFiles.foreach(f => {
                                     import org.opalj.br.fpcf.properties.immutability
                                     propertyStore.force(f, immutability.FieldAssignability.key)
                                 })
                             if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f ⇒ propertyStore.force(f, immutability.FieldImmutability.key)
+                                    f => propertyStore.force(f, immutability.FieldImmutability.key)
                                 )
                             if (css.contains(LazyClassImmutabilityAnalysis))
-                                allProjectClassTypes.foreach(c ⇒ {
+                                allProjectClassTypes.foreach(c => {
                                     import org.opalj.br.fpcf.properties.immutability
                                     propertyStore.force(c, immutability.ClassImmutability.key)
                                 })
                             if (css.contains(LazyTypeImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c ⇒ propertyStore.force(c, immutability.TypeImmutability.key)
+                                    c => propertyStore.force(c, immutability.TypeImmutability.key)
                                 )
                     }
             }
             )
-        } { t ⇒
+        } { t =>
             analysisTime = t.toSeconds
         }
 
@@ -258,7 +258,7 @@ object Immutability {
 
         val fieldAssignabilityGroupedResults = propertyStore
             .entities(FieldAssignability.key)
-            .filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
+            .filter(field => allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
             .toTraversable
             .groupBy(_.asFinal.p)
 
@@ -345,12 +345,12 @@ object Immutability {
 
         val fieldGroupedResults = propertyStore
             .entities(FieldImmutability.key)
-            .filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
+            .filter(eps => allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
             .toTraversable
             .groupBy {
                 _.asFinal.p match {
-                    case DependentlyImmutableField(_) ⇒ DependentlyImmutableField(Set.empty)
-                    case default                      ⇒ default
+                    case DependentlyImmutableField(_) => DependentlyImmutableField(Set.empty)
+                    case default                      => default
                 }
             }
 
@@ -366,7 +366,7 @@ object Immutability {
             .map(unpackFieldEPS)
             .sortWith(_ < _)
 
-        val dependentlyImmutableFields = fieldGroupedResults //.collect { case (DependentlyImmutableField(_), rhs) ⇒ rhs }
+        val dependentlyImmutableFields = fieldGroupedResults //.collect { case (DependentlyImmutableField(_), rhs) => rhs }
             .getOrElse(DependentlyImmutableField(Set.empty), Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
@@ -403,12 +403,12 @@ object Immutability {
 
         val classGroupedResults = propertyStore
             .entities(ClassImmutability.key)
-            .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
             .groupBy {
                 _.asFinal.p match {
-                    case DependentlyImmutableClass(_) ⇒ DependentlyImmutableClass(Set.empty)
-                    case default                      ⇒ default
+                    case DependentlyImmutableClass(_) => DependentlyImmutableClass(Set.empty)
+                    case default                      => default
                 }
             }
 
@@ -445,13 +445,13 @@ object Immutability {
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val transitivelyImmutableClassesInterfaces = transitivelyImmutables
-            .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
 
         val transitivelyImmutableClasses = transitivelyImmutables
-            .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => !allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
@@ -487,12 +487,12 @@ object Immutability {
 
         val typeGroupedResults = propertyStore
             .entities(TypeImmutability.key)
-            .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
             .groupBy {
                 _.asFinal.p match {
-                    case DependentlyImmutableType(_) ⇒ DependentlyImmutableType(Set.empty)
-                    case default                     ⇒ default
+                    case DependentlyImmutableType(_) => DependentlyImmutableType(Set.empty)
+                    case default                     => default
                 }
             }
         ()
@@ -564,7 +564,7 @@ object Immutability {
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 | Fields with primitive Types / java.lang.String: ${
                     allFieldsInProjectClassFiles
-                        .filter(field ⇒ !field.fieldType.isReferenceType || field.fieldType == ObjectType.String).size
+                        .filter(field => !field.fieldType.isReferenceType || field.fieldType == ObjectType.String).size
                 }
                 |""".stripMargin
             )
@@ -685,7 +685,7 @@ object Immutability {
 
                 bw.close()
             } catch {
-                case _: IOException ⇒ println(s"could not write file: ${file.getName}")
+                case _: IOException => println(s"could not write file: ${file.getName}")
             } finally {
                 bw.close()
             }
@@ -759,7 +759,7 @@ object Immutability {
         while (i < args.length) {
             args(i) match {
 
-                case "-analysis" ⇒
+                case "-analysis" =>
                     val result = readNextArg()
                     if (result == "All")
                         analysis = All
@@ -776,26 +776,26 @@ object Immutability {
                         throw new IllegalArgumentException(s"unknown parameter: $result")
                     }
 
-                case "-threads"                           ⇒ numThreads = readNextArg().toInt
-                case "-cp"                                ⇒ cp = new File(readNextArg())
-                case "-resultFolder"                      ⇒ resultFolder = FileSystems.getDefault.getPath(readNextArg())
-                case "-projectDir"                        ⇒ projectDir = Some(readNextArg())
-                case "-libDir"                            ⇒ libDir = Some(readNextArg())
-                case "-closedWorld"                       ⇒ closedWorldAssumption = true
-                case "-isLibrary"                         ⇒ isLibrary = true
-                case "-noJDK"                             ⇒ withoutJDK = true
-                case "-callGraph"                         ⇒ callGraphName = Some(readNextArg())
-                case "-level"                             ⇒ level = Integer.parseInt(readNextArg())
-                case "-times"                             ⇒ times = Integer.parseInt(readNextArg())
-                case "-withoutConsiderGenericity"         ⇒ withoutConsiderGenericity = true
-                case "-withoutConsiderLazyInitialization" ⇒ withoutConsiderLazyInitialization = true
-                case "-multi"                             ⇒ multiProjects = true
-                case "-analysisName"                      ⇒ configurationName = Some(readNextArg())
-                case "-JDK" ⇒
+                case "-threads"                           => numThreads = readNextArg().toInt
+                case "-cp"                                => cp = new File(readNextArg())
+                case "-resultFolder"                      => resultFolder = FileSystems.getDefault.getPath(readNextArg())
+                case "-projectDir"                        => projectDir = Some(readNextArg())
+                case "-libDir"                            => libDir = Some(readNextArg())
+                case "-closedWorld"                       => closedWorldAssumption = true
+                case "-isLibrary"                         => isLibrary = true
+                case "-noJDK"                             => withoutJDK = true
+                case "-callGraph"                         => callGraphName = Some(readNextArg())
+                case "-level"                             => level = Integer.parseInt(readNextArg())
+                case "-times"                             => times = Integer.parseInt(readNextArg())
+                case "-withoutConsiderGenericity"         => withoutConsiderGenericity = true
+                case "-withoutConsiderLazyInitialization" => withoutConsiderLazyInitialization = true
+                case "-multi"                             => multiProjects = true
+                case "-analysisName"                      => configurationName = Some(readNextArg())
+                case "-JDK" =>
                     cp = JRELibraryFolder
                     withoutJDK = true
 
-                case unknown ⇒
+                case unknown =>
                     println(usage)
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
@@ -805,11 +805,11 @@ object Immutability {
             throw new Exception(s"not a domain level: $level")
 
         val callGraphKey = callGraphName match {
-            case Some("CHA")        ⇒ CHACallGraphKey
-            case Some("PointsTo")   ⇒ AllocationSiteBasedPointsToCallGraphKey
-            case Some("RTA") | None ⇒ RTACallGraphKey
-            case Some("XTA")        ⇒ XTACallGraphKey
-            case Some(a) ⇒
+            case Some("CHA")        => CHACallGraphKey
+            case Some("PointsTo")   => AllocationSiteBasedPointsToCallGraphKey
+            case Some("RTA") | None => RTACallGraphKey
+            case Some("XTA")        => XTACallGraphKey
+            case Some(a) =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
                 return ;
@@ -818,7 +818,7 @@ object Immutability {
         var nIndex = 1
         while (nIndex <= times) {
             if (multiProjects) {
-                for (subp ← cp.listFiles()) {
+                for (subp <- cp.listFiles()) {
                     evaluate(
                         subp,
                         analysis,

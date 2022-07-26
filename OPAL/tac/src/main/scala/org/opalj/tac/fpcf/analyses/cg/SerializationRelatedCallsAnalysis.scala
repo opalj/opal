@@ -29,8 +29,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
-import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
+import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
+import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.tac.fpcf.properties.cg.Callees
@@ -81,7 +81,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             val param = params.head.get.asVar
 
             val receiver = persistentUVar(param)
-            val parameters = Seq(receiverOption.flatMap(os ⇒ persistentUVar(os.asVar)))
+            val parameters = Seq(receiverOption.flatMap(os => persistentUVar(os.asVar)))
 
             implicit val state: CGState[ContextType] = new CGState[ContextType](
                 callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)),
@@ -108,7 +108,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         val indirectCalls = new IndirectCalls()
 
         typeIterator.continuation(receiverVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) {
-            newType ⇒
+            newType =>
                 handleType(newType, state.callContext, pc, receiver, parameters, indirectCalls)
         }(state)
 
@@ -150,7 +150,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             typeIterator.typesProperty(
                 param, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
             )
-        ) { tpe ⇒ handleType(tpe, callContext, callPC, receiver, parameters, indirectCalls) }
+        ) { tpe => handleType(tpe, callContext, callPC, receiver, parameters, indirectCalls) }
     }
 
     private[this] def handleType(
@@ -189,7 +189,7 @@ class OOSWriteObjectAnalysis private[analyses] (
                 WriteExternalDescriptor,
                 parameters,
                 receiver,
-                tgt ⇒ typeIterator.expandContext(callContext, tgt, callPC)
+                tgt => typeIterator.expandContext(callContext, tgt, callPC)
             )
         } else {
             val writeObjectMethod = project.specialCall(
@@ -209,7 +209,7 @@ class OOSWriteObjectAnalysis private[analyses] (
                 WriteObjectDescriptor,
                 parameters,
                 receiver,
-                tgt ⇒ typeIterator.expandContext(callContext, tgt, callPC)
+                tgt => typeIterator.expandContext(callContext, tgt, callPC)
             )
         }
 
@@ -231,7 +231,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             WriteObjectDescriptor,
             parameters,
             receiver,
-            tgt ⇒ typeIterator.expandContext(callContext, tgt, callPC)
+            tgt => typeIterator.expandContext(callContext, tgt, callPC)
         )
     }
 
@@ -299,17 +299,17 @@ class OISReadObjectAnalysis private[analyses] (
         stmts: Array[Stmt[V]]
     ): Unit = {
         var foundCast = false
-        val parameterList = Seq(inputStream.flatMap(is ⇒ persistentUVar(is.asVar)))
+        val parameterList = Seq(inputStream.flatMap(is => persistentUVar(is.asVar)))
         for {
-            use ← targetVar.usedBy
+            use <- targetVar.usedBy
         } stmts(use) match {
-            case Checkcast(_, value, ElementReferenceType(castType)) ⇒
+            case Checkcast(_, value, ElementReferenceType(castType)) =>
                 foundCast = true
 
                 // for each subtype of the cast type we add calls to the relevant methods
                 for {
-                    t ← ch.allSubtypes(castType, reflexive = true)
-                    cf ← project.classFile(t) // we ignore cases were no class file exists
+                    t <- ch.allSubtypes(castType, reflexive = true)
+                    cf <- project.classFile(t) // we ignore cases were no class file exists
                     if !cf.isInterfaceDeclaration
                     if ch.isSubtypeOf(castType, ObjectType.Serializable)
                 } {
@@ -333,11 +333,11 @@ class OISReadObjectAnalysis private[analyses] (
                             ReadExternalDescriptor,
                             parameterList,
                             receiver,
-                            tgt ⇒ typeIterator.expandContext(context, tgt, pc)
+                            tgt => typeIterator.expandContext(context, tgt, pc)
                         )
 
                         // call to no-arg constructor
-                        cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
+                        cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c =>
                             calleesAndCallers.addCall(
                                 context,
                                 pc,
@@ -360,14 +360,14 @@ class OISReadObjectAnalysis private[analyses] (
                             ReadObjectDescriptor,
                             parameterList,
                             receiver,
-                            tgt ⇒ typeIterator.expandContext(context, tgt, pc)
+                            tgt => typeIterator.expandContext(context, tgt, pc)
                         )
 
                         // call to first super no-arg constructor
                         val nonSerializableSuperclass = firstNotSerializableSupertype(t)
                         if (nonSerializableSuperclass.isDefined) {
                             val constructor =
-                                p.classFile(nonSerializableSuperclass.get).flatMap { cf ⇒
+                                p.classFile(nonSerializableSuperclass.get).flatMap { cf =>
                                     cf.findMethod("<init>", NoArgsAndReturnVoid)
                                 }
                             // otherwise an exception will thrown at runtime
@@ -390,12 +390,12 @@ class OISReadObjectAnalysis private[analyses] (
                         // Note, that we assume that there is a constructor
                         // Note that we have to do a String comparison since methods with ObjectType
                         // descriptors are not sorted consistently across runs
-                        val constructors = cf.constructors.map[(String, Method)] { ctor ⇒
+                        val constructors = cf.constructors.map[(String, Method)] { ctor =>
                             (ctor.descriptor.toJava, ctor)
                         }
 
                         if (constructors.nonEmpty) {
-                            val constructor = constructors.minBy(t ⇒ t._1)._2
+                            val constructor = constructors.minBy(t => t._1)._2
 
                             calleesAndCallers.addCall(
                                 context,
@@ -421,7 +421,7 @@ class OISReadObjectAnalysis private[analyses] (
                         JustReturnsObject,
                         Seq.empty,
                         receiver,
-                        tgt ⇒ typeIterator.expandContext(context, tgt, pc)
+                        tgt => typeIterator.expandContext(context, tgt, pc)
                     )
 
                     // call to `validateObject`
@@ -436,11 +436,11 @@ class OISReadObjectAnalysis private[analyses] (
                             JustReturnsObject,
                             Seq.empty,
                             receiver,
-                            tgt ⇒ typeIterator.expandContext(context, tgt, pc)
+                            tgt => typeIterator.expandContext(context, tgt, pc)
                         )
                     }
                 }
-            case _ ⇒
+            case _ =>
         }
 
         if (!foundCast) {
@@ -450,8 +450,8 @@ class OISReadObjectAnalysis private[analyses] (
 
     @tailrec private[this] def firstNotSerializableSupertype(t: ObjectType): Option[ObjectType] = {
         ch.superclassType(t) match {
-            case None ⇒ None
-            case Some(superType) ⇒
+            case None => None
+            case Some(superType) =>
                 if (ch.isSubtypeOf(superType, ObjectType.Serializable)) {
                     firstNotSerializableSupertype(superType)
                 } else {

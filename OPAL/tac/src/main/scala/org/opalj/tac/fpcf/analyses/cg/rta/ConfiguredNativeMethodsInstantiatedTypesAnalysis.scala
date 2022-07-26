@@ -28,6 +28,8 @@ import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.ReferenceType
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
  *
@@ -44,25 +46,25 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
         ConfiguredMethods.reader.read(
             p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
-        ).nativeMethods.map { v ⇒ (v.method, v.pointsTo) }.toMap
+        ).nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
     }
 
     def getInstantiatedTypesUB(
         instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
     ): UIDSet[ReferenceType] = {
         instantiatedTypesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ UIDSet.empty
+            case eps: EPS[_, _] => eps.ub.types
+            case _              => UIDSet.empty
         }
     }
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         (propertyStore(declaredMethod, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -79,7 +81,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             return NoResult;
 
         val instantiatedTypes = dataO.get.collect {
-            case PointsToRelation(_, as: AllocationSiteDescription) ⇒
+            case PointsToRelation(_, as: AllocationSiteDescription) =>
                 as.arrayComponentTypes.map(ReferenceType(_)) :+ ReferenceType(as.instantiatedType)
         }.flatten
 
@@ -87,7 +89,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
 
         val newInstantiatedTypes = UIDSet(
-            instantiatedTypes.filterNot(instantiatedTypesUB.contains): _*
+            ArraySeq.unsafeWrapArray(instantiatedTypes.filterNot(instantiatedTypesUB.contains)): _*
         )
 
         if (newInstantiatedTypes.isEmpty)

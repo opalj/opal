@@ -31,11 +31,12 @@ package object util {
         versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
     }
 
-    def avg(ts: Traversable[Nanoseconds]): Nanoseconds = {
-        if (ts.isEmpty)
+    def avg(ts: IterableOnce[Nanoseconds]): Nanoseconds = {
+        val iterator = ts.iterator
+        if (iterator.isEmpty)
             return Nanoseconds.None;
 
-        Nanoseconds(ts.map(_.timeSpan).sum / ts.size)
+        Nanoseconds(iterator.map(_.timeSpan).sum / iterator.size)
     }
 
     /**

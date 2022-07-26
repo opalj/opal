@@ -3,10 +3,11 @@ package org
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * OPAL is a Scala-based framework for the static analysis, manipulation and creation of
@@ -69,7 +70,7 @@ package object opalj {
             // when we reach this point assertions are turned off
             info("OPAL Common", "Production Build")
         } catch {
-            case _: AssertionError ⇒ info("OPAL Common", "Development Build with Assertions")
+            case _: AssertionError => info("OPAL Common", "Development Build with Assertions")
         }
     }
 
@@ -81,7 +82,7 @@ package object opalj {
     }
 
     /** Non-elidable version of `assert`; only to be used in a guarded context. */
-    def check(condition: Boolean, message: ⇒ String): Unit = {
+    def check(condition: Boolean, message: => String): Unit = {
         if (!condition) throw new AssertionError(message);
     }
 
@@ -144,6 +145,8 @@ package object opalj {
      * A method that takes an arbitrary parameter and throws an `UnknownError` that states
      * that an implementation was not required.
      */
-    final val NotRequired: Any ⇒ Nothing = (a: Any) ⇒ { notRequired() }
+    final val NotRequired: Any => Nothing = (a: Any) => { notRequired() }
 
+    def partitionByType[T <: AnyRef, X <: AnyRef](data: ArraySeq[T], clazz: Class[X]): (ArraySeq[X], ArraySeq[T]) =
+        data.partition(clazz.isInstance(_)).asInstanceOf[(ArraySeq[X], ArraySeq[T])]
 }

@@ -49,9 +49,9 @@ case class InstantiatedTypes private[properties] (
         }
     }
 
-    def updated(newTypes: TraversableOnce[ReferenceType]): InstantiatedTypes = {
+    def updated(newTypes: IterableOnce[ReferenceType]): InstantiatedTypes = {
         var newOrderedTypes = orderedTypes
-        for { t ← newTypes if !types.contains(t) } {
+        for { t <- newTypes.iterator if !types.contains(t) } {
             newOrderedTypes ::= t
         }
         new InstantiatedTypes(newOrderedTypes, types ++ newTypes)
@@ -82,9 +82,9 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
         val name = "opalj.InstantiatedTypes"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoInstantiatedTypes
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoInstantiatedTypes
+                case _ =>
                     throw new IllegalStateException(s"No analysis is scheduled for property: $name")
             }
         )
@@ -109,18 +109,18 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     )(
         eop: EOptionP[E, InstantiatedTypes]
     ): Option[InterimEP[E, InstantiatedTypes]] = eop match {
-        case InterimUBP(ub: InstantiatedTypes) ⇒
+        case InterimUBP(ub: InstantiatedTypes) =>
             val newUB = ub.updated(newInstantiatedTypes)
             if (newUB.types.size > ub.types.size)
                 Some(InterimEUBP(entity, newUB))
             else
                 None
 
-        case _: EPK[_, _] ⇒
+        case _: EPK[_, _] =>
             val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
             Some(InterimEUBP(entity, newUB))
 
-        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+        case r => throw new IllegalStateException(s"unexpected previous result $r")
     }
 }
 

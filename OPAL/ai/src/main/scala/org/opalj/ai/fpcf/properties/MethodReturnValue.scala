@@ -55,8 +55,8 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
 
     def apply(mrvOption: Option[ValueInformation]): MethodReturnValue = {
         mrvOption match {
-            case Some(vi)   ⇒ TheMethodReturnValue(vi)
-            case _ /*None*/ ⇒ NoMethodReturnValue
+            case Some(vi)   => TheMethodReturnValue(vi)
+            case _ /*None*/ => NoMethodReturnValue
         }
     }
 
@@ -65,7 +65,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
      */
     final val key = PropertyKey.create[Method, MethodReturnValue](
         "opalj.MethodReturnValue",
-        (ps: PropertyStore, _: FallbackReason, m: Method) ⇒ {
+        (ps: PropertyStore, _: FallbackReason, m: Method) => {
             val p = ps.context(classOf[SomeProject])
             MethodReturnValue(
                 Some(ValueInformation.forProperValue(m.descriptor.returnType)(p.classHierarchy))

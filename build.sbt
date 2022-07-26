@@ -1,9 +1,8 @@
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import sbt.Test
 import scalariform.formatter.preferences._
-
 import sbtassembly.AssemblyPlugin.autoImport._
-
 import sbtunidoc.ScalaUnidocPlugin
 
 name := "OPAL Library"
@@ -29,8 +28,9 @@ ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licens
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-
-scalaVersion in ThisBuild := "2.12.15"
+// TODO: Use release version of Scala 2.13.9 instead of nightly
+Global / resolvers += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/"
+ThisBuild / scalaVersion := "2.13.9-bin-7952071"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -47,7 +47,7 @@ ThisBuild / javacOptions ++= Seq("-encoding", "utf8", "-source", "1.8")
 
 ThisBuild /testOptions := {
   baseDirectory
-    .map(bd ⇒ Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
+    .map(bd => Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
     .value
 }
 
@@ -57,7 +57,7 @@ ThisBuild / testOptions += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
 ScalaUnidoc / unidoc / scalacOptions := {
-  baseDirectory.map(bd ⇒ Seq("-sourcepath", bd.getAbsolutePath)).value
+  baseDirectory.map(bd => Seq("-sourcepath", bd.getAbsolutePath)).value
 }
 
 ScalaUnidoc / unidoc / scalacOptions ++=
@@ -202,6 +202,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
     name := "Bytecode Infrastructure",
     libraryDependencies ++= Dependencies.bi,
     Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+    // Test / publishArtifact := true, // Needed to get access to class TestResources
     /*
       The following settings relate to the java-fixture-compiler plugin, which
       compiles the java fixture projects in the BytecodeInfrastructure project for testing.
@@ -234,8 +235,9 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
   .settings(
     name := "Bytecode Representation",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Representation"),
-    libraryDependencies ++= Dependencies.br
-  )
+    libraryDependencies ++= Dependencies.br,
+    // Test / publishArtifact := true // Needed to get access to class TestResources and TestSupport
+   )
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -320,7 +322,8 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .settings(buildSettings: _*)
   .settings(
     name := "Architecture Validation",
-    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation")
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation"),
+    // Test / publishArtifact := true
   )
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)

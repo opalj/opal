@@ -6,20 +6,21 @@ import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
 import java.lang.Boolean.FALSE
 import java.io.File
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 import java.util.concurrent.atomic.AtomicInteger
-
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithCaching
 import org.opalj.br.reader.BytecodeOptimizer.SimplifyControlFlowKey
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Smoketest if we can convert every class file using the "Bytecode Representation" back to a
@@ -35,9 +36,9 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
     val ClassFileReader = {
         val testConfig = BaseConfig.withValue(SimplifyControlFlowKey, fromAnyRef(FALSE))
 
-        object Framework extends {
-            override val config = testConfig
-        } with Java9FrameworkWithCaching(new BytecodeInstructionsCache)
+        object Framework extends Java9FrameworkWithCaching(new BytecodeInstructionsCache) {
+            override def defaultConfig = testConfig
+        }
         Framework
     }
 
@@ -47,7 +48,7 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
         val Lock = new Object
         var exceptions: List[Throwable] = Nil
 
-        for { (brClassFile1, url) ← ClassFileReader.ClassFiles(file).par } {
+        for { (brClassFile1, url) <- ClassFileReader.ClassFiles(file).par } {
 
             try {
                 // PART 1... just serialize the file...
@@ -67,7 +68,7 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
 
                 entriesCount.incrementAndGet()
             } catch {
-                case e: Exception ⇒
+                case e: Exception =>
                     Lock.synchronized {
                         Console.err.println(s"reading/writing of $url -> failed: ${e.getMessage}\n")
                         e.printStackTrace(Console.err)
@@ -96,7 +97,7 @@ class BRtoBATest extends AnyFlatSpec with Matchers {
 
     val jmodsFile = locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
-        file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
+        file <- JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
         if file.isFile
         if file.canRead
         if file.length() > 0

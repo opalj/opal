@@ -63,13 +63,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     )(implicit state: AnalysisState): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
-        pcs.iterator.exists { pc ⇒
+        pcs.iterator.exists { pc =>
             val index = taCode.pcToIndex(pc)
             if (index > -1) { //TODO actually, unnecessary but required because there are '-1'
                 val stmt = stmts(index)
                 if (stmt.pc == pc) {
                     (stmt.astID: @switch) match {
-                        case PutStatic.ASTID | PutField.ASTID ⇒
+                        case PutStatic.ASTID | PutField.ASTID =>
                             if (method.isInitializer) {
                                 if (field.isStatic) {
                                     method.isConstructor
@@ -134,7 +134,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                     val assignedValueObjectVar =
                                         stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
 
-                                    if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index ⇒
+                                    if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index =>
                                         val stmt = stmts(index)
 
                                         // val writeStmt  = stmts(fieldWriteInMethodIndex)
@@ -147,7 +147,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                         return true;
 
                                     val fieldReadsInMethod = reads.iterator.filter(_._1 eq method).map(_._2).toList
-                                    if (fieldReadsInMethod.size > 1 && !fieldReadsInMethod.head.forall { pc ⇒
+                                    if (fieldReadsInMethod.size > 1 && !fieldReadsInMethod.head.forall { pc =>
                                         val index = taCode.pcToIndex(pc)
                                         fieldWriteInMethodIndex == index ||
                                             dominates(fieldWriteInMethodIndex, index, taCode)
@@ -157,7 +157,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 }
 
                             }
-                        case _ ⇒ throw new RuntimeException("unexpected field access");
+                        case _ => throw new RuntimeException("unexpected field access");
                     }
                 } else {
                     // nothing to do as the put field is dead

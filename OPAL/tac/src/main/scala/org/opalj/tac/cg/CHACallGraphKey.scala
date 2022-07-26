@@ -28,7 +28,7 @@ object CHACallGraphKey extends CallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = List.empty
+    ): Iterable[FPCFAnalysisScheduler] = List.empty
 
     override def getTypeIterator(project: SomeProject) = new CHATypeIterator(project)
 

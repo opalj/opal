@@ -9,6 +9,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.da.ClassFile
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Test case feature that performs an interface call for a default method where an intermediate
  * interface shadows the default method with a static method (not valid java, but valid bytecode).
@@ -24,7 +26,7 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
@@ -32,12 +34,12 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
         val classHierarchy = project.classHierarchy
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction ← body
+            pcAndInstruction <- body
             if pcAndInstruction.instruction.opcode == INVOKEINTERFACE.opcode
         } {
             val INVOKEINTERFACE(declaringClass, name, desc) = pcAndInstruction.instruction
@@ -48,7 +50,7 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
                 val invokedMethod = targets.head
                 val declIntf = invokedMethod.classFile
                 if (declIntf.isInterfaceDeclaration &&
-                    classHierarchy.allSuperinterfacetypes(declaringClass).exists { sintf ⇒
+                    classHierarchy.allSuperinterfacetypes(declaringClass).exists { sintf =>
                         val sintfCfO = project.classFile(sintf)
                         sintfCfO.isDefined &&
                             sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
@@ -63,6 +65,6 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
             }
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 }

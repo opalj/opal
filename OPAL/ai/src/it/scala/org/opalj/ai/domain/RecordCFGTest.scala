@@ -4,22 +4,24 @@ package ai
 package domain
 
 import java.net.URL
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funspec.AnyFunSpec
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
+import org.junit.runner.RunWith
+import org.opalj.graphs.ControlDependencies
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.graphs.ControlDependencies
-import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.Method
 import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.TestSupport.createJREProject
 
 /**
@@ -33,7 +35,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
     private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    import DominatorsPerformanceEvaluation.{time ⇒ dTime}
+    import DominatorsPerformanceEvaluation.{time => dTime}
 
     class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain
@@ -55,7 +57,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 
-    def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: ⇒ String)(f: ⇒ T): T = {
+    def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: => String)(f: => T): T = {
         @volatile var result: T = null
         val t = new Thread(new Runnable { def run(): Unit = { result = f } })
         t.start()
@@ -75,21 +77,21 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
         val failures = new java.util.concurrent.ConcurrentLinkedQueue[(String, Throwable)]
 
-        project.parForeachMethodWithBody() { methodInfo ⇒
+        project.parForeachMethodWithBody() { methodInfo =>
             val method = methodInfo.method
             try {
                 val domain = new RecordCFGDomain(method, project)
-                val evaluatedInstructions = dTime('AI) {
+                val evaluatedInstructions = dTime(Symbol("AI")) {
                     BaseAI(method, domain).evaluatedInstructions
                 }
 
-                val bbBRCFG = dTime('BasicBlocksBasedBRCFG) {
+                val bbBRCFG = dTime(Symbol("BasicBlocksBasedBRCFG")) {
                     CFGFactory(method.body.get, project.classHierarchy)
                 }
-                val bbAICFG = dTime('BasicBlocksBasedAICFG) { domain.bbCFG }
+                val bbAICFG = dTime(Symbol("BasicBlocksBasedAICFG")) { domain.bbCFG }
 
                 val pcs = new mutable.BitSet(method.body.size)
-                bbAICFG.allBBs.foreach { bbAI ⇒
+                bbAICFG.allBBs.foreach { bbAI =>
 
                     assert(bbAI.startPC <= bbAI.endPC, s"${bbAI.startPC}> ${bbAI.endPC}")
 
@@ -111,10 +113,10 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                                 s" and bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
                         )
                     }
-                    val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock ⇒ bb }
-                    val allAIPredecessors = bbAI.predecessors.collect { case bb: BasicBlock ⇒ bb }
-                    allAIPredecessors.foreach { predecessorBB ⇒
-                        if (!allBRPredecessors.exists { p ⇒ p.endPC == predecessorBB.endPC })
+                    val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock => bb }
+                    val allAIPredecessors = bbAI.predecessors.collect { case bb: BasicBlock => bb }
+                    allAIPredecessors.foreach { predecessorBB =>
+                        if (!allBRPredecessors.exists { p => p.endPC == predecessorBB.endPC })
                             fail(
                                 s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):"+
                                     allAIPredecessors.mkString("ai:{", ",", "} vs. ") +
@@ -123,13 +125,13 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     }
                 }
 
-                evaluatedInstructions.iterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc =>
 
-                    domain.foreachSuccessorOf(pc) { succPC ⇒
+                    domain.foreachSuccessorOf(pc) { succPC =>
                         domain.predecessorsOf(succPC).contains(pc) should be(true)
                     }
 
-                    domain.foreachPredecessorOf(pc) { predPC ⇒
+                    domain.foreachPredecessorOf(pc) { predPC =>
                         domain.allSuccessorsOf(predPC).contains(pc) should be(true)
                     }
 
@@ -141,16 +143,16 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     bb.endPC should be >= (pc)
                 }
 
-                val dt = dTime('Dominators) { domain.dominatorTree }
+                val dt = dTime(Symbol("Dominators")) { domain.dominatorTree }
 
-                val postDT = dTime('PostDominators) { domain.postDominatorTree }
+                val postDT = dTime(Symbol("PostDominators")) { domain.postDominatorTree }
 
                 val cdg =
-                    terminateAfter[ControlDependencies](1000l, { method.toJava }) {
-                        dTime('ControlDependencies) { domain.pdtBasedControlDependencies }
+                    terminateAfter[ControlDependencies](1000L, { method.toJava }) {
+                        dTime(Symbol("ControlDependencies")) { domain.pdtBasedControlDependencies }
                     }
 
-                evaluatedInstructions.iterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc =>
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
                         !evaluatedInstructions.contains(dt.dom(pc))) {
@@ -166,30 +168,30 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
                     }
                     try {
-                        dTime('QueryingControlDependencies) {
-                            cdg.xIsControlDependentOn(pc)(x ⇒ { /* "somke test" */ })
+                        dTime(Symbol("QueryingControlDependencies")) {
+                            cdg.xIsControlDependentOn(pc)(x => { /* "somke test" */ })
                         }
                     } catch {
-                        case t: Throwable ⇒
+                        case t: Throwable =>
                             t.printStackTrace
                             fail(s"getting the control dependency information for $pc failed", t)
                     }
                 }
 
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     t.printStackTrace()
                     failures.add((method.toJava, t))
             }
         }
 
         if (failures.size > 0) {
-            val failureMessages = for { (failure, exception) ← failures.asScala } yield {
+            val failureMessages = for { (failure, exception) <- failures.asScala } yield {
                 var root: Throwable = exception
                 while (root.getCause != null) root = root.getCause
                 val location =
                     if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
-                        root.getStackTrace().take(5).map { stackTraceElement ⇒
+                        root.getStackTrace().take(5).map { stackTraceElement =>
                             stackTraceElement.getClassName+
                                 " { "+
                                 stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
@@ -212,38 +214,38 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
-        def evaluateProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
+        def evaluateProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
             it(s"should be possible for all methods of $projectName") {
                 DominatorsPerformanceEvaluation.resetAll()
                 val project = projectFactory()
                 time {
                     analyzeProject(projectName, project)
-                } { t ⇒ info("the analysis took (real time):                            "+t.toSeconds) }
+                } { t => info("the analysis took (real time):                            "+t.toSeconds) }
 
                 import DominatorsPerformanceEvaluation.getTime
-                info("performing AI took (CPU time):                            "+getTime('AI).toSeconds)
-                info("computing dominator information took (CPU time):          "+getTime('Dominators).toSeconds)
+                info("performing AI took (CPU time):                            "+getTime(Symbol("AI")).toSeconds)
+                info("computing dominator information took (CPU time):          "+getTime(Symbol("Dominators")).toSeconds)
 
-                val postDominatorsTime = getTime('PostDominators).toSeconds
+                val postDominatorsTime = getTime(Symbol("PostDominators")).toSeconds
                 info("computing post-dominator information took (CPU time):     "+postDominatorsTime)
 
-                val cdgTime = getTime('ControlDependencies).toSeconds
+                val cdgTime = getTime(Symbol("ControlDependencies")).toSeconds
                 info("computing control dependency information took (CPU time): "+cdgTime)
-                val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
+                val cdgQueryTime = getTime(Symbol("QueryingControlDependencies")).toSeconds
                 info("querying control dependency information took (CPU time):  "+cdgQueryTime)
 
-                val bbAICFGTime = getTime('BasicBlocksBasedAICFG).toSeconds
+                val bbAICFGTime = getTime(Symbol("BasicBlocksBasedAICFG")).toSeconds
                 info("constructing the AI based CFGs took (CPU time):           "+bbAICFGTime)
 
-                val bbBRCFGTime = getTime('BasicBlocksBasedBRCFG).toSeconds
+                val bbBRCFGTime = getTime(Symbol("BasicBlocksBasedBRCFG")).toSeconds
                 info("constructing the BR based CFGs took (CPU time):           "+bbBRCFGTime)
             }
         }
 
-        evaluateProject("the JDK", () ⇒ createJREProject)
+        evaluateProject("the JDK", () => createJREProject())
 
         var projectsCount = 0
-        br.TestSupport.allBIProjects(reader, None) foreach { biProject ⇒
+        br.TestSupport.allBIProjects(reader, None) foreach { biProject =>
             val (projectName, projectFactory) = biProject
             evaluateProject(projectName, projectFactory)
             projectsCount += 1

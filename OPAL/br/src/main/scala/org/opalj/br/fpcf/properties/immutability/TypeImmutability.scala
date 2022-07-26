@@ -87,7 +87,7 @@ case class DependentlyImmutableType(parameter: Set[String]) extends TypeImmutabi
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == TransitivelyImmutableType) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 }
@@ -106,9 +106,9 @@ case object NonTransitivelyImmutableType extends TypeImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         other match {
-            case TransitivelyImmutableType | DependentlyImmutableType(_) ⇒
-                throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
-            case _ ⇒
+            case TransitivelyImmutableType | DependentlyImmutableType(_) =>
+                throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
+            case _ =>
         }
     }
 }
@@ -123,7 +123,7 @@ case object MutableType extends TypeImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other != MutableType) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 }

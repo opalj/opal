@@ -19,14 +19,14 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
 
     val classhierachy =
         ClassHierarchy(
-            Traversable.empty,
-            List(() ⇒ this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
+            Iterable.empty,
+            List(() => this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
         )(GlobalLogContext)
 
     implicit def stringToUIDSetObjectType(str: String) = UIDSet(ObjectType(str))
 
     implicit def setToUIDSet(s: Set[String]): UIDSet[ObjectType] = {
-        s.map(ObjectType.apply)(UIDSet.canBuildUIDSet)
+        UIDSet.fromSpecific(s.map(ObjectType.apply))
     }
 
     def testJoinUpperTypeBounds(

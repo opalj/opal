@@ -62,27 +62,20 @@ object MethodHandlesUtil {
     private[reflection] def retrieveDescriptorBasedMethodMatcher(
         descriptorOpt: Option[MethodDescriptor],
         expr:          Expr[V],
-        isStatic:      Boolean,
         isConstructor: Boolean,
         stmts:         Array[Stmt[V]],
         project:       SomeProject
     ): MethodMatcher = {
         val descriptorsOpt =
             if (descriptorOpt.isDefined) {
-                descriptorOpt.map { md ⇒
-                    // for instance methods, we need to peel off the receiver type
-                    if (!isStatic && !isConstructor)
-                        Set(MethodDescriptor(md.parameterTypes.tail, md.returnType))
-                    else
-                        Set(md)
-                }
+                descriptorOpt.map { Set(_) }
             } else
                 getPossibleDescriptorsForMethodTypes(expr, stmts, project).map(_.toSet)
 
         val actualDescriptorOpt =
             if (isConstructor)
                 // for constructor
-                descriptorsOpt.map(_.map { md ⇒
+                descriptorsOpt.map(_.map { md =>
                     MethodDescriptor(md.parameterTypes, VoidType)
                 })
             else
@@ -92,7 +85,7 @@ object MethodHandlesUtil {
         // e.g. name or classes.
         MatcherUtil.retrieveSuitableNonEssentialMatcher[Set[MethodDescriptor]](
             actualDescriptorOpt,
-            v ⇒ new DescriptorBasedMethodMatcher(v)
+            v => new DescriptorBasedMethodMatcher(v)
         )
     }
 
@@ -179,9 +172,9 @@ object MethodHandlesUtil {
             }
 
             val possibleTypes = for {
-                otherParamTypes ← possibleOtherParamTypes.iterator // empty seq. if None
-                returnType ← returnTypes
-                firstParamType ← firstParamTypesOpt.get.asInstanceOf[Iterator[FieldType]]
+                otherParamTypes <- possibleOtherParamTypes.iterator // empty seq. if None
+                returnType <- returnTypes
+                firstParamType <- firstParamTypesOpt.get.asInstanceOf[Iterator[FieldType]]
             } yield MethodDescriptor(firstParamType +: otherParamTypes, returnType)
 
             Some(possibleTypes)
@@ -197,8 +190,8 @@ object MethodHandlesUtil {
 
                 val possibleMethodDescriptorsIterator =
                     for {
-                        otherParamTypes ← possibleOtherParamTypes.get.iterator
-                        returnType ← returnTypes
+                        otherParamTypes <- possibleOtherParamTypes.get.iterator
+                        returnType <- returnTypes
                     } yield MethodDescriptor(otherParamTypes, returnType)
                 Some(possibleMethodDescriptorsIterator)
             } else if (secondParamType == ObjectType.Class) { // methodType(T1, T2) => (T2)T2
@@ -209,8 +202,8 @@ object MethodHandlesUtil {
                 }
                 val paramTypes = paramTypesOpt.get.asInstanceOf[Iterator[FieldType]]
                 Some(for {
-                    returnType ← returnTypes
-                    paramType ← paramTypes
+                    returnType <- returnTypes
+                    paramType <- paramTypes
                 } yield MethodDescriptor(paramType, returnType))
             } else { // we don't handle methodType(T1, List(T2, ...)) and methodType(T1, MethodType)
                 None

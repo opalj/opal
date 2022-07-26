@@ -45,8 +45,8 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
      */
     def determineFieldAssignabilityLazy(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case field: Field ⇒ determineFieldAssignability(field)
-            case _            ⇒ throw new IllegalArgumentException(s"$e is not a Field")
+            case field: Field => determineFieldAssignability(field)
+            case _            => throw new IllegalArgumentException(s"$e is not a Field")
         }
     }
 
@@ -79,12 +79,12 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         val thisType = classFile.thisType
 
         for {
-            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
+            (method, pcs) <- fieldAccessInformation.writeAccesses(field)
             if !method.isStaticInitializer
-            pc ← pcs
+            pc <- pcs
         } {
             method.body.get.instructions(pc) match {
-                case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
+                case PUTSTATIC(`thisType`, fieldName, fieldType) =>
                     // We don't need to lookup the field in the class
                     // hierarchy since we are only concerned about private
                     // fields so far... so we don't have to do a full
@@ -94,7 +94,7 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
                         return Result(field.get, Assignable);
                     }
 
-                case _ ⇒
+                case _ =>
             }
         }
 
@@ -134,7 +134,7 @@ object EagerL0FieldAssignabilityAnalysis
             else
                 p.allClassFiles
         val fields = {
-            classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
+            classFileCandidates.filter(cf => cf.methods.forall(m => !m.isNative)).flatMap(_.fields)
         }
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldAssignability)
         analysis
@@ -152,7 +152,7 @@ object LazyL0FieldAssignabilityAnalysis
         val analysis = new L0FieldAssignabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldAssignability.key,
-            (field: Field) ⇒ analysis.determineFieldAssignabilityLazy(field)
+            (field: Field) => analysis.determineFieldAssignabilityLazy(field)
         )
         analysis
     }

@@ -4,9 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.collection.immutable.RefArray
-import org.opalj.control.fillRefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
@@ -20,7 +21,8 @@ trait MethodParameters_attributeReader extends AttributeReader {
     type MethodParameters_attribute >: Null <: Attribute
 
     type MethodParameter <: AnyRef
-    type MethodParameters = RefArray[MethodParameter]
+    implicit val methodParameterType: ClassTag[MethodParameter] // TODO: Replace in Scala 3 by `type MethodParameter : ClassTag`
+    type MethodParameters = ArraySeq[MethodParameter]
 
     def MethodParameters_attribute(
         cp:                   Constant_Pool,
@@ -59,7 +61,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val parameters_count = in.readUnsignedByte
         if (parameters_count > 0 || reifyEmptyAttributes) {
@@ -68,7 +70,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
                 ap_name_index,
                 ap_descriptor_index,
                 attribute_name_index,
-                fillRefArray(parameters_count) {
+                fillArraySeq(parameters_count) {
                     MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
                 }
             )
@@ -77,5 +79,5 @@ trait MethodParameters_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(MethodParametersAttribute.Name → parserFactory())
+    registerAttributeReader(MethodParametersAttribute.Name -> parserFactory())
 }

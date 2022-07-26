@@ -4,9 +4,10 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.fillArraySeq
 
-import org.opalj.control.fillRefArray
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the `type_path` field of type annotations. This
@@ -29,7 +30,8 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
     def TypeAnnotationDirectlyOnType: TypeAnnotationPath
 
     type TypeAnnotationPathElement <: AnyRef
-    type TypeAnnotationPathElementsTable = RefArray[TypeAnnotationPathElement]
+    implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] // TODO: Replace in Scala 3 by `type TypeAnnotationPathElement : ClassTag`
+    type TypeAnnotationPathElementsTable = ArraySeq[TypeAnnotationPathElement]
 
     def TypeAnnotationPath(path: TypeAnnotationPathElementsTable): TypeAnnotationPath
 
@@ -62,22 +64,22 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
             TypeAnnotationDirectlyOnType
         } else {
             TypeAnnotationPath(
-                fillRefArray(path_length) {
+                fillArraySeq(path_length) {
                     val type_path_kind = in.readUnsignedByte()
                     (type_path_kind: @scala.annotation.switch) match {
                         // FROM THE JVM SPEC:
                         // If the value of the type_path_kind item is 0, 1, or 2,
                         // then the value of the type_argument_index item is 0.
-                        case 0 ⇒
+                        case 0 =>
                             in.read() // <=> in.skip..
                             TypeAnnotationDeeperInArrayType
-                        case 1 ⇒
+                        case 1 =>
                             in.read() // <=> in.skip..
                             TypeAnnotationDeeperInNestedType
-                        case 2 ⇒
+                        case 2 =>
                             in.read() // <=> in.skip..
                             TypeAnnotationOnBoundOfWildcardType
-                        case 3 ⇒
+                        case 3 =>
                             TypeAnnotationOnTypeArgument(in.readUnsignedByte())
                     }
                 }

@@ -54,8 +54,8 @@ package object pointsto {
             definitionSites(context.method.definedMethod, stmts(defSite).pc)
         }
         typeIterator match {
-            case _: SimpleContextProvider ⇒ entity
-            case _                        ⇒ (context, entity)
+            case _: SimpleContextProvider => entity
+            case _                        => (context, entity)
         }
     }
 }

@@ -3,13 +3,11 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntIntPair
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.ForeachRefIterator
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Access jump table by key match and jump.
@@ -43,7 +41,7 @@ trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
  */
 case class LOOKUPSWITCH(
         defaultOffset: Int,
-        npairs:        RefArray[IntIntPair]
+        npairs:        ArraySeq[IntIntPair]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
     final override def asLOOKUPSWITCH: this.type = this
@@ -55,7 +53,7 @@ case class LOOKUPSWITCH(
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
         LabeledLOOKUPSWITCH(
             InstructionLabel(currentPC + defaultOffset),
-            npairs.map[(Int, InstructionLabel)] { e ⇒
+            npairs.map[(Int, InstructionLabel)] { e =>
                 val IntIntPair(v, branchoffset) = e
                 (v, InstructionLabel(currentPC + branchoffset))
             }
@@ -64,16 +62,16 @@ case class LOOKUPSWITCH(
 
     override def tableSize: Int = npairs.size
 
-    def jumpOffsets: Iterable[Int] = npairs.view.map(_._2)
+    def jumpOffsets: Iterable[Int] = npairs.map(_._2)
 
-    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
+    def caseValueOfJumpOffset(jumpOffset: Int): (List[Int], Boolean) = {
         (
-            npairs.view.filter(_._2 == jumpOffset).map(_._1)(Chain.GenericSpecializedCBF),
+            npairs.view.filter(_._2 == jumpOffset).map(_._1).toList,
             jumpOffset == defaultOffset
         )
     }
 
-    override def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultOffset).map(_._1)
+    override def caseValues: Iterator[Int] = npairs.iterator.filter(_._2 != defaultOffset).map(_._1)
 
     def nextInstructions(
         currentPC:             PC,
@@ -82,16 +80,16 @@ case class LOOKUPSWITCH(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         val defaultTarget = currentPC + defaultOffset
-        var pcs = Chain.singleton(defaultTarget)
+        var pcs = List(defaultTarget)
         var seen: IntArraySet = new IntArraySet1(defaultTarget)
-        npairs foreach { npair ⇒
+        npairs foreach { npair =>
             val offset = npair.value
             val nextTarget = currentPC + offset
             if (!seen.contains(nextTarget)) {
                 seen += nextTarget
-                pcs :&:= nextTarget
+                pcs ::= nextTarget
             }
         }
         pcs
@@ -102,7 +100,7 @@ case class LOOKUPSWITCH(
 
         code.instructions(otherPC) match {
 
-            case LOOKUPSWITCH(otherDefaultOffset, otherNpairs) ⇒
+            case LOOKUPSWITCH(otherDefaultOffset, otherNpairs) =>
                 (this.defaultOffset + paddingOffset == otherDefaultOffset) &&
                     this.npairs.size == otherNpairs.size && {
                         val tIt = this.npairs.iterator
@@ -117,16 +115,16 @@ case class LOOKUPSWITCH(
                         doesMatch
                     }
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 
     override def toString(pc: Int): String = {
         "LOOKUPSWITCH("+
             npairs.iterator.
-            map[String](p ⇒ p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).
-            mkString(",")+
-            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+
+            map[String](p => s"${p._1}=${pc + p._2}${if (p._2 >= 0) "↓" else "↑"}").
+            mkString(",") +
+            s"; ifNoMatch=${(defaultOffset + pc)}${if (defaultOffset >= 0) "↓" else "↑"}"+
             ")"
     }
 }
@@ -148,7 +146,7 @@ object LOOKUPSWITCH extends InstructionMetaInformation {
      */
     def apply(
         defaultBranchTarget: InstructionLabel,
-        branchTargets:       RefArray[(Int, InstructionLabel)]
+        branchTargets:       ArraySeq[(Int, InstructionLabel)]
     ): LabeledLOOKUPSWITCH = LabeledLOOKUPSWITCH(defaultBranchTarget, branchTargets)
 
 }
@@ -162,22 +160,22 @@ object LOOKUPSWITCH extends InstructionMetaInformation {
  */
 case class LabeledLOOKUPSWITCH(
         defaultBranchTarget: InstructionLabel,
-        npairs:              RefArray[(Int, InstructionLabel)]
+        npairs:              ArraySeq[(Int, InstructionLabel)]
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
 
     override def tableSize: Int = npairs.size
 
-    def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
+    def caseValues: Iterator[Int] = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: ForeachRefIterator[InstructionLabel] = {
-        npairs.foreachIterator.map[InstructionLabel](_._2) + defaultBranchTarget
+    override def branchTargets: Iterator[InstructionLabel] = {
+        npairs.iterator.map[InstructionLabel](_._2) ++ Iterator(defaultBranchTarget)
     }
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
-            npairs map { pair ⇒
+            npairs map { pair =>
                 val (value, target) = pair
                 IntIntPair(value, asShortBranchoffset(pcs(target) - currentPC))
             }
@@ -191,7 +189,7 @@ case class LabeledLOOKUPSWITCH(
 
     override def toString(pc: Int): String = {
         npairs.iterator.
-            map(p ⇒ p._1+"="+p._2).
+            map(p => s"${p._1}=${p._2}").
             mkString("LOOKUPSWITCH(", ",", s"; ifNoMatch=$defaultBranchTarget)")
     }
 }

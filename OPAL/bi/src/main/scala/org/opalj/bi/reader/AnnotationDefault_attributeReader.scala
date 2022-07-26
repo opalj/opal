@@ -51,7 +51,7 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /* val attributeLength = */ in.readInt()
         AnnotationDefault_attribute(
             cp,
@@ -62,5 +62,5 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(AnnotationDefaultAttribute.Name → parserFactory())
+    registerAttributeReader(AnnotationDefaultAttribute.Name -> parserFactory())
 }

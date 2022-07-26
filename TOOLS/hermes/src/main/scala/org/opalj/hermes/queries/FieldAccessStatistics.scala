@@ -10,6 +10,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
 
+import scala.collection.immutable.ArraySeq
+
 /**
  * Counts how often fields are accessed.
  *
@@ -32,7 +34,7 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -41,9 +43,9 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
         import fieldAccessInformation.allAccesses
 
         for {
-            cf ← project.allProjectClassFiles
+            cf <- project.allProjectClassFiles
             classFileLocation = ClassFileLocation(project, cf)
-            field ← cf.fields
+            field <- cf.fields
             fieldType = field.fieldType
             if !fieldType.isBaseType ||
                 (field.fieldType ne ObjectType.String) ||
@@ -52,18 +54,18 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
             val category =
                 if (!isAccessed(field)) {
                     field.visibilityModifier match {
-                        case Some(ACC_PRIVATE)   ⇒ 0
-                        case None                ⇒ 1
-                        case Some(ACC_PROTECTED) ⇒ 2
-                        case Some(ACC_PUBLIC)    ⇒ 3
+                        case Some(ACC_PRIVATE)   => 0
+                        case None                => 1
+                        case Some(ACC_PROTECTED) => 2
+                        case Some(ACC_PUBLIC)    => 3
                     }
-                } else if (!field.isPrivate && allAccesses(field).forall(mi ⇒ mi._1.classFile eq cf)) {
+                } else if (!field.isPrivate && allAccesses(field).forall(mi => mi._1.classFile eq cf)) {
                     field.visibilityModifier match {
-                        case None                ⇒ 4
-                        case Some(ACC_PROTECTED) ⇒ 5
-                        case Some(ACC_PUBLIC)    ⇒ 6
+                        case None                => 4
+                        case Some(ACC_PROTECTED) => 5
+                        case Some(ACC_PUBLIC)    => 6
 
-                        case Some(ACC_PRIVATE) ⇒
+                        case Some(ACC_PRIVATE) =>
                             throw new UnknownError(s"non private-field $field has private modifier")
                     }
                 } else {
@@ -71,6 +73,6 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
                 }
             if (category != -1) locations(category) += FieldLocation(classFileLocation, field)
         }
-        locations
+        ArraySeq.unsafeWrapArray(locations)
     }
 }

@@ -133,12 +133,12 @@ abstract class TypeIterator(val project: SomeProject) {
         use:             V,
         typesProperty:   InformationType,
         additionalTypes: Set[ReferenceType] = Set.empty
-    )(handleType: ReferenceType ⇒ Unit): Unit
+    )(handleType: ReferenceType => Unit): Unit
 
     def foreachType(
         field:         Field,
         typesProperty: InformationType
-    )(handleType: ReferenceType ⇒ Unit): Unit
+    )(handleType: ReferenceType => Unit): Unit
 
     def foreachAllocation(
         use:             V,
@@ -147,16 +147,16 @@ abstract class TypeIterator(val project: SomeProject) {
         typesProperty:   InformationType,
         additionalTypes: Set[ReferenceType] = Set.empty
     )(
-        handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
         var hasUnknownAllocation = false
-        use.definedBy.foreach { index ⇒
+        use.definedBy.foreach { index =>
             if (index >= 0) {
                 val allocO = stmts(index) match {
-                    case Assignment(pc, _, New(_, tpe))         ⇒ Some((tpe, pc))
-                    case Assignment(pc, _, NewArray(_, _, tpe)) ⇒ Some((tpe, pc))
-                    case Assignment(pc, _, c: Const)            ⇒ Some((c.tpe.asObjectType, pc))
-                    case _ ⇒
+                    case Assignment(pc, _, New(_, tpe))         => Some((tpe, pc))
+                    case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
+                    case Assignment(pc, _, c: Const)            => Some((c.tpe.asObjectType, pc))
+                    case _ =>
                         hasUnknownAllocation = true
                         None
                 }
@@ -184,7 +184,7 @@ abstract class TypeIterator(val project: SomeProject) {
     def foreachAllocation(
         field: Field, typesProperty: InformationType
     )(
-        handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
         handleAllocation(field.fieldType.asReferenceType, NoContext, -1)
     }
@@ -194,7 +194,7 @@ abstract class TypeIterator(val project: SomeProject) {
         updatedEPS:      EPS[Entity, PropertyType],
         additionalTypes: Set[ReferenceType]        = Set.empty
     )(
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
@@ -206,7 +206,7 @@ abstract class TypeIterator(val project: SomeProject) {
         field:      Field,
         updatedEPS: EPS[Entity, Property]
     )(
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
@@ -219,14 +219,14 @@ abstract class TypeIterator(val project: SomeProject) {
         updatedEPS:      EPS[Entity, PropertyType],
         oldEOptP:        EOptionP[Entity, PropertyType],
         additionalTypes: Set[ReferenceType],
-        handleNewType:   ReferenceType ⇒ Unit
+        handleNewType:   ReferenceType => Unit
     ): Unit
 
     @inline protected[this] def continuation(
         field:         Field,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit
 
     def continuationForAllocations(
@@ -234,7 +234,7 @@ abstract class TypeIterator(val project: SomeProject) {
         updatedEPS:      EPS[Entity, PropertyType],
         additionalTypes: Set[ReferenceType]        = Set.empty
     )(
-        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
     )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
@@ -246,7 +246,7 @@ abstract class TypeIterator(val project: SomeProject) {
         field:      Field,
         updatedEPS: EPS[Entity, Property]
     )(
-        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
     )(implicit state: TypeIteratorState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
@@ -259,7 +259,7 @@ abstract class TypeIterator(val project: SomeProject) {
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
         additionalTypes:     Set[ReferenceType],
-        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
         // Do nothing
     }
@@ -268,7 +268,7 @@ abstract class TypeIterator(val project: SomeProject) {
         field:               Field,
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
-        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
     )(
         implicit
         @nowarn state: TypeIteratorState
@@ -283,7 +283,7 @@ abstract class TypeIterator(val project: SomeProject) {
             false
         else
             rv.allValues.exists {
-                case sv: IsSReferenceValue[_] ⇒
+                case sv: IsSReferenceValue[_] =>
                     val tub = sv.theUpperTypeBound
                     if (sv.isPrecise) {
                         tpe eq tub
@@ -295,13 +295,13 @@ abstract class TypeIterator(val project: SomeProject) {
                                 project.classFile(tpe.asObjectType).isDefined)
                     }
 
-                case mv: IsMObjectValue ⇒
+                case mv: IsMObjectValue =>
                     val typeBounds = mv.upperTypeBound
-                    typeBounds.forall { supertype ⇒
+                    typeBounds.forall { supertype =>
                         project.classHierarchy.isSubtypeOf(tpe, supertype)
                     }
 
-                case _: IsNullValue ⇒
+                case _: IsNullValue =>
                     false
             }
     }
@@ -352,11 +352,11 @@ trait CallStringContextProvider extends TypeIterator {
         pc:         Int
     ): CallStringContext = {
         oldContext match {
-            case csc: CallStringContext ⇒
+            case csc: CallStringContext =>
                 callStringContexts(method, (oldContext.method, pc) :: csc.callString.take(k - 1))
-            case _ if oldContext.hasContext ⇒
+            case _ if oldContext.hasContext =>
                 callStringContexts(method, List((oldContext.method, pc)))
-            case _ ⇒
+            case _ =>
                 callStringContexts(method, Nil)
         }
     }
@@ -393,18 +393,18 @@ class CHATypeIterator(project: SomeProject)
 
     def foreachType(
         use: V, typesProperty: Null, additionalTypes: Set[ReferenceType]
-    )(handleType: ReferenceType ⇒ Unit): Unit = {
+    )(handleType: ReferenceType => Unit): Unit = {
         additionalTypes.foreach(handleType)
         val rvs = use.value.asReferenceValue.allValues
-        for (rv ← rvs) rv match {
-            case sv: IsSReferenceValue[_] ⇒
+        for (rv <- rvs) rv match {
+            case sv: IsSReferenceValue[_] =>
                 if (sv.isPrecise) {
                     handleType(sv.theUpperTypeBound)
                 } else {
                     if (sv.theUpperTypeBound.isObjectType) {
                         project.classHierarchy.allSubtypesForeachIterator(
                             sv.theUpperTypeBound.asObjectType, reflexive = true
-                        ).filter { subtype ⇒
+                        ).filter { subtype =>
                                 val cfOption = project.classFile(subtype)
                                 cfOption.isDefined && {
                                     val cf = cfOption.get
@@ -414,18 +414,18 @@ class CHATypeIterator(project: SomeProject)
                     } else handleType(ObjectType.Object)
                 }
 
-            case mv: IsMObjectValue ⇒
+            case mv: IsMObjectValue =>
                 val typeBounds = mv.upperTypeBound
                 val remainingTypeBounds = typeBounds.tail
                 val firstTypeBound = typeBounds.head
                 val potentialTypes = project.classHierarchy.allSubtypesForeachIterator(
                     firstTypeBound, reflexive = true
-                ).filter { subtype ⇒
+                ).filter { subtype =>
                     val cfOption = project.classFile(subtype)
                     cfOption.isDefined && {
                         val cf = cfOption.get
                         !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                            remainingTypeBounds.forall { supertype ⇒
+                            remainingTypeBounds.forall { supertype =>
                                 project.classHierarchy.isSubtypeOf(subtype, supertype)
                             }
                     }
@@ -433,18 +433,18 @@ class CHATypeIterator(project: SomeProject)
 
                 potentialTypes.foreach(handleType)
 
-            case _: IsNullValue ⇒
+            case _: IsNullValue =>
             // TODO handle Null values?
         }
     }
 
     def foreachType(
         field: Field, typesProperty: Null
-    )(handleType: ReferenceType ⇒ Unit): Unit = {
+    )(handleType: ReferenceType => Unit): Unit = {
         if (field.fieldType.isObjectType) {
             project.classHierarchy.allSubtypesForeachIterator(
                 field.fieldType.asObjectType, reflexive = true
-            ).filter { subtype ⇒
+            ).filter { subtype =>
                     val cfOption = project.classFile(subtype)
                     cfOption.isDefined && {
                         val cf = cfOption.get
@@ -460,7 +460,7 @@ class CHATypeIterator(project: SomeProject)
         updatedEPS:      EPS[Entity, Nothing],
         oldEOptP:        EOptionP[Entity, Nothing],
         additionalTypes: Set[ReferenceType],
-        handleNewType:   ReferenceType ⇒ Unit
+        handleNewType:   ReferenceType => Unit
     ): Unit = {
         throw new UnsupportedOperationException
     }
@@ -469,7 +469,7 @@ class CHATypeIterator(project: SomeProject)
         field:         Field,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
         throw new UnsupportedOperationException
     }
@@ -521,15 +521,15 @@ class RTATypeIterator(project: SomeProject)
     @inline override def foreachType(
         use: V, typesProperty: InstantiatedTypes, additionalTypes: Set[ReferenceType]
     )(
-        handleType: ReferenceType ⇒ Unit
+        handleType: ReferenceType => Unit
     ): Unit = {
         // The InstantiatedTypes do not track array types, we just assume them to be instantiated
         use.value.asReferenceValue.allValues.foreach {
-            case av: IsSArrayValue ⇒
+            case av: IsSArrayValue =>
                 handleType(av.theUpperTypeBound)
-            case _ ⇒
+            case _ =>
         }
-        typesProperty.types.iterator.filter { tpe ⇒
+        typesProperty.types.iterator.filter { tpe =>
             isPossibleType(use, tpe) || additionalTypes.contains(tpe)
         }.foreach(handleType)
     }
@@ -537,7 +537,7 @@ class RTATypeIterator(project: SomeProject)
     @inline override def foreachType(
         field: Field, typesProperty: InstantiatedTypes
     )(
-        handleType: ReferenceType ⇒ Unit
+        handleType: ReferenceType => Unit
     ): Unit = {
         // The InstantiatedTypes do not track array types, we just assume them to be instantiated
         if (field.fieldType.isArrayType)
@@ -551,10 +551,10 @@ class RTATypeIterator(project: SomeProject)
         updatedEPS:      EPS[Entity, InstantiatedTypes],
         oldEOptP:        EOptionP[Entity, InstantiatedTypes],
         additionalTypes: Set[ReferenceType],
-        handleNewType:   ReferenceType ⇒ Unit
+        handleNewType:   ReferenceType => Unit
     ): Unit = {
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        updatedEPS.ub.dropOldest(seenTypes).filter { tpe ⇒
+        updatedEPS.ub.dropOldest(seenTypes).filter { tpe =>
             isPossibleType(use, tpe) || additionalTypes.contains(tpe)
         }.foreach(handleNewType)
     }
@@ -563,7 +563,7 @@ class RTATypeIterator(project: SomeProject)
         field:         Field,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
         val seenTypes =
             if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[InstantiatedTypes].numElements else 0
@@ -633,12 +633,12 @@ class PropagationBasedTypeIterator(
         typesProperty:   (InstantiatedTypes, InstantiatedTypes),
         additionalTypes: Set[ReferenceType]
     )(
-        handleType: ReferenceType ⇒ Unit
+        handleType: ReferenceType => Unit
     ): Unit = {
-        typesProperty._1.types.iterator.filter { tpe ⇒
+        typesProperty._1.types.iterator.filter { tpe =>
             isPossibleType(use, tpe) || additionalTypes.contains(tpe)
         }.foreach(handleType)
-        typesProperty._2.types.iterator.filter { tpe ⇒
+        typesProperty._2.types.iterator.filter { tpe =>
             isPossibleType(use, tpe) || additionalTypes.contains(tpe)
         }.foreach(handleType)
     }
@@ -647,7 +647,7 @@ class PropagationBasedTypeIterator(
         field:         Field,
         typesProperty: (InstantiatedTypes, InstantiatedTypes)
     )(
-        handleType: ReferenceType ⇒ Unit
+        handleType: ReferenceType => Unit
     ): Unit = {
         typesProperty._1.types.iterator.filter(isPossibleType(field, _)).foreach(handleType)
         typesProperty._2.types.iterator.filter(isPossibleType(field, _)).foreach(handleType)
@@ -658,10 +658,10 @@ class PropagationBasedTypeIterator(
         updatedEPS:      EPS[Entity, InstantiatedTypes],
         oldEOptP:        EOptionP[Entity, InstantiatedTypes],
         additionalTypes: Set[ReferenceType],
-        handleNewType:   ReferenceType ⇒ Unit
+        handleNewType:   ReferenceType => Unit
     ): Unit = {
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        updatedEPS.ub.dropOldest(seenTypes).filter { tpe ⇒
+        updatedEPS.ub.dropOldest(seenTypes).filter { tpe =>
             isPossibleType(use, tpe) || additionalTypes.contains(tpe)
         }.foreach(handleNewType)
     }
@@ -670,7 +670,7 @@ class PropagationBasedTypeIterator(
         field:         Field,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
         val seenTypes =
             if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[InstantiatedTypes].numElements else 0
@@ -712,7 +712,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     def typesProperty(
         use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
     )(implicit state: TypeIteratorState): PointsToSet = {
-        use.definedBy.foldLeft(emptyPointsToSet) { (result, defSite) ⇒
+        use.definedBy.foldLeft(emptyPointsToSet) { (result, defSite) =>
             val pc = pcOfDefSite(defSite)(stmts)
             if (ai.isImmediateVMException(pc)) {
                 // FIXME -  we need to get the actual exception type here
@@ -749,7 +749,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
             pointsto.toEntity(fieldAllocation.pc, context, stmts)
         )
         var pointsTo = emptyPointsToSet
-        objects.forNewestNElements(objects.numElements) { as ⇒
+        objects.forNewestNElements(objects.numElements) { as =>
             pointsTo = combine(pointsTo, currentPointsTo(depender, (as, field)))
         }
         pointsTo
@@ -762,9 +762,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     @inline override def foreachType(
         use: V, typesProperty: PointsToSet, additionalTypes: Set[ReferenceType]
     )(
-        handleType: ReferenceType ⇒ Unit
+        handleType: ReferenceType => Unit
     ): Unit = {
-        typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe ⇒
+        typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe =>
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe)) handleType(tpe)
         }
     }
@@ -772,9 +772,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     @inline override def foreachType(
         field: Field, typesProperty: PointsToSet
     )(
-        handleType: ReferenceType ⇒ Unit
+        handleType: ReferenceType => Unit
     ): Unit = {
-        typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe ⇒
+        typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe =>
             if (isPossibleType(field, tpe)) handleType(tpe)
         }
     }
@@ -784,11 +784,11 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         updatedEPS:      EPS[Entity, PointsToSet],
         oldEOptP:        EOptionP[Entity, PointsToSet],
         additionalTypes: Set[ReferenceType],
-        handleNewType:   ReferenceType ⇒ Unit
+        handleNewType:   ReferenceType => Unit
     ): Unit = {
         val ub = updatedEPS.ub
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
-        ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe ⇒
+        ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe =>
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe)) handleNewType(tpe)
         }
     }
@@ -797,11 +797,11 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         field:         Field,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
         val ub = updatedEPS.ub.asInstanceOf[PointsToSet]
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[PointsToSet].numTypes else 0
-        ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe ⇒
+        ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe =>
             if (isPossibleType(field, tpe)) handleNewType(tpe)
         }
     }
@@ -849,7 +849,7 @@ trait TypesBasedPointsToTypeIterator
         state:         TypeIteratorState
     ): TypeBasedPointsToSet = {
         val types = project.classHierarchy.allSubtypes(field.classFile.thisType, reflexive = true)
-        types.foldLeft(emptyPointsToSet) { (result, tpe) ⇒
+        types.foldLeft(emptyPointsToSet) { (result, tpe) =>
             combine(result, currentPointsTo(depender, (tpe, field)))
         }
     }
@@ -891,16 +891,16 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         if (field.isStatic) {
             currentPointsTo(depender, field)
         } else {
-            fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) ⇒
+            fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) =>
                 val eOptP = propertyStore(access._1, TACAI.key)
                 eOptP match {
-                    case UBPS(tac: TheTACAI, isFinal) ⇒
+                    case UBPS(tac: TheTACAI, isFinal) =>
                         if (!isFinal)
                             state.addDependency((depender, access._1, access._2), eOptP)
 
                         val theTAC = tac.theTAC
-                        access._2.foldLeft(result) { (result, pc) ⇒
-                            theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy.foldLeft(result) { (result, defSite) ⇒
+                        access._2.foldLeft(result) { (result, pc) =>
+                            theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy.foldLeft(result) { (result, defSite) =>
                                 val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
                                 combine(
                                     result,
@@ -909,7 +909,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                             }
                         }
 
-                    case _ ⇒
+                    case _ =>
                         state.addDependency((depender, access._1, access._2), eOptP)
                         result
                 }
@@ -924,9 +924,9 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         typesProperty:   AllocationSitePointsToSet,
         additionalTypes: Set[ReferenceType]
     )(
-        handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
-        typesProperty.forNewestNElements(typesProperty.numElements) { as ⇒
+        typesProperty.forNewestNElements(typesProperty.numElements) { as =>
             val (context, pc, typeId) = longToAllocationSite(as)(this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
@@ -937,9 +937,9 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
     @inline override def foreachAllocation(
         field: Field, typesProperty: AllocationSitePointsToSet
     )(
-        handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
-        typesProperty.forNewestNElements(typesProperty.numElements) { as ⇒
+        typesProperty.forNewestNElements(typesProperty.numElements) { as =>
             val (context, pc, typeId) = longToAllocationSite(as)(this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(field, tpe))
@@ -951,7 +951,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         field:         Field,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
-        handleNewType: ReferenceType ⇒ Unit
+        handleNewType: ReferenceType => Unit
     )(implicit state: TypeIteratorState): Unit = {
         def handleType(as: AllocationSite): Unit = {
             val typeId = allocationSiteLongToTypeId(as)
@@ -962,41 +962,41 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
         val ub = updatedEPS.ub
         ub match {
-            case pts: AllocationSitePointsToSet ⇒
+            case pts: AllocationSitePointsToSet =>
                 val seenElements = if (oldEOptP.hasUBP)
                     oldEOptP.ub.asInstanceOf[AllocationSitePointsToSet].numElements
                 else
                     0
                 updatedEPS.e match {
-                    case (_, `field`) ⇒
+                    case (_, `field`) =>
                         pts.forNewestNElements(pts.numElements - seenElements)(handleType)
-                    case _ ⇒
-                        pts.forNewestNElements(pts.numElements - seenElements) { oas ⇒
-                            state.dependersOf(updatedEPS.toEPK).foreach { depender ⇒
+                    case _ =>
+                        pts.forNewestNElements(pts.numElements - seenElements) { oas =>
+                            state.dependersOf(updatedEPS.toEPK).foreach { depender =>
                                 val objects = currentPointsTo(depender, (oas, field))
-                                objects.forNewestNTypes(objects.numTypes) { tpe ⇒
+                                objects.forNewestNTypes(objects.numTypes) { tpe =>
                                     if (isPossibleType(field, tpe))
                                         handleNewType(tpe)
                                 }
                             }
                         }
                 }
-            case tac: TheTACAI ⇒
+            case tac: TheTACAI =>
                 val theTAC = tac.theTAC
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, method: Method, pcs: PCs) ⇒
-                        pcs.foreach { pc ⇒
+                    case (depender: Entity, method: Method, pcs: PCs) =>
+                        pcs.foreach { pc =>
                             val putField = theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField
-                            putField.objRef.asVar.definedBy.foreach { defSite ⇒
+                            putField.objRef.asVar.definedBy.foreach { defSite =>
                                 val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
                                 val objects = currentPointsTo(
                                     depender,
                                     pointsto.toEntity(defPC, newContext(declaredMethods(updatedEPS.e.asInstanceOf[Method])), theTAC.stmts)(formalParameters, definitionSites, this)
                                 )
 
-                                objects.forNewestNElements(objects.numElements) { as ⇒
+                                objects.forNewestNElements(objects.numElements) { as =>
                                     val pts = currentPointsTo(depender, (as, field))
-                                    pts.forNewestNTypes(pts.numTypes) { tpe ⇒
+                                    pts.forNewestNTypes(pts.numTypes) { tpe =>
                                         if (isPossibleType(field, tpe))
                                             handleNewType(tpe)
                                     }
@@ -1012,11 +1012,11 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
         additionalTypes:     Set[ReferenceType],
-        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
         val ub = updatedEPS.ub
         val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        ub.forNewestNElements(ub.numElements - seenElements) { as ⇒
+        ub.forNewestNElements(ub.numElements - seenElements) { as =>
             val (context, pc, typeId) = longToAllocationSite(as)(this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
@@ -1028,7 +1028,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         field:               Field,
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
-        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
     )(implicit state: TypeIteratorState): Unit = {
         def handleAllocation(as: AllocationSite): Unit = {
             val (context, pc, typeId) = longToAllocationSite(as)(this)
@@ -1039,36 +1039,36 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
         val ub = updatedEPS.ub
         ub match {
-            case pts: AllocationSitePointsToSet ⇒
+            case pts: AllocationSitePointsToSet =>
                 val seenElements = if (oldEOptP.hasUBP)
                     oldEOptP.ub.asInstanceOf[AllocationSitePointsToSet].numElements
                 else
                     0
                 updatedEPS.e match {
-                    case (_, `field`) ⇒
+                    case (_, `field`) =>
                         pts.forNewestNElements(pts.numElements - seenElements)(handleAllocation)
-                    case _ ⇒
-                        pts.forNewestNElements(pts.numElements - seenElements) { oas ⇒
-                            state.dependersOf(updatedEPS.toEPK).foreach { depender ⇒
+                    case _ =>
+                        pts.forNewestNElements(pts.numElements - seenElements) { oas =>
+                            state.dependersOf(updatedEPS.toEPK).foreach { depender =>
                                 val objects = currentPointsTo(depender, (oas, field))
                                 objects.forNewestNElements(objects.numElements)(handleAllocation)
                             }
                         }
                 }
-            case tac: TheTACAI ⇒
+            case tac: TheTACAI =>
                 val theTAC = tac.theTAC
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, method: Method, pcs: PCs) ⇒
-                        pcs.foreach { pc ⇒
+                    case (depender: Entity, method: Method, pcs: PCs) =>
+                        pcs.foreach { pc =>
                             val putField = theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField
-                            putField.objRef.asVar.definedBy.foreach { defSite ⇒
+                            putField.objRef.asVar.definedBy.foreach { defSite =>
                                 val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
                                 val objects = currentPointsTo(
                                     depender,
                                     pointsto.toEntity(defPC, newContext(declaredMethods(updatedEPS.e.asInstanceOf[Method])), theTAC.stmts)(formalParameters, definitionSites, this)
                                 )
 
-                                objects.forNewestNElements(objects.numElements) { as ⇒
+                                objects.forNewestNElements(objects.numElements) { as =>
                                     val pts = currentPointsTo(depender, (as, field))
                                     pts.forNewestNElements(pts.numElements)(handleAllocation)
                                 }
@@ -1096,27 +1096,27 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         }
 
         (allocatedType.id: @switch) match {
-            case StringBuilderId ⇒
+            case StringBuilderId =>
                 if (mergeStringBuilderBuffer)
                     stringBuilderPointsToSet
                 else
                     createNewPointsToSet()
-            case StringBufferId ⇒
+            case StringBufferId =>
                 if (mergeStringBuilderBuffer)
                     stringBufferPointsToSet
                 else
                     createNewPointsToSet()
-            case StringId ⇒
+            case StringId =>
                 if (mergeStringConstants && isConstant)
                     stringConstPointsToSet
                 else
                     createNewPointsToSet()
-            case ClassId ⇒
+            case ClassId =>
                 if (mergeClassConstants && isConstant)
                     classConstPointsToSet
                 else
                     createNewPointsToSet()
-            case _ ⇒
+            case _ =>
                 if (mergeExceptions &&
                     project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
@@ -1124,7 +1124,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                         ptsO.get
                     else {
                         val newPts = mergedPointsToSetForType(allocatedType)
-                        exceptionPointsToSets += allocatedType.id → newPts
+                        exceptionPointsToSets += allocatedType.id -> newPts
                         newPts
                     }
                 } else
@@ -1163,16 +1163,16 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         if (field.isStatic) {
             currentPointsTo(depender, field)
         } else {
-            fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) ⇒
+            fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) =>
                 val eOptP = propertyStore(access._1, TACAI.key)
                 eOptP match {
-                    case UBPS(tac: TheTACAI, isFinal) ⇒
+                    case UBPS(tac: TheTACAI, isFinal) =>
                         if (!isFinal)
                             state.addDependency((depender, access._1, access._2), eOptP)
 
                         val theTAC = tac.theTAC
-                        access._2.foldLeft(result) { (result, pc) ⇒
-                            theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy.foldLeft(result) { (result, defSite) ⇒
+                        access._2.foldLeft(result) { (result, pc) =>
+                            theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy.foldLeft(result) { (result, defSite) =>
                                 val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
                                 combine(
                                     result,
@@ -1181,7 +1181,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
                             }
                         }
 
-                    case _ ⇒
+                    case _ =>
                         state.addDependency((depender, access._1, access._2), eOptP)
                         result
                 }
@@ -1196,9 +1196,9 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         typesProperty:   AllocationSitePointsToSet,
         additionalTypes: Set[ReferenceType]
     )(
-        handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
-        typesProperty.forNewestNElements(typesProperty.numElements) { as ⇒
+        typesProperty.forNewestNElements(typesProperty.numElements) { as =>
             val (context, pc, typeId) = longToAllocationSite(as)(this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
@@ -1213,11 +1213,11 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
         additionalTypes:     Set[ReferenceType],
-        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
         val ub = updatedEPS.ub
         val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        ub.forNewestNElements(ub.numElements - seenElements) { as ⇒
+        ub.forNewestNElements(ub.numElements - seenElements) { as =>
             val (context, pc, typeId) = longToAllocationSite(as)(this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
@@ -1243,27 +1243,27 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         }
 
         (allocatedType.id: @switch) match {
-            case StringBuilderId ⇒
+            case StringBuilderId =>
                 if (mergeStringBuilderBuffer)
                     stringBuilderPointsToSet
                 else
                     createNewPointsToSet()
-            case StringBufferId ⇒
+            case StringBufferId =>
                 if (mergeStringBuilderBuffer)
                     stringBufferPointsToSet
                 else
                     createNewPointsToSet()
-            case StringId ⇒
+            case StringId =>
                 if (mergeStringConstants && isConstant)
                     stringConstPointsToSet
                 else
                     createNewPointsToSet()
-            case ClassId ⇒
+            case ClassId =>
                 if (mergeClassConstants && isConstant)
                     classConstPointsToSet
                 else
                     createNewPointsToSet()
-            case _ ⇒
+            case _ =>
                 if (mergeExceptions &&
                     project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
@@ -1271,7 +1271,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
                         ptsO.get
                     else {
                         val newPts = mergedPointsToSetForType(allocatedType)
-                        exceptionPointsToSets += allocatedType.id → newPts
+                        exceptionPointsToSets += allocatedType.id -> newPts
                         newPts
                     }
                 } else

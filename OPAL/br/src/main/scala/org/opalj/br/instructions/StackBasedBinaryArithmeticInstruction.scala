@@ -11,9 +11,9 @@ package instructions
  */
 trait StackBasedBinaryArithmeticInstruction extends StackBasedArithmeticInstruction {
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 2
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
 }
 

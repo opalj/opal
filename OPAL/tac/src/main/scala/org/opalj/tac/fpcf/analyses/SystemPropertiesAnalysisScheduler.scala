@@ -45,12 +45,12 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
 
         var propertyMap: Map[String, Set[String]] = Map.empty
 
-        for (stmt ← stmts) stmt match {
-            case VirtualFunctionCallStatement(call) if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) ⇒
+        for (stmt <- stmts) stmt match {
+            case VirtualFunctionCallStatement(call) if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) =>
                 propertyMap = computeProperties(propertyMap, call.params, stmts)
-            case StaticMethodCall(_, ObjectType.System, _, "setProperty", _, params) ⇒
+            case StaticMethodCall(_, ObjectType.System, _, "setProperty", _, params) =>
                 propertyMap = computeProperties(propertyMap, params, stmts)
-            case _ ⇒
+            case _ =>
         }
 
         if (propertyMap.isEmpty) {
@@ -60,10 +60,10 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
         def update(
             currentVal: EOptionP[SomeProject, SystemProperties]
         ): Option[InterimEP[SomeProject, SystemProperties]] = currentVal match {
-            case UBP(ub) ⇒
+            case UBP(ub) =>
                 var oldProperties = ub.properties
                 val noNewProperty = propertyMap.forall {
-                    case (key, values) ⇒
+                    case (key, values) =>
                         oldProperties.contains(key) && {
                             val oldValues = oldProperties(key)
                             values.forall(oldValues.contains)
@@ -73,14 +73,14 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
                 if (noNewProperty) {
                     None
                 } else {
-                    for ((key, values) ← propertyMap) {
+                    for ((key, values) <- propertyMap) {
                         val oldValues = oldProperties.getOrElse(key, Set.empty)
                         oldProperties = oldProperties.updated(key, oldValues ++ values)
                     }
                     Some(InterimEUBP(project, new SystemProperties(propertyMap)))
                 }
 
-            case _: EPK[SomeProject, SystemProperties] ⇒
+            case _: EPK[SomeProject, SystemProperties] =>
                 Some(InterimEUBP(project, new SystemProperties(propertyMap)))
         }
 
@@ -112,7 +112,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
         val possibleKeys = getPossibleStrings(params.head, stmts)
         val possibleValues = getPossibleStrings(params(1), stmts)
 
-        for (key ← possibleKeys) {
+        for (key <- possibleKeys) {
             val values = res.getOrElse(key, Set.empty)
             res = res.updated(key, values ++ possibleValues)
         }
@@ -123,7 +123,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
     def getPossibleStrings(
         value: Expr[DUVar[ValueInformation]], stmts: Array[Stmt[DUVar[ValueInformation]]]
     ): Set[String] = {
-        value.asVar.definedBy filter { index ⇒
+        value.asVar.definedBy filter { index =>
             index >= 0 && stmts(index).asAssignment.expr.isStringConst
         } map { stmts(_).asAssignment.expr.asStringConst.value }
     }

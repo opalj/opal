@@ -6,7 +6,8 @@ package mutable
 
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConstantLengthInstruction
-import org.opalj.collection.mutable.RefArrayBuffer
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * A buffer for creating bytecode arrays that automatically adds the required null entries.
@@ -14,11 +15,10 @@ import org.opalj.collection.mutable.RefArrayBuffer
  * @author Dominik Helm
  *         @author Michael Eichberg
  */
-class InstructionsBuilder private (private val buffer: RefArrayBuffer[Instruction]) {
+class InstructionsBuilder private (private val buffer: ArrayBuffer[Instruction]) {
 
-    def this(initialSize: Int) {
-        this(RefArrayBuffer.withInitialSize[Instruction](initialSize))
-    }
+    def this(initialSize: Int) =
+        this(new ArrayBuffer[Instruction](initialSize = initialSize))
 
     /**
      * Adds the given instruction to the buffer and adds the appropriate number of `null`
@@ -26,7 +26,7 @@ class InstructionsBuilder private (private val buffer: RefArrayBuffer[Instructio
      * specified by `slots`. Hence, `slotes` has to be >= 1.
      */
     def ++=(value: Instruction, slots: Int): Unit = {
-        if (slots > 1) buffer.ensureAdditionalCapacity(slots)
+        //        if (slots > 1) buffer.ensureAdditionalCapacity(slots)
         buffer += value
         var i = 1
         while (i < slots) {
@@ -51,5 +51,5 @@ class InstructionsBuilder private (private val buffer: RefArrayBuffer[Instructio
     /**
      * Returns the build instructions array; this builder is not to be used afterwards.
      */
-    def result(): Array[Instruction] = buffer._UNSAFE_toArray
+    def result(): Array[Instruction] = buffer.toArray
 }

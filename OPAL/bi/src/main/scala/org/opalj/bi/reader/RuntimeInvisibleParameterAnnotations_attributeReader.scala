@@ -15,7 +15,7 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
     //
 
     type ParameterAnnotations
-    type ParametersAnnotations <: Traversable[ParameterAnnotations]
+    type ParametersAnnotations <: Iterable[ParameterAnnotations]
     /**
      * Method that delegates to another reader to parse the annotations of the parameters.
      */
@@ -59,7 +59,7 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length = */ in.readInt()
         val parameter_annotations = ParametersAnnotations(cp, in)
         if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
@@ -75,6 +75,6 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
         }
     }
 
-    registerAttributeReader(RuntimeInvisibleParameterAnnotationsAttribute.Name → parserFactory())
+    registerAttributeReader(RuntimeInvisibleParameterAnnotationsAttribute.Name -> parserFactory())
 
 }

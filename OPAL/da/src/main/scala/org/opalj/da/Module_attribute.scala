@@ -29,10 +29,10 @@ case class Module_attribute(
     def attribute_length: Int = {
         2 + 2 + 2 + // <= module meta information
             2 + requires.size * 6 +
-            2 + exports.sum(_.attribute_length) +
-            2 + opens.sum(_.attribute_length) +
+            2 + exports.iterator.map(_.attribute_length).sum +
+            2 + opens.iterator.map(_.attribute_length).sum +
             2 + uses.size * 2 +
-            2 + provides.sum(_.attribute_length)
+            2 + provides.iterator.map(_.attribute_length).sum
     }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
@@ -50,35 +50,35 @@ case class Module_attribute(
             <summary class="attribute">{ module }</summary>
             <div>
                 {
-                    requires.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    requires.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    exports.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    exports.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    opens.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    opens.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    uses.map(cp(_).toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    uses.view.map(cp(_).toString).sorted.map[NodeBuffer] { r =>
                         <span>{ s"uses $r" }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    provides.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    provides.view.map[String](_.toString).sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }
@@ -123,8 +123,9 @@ case class ExportsEntry(
                 ";"
             else
                 exports_to_index_table
+                    .view
                     .map(cp(_).toString)
-                    ._UNSAFE_sorted
+                    .sorted
                     .mkString(" to ", ", ", ";")
         }
 
@@ -147,8 +148,9 @@ case class OpensEntry(
                 ";"
             else
                 opens_to_index_table.
+                    view.
                     map(cp(_).toString).
-                    _UNSAFE_sorted.
+                    sorted.
                     mkString(" to ", ", ", ";")
         }
 
@@ -166,8 +168,9 @@ case class ProvidesEntry(
     def toString(implicit cp: Constant_Pool): String = {
         val provides_with =
             provides_with_index_table.
+                view.
                 map(cp(_).toString).
-                _UNSAFE_sorted.
+                sorted.
                 mkString(" with ", ", ", ";")
 
         s"provides ${cp(provides_index).toString(cp)}$provides_with"

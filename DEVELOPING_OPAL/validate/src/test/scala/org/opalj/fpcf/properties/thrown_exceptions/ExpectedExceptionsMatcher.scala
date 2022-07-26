@@ -4,11 +4,12 @@ package fpcf
 package properties
 package thrown_exceptions
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.ThrownExceptions
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Trait to extract the concrete and upper bound exceptions specified in the test cases.
@@ -20,7 +21,7 @@ private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractProperty
     def getConcreteAndUpperBoundExceptionAnnotations(
         p: SomeProject,
         a: AnnotationLike
-    ): (RefArray[ObjectType], RefArray[ObjectType]) = {
+    ): (ArraySeq[ObjectType], ArraySeq[ObjectType]) = {
         val annotationType = a.annotationType.asObjectType
         val exceptionTypesAnnotation = getValue(
             p,
@@ -43,8 +44,8 @@ private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractProperty
         ).asArrayValue
 
         (
-            concreteTypeExceptions.values.map[ObjectType](ev ⇒ ev.asClassValue.value.asObjectType),
-            upperBoundTypeExceptions.values.map[ObjectType](ev ⇒ ev.asClassValue.value.asObjectType)
+            concreteTypeExceptions.values.map[ObjectType](ev => ev.asClassValue.value.asObjectType),
+            upperBoundTypeExceptions.values.map[ObjectType](ev => ev.asClassValue.value.asObjectType)
         )
     }
 }
@@ -61,7 +62,7 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTy
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)
@@ -69,15 +70,15 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTy
         val annotationType = a.annotationType.asObjectType
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map[ObjectType](ev ⇒ ev.asClassValue.value.asObjectType)
+        val requiredAnalysis = analysesElementValues.map[ObjectType](ev => ev.asClassValue.value.asObjectType)
 
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
             properties.forall {
-                case t: ThrownExceptions ⇒
+                case t: ThrownExceptions =>
                     t.types.nonEmpty &&
                         concreteTypeExceptions.forall(t.types.concreteTypes.contains(_)) &&
                         upperBoundTypeExceptions.forall(t.types.upperTypeBounds.contains(_))
-                case _ ⇒ true
+                case _ => true
             }
 
         if (isPropertyValid) {

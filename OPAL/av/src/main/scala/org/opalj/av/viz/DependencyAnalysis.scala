@@ -21,12 +21,10 @@ import org.opalj.br.BaseType
 import org.opalj.br.ObjectType
 import org.opalj.br.VirtualClass
 import org.opalj.br.VirtualSourceElement
-import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.ProgressEvents
-import org.opalj.br.analyses.Project
 
 /**
  * @author Tobias Becker
@@ -48,8 +46,8 @@ object DependencyAnalysis extends AnalysisApplication {
 
     def readParameter(param: String, args: Seq[String], default: String = ""): (String, Seq[String]) = {
         args.partition(_.startsWith("-"+param+"=")) match {
-            case (Seq(), parameters1) ⇒ (default, parameters1)
-            case (Seq(p), parameters1) ⇒ {
+            case (Seq(), parameters1) => (default, parameters1)
+            case (Seq(p), parameters1) => {
                 if (p.startsWith("-"+param+"=\"") && p.endsWith("\""))
                     (p.substring(param.length + 3, p.length - 1), parameters1)
                 else
@@ -58,7 +56,7 @@ object DependencyAnalysis extends AnalysisApplication {
         }
     }
 
-    override def checkAnalysisSpecificParameters(args: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(args: Seq[String]): Iterable[String] = {
 
         val (mainPackage, parameters1) = readParameter("mp", args)
         this.mainPackage = mainPackage
@@ -73,7 +71,7 @@ object DependencyAnalysis extends AnalysisApplication {
         this.filter = filter
 
         if (parameters4.isEmpty)
-            Traversable.empty
+            Iterable.empty
         else
             parameters4.map("unknown parameter: "+_)
     }
@@ -88,14 +86,14 @@ object DependencyAnalysis extends AnalysisApplication {
         val pattern = "<%[A-Z_]+%>".r
         val option = pattern findFirstIn doc
         option match {
-            case Some(o) ⇒ {
+            case Some(o) => {
                 println(
                     Console.YELLOW+
                         "[warn] HtmlDocument has at least one unset option "+o +
                         Console.RESET
                 )
             }
-            case None ⇒
+            case None =>
         }
         doc
     }
@@ -108,7 +106,7 @@ object DependencyAnalysis extends AnalysisApplication {
         def analyze(
             project:                Project[URL],
             parameters:             Seq[String],
-            initProgressManagement: (Int) ⇒ ProgressManagement
+            initProgressManagement: (Int) => ProgressManagement
         ) = {
 
             val pm = initProgressManagement(3)
@@ -192,7 +190,7 @@ object DependencyAnalysis extends AnalysisApplication {
 
             pm.progress(2, ProgressEvents.Start, Some("extracting dependencies"))
             for {
-                classFile ← project.allClassFiles
+                classFile <- project.allClassFiles
                 packageName = classFile.thisType.packageName
             } {
                 dependencyExtractor.process(classFile)
@@ -208,9 +206,9 @@ object DependencyAnalysis extends AnalysisApplication {
             val maxCount = dependencyProcessor.currentMaxDependencyCount
 
             var data = ("["+packages.foldRight("")(
-                (p1, l1) ⇒ "["+
+                (p1, l1) => "["+
                     packages.foldRight("")(
-                        (p2, l2) ⇒ (dependencyProcessor.currentDependencyCount(p1, p2) / maxCount)+","+l2
+                        (p2, l2) => s"${dependencyProcessor.currentDependencyCount(p1, p2) / maxCount},$l2"
                     )+"],"+l1
             )+"]").replaceAll(",]", "]")
 
@@ -221,10 +219,10 @@ object DependencyAnalysis extends AnalysisApplication {
 
             val addOut =
                 if (debug)
-                    ("<table> <tr><th"+cS+"></th>"+packages.foldRight("</tr>")((p, l) ⇒ "<th"+cS+">"+p+"</th>"+l) + packages.foldRight("</table>")(
-                        (p1, l1) ⇒ "<tr><td"+cS+"><b>"+p1+"</b></td>"+
+                    ("<table> <tr><th"+cS+"></th>"+packages.foldRight("</tr>")((p, l) => "<th"+cS+">"+p+"</th>"+l) + packages.foldRight("</table>")(
+                        (p1, l1) => "<tr><td"+cS+"><b>"+p1+"</b></td>"+
                             packages.foldRight("</tr>\n")(
-                                (p2, l2) ⇒ "<td"+cS+">"+(dependencyProcessor.currentDependencyCount(p1, p2))+"</td>"+l2
+                                (p2, l2) => "<td"+cS+">"+(dependencyProcessor.currentDependencyCount(p1, p2))+"</td>"+l2
                             ) + l1
                     ))
                 else
@@ -245,7 +243,7 @@ object DependencyAnalysis extends AnalysisApplication {
             htmlDocument = htmlDocument.replace("<%ADDITIONAL_OUTPUT%>", addOut)
 
             htmlDocument = htmlDocument.replace("<%PACKAGES%>", "["+packages.foldRight("")(
-                (name, json) ⇒
+                (name, json) =>
                     s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json
             )+"]")
             writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")

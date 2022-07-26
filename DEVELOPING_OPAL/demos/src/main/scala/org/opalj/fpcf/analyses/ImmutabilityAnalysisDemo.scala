@@ -37,33 +37,33 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     override def description: String = "determines the immutability of objects and types"
 
-    private[this] var setupTime = Nanoseconds.None
+    private[this] val setupTime = Nanoseconds.None
     private[this] var analysisTime = Nanoseconds.None
     private[this] var performanceData: Map[Nanoseconds, List[Nanoseconds]] = Map.empty
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
-        var r: () ⇒ String = null
+        var r: () => String = null
 
         def handleResults(t: Nanoseconds, ts: Seq[Nanoseconds]) = {
             performanceData += ((t, List(setupTime, analysisTime)))
-            performanceData = performanceData.filter((t_ts) ⇒ ts.contains(t_ts._1))
+            performanceData = performanceData.filter((t_ts) => ts.contains(t_ts._1))
         }
 
-        List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel ⇒
+        List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel =>
             performanceData = Map.empty
             gc()
 
             println(s"\nRunning analysis with $parallelismLevel thread(s):")
-            r = time[() ⇒ String](10, 50, 15, analyze(project, parallelismLevel))(handleResults)
+            r = time[() => String](10, 50, 15, analyze(project, parallelismLevel))(handleResults)
             println(
                 s"Results with $parallelismLevel threads:\n"+
                     performanceData.values.
-                    map(v ⇒ v.map(_.toSeconds.toString(false))).
-                    map(v ⇒ List("setup\t", "analysis\t").zip(v).map(e ⇒ e._1 + e._2).mkString("", "\n", "\n")).
+                    map(v => v.map(_.toSeconds.toString(false))).
+                    map(v => List("setup\t", "analysis\t").zip(v).map(e => e._1 + e._2).mkString("", "\n", "\n")).
                     mkString("\n")
             )
 
@@ -72,7 +72,7 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         BasicReport(r())
     }
 
-    def analyze(theProject: Project[URL], parallelismLevel: Int): () ⇒ String = {
+    def analyze(theProject: Project[URL], parallelismLevel: Int): () => String = {
         var result = "Results:\n"
         val project = Project.recreate(theProject) // We need an empty project(!)
 
@@ -83,7 +83,7 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         time {
 
-          propertyStore.setupPhase(Set[PropertyKind](
+            propertyStore.setupPhase(Set[PropertyKind](
                 FieldAssignability.key, ClassImmutability.key, TypeImmutability.key
             ))
             LazyL0FieldAssignabilityAnalysis.register(project, propertyStore, null)
@@ -91,19 +91,19 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             EagerTypeImmutabilityAnalysis.start(project, propertyStore, null)
 
             propertyStore.waitOnPhaseCompletion()
-        } { r ⇒ analysisTime = r }
+        } { r => analysisTime = r }
 
         result += s"\t- analysis time: ${analysisTime.toSeconds}\n"
 
-        () ⇒ {
+        () => {
             val immutableClasses =
                 propertyStore.entities(ClassImmutability.key).
-                    filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
-                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub).
-                    map { kv ⇒
+                    filter(eps => !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
+                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) => eps.ub).
+                    map { kv =>
                         (
                             kv._1,
-                            kv._2.toList.sortWith { (a, b) ⇒
+                            kv._2.toList.sortWith { (a, b) =>
                                 val cfA = a.e.asInstanceOf[ClassFile]
                                 val cfB = b.e.asInstanceOf[ClassFile]
                                 cfA.thisType.toJava < cfB.thisType.toJava
@@ -113,22 +113,22 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
             val immutableClassesPerCategory =
                 immutableClasses.
-                    map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).
+                    map(kv => "\t\t"+kv._1+": "+kv._2.size).
                     toBuffer.sorted.
                     mkString("\n")
 
             val immutableTypes =
                 propertyStore.entities(TypeImmutability.key).
-                    filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
-                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub).
-                    map(kv ⇒ (kv._1, kv._2.size))
+                    filter(eps => !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
+                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) => eps.ub).
+                    map(kv => (kv._1, kv._2.size))
             val immutableTypesPerCategory =
-                immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toBuffer.sorted.mkString("\n")
+                immutableTypes.map(kv => "\t\t"+kv._1+": "+kv._2).toBuffer.sorted.mkString("\n")
 
             val immutableClassesInfo =
-                immutableClasses.values.flatten.filter { ep ⇒
+                immutableClasses.values.flatten.filter { ep =>
                     !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration
-                }.map { eps ⇒
+                }.map { eps =>
                     eps.e.asInstanceOf[ClassFile].thisType.toJava+
                         " => "+eps.ub+
                         " => "+propertyStore(eps.e, TypeImmutability.key).ub

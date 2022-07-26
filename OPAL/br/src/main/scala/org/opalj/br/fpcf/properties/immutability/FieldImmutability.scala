@@ -56,7 +56,7 @@ case class DependentlyImmutableField(parameter: Set[String]) extends FieldImmuta
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == TransitivelyImmutableField) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
         }
     }
 
@@ -79,7 +79,7 @@ case object NonTransitivelyImmutableField extends FieldImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == TransitivelyImmutableField || other.isInstanceOf[DependentlyImmutableField]) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
         }
     }
 }
@@ -90,7 +90,7 @@ case object MutableField extends FieldImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other != MutableField) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 }

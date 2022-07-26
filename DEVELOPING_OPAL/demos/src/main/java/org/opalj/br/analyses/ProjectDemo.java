@@ -3,7 +3,7 @@ package org.opalj.br.analyses;
 
 import java.io.File;
 
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import org.opalj.br.ClassFile;
 import org.opalj.br.Method;
@@ -31,8 +31,8 @@ public class ProjectDemo {
         BaseAI ai = new BaseAI(true, false);
 
         // Alternatively choose between the available domains using the registry
-        Iterable<String> domainDescriptions = JavaConversions
-                .asJavaIterable(DomainRegistry.domainDescriptions());
+        Iterable<String> domainDescriptions = CollectionConverters
+                .asJava(DomainRegistry.domainDescriptions());
         System.out.println("The available domains are: ");
         for (String domainDescription : domainDescriptions)
             System.out.println("\t- " + domainDescription);
@@ -41,11 +41,11 @@ public class ProjectDemo {
 
         // Do something with it...
         System.out.println("The project contains:");
-        for (ClassFile classFile : JavaConversions.asJavaIterable(project.allClassFiles())) {
+        for (ClassFile classFile : CollectionConverters.asJava(project.allClassFiles())) {
             System.out.println(" - " + classFile.thisType().toJava());
 
-            Iterable<Method> methods = JavaConversions
-                    .asJavaIterable(classFile.methods());
+            Iterable<Method> methods = CollectionConverters
+                    .asJava(classFile.methods());
             for (Method method : methods) {
                 if (method.body().isDefined()) {
                     // Use a fixed domain

@@ -14,7 +14,7 @@ If a project should be compiled using different compiler settings or requires an
 	-g -8 -parameters -genericsignature
 	-g:none -5
 
-For the generated JAR archive the compiler parameters are concatenated (" " ⇒ "") and colons are replaced by equals signs: (':' ⇒ '='), unless the default options are used. In the latter case all parameters are omitted.
+For the generated JAR archive the compiler parameters are concatenated (" " => "") and colons are replaced by equals signs: (':' => '='), unless the default options are used. In the latter case all parameters are omitted.
 
  > The target folder, the enconding (UTF-8) and the error messages style (emacs) are however
  > automatically configured and most not be specified.

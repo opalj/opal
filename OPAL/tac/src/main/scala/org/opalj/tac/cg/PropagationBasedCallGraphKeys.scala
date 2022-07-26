@@ -48,7 +48,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         val theTypeSetEntitySelector = typeSetEntitySelector()
 
         val isLibrary =

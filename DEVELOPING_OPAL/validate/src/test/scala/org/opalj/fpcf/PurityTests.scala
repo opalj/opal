@@ -39,7 +39,7 @@ class PurityTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            _ ⇒ Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+            _ => Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         )
 
         p.get(RTACallGraphKey)

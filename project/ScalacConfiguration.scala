@@ -48,7 +48,7 @@ object ScalacConfiguration {
 
       val symmetricDifference = symDifference(managedOptions, localOptions.get)
       val significantDifference =
-        symmetricDifference.filterNot(diffEntry ⇒ whitelist.contains(diffEntry.optionName))
+        symmetricDifference.filterNot(diffEntry => whitelist.contains(diffEntry.optionName))
       if (significantDifference.nonEmpty) {
         if (issueWarningOnNonWhitelistedDifference) {
           val differences = significantDifference.map(_.optionName)
@@ -68,13 +68,13 @@ object ScalacConfiguration {
   def parseScalacOptions(cfgFile: File): Seq[ScalacOptionEntry] = {
     val trimmedLines = IO.readLines(cfgFile).map(_.trim).filterNot(_.isEmpty)
     val withoutComments =
-      trimmedLines.filterNot(line ⇒ line.startsWith("#") || line.startsWith("//"))
-    val splitArgs = withoutComments.flatMap(line ⇒ line.split(' '))
+      trimmedLines.filterNot(line => line.startsWith("#") || line.startsWith("//"))
+    val splitArgs = withoutComments.flatMap(line => line.split(' '))
     splitArgs.map(ScalacOptionEntry.apply)
   }
 
   val globalScalacOptions: Def.SettingsDefinition = {
-    scalacOptions in ThisBuild ++= {
+    ThisBuild / scalacOptions ++= {
       val logger: ManagedLogger = streams.value.log
       val baseDir = baseDirectory.value
       val defaultFile = scalacDefaultsFile(baseDir)

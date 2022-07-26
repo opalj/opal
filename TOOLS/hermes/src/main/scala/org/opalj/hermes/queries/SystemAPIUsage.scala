@@ -2,7 +2,6 @@
 package org.opalj.hermes
 package queries
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.ObjectType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
@@ -17,7 +16,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override val apiFeatures: Chain[APIFeature] = {
+    override val apiFeatures: List[APIFeature] = {
 
         object Sound {
             val Clip = ObjectType("javax/sound/sampled/Clip")
@@ -49,12 +48,12 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
         val System = ObjectType("java/lang/System")
         val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
 
-        Chain(
+        List(
 
             // PROCESS
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Runtime, "exec"),
                     InstanceAPIMethod(ProcessBuilder, "start")
                 ),
@@ -64,7 +63,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // JVM EXIT
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Runtime, "exit"),
                     InstanceAPIMethod(Runtime, "halt"),
                     StaticAPIMethod(System, "exit")
@@ -75,7 +74,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // NATIVE LIBRARIES
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Runtime, "load"),
                     InstanceAPIMethod(Runtime, "loadLibrary"),
                     StaticAPIMethod(System, "load"),
@@ -92,7 +91,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // ENV
 
             APIFeatureGroup(
-                Chain(
+                List(
                     StaticAPIMethod(System, "getenv")
                 ),
                 "Environment"
@@ -101,7 +100,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // SOUND
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Sound.Clip, "start"),
                     InstanceAPIMethod(Sound.DataLine, "start"),
                     InstanceAPIMethod(Sound.TargetDataLine, "start"),
@@ -113,7 +112,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
             // NETWORK
 
             APIFeatureGroup(
-                Chain(
+                List(
                     InstanceAPIMethod(Network.Socket, constructor),
                     InstanceAPIMethod(Network.ServerSocket, constructor),
                     InstanceAPIMethod(Network.DatagramSocket, constructor),

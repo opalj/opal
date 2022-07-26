@@ -2,12 +2,12 @@
 package org.opalj.ai.tutorial.base
 
 import java.net.URL
-
-import org.opalj.collection.immutable.:&:
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
 import org.opalj.ai._
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * @author Michael Eichberg
@@ -20,14 +20,14 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         // Step 1
         // Find all methods that create "java.io.File(<String>)" objects.
         val callSites =
             (for {
-                cf ← theProject.allProjectClassFiles.par
-                m ← cf.methodsWithBody
+                cf <- theProject.allProjectClassFiles.par
+                m <- cf.methodsWithBody
             } yield {
                 val pcs =
                     m.body.get.collectWithIndex {
@@ -37,7 +37,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                                 ObjectType("java/io/File"), false /* = isInterface*/ ,
                                 "<init>",
                                 SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                            ) ⇒ pc
+                            ) => pc
                     }
                 (m, pcs)
             }).filter(_._2.size > 0)
@@ -68,10 +68,10 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
 
         val callSitesWithConstantStringParameter =
             for {
-                (m, pcs) ← callSites
+                (m, pcs) <- callSites
                 result = BaseAI(m, new AnalysisDomain(theProject, m))
-                (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
-                    case (pc, result.domain.StringValue(value) :&: _) ⇒ (pc, value)
+                (pc, value) <- pcs.map(pc => (pc, result.operandsArray(pc))).collect {
+                    case (pc, result.domain.StringValue(value) :: _) => (pc, value)
                 }
             } yield (m, pc, value)
 

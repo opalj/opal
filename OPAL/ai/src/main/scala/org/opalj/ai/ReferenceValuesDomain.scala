@@ -2,14 +2,16 @@
 package org.opalj
 package ai
 
-import org.opalj.br.{ReferenceType, ArrayType, FieldType}
+import org.opalj.br.ReferenceType
+import org.opalj.br.ArrayType
+import org.opalj.br.FieldType
 
 /**
  * Domain that defines all methods that perform computations related to `RefernceValues`.
  *
  * @author Michael Eichberg
  */
-trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
+trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
 
     // -----------------------------------------------------------------------------------
     //

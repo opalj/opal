@@ -46,20 +46,19 @@ final class TypeCheckingDomain(
     with DefaultExceptionsFactory
     with TheMethod {
 
-    def this(project: SomeProject, method: Method) {
+    def this(project: SomeProject, method: Method) =
         this(project.classHierarchy, method)
-    }
 
-    type AReferenceValue = ReferenceValue
+    type AReferenceValue = ReferenceValueLike
     type DomainReferenceValue = AReferenceValue
 
     final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
-    type DomainNullValue = NullValue
-    type DomainObjectValue = ObjectValue
-    type DomainArrayValue = ArrayValue
+    type DomainNullValue = ANullValue
+    type DomainObjectValue = AnObjectValue
+    type DomainArrayValue = AnArrayValue
 
-    val TheNullValue: DomainNullValue = new NullValue()
+    val TheNullValue: DomainNullValue = new ANullValue()
 
     // -----------------------------------------------------------------------------------
     //
@@ -69,16 +68,16 @@ final class TypeCheckingDomain(
 
     protected case class InitializedObjectValue(
             override val theUpperTypeBound: ObjectType
-    ) extends SObjectValue with Value {
-        this: DomainObjectValue ⇒
+    ) extends SObjectValueLike with Value {
+        this: DomainObjectValue =>
 
         override def isNull: Answer = No
 
         // WIDENING OPERATION
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: UninitializedObjectValue ⇒ MetaInformationUpdateIllegalValue
-                case that                        ⇒ super.doJoin(pc, that)
+                case _: UninitializedObjectValue => MetaInformationUpdateIllegalValue
+                case that                        => super.doJoin(pc, that)
             }
         }
     }
@@ -89,8 +88,8 @@ final class TypeCheckingDomain(
     protected case class UninitializedObjectValue(
             override val theUpperTypeBound: ObjectType,
             origin:                         ValueOrigin
-    ) extends SObjectValue {
-        this: DomainObjectValue ⇒
+    ) extends SObjectValueLike {
+        this: DomainObjectValue =>
 
         override def isPrecise: Boolean = {
             origin != -1 /* "-1" means that we are talking about "uninitialized this" */ ||
@@ -110,17 +109,17 @@ final class TypeCheckingDomain(
         // WIDENING OPERATION
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case UninitializedObjectValue(`theUpperTypeBound`, `origin`) ⇒ NoUpdate
+                case UninitializedObjectValue(`theUpperTypeBound`, `origin`) => NoUpdate
                 // this value is not completely useable...
-                case _ ⇒ MetaInformationUpdateIllegalValue
+                case _ => MetaInformationUpdateIllegalValue
             }
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case that: UninitializedObjectValue ⇒
+                case that: UninitializedObjectValue =>
                     (that.theUpperTypeBound eq this.theUpperTypeBound) && this.origin == that.origin
-                case _ ⇒
+                case _ =>
                     false
             }
         }
@@ -163,13 +162,13 @@ final class TypeCheckingDomain(
 
     protected case class DefaultMObjectValue(
             upperTypeBound: UIDSet[ObjectType]
-    ) extends MObjectValue {
+    ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }
 
     protected case class DefaultArrayValue(
             theUpperTypeBound: ArrayType
-    ) extends ArrayValue {
+    ) extends AnArrayValue {
         override def isNull: Answer = Unknown
     }
 

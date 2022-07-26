@@ -38,7 +38,7 @@ abstract class AbstractPropertyMatcher extends org.opalj.fpcf.properties.Propert
         elementName:    String
     ): ElementValue = {
         evps.collectFirst {
-            case ElementValuePair(`elementName`, value) ⇒ value
+            case ElementValuePair(`elementName`, value) => value
         }.orElse {
             // get default value ...
             p.classFile(annotationType).get.findMethod(elementName).head.annotationDefault

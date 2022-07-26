@@ -43,16 +43,16 @@ object DependencyExtractorsHelper {
 
     def vseToString(vse: VirtualSourceElement): String = {
         vse match {
-            case vc: VirtualClass  ⇒ sourceElementName(vc)
-            case vm: VirtualMethod ⇒ sourceElementName(vm)
-            case vf: VirtualField  ⇒ sourceElementName(vf)
+            case vc: VirtualClass  => sourceElementName(vc)
+            case vm: VirtualMethod => sourceElementName(vm)
+            case vf: VirtualField  => sourceElementName(vf)
         }
     }
 
     def extractDependencies(
         folder:                    String,
         jarFile:                   String,
-        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor
+        createDependencyExtractor: (DependencyProcessor) => DependencyExtractor
     ): Map[(String, String, DependencyType), Int] = {
         var dependencies: Map[(String, String, DependencyType), Int] = Map.empty
 
@@ -85,7 +85,7 @@ object DependencyExtractorsHelper {
                 }
             )
         def resources() = locateTestResources(jarFile, folder)
-        for ((classFile, _) ← ClassFiles(resources())) {
+        for ((classFile, _) <- ClassFiles(resources())) {
             dependencyExtractor.process(classFile)
         }
         dependencies

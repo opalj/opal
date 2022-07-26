@@ -39,7 +39,7 @@ object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, N
             val constructor = Class.forName(analysisClassName).getConstructors.head
             constructor.newInstance(project).asInstanceOf[ClassExtensibility]
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 val m = "cannot compute the extensibility of classes; extensibility will be unknown"
                 OPALLogger.error("project configuration", m, t)(project.logContext)
                 new ClassExtensibility {

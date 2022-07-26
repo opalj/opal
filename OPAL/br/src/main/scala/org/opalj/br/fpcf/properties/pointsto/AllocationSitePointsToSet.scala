@@ -5,11 +5,9 @@ package fpcf
 package properties
 package pointsto
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongTrieSetWithList
-import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -44,7 +42,7 @@ sealed trait AllocationSitePointsToSet
         }
     }
 
-    protected[this] def orderedTypes: Chain[ReferenceType]
+    protected[this] def orderedTypes: List[ReferenceType]
     override def types: UIDSet[ReferenceType]
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
@@ -58,7 +56,7 @@ sealed trait AllocationSitePointsToSet
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             val oldAllocationSites = newAllocationSites
             newAllocationSites += allocationSite
@@ -66,7 +64,7 @@ sealed trait AllocationSitePointsToSet
                 val oldTypes = newTypes
                 newTypes += tpe
                 if (newTypes ne oldTypes)
-                    newOrderedTypes :&:= tpe
+                    newOrderedTypes ::= tpe
             }
         }
 
@@ -77,7 +75,7 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other);
@@ -85,7 +83,7 @@ sealed trait AllocationSitePointsToSet
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
+        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val newAllocationSites = r + allocationSite
@@ -93,7 +91,7 @@ sealed trait AllocationSitePointsToSet
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
                 newAllocationSites
             } else {
@@ -110,7 +108,7 @@ sealed trait AllocationSitePointsToSet
     override def included(
         other:        AllocationSitePointsToSet,
         seenElements: Int,
-        typeFilter:   ReferenceType ⇒ Boolean
+        typeFilter:   ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other, seenElements);
@@ -119,7 +117,7 @@ sealed trait AllocationSitePointsToSet
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val oldAllocationSites = newAllocationSites
@@ -128,7 +126,7 @@ sealed trait AllocationSitePointsToSet
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
             }
         }
@@ -139,15 +137,15 @@ sealed trait AllocationSitePointsToSet
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
+    override def filter(typeFilter: ReferenceType => Boolean): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return this;
 
         var newTypes = UIDSet.empty[ReferenceType]
-        var newOrderedTypes = Chain.empty[ReferenceType]
+        var newOrderedTypes = List.empty[ReferenceType]
 
         val newAllocationSites =
-            elements.foldLeft(LongTrieSetWithList.empty) { (r, allocationSite) ⇒
+            elements.foldLeft(LongTrieSetWithList.empty) { (r, allocationSite) =>
                 val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
                 if (typeFilter(tpe)) {
                     val newAllocationSites = r + allocationSite
@@ -155,7 +153,7 @@ sealed trait AllocationSitePointsToSet
                         val oldTypes = newTypes
                         newTypes += tpe
                         if (newTypes ne oldTypes)
-                            newOrderedTypes :&:= tpe
+                            newOrderedTypes ::= tpe
                     }
                     newAllocationSites
                 } else {
@@ -171,11 +169,11 @@ sealed trait AllocationSitePointsToSet
 
     assert {
         var asTypes = IntTrieSet.empty
-        elements.foreach { allocationSite ⇒
+        elements.foreach { allocationSite =>
             asTypes += allocationSiteLongToTypeId(allocationSite)
         }
 
-        val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) ⇒ r + t.id }
+        val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) => r + t.id }
         typeIds == asTypes
     }
     assert(numElements >= numTypes)
@@ -200,14 +198,14 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
             LongTrieSetWithList(allocationSiteNew, allocationSiteOld),
             UIDSet(allocatedTypeOld, allocatedTypeNew),
             if (allocatedTypeNew != allocatedTypeOld)
-                allocatedTypeNew :&: allocatedTypeOld :&: Naught
+                List(allocatedTypeNew, allocatedTypeOld)
             else
-                allocatedTypeNew :&: Naught
+                List(allocatedTypeNew)
         )
     }
 
     def apply(
-        elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
+        elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: List[ReferenceType]
     ): AllocationSitePointsToSet = {
 
         if (elements.isEmpty) {
@@ -223,9 +221,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         val name = "opalj.AllocationSitePointsToSet"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoAllocationSites
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoAllocationSites
+                case _ =>
                     throw new IllegalStateException(s"no analysis is scheduled for property: $name")
             }
         )
@@ -235,24 +233,24 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 case class AllocationSitePointsToSetN private[pointsto] (
         override val elements:                     LongLinkedSet,
         override val types:                        UIDSet[ReferenceType],
-        override protected[this] val orderedTypes: Chain[ReferenceType]
+        override protected[this] val orderedTypes: List[ReferenceType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
     override def numElements: Int = elements.size
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
-        orderedTypes.forFirstN(n)(f)
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
+        orderedTypes.take(n).map(f)
     }
 
-    override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
         elements.forFirstN(n)(f)
     }
 
     // TODO: should the order matter?
     override def equals(obj: Any): Boolean = {
         obj match {
-            case that: AllocationSitePointsToSetN ⇒
+            case that: AllocationSitePointsToSetN =>
                 (this eq that) || {
                     that.elements.size == this.elements.size &&
                         that.numTypes == this.numTypes &&
@@ -260,7 +258,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
                         //  that.elements == this.elements => that.orderedTypes == this.orderedTypes
                         that.elements == this.elements
                 }
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -282,12 +280,12 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         other.filter(typeFilter)
     }
 
-    override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
+    override def filter(typeFilter: ReferenceType => Boolean): AllocationSitePointsToSet = {
         this
     }
 
@@ -295,17 +293,17 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def types: UIDSet[ReferenceType] = UIDSet.empty
 
-    override protected[this] def orderedTypes: Chain[ReferenceType] = Chain.empty
+    override protected[this] def orderedTypes: List[ReferenceType] = List.empty
 
     override def numElements: Int = 0
 
     override def elements: LongLinkedSet = LongTrieSetWithList.empty
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
         assert(n == 0)
     }
 
-    override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
         assert(n == 0)
     }
 
@@ -320,7 +318,7 @@ case class AllocationSitePointsToSet1(
 
     override def types: UIDSet[ReferenceType] = UIDSet(allocatedType)
 
-    override protected[this] def orderedTypes: Chain[ReferenceType] = Chain(allocatedType)
+    override protected[this] def orderedTypes: List[ReferenceType] = List(allocatedType)
 
     override def numElements: Int = 1
 
@@ -328,19 +326,19 @@ case class AllocationSitePointsToSet1(
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other match {
-            case AllocationSitePointsToSet1(`allocationSite`, `allocatedType`) ⇒
+            case AllocationSitePointsToSet1(`allocationSite`, `allocatedType`) =>
                 this
 
-            case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) ⇒
+            case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) =>
                 AllocationSitePointsToSet(
                     otherAllocationSite, otherAllocatedType, allocationSite, allocatedType
                 )
 
-            case NoAllocationSites ⇒
+            case NoAllocationSites =>
                 this
 
-            case AllocationSitePointsToSetN(otherAllocationSites, otherTypes, otherOrderedTypes) ⇒
-                val newAllocations = otherAllocationSites.foldLeft(elements) { (l, as) ⇒
+            case AllocationSitePointsToSetN(otherAllocationSites, otherTypes, otherOrderedTypes) =>
+                val newAllocations = otherAllocationSites.foldLeft(elements) { (l, as) =>
                     if (as != allocationSite) {
                         l + as
                     } else {
@@ -348,8 +346,8 @@ case class AllocationSitePointsToSet1(
                     }
                 }
 
-                val newOrderedTypes = otherOrderedTypes.foldLeft(allocatedType :&: Naught) { (l, at) ⇒
-                    if (at != allocatedType) at :&: l else l
+                val newOrderedTypes = otherOrderedTypes.foldLeft(List(allocatedType)) { (l, at) =>
+                    if (at != allocatedType) at :: l else l
                 }
 
                 new AllocationSitePointsToSetN(
@@ -357,7 +355,7 @@ case class AllocationSitePointsToSet1(
                     otherTypes + allocatedType,
                     newOrderedTypes
                 )
-            case _ ⇒
+            case _ =>
                 throw new IllegalArgumentException(s"unexpected list $other")
         }
     }
@@ -372,7 +370,7 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other);
@@ -380,7 +378,7 @@ case class AllocationSitePointsToSet1(
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
+        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val newAllocationSites = r + allocationSite
@@ -388,7 +386,7 @@ case class AllocationSitePointsToSet1(
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
                 newAllocationSites
             } else {
@@ -405,7 +403,7 @@ case class AllocationSitePointsToSet1(
     override def included(
         other:        AllocationSitePointsToSet,
         seenElements: Int,
-        typeFilter:   ReferenceType ⇒ Boolean
+        typeFilter:   ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other, seenElements);
@@ -414,7 +412,7 @@ case class AllocationSitePointsToSet1(
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val oldAllocationSites = newAllocationSites
@@ -423,7 +421,7 @@ case class AllocationSitePointsToSet1(
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
-                        newOrderedTypes :&:= tpe
+                        newOrderedTypes ::= tpe
                 }
             }
         }
@@ -434,7 +432,7 @@ case class AllocationSitePointsToSet1(
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
+    override def filter(typeFilter: ReferenceType => Boolean): AllocationSitePointsToSet = {
         if ((typeFilter eq PointsToSetLike.noFilter) || typeFilter(allocatedType)) {
             this
         } else {
@@ -442,13 +440,13 @@ case class AllocationSitePointsToSet1(
         }
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
         assert(n == 0 || n == 1)
         if (n == 1)
             f(allocatedType)
     }
 
-    override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
         assert(n == 0 || n == 1)
         if (n == 1)
             f(allocationSite)
@@ -456,10 +454,10 @@ case class AllocationSitePointsToSet1(
 
     override def equals(obj: Any): Boolean = {
         obj match {
-            case that: AllocationSitePointsToSet1 ⇒
+            case that: AllocationSitePointsToSet1 =>
                 that.allocationSite == this.allocationSite
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 

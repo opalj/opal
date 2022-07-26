@@ -98,7 +98,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)
                 val v2 = IntegerRange(lb = -10, ub = -1)
                 v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)))
-                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue()))
             }
 
             it("the rejoin of two ranges which exceed the max. card. should result in the same rane") {
@@ -147,7 +147,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(-1, 3)
                 val v2 = IntegerRange(0, 2)
 
-                v1.join(-1, v2) should be('isMetaInformationUpdate)
+                v1.join(-1, v2) should be(Symbol("isMetaInformationUpdate"))
             }
 
             it("(join of an IntegerRange value and an IntegerRange value that describes a sub-range) [0,2] join [-1,3] => \"StructuralUpdate\";  [0,2] join l @ [-1,3] => l'") {
@@ -281,7 +281,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 * [1,1] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(1, 1)
 
                 imul(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -289,7 +289,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of multiplying a specific (but unknown) value v1 by a \"point\" range != [1,1] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
 
                 imul(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -297,7 +297,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of multiplying a specific (but unknown) value v1 by [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
                 imul(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -327,14 +327,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("AnIntegerValue | [8,19] => AnIntegerRange") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(8, 19)
 
-                ior(-1, v, s) should be(AnIntegerValue)
+                ior(-1, v, s) should be(AnIntegerValue())
             }
 
             it("AnIntegerValue | [0,0] => AnIntegerRange") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
                 ior(-1, v, s) should be theSameInstanceAs (v)
@@ -345,10 +345,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(8, 19)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
@@ -358,10 +358,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MaxValue - 1, Int.MaxValue - 1)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MaxValue)
                         ub should ===(Int.MaxValue)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
@@ -371,10 +371,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MaxValue - 32, Int.MaxValue - 16)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MaxValue - 32)
                         ub should ===(Int.MaxValue)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
@@ -384,10 +384,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v2 = IntegerRange(8, 19)
 
                 ior(-1, v1, v2) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
@@ -397,10 +397,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v2 = IntegerRange(Int.MinValue, Int.MaxValue)
 
                 ior(-1, v1, v2) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
@@ -410,10 +410,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v2 = IntegerRange(8, 19)
 
                 ior(-1, v1, v2) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===((Int.MinValue))
                         ub should be >= 19
-                    case v ⇒
+                    case v =>
                         fail(s"expected [Int.MinValue, 19]; found $v")
                 }
             }
@@ -423,10 +423,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(8, 19)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 11
                         ub should be >= 19
-                    case v ⇒
+                    case v =>
                         fail(s"expected [11,19]; found $v")
                 }
             }
@@ -436,10 +436,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(19, 19)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 19
                         ub should be >= 19
-                    case v ⇒ fail(s"expected [19,19]; found $v")
+                    case v => fail(s"expected [19,19]; found $v")
                 }
             }
 
@@ -448,10 +448,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(1, 19)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 3
                         ub should be >= 19
-                    case v ⇒
+                    case v =>
                         fail(s"expected [3,19]; found $v")
                 }
             }
@@ -461,10 +461,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(1, 4)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 1
                         ub should be >= 7
-                    case v ⇒
+                    case v =>
                         fail(s"expected [1,7]; found $v")
                 }
             }
@@ -474,10 +474,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(8, 10)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 8
                         ub should be >= 30
-                    case v ⇒
+                    case v =>
                         fail(s"expected [8,30]; found $v")
                 }
             }
@@ -487,10 +487,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 0)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 0
-                    case v ⇒
+                    case v =>
                         fail(s"expected [0,0]; found $v")
                 }
             }
@@ -500,10 +500,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(8, 19)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= 19
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-5,19]; found $v")
                 }
             }
@@ -513,10 +513,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(8, 19)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-5,-1]; found $v")
                 }
             }
@@ -526,10 +526,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-8, 19)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-5,-1]; found $v")
                 }
             }
@@ -539,10 +539,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-19, -8)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-5,-1]; found $v")
                 }
             }
@@ -552,10 +552,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-19, -8)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-19,-]; found $v")
                 }
             }
@@ -565,10 +565,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-19, 0)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-5,-1]; found $v")
                 }
             }
@@ -578,10 +578,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-19, -1)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-19,-1]; found $v")
                 }
             }
@@ -591,10 +591,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-19, 1)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= 5
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-19,5]; found $v")
                 }
             }
@@ -604,10 +604,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-19, 1)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -19
                         ub should be >= 5
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-19,5]; found $v")
                 }
             }
@@ -617,10 +617,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 1)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -1
                         ub should be >= 1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-1,1]; found $v")
                 }
             }
@@ -630,10 +630,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-9, -9)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -9
                         ub should be >= -9
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-9,-9]; found $v")
                 }
             }
@@ -643,10 +643,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-9, 0)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -10
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-10,-1]; found $v")
                 }
             }
@@ -656,10 +656,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-9, -9)
 
                 ior(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -1
                         ub should be >= -1
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-1,-1]; found $v")
                 }
             }
@@ -673,7 +673,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 | [0,0] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
                 ior(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -681,7 +681,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the or of a specific (but unknown) value v1 and a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
 
                 ior(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -689,7 +689,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the or of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
                 ior(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -705,7 +705,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value | r@[-1,-1] should be r itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(-1, -1)
 
                 ior(-1, v1, v2) should be theSameInstanceAs (v2)
@@ -751,7 +751,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("-[Int.MinValue,3] => AnIntegerValue") {
                 val v1 = IntegerRange(Int.MinValue, 3)
 
-                ineg(-1, v1) should be(AnIntegerValue)
+                ineg(-1, v1) should be(AnIntegerValue())
             }
 
         }
@@ -766,10 +766,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(4, 4)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-7)
                         ub should ===(-7)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-7,-7]; found $v")
                 }
             }
@@ -779,10 +779,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(4, 4)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(1)
                         ub should ===(1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [1,1]; found $v")
                 }
             }
@@ -792,10 +792,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(3, 3)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -2
                         ub should be >= 0
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2 and ub >= 0; found $v")
                 }
             }
@@ -805,10 +805,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(3, 31)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -2
                         ub should be >= 0
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2 and ub >= 0; found $v")
                 }
             }
@@ -818,10 +818,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(1, 3)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= 2
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -5 and ub >= 2; found $v")
                 }
             }
@@ -831,10 +831,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 31)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-1)
                         ub should be >= (1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -1 and ub >= 1; found $v")
                 }
             }
@@ -844,10 +844,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(1, 3)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-5)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -5 and ub >= -1; found $v")
                 }
             }
@@ -857,10 +857,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(1, 31)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-5)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -5 and ub >= -1; found $v")
                 }
             }
@@ -870,10 +870,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(1, 31)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (25)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 25; found $v")
                 }
             }
@@ -883,10 +883,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 2)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (5)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 5; found $v")
                 }
             }
@@ -896,10 +896,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 31)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= -1; found $v")
                 }
             }
@@ -909,10 +909,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(10, 12)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (524287)
                         ub should be >= (2097151)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 524287 and ub >= 2097151; found $v")
                 }
             }
@@ -922,10 +922,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-5, 12)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-1000)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -1000 and ub >= -1; found $v")
                 }
             }
@@ -935,10 +935,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-8, 12)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-10)
                         ub should be >= (1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -10 and ub >= 1; found $v")
                 }
             }
@@ -948,10 +948,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-12, 12)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (12)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 12; found $v")
                 }
             }
@@ -961,10 +961,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(13, 35)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-1)
                         ub should ===(-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-1,-1]; found $v")
                 }
             }
@@ -974,10 +974,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(30, 45)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-1)
                         ub should ===(0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-1,0]; found $v")
                 }
             }
@@ -987,10 +987,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(20, 120)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(0)
                         ub should ===(0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [0,0]; found $v")
                 }
             }
@@ -1000,10 +1000,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-9, -9)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(0)
                         ub should ===(0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [0,0]; found $v")
                 }
             }
@@ -1013,10 +1013,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(128, 135)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (10)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 10; found $v")
                 }
             }
@@ -1026,10 +1026,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-9, -9)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (15)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 15; found $v")
                 }
             }
@@ -1039,10 +1039,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-9, -9)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-10)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -10 and ub >= -1; found $v")
                 }
             }
@@ -1052,10 +1052,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(99, 99)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-10)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -10 and ub >= -1; found $v")
                 }
             }
@@ -1065,10 +1065,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(99, 99)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-10)
                         ub should be >= (5)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -10 and ub >= 5; found $v")
                 }
             }
@@ -1078,10 +1078,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(31, 31)
 
                 ishr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(-1)
                         ub should ===(0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected [-1,0]; found $v")
                 }
             }
@@ -1108,7 +1108,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 right-shifted by [0,0] should be v1 itself") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
                 ishr(-1, v, s) should be theSameInstanceAs (v)
@@ -1116,7 +1116,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[0,0] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(0, 0)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishr(-1, v, s) should be theSameInstanceAs (v)
             }
@@ -1137,7 +1137,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[-1,-1] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(-1, -1)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishr(-1, v, s) should be theSameInstanceAs (v)
             }
@@ -1158,14 +1158,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 right-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
                 ishr(-1, v, s) should not be theSameInstanceAs(v)
             }
 
             it("A specific (but unknown) value v1 right-shifted by [2,4] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 4)
 
                 ishr(-1, v, s) should not be theSameInstanceAs(v)
@@ -1205,8 +1205,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(0, 0)
                 val v2 = AnIntegerValue()
 
-                iadd(-1, v1, v2) should be(AnIntegerValue)
-                iadd(-1, v2, v1) should be(AnIntegerValue)
+                iadd(-1, v1, v2) should be(AnIntegerValue())
+                iadd(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("[Int.MinValue,3] + [2,3] => [Int.MinValue+2,6]") {
@@ -1226,12 +1226,12 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             it("[Int.MinValue,3] + [-3,2] => AnIntegerValue") {
                 val v1 = IntegerRange(Int.MinValue, 3)
                 val v2 = IntegerRange(-3, 2)
-                iadd(-1, v1, v2) should be(AnIntegerValue)
-                iadd(-1, v2, v1) should be(AnIntegerValue)
+                iadd(-1, v1, v2) should be(AnIntegerValue())
+                iadd(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("A specific (but unknown) value v1 + [0,0] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
                 iadd(-1, v1, v2) should be theSameInstanceAs (v1)
                 iadd(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -1245,14 +1245,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of adding a specific (but unknown) value v1 to a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
                 iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
                 iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
             }
 
             it("The result of adding a specific (but unknown) value v1 to a [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
                 iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
                 iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
@@ -1289,7 +1289,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(0, 0)
                 val v2 = AnIntegerValue()
 
-                isub(-1, v1, v2) should be(AnIntegerValue)
+                isub(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("AnIntegerValue - [0,0] => AnIntegerValue") {
@@ -1303,21 +1303,21 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerRange(Int.MinValue, 3)
                 val v2 = IntegerRange(2, 3)
 
-                isub(-1, v1, v2) should be(AnIntegerValue)
+                isub(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("[2,3] - [Int.MinValue,3] => AnIntegerValue") {
                 val v2 = IntegerRange(2, 3)
                 val v1 = IntegerRange(Int.MinValue, 3)
 
-                isub(-1, v2, v1) should be(AnIntegerValue)
+                isub(-1, v2, v1) should be(AnIntegerValue())
             }
 
             it("[-3,-1] - [-3,Int.MaxValue] => AnIntegerValue") {
                 val v1 = IntegerRange(-3, -1)
                 val v2 = IntegerRange(-3, Int.MaxValue)
 
-                isub(-1, v1, v2) should be(AnIntegerValue)
+                isub(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("[-1,-1] - [-3,Int.MaxValue] => [Int.MinValue,2]") {
@@ -1328,13 +1328,13 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value - 'itself' => [0,0]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
 
                 isub(-1, v, v) should be(IntegerRange(0, 0))
             }
 
             it("A specific (but unknown) value v1 - [0,0] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
                 isub(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -1349,14 +1349,14 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("The result of subtracting a \"point\" range != [0,0] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
                 val v1 = IntegerRange(2, 2)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
                 isub(-1, v1, v2) should not be theSameInstanceAs(v2)
             }
 
             it("The result of subtracting [2,4] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
                 val v1 = IntegerRange(2, 4)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
                 isub(-1, v1, v2) should not be theSameInstanceAs(v2)
             }
@@ -1389,8 +1389,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1408,8 +1408,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1420,20 +1420,20 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
             it("[-1,200] / AnIntegerValue => Value and ThrowsException") {
                 val v1 = IntegerRange(-1, 200)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
                 val result = idiv(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1464,8 +1464,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1476,8 +1476,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1488,8 +1488,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1500,8 +1500,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1512,8 +1512,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1524,8 +1524,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(-21, 21))
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1572,8 +1572,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(-3, 3))
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                                => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1636,21 +1636,21 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("AnIntegerValue & [2,2] => [0,2]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
                 iand(-1, v, s) should be(IntegerRange(0, 2))
             }
 
             it("AnIntegerValue & [1,1] => [0,1]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(1, 1)
 
                 iand(-1, v, s) should be(IntegerRange(0, 1))
             }
 
             it("[1,1] & AnIntegerValue => [0,1]") {
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
                 val v = IntegerRange(1, 1)
 
                 iand(-1, v, s) should be(IntegerRange(0, 1))
@@ -1658,23 +1658,23 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("[2,2] & AnIntegerValue  => [0,2]") {
                 val v = IntegerRange(2, 2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 iand(-1, v, s) should be(IntegerRange(0, 2))
             }
 
             it("[-2,-2] & AnIntegerValue  => [0,2]") {
                 val v = IntegerRange(-2, -2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                iand(-1, v, s) should be(AnIntegerValue)
+                iand(-1, v, s) should be(AnIntegerValue())
             }
 
             it("[-2,-2] & AnIntegerValue  => AnIntegerValue") {
                 val v1 = IntegerRange(-2, -2)
-                val v2 = AnIntegerValue
+                val v2 = AnIntegerValue()
 
-                iand(-1, v1, v2) should be(AnIntegerValue)
+                iand(-1, v1, v2) should be(AnIntegerValue())
             }
 
             it("The result of the and of a range r and [1,1] should be r itself; [2,4] & [-1,-1] => [2,4]") {
@@ -1686,7 +1686,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 & [-1,-1] should be v1 itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(-1, -1)
 
                 iand(-1, v1, v2) should be theSameInstanceAs (v1)
@@ -1694,7 +1694,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the and of a specific (but unknown) value v1 and a \"point\" != [-1,-1] range should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 2)
 
                 iand(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -1702,7 +1702,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("The result of the and of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
                 iand(-1, v1, v2) should not be theSameInstanceAs(v1)
@@ -1718,7 +1718,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value & r@[0,0] should be r itself") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
                 iand(-1, v1, v2) should be theSameInstanceAs (v2)
@@ -1771,11 +1771,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(2, 4)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 1
                         ub should be >= 5
 
-                    case v ⇒ fail(s"expected lb <= 1 and ub >= 5; found $v")
+                    case v => fail(s"expected lb <= 1 and ub >= 5; found $v")
                 }
             }
 
@@ -1784,11 +1784,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(25, 45)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 1
                         ub should be >= 64
 
-                    case v ⇒ fail(s"expected lb <= 1 and ub >= 64; found $v")
+                    case v => fail(s"expected lb <= 1 and ub >= 64; found $v")
                 }
             }
 
@@ -1797,11 +1797,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(25, 45)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 0
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >= 0; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >= 0; found $v")
                 }
             }
 
@@ -1810,11 +1810,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(25, 45)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 127
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >= 127; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >= 127; found $v")
                 }
             }
 
@@ -1823,11 +1823,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-20, 1)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 2
                         ub should be >= 20
 
-                    case v ⇒ fail(s"expected lb <= 2 and ub >= 20; found $v")
+                    case v => fail(s"expected lb <= 2 and ub >= 20; found $v")
                 }
             }
 
@@ -1836,11 +1836,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-20, 1)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -5
                         ub should be >= 2147483647
 
-                    case v ⇒ fail(s"expected lb <= -5 and ub >= 2147483647; found $v")
+                    case v => fail(s"expected lb <= -5 and ub >= 2147483647; found $v")
                 }
             }
 
@@ -1849,11 +1849,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-20, 1)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -20
                         ub should be >= 2147483645
 
-                    case v ⇒ fail(s"expected lb <= -20 and ub >= 2147483645; found $v")
+                    case v => fail(s"expected lb <= -20 and ub >= 2147483645; found $v")
                 }
             }
 
@@ -1862,11 +1862,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(25, 31)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 1
                         ub should be >= 64
 
-                    case v ⇒ fail(s"expected lb <= 1 and ub >= 64; found $v")
+                    case v => fail(s"expected lb <= 1 and ub >= 64; found $v")
                 }
             }
 
@@ -1875,11 +1875,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(4, 8)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 8388568
                         ub should be >= 134217727
 
-                    case v ⇒ fail(s"expected lb <= 8388568 and ub >=134217727; found $v")
+                    case v => fail(s"expected lb <= 8388568 and ub >=134217727; found $v")
                 }
             }
 
@@ -1888,11 +1888,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(4, 8)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 268435455
 
-                    case v ⇒ fail(s"expected lb <= -1 and ub >=2147483647; found $v")
+                    case v => fail(s"expected lb <= -1 and ub >=2147483647; found $v")
                 }
             }
 
@@ -1901,11 +1901,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 1)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -25
                         ub should be >= 2147483647
 
-                    case v ⇒ fail(s"expected lb <= -25 and ub >=2147483647; found $v")
+                    case v => fail(s"expected lb <= -25 and ub >=2147483647; found $v")
                 }
             }
 
@@ -1914,11 +1914,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 25)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 60
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >= 60; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >= 60; found $v")
                 }
             }
 
@@ -1927,11 +1927,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 1)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 1
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >= 60; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >= 60; found $v")
                 }
             }
 
@@ -1940,11 +1940,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(5, 5)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(0)
                         ub should ===(0)
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >=0; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >=0; found $v")
                 }
             }
 
@@ -1953,11 +1953,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(5, 5)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(134217727)
                         ub should ===(134217727)
 
-                    case v ⇒ fail(s"expected lb <= 134217727 and ub >=134217727; found $v")
+                    case v => fail(s"expected lb <= 134217727 and ub >=134217727; found $v")
                 }
             }
 
@@ -1966,11 +1966,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(5, 5)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= (134217727)
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >=134217727; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >=134217727; found $v")
                 }
             }
 
@@ -1979,11 +1979,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 31)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -15
                         ub should be >= 2147483647
 
-                    case v ⇒ fail(s"expected lb <= -15 and ub >=2147483647; found $v")
+                    case v => fail(s"expected lb <= -15 and ub >=2147483647; found $v")
                 }
             }
 
@@ -1992,11 +1992,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 31)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= 0
                         ub should be >= 45
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >=45; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >=45; found $v")
                 }
             }
 
@@ -2005,11 +2005,11 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 31)
 
                 iushr(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= -45
                         ub should be >= 2147483645
 
-                    case v ⇒ fail(s"expected lb <= 0 and ub >=45; found $v")
+                    case v => fail(s"expected lb <= 0 and ub >=45; found $v")
                 }
             }
         }
@@ -2019,102 +2019,102 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(-10, -10)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[-10,-10] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(-10, -10)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[-22,-2] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(-22, -2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [-22,-2] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(-22, -2)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [2,22] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 22)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[2,22] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(2, 22)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[-12,12] ^ AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(-12, 12)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [-12,12]  => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(-12, 12)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ AnIntegerValue  => AnIntegerValue") {
-                val v = AnIntegerValue
-                val s = AnIntegerValue
+                val v = AnIntegerValue()
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("[0,0] ^ AnIntegerValue  => AnIntegerValue") {
                 val v = IntegerRange(0, 0)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("AnIntegerValue ^ [0,0] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
-                ixor(-1, v, s) should be(AnIntegerValue)
+                ixor(-1, v, s) should be(AnIntegerValue())
 
             }
 
             it("x (AnIntegerValue) ^ x => [0,0]") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = v
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(0)
                         ub should ===(0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb == 0 and ub == 0; found $v")
                 }
             }
@@ -2124,10 +2124,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val v2 = IntegerRange(0, 1)
 
                 ixor(-1, v1, v2) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be(0)
                         ub should be(1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb = 0 and ub = 1; found $v")
                 }
                 ixor(-1, v2, v1) should be(ixor(-1, v1, v2))
@@ -2138,10 +2138,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 3)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (7)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 7; found $v")
                 }
             }
@@ -2151,10 +2151,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 3)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-4)
                         ub should be >= (7)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -4 and ub >= 7; found $v")
                 }
             }
@@ -2164,10 +2164,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 3)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-12)
                         ub should be >= (-5)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -12 and ub >= -5; found $v")
                 }
             }
@@ -2177,10 +2177,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(12, 31)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (63)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 63; found $v")
                 }
             }
@@ -2190,10 +2190,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(12, 31)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-32)
                         ub should be >= (63)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -32 and ub >= 63; found $v")
                 }
             }
@@ -2203,10 +2203,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-8, -6)
 
                 ixor(-1, v, s) match {
-                    case IntegerRange(lb, ub) ⇒
+                    case IntegerRangeLike(lb, ub) =>
                         lb should be <= (1)
                         ub should be >= (7)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 1 and ub >= 7; found $v")
                 }
             }
@@ -2216,10 +2216,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-80, -60)
 
                 ixor(-1, v, s) match {
-                    case IntegerRange(lb, ub) ⇒
+                    case IntegerRangeLike(lb, ub) =>
                         lb should be <= (56)
                         ub should be >= (79)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 56 and ub >= 79; found $v")
                 }
             }
@@ -2229,10 +2229,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-120, -100)
 
                 ixor(-1, v, s) match {
-                    case IntegerRange(lb, ub) ⇒
+                    case IntegerRangeLike(lb, ub) =>
                         lb should be <= (0)
                         ub should be >= (511)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 511; found $v")
                 }
             }
@@ -2242,10 +2242,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-120, -100)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (99)
                         ub should be >= (119)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 99 and ub >= 119; found $v")
                 }
             }
@@ -2255,10 +2255,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(9, 12)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-16)
                         ub should be >= (-9)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -16 and ub >= -9; found $v")
                 }
             }
@@ -2268,10 +2268,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 45)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-64)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -64 and ub >= -1; found $v")
                 }
             }
@@ -2281,10 +2281,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 45)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (-2147483521)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
                 }
             }
@@ -2294,10 +2294,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(40, 45)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (-2147483521)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
                 }
             }
@@ -2307,10 +2307,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-14, -10)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-16)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -16 and ub >= -1; found $v")
                 }
             }
@@ -2320,10 +2320,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MinValue, Int.MinValue + 100)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (-2147483521)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
                 }
             }
@@ -2333,10 +2333,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-50, -30)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-64)
                         ub should be >= (-1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -64 and ub >= -1; found $v")
                 }
             }
@@ -2346,10 +2346,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 12)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-13)
                         ub should be >= (13)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -13 and ub >= 13; found $v")
                 }
             }
@@ -2359,10 +2359,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(10, 18)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-19)
                         ub should be >= (31)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -19 and ub >= 31; found $v")
                 }
             }
@@ -2372,10 +2372,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(10, 18)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-32)
                         ub should be >= (31)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
@@ -2385,10 +2385,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MaxValue - 25, Int.MaxValue)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (2147483647)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
                 }
             }
@@ -2398,10 +2398,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-25, 19)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (2147483647)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
                 }
             }
@@ -2411,10 +2411,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-25, 19)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-32)
                         ub should be >= (31)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
@@ -2424,10 +2424,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-5, -1)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-24)
                         ub should be >= (28)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
@@ -2437,10 +2437,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-25, 19)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-24)
                         ub should be >= (28)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -32 and ub >= 31; found $v")
                 }
             }
@@ -2450,10 +2450,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-1, 1)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2)
                         ub should be >= (1)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2 and ub >= 1; found $v")
                 }
             }
@@ -2463,10 +2463,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-1, 34)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-48)
                         ub should be >= (46)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -48 and ub >= 46; found $v")
                 }
             }
@@ -2476,10 +2476,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-1, 34)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-1)
                         ub should be >= (34)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -1 and ub >= 34; found $v")
                 }
             }
@@ -2489,10 +2489,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-1, 34)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-35)
                         ub should be >= (34)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -35 and ub >= 34; found $v")
                 }
             }
@@ -2502,10 +2502,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(34, 34)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(34)
                         ub should ===(34)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 34 and ub >= 34; found $v")
                 }
             }
@@ -2515,10 +2515,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MinValue, Int.MaxValue)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= Int.MinValue (-2147483648) and ub >= Int.MaxValue (2147483647); found $v")
                 }
             }
@@ -2528,10 +2528,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MinValue, Int.MaxValue)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-58880)
                         ub should be >= (-57857)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -58880 and ub >= -57857; found $v")
                 }
             }
@@ -2541,10 +2541,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 60)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (8512)
                         ub should be >= (12031)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 8512 and ub >= 12031; found $v")
                 }
             }
@@ -2554,10 +2554,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(100, 102)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-103)
                         ub should be >= (102)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -103 and ub >= 102; found $v")
                 }
             }
@@ -2574,10 +2574,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(12, 31)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (2013265920)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 2013265920; found $v")
                 }
             }
@@ -2587,10 +2587,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(1, 4)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (2)
                         ub should be >= (352)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 2 and ub >= 352; found $v")
                 }
             }
@@ -2600,10 +2600,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 4)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (0)
                         ub should be >= (80)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 0 and ub >= 80; found $v")
                 }
             }
@@ -2613,10 +2613,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(4, 4)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (16)
                         ub should be >= (80)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 16 and ub >= 80; found $v")
                 }
             }
@@ -2626,10 +2626,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-4, 4)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (1)
                         ub should be >= (80)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 1 and ub >= 80; found $v")
                 }
             }
@@ -2639,10 +2639,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-4, -1)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (1610612736)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
                 }
             }
@@ -2652,10 +2652,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-4, 100)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (1610612736)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
                 }
             }
@@ -2665,10 +2665,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(50, 100)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (1610612736)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 1610612736; found $v")
                 }
             }
@@ -2678,10 +2678,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 0)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (1)
                         ub should be >= (5)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= 1 and ub >= 5; found $v")
                 }
             }
@@ -2691,10 +2691,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MaxValue, Int.MaxValue)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
                 }
             }
@@ -2704,10 +2704,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MaxValue, Int.MaxValue)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
                 }
             }
@@ -2717,10 +2717,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MaxValue, Int.MaxValue)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (0)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 0; found $v")
                 }
             }
@@ -2730,10 +2730,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MinValue, Int.MaxValue)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (2080374784)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 2080374784; found $v")
                 }
             }
@@ -2743,10 +2743,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MinValue, Int.MinValue)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (1879048192)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 1879048192; found $v")
                 }
             }
@@ -2756,10 +2756,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MinValue, Int.MinValue)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (2080374784)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 2080374784; found $v")
                 }
             }
@@ -2769,10 +2769,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(Int.MinValue, Int.MinValue)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-2147483648)
                         ub should be >= (1879048192)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -2147483648 and ub >= 1879048192; found $v")
                 }
             }
@@ -2782,10 +2782,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 0)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-100)
                         ub should be >= (-50)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -100 and ub >= -50; found $v")
                 }
             }
@@ -2795,10 +2795,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(3, 24)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-1677721600)
                         ub should be >= (-400)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -1677721600 and ub >= -400; found $v")
                 }
             }
@@ -2808,10 +2808,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(0, 24)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-167772160)
                         ub should be >= (-5)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -167772160 and ub >= -5; found $v")
                 }
             }
@@ -2821,10 +2821,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(2, 2)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-40)
                         ub should be >= (-20)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -40 and ub >= -20; found $v")
                 }
             }
@@ -2834,26 +2834,26 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(-2, 2)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-40)
                         ub should be >= (-5)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -40 and ub >= -5; found $v")
                 }
             }
 
             it("AnIntegerValue << [2,2] => AnIntegerValue") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
-                ishl(-1, v, s) should be(AnIntegerValue)
+                ishl(-1, v, s) should be(AnIntegerValue())
             }
 
             it("[2,2] << AnIntegerValue => AnIntegerValue") {
                 val v = IntegerRange(2, 2)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
-                ishl(-1, v, s) should be(AnIntegerValue)
+                ishl(-1, v, s) should be(AnIntegerValue())
             }
 
             it("[-1,1] << [2,2] => [-4, 4]") {
@@ -2861,10 +2861,10 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val s = IntegerRange(2, 2)
 
                 ishl(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case (IntegerRangeLike(lb, ub)) =>
                         lb should be <= (-4)
                         ub should be >= (4)
-                    case v ⇒
+                    case v =>
                         fail(s"expected lb <= -4 and ub >= 4; found $v")
                 }
             }
@@ -2961,7 +2961,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             }
 
             it("A specific (but unknown) value v1 left-shifted by [0,0] should be v1 itself") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
                 ishl(-1, v, s) should be theSameInstanceAs (v)
@@ -2969,7 +2969,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[0,0] left-shifted by a specific (but unknown) IntegerValue should be r itself") {
                 val v = IntegerRange(0, 0)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishl(-1, v, s) should be theSameInstanceAs (v)
             }
@@ -2990,20 +2990,20 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
             it("r@[-1,-1] left-shifted by a specific (but unknown) IntegerValue should be [Int.MinValue, -1]") {
                 val v = IntegerRange(-1, -1)
-                val s = AnIntegerValue
+                val s = AnIntegerValue()
 
                 ishl(-1, v, s) should be(IntegerRange(Int.MinValue, -1))
             }
 
             it("A specific (but unknown) value v1 left-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 2)
 
                 ishl(-1, v, s) should not be theSameInstanceAs(v)
             }
 
             it("A specific (but unknown) value v1 left-shifted by [2,4] should be a specific (but unknown) value different from v1") {
-                val v = AnIntegerValue
+                val v = AnIntegerValue()
                 val s = IntegerRange(2, 4)
 
                 ishl(-1, v, s) should not be theSameInstanceAs(v)
@@ -3017,7 +3017,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("(byte)AnIntegerValue => [-128,+127]") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 i2b(-1, v1) should be(IntegerRange(-128, +127))
             }
 
@@ -3038,7 +3038,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             import theDomain._
 
             it("(short)AnIntegerValue => [-Short.MinValue,Short.MaxValue]") {
-                val v1 = AnIntegerValue
+                val v1 = AnIntegerValue()
                 i2s(-1, v1) should be(IntegerRange(Short.MinValue, Short.MaxValue))
             }
 
@@ -3114,18 +3114,18 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (>=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsGreaterThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
             }
 
             describe("the behavior of the greater or equal than (<=) operator") {
                 it("a specific (but unknown) value compared (<=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsLessThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
                 it("comparison(<=) of anInt with IntMin") {
-                    val v1 = AnIntegerValue
+                    val v1 = AnIntegerValue()
                     val v2 = IntegerRange(Int.MinValue, Int.MinValue)
                     intIsLessThanOrEqualTo(IrrelevantPC, v1, v2) should be(Unknown)
                     intIsLessThanOrEqualTo(IrrelevantPC, v2, v1) should be(Yes)
@@ -3190,7 +3190,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (>) with itself should be No") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsGreaterThan(IrrelevantPC, p, p) should be(No)
                 }
             }
@@ -3198,7 +3198,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             describe("the behavior of the greater than (<) operator") {
 
                 it("a specific (but unknown) value compared (<) with itself should be No") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intIsLessThan(IrrelevantPC, p, p) should be(No)
                 }
             }
@@ -3242,7 +3242,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
 
                 it("a specific (but unknown) value compared (==) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intAreEqual(IrrelevantPC, p, p) should be(Yes)
                 }
             }
@@ -3250,7 +3250,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
             describe("the behavior of the not equals (!=) operator") {
 
                 it("a specific (but unknown) value compared (!=) with itself should be Yes") {
-                    val p = AnIntegerValue
+                    val p = AnIntegerValue()
                     intAreNotEqual(IrrelevantPC, p, p) should be(No)
                 }
 
@@ -3337,7 +3337,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 5))
             }
 
@@ -3348,7 +3348,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(Int.MinValue, 6))
             }
 
@@ -3359,7 +3359,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(-1, Int.MaxValue))
             }
 
@@ -3370,7 +3370,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(0, Int.MaxValue))
             }
 
@@ -3391,7 +3391,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 if (domain.allReturnedValues.size != 2)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
-                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                val summary = domain.summarize(-1, domain.allReturnedValues.values)
                 summary should be(domain.IntegerRange(5, 5))
             }
 
@@ -3504,7 +3504,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 if (result.operandsArray(37) != null) {
-                    result.operandsArray(37).head should be(domain.AnIntegerValue)
+                    result.operandsArray(37).head should be(domain.AnIntegerValue())
                     result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
                 } else {
                     // OK - the code is dead, however, we cannot identify this, but the
@@ -3518,7 +3518,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 if (result.operandsArray(37) != null) {
-                    result.operandsArray(37).head should be(domain.AnIntegerValue)
+                    result.operandsArray(37).head should be(domain.AnIntegerValue())
                     result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
                 } else {
                     // OK - the code is dead, however, we cannot identify this, but the
@@ -3532,7 +3532,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 if (result.operandsArray(38) != null) {
-                    result.operandsArray(38).head should be(domain.AnIntegerValue)
+                    result.operandsArray(38).head should be(domain.AnIntegerValue())
                     result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
                 } else {
                     // OK - the code is dead, however, we cannot identify this, but the
@@ -3544,7 +3544,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues2").head
                 val result = BaseAI(method, domain)
-                result.operandsArray(38).head should be(domain.AnIntegerValue)
+                result.operandsArray(38).head should be(domain.AnIntegerValue())
                 result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
             }
 
@@ -3552,7 +3552,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues3").head
                 val result = BaseAI(method, domain)
-                result.operandsArray(45).head should be(domain.AnIntegerValue)
+                result.operandsArray(45).head should be(domain.AnIntegerValue())
                 result.operandsArray(49).head should be(domain.IntegerRange(0, 0))
             }
 
@@ -3561,8 +3561,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val method = IntegerValues.findMethod("cfDependentValues4").head
                 val result = BaseAI(method, domain)
                 result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
-                result.operandsArray(50).head should be(domain.AnIntegerValue)
-                result.operandsArray(54).head should be(domain.AnIntegerValue)
+                result.operandsArray(50).head should be(domain.AnIntegerValue())
+                result.operandsArray(54).head should be(domain.AnIntegerValue())
                 if (result.operandsArray(50).head eq result.operandsArray(54).head)
                     fail("unequal values are made equal")
             }
@@ -3573,7 +3573,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
                 result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
                 result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
-                result.operandsArray(55).head should be(domain.AnIntegerValue)
+                result.operandsArray(55).head should be(domain.AnIntegerValue())
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
@@ -3582,17 +3582,17 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = BaseAI(method, domain)
 
                 result.operandsArray(77).head should be(domain.IntegerRange(0, 0))
-                result.operandsArray(81).head should be(domain.AnIntegerValue)
-                result.operandsArray(85).head should be(domain.AnIntegerValue)
+                result.operandsArray(81).head should be(domain.AnIntegerValue())
+                result.operandsArray(85).head should be(domain.AnIntegerValue())
                 result.operandsArray(89).head should be(domain.IntegerRange(0, 0))
 
-                result.operandsArray(97).head should be(domain.AnIntegerValue)
+                result.operandsArray(97).head should be(domain.AnIntegerValue())
                 result.operandsArray(101).head should be(domain.IntegerRange(0, 0))
-                result.operandsArray(105).head should be(domain.AnIntegerValue)
+                result.operandsArray(105).head should be(domain.AnIntegerValue())
                 result.operandsArray(109).head should be(domain.IntegerRange(0, 0))
 
-                result.operandsArray(117).head should be(domain.AnIntegerValue)
-                result.operandsArray(121).head should be(domain.AnIntegerValue)
+                result.operandsArray(117).head should be(domain.AnIntegerValue())
+                result.operandsArray(121).head should be(domain.AnIntegerValue())
                 result.operandsArray(125).head should be(domain.IntegerRange(0, 0))
                 result.operandsArray(129).head should be(domain.IntegerRange(0, 0))
             }
@@ -3621,7 +3621,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val method = IntegerValues.findMethod("moreComplexAliasing").head
                 val result = BaseAI(method, domain)
 
-                result.operandsArray(20).head should be(domain.AnIntegerValue)
+                result.operandsArray(20).head should be(domain.AnIntegerValue())
             }
         }
     }

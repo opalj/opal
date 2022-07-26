@@ -15,6 +15,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedLibraryPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
@@ -36,7 +37,11 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
 
     override protected[cg] def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
+        val isLibrary =
+            project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
+                "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
+
         List(
             TypeBasedPointsToAnalysisScheduler,
             TypeBasedConfiguredMethodsPointsToAnalysisScheduler,
@@ -44,7 +49,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
             TypeBasedArraycopyPointsToAnalysisScheduler,
             TypeBasedUnsafePointsToAnalysisScheduler,
             TypeBasedNewInstanceAnalysisScheduler
-        )
+        ) ::: (if (isLibrary) List(TypeBasedLibraryPointsToAnalysisScheduler) else Nil)
     }
 
     override def getTypeIterator(project: SomeProject): TypeIterator =

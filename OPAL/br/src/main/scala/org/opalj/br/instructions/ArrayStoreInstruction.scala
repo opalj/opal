@@ -10,9 +10,9 @@ package instructions
  */
 abstract class ArrayStoreInstruction extends ArrayAccessInstruction {
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 3
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 3
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def stackSlotsChange: Int = -2 - elementTypeComputationalType.operandSize
 

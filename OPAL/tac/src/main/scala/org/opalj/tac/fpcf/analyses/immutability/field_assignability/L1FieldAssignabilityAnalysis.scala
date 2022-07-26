@@ -59,16 +59,16 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         pcs:     PCs
     )(implicit state: AnalysisState): Boolean = {
         val stmts = taCode.stmts
-        for (pc ← pcs) {
+        for (pc <- pcs) {
             val index = taCode.properStmtIndexForPC(pc)
             if (index >= 0) {
                 val stmtCandidate = stmts(index)
                 if (stmtCandidate.pc == pc) {
                     stmtCandidate match {
-                        case _: PutStatic[_] ⇒
+                        case _: PutStatic[_] =>
                             if (!method.isStaticInitializer)
                                 return true;
-                        case stmt: PutField[V] ⇒
+                        case stmt: PutField[V] =>
                             val objRef = stmt.objRef.asVar
                             if ((!method.isConstructor ||
                                 objRef.definedBy != SelfReferenceParameter) &&
@@ -85,7 +85,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
                                 // write the field as long as that new object did not yet escape.
                                 return true;
                             }
-                        case _ ⇒ throw new RuntimeException("unexpected field access");
+                        case _ => throw new RuntimeException("unexpected field access");
                     }
                 } else { // nothing to do as the put field is dead
                 }

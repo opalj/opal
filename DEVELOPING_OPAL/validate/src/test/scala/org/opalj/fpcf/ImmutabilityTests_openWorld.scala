@@ -47,7 +47,7 @@ class ImmutabilityTests_openWorld extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
 
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
 
             Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }
@@ -75,12 +75,12 @@ class ImmutabilityTests_openWorld extends PropertiesTest {
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
         /*validateProperties(
             as,
-            classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
+            classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
             Set("ClassImmutability")
         )
         validateProperties(
             as,
-            classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
+            classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability")
         )*/
     }

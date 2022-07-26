@@ -47,13 +47,13 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
     def callers(method: DeclaredMethod)(
         implicit
         typeIterator: TypeIterator
-    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
-        callContexts(method).foldLeft(List[(DeclaredMethod, Int, Boolean)]()) {
-            (results, contextData) ⇒
+    ): IterableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
+        callContexts(method).iterator.foldLeft(List[(DeclaredMethod, Int, Boolean)]()) {
+            (results, contextData) =>
                 val (_, callerContext, pc, isDirect) = contextData
                 callerContext match {
-                    case NoContext ⇒ results
-                    case _         ⇒ (callerContext.method, pc, isDirect) :: results
+                    case NoContext => results
+                    case _         => (callerContext.method, pc, isDirect) :: results
                 }
         }
     }
@@ -63,21 +63,21 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
     def callContexts(method: DeclaredMethod)(
         implicit
         typeIterator: TypeIterator
-    ): TraversableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )]
+    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )]
 
     def calleeContexts(
         method: DeclaredMethod
-    )(implicit typeIterator: TypeIterator): TraversableOnce[Context]
+    )(implicit typeIterator: TypeIterator): IterableOnce[Context]
 
     def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ ⇒ Unit
+        handleContext: Context /*Callee*/ => Unit
     )(
         implicit
         typeIterator: TypeIterator
     ): Unit
 
     def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) ⇒ Unit
+        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
     )(
         implicit
         typeIterator: TypeIterator
@@ -140,7 +140,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     override def callContexts(method: DeclaredMethod)(
         implicit
         typeIterator: TypeIterator
-    ): TraversableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
+    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
         if (hasCallersWithUnknownContext || hasVMLevelCallers)
             Iterator((typeIterator.newContext(method), NoContext, -1, true))
         else
@@ -149,7 +149,7 @@ sealed trait EmptyConcreteCallers extends Callers {
 
     override def calleeContexts(
         method: DeclaredMethod
-    )(implicit typeIterator: TypeIterator): TraversableOnce[Context] = {
+    )(implicit typeIterator: TypeIterator): IterableOnce[Context] = {
         if (hasCallersWithUnknownContext || hasVMLevelCallers)
             Iterator(typeIterator.newContext(method))
         else
@@ -157,7 +157,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     }
 
     override def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ ⇒ Unit
+        handleContext: Context /*Callee*/ => Unit
     )(
         implicit
         typeIterator: TypeIterator
@@ -168,7 +168,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     }
 
     override def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) ⇒ Unit
+        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
     )(
         implicit
         typeIterator: TypeIterator
@@ -181,7 +181,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     final override def updated(
         calleeContext: Context, callerContext: Context, pc: Int, isDirect: Boolean
     ): Callers = {
-        val map = IntMap(calleeContext.id → LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect)))
+        val map = IntMap(calleeContext.id -> LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect)))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
             new CallersOnlyWithConcreteCallers(map, 1)
@@ -226,11 +226,11 @@ sealed trait CallersImplementation extends Callers {
     final override def callContexts(method: DeclaredMethod)(
         implicit
         typeIterator: TypeIterator
-    ): TraversableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
+    ): IterableOnce[(Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ )] = {
         val contexts = encodedCallers.iterator.flatMap {
-            case (calleeContextId, callers) ⇒
+            case (calleeContextId, callers) =>
                 val calleeContext = typeIterator.contextFromId(calleeContextId)
-                callers.iterator.map { callerData ⇒
+                callers.iterator.map { callerData =>
                     val (callerContextId, pc, isDirect) = Callers.toContextPcAndIsDirect(callerData)
                     (calleeContext, typeIterator.contextFromId(callerContextId), pc, isDirect)
                 }
@@ -244,7 +244,7 @@ sealed trait CallersImplementation extends Callers {
     final override def calleeContexts(method: DeclaredMethod)(
         implicit
         typeIterator: TypeIterator
-    ): TraversableOnce[Context] = {
+    ): IterableOnce[Context] = {
         val contexts = encodedCallers.keysIterator.map(typeIterator.contextFromId)
         if (hasCallersWithUnknownContext || hasVMLevelCallers) {
             val unknownContext = typeIterator.newContext(method)
@@ -257,7 +257,7 @@ sealed trait CallersImplementation extends Callers {
     }
 
     final override def forNewCalleeContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: Context /*Callee*/ ⇒ Unit
+        handleContext: Context /*Callee*/ => Unit
     )(
         implicit
         typeIterator: TypeIterator
@@ -266,7 +266,7 @@ sealed trait CallersImplementation extends Callers {
         val unknownContextId = unknownContext.id
 
         encodedCallers.foreach {
-            case (calleeContextId, _) ⇒
+            case (calleeContextId, _) =>
                 if (old eq null)
                     handleContext(typeIterator.contextFromId(calleeContextId))
                 else if (old.callersForContextId(calleeContextId).isEmpty) {
@@ -283,16 +283,16 @@ sealed trait CallersImplementation extends Callers {
     }
 
     final override def forNewCallerContexts(old: Callers, method: DeclaredMethod)(
-        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) ⇒ Unit
+        handleContext: (Context /*Callee*/ , Context /*Caller*/ , Int /*PC*/ , Boolean /*isDirect*/ ) => Unit
     )(
         implicit
         typeIterator: TypeIterator
     ): Unit = {
         encodedCallers.foreach {
-            case (calleeContextId, callers) ⇒
+            case (calleeContextId, callers) =>
                 val calleeContext = typeIterator.contextFromId(calleeContextId)
                 val seen = if (old eq null) 0 else old.callersForContextId(calleeContextId).size
-                callers.forFirstN(callers.size - seen) { encodedPair: Long ⇒
+                callers.forFirstN(callers.size - seen) { encodedPair: Long =>
                     val (callerContextId, pc, isDirect) = Callers.toContextPcAndIsDirect(encodedPair)
                     val callerContext = typeIterator.contextFromId(callerContextId)
                     handleContext(calleeContext, callerContext, pc, isDirect)
@@ -325,12 +325,12 @@ class CallersOnlyWithConcreteCallers(
                 this
             else
                 new CallersOnlyWithConcreteCallers(
-                    encodedCallers + (calleeContextId → newSet),
+                    encodedCallers + (calleeContextId -> newSet),
                     size + 1
                 )
         } else {
             new CallersOnlyWithConcreteCallers(
-                encodedCallers + (calleeContextId → LongLinkedTrieSet(encodedCaller)), size + 1
+                encodedCallers + (calleeContextId -> LongLinkedTrieSet(encodedCaller)), size + 1
             )
         }
     }
@@ -377,13 +377,13 @@ class CallersImplWithOtherCalls(
                 this
             else
                 new CallersImplWithOtherCalls(
-                    encodedCallers + (calleeContextId → newSet),
+                    encodedCallers + (calleeContextId -> newSet),
                     size + 1,
                     specialCallSitesFlags
                 )
         } else {
             new CallersImplWithOtherCalls(
-                encodedCallers + (calleeContextId → LongLinkedTrieSet(encodedCaller)),
+                encodedCallers + (calleeContextId -> LongLinkedTrieSet(encodedCaller)),
                 size + 1,
                 specialCallSitesFlags
             )
@@ -429,9 +429,9 @@ object Callers extends CallersPropertyMetaInformation {
         val name = "opalj.CallersProperty"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoCallers
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoCallers
+                case _ =>
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
         )

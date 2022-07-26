@@ -9,7 +9,7 @@ import java.io.FileInputStream
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * Prints the current explicit (application.conf/reference.conf files) and
@@ -56,7 +56,7 @@ object ShowConfiguration {
             try {
                 config.getString("java.home")
             } catch {
-                case e: Exception ⇒
+                case e: Exception =>
                     err.println("failed while reading \"java.home\"")
                     e.printStackTrace(err)
                     return ;
@@ -88,7 +88,7 @@ object ShowConfiguration {
         if (getProperty("package.access") != getProperty("package.definition")) {
             err.println("package.access and package.definition define different packages")
         }
-        javaSecurity.stringPropertyNames().asScala.foreach { property ⇒
+        javaSecurity.stringPropertyNames().asScala.foreach { property =>
             val entry = javaSecurity.getProperty(property)
             if (entry.contains(","))
                 println(entry.split(",").mkString("\t"+property+"=\n\t\t", ",\n\t\t", ""))

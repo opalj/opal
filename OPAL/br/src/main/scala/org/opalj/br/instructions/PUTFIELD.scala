@@ -3,8 +3,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * Set field in object.
  *
@@ -27,7 +25,7 @@ case class PUTFIELD(
 
     final def mayThrowExceptions: Boolean = true
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 2
 
     final def stackSlotsChange: Int = -fieldType.computationalType.operandSize - 1
 
@@ -38,9 +36,9 @@ case class PUTFIELD(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): List[PC] = {
         if (regularSuccessorsOnly)
-            Chain.singleton(indexOfNextInstruction(currentPC))
+            List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
                 this, currentPC, ObjectType.NullPointerException

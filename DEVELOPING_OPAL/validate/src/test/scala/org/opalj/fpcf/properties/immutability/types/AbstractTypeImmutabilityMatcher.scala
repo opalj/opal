@@ -24,7 +24,7 @@ class AbstractTypeImmutabilityMatcher(
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
     }
@@ -37,16 +37,16 @@ class AbstractTypeImmutabilityMatcher(
         properties: Traversable[Property]
     ): Option[String] = {
         import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
-        if (!properties.exists(p ⇒ p match {
-            case DependentlyImmutableType(_) ⇒
+        if (!properties.exists(p => p match {
+            case DependentlyImmutableType(_) =>
                 val annotationType = a.annotationType.asFieldType.asObjectType
                 val parameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x ⇒ x.asStringValue.value)
+                        asArrayValue.values.map(x => x.asStringValue.value)
                 property.isInstanceOf[DependentlyImmutableType] &&
                     p.asInstanceOf[DependentlyImmutableType].parameter.size == parameters.size &&
-                    parameters.toList.forall(param ⇒ p.asInstanceOf[DependentlyImmutableType].parameter.contains(param))
-            case _ ⇒ p == property
+                    parameters.toList.forall(param => p.asInstanceOf[DependentlyImmutableType].parameter.contains(param))
+            case _ => p == property
         })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
