@@ -38,7 +38,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -62,7 +62,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
-    private[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // only constructors may initialize a class
@@ -256,7 +256,7 @@ class InstantiatedTypesAnalysisScheduler(
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        TypeProviderKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
+        TypeIteratorKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
         InitialInstantiatedTypesKey
     )
 

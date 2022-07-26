@@ -2,8 +2,8 @@
 package org.opalj.fpcf.fixtures.callgraph;
 
 import org.opalj.fpcf.properties.callgraph.DirectCall;
-import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider;
-import org.opalj.tac.fpcf.analyses.cg.RTATypeProvider;
+import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator;
+import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator;
 
 /**
  * Testing call graph construction with a very simple hierarchy.
@@ -28,12 +28,12 @@ public class SimpleHierarchy {
             resolvedTargets = {
                     "Lorg/opalj/fpcf/fixtures/callgraph/A;",
                     "Lorg/opalj/fpcf/fixtures/callgraph/B;"},
-            analyses = { CHATypeProvider.class})
+            analyses = { CHATypeIterator.class})
     @DirectCall(
             name = "foo",
             line = 38,
             resolvedTargets = {"Lorg/opalj/fpcf/fixtures/callgraph/B;"},
-            analyses = { RTATypeProvider.class})
+            analyses = { RTATypeIterator.class})
     public static void callSite(A obj) {
         obj.foo();
         // if this call site was inside main, TAC would know that the

@@ -12,7 +12,7 @@ import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 package object pointsto {
 
@@ -20,11 +20,11 @@ package object pointsto {
         encodedAllocationSite: AllocationSite
     )(
         implicit
-        typeProvider: TypeProvider
+        typeIterator: TypeIterator
     ): (Context, PC, Int) /* method, pc, typeid */ = {
         val contextID = encodedAllocationSite.toInt & 0x7FFFFFF
         (
-            typeProvider.contextFromId(if (contextID == 0x7FFFFFF) -1 else contextID),
+            typeIterator.contextFromId(if (contextID == 0x7FFFFFF) -1 else contextID),
             (encodedAllocationSite >> 27).toInt & 0xFFFF,
             (encodedAllocationSite >> 44).toInt
         )
@@ -40,7 +40,7 @@ package object pointsto {
         implicit
         formalParameters: VirtualFormalParameters,
         definitionSites:  DefinitionSites,
-        typeProvider:     TypeProvider
+        typeIterator:     TypeIterator
     ): Entity = {
         val entity = if (ai.isMethodExternalExceptionOrigin(defSite)) {
             val pc = ai.pcOfMethodExternalException(defSite)
@@ -53,7 +53,7 @@ package object pointsto {
         } else {
             definitionSites(context.method.definedMethod, stmts(defSite).pc)
         }
-        typeProvider match {
+        typeIterator match {
             case _: SimpleContextProvider => entity
             case _                        => (context, entity)
         }

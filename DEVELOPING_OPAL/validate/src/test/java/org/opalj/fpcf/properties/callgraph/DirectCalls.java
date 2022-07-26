@@ -2,8 +2,8 @@
 package org.opalj.fpcf.properties.callgraph;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider;
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider;
+import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator;
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator;
 
 import java.lang.annotation.*;
 
@@ -27,5 +27,5 @@ public @interface DirectCalls {
      * If the list is empty, we assume the annotation applies to any call graph
      * algorithm.
      */
-    Class<? extends TypeProvider>[] analyses() default { CHATypeProvider.class};
+    Class<? extends TypeIterator>[] analyses() default { CHATypeIterator.class};
 }

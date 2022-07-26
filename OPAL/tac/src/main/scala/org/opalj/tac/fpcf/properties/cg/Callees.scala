@@ -20,7 +20,7 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.Opcode
 import org.opalj.br.PCs
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -72,7 +72,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     )(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context]
 
     /**
@@ -85,7 +85,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     )(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context]
 
     /**
@@ -99,7 +99,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     )(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context]
 
     /**
@@ -110,7 +110,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     /**
      * The available contexts of the calling methods.
      */
-    def callerContexts(implicit typeProvider: TypeProvider): Iterator[Context]
+    def callerContexts(implicit typeIterator: TypeIterator): Iterator[Context]
 
     /**
      * PCs of all call sites in the method.
@@ -126,7 +126,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     def callSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Map[Int, Iterator[Context]]
 
     /**
@@ -136,7 +136,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     def directCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Map[Int, Iterator[Context]]
 
     /**
@@ -147,7 +147,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     def indirectCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Map[Int, Iterator[Context]]
 
     /**
@@ -223,7 +223,7 @@ sealed class ConcreteCallees(
     )(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = {
         directCallees(callerContext, pc) ++ indirectCallees(callerContext, pc)
     }
@@ -234,11 +234,11 @@ sealed class ConcreteCallees(
     )(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = {
         val contexts = directCalleesIds.get(callerContext.id)
         val directCallees = contexts.flatMap(_.get(pc)).getOrElse(IntTrieSet.empty)
-        directCallees.iterator.map[Context](typeProvider.contextFromId)
+        directCallees.iterator.map[Context](typeIterator.contextFromId)
     }
 
     override def indirectCallees(
@@ -247,11 +247,11 @@ sealed class ConcreteCallees(
     )(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = {
         val contexts = indirectCalleesIds.get(callerContext.id)
         val indirectCallees = contexts.flatMap(_.get(pc)).getOrElse(IntTrieSet.empty)
-        indirectCallees.iterator.map[Context](typeProvider.contextFromId)
+        indirectCallees.iterator.map[Context](typeIterator.contextFromId)
     }
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = {
@@ -259,8 +259,8 @@ sealed class ConcreteCallees(
             indirectCalleesIds.valuesIterator.map { _.get(pc).map(_.size).getOrElse(0) }.sum
     }
 
-    override def callerContexts(implicit typeProvider: TypeProvider): Iterator[Context] = {
-        directCalleesIds.keysIterator.map(typeProvider.contextFromId)
+    override def callerContexts(implicit typeIterator: TypeIterator): Iterator[Context] = {
+        directCalleesIds.keysIterator.map(typeIterator.contextFromId)
     }
 
     override def callSitePCs(callerContext: Context)(implicit propertyStore: PropertyStore): Iterator[Int] = {
@@ -271,7 +271,7 @@ sealed class ConcreteCallees(
     override def callSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = {
         var res = IntMap(directCallSites(callerContext).to(LazyList): _*)
 
@@ -285,11 +285,11 @@ sealed class ConcreteCallees(
     override def directCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Map[Int, Iterator[Context]] = {
         if (directCalleesIds.contains(callerContext.id))
             directCalleesIds(callerContext.id).view.mapValues { calleeIds =>
-                calleeIds.iterator.map[Context](typeProvider.contextFromId)
+                calleeIds.iterator.map[Context](typeIterator.contextFromId)
             }.toMap
         else Map.empty
     }
@@ -297,11 +297,11 @@ sealed class ConcreteCallees(
     override def indirectCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Map[Int, Iterator[Context]] = {
         if (indirectCalleesIds.contains(callerContext.id))
             indirectCalleesIds(callerContext.id).view.mapValues { calleeIds =>
-                calleeIds.iterator.map[Context](typeProvider.contextFromId)
+                calleeIds.iterator.map[Context](typeIterator.contextFromId)
             }.toMap
         else Map.empty
     }
@@ -435,24 +435,24 @@ object NoCallees extends Callees {
     override def callees(callerContext: Context, pc: Int)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = Iterator.empty
 
     override def directCallees(callerContext: Context, pc: Int)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = Iterator.empty
 
     override def indirectCallees(callerContext: Context, pc: Int)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = Iterator.empty
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = 0
 
-    override def callerContexts(implicit typeProvider: TypeProvider): Iterator[Context] =
+    override def callerContexts(implicit typeIterator: TypeIterator): Iterator[Context] =
         Iterator.empty
 
     override def callSitePCs(
@@ -462,19 +462,19 @@ object NoCallees extends Callees {
     override def callSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def directCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def indirectCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def indirectCallReceiver(
@@ -536,24 +536,24 @@ object NoCalleesDueToNotReachableMethod extends Callees {
     override def callees(callerContext: Context, pc: Int)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = Iterator.empty
 
     override def directCallees(callerContext: Context, pc: Int)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = Iterator.empty
 
     override def indirectCallees(callerContext: Context, pc: Int)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): Iterator[Context] = Iterator.empty
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = 0
 
-    override def callerContexts(implicit typeProvider: TypeProvider): Iterator[Context] =
+    override def callerContexts(implicit typeIterator: TypeIterator): Iterator[Context] =
         Iterator.empty
 
     override def callSitePCs(
@@ -563,19 +563,19 @@ object NoCalleesDueToNotReachableMethod extends Callees {
     override def callSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def directCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def indirectCallSites(callerContext: Context)(
         implicit
         propertyStore: PropertyStore,
-        typeProvider:  TypeProvider
+        typeIterator:  TypeIterator
     ): IntMap[Iterator[Context]] = IntMap.empty
 
     override def indirectCallReceiver(

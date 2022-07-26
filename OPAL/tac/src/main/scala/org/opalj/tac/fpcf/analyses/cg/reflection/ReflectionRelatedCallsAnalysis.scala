@@ -47,7 +47,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.Method
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
 import org.opalj.tac.fpcf.properties.TACAI
@@ -94,7 +94,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
             indirectCalls.addCall(
                 callContext,
                 callPC,
-                typeProvider.expandContext(callContext, declaredMethods(m), callPC),
+                typeIterator.expandContext(callContext, declaredMethods(m), callPC),
                 actualParams,
                 actualReceiver(m)
             )
@@ -1328,7 +1328,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
             indirectCalls.addCall(
                 callContext,
                 callPC,
-                typeProvider.expandContext(callContext, declaredMethods(m), callPC),
+                typeIterator.expandContext(callContext, declaredMethods(m), callPC),
                 // TODO: is this sufficient?
                 params,
                 receiver
@@ -1473,7 +1473,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 object ReflectionRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, ProjectIndexKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, ProjectIndexKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
@@ -1483,7 +1483,7 @@ object ReflectionRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSch
     )
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeProviderKey).usedPropertyKinds
+        p.get(TypeIteratorKey).usedPropertyKinds
     }
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(

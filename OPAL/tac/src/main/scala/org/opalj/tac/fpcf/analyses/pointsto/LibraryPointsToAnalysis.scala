@@ -32,7 +32,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
@@ -93,7 +93,7 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
             dm = declaredMethods(ep)
         ) {
             val fps = formalParameters(dm)
-            val context = typeProvider.newContext(dm)
+            val context = typeIterator.newContext(dm)
 
             if (!dm.definedMethod.isStatic) {
                 if (initialInstantiatedTypes.contains(dm.declaringClassType))
@@ -239,7 +239,7 @@ trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     val createAnalysis: SomeProject => LibraryPointsToAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        TypeProviderKey,
+        TypeIteratorKey,
         ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey, VirtualFormalParametersKey,
         InitialInstantiatedTypesKey
     )

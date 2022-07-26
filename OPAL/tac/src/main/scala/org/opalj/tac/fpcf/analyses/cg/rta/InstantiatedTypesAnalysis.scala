@@ -35,7 +35,7 @@ import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.NEW
 import org.opalj.br.ReferenceType
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -49,7 +49,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // only constructors may initialize a class
@@ -207,7 +207,7 @@ object InstantiatedTypesAnalysis {
 
 object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,

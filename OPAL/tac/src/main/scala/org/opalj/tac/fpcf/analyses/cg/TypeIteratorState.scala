@@ -15,12 +15,12 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 
 /**
- * A trait to implement state classes that have to manage the state of a [[TypeProvider]], i.e.,
+ * A trait to implement state classes that have to manage the state of a [[TypeIterator]], i.e.,
  * the dependencies introduced by querying type information.
  *
  * @author Dominik Helm
  */
-trait TypeProviderState extends AnalysisState {
+trait TypeIteratorState extends AnalysisState {
     private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
     }

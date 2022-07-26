@@ -23,7 +23,7 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * An abstract [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]].
@@ -37,7 +37,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     private[this] val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
 
-    private[this] var typeProvider: TypeProvider = null
+    private[this] var typeIterator: TypeIterator = null
 
     /**
      * Lists the call graph specific schedulers that must be run to compute the respective call
@@ -48,18 +48,18 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        project.updateProjectInformationKeyInitializationData(TypeProviderKey) {
-            case Some(typeProvider: TypeProvider) if typeProvider ne this.typeProvider =>
+        project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
+            case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.error(
                     "analysis configuration",
-                    s"must not configure multiple type providers"
+                    s"must not configure multiple type iterators"
                 )
                 throw new IllegalArgumentException()
-            case Some(_) => () => this.typeProvider
+            case Some(_) => () => this.typeIterator
             case None => () => {
-                this.typeProvider = getTypeProvider(project)
-                this.typeProvider
+                this.typeIterator = getTypeIterator(project)
+                this.typeIterator
             }
         }
 
@@ -87,7 +87,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     }
 
     override def compute(project: SomeProject): CallGraph = {
-        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
         val manager = project.get(FPCFAnalysesManagerKey)
@@ -147,12 +147,12 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         Seq.empty
     }
 
-    def getTypeProvider(project: SomeProject): TypeProvider
+    def getTypeIterator(project: SomeProject): TypeIterator
 }
 
 object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def compute(project: SomeProject): CallGraph = {
 
