@@ -94,7 +94,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
               tacDependees.valuesIterator.filter(_.isRefinable)).toSet
         }
     }
-
+    /*
     trait AbstractFieldAssignabilityAnalysisState {
 
         val field: Field
@@ -119,7 +119,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 purityDependees ++ fieldAssignabilityDependees ++
                 tacDependees.valuesIterator.filter(_.isRefinable)).toSet
         }
-    }
+    } */
 
     type V = DUVar[ValueInformation]
 
