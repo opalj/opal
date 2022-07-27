@@ -156,7 +156,7 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet =>
 
         val expected = propertyConstructor(modifiedParams)
 
-        if (!properties.exist {
+        if (!properties.exists {
             case `expected` => true
             case _          => false
         }) {

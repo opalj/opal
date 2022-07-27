@@ -11,7 +11,6 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.tac.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssignabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L3FieldAssignabilityAnalysis;
 
 /**
 *  This class represents the implementation of Scala lazy val from Scala 2.12.
@@ -27,14 +26,14 @@ public class LazyCell {
 @LazilyInitializedField(value = "The field is only set once in a synchronized way.", analyses = {})
 @AssignableField(value = "The analyses do no recognize lazy initialization over multiple methods",
         analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
-                L2FieldAssignabilityAnalysis.class, L3FieldAssignabilityAnalysis.class})
+                L2FieldAssignabilityAnalysis.class})
 private volatile boolean bitmap_0 = false;
 
 @TransitivelyImmutableField("Lazy initialized field with primitive type")
 @LazilyInitializedField(value = "The field is only set once in a synchronized way.", analyses = {})
 @AssignableField(value = "The analyses do no recognize lazy initialization over multiple methods",
         analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
-                L2FieldAssignabilityAnalysis.class, L3FieldAssignabilityAnalysis.class})
+                L2FieldAssignabilityAnalysis.class})
 Integer value_0;
 
 private Integer value_lzycompute() {

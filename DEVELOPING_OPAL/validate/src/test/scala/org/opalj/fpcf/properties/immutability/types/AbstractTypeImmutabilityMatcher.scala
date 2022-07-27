@@ -34,7 +34,7 @@ class AbstractTypeImmutabilityMatcher(
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
         if (!properties.exists(p => p match {

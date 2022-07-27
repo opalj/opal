@@ -57,7 +57,7 @@ class AssignableFieldReferenceMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists(p => p == property)) {
             // ... when we reach this point the expected property was not found.

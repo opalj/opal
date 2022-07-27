@@ -36,7 +36,7 @@ class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends 
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 
@@ -73,7 +73,7 @@ class MutableClassMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (properties.exists {
             case _: MutableClass => true

@@ -42,7 +42,7 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
         if (!properties.exists(p => p match {

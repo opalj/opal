@@ -9,7 +9,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableF
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssignabilityAnalysis;
 
 /**
  * This class represents a simple model of the class java.util.String.
@@ -31,7 +31,7 @@ public final class SimpleStringModel {
     @TransitivelyImmutableField("Lazy initialized field with primitive type")
     @LazilyInitializedField(value = "Field is lazily initialized", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis cannot reconizes determinism",
-            analyses = {L3FieldAssignabilityAnalysis.class})
+            analyses = {L2FieldAssignabilityAnalysis.class})
     private int hash; // Default value 0
 
     public SimpleStringModel(SimpleStringModel original) {
