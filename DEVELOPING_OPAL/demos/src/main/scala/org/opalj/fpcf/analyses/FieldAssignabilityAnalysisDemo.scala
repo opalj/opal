@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -65,7 +65,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         time {
             propertyStore = analysesManager
                 .runAll(
-                    EagerL3FieldAssignabilityAnalysis,
+                    EagerL2FieldAssignabilityAnalysis,
                     LazyL0FieldImmutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis,
@@ -84,11 +84,11 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
             analysisTime = t.toSeconds
         }
 
-        val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
+        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
         val groupedResults = propertyStore.entities(FieldAssignability.key).
-            filter(field => allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
-            toTraversable.groupBy(_.toFinalEP.p)
+            filter(field => allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field]))
+            .iterator.to(Iterable).groupBy(_.toFinalEP.p)
 
         val order = (eps1: EPS[Entity, FieldAssignability], eps2: EPS[Entity, FieldAssignability]) =>
             eps1.e.toString < eps2.e.toString
@@ -128,7 +128,14 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
           | took : $analysisTime seconds
           |""".stripMargin
 
-        val file = new File(s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt")
+        val calendar = Calendar.getInstance()
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val month = calendar.get(Calendar.MONTH)
+        val year = calendar.get(Calendar.YEAR)
+        val hour = calendar.get(Calendar.HOUR)
+        val minute = calendar.get(Calendar.MINUTE)
+        val seconds = calendar.get(Calendar.SECOND)
+        val file = new File(s"""${day}_${month}_${year}_${hour}_${minute}_${seconds}.txt""")
 
         val bw = new BufferedWriter(new FileWriter(file))
 

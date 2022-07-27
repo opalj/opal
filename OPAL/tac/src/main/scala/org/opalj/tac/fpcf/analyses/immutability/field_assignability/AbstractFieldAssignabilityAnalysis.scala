@@ -84,14 +84,14 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         def hasDependees: Boolean = {
             escapeDependees.nonEmpty || tacDependees.valuesIterator.exists(_.isRefinable) ||
-              callerDependees.valuesIterator.exists(_.isRefinable) ||
-              fieldAssignabilityDependees.nonEmpty || purityDependees.nonEmpty
+                callerDependees.valuesIterator.exists(_.isRefinable) ||
+                fieldAssignabilityDependees.nonEmpty || purityDependees.nonEmpty
         }
 
         def dependees: Set[SomeEOptionP] = {
             (escapeDependees ++ callerDependees.valuesIterator.filter(_.isRefinable) ++
-              purityDependees ++ fieldAssignabilityDependees ++
-              tacDependees.valuesIterator.filter(_.isRefinable)).toSet
+                purityDependees ++ fieldAssignabilityDependees ++
+                tacDependees.valuesIterator.filter(_.isRefinable)).toSet
         }
     }
     /*

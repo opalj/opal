@@ -67,7 +67,6 @@ import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
@@ -567,28 +566,26 @@ object Purity {
         }
 
         fieldMutabilityAnalysisName match {
-            case Some("L0") if eager => support ::= EagerL0FieldMutabilityAnalysis
+            case Some("L0") if eager => support ::= EagerL0FieldAssignabilityAnalysis
 
-            case Some("L0")          => support ::= LazyL0FieldMutabilityAnalysis
+            case Some("L0")          => support ::= LazyL0FieldAssignabilityAnalysis
 
-            case Some("L1") if eager => support ::= EagerL1FieldMutabilityAnalysis
+            case Some("L1") if eager => support ::= EagerL1FieldAssignabilityAnalysis
 
-            case Some("L1")          => support ::= LazyL1FieldMutabilityAnalysis
+            case Some("L1")          => support ::= LazyL1FieldAssignabilityAnalysis
 
             case Some("L2") if eager =>
-                support ::= EagerL2FieldMutabilityAnalysis
-                support ::= EagerUnsoundPrematurelyReadFieldsAnalysis
+                support ::= EagerL2FieldAssignabilityAnalysis
 
             case Some("L2") =>
-                support ::= LazyL2FieldMutabilityAnalysis
-                support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
+                support ::= LazyL2FieldAssignabilityAnalysis
 
             case Some("none") =>
 
             case None => analysis match {
-                case LazyL0PurityAnalysis => LazyL0FieldMutabilityAnalysis
-                case LazyL1PurityAnalysis => LazyL1FieldMutabilityAnalysis
-                case LazyL2PurityAnalysis => LazyL1FieldMutabilityAnalysis
+                case LazyL0PurityAnalysis => LazyL0FieldAssignabilityAnalysis
+                case LazyL1PurityAnalysis => LazyL1FieldAssignabilityAnalysis
+                case LazyL2PurityAnalysis => LazyL1FieldAssignabilityAnalysis
             }
 
             case Some(a) =>

@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import java.io.IOException
@@ -65,7 +65,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             propertyStore = analysesManager
                 .runAll(
                     LazyL2PurityAnalysis,
-                    LazyL3FieldAssignabilityAnalysis,
+                    LazyL2FieldAssignabilityAnalysis,
                     LazyL0FieldImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis,
                     EagerClassImmutabilityAnalysis,
@@ -86,7 +86,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
         val groupedResults = propertyStore.entities(ClassImmutability.key).
-            filter(x => allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
+            filter(x => allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).iterator.to(Iterable).groupBy(_.e)
 
         val order = (eps1: EPS[Entity, ClassImmutability], eps2: EPS[Entity, ClassImmutability]) =>
             eps1.e.toString < eps2.e.toString
@@ -144,7 +144,14 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | analysis took : $analysisTime seconds
              |"""".stripMargin
 
-        val file = new File(s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt")
+        val calendar = Calendar.getInstance()
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val month = calendar.get(Calendar.MONTH)
+        val year = calendar.get(Calendar.YEAR)
+        val hour = calendar.get(Calendar.HOUR)
+        val minute = calendar.get(Calendar.MINUTE)
+        val seconds = calendar.get(Calendar.SECOND)
+        val file = new File(s"""${analysis.toString}_${day}_${month}_${year}_${hour}_${minute}_${seconds}.txt""")
 
         val bw = new BufferedWriter(new FileWriter(file))
 

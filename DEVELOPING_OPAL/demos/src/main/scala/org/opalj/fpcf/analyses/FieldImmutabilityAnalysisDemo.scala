@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -70,7 +70,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         time {
             propertyStore = analysesManager
                 .runAll(
-                    LazyL3FieldAssignabilityAnalysis,
+                    LazyL2FieldAssignabilityAnalysis,
                     LazyL2PurityAnalysis,
                     EagerL0FieldImmutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
@@ -87,12 +87,12 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             analysisTime = t.toSeconds
         }
 
-        val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
+        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
         val groupedResults = propertyStore
             .entities(FieldImmutability.key)
             .filter(field => allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
-            .toTraversable
+            .iterator.to(Iterable)
             .groupBy(_.toFinalEP.p)
 
         val order = (eps1: EPS[Entity, FieldImmutability], eps2: EPS[Entity, FieldImmutability]) =>
@@ -123,16 +123,14 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              |propertyStore: ${propertyStore.getClass}
              |""".stripMargin
 
-        import java.text.SimpleDateFormat
-
-        val calender = Calendar.getInstance()
-        calender.add(Calendar.ALL_STYLES, 1)
-        val date = calender.getTime()
-        val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
-
-        val file = new File(
-            s"demo_${analysis.toString}_${simpleDateFormat.format(date)}.txt"
-        )
+        val calendar = Calendar.getInstance()
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val month = calendar.get(Calendar.MONTH)
+        val year = calendar.get(Calendar.YEAR)
+        val hour = calendar.get(Calendar.HOUR)
+        val minute = calendar.get(Calendar.MINUTE)
+        val seconds = calendar.get(Calendar.SECOND)
+        val file = new File(s"""${day}_${month}_${year}_${hour}_${minute}_${seconds}.txt""")
 
         println(s"filepath: ${file.getAbsolutePath}")
         val bw = new BufferedWriter(new FileWriter(file))

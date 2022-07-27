@@ -42,7 +42,6 @@ import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.br.fpcf.properties.immutability.Assignable
@@ -109,11 +108,11 @@ object Immutability {
 
         val libFiles = libDir match {
             case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-            case None      => Traversable.empty
+            case None      => Iterable.empty
         }
 
         val JDKFiles =
-            if (withoutJDK) Traversable.empty
+            if (withoutJDK) Iterable.empty
             else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         // TODO: use variables for the constants
@@ -142,15 +141,15 @@ object Immutability {
                 classFiles,
                 libFiles ++ JDKFiles,
                 libraryClassFilesAreInterfacesOnly = false,
-                Traversable.empty
+                Iterable.empty
             )
         } { t =>
             projectTime = t.toSeconds
         }
 
-        val allProjectClassTypes = project.allProjectClassFiles.toIterator.map(_.thisType).toSet
+        val allProjectClassTypes = project.allProjectClassFiles.iterator.map(_.thisType).toSet
 
-        val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
+        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
@@ -199,36 +198,30 @@ object Immutability {
             analysesManager.runAll(
                 dependencies, {
 
-                css: Chain[ComputationSpecification[FPCFAnalysis]] =>
+                css: List[ComputationSpecification[FPCFAnalysis]] =>
                     analysis match {
                         case Assignability =>
-                            import org.opalj.br.fpcf.properties.immutability
+
                             if (css.contains(LazyL2FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, immutability.FieldAssignability.key)
+                                    f => propertyStore.force(f, FieldAssignability.key)
                                 )
                         case Fields =>
-                            import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, immutability.FieldImmutability.key)
+                                    f => propertyStore.force(f, FieldImmutability.key)
                                 )
                         case Classes =>
-
-                            import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyClassImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, immutability.ClassImmutability.key)
+                                    c => propertyStore.force(c, ClassImmutability.key)
                                 )
                         case Types =>
-                            import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyTypeImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, immutability.TypeImmutability.key)
+                                    c => propertyStore.force(c, TypeImmutability.key)
                                 )
                         case All =>
-                            import org.opalj.br.fpcf.properties.immutability
-                            import org.opalj.br.fpcf.properties.immutability
                             if (css.contains(LazyL2FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(f => {
                                     import org.opalj.br.fpcf.properties.immutability
@@ -236,7 +229,7 @@ object Immutability {
                                 })
                             if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f => propertyStore.force(f, immutability.FieldImmutability.key)
+                                    f => propertyStore.force(f, FieldImmutability.key)
                                 )
                             if (css.contains(LazyClassImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(c => {
@@ -245,7 +238,7 @@ object Immutability {
                                 })
                             if (css.contains(LazyTypeImmutabilityAnalysis))
                                 allProjectClassTypes.foreach(
-                                    c => propertyStore.force(c, immutability.TypeImmutability.key)
+                                    c => propertyStore.force(c, TypeImmutability.key)
                                 )
                     }
             }
@@ -259,7 +252,7 @@ object Immutability {
         val fieldAssignabilityGroupedResults = propertyStore
             .entities(FieldAssignability.key)
             .filter(field => allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
-            .toTraversable
+            .iterator.to(Iterable)
             .groupBy(_.asFinal.p)
 
         def unpackFieldEPS(eps: EPS[Entity, OrderedProperty]): String = {
@@ -275,8 +268,8 @@ object Immutability {
         val assignableFields =
             fieldAssignabilityGroupedResults
                 .getOrElse(Assignable, Iterator.empty)
-                .map(unpackFieldEPS)
                 .toSeq
+                .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
         val notThreadSafeLazilyInitializedFields =
@@ -346,7 +339,7 @@ object Immutability {
         val fieldGroupedResults = propertyStore
             .entities(FieldImmutability.key)
             .filter(eps => allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
-            .toTraversable
+            .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
                     case DependentlyImmutableField(_) => DependentlyImmutableField(Set.empty)
@@ -404,7 +397,7 @@ object Immutability {
         val classGroupedResults = propertyStore
             .entities(ClassImmutability.key)
             .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
-            .toTraversable
+            .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
                     case DependentlyImmutableClass(_) => DependentlyImmutableClass(Set.empty)
@@ -488,7 +481,7 @@ object Immutability {
         val typeGroupedResults = propertyStore
             .entities(TypeImmutability.key)
             .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
-            .toTraversable
+            .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
                     case DependentlyImmutableType(_) => DependentlyImmutableType(Set.empty)
