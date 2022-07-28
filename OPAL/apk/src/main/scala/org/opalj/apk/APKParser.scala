@@ -3,8 +3,12 @@ package org.opalj.apk
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.zip.ZipFile
 import sys.process._
+
+import scala.jdk.CollectionConverters._
 
 /**
  * Parses an APK file and generates a [[org.opalj.br.analyses.Project]] for it.
@@ -13,7 +17,6 @@ import sys.process._
  * bytecode, its native code and its entry points.
  * 
  * Following external tools are utilized:
- *   - unzip (for unzipping the APK)
  *   - enjarify or dex2jar(for creating .jar from .dex)
  *   - RetDec (for lifting native code to LLVM IR)
  * 
@@ -28,7 +31,7 @@ class APKParser(val apkPath: String) {
   // only temporary
 
 
-  private var unzipTmpDir: Option[File] = None
+  private var tmpDir: Option[File] = None
 
   /**
    * Parses the entry points of the APK.
@@ -72,23 +75,21 @@ class APKParser(val apkPath: String) {
    * 
    * You should call this when you are done to not clutter up tmpfs.
    */
-  def close() = unzipTmpDir match {
+  def close() = tmpDir match {
     case Some(tmpDirPath) => {
       APKParser.runCmd("rm -r " + tmpDirPath)
-      unzipTmpDir = None
+      tmpDir = None
     }
     case None =>
   }
 
-  private[this] def unzipAPK() = unzipTmpDir match {
+  private[this] def unzipAPK() = tmpDir match {
     case Some(_) =>
     case None => {
       val fileName = Paths.get(apkPath).getFileName
-      unzipTmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
-      if (APKParser.runCmd("unzip -d " + unzipTmpDir.get + "/apk_contents " + apkPath)._1 != 0) {
-        close()
-        throw new APKParserException("could not unzip the APK file")
-      }
+      tmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
+      val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getAbsolutePath + "/apk_contents"))
+      APKParser.unzip(Paths.get(apkPath), unzipDir)
     }
   }
 }
@@ -100,9 +101,22 @@ object APKParser {
    * 
    * @return (return value, stdout)
    */
-  def runCmd(cmd: String): (Int, ByteArrayOutputStream) = {
+  private def runCmd(cmd: String): (Int, ByteArrayOutputStream) = {
     val cmd_stdout = new ByteArrayOutputStream
     val cmd_result = (cmd #> cmd_stdout).!
     return (cmd_result, cmd_stdout)
+  }
+
+  private def unzip(zipPath: Path, outputPath: Path): Unit = {
+    val zipFile = new ZipFile(zipPath.toFile)
+    for (entry <- zipFile.entries.asScala) {
+      val path = outputPath.resolve(entry.getName)
+      if (entry.isDirectory) {
+        Files.createDirectories(path)
+      } else {
+        Files.createDirectories(path.getParent)
+        Files.copy(zipFile.getInputStream(entry), path)
+      }
+    }
   }
 }
