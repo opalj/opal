@@ -73,7 +73,7 @@ class ImmutabilityTests_closedWorld extends PropertiesTest {
 
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
-        /* validateProperties(
+        validateProperties(
             as,
             classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
             Set("ClassImmutability")
@@ -82,6 +82,6 @@ class ImmutabilityTests_closedWorld extends PropertiesTest {
             as,
             classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability")
-        ) */
+        )
     }
 }
