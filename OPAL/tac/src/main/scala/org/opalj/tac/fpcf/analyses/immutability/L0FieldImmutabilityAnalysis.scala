@@ -225,8 +225,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             } else {
 
                 val result = propertyStore(objectType, TypeImmutability.key)
-                if (state.field.fieldType.toString.contains("Long"))
-                    println(result)
                 result match {
                     case LBP(TransitivelyImmutableType) => // transitively immutable type is set as default
                     case FinalEP(t, DependentlyImmutableType(_)) =>
@@ -268,15 +266,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * If there are no dependencies left, this method can be called to create the result.
          */
         def createResult()(implicit state: State): ProperPropertyComputationResult = {
-            if (field.fieldType.toString.contains("Long")) {
-                println(
-                    s"""
-               | field: ${state.field.name}
-               | type immutability: ${state.typeImmutability}
-               | class immutability: ${state.classImmutability}
-               |""".stripMargin
-                )
-            }
 
             if (state.hasFieldImmutabilityDependees) {
                 val lowerBound =
