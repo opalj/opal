@@ -94,32 +94,6 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 tacDependees.valuesIterator.filter(_.isRefinable)).toSet
         }
     }
-    /*
-    trait AbstractFieldAssignabilityAnalysisState {
-
-        val field: Field
-        var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
-        var fieldAssignability: FieldAssignability = NonAssignable
-        var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
-        var tacPCs: Map[Method, PCs] = Map.empty
-        var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
-        var fieldAssignabilityDependees: Set[EOptionP[Field, FieldAssignability]] = Set.empty
-        var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
-        var lazyInitInvocation: Option[(DeclaredMethod, PC)] = None
-        var purityDependees: Set[EOptionP[Context, Purity]] = Set.empty
-
-        def hasDependees: Boolean = {
-            escapeDependees.nonEmpty || tacDependees.valuesIterator.exists(_.isRefinable) ||
-                callerDependees.valuesIterator.exists(_.isRefinable) ||
-                fieldAssignabilityDependees.nonEmpty || purityDependees.nonEmpty
-        }
-
-        def dependees: Set[SomeEOptionP] = {
-            (escapeDependees ++ callerDependees.valuesIterator.filter(_.isRefinable) ++
-                purityDependees ++ fieldAssignabilityDependees ++
-                tacDependees.valuesIterator.filter(_.isRefinable)).toSet
-        }
-    } */
 
     type V = DUVar[ValueInformation]
 
