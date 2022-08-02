@@ -136,7 +136,7 @@ public class DifferentLazyInitializedFieldTypes {
         return inAGetterLazyInitializedString;
     }
 
-    @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
+    @NonTransitivelyImmutableField("")
     @LazilyInitializedField("lazy initialized within a synchronized method")
     private Object inAGetterLazyInitializedObjectReference;
 

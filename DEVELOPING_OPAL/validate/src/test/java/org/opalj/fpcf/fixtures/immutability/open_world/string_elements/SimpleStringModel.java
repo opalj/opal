@@ -4,9 +4,11 @@ package org.opalj.fpcf.fixtures.immutability.open_world.string_elements;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssignabilityAnalysis;
@@ -15,12 +17,14 @@ import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssig
  * This class represents a simple model of the class java.util.String.
  * It encompasses cases of a shared array and a lazy initialized field storing a hash value.
  */
-@TransitivelyImmutableType("Class is final")
+@TransitivelyImmutableType(value = "Class is final", analyses = {})
 @TransitivelyImmutableClass(value = "Class has only transitively immutable fields", analyses = {})
+@NonTransitivelyImmutableType("")
 @NonTransitivelyImmutableClass(value = "the analysis only recognize non transitively immutable fields", analyses = {ClassImmutabilityAnalysis.class})
 public final class SimpleStringModel {
 
-    @TransitivelyImmutableField("The array values are not mutated anymore after the assignment ")
+    @TransitivelyImmutableField(value = "The array values are not mutated anymore after the assignment ", analyses = {})
+    @NonTransitivelyImmutableField("")
     @NonAssignableField("Field is final")
     private final char value[];
 
@@ -28,7 +32,8 @@ public final class SimpleStringModel {
         return value.clone();
     }
 
-    @TransitivelyImmutableField("Lazy initialized field with primitive type")
+    @TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
+    @NonTransitivelyImmutableField("")
     @LazilyInitializedField(value = "Field is lazily initialized", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis cannot reconizes determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})

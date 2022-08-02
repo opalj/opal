@@ -76,8 +76,7 @@ public class EffectivelyNonAssignable {
     @EffectivelyNonAssignableField("The field is not written after initialization")
     private List<Object> effectivelyNonAssignableLinkedList = new LinkedList<Object>();
 
-    @TransitivelyImmutableField("The field is effectively non assignable and the concrete assigned " +
-            "object is known to be transitively immutable")
+    @NonTransitivelyImmutableField("")
     @EffectivelyNonAssignableField("The field is not written after initialization")
     private Object effectivelyNonAssignableObject = new Object();
 
