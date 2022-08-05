@@ -9,7 +9,7 @@ The ***APK*** module provides tools to do cross language (Dex bytecode and nativ
 ## TODO:
 - [x] add to build
 - [x] dex parser
-- [ ] so parser
+- [x] so parser
 - [x] manifest entry point parser
 - [x] unzip in scala, remove unzip dependency
 - [ ] dynamic entry points analysis

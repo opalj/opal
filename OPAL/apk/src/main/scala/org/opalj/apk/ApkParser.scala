@@ -123,10 +123,10 @@ class ApkParser(val apkPath: String) {
                 (dex: File) => dex2jarPath + " -o " + getJarPath(dex.toString) + " " + dex
             }
 
+        // generate .jar files from .dex files, this can take some time ...
         var jarFiles: Seq[Path] = Seq.empty
         dexFiles.foreach(dex => {
-            val jarName = ApkParser.getFileBaseName(dex.toString) + ".jar"
-            jarFiles = jarFiles :+ Paths.get(jarName)
+            jarFiles = jarFiles :+ Paths.get(getJarPath(dex.toString))
             if (ApkParser.runCmd(getCmd(dex))._1 != 0) {
                 throw ApkParserException("could not convert .dex files to .jar files")
             }
@@ -141,17 +141,52 @@ class ApkParser(val apkPath: String) {
      * Uses RetDec to lift .so .files to LLVM .bc files. This can take some time,
      * please be patient.
      *
-     * @return (directory containing all .bc files, Seq of every single .bc file)
+     * @return Option(directory containing all .bc files, Seq of every single .bc file) or
+     *         None if APK contains no native code
      */
-    def parseNativeCode: (Path, Seq[Path]) = {
+    def parseNativeCode: Option[(Path, Seq[Path])] = {
         // TODO docker
         // --- ONLY TEMPORARY ---
-        //val retdecPath = "/home/nicolas/bin/retdec/bin/retdec-decompiler.py"
+        val retdecPath = "/home/nicolas/bin/retdec/bin/retdec-decompiler.py"
         // --- ONLY TEMPORARY ---
-        //val Llvm = "/llvm"
+
         unzipApk()
-        // TODO
-        (Paths.get(""), List.empty)
+        val apkLibPath = tmpDir.get.toString + ApkParser.ApkUnzipped + "/lib"
+        val archs = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
+        if (!Files.isDirectory(Paths.get(apkLibPath)) || archs.isEmpty) {
+            // APK does not contain native code
+            return None
+        }
+
+        val soFilesPerArch = archs.map(arch => {
+            val archDir = new File(apkLibPath + "/" + arch)
+            val soFiles = archDir.listFiles.filter(_.isFile).filter(_.getName.endsWith(".so"))
+            (archDir, soFiles)
+        })
+
+        // prefer arm64, then arm, then anything else that comes first
+        val selectedArchSoFiles = soFilesPerArch.find(t => t._1.getName.startsWith("arm64")) match {
+            case None => soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
+                case None    => soFilesPerArch.head
+                case Some(t) => t
+            }
+            case Some(t) => t
+        }
+
+        // generate .bc files from .so files, this can take some time ...
+        val llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/llvm"))
+        val getLlvmPath = (soPath: String) => llvmDir.toString + "/" + ApkParser.getFileBaseName(soPath)
+        val getCmd = (so: File) =>
+            retdecPath + " --stop-after=bin2llvmir -o " + getLlvmPath(so.toString) + " " + so
+        var llvmFiles: Seq[Path] = Seq.empty
+        selectedArchSoFiles._2.foreach(so => {
+            llvmFiles = llvmFiles :+ Paths.get(getLlvmPath(so.toString) + ".bc")
+            if (ApkParser.runCmd(getCmd(so))._1 != 0) {
+                throw ApkParserException("could not convert .so files to .bc files")
+            }
+        })
+
+        Some((llvmDir, llvmFiles))
     }
 
     /**
@@ -210,11 +245,15 @@ object ApkParser {
         )
         project.get(ApkEntriesKey)
 
-        val llvmModules = apkParser.parseNativeCode._2
-        project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-            current => llvmModules.map(f => f.toString)
-        )
-        project.get(LLVMProjectKey)
+        apkParser.parseNativeCode match {
+            case Some((_, llvmModules)) => {
+                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
+                    current => llvmModules.map(f => f.toString)
+                )
+                project.get(LLVMProjectKey)
+            }
+            case None =>
+        }
 
         apkParser.cleanUp()
 
