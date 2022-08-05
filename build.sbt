@@ -168,6 +168,7 @@ lazy val `OPAL` = (project in file("."))
     de,
     av,
     ll,
+    apk,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -368,6 +369,8 @@ lazy val `APK` = (project in file("OPAL/apk"))
   .settings(
     name := "APK",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - APK"),
+    libraryDependencies += "net.dongliu" % "apk-parser" % "2.6.10",
+    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
   )
   .dependsOn(
     br % "it->it;it->test;test->test;compile->compile",
