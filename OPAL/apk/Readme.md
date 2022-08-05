@@ -3,12 +3,12 @@
 The ***APK*** module provides tools to do cross language (Dex bytecode and native code) analyses on Android APKs.
 
 ## Future work
-- Entry points analysis is not complete, focus only on Activities, Services, Broadcast Receivers and Content Providers,
+- Entry points analysis is not complete, focus only on Activities, Services, Broadcast Receivers and Content Providers, 
   from AndroidManifest.xml and from registrations in code. Entry points of UI events are missing, e.g. button onClick, gestures, ...
 
-TODO:
+## TODO:
 - [x] add to build
-- [ ] dex parser
+- [x] dex parser
 - [ ] so parser
 - [x] manifest entry point parser
 - [x] unzip in scala, remove unzip dependency
