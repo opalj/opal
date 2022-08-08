@@ -334,6 +334,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                     case UBP(NonTransitivelyImmutableType | MutableType) =>
                         state.dependentImmutability = Some(MutableField)
+                        state.typeImmutability = MutableType
 
                     case FinalEP(t, DependentlyImmutableClass(_)) =>
                         if (t.asInstanceOf[FieldType] == state.field.fieldType) {
@@ -355,7 +356,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         // if (t.asInstanceOf[FieldType] == state.field.fieldType)
                         state.typeImmutability = MutableType
 
-                    case ubp @ UBP(EffectivelyNonAssignable | NonAssignable |
+                    case ubp @ UBP(EffectivelyNonAssignable | NonAssignable | LazilyInitialized |
                         TransitivelyImmutableClass |
                         TransitivelyImmutableType |
                         DependentlyImmutableClass(_)) => state.fieldImmutabilityDependees += ubp
@@ -389,7 +390,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
         handleTypeImmutability(field.fieldType)
 
-        if (typeExtensibility(ObjectType.Object).isNo) queryTypeIterator
+        if (typeExtensibility(ObjectType.Object).isNo && field.fieldType.isReferenceType)
+            queryTypeIterator
 
         createResult()
     }
