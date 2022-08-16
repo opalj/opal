@@ -22,7 +22,6 @@ import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
@@ -307,7 +306,7 @@ class BasicIFDSTaintAnalysis private (
 
                 case FlowFact(flow) =>
                     val newFlow = flow + stmt.context
-                    if (entryPoints.contains(exit.context.method)) {
+                    if (entryPoints.contains(exit.context)) {
                         //println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
                     } else {
                         flows += FlowFact(newFlow)
@@ -395,12 +394,12 @@ class BasicIFDSTaintAnalysis private (
          else*/ Set.empty
     }
 
-    val entryPoints: Map[DeclaredMethod, Fact] = (for {
+    val entryPoints: Map[Context, Fact] = (for {
         m <- p.allMethodsWithBody
         if (m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object || m.descriptor.returnType == ObjectType.Class)
         index <- m.descriptor.parameterTypes.zipWithIndex.collect { case (pType, index) if pType == ObjectType.String => index }
     } //yield (declaredMethods(m), null)
-    yield declaredMethods(m) -> Variable(-2 - index)).toMap
+    yield typeIterator.newContext(declaredMethods(m)) -> Variable(-2 - index)).toMap
 
 }
 

@@ -157,7 +157,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     /**
      * The entry points of this analysis.
      */
-    val entryPoints: Map[DeclaredMethod, IFDSFact]
+    val entryPoints: Map[Context, IFDSFact]
 
     /**
      * The state of the analysis. For each method and source fact, there is a separate state.
