@@ -62,13 +62,20 @@ object MethodHandlesUtil {
     private[reflection] def retrieveDescriptorBasedMethodMatcher(
         descriptorOpt: Option[MethodDescriptor],
         expr:          Expr[V],
+        isStatic:      Boolean,
         isConstructor: Boolean,
         stmts:         Array[Stmt[V]],
         project:       SomeProject
     ): MethodMatcher = {
         val descriptorsOpt =
             if (descriptorOpt.isDefined) {
-                descriptorOpt.map { Set(_) }
+                descriptorOpt.map { md =>
+                    // for instance methods, we need to peel off the receiver type
+                    if (!isStatic && !isConstructor)
+                        Set(MethodDescriptor(md.parameterTypes.tail, md.returnType))
+                    else
+                        Set(md)
+                }
             } else
                 getPossibleDescriptorsForMethodTypes(expr, stmts, project).map(_.toSet)
 

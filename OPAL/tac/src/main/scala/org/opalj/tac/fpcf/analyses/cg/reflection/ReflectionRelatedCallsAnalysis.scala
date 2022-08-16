@@ -1240,7 +1240,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 val (refc, name, methodType, isVirtual, isStatic, isConstructor) = methodHandleData.get
                 matchers += (if (isStatic) StaticMethodMatcher else NonStaticMethodMatcher)
                 matchers += retrieveDescriptorBasedMethodMatcher(
-                    descriptorOpt, methodType, isConstructor, stmts, project
+                    descriptorOpt, methodType, isStatic, isConstructor, stmts, project
                 )
                 if (!matchers.contains(NoMethodsMatcher))
                     matchers +=
