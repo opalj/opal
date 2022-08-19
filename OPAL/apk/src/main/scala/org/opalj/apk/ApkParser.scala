@@ -11,9 +11,13 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.ZipFile
 import net.dongliu.apk.parser.ApkFile
+import org.opalj.apk.ApkParser.logStdout
 import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.util.PerformanceEvaluation.time
 
 import scala.jdk.CollectionConverters._
 import scala.xml.Node
@@ -34,10 +38,13 @@ import sys.process._
  */
 class ApkParser(val apkPath: String) {
 
+    private implicit val logContext: LogContext = GlobalLogContext
+    private val logCategory = "APK parser"
+
     private var tmpDir: Option[File] = None
 
-  /**
-     * Parses the entry points of the APK.
+    /**
+     * Parses the static entry points of the APK from AndroidManifest.xml.
      *
      * @return a Seq of [[ApkEntryPoint]]
      */
@@ -108,30 +115,40 @@ class ApkParser(val apkPath: String) {
         val dex2jarPath = "/home/nicolas/Downloads/dex2jar-2.1/dex-tools-2.1/d2j-dex2jar.sh"
         // --- ONLY TEMPORARY ---
 
-        unzipApk()
-        val apkRootDir = new File(tmpDir.get.toString + ApkParser.ApkUnzipped)
-        val dexFiles = apkRootDir.listFiles
-            .filter(_.isFile)
-            .filter(_.getName.endsWith(".dex"))
+        OPALLogger.info(logCategory, "dex code parsing started")
 
-        val jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/jars"))
-        val getJarPath = (dexPath: String) => jarsDir.toString + "/" + ApkParser.getFileBaseName(dexPath) + ".jar"
-        val getCmd =
-            if (useEnjarify) {
-                (dex: File) => enjarifyPath + " -o " + getJarPath(dex.toString) + " " + dex
-            } else {
-                (dex: File) => dex2jarPath + " -o " + getJarPath(dex.toString) + " " + dex
-            }
-
-        // generate .jar files from .dex files, this can take some time ...
+        var jarsDir: Path = null
         var jarFiles: Seq[Path] = Seq.empty
-        dexFiles.foreach(dex => {
-            jarFiles = jarFiles :+ Paths.get(getJarPath(dex.toString))
-            if (ApkParser.runCmd(getCmd(dex))._1 != 0) {
-                throw ApkParserException("could not convert .dex files to .jar files")
-            }
-        })
+        time {
+            unzipApk()
+            val apkRootDir = new File(tmpDir.get.toString + ApkParser.ApkUnzipped)
+            val dexFiles = apkRootDir.listFiles
+                .filter(_.isFile)
+                .filter(_.getName.endsWith(".dex"))
 
+            jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/jars"))
+            val getJarPath = (dexPath: String) => jarsDir.toString + "/" + ApkParser.getFileBaseName(dexPath) + ".jar"
+            val getCmd =
+                if (useEnjarify) {
+                    (dex: File) => s"$enjarifyPath -o ${getJarPath(dex.toString)} $dex"
+                } else {
+                    (dex: File) => s"$dex2jarPath -o ${getJarPath(dex.toString)} $dex"
+                }
+
+            // generate .jar files from .dex files, this can take some time ...
+            dexFiles.foreach(dex => {
+                jarFiles = jarFiles :+ Paths.get(getJarPath(dex.toString))
+                val (retval, stdout) = ApkParser.runCmd(getCmd(dex))
+                if (logStdout) {
+                    OPALLogger.info(logCategory, stdout.toString())
+                }
+                if (retval != 0) {
+                    throw ApkParserException("could not convert .dex files to .jar files")
+                }
+            })
+        } {
+            t => OPALLogger.info(logCategory, s"dex code parsing finished, took ${t.toSeconds}")
+        }
         (jarsDir, jarFiles)
     }
 
@@ -150,42 +167,52 @@ class ApkParser(val apkPath: String) {
         val retdecPath = "/home/nicolas/bin/retdec/bin/retdec-decompiler.py"
         // --- ONLY TEMPORARY ---
 
-        unzipApk()
-        val apkLibPath = tmpDir.get.toString + ApkParser.ApkUnzipped + "/lib"
-        val archs = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
-        if (!Files.isDirectory(Paths.get(apkLibPath)) || archs.isEmpty) {
-            // APK does not contain native code
-            return None
-        }
+        OPALLogger.info(logCategory, "native code parsing started")
 
-        val soFilesPerArch = archs.map(arch => {
-            val archDir = new File(apkLibPath + "/" + arch)
-            val soFiles = archDir.listFiles.filter(_.isFile).filter(_.getName.endsWith(".so"))
-            (archDir, soFiles)
-        })
+        var llvmDir: Path = null
+        var llvmFiles: Seq[Path] = Seq.empty
+        time {
+            unzipApk()
+            val apkLibPath = tmpDir.get.toString + ApkParser.ApkUnzipped + "/lib"
+            val archs = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
+            if (!Files.isDirectory(Paths.get(apkLibPath)) || archs.isEmpty) {
+                // APK does not contain native code
+                return None
+            }
 
-        // prefer arm64, then arm, then anything else that comes first
-        val selectedArchSoFiles = soFilesPerArch.find(t => t._1.getName.startsWith("arm64")) match {
-            case None => soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
-                case None    => soFilesPerArch.head
+            val soFilesPerArch = archs.map(arch => {
+                val archDir = new File(apkLibPath + "/" + arch)
+                val soFiles = archDir.listFiles.filter(_.isFile).filter(_.getName.endsWith(".so"))
+                (archDir, soFiles)
+            })
+
+            // prefer arm64, then arm, then anything else that comes first
+            val selectedArchSoFiles = soFilesPerArch.find(t => t._1.getName.startsWith("arm64")) match {
+                case None => soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
+                    case None => soFilesPerArch.head
+                    case Some(t) => t
+                }
                 case Some(t) => t
             }
-            case Some(t) => t
+
+            // generate .bc files from .so files, this can take some time ...
+            llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/llvm"))
+            val getLlvmPath = (soPath: String) => llvmDir.toString + "/" + ApkParser.getFileBaseName(soPath)
+            val getCmd = (so: File) => s"$retdecPath --stop-after=bin2llvmir -o ${getLlvmPath(so.toString)} $so"
+            selectedArchSoFiles._2.foreach(so => {
+                llvmFiles = llvmFiles :+ Paths.get(getLlvmPath(so.toString) + ".bc")
+                val (retval, stdout) = ApkParser.runCmd(getCmd(so))
+                if (logStdout) {
+                    OPALLogger.info(logCategory, stdout.toString())
+                }
+                if (retval != 0) {
+                    throw ApkParserException("could not convert .so files to .bc files")
+                }
+            })
+
+        } {
+            t => OPALLogger.info(logCategory, s"native code parsing finished, took ${t.toSeconds}")
         }
-
-        // generate .bc files from .so files, this can take some time ...
-        val llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/llvm"))
-        val getLlvmPath = (soPath: String) => llvmDir.toString + "/" + ApkParser.getFileBaseName(soPath)
-        val getCmd = (so: File) =>
-            retdecPath + " --stop-after=bin2llvmir -o " + getLlvmPath(so.toString) + " " + so
-        var llvmFiles: Seq[Path] = Seq.empty
-        selectedArchSoFiles._2.foreach(so => {
-            llvmFiles = llvmFiles :+ Paths.get(getLlvmPath(so.toString) + ".bc")
-            if (ApkParser.runCmd(getCmd(so))._1 != 0) {
-                throw ApkParserException("could not convert .so files to .bc files")
-            }
-        })
-
         Some((llvmDir, llvmFiles))
     }
 
@@ -195,7 +222,7 @@ class ApkParser(val apkPath: String) {
      *
      * You should call this when you are done to not clutter up tmpfs.
      */
-    def cleanUp() = tmpDir match {
+    def cleanUp(): Unit = tmpDir match {
         case Some(tmpDirPath) => {
             ApkParser.runCmd("rm -r " + tmpDirPath)
             tmpDir = None
@@ -204,7 +231,7 @@ class ApkParser(val apkPath: String) {
         case None =>
     }
 
-    private[this] def unzipApk() = tmpDir match {
+    private[this] def unzipApk(): Unit = tmpDir match {
         case Some(_) =>
         case None => {
             val fileName = Paths.get(apkPath).getFileName
@@ -218,6 +245,11 @@ class ApkParser(val apkPath: String) {
 object ApkParser {
 
     private val ApkUnzipped = "/apk_unzipped"
+
+    /**
+     * Set this to true if you want stdout of commands (retdec, enjarify, dex2jar) being logged.
+     */
+    var logStdout = false
 
     /**
      * Creates a new [[Project]] from an APK file.
@@ -266,7 +298,7 @@ object ApkParser {
         (cmd_result, cmd_stdout)
     }
 
-    private def unzip(zipPath: Path, outputPath: Path) = {
+    private def unzip(zipPath: Path, outputPath: Path): Unit = {
         val zipFile = new ZipFile(zipPath.toFile)
         for (entry <- zipFile.entries.asScala) {
             val path = outputPath.resolve(entry.getName)
