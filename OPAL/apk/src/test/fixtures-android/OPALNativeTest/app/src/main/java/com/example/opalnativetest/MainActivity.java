@@ -1,7 +1,9 @@
 package com.example.opalnativetest;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -30,8 +32,23 @@ public class MainActivity extends AppCompatActivity {
         TextView tv = binding.sampleText;
         tv.setText(someNativeMethod(someData));
 
-        // context-registered Broadcast Receiver
+        // context-registered Broadcast Receiver - via Context
         registerReceiver(new TestBroadcastReceiver2(), new IntentFilter(Intent.ACTION_POWER_CONNECTED));
+        registerReceiver(receiverFromMethod(),intentFilterFromMethod());
+
+        // context-registered Broadcast Receiver - via LocalBroadcastManager
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                new TestBroadcastReceiver2(), new IntentFilter(Intent.ACTION_SCREEN_ON));
+    }
+
+    private BroadcastReceiver receiverFromMethod() {
+        return new TestBroadcastReceiver1();
+    }
+
+    private IntentFilter intentFilterFromMethod() {
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED);
+        intentFilter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        return intentFilter;
     }
 
     /**
