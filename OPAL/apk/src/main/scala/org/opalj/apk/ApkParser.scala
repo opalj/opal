@@ -3,15 +3,17 @@ package org.opalj.apk
 
 import com.typesafe.config.Config
 import net.dongliu.apk.parser.ApkFile
+import org.opalj.apk.ApkComponentType.ApkComponentType
 import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.log.{GlobalLogContext, LogContext, OPALLogger}
 import org.opalj.util.PerformanceEvaluation.time
 
-import java.io.{ByteArrayOutputStream, File}
+import java.io.{File, StringWriter}
 import java.net.URL
 import java.nio.file.{Files, Path, Paths}
 import java.util.zip.ZipFile
+import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 import scala.sys.process._
 import scala.xml.{Node, XML}
@@ -25,6 +27,8 @@ import scala.xml.{Node, XML}
  *   - enjarify or dex2jar (for creating .jar from .dex)
  *   - RetDec (for lifting native code to LLVM IR)
  *
+ * @param apkPath path to the APK file.
+ *
  * @author Nicolas Gross
  */
 class ApkParser(val apkPath: String) {
@@ -36,59 +40,35 @@ class ApkParser(val apkPath: String) {
     private val ApkUnzippedDir = "/apk_unzipped"
 
     /**
-     * Parses the static entry points of the APK from AndroidManifest.xml.
+     * Parses the components / static entry points of the APK from AndroidManifest.xml.
      *
-     * @return a Seq of [[ApkEntryPoint]]
+     * @return a Seq of [[ApkComponent]]
      */
-    def parseEntryPoints: Seq[ApkEntryPoint] = {
-        val activityEntryPoints = Seq("onActionModeFinished", "onActionModeStarted", "onActivityReenter", "onAttachFragment",
-            "onAttachedToWindow", "onBackPressed", "onConfigurationChanged", "onContentChanged", "onContextItemSelected",
-            "onContextMenuClosed", "onCreate", "onCreateContextMenu", "onCreateDescription", "onCreateNavigateUpTaskStack",
-            "onCreateOptionsMenu", "onCreatePanelMenu", "onCreatePanelView", "onCreateThumbnail", "onCreateView",
-            "onDetachedFromWindow", "onEnterAnimationComplete", "onGenericMotionEvent", "onGetDirectActions", "onKeyDown",
-            "onKeyLongPress", "onKeyMultiple", "onKeyShortcut", "onKeyUp", "onLocalVoiceInteractionStarted",
-            "onLocalVoiceInteractionStopped", "onLowMemory", "onMenuItemSelected", "onMenuOpened", "onMultiWindowModeChanged",
-            "onNavigateUp", "onNavigateUpFromChild", "onOptionsItemSelected", "onOptionsMenuClosed", "onPanelClosed",
-            "onPerformDirectAction", "onPictureInPictureModeChanged", "onPictureInPictureRequested",
-            "onPictureInPictureUiStateChanged", "onPostCreate", "onPrepareNavigateUpTaskStack", "onPrepareOptionsMenu",
-            "onPreparePanel", "onProvideAssistContent", "onProvideAssistData", "onProvideKeyboardShortcuts",
-            "onProvideReferrer", "onRequestPermissionsResult", "onRestoreInstanceState", "onRetainNonConfigurationInstance",
-            "onSaveInstanceState", "onSearchRequested", "onStateNotSaved", "onTopResumedActivityChanged", "onTouchEvent",
-            "onTrackballEvent", "onTrimMemory", "onUserInteraction", "onVisibleBehindCanceled", "onWindowAttributesChanged",
-            "onWindowFocusChanged", "onWindowStartingActionMode", "onActivityResult", "onApplyThemeResource",
-            "onChildTitleChanged", "onCreateDialog", "onDestroy", "onNewIntent", "onPause", "onPostCreate", "onPostResume",
-            "onPrepareDialog", "onRestart", "onResume", "onStart", "onStop", "onTitleChanged", "onUserLeaveHint")
-        val serviceEntryPoints = Seq("onBind", "onConfigurationChanged", "onCreate", "onDestroy", "onLowMemory", "onRebind",
-            "onStart", "onStartCommand", "onTaskRemoved", "onTrimMemory", "onUnbind")
-        val receiverEntryPoints = Seq("onReceive")
-        val providerEntryPoints = Seq("onCallingPackageChanged", "onConfigurationChanged", "onCreate", "onLowMemory",
-            "onTrimMemory", "applyBatch", "bulkInsert", "call", "canonicalize", "delete", "getStreamTypes", "getType",
-            "insert", "openAssetFile", "openFile", "openTypedAssetFile", "query", "refresh", "shutdown", "update")
-
+    def parseComponents: Seq[ApkComponent] = {
         val apkFile = new ApkFile(apkPath)
         val manifestXmlString = apkFile.getManifestXml
         val manifestXml = XML.loadString(manifestXmlString)
 
         val xmlns = "http://schemas.android.com/apk/res/android"
-        val nodeToEntryPoint = (n: Node, entries: Seq[String]) =>
-            new ApkEntryPoint(
+        val nodeToEntryPoint = (compType: ApkComponentType, n: Node) =>
+            new ApkComponent(
+                compType,
                 (n \ ("@{"+xmlns+"}name")).text, // class
-                entries, // entry points
                 (n \\ "action" \\ ("@{"+xmlns+"}name")).map(_.text) // intents / triggers
             )
-        var entryPoints: Seq[ApkEntryPoint] = Seq.empty
+        val entryPoints: ListBuffer[ApkComponent] = ListBuffer.empty
 
         // collect all Activities, Services, Broadcast Receivers and Content Providers, which are all entry points
         val activities = manifestXml \ "application" \ "activity"
-        activities.foreach(a => entryPoints = entryPoints :+ nodeToEntryPoint(a, activityEntryPoints))
+        activities.foreach(a => entryPoints.append(nodeToEntryPoint(ApkComponentType.Activity, a)))
         val services = manifestXml \ "application" \ "service"
-        services.foreach(s => entryPoints = entryPoints :+ nodeToEntryPoint(s, serviceEntryPoints))
+        services.foreach(s => entryPoints.append(nodeToEntryPoint(ApkComponentType.Service, s)))
         val receivers = manifestXml \ "application" \ "receiver"
-        receivers.foreach(r => entryPoints = entryPoints :+ nodeToEntryPoint(r, receiverEntryPoints))
+        receivers.foreach(r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r)))
         val providers = manifestXml \ "application" \ "provider"
-        providers.foreach(p => entryPoints = entryPoints :+ nodeToEntryPoint(p, providerEntryPoints))
+        providers.foreach(p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p)))
 
-        entryPoints
+        entryPoints.toSeq
     }
 
     /**
@@ -110,7 +90,7 @@ class ApkParser(val apkPath: String) {
         OPALLogger.info(LogCategory, "dex code parsing started")
 
         var jarsDir: Path = null
-        var jarFiles: Seq[Path] = Seq.empty
+        val jarFiles: ListBuffer[Path] = ListBuffer.empty
         time {
             unzipApk()
             val apkRootDir = new File(tmpDir.get.toString + ApkUnzippedDir)
@@ -129,7 +109,7 @@ class ApkParser(val apkPath: String) {
 
             // generate .jar files from .dex files, this can take some time ...
             dexFiles.foreach(dex => {
-                jarFiles = jarFiles :+ Paths.get(getJarPath(dex.toString))
+                jarFiles.append(Paths.get(getJarPath(dex.toString)))
                 val (retval, _, _) = ApkParser.runCmd(getCmd(dex))
                 if (retval != 0) {
                     throw ApkParserException("could not convert .dex files to .jar files")
@@ -138,7 +118,7 @@ class ApkParser(val apkPath: String) {
         } {
             t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
         }
-        (jarsDir, jarFiles)
+        (jarsDir, jarFiles.toSeq)
     }
 
     /**
@@ -159,7 +139,7 @@ class ApkParser(val apkPath: String) {
         OPALLogger.info(LogCategory, "native code parsing started")
 
         var llvmDir: Path = null
-        var llvmFiles: Seq[Path] = Seq.empty
+        val llvmFiles: ListBuffer[Path] = ListBuffer.empty
         time {
             unzipApk()
             val apkLibPath = tmpDir.get.toString + ApkUnzippedDir + "/lib"
@@ -189,7 +169,7 @@ class ApkParser(val apkPath: String) {
             val getLlvmPath = (soPath: String) => llvmDir.toString + "/" + ApkParser.getFileBaseName(soPath)
             val getCmd = (so: File) => s"$retdecPath --stop-after=bin2llvmir -o ${getLlvmPath(so.toString)} $so"
             selectedArchSoFiles._2.foreach(so => {
-                llvmFiles = llvmFiles :+ Paths.get(getLlvmPath(so.toString) + ".bc")
+                llvmFiles.append(Paths.get(getLlvmPath(so.toString) + ".bc"))
                 val (retval, _, _) = ApkParser.runCmd(getCmd(so))
                 if (retval != 0) {
                     throw ApkParserException("could not convert .so files to .bc files")
@@ -199,7 +179,7 @@ class ApkParser(val apkPath: String) {
         } {
             t => OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
         }
-        Some((llvmDir, llvmFiles))
+        Some((llvmDir, llvmFiles.toSeq))
     }
 
     /**
@@ -258,10 +238,10 @@ object ApkParser {
                 projectConfig
             )
 
-        project.updateProjectInformationKeyInitializationData(ApkEntriesKey)(
+        project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(
             current => apkParser
         )
-        project.get(ApkEntriesKey)
+        project.get(ApkComponentsKey)
 
         apkParser.parseNativeCode match {
             case Some((_, llvmModules)) => {
@@ -281,29 +261,29 @@ object ApkParser {
     /**
      * Runs an external command.
      *
-     * @param cmd the command that is executed
-     * @return a tuple consisting of the return code, stdout and stderr
+     * @param cmd the command that is executed.
+     * @return a tuple consisting of the return code, stdout and stderr.
      */
-    private def runCmd(cmd: String, logOutput: Boolean = logOutput): (Int, ByteArrayOutputStream, ByteArrayOutputStream) = {
+    private def runCmd(cmd: String, logOutput: Boolean = logOutput): (Int, StringWriter, StringWriter) = {
         val logCategory = "APK parser - command"
         OPALLogger.info(logCategory, s"run:  $cmd")
-        val cmd_stdout = new ByteArrayOutputStream()
-        val cmd_stderr = new ByteArrayOutputStream()
+        val cmd_stdout = new StringWriter()
+        val cmd_stderr = new StringWriter()
         val logger = if (logOutput) {
             ProcessLogger(
                 o => {
                     OPALLogger.info(s"$logCategory stdout", o)
-                    cmd_stdout.write((o + System.lineSeparator()).getBytes())
+                    cmd_stdout.write(o + System.lineSeparator())
                 },
                 e => {
                     OPALLogger.info(s"$logCategory stderr", e)
-                    cmd_stderr.write((e + System.lineSeparator()).getBytes())
+                    cmd_stderr.write(e + System.lineSeparator())
                 },
             )
         } else {
             ProcessLogger(
-                o => cmd_stdout.write((o + System.lineSeparator()).getBytes()),
-                e => cmd_stderr.write((e + System.lineSeparator()).getBytes()),
+                o => cmd_stdout.write(o + System.lineSeparator()),
+                e => cmd_stderr.write(e + System.lineSeparator()),
             )
         }
         val cmd_result = cmd ! logger
