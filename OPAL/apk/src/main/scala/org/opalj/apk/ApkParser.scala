@@ -2,33 +2,24 @@
 package org.opalj.apk
 
 import com.typesafe.config.Config
-
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.net.URL
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.zip.ZipFile
 import net.dongliu.apk.parser.ApkFile
-import org.opalj.apk.ApkParser.logStdout
 import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
+import org.opalj.log.{GlobalLogContext, LogContext, OPALLogger}
 import org.opalj.util.PerformanceEvaluation.time
 
+import java.io.{ByteArrayOutputStream, File}
+import java.net.URL
+import java.nio.file.{Files, Path, Paths}
+import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters._
-import scala.xml.Node
-import scala.xml.XML
-import sys.process._
+import scala.sys.process._
+import scala.xml.{Node, XML}
 
 /**
  * Parses an APK file and generates a [[Project]] for it.
  *
- * The generated [[Project]] contains the APK's Java
- * bytecode, its native code and its entry points.
+ * The generated [[Project]] contains the APK's Java bytecode, its native code and its entry points.
  *
  * Following external tools are utilized:
  *   - enjarify or dex2jar (for creating .jar from .dex)
@@ -38,10 +29,11 @@ import sys.process._
  */
 class ApkParser(val apkPath: String) {
 
-    private implicit val logContext: LogContext = GlobalLogContext
-    private val logCategory = "APK parser"
+    private implicit val LogContext: LogContext = GlobalLogContext
+    private val LogCategory = "APK parser"
 
     private var tmpDir: Option[File] = None
+    private val ApkUnzippedDir = "/apk_unzipped"
 
     /**
      * Parses the static entry points of the APK from AndroidManifest.xml.
@@ -115,13 +107,13 @@ class ApkParser(val apkPath: String) {
         val dex2jarPath = "/home/nicolas/Downloads/dex2jar-2.1/dex-tools-2.1/d2j-dex2jar.sh"
         // --- ONLY TEMPORARY ---
 
-        OPALLogger.info(logCategory, "dex code parsing started")
+        OPALLogger.info(LogCategory, "dex code parsing started")
 
         var jarsDir: Path = null
         var jarFiles: Seq[Path] = Seq.empty
         time {
             unzipApk()
-            val apkRootDir = new File(tmpDir.get.toString + ApkParser.ApkUnzipped)
+            val apkRootDir = new File(tmpDir.get.toString + ApkUnzippedDir)
             val dexFiles = apkRootDir.listFiles
                 .filter(_.isFile)
                 .filter(_.getName.endsWith(".dex"))
@@ -138,16 +130,13 @@ class ApkParser(val apkPath: String) {
             // generate .jar files from .dex files, this can take some time ...
             dexFiles.foreach(dex => {
                 jarFiles = jarFiles :+ Paths.get(getJarPath(dex.toString))
-                val (retval, stdout) = ApkParser.runCmd(getCmd(dex))
-                if (logStdout) {
-                    OPALLogger.info(logCategory, stdout.toString())
-                }
+                val (retval, _, _) = ApkParser.runCmd(getCmd(dex))
                 if (retval != 0) {
                     throw ApkParserException("could not convert .dex files to .jar files")
                 }
             })
         } {
-            t => OPALLogger.info(logCategory, s"dex code parsing finished, took ${t.toSeconds}")
+            t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
         }
         (jarsDir, jarFiles)
     }
@@ -167,13 +156,13 @@ class ApkParser(val apkPath: String) {
         val retdecPath = "/home/nicolas/bin/retdec/bin/retdec-decompiler.py"
         // --- ONLY TEMPORARY ---
 
-        OPALLogger.info(logCategory, "native code parsing started")
+        OPALLogger.info(LogCategory, "native code parsing started")
 
         var llvmDir: Path = null
         var llvmFiles: Seq[Path] = Seq.empty
         time {
             unzipApk()
-            val apkLibPath = tmpDir.get.toString + ApkParser.ApkUnzipped + "/lib"
+            val apkLibPath = tmpDir.get.toString + ApkUnzippedDir + "/lib"
             val archs = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
             if (!Files.isDirectory(Paths.get(apkLibPath)) || archs.isEmpty) {
                 // APK does not contain native code
@@ -201,17 +190,14 @@ class ApkParser(val apkPath: String) {
             val getCmd = (so: File) => s"$retdecPath --stop-after=bin2llvmir -o ${getLlvmPath(so.toString)} $so"
             selectedArchSoFiles._2.foreach(so => {
                 llvmFiles = llvmFiles :+ Paths.get(getLlvmPath(so.toString) + ".bc")
-                val (retval, stdout) = ApkParser.runCmd(getCmd(so))
-                if (logStdout) {
-                    OPALLogger.info(logCategory, stdout.toString())
-                }
+                val (retval, _, _) = ApkParser.runCmd(getCmd(so))
                 if (retval != 0) {
                     throw ApkParserException("could not convert .so files to .bc files")
                 }
             })
 
         } {
-            t => OPALLogger.info(logCategory, s"native code parsing finished, took ${t.toSeconds}")
+            t => OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
         }
         Some((llvmDir, llvmFiles))
     }
@@ -236,7 +222,7 @@ class ApkParser(val apkPath: String) {
         case None => {
             val fileName = Paths.get(apkPath).getFileName
             tmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
-            val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkParser.ApkUnzipped))
+            val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkUnzippedDir))
             ApkParser.unzip(Paths.get(apkPath), unzipDir)
         }
     }
@@ -244,12 +230,12 @@ class ApkParser(val apkPath: String) {
 
 object ApkParser {
 
-    private val ApkUnzipped = "/apk_unzipped"
+    private implicit val logContext: LogContext = GlobalLogContext
 
     /**
-     * Set this to true if you want stdout of commands (retdec, enjarify, dex2jar) being logged.
+     * Set this to true if you want stdout and stderr of commands (retdec, enjarify, dex2jar) being logged.
      */
-    var logStdout = false
+    var logOutput = false
 
     /**
      * Creates a new [[Project]] from an APK file.
@@ -260,10 +246,10 @@ object ApkParser {
      * @param projectConfig config values for the [[Project]].
      * @return the newly created [[Project]] containing the APK's contents (dex code, native code and entry points).
      */
-    def createProject(apkPath: String, projectConfig: Config): Project[URL] = {
+    def createProject(apkPath: String, projectConfig: Config, useEnjarify: Boolean = true): Project[URL] = {
         val apkParser = new ApkParser(apkPath)
 
-        val jarDir = apkParser.parseDexCode()._1
+        val jarDir = apkParser.parseDexCode(useEnjarify)._1
 
         val project =
             Project(
@@ -292,10 +278,36 @@ object ApkParser {
         project
     }
 
-    private def runCmd(cmd: String): (Int, ByteArrayOutputStream) = {
-        val cmd_stdout = new ByteArrayOutputStream
-        val cmd_result = (cmd #> cmd_stdout).!
-        (cmd_result, cmd_stdout)
+    /**
+     * Runs an external command.
+     *
+     * @param cmd the command that is executed
+     * @return a tuple consisting of the return code, stdout and stderr
+     */
+    private def runCmd(cmd: String, logOutput: Boolean = logOutput): (Int, ByteArrayOutputStream, ByteArrayOutputStream) = {
+        val logCategory = "APK parser - command"
+        OPALLogger.info(logCategory, s"run:  $cmd")
+        val cmd_stdout = new ByteArrayOutputStream()
+        val cmd_stderr = new ByteArrayOutputStream()
+        val logger = if (logOutput) {
+            ProcessLogger(
+                o => {
+                    OPALLogger.info(s"$logCategory stdout", o)
+                    cmd_stdout.write((o + System.lineSeparator()).getBytes())
+                },
+                e => {
+                    OPALLogger.info(s"$logCategory stderr", e)
+                    cmd_stderr.write((e + System.lineSeparator()).getBytes())
+                },
+            )
+        } else {
+            ProcessLogger(
+                o => cmd_stdout.write((o + System.lineSeparator()).getBytes()),
+                e => cmd_stderr.write((e + System.lineSeparator()).getBytes()),
+            )
+        }
+        val cmd_result = cmd ! logger
+        (cmd_result, cmd_stdout, cmd_stderr)
     }
 
     private def unzip(zipPath: Path, outputPath: Path): Unit = {
