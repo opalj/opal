@@ -33,7 +33,9 @@ public class MainActivity extends AppCompatActivity {
         tv.setText(someNativeMethod(someData));
 
         // context-registered Broadcast Receiver - via Context
-        registerReceiver(new TestBroadcastReceiver2(), new IntentFilter(Intent.ACTION_POWER_CONNECTED));
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED);
+        intentFilter.addAction(Intent.ACTION_POWER_CONNECTED);
+        registerReceiver(new TestBroadcastReceiver2(), intentFilter);
         registerReceiver(receiverFromMethod(),intentFilterFromMethod());
 
         // context-registered Broadcast Receiver - via LocalBroadcastManager
