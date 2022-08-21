@@ -9,18 +9,18 @@ class ApkParserTest extends AnyFunSpec with Matchers {
     describe("ApkParser Test") {
         ApkParser.logOutput = true
         val project = ApkParser.createProject(
-            "./OPAL/apk/src/test/resources/opal-native-test.apk",
+            "./OPAL/apk/src/test/resources/context-registered-receivers-and-native.apk",
             BaseConfig,
         )
 
         // check if static entry point parsing worked
-        val entries = project.get(ApkComponentsKey)
+        val components = project.get(ApkComponentsKey)
         println()
         println("------------------------------------------")
-        println("static entry points:")
+        println("components / entry points:")
         println("------------------------------------------")
-        println(entries)
-        assert(entries.length == 5)
+        println(components)
+        assert(components.length == 5)
 
         // check if java code parsing worked
         println()
