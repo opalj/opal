@@ -21,7 +21,7 @@ import scala.xml.{Node, XML}
 /**
  * Parses an APK file and generates a [[Project]] for it.
  *
- * The generated [[Project]] contains the APK's Java bytecode, its native code and its entry points.
+ * The generated [[Project]] contains the APK's Java bytecode, its native code and its components / entry points.
  *
  * Following external tools are utilized:
  *   - enjarify or dex2jar (for creating .jar from .dex)
@@ -54,7 +54,8 @@ class ApkParser(val apkPath: String) {
             new ApkComponent(
                 compType,
                 (n \ ("@{"+xmlns+"}name")).text, // class
-                (n \\ "action" \\ ("@{"+xmlns+"}name")).map(_.text) // intents / triggers
+                (n \\ "action" \\ ("@{"+xmlns+"}name")).map(_.text), // intents / triggers
+                (n \\ "category" \\ ("@{"+xmlns+"}name")).map(_.text) // intents / triggers
             )
         val entryPoints: ListBuffer[ApkComponent] = ListBuffer.empty
 
@@ -239,14 +240,14 @@ object ApkParser {
             )
 
         project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(
-            current => apkParser
+            _ => apkParser
         )
         project.get(ApkComponentsKey)
 
         apkParser.parseNativeCode match {
             case Some((_, llvmModules)) => {
                 project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-                    current => llvmModules.map(f => f.toString)
+                    _ => llvmModules.map(f => f.toString)
                 )
                 project.get(LLVMProjectKey)
             }

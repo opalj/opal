@@ -5,7 +5,8 @@ import org.opalj.apk.ApkContextRegisteredReceiver
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.tac.LazyDetachedTACAIKey
+import org.opalj.tac.{AITACode, DUVar, LazyDetachedTACAIKey, Stmt, TACMethodParameter}
+import org.opalj.value.{TheStringValue, ValueInformation}
 
 import scala.collection.mutable.ListBuffer
 
@@ -19,25 +20,7 @@ object ContextRegisteredReceiversAnalysis {
     val ContextClass = "android.content.Context"
     val LocalBroadcastManagerClass = "androidx.localbroadcastmanager.content.LocalBroadcastManager"
     val ActivityClass = "android.app.Activity"
-
-    private def classMatches(clazz: ObjectType): Boolean = {
-        clazz.toJava.equals(ContextClass) || clazz.toJava.equals(LocalBroadcastManagerClass) ||
-            clazz.toJava.equals(ActivityClass)
-    }
-
-    private def classHierarchyMatches(project: Project[_], clazz: ObjectType): Boolean = {
-        var tmpClazz = clazz
-        while (!classMatches(tmpClazz)) {
-            if (tmpClazz.toJava.equals("java.lang.Object")) {
-                return false
-            }
-            tmpClazz = project.classFile(tmpClazz) match {
-                case Some(c) => c.superclassType.get
-                case _ => return false
-            }
-        }
-        true
-    }
+    val IntentFilterClass = "android.content.IntentFilter"
 
     def analyze(project: Project[_]): Seq[ApkContextRegisteredReceiver] = {
         val foundReceivers: ListBuffer[ApkContextRegisteredReceiver] = ListBuffer.empty
@@ -68,8 +51,20 @@ object ContextRegisteredReceiversAnalysis {
 
                             if (call != null && call.name.equals(RegisterReceiverName) &&
                                 classHierarchyMatches(project, call.declaringClass.mostPreciseObjectType)) {
-                                val receiverClass = call.params.head.asVar.value.asReferenceValue.upperTypeBound.head.toJava
-                                foundReceivers.append(new ApkContextRegisteredReceiver(receiverClass, Seq.empty, m, s.pc))
+                                val receiverType = call.params.head.asVar.value.asReferenceValue.upperTypeBound
+                                // check if broadcast receiver param is null
+                                // if yes: sticky intent, result is cached, no code executed -> ignore
+                                if (receiverType.nonEmpty) {
+                                    // get broadcast receiver class, might be imprecise
+                                    val receiverClass = receiverType.head.toJava
+
+                                    // try to find intents, might be incomplete
+                                    val intentDef = tacMethod.stmts(call.params(1).asVar.definedBy.head)
+                                    val (actions, categories) = assembleIntentFilter(tacMethod, intentDef)
+
+                                    foundReceivers.append(new ApkContextRegisteredReceiver(
+                                        receiverClass, actions, categories, m, s.pc))
+                                }
                             }
                         })
                     }
@@ -80,5 +75,68 @@ object ContextRegisteredReceiversAnalysis {
         // TODO calls from native code
 
         foundReceivers.toSeq
+    }
+
+    private def classMatches(clazz: ObjectType): Boolean = {
+        clazz.toJava.equals(ContextClass) || clazz.toJava.equals(LocalBroadcastManagerClass) ||
+            clazz.toJava.equals(ActivityClass)
+    }
+
+    private def classHierarchyMatches(project: Project[_], clazz: ObjectType): Boolean = {
+        var tmpClazz = clazz
+        while (!classMatches(tmpClazz)) {
+            if (tmpClazz.toJava.equals("java.lang.Object")) {
+                return false
+            }
+            tmpClazz = project.classFile(tmpClazz) match {
+                case Some(c) => c.superclassType.get
+                case _ => return false
+            }
+        }
+        true
+    }
+
+    /**
+     * Tries to rebuild the IntentFilter for a registerReceiver() call. Only works with IntentFilters that are
+     * created and its actions and categories are added in the same method as where registerReceiver() is called.
+     */
+    private def assembleIntentFilter(tacMethod: AITACode[TACMethodParameter, ValueInformation],
+                                     intentDef: Stmt[DUVar[ValueInformation]]
+                                    ): (Seq[String], Seq[String]) = {
+        val foundActions: ListBuffer[String] = ListBuffer.empty
+        val foundCategories: ListBuffer[String] = ListBuffer.empty
+        if (intentDef.isAssignment && intentDef.asAssignment.expr.isNew &&
+            intentDef.asAssignment.expr.asNew.tpe.toJava.equals(IntentFilterClass)) {
+            intentDef.asAssignment.targetVar.usedBy.map(tacMethod.stmts(_)).foreach(s => {
+                var isAction = true
+                val call = if (s.isNonVirtualMethodCall &&
+                    s.asNonVirtualMethodCall.declaringClass.mostPreciseObjectType.toJava.equals(IntentFilterClass) &&
+                    s.asNonVirtualMethodCall.name.equals("<init>")) {
+                    s.asNonVirtualMethodCall
+                } else if (s.isVirtualMethodCall &&
+                    s.asVirtualMethodCall.declaringClass.mostPreciseObjectType.toJava.equals(IntentFilterClass) &&
+                    s.asVirtualMethodCall.name.equals("addAction")) {
+                    s.asVirtualMethodCall
+                } else if (s.isVirtualMethodCall &&
+                    s.asVirtualMethodCall.declaringClass.mostPreciseObjectType.toJava.equals(IntentFilterClass) &&
+                    s.asVirtualMethodCall.name.equals("addCategory")) {
+                    isAction = false
+                    s.asVirtualMethodCall
+                } else {
+                    null
+                }
+
+                if (call != null) {
+                    val actionOrCategory = call.params.head.asVar.value.asReferenceValue.toCanonicalForm.
+                        asInstanceOf[TheStringValue].value
+                    if (isAction) {
+                        foundActions.append(actionOrCategory)
+                    } else {
+                        foundCategories.append(actionOrCategory)
+                    }
+                }
+            })
+        }
+        (foundActions.toSeq, foundCategories.toSeq)
     }
 }

@@ -9,11 +9,15 @@ import org.opalj.apk.ApkComponentType.ApkComponentType
  *
  * @param componentType the type of the component.
  * @param clazz the class name of the component.
- * @param intents list of intents that triggers this component / entry point.
+ * @param intentActions list of intent actions that trigger this component / entry point.
+ * @param intentCategories list of intent categories that trigger this component / entry point.
  *
  * @author Nicolas Gross
  */
-class ApkComponent(val componentType: ApkComponentType, val clazz: String, val intents: Seq[String]) {
+class ApkComponent(val componentType: ApkComponentType,
+                   val clazz: String,
+                   val intentActions: Seq[String],
+                   val intentCategories: Seq[String]) {
 
     private val ActivityEntryPoints = Seq("onActionModeFinished", "onActionModeStarted", "onActivityReenter",
         "onAttachFragment", "onAttachedToWindow", "onBackPressed", "onConfigurationChanged", "onContentChanged",
@@ -54,7 +58,7 @@ class ApkComponent(val componentType: ApkComponentType, val clazz: String, val i
 
     override def toString: String = {
         val ls = System.lineSeparator()
-        s"$clazz: $componentType$ls\tfunctions: ${entryFunctions()}$ls\t intents: $intents))$ls"
+        s"$clazz: $componentType$ls\tactions: $intentActions$ls\tcategories: $intentCategories$ls"
     }
 }
 
