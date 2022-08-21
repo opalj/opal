@@ -16,7 +16,7 @@ import scala.collection.mutable.ListBuffer
  * @author Nicolas Gross
  */
 object ContextRegisteredReceiversAnalysis {
-    val RegisterReceiverName = "registerReceiver"
+    val RegisterReceiverMethod = "registerReceiver"
     val ContextClass = "android.content.Context"
     val LocalBroadcastManagerClass = "androidx.localbroadcastmanager.content.LocalBroadcastManager"
     val ActivityClass = "android.app.Activity"
@@ -31,7 +31,7 @@ object ContextRegisteredReceiversAnalysis {
             var alreadyFoundCall = false
             m.body.get.instructionIterator.foreach {
                 case i: MethodInvocationInstruction =>
-                    if (!alreadyFoundCall && i.name.equals(RegisterReceiverName) &&
+                    if (!alreadyFoundCall && i.name.equals(RegisterReceiverMethod) &&
                         classHierarchyMatches(project, i.declaringClass.mostPreciseObjectType)) {
                         // potential further calls are found in TAC, remaining bytecode instructions must not be analyzed
                         alreadyFoundCall = true
@@ -49,7 +49,7 @@ object ContextRegisteredReceiversAnalysis {
                                 null
                             }
 
-                            if (call != null && call.name.equals(RegisterReceiverName) &&
+                            if (call != null && call.name.equals(RegisterReceiverMethod) &&
                                 classHierarchyMatches(project, call.declaringClass.mostPreciseObjectType)) {
                                 val receiverType = call.params.head.asVar.value.asReferenceValue.upperTypeBound
                                 // check if broadcast receiver param is null
