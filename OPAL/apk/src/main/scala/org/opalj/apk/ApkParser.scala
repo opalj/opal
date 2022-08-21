@@ -82,12 +82,6 @@ class ApkParser(val apkPath: String) {
      * @return (directory containing all .jar files, Seq of every single .jar file)
      */
     def parseDexCode(useEnjarify: Boolean = true): (Path, Seq[Path]) = {
-        // TODO docker
-        // --- ONLY TEMPORARY ---
-        val enjarifyPath = "/home/nicolas/git/enjarify/enjarify.sh"
-        val dex2jarPath = "/home/nicolas/Downloads/dex2jar-2.1/dex-tools-2.1/d2j-dex2jar.sh"
-        // --- ONLY TEMPORARY ---
-
         OPALLogger.info(LogCategory, "dex code parsing started")
 
         var jarsDir: Path = null
@@ -100,20 +94,25 @@ class ApkParser(val apkPath: String) {
                 .filter(_.getName.endsWith(".dex"))
 
             jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/jars"))
-            val getJarPath = (dexPath: String) => jarsDir.toString + "/" + ApkParser.getFileBaseName(dexPath) + ".jar"
-            val getCmd =
-                if (useEnjarify) {
-                    (dex: File) => s"$enjarifyPath -o ${getJarPath(dex.toString)} $dex"
+            val getCmd = (dex: File) => {
+                val dexBaseName = ApkParser.getFileBaseName(dex.toString)
+                val cmd = if (useEnjarify) {
+                    s"enjarify.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
                 } else {
-                    (dex: File) => s"$dex2jarPath -o ${getJarPath(dex.toString)} $dex"
+                    s"d2j-dex2jar.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
                 }
+                s"docker run --rm " +
+                    s"-v ${dex.getParent}:/dex " +
+                    s"-v $jarsDir:/jar " +
+                    s"opal-apk-parser $cmd"
+            }
 
             // generate .jar files from .dex files, this can take some time ...
             dexFiles.foreach(dex => {
-                jarFiles.append(Paths.get(getJarPath(dex.toString)))
+                jarFiles.append(Paths.get(s"$jarsDir/${ApkParser.getFileBaseName(dex.toString)}.jar"))
                 val (retval, _, _) = ApkParser.runCmd(getCmd(dex))
                 if (retval != 0) {
-                    throw ApkParserException("could not convert .dex files to .jar files")
+                    throw ApkParserException("could not convert .dex files to .jar files, check if docker container was built")
                 }
             })
         } {
@@ -132,11 +131,6 @@ class ApkParser(val apkPath: String) {
      *         None if APK contains no native code
      */
     def parseNativeCode: Option[(Path, Seq[Path])] = {
-        // TODO docker
-        // --- ONLY TEMPORARY ---
-        val retdecPath = "/home/nicolas/bin/retdec/bin/retdec-decompiler.py"
-        // --- ONLY TEMPORARY ---
-
         OPALLogger.info(LogCategory, "native code parsing started")
 
         var llvmDir: Path = null
@@ -167,13 +161,16 @@ class ApkParser(val apkPath: String) {
 
             // generate .bc files from .so files, this can take some time ...
             llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/llvm"))
-            val getLlvmPath = (soPath: String) => llvmDir.toString + "/" + ApkParser.getFileBaseName(soPath)
-            val getCmd = (so: File) => s"$retdecPath --stop-after=bin2llvmir -o ${getLlvmPath(so.toString)} $so"
-            selectedArchSoFiles._2.foreach(so => {
-                llvmFiles.append(Paths.get(getLlvmPath(so.toString) + ".bc"))
-                val (retval, _, _) = ApkParser.runCmd(getCmd(so))
+            val getCmd = (soBaseName: String) => s"docker run --rm " +
+                s"-v ${selectedArchSoFiles._1}:/so " +
+                s"-v $llvmDir:/llvm " +
+                s"opal-apk-parser " +
+                s"retdec-decompiler -o /llvm/$soBaseName.c /so/$soBaseName.so"
+            selectedArchSoFiles._2.map(so => ApkParser.getFileBaseName(so.toString)).foreach(soBaseName => {
+                llvmFiles.append(Paths.get(s"$llvmDir/$soBaseName.bc"))
+                val (retval, _, _) = ApkParser.runCmd(getCmd(soBaseName))
                 if (retval != 0) {
-                    throw ApkParserException("could not convert .so files to .bc files")
+                    throw ApkParserException("could not convert .so files to .bc files, check if docker container was built")
                 }
             })
 
