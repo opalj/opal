@@ -3,9 +3,9 @@
 The ***APK*** module provides tools to do cross language (dex bytecode and native code) analyses on Android APKs.
 
 ## Working features
-- APK's dex can be analyzed after being transformed to jars via [enjarify](https://github.com/ThexXTURBOXx/dex2jar) or
+- APK's dex can be analyzed after being transformed to jars via [enjarify](https://github.com/Storyyeller/enjarify) or
   [dex2jar](https://github.com/ThexXTURBOXx/dex2jar).
-- APK's native code can be analyzed after being lifted to LLVM IR via [RetDec](https://github.com/ThexXTURBOXx/dex2jar).
+- APK's native code can be analyzed after being lifted to LLVM IR via [RetDec](https://github.com/avast/retdec).
 - APK components / entry points - Activities, Services, Broadcast Receivers and Content Providers - are parsed from
   AndroidManifest.xml.
 - Occurrences of context-registered Broadcast Receivers are parsed, but the recovered class name is imprecise. 
@@ -19,9 +19,9 @@ The ***APK*** module provides tools to do cross language (dex bytecode and nativ
 
 ## Dependencies
 The ***APK*** module uses following projects and libraries:
-- [enjarify](https://github.com/ThexXTURBOXx/dex2jar)
+- [enjarify](https://github.com/Storyyeller/enjarify)
 - [dex2jar](https://github.com/ThexXTURBOXx/dex2jar)
-- [RetDec](https://github.com/ThexXTURBOXx/dex2jar)
+- [RetDec](https://github.com/avast/retdec)
 - [apk-parser](https://github.com/hsiafan/apk-parser)
 
 To install the required tools in a docker container, run `build_container.sh`. Without the docker container, the ***APK***
