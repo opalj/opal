@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
         // context-registered Broadcast Receiver - via Context
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED);
         intentFilter.addAction(Intent.ACTION_POWER_CONNECTED);
+        intentFilter.addCategory(Intent.CATEGORY_APP_FILES);
         registerReceiver(new TestBroadcastReceiver2(), intentFilter);
         registerReceiver(receiverFromMethod(),intentFilterFromMethod());
 
@@ -50,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private IntentFilter intentFilterFromMethod() {
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED);
         intentFilter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        intentFilter.addCategory(Intent.CATEGORY_APP_CALENDAR);
         return intentFilter;
     }
 
