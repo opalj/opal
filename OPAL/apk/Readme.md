@@ -25,7 +25,8 @@ The ***APK*** module uses following projects and libraries:
 - [apk-parser](https://github.com/hsiafan/apk-parser)
 
 To install the required tools in a docker container, run `build_container.sh`. Without the docker container, the ***APK***
-module won't work.
+module won't work. The container uses the master/main branches of the respective tools. Run `build_container.sh --no-cache`
+for a clean build, which pulls new commits from the repositories.
 
 ## Usage
 First, build the docker container.
