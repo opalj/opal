@@ -166,13 +166,13 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         case ProperTypeArgument(_, ArrayTypeSignature(_)) =>
                             state.upperBound = NonTransitivelyImmutableField
                         case Wildcard =>
-                        case  _ => state.upperBound = NonTransitivelyImmutableField
+                        case _        => state.upperBound = NonTransitivelyImmutableField
                     }
                 case ConstantInteger(_) | ConstantFloat(_) | ConstantString(_) | ConstantLong(_) | ConstantDouble(_) |
                     Synthetic | Deprecated |
                     RuntimeVisibleAnnotationTable(_) =>
                 case ArrayTypeSignature(_) => state.upperBound = NonTransitivelyImmutableField
-                case _ => state.upperBound = NonTransitivelyImmutableField
+                case _                     => state.upperBound = NonTransitivelyImmutableField
             }
         }
 
@@ -223,8 +223,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                     case FinalP(DependentlyImmutableClass(_)) =>
                         //state.upperBound = DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
-state.upperBound = NonTransitivelyImmutableField
-                       case EUBP(c, MutableClass) if (field.fieldType == ObjectType.Object && c == ObjectType.Object) => {
+                        state.upperBound = NonTransitivelyImmutableField
+                    case EUBP(c, MutableClass) if (field.fieldType == ObjectType.Object && c == ObjectType.Object) => {
                         //var tmpImmutability: Property = NonTransitivelyImmutableField
                         state.field.attributes.foreach {
                             case TypeVariableSignature(_) =>
@@ -315,7 +315,7 @@ state.upperBound = NonTransitivelyImmutableField
                     }
 
                     case UBP(NonTransitivelyImmutableClass | NonTransitivelyImmutableType | MutableType | MutableClass) =>
-                        state.upperBound = NonTransitivelyImmutableField
+                        state.upperBound = NonTransitivelyImmutableField //TODO?
 
                     case eubp @ EUBP(t, DependentlyImmutableType(_) | DependentlyImmutableClass(_)) =>
                         if (t.asInstanceOf[FieldType] != state.field.fieldType) {
@@ -354,7 +354,7 @@ state.upperBound = NonTransitivelyImmutableField
         }
 
         /**
-         * Determines whether the field is dependent immutable
+         * Determines whether the field is dependently immutable
          */
         determineDependentImmutability()
 
@@ -363,7 +363,6 @@ state.upperBound = NonTransitivelyImmutableField
             queryTypeIterator
         //else
         //    handleTypeImmutability(field.fieldType)
-
 
         createResult()
     }
