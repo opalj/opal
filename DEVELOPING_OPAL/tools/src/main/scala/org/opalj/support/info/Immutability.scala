@@ -61,6 +61,12 @@ import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.MutableField
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis_adHocCHA
 
 /**
  * Determines the assignability of fields and the immutability  of fields, classes and types and provides several
@@ -93,13 +99,9 @@ object Immutability {
         withoutConsiderLazyInitialization: Boolean,
         configurationName:                 Option[String],
         times:                             Int,
-        callgraphKey:                      CallGraphKey
+        callgraphKey:                      CallGraphKey,
+        adHocCHA:                          Boolean
     ): BasicReport = {
-        import org.opalj.br.fpcf.properties.immutability.FieldImmutability
-        import org.opalj.br.fpcf.properties.immutability.MutableField
-        import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
-        import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
-        import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 
         val classFiles = projectDir match {
             case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -154,7 +156,12 @@ object Immutability {
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyL2FieldAssignabilityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
+                {
+                    if (adHocCHA)
+                        LazyL0FieldImmutabilityAnalysis_adHocCHA
+                    else
+                        LazyL0FieldImmutabilityAnalysis
+                },
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
@@ -207,7 +214,12 @@ object Immutability {
                                     f => propertyStore.force(f, FieldAssignability.key)
                                 )
                         case Fields =>
-                            if (css.contains(LazyL0FieldImmutabilityAnalysis))
+                            if (css.contains({
+                                if (adHocCHA)
+                                    LazyL0FieldImmutabilityAnalysis_adHocCHA
+                                else
+                                    LazyL0FieldImmutabilityAnalysis
+                            }))
                                 allFieldsInProjectClassFiles.foreach(
                                     f => propertyStore.force(f, FieldImmutability.key)
                                 )
@@ -704,6 +716,7 @@ object Immutability {
             | -projectDir <project directory>
             | -libDir <library directory>
             | -isLibrary
+            | -adHocCHA
             | [-JDK] (running with the JDK)
             | [-analysis <imm analysis that should be executed: FieldAssignability, Fields, Classes, Types, All>]
             | [-threads <threads that should be max used>]
@@ -736,6 +749,7 @@ object Immutability {
         var times = 1
         var multiProjects = false
         var configurationName: Option[String] = None
+        var adHocCHA = false
 
         def readNextArg(): String = {
             i = i + 1
@@ -768,7 +782,7 @@ object Immutability {
                         println(usage)
                         throw new IllegalArgumentException(s"unknown parameter: $result")
                     }
-
+                case "-adHocCHA"                          => adHocCHA = true
                 case "-threads"                           => numThreads = readNextArg().toInt
                 case "-cp"                                => cp = new File(readNextArg())
                 case "-resultFolder"                      => resultFolder = FileSystems.getDefault.getPath(readNextArg())
@@ -826,7 +840,8 @@ object Immutability {
                         withoutConsiderLazyInitialization,
                         configurationName,
                         nIndex,
-                        callGraphKey
+                        callGraphKey,
+                        adHocCHA
                     )
                 }
             } else {
@@ -844,7 +859,8 @@ object Immutability {
                     withoutConsiderLazyInitialization,
                     configurationName,
                     nIndex,
-                    callGraphKey
+                    callGraphKey,
+                    adHocCHA
                 )
             }
             nIndex = nIndex + 1
