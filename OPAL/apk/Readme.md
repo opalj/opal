@@ -19,10 +19,10 @@ The ***APK*** module provides tools to do cross language (dex bytecode and nativ
 
 ## Dependencies
 The ***APK*** module uses following projects and libraries:
-- [enjarify](https://github.com/Storyyeller/enjarify)
-- [dex2jar](https://github.com/ThexXTURBOXx/dex2jar)
-- [RetDec](https://github.com/avast/retdec)
-- [apk-parser](https://github.com/hsiafan/apk-parser)
+- [enjarify](https://github.com/Storyyeller/enjarify) (included in docker container)
+- [dex2jar](https://github.com/ThexXTURBOXx/dex2jar) (included in docker container)
+- [RetDec](https://github.com/avast/retdec) (included in docker container)
+- [apk-parser](https://github.com/hsiafan/apk-parser) (library, included via sbt)
 
 To install the required tools in a docker container, run `build_container.sh`. Without the docker container, the ***APK***
 module won't work. The container uses the master/main branches of the respective tools. Run `build_container.sh --no-cache`
@@ -32,12 +32,12 @@ for a clean build, which pulls new commits from the repositories.
 First, build the docker container.
 
 ```scala
-ApkParser.logOutput = true  // optional
+ApkParser.logOutput = true  // optional, for debugging
 
 val project = ApkParser.createProject(
     "PATH-TO-APK",
     BaseConfig,
-    false                   // optional, true = enjarify (default), false = dex2jar
+    DexParser.Enjarify
 )
 
 val components = project.get(ApkComponentsKey)

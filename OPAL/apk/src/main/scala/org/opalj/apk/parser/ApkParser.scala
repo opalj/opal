@@ -1,9 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.apk
+package org.opalj.apk.parser
 
 import com.typesafe.config.Config
 import net.dongliu.apk.parser.ApkFile
 import org.opalj.apk.ApkComponentType.ApkComponentType
+import org.opalj.apk.parser.DexParser.DexParser
+import org.opalj.apk.{ApkComponent, ApkComponentType, ApkComponentsKey}
 import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.log.{GlobalLogContext, LogContext, OPALLogger}
@@ -42,7 +44,7 @@ class ApkParser(val apkPath: String) {
     /**
      * Parses the components / static entry points of the APK from AndroidManifest.xml.
      *
-     * @return a Seq of [[ApkComponent]]
+     * @return a Seq of [[ApkComponent]].
      */
     def parseComponents: Seq[ApkComponent] = {
         val apkFile = new ApkFile(apkPath)
@@ -78,10 +80,10 @@ class ApkParser(val apkPath: String) {
      * Uses enjarify to create .jar files from .dex files. This can take some time,
      * please be patient.
      *
-     * @param useEnjarify: defaults to true, uses dex2jar if set to false
-     * @return (directory containing all .jar files, Seq of every single .jar file)
+     * @param dexParser: used dex file parser, defaults to Enjarify.
+     * @return (directory containing all .jar files, Seq of every single .jar file).
      */
-    def parseDexCode(useEnjarify: Boolean = true): (Path, Seq[Path]) = {
+    def parseDexCode(dexParser: DexParser = DexParser.Enjarify): (Path, Seq[Path]) = {
         OPALLogger.info(LogCategory, "dex code parsing started")
 
         var jarsDir: Path = null
@@ -96,7 +98,7 @@ class ApkParser(val apkPath: String) {
             jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/jars"))
             val getCmd = (dex: File) => {
                 val dexBaseName = ApkParser.getFileBaseName(dex.toString)
-                val cmd = if (useEnjarify) {
+                val cmd = if (dexParser == DexParser.Enjarify) {
                     s"enjarify.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
                 } else {
                     s"d2j-dex2jar.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
@@ -108,13 +110,15 @@ class ApkParser(val apkPath: String) {
             }
 
             // generate .jar files from .dex files, this can take some time ...
-            dexFiles.foreach(dex => {
-                jarFiles.append(Paths.get(s"$jarsDir/${ApkParser.getFileBaseName(dex.toString)}.jar"))
-                val (retval, _, _) = ApkParser.runCmd(getCmd(dex))
-                if (retval != 0) {
-                    throw ApkParserException("could not convert .dex files to .jar files, check if docker container was built")
-                }
-            })
+            dexFiles.zipWithIndex.foreach {
+                case (dex, i) =>
+                    jarFiles.append(Paths.get(s"$jarsDir/${ApkParser.getFileBaseName(dex.toString)}.jar"))
+                    val (retval, _, _) = ApkParser.runCmd(getCmd(dex))
+                    if (retval != 0) {
+                        throw ApkParserException("could not convert .dex files to .jar files, check if docker container was built")
+                    }
+                    OPALLogger.info(LogCategory, s"${i+1} of ${dexFiles.length} dex code files parsed")
+            }
         } {
             t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
         }
@@ -128,7 +132,7 @@ class ApkParser(val apkPath: String) {
      * please be patient.
      *
      * @return Option(directory containing all .bc files, Seq of every single .bc file) or
-     *         None if APK contains no native code
+     *         None if APK contains no native code.
      */
     def parseNativeCode: Option[(Path, Seq[Path])] = {
         OPALLogger.info(LogCategory, "native code parsing started")
@@ -166,13 +170,15 @@ class ApkParser(val apkPath: String) {
                 s"-v $llvmDir:/llvm " +
                 s"opal-apk-parser " +
                 s"retdec-decompiler -o /llvm/$soBaseName.c /so/$soBaseName.so"
-            selectedArchSoFiles._2.map(so => ApkParser.getFileBaseName(so.toString)).foreach(soBaseName => {
-                llvmFiles.append(Paths.get(s"$llvmDir/$soBaseName.bc"))
-                val (retval, _, _) = ApkParser.runCmd(getCmd(soBaseName))
-                if (retval != 0) {
-                    throw ApkParserException("could not convert .so files to .bc files, check if docker container was built")
-                }
-            })
+            selectedArchSoFiles._2.map(so => ApkParser.getFileBaseName(so.toString)).zipWithIndex.foreach {
+                case (soBaseName, i) =>
+                    llvmFiles.append(Paths.get(s"$llvmDir/$soBaseName.bc"))
+                    val (retval, _, _) = ApkParser.runCmd(getCmd(soBaseName))
+                    if (retval != 0) {
+                        throw ApkParserException("could not convert .so files to .bc files, check if docker container was built")
+                    }
+                    OPALLogger.info(LogCategory, s"${i+1} of ${selectedArchSoFiles._2.length} native code files parsed")
+            }
 
         } {
             t => OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
@@ -222,12 +228,13 @@ object ApkParser {
      *
      * @param apkPath path to the APK file.
      * @param projectConfig config values for the [[Project]].
+     * @param dexParser: used dex file parser, defaults to Enjarify.
      * @return the newly created [[Project]] containing the APK's contents (dex code, native code and entry points).
      */
-    def createProject(apkPath: String, projectConfig: Config, useEnjarify: Boolean = true): Project[URL] = {
+    def createProject(apkPath: String, projectConfig: Config, dexParser: DexParser = DexParser.Enjarify): Project[URL] = {
         val apkParser = new ApkParser(apkPath)
 
-        val jarDir = apkParser.parseDexCode(useEnjarify)._1
+        val jarDir = apkParser.parseDexCode(dexParser)._1
 
         val project =
             Project(
