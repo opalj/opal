@@ -7,6 +7,9 @@ import org.opalj.apk.ApkComponentType.ApkComponentType
  * Component of an APK. Each component is a potential entry point. A component is either an
  * Activity, Service, Broadcast Receiver or Content Provider. Parsed from AndroidManifest.xml.
  *
+ * The entry point functions were collected up to API level 33 (Android 13). They also include
+ * all deprecated functions.
+ *
  * @param componentType the type of the component.
  * @param clazz the class name of the component.
  * @param intentActions list of intent actions that trigger this component / entry point.
