@@ -196,6 +196,7 @@ class ApkParser(val apkPath: String) {
         case Some(tmpDirPath) => {
             ApkParser.runCmd("rm -r " + tmpDirPath)
             tmpDir = None
+            OPALLogger.info(LogCategory, s"temporary unzip directory cleaned")
 
         }
         case None =>
@@ -208,6 +209,7 @@ class ApkParser(val apkPath: String) {
             tmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
             val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkUnzippedDir))
             ApkParser.unzip(Paths.get(apkPath), unzipDir)
+            OPALLogger.info(LogCategory, s"APK successfully unzipped")
         }
     }
 }
