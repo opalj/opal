@@ -1,53 +1,48 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.apk
 
+import org.opalj.apk.parser.ApkParser
+import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
 
-class ApkParserTest extends AnyFunSpec with Matchers {
-    describe("ApkParser Test") {
+import java.net.URL
+
+/**
+ * Tests that the [[ApkParser]] works.
+ *
+ * @author Nicolas Gross
+ */
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class ApkParserTest extends AnyFunSuite with BeforeAndAfterAll {
+
+    var project: Project[URL] = _
+
+    override def beforeAll(): Unit = {
         ApkParser.logOutput = true
-        val project = ApkParser.createProject(
+        project = ApkParser.createProject(
             "./OPAL/apk/src/test/resources/context-registered-receivers-and-native.apk",
             BaseConfig,
         )
+    }
 
-        // check if static entry point parsing worked
+    test("components / entry point parsing") {
         val components = project.get(ApkComponentsKey)
-        println()
-        println("------------------------------------------")
-        println("components / entry points:")
-        println("------------------------------------------")
-        println(components)
         assert(components.length == 5)
+    }
 
-        // check if java code parsing worked
-        println()
-        println("------------------------------------------")
-        println("java packages:")
-        println("------------------------------------------")
-        println(project.projectPackages)
+    test("java packages parsing") {
         assert(project.packagesCount == 159)
+    }
 
-        // check if native code parsing worked
+    test("native functions parsing") {
         val llvmProject = project.get(LLVMProjectKey)
-        println()
-        println("------------------------------------------")
-        println("native functions:")
-        println("------------------------------------------")
-        println(llvmProject.functions)
+        assert(llvmProject.functions.size == 886)
+    }
 
-        // check if dynamically registered Intents for Broadcast Receivers are found
-        println()
-        println("------------------------------------------")
-        println("context registered broadcast receivers:")
-        println("------------------------------------------")
+    test("context registered broadcast receiver parsing") {
         val contextRegisteredReceivers = project.get(ApkContextRegisteredReceiversKey)
-        println(contextRegisteredReceivers)
         assert(contextRegisteredReceivers.length == 4)
-
-        println()
-        println("DONE")
     }
 }
