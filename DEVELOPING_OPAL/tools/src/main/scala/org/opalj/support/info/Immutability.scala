@@ -67,6 +67,7 @@ import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis_adHocCHA
+import org.opalj.tac.cg.CallGraphKey
 
 /**
  * Determines the assignability of fields and the immutability  of fields, classes and types and provides several
@@ -76,7 +77,7 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis_
  */
 object Immutability {
 
-    import org.opalj.tac.cg.CallGraphKey
+
 
     sealed trait Analyses
     case object Assignability extends Analyses

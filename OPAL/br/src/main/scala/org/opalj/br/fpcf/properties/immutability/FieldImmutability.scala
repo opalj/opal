@@ -63,8 +63,11 @@ case class DependentlyImmutableField(parameter: Set[String]) extends FieldImmuta
     def meet(that: FieldImmutability): FieldImmutability = {
         if (that == MutableField || that == NonTransitivelyImmutableField)
             that
-        else
-            this
+        else {
+            if (that.isInstanceOf[DependentlyImmutableField])
+                DependentlyImmutableField(parameter.union(that.asInstanceOf[DependentlyImmutableField].parameter))
+            else this
+        }
     }
 }
 

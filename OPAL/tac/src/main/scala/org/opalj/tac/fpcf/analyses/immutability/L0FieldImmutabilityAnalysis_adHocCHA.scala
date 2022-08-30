@@ -97,7 +97,7 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
             var genericTypeParameters:      Set[String]                                 = Set.empty,
             var upperBound:                 FieldImmutability                           = TransitivelyImmutableField,
             var concreteClassTypeIsKnown:   Boolean                                     = false,
-            var concreterTypeIsKnown: Boolean                                           = false
+            var concreterTypeIsKnown:       Boolean                                     = false
     ) {
         def hasDependees: Boolean = fieldImmutabilityDependees.nonEmpty || tacDependees.nonEmpty
         def getDependees: Set[EOptionP[Entity, Property]] =
@@ -123,22 +123,20 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
          * Determines the immutability of a type. Adjusts the state and registers the dependencies if necessary.
          */
         def handleTypeImmutability(objectType: FieldType)(implicit state: State): Unit = {
-
             if (objectType.isBaseType) {
                 // base types are by design transitively immutable
                 // state.upperBound = TransitivelyImmutableField true is default
             } else if (objectType == ObjectType.Object || //handling generic fields
                 objectType.isArrayType) { //Because the entries of an array can be reassigned we state it as mutable
                 state.upperBound = NonTransitivelyImmutableField
-                //state.typeImmutability = MutableType
             } else {
                 propertyStore(objectType, TypeImmutability.key) match {
                     case LBP(TransitivelyImmutableType) => // transitively immutable type is set as default
                     case FinalEP(t, DependentlyImmutableType(_)) =>
-                         if (t == field.fieldType)
-                             state.upperBound =
-                                 DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
-                         else
+                        if (t == field.fieldType)
+                            state.upperBound =
+                                DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
+                        else
                             state.upperBound = NonTransitivelyImmutableField
 
                     case UBP(MutableType | NonTransitivelyImmutableType) =>
@@ -160,8 +158,7 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
                     case FinalP(DependentlyImmutableClass(_)) =>
                         state.upperBound = DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
 
-                    case EUBP(c, MutableClass) if (field.fieldType == ObjectType.Object && c == ObjectType.Object) => {
-
+                    case EUBP(c, MutableClass) if (field.fieldType == ObjectType.Object && c == ObjectType.Object) =>
                         state.field.attributes.foreach {
                             case TypeVariableSignature(_) =>
                                 state.upperBound = DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
@@ -175,9 +172,10 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
                         }
                         if (!state.upperBound.isInstanceOf[DependentlyImmutableField])
                             state.upperBound = NonTransitivelyImmutableField
-                    }
+
                     case UBP(MutableClass | NonTransitivelyImmutableClass) =>
                         state.upperBound = NonTransitivelyImmutableField
+
                     case eps => state.fieldImmutabilityDependees += eps
                 }
             }
