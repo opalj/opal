@@ -79,7 +79,6 @@ import org.opalj.br.ConstantFloat
 import org.opalj.br.ConstantInteger
 import org.opalj.br.Deprecated
 import org.opalj.br.ReferenceType
-import org.opalj.value.ASObjectValue
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
@@ -95,8 +94,7 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
             var genericTypeParameters:      Set[String]                                 = Set.empty,
             var upperBound:                 FieldImmutability                           = TransitivelyImmutableField,
             var tacDependees:               Map[Method, (EOptionP[Method, TACAI], PCs)] = Map.empty,
-            var concreteClassTypeIsKnown:   Boolean                                     = false,
-            var concreterTypeIsKnown:       Boolean                                     = false
+            var concreteClassTypeIsKnown:   Boolean                                     = true
     ) {
         def hasDependees: Boolean = fieldImmutabilityDependees.nonEmpty || tacDependees.nonEmpty
         def getDependees: Set[EOptionP[Entity, Property]] =
@@ -301,23 +299,17 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
                 } else if (putValue.value.isArrayValue.isNoOrUnknown && putValue.value.isReferenceValue) {
                     putDefinitionSites.foreach { putDefinitionSite =>
                         if (putDefinitionSite < 0) {
-                            if (putValue.asVar.value.isInstanceOf[ASObjectValue]) {
-                                val oType = putValue.asVar.value.asInstanceOf[ASObjectValue].theUpperTypeBound
-                                if (oType == field.fieldType.asObjectType ||
-                                    oType.isSubtypeOf(field.fieldType.asObjectType)) {
-                                    state.concreterTypeIsKnown = true
-                                    handleTypeImmutability(oType)
-                                }
-                            }
+                            state.concreteClassTypeIsKnown = false
                         } else {
                             val definitionSiteAssignment = taCode.stmts(putDefinitionSite).asAssignment
                             if (definitionSiteAssignment.expr.isNew) {
                                 val newStmt = definitionSiteAssignment.expr.asNew
                                 if (field.fieldType.isObjectType) {
-                                    state.concreteClassTypeIsKnown = true
                                     handleClassImmutability(newStmt.tpe.mostPreciseObjectType)
-                                }
-                            }
+                                } else
+                                    state.concreteClassTypeIsKnown = false
+                            } else
+                                state.concreteClassTypeIsKnown = false
                         }
                     }
                 }
@@ -377,7 +369,7 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
                     state.fieldIsNotAssignable = Some(true)
 
                 case UBP(NonTransitivelyImmutableClass | NonTransitivelyImmutableType | MutableType | MutableClass) =>
-                    state.upperBound = NonTransitivelyImmutableField //TODO?
+                    state.upperBound = NonTransitivelyImmutableField
 
                 case epk if epk.asEPS.pk == TACAI.key =>
                     val newEP = epk.asInstanceOf[EOptionP[Method, TACAI]]
@@ -387,6 +379,8 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
                     if (epk.isFinal) {
                         val tac = epk.asInstanceOf[FinalEP[Method, TACAI]].p.tac.get
                         searchForConcreteObjectInFieldWritesWithKnownTAC(pcs, tac)(state)
+                        if (!state.concreteClassTypeIsKnown)
+                            handleTypeImmutability(state.field.fieldType)
                     } else {
                         state.tacDependees += method -> ((newEP, pcs))
                     }
@@ -435,7 +429,7 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
         /**
          * In case of we know the concrete class type assigned to the field we could use the immutability of this.
          */
-        if (!state.concreteClassTypeIsKnown && !state.concreterTypeIsKnown)
+        if (!state.concreteClassTypeIsKnown && state.tacDependees.isEmpty)
             handleTypeImmutability(state.field.fieldType)
 
         createResult()
