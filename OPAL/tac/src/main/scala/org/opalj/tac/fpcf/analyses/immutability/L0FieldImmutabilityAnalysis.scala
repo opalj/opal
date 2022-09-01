@@ -86,7 +86,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             var genericTypeParameters:      Set[String]                     = Set.empty,
             var upperBound:                 FieldImmutability               = TransitivelyImmutableField
     ) extends BaseAnalysisState with TypeIteratorState {
-        def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty && super.hasOpenDependencies
+        def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty || super.hasOpenDependencies
         def getFieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees
     }
 

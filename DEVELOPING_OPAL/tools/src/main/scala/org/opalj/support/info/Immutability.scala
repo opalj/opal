@@ -77,8 +77,6 @@ import org.opalj.tac.cg.CallGraphKey
  */
 object Immutability {
 
-
-
     sealed trait Analyses
     case object Assignability extends Analyses
     case object Fields extends Analyses
