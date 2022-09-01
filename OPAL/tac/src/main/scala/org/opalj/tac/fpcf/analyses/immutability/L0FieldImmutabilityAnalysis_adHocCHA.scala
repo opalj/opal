@@ -90,12 +90,11 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
 
     case class State(
             field:                          Field,
-            var tacDependees:               Map[Method, (EOptionP[Method, TACAI], PCs)] = Map.empty,
             var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]]             = Set.empty,
             var fieldIsNotAssignable:       Option[Boolean]                             = None,
-            var totalNumberOfFieldWrites:   Int                                         = 0,
             var genericTypeParameters:      Set[String]                                 = Set.empty,
             var upperBound:                 FieldImmutability                           = TransitivelyImmutableField,
+            var tacDependees:               Map[Method, (EOptionP[Method, TACAI], PCs)] = Map.empty,
             var concreteClassTypeIsKnown:   Boolean                                     = false,
             var concreterTypeIsKnown:       Boolean                                     = false
     ) {
@@ -267,7 +266,6 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
          */
         def examineFieldWritesForConcretizationOfImmutability()(implicit state: State): Unit = {
             val writes = fieldAccessInformation.writeAccesses(state.field)
-
             writes.foreach { write =>
                 val (method, pcs) = write
                 val taCodeOption = getTACAI(method, pcs, isRead = false)

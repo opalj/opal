@@ -82,15 +82,16 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     case class State(
             field:                          Field,
             var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
-            var upperBound:                 FieldImmutability               = TransitivelyImmutableField,
             var fieldIsNotAssignable:       Option[Boolean]                 = None,
-            var genericTypeParameters:      Set[String]                     = Set.empty
+            var genericTypeParameters:      Set[String]                     = Set.empty,
+            var upperBound:                 FieldImmutability               = TransitivelyImmutableField
     ) extends BaseAnalysisState with TypeIteratorState {
-        def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty
+        def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty && super.hasOpenDependencies
         def getFieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees
     }
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
+    implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
         case field: Field => determineFieldImmutability(field)
@@ -103,7 +104,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     ): ProperPropertyComputationResult = {
 
         implicit val state: State = State(field)
-        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
         /**
          * Query type iterator for concrete class types.
