@@ -41,9 +41,9 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
  */
 object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "determines the immutability of classes"
+    override def title: String = "Determines class immutability"
 
-    override def description: String = "identifies classes that are immutable in a shallow or deep way"
+    override def description: String = "Identifies classes that are (non) transitively immutable"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -94,80 +94,38 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val mutableClasses =
             groupedResults(MutableClass).toSeq.sortWith(order)
 
-        val shallowImmutableClasses =
+        val nonTransitivelyImmutableClasses =
             groupedResults(NonTransitivelyImmutableClass).toSeq.sortWith(order)
 
-        val dependentImmutableClasses =
+        val dependentlyImmutableClasses =
             groupedResults(DependentlyImmutableClass).toSeq.sortWith(order)
 
-        val deepImmutables = groupedResults(TransitivelyImmutableClass).toSeq.sortWith(order)
+        val transitivelyImmutableClassesOrInterfaces = groupedResults(TransitivelyImmutableClass).toSeq.sortWith(order)
 
         val allInterfaces =
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
-        val deepImmutableClassesInterfaces = deepImmutables
+        val transitivelyImmutableInterfaces = transitivelyImmutableClassesOrInterfaces
             .filter(eps => allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
 
-        val deepImmutableClasses =
-            deepImmutables
+        val transitivelyImmutableClasses =
+            transitivelyImmutableClassesOrInterfaces
                 .filter(eps => !allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
 
-        val output =
             s"""
-             | Mutable Classes:
-             | ${mutableClasses.mkString(" | Mutable Class\n")}
-             |
-             | Shallow Immutable Classes:
-             | ${shallowImmutableClasses.mkString(" | Shallow Immutable Class\n")}
-             |
-             | Dependent Immutable Classes:
-             | ${dependentImmutableClasses.mkString(" | Dependent Immutable Class\n")}
-             |
-             | Deep Immutable Classes:
-             | ${deepImmutableClasses.mkString(" | Deep Immutable Classes\n")}
-             |
-             | Deep Immutable Class Interfaces:
-             | ${deepImmutableClassesInterfaces.mkString(" | Deep Immutable Classes Interfaces\n")}
-             |
              |
              | Mutable Classes: ${mutableClasses.size}
-             | Shallow Immutable Classes: ${shallowImmutableClasses.size}
-             | Dependent Immutable Classes: ${dependentImmutableClasses.size}
-             | Deep Immutable Classes: ${deepImmutableClasses.size}
-             | Deep Immutable Classes Interfaces: ${deepImmutableClassesInterfaces.size}
-             | Deep Immutables: ${deepImmutables.size}
+             | Non Transitively Immutable Classes: ${nonTransitivelyImmutableClasses.size}
+             | Dependent Immutable Classes: ${dependentlyImmutableClasses.size}
+             | Transitively Immutable Classes: ${transitivelyImmutableClasses.size}
+             | Transitively Immutable Interfaces: ${transitivelyImmutableInterfaces.size}
+             | Transitively Immutables Classes or Interfaces: ${transitivelyImmutableClassesOrInterfaces.size}
              |
-             | sum: ${
-                mutableClasses.size + shallowImmutableClasses.size + dependentImmutableClasses.size +
-                    deepImmutableClasses.size + deepImmutableClassesInterfaces.size
+             | total classes or interfaces: ${
+                mutableClasses.size + nonTransitivelyImmutableClasses.size + dependentlyImmutableClasses.size +
+                    transitivelyImmutableClasses.size + transitivelyImmutableInterfaces.size
             }
              | analysis took : $analysisTime seconds
              |"""".stripMargin
-
-        val calendar = Calendar.getInstance()
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val month = calendar.get(Calendar.MONTH)
-        val year = calendar.get(Calendar.YEAR)
-        val hour = calendar.get(Calendar.HOUR)
-        val minute = calendar.get(Calendar.MINUTE)
-        val seconds = calendar.get(Calendar.SECOND)
-        val file = new File(s"""${analysis.toString}_${day}_${month}_${year}_${hour}_${minute}_${seconds}.txt""")
-
-        val bw = new BufferedWriter(new FileWriter(file))
-
-        try {
-            bw.write(output)
-            bw.close()
-        } catch {
-            case e: IOException => println(
-                s""" Could not write file: ${file.getName}
-                   | ${e.getMessage}
-                   |""".stripMargin
-            )
-        } finally {
-            bw.close()
-        }
-
-        output
     }
 }

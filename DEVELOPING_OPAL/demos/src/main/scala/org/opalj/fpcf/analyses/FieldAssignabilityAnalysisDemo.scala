@@ -36,15 +36,15 @@ import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 
 /**
- * Runs the EagerL0FieldAssignabilityAnalysis including all analysis needed for improving the result.
+ * Runs the EagerL2FieldAssignabilityAnalysis including all analysis needed for improving the result.
  *
  * @author Tobias Roth
  */
 object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "determines the assignability of static and instce fields"
+    override def title: String = "Determiens field Assignability the assignability of static and instce fields"
 
-    override def description: String = "identifies non assignable fields"
+    override def description: String = "Identifies non assignable fields"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -93,65 +93,27 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         val order = (eps1: EPS[Entity, FieldAssignability], eps2: EPS[Entity, FieldAssignability]) =>
             eps1.e.toString < eps2.e.toString
         val assignableFields = groupedResults(Assignable).toSeq.sortWith(order)
-        val notThreadSafeLazyInitializedFieldReferences = groupedResults(UnsafelyLazilyInitialized).
+        val unsafelyLazilyInitializedFields = groupedResults(UnsafelyLazilyInitialized).
             toSeq.sortWith(order)
-        val threadSafeLazyInitializedFieldReferences = groupedResults(LazilyInitialized).toSeq.
+        val threadSafeLazyInitializedFields = groupedResults(LazilyInitialized).toSeq.
             sortWith(order)
-        val immutableReferences = groupedResults(EffectivelyNonAssignable).toSeq.sortWith(order)
-        val output =
+        val EffectivelynonAssignableFields = groupedResults(EffectivelyNonAssignable).toSeq.sortWith(order)
+        val NonAssignableFields = groupedResults(NonAssignableField).toSeq.sortWith(order)
+
             s"""
-          | Assignable Field:
-          | ${assignableFields.mkString(" | Assignable \n")}
           |
-          |  Lazy Initialized Not Thread Safe Field:
-          | ${notThreadSafeLazyInitializedFieldReferences.mkString(" | Not Thread Safe Lazy Initialization \n")}
+          | Assignable Fields: ${assignableFields.size}
+           Lazy Initialized Fields : ${unsafelyLazilyInitializedFields.size}
+          | Lazy Initialized Thread Safe Fields: ${threadSafeLazyInitializedFields.size}
+          | Effectively Non Assignable Fields: ${EffectivelynonAssignableFields.size}
+          | Non Assignable Fields: ${NonAssignableFields.size}
           |
-          | lazy Initialized Thread Safe Field:
-          | ${threadSafeLazyInitializedFieldReferences.mkString(" | Lazy initialized thread safe field reference \n")}
-          |
-          | Effectively Non Assignable Field
-          |
-          | Non Assignable Field:
-          | ${immutableReferences.mkString(" | Immutable Field Reference \n")}
-          |
-          |
-          | Mutable References: ${assignableFields.size}
-           Lazy Initialized References Not Thread : ${notThreadSafeLazyInitializedFieldReferences.size}
-          | Lazy Initialized Thread Safe References: ${threadSafeLazyInitializedFieldReferences.size}
-          | Immutable References: ${immutableReferences.size}
-          |
-          | sum: ${
-                assignableFields.size + notThreadSafeLazyInitializedFieldReferences.size +
-                    threadSafeLazyInitializedFieldReferences.size +
-                    immutableReferences.size
+          | total Fields: ${
+                assignableFields.size + unsafelyLazilyInitializedFields.size +
+                    threadSafeLazyInitializedFields.size +
+                    EffectivelynonAssignableFields.size + NonAssignableFields.siize
             }
           | took : $analysisTime seconds
           |""".stripMargin
-
-        val calendar = Calendar.getInstance()
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val month = calendar.get(Calendar.MONTH)
-        val year = calendar.get(Calendar.YEAR)
-        val hour = calendar.get(Calendar.HOUR)
-        val minute = calendar.get(Calendar.MINUTE)
-        val seconds = calendar.get(Calendar.SECOND)
-        val file = new File(s"""${day}_${month}_${year}_${hour}_${minute}_${seconds}.txt""")
-
-        val bw = new BufferedWriter(new FileWriter(file))
-
-        try {
-            bw.write(output)
-            bw.close()
-        } catch {
-            case e: IOException => println(
-                s""" Could not write file: ${file.getName}
-               | ${e.getMessage}
-               |""".stripMargin
-            )
-        } finally {
-            bw.close()
-        }
-
-        output
     }
 }

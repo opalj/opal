@@ -43,9 +43,9 @@ import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
  */
 object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "determines the immutability of static and instance fields"
+    override def title: String = "Determines field immutability"
 
-    override def description: String = "identifies transitively immutable fields"
+    override def description: String = "Identifies transitively immutable fields"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -105,14 +105,13 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val transitivelyImmutableFields =
             groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 
-        val output =
             s""" |
              | Mutable Fields: ${mutableFields.size}
              | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
              | Dependent Immutable Fields: ${dependentImmutableFields.size}
              | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
              |
-             | sum: ${
+             | total fields: ${
                 mutableFields.size + nonTransitivelyImmutableFields.size +
                     dependentImmutableFields.size + transitivelyImmutableFields.size
             }
@@ -122,33 +121,5 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
              |propertyStore: ${propertyStore.getClass}
              |""".stripMargin
-
-        val calendar = Calendar.getInstance()
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val month = calendar.get(Calendar.MONTH)
-        val year = calendar.get(Calendar.YEAR)
-        val hour = calendar.get(Calendar.HOUR)
-        val minute = calendar.get(Calendar.MINUTE)
-        val seconds = calendar.get(Calendar.SECOND)
-        val file = new File(s"""${day}_${month}_${year}_${hour}_${minute}_${seconds}.txt""")
-
-        println(s"filepath: ${file.getAbsolutePath}")
-        val bw = new BufferedWriter(new FileWriter(file))
-
-        try {
-            bw.write(output)
-            bw.close()
-        } catch {
-            case e: IOException =>
-                println(
-                    s""" Could not write file: ${file.getName}
-               | ${e.getMessage}
-               |""".stripMargin
-                )
-        } finally {
-            bw.close()
-        }
-
-        output
     }
 }

@@ -36,16 +36,15 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
 
 /**
- * Runs the EagerL1TypeImmutabilityAnalysis as well as all analyses needed for improving the result
+ * Runs the EagerTypeImmutabilityAnalysis as well as all analyses needed for improving the result
  *
  * @author Tobias Roth
  */
 object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "determines the immutability of types respecting all possible subtypes"
+    override def title: String = "Determines type immutability"
 
-    override def description: String = "identifies types that are transitively immutable "+
-        "respecting all possible subtypes"
+    override def description: String = "identifies transitively immutable types"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -100,60 +99,22 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val nonTransitivelyImmutableTypes = groupedResults(NonTransitivelyImmutableType).toSeq.sortWith(order)
 
-        val dependentImmutableTypes = groupedResults(DependentlyImmutableType).toSeq.sortWith(order)
+        val dependentlyImmutableTypes = groupedResults(DependentlyImmutableType).toSeq.sortWith(order)
 
         val transitivelyImmutableTypes = groupedResults(TransitivelyImmutableType).toSeq.sortWith(order)
 
-        val output =
             s"""
-           | Mutable Types:
-           | ${mutableTypes.mkString(" | Mutable Type\n")}
-           |
-           | Shallow Immutable Types:
-           | ${nonTransitivelyImmutableTypes.mkString(" | Shallow Immutable Type\n")}
-           |
-           | Dependent Immutable Types:
-           | ${dependentImmutableTypes.mkString(" | Dependent Immutable Type\n")}
-           |
-           | Transitively Immutable Types:
-           | ${transitivelyImmutableTypes.mkString(" | Deep Immutable Type\n")}
-           |
            |
            | Mutable Types: ${mutableTypes.size}
            | Non-Transitively Immutable Types: ${nonTransitivelyImmutableTypes.size}
-           | Dependent Immutable Types: ${dependentImmutableTypes.size}
+           | Dependently Immutable Types: ${dependentlyImmutableTypes.size}
            | Transitively Immutable Types: ${transitivelyImmutableTypes.size}
            |
-           | sum: ${
-                mutableTypes.size + nonTransitivelyImmutableTypes.size + dependentImmutableTypes.size +
+           | total fields: ${
+                mutableTypes.size + nonTransitivelyImmutableTypes.size + dependentlyImmutableTypes.size +
                     transitivelyImmutableTypes.size
             }
            | took : $analysisTime seconds
            |""".stripMargin
-
-        val calendar = Calendar.getInstance()
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val month = calendar.get(Calendar.MONTH)
-        val year = calendar.get(Calendar.YEAR)
-        val hour = calendar.get(Calendar.HOUR)
-        val minute = calendar.get(Calendar.MINUTE)
-        val seconds = calendar.get(Calendar.SECOND)
-        val file = new File(s"""${day}_${month}_${year}_${hour}_${minute}_${seconds}.txt""")
-        val bw = new BufferedWriter(new FileWriter(file))
-
-        try {
-            bw.write(output)
-            bw.close()
-        } catch {
-            case e: IOException => println(
-                s""" Could not write file: ${file.getName}
-               | ${e.getMessage}
-               |""".stripMargin
-            )
-        } finally {
-            bw.close()
-        }
-
-        output
     }
 }
