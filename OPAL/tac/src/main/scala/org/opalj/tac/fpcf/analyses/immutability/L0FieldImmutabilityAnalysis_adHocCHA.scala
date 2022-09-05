@@ -104,7 +104,6 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
     final val typeExtensibility = project.get(TypeExtensibilityKey)
     final val closedPackages = project.get(ClosedPackagesKey)
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
-    final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
@@ -295,7 +294,7 @@ class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeP
                         throw new Exception(s"$putStmt is not a  putStmt")
                 }
                 if (putValue.value.isArrayValue.isYesOrUnknown) {
-                    state.upperBound = NonTransitivelyImmutableField //.classImmutability = MutableClass
+                    state.upperBound = NonTransitivelyImmutableField
                 } else if (putValue.value.isArrayValue.isNoOrUnknown && putValue.value.isReferenceValue) {
                     putDefinitionSites.foreach { putDefinitionSite =>
                         if (putDefinitionSite < 0) {
