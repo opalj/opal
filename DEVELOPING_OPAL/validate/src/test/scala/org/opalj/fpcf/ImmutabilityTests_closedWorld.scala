@@ -14,9 +14,7 @@ import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.opalj.br.BaseConfig
+import com.typesafe.config.ConfigFactory
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -33,17 +31,7 @@ class ImmutabilityTests_closedWorld extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/immutability/closed_world")
     }
 
-    override def createConfig(): Config = {
-        val config = BaseConfig
-            .withValue(
-                "org.opalj.br.analyses.cg.ClosedPackagesKey",
-                fromAnyRef("org.opalj.br.analyses.cg.AllPackagesClosed")
-            )
-            .withValue("org.opalj.br.analyses.cg.ClassExtensibilityKey", ConfigValueFactory.fromAnyRef(
-                "org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible"
-            ))
-        config
-    }
+    override def createConfig(): Config = ConfigFactory.load("CommandLineProject.conf")
 
     override def init(p: Project[URL]): Unit = {
 
@@ -83,5 +71,6 @@ class ImmutabilityTests_closedWorld extends PropertiesTest {
             classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability")
         )
+        println("reachable methods: "+as.project.get(TypeBasedPointsToCallGraphKey).reachableMethods().toList.size)
     }
 }

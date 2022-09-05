@@ -111,10 +111,20 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         def queryTypeIterator(implicit state: State, typeIterator: TypeIterator): Unit = {
             val actualTypes = typeIterator.typesProperty(state.field, typeIterator)
-
+            if (field.name.contains("nonTransitivelyImmutableField")) {
+                println(s"fieldname: ${field.name}"+
+                    s"$actualTypes"+
+                    s""+
+                    s"")
+            }
             typeIterator.foreachType(state.field, actualTypes) { actualType =>
+                if (field.name.contains("nonTransitivelyImmutableField")) {
+                    println("------------------------------------------")
+                    println("actual Types: "+actualType)
+                }
                 handleClassImmutability(actualType)
             }
+
         }
 
         def determineDependentImmutability()(implicit state: State): Unit = {
