@@ -11,6 +11,7 @@ import java.io.FileWriter
 import java.util.Calendar
 import java.nio.file.FileSystems
 import java.net.URL
+import java.text.SimpleDateFormat
 import com.typesafe.config.ConfigValueFactory
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -657,7 +658,6 @@ object Immutability {
         }
 
         if (resultsFolder != null) {
-            import java.text.SimpleDateFormat
 
             val calender = Calendar.getInstance()
             calender.add(Calendar.ALL_STYLES, 1)
