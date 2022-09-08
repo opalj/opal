@@ -22,11 +22,12 @@ class UseSiteVariance<T extends ClassWithMutableFields> {
     @NonAssignableField("field is final")
     private final T t;
 
-    @NonTransitivelyImmutableField("? has super type object")
+    @NonTransitivelyImmutableField(value = "? has super type object")
     @NonAssignableField("field is final")
     private final Generic<? super EmptyClass> nonTransitivelyImmutableField;
 
-    @TransitivelyImmutableField("Type ? can only be FinalEmptyClass and, thus, transitively immutable")
+    @TransitivelyImmutableField(value = "Type ? can only be FinalEmptyClass and, thus, transitively immutable", analyses = {})
+    @NonTransitivelyImmutableField("The analysis is not able to recognize use site variance")
     @NonAssignableField("field is final")
     private final Generic<? extends FinalEmptyClass> transitivelyImmutableField;
 

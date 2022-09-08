@@ -9,6 +9,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
 
 /**
  * Matches a field's `FieldImmutability` property. The match is successful if the field has the
@@ -44,16 +45,16 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
+
         if (!properties.exists(p => p match {
             case DependentlyImmutableField(_) =>
-                val annotationType = a.annotationType.asFieldType.asObjectType
-                val parameters =
+                //val annotationType = a.annotationType.asFieldType.asObjectType
+                /*val parameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x => x.asStringValue.value)
-                property.isInstanceOf[DependentlyImmutableField] &&
+                        asArrayValue.values.map(x => x.asStringValue.value) */
+                property.isInstanceOf[DependentlyImmutableField] /* &&
                     p.asInstanceOf[DependentlyImmutableField].parameter.size == parameters.size &&
-                    parameters.toList.forall(param => p.asInstanceOf[DependentlyImmutableField].parameter.contains(param))
+                    parameters.toList.forall(param => p.asInstanceOf[DependentlyImmutableField].parameter.contains(param)) */
             case _ => p == property
         })) {
             // ... when we reach this point the expected property was not found.

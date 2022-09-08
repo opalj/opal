@@ -29,9 +29,9 @@ public class LazyCell {
                 L2FieldAssignabilityAnalysis.class})
 private volatile boolean bitmap_0 = false;
 
-@TransitivelyImmutableField("Lazy initialized field with primitive type")
+@TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
 @LazilyInitializedField(value = "The field is only set once in a synchronized way.", analyses = {})
-@AssignableField(value = "The analyses do no recognize lazy initialization over multiple methods",
+@AssignableField(value = "The analysis is not able to recognize lazy initialization over multiple methods",
         analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
                 L2FieldAssignabilityAnalysis.class})
 Integer value_0;

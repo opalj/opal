@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.open_world.generic.simple;
 
-import org.opalj.fpcf.fixtures.immutability.open_world.general.ClassWithMutableFields;
-import org.opalj.fpcf.fixtures.immutability.open_world.general.FinalClassWithNoFields;
-import org.opalj.fpcf.fixtures.immutability.open_world.general.FinalClassWithNonTransitivelyImmutableField;
+import org.opalj.fpcf.fixtures.immutability.open_world.generic.ClassWithMutableFields;
+import org.opalj.fpcf.fixtures.immutability.open_world.generic.FinalClassWithNoFields;
+import org.opalj.fpcf.fixtures.immutability.open_world.generic.FinalClassWithNonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;

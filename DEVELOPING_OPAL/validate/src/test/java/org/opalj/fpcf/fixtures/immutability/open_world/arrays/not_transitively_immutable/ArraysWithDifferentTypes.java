@@ -25,8 +25,8 @@ public class ArraysWithDifferentTypes<T> {
         finalArrayWithSetterForOneElement[2] = new Object();
     }
 
-    @MutableField("Array is assignable.")
-    @AssignableField("The array is initialized always when the InitC function is called")
+    @MutableField("The array is assignable.")
+    @AssignableField("The array is initialized always when the setC function is called")
     private Object[] assignableArray;
 
     public void setC() {
@@ -45,22 +45,24 @@ public class ArraysWithDifferentTypes<T> {
     @EffectivelyNonAssignableField("The field is initialized in the constructor")
     private String[] privateStringArrayEscapingViaConstructor;
 
-    @NonTransitivelyImmutableField("The array escapes via the constructor")
-    @EffectivelyNonAssignableField("The field is initialized in the constructor")
-    private int[] privateIntArrayEscapingViaConstructor;
+    @MutableField("Field is assignable")
+    @AssignableField("Field is public")
+    public Object publicObject = new Object();
 
-    @NonTransitivelyImmutableField("The array escapes via the constructor")
-    @EffectivelyNonAssignableField("The field is initialized in the constructor")
-    private Object[] privateObjectArrayEscapingViaConstructor;
+    @NonTransitivelyImmutableField("Field is initialized with an non-transitively immutable field")
+    @NonAssignableField("Field is final")
+    private final Object[] arrayWithOneEscapingObject;
 
-    @NonTransitivelyImmutableField("The array escapes via the constructor")
-    @EffectivelyNonAssignableField("The field is initialized in the constructor")
-    private T[] privateTArrayEscapingViaConstructor;
+    @NonTransitivelyImmutableField("One object of the array can escape via a getter method")
+    @NonAssignableField("Field is final")
+    private final Object[] arrayAccessedByGetterMethod = new Object[]{new Object(), new Object()};
 
-    ArraysWithDifferentTypes(String[] stringArray, int[] intArray, Object[] objectArr, T[] tArray) {
+    public Object getSecondElement(){
+        return arrayAccessedByGetterMethod[1];
+    }
+
+    ArraysWithDifferentTypes(String[] stringArray) {
         this.privateStringArrayEscapingViaConstructor = stringArray;
-        this.privateIntArrayEscapingViaConstructor = intArray;
-        this.privateObjectArrayEscapingViaConstructor = objectArr;
-        this.privateTArrayEscapingViaConstructor = tArray;
+        arrayWithOneEscapingObject = new Object[]{publicObject};
     }
 }

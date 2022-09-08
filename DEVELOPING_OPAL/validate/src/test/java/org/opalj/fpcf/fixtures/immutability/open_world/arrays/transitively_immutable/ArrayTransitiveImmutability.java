@@ -40,7 +40,8 @@ public final class ArrayTransitiveImmutability {
         transitivelyImmutableArrayAssignedInTheConstructor = new Integer[]{5, 6, 7, 8};
     }
 
-    @TransitivelyImmutableField("The elements of the array can not escape")
+    @TransitivelyImmutableField(value = "The elements of the array can not escape", analyses = {})
+    @NonTransitivelyImmutableField(value = "The analysis is currently not able to recognize transitively immutable arrays", analyses = {L0FieldImmutabilityAnalysis.class})
     @EffectivelyNonAssignableField("The array is not initialized.")
     private Object[] notInitializedArray;
 

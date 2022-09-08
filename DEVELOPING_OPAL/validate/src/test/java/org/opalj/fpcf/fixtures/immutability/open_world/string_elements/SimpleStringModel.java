@@ -4,6 +4,7 @@ package org.opalj.fpcf.fixtures.immutability.open_world.string_elements;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
@@ -33,7 +34,7 @@ public final class SimpleStringModel {
     }
 
     @TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
-    @NonTransitivelyImmutableField("")
+    @MutableField("The field is not non-assignable")
     @LazilyInitializedField(value = "Field is lazily initialized", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis cannot reconizes determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})

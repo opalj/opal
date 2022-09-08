@@ -27,6 +27,6 @@ public class Specialization<T> {
         }
     }
 
-    @TransitivelyImmutableField("The field is assigned with a concretized transitively immutable object.")
-    private final Object o = new G<>(new FinalClassWithNoFields());
+    //@TransitivelyImmutableField("The field is assigned with a concretized transitively immutable object.")
+    //private final Object o = new G<>(new FinalClassWithNoFields());
 }

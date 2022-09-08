@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.immutability.open_world.lazy_initialization.primitive_types;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.*;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
@@ -16,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssig
 class Simple {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
-    @NonTransitivelyImmutableField(value = "", analyses = {L0FieldImmutabilityAnalysis.class})
+    @MutableField(value = "The field is unsafely lazily initialized", analyses = {L0FieldImmutabilityAnalysis.class})
     @LazilyInitializedField(value = "Simple lazy initialization with primitive type", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
@@ -32,7 +33,7 @@ class Simple {
 
 class Local {
 
-    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with local", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
@@ -49,7 +50,7 @@ class Local {
 
 class LocalWrong {
 
-    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @MutableField("Field is assignable")
     @AssignableField("Incorrect lazy initialization with local")
     private int x;
 
@@ -64,7 +65,7 @@ class LocalWrong {
 
 class LocalReversed {
 
-    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with local (reversed)", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
@@ -81,7 +82,7 @@ class LocalReversed {
 
 class SimpleReversed {
 
-    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Simple lazy initialization (reversed)", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis cannot reconizes determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
@@ -118,8 +119,9 @@ class WrongDefault {
 
 class DeterministicCall {
 
-    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with call to deterministic method", analyses = {})
+    @MutableField("field is unsafely lazily initialized and has primitive value")
     @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
@@ -138,7 +140,7 @@ class DeterministicCall {
 
 class DeterministicCallWithParam {
 
-    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @MutableField("field is unsafely lazily initialized and has primitive value")
     @UnsafelyLazilyInitializedField("Lazy initialization is not the same for different invocations")
     private int x;
 
@@ -156,7 +158,7 @@ class DeterministicCallWithParam {
 
 class DeterministicCallOnFinalField {
 
-    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with call to deterministic method ", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})

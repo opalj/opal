@@ -2,7 +2,6 @@
 package org.opalj.fpcf
 
 import java.net.URL
-
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
@@ -15,9 +14,7 @@ import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.opalj.br.BaseConfig
+import com.typesafe.config.ConfigFactory
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
  * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
@@ -33,17 +30,7 @@ class ImmutabilityTests_openWorld extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/immutability/open_world")
     }
 
-    override def createConfig(): Config = {
-        val config = BaseConfig
-            .withValue(
-                "org.opalj.br.analyses.cg.ClosedPackagesKey",
-                fromAnyRef("org.opalj.br.analyses.cg.OpenCodeBase")
-            )
-            .withValue("org.opalj.br.analyses.cg.ClassExtensibilityKey", ConfigValueFactory.fromAnyRef(
-                "org.opalj.br.analyses.cg.ConfiguredExtensibleClasses.ConfiguredFinalClasses"
-            ))
-        config
-    }
+    override def createConfig(): Config = ConfigFactory.load("LibraryProject.conf")
 
     override def init(p: Project[URL]): Unit = {
 

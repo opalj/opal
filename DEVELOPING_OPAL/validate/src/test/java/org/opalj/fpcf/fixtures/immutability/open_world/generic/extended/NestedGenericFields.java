@@ -13,18 +13,21 @@ import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
  */
 public class NestedGenericFields<T> {
 
-    @TransitivelyImmutableField("The generic types are nested transitively immutable")
+    @TransitivelyImmutableField(value = "The generic types are nested transitively immutable", analyses = {})
+    @NonTransitivelyImmutableField("")
     @NonAssignableField("field is final")
     private final Generic<Generic<FinalClassWithNoFields>> nestedTransitivelyImmutable =
             new Generic<>(new Generic<>(new FinalClassWithNoFields()));
 
     @DependentlyImmutableField(value = "The immutability of the field depends on the generic type parameter T",
-            parameter = {"T"})
+            parameter = {"T"}, analyses = {})
+    @NonTransitivelyImmutableField("")
     @NonAssignableField("field is final")
     private final Generic<Generic<T>> nestedAssignable;
 
     @DependentlyImmutableField(value = "The immutability of the field depends on the generic type parameter T",
-            parameter={"T"})
+            parameter={"T"}, analyses = {})
+    @NonTransitivelyImmutableField("")
     @NonAssignableField("field is final")
     private final Generic<Generic<T>> nestedDependent;
 
