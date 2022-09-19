@@ -100,7 +100,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         val EffectivelynonAssignableFields = groupedResults(EffectivelyNonAssignable).toSeq.sortWith(order)
         val NonAssignableFields = groupedResults(NonAssignableField).toSeq.sortWith(order)
 
-            s"""
+        s"""
           |
           | Assignable Fields: ${assignableFields.size}
            Lazy Initialized Fields : ${unsafelyLazilyInitializedFields.size}
@@ -109,10 +109,10 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
           | Non Assignable Fields: ${NonAssignableFields.size}
           |
           | total Fields: ${
-                assignableFields.size + unsafelyLazilyInitializedFields.size +
-                    threadSafeLazyInitializedFields.size +
-                    EffectivelynonAssignableFields.size + NonAssignableFields.siize
-            }
+            assignableFields.size + unsafelyLazilyInitializedFields.size +
+                threadSafeLazyInitializedFields.size +
+                EffectivelynonAssignableFields.size + NonAssignableFields.siize
+        }
           | took : $analysisTime seconds
           |""".stripMargin
     }

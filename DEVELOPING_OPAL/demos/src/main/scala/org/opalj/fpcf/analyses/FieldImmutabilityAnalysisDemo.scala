@@ -105,16 +105,16 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val transitivelyImmutableFields =
             groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 
-            s""" |
+        s""" |
              | Mutable Fields: ${mutableFields.size}
              | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
              | Dependent Immutable Fields: ${dependentImmutableFields.size}
              | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
              |
              | total fields: ${
-                mutableFields.size + nonTransitivelyImmutableFields.size +
-                    dependentImmutableFields.size + transitivelyImmutableFields.size
-            }
+            mutableFields.size + nonTransitivelyImmutableFields.size +
+                dependentImmutableFields.size + transitivelyImmutableFields.size
+        }
              |
              | took : $analysisTime seconds
              |

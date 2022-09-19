@@ -103,7 +103,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val transitivelyImmutableTypes = groupedResults(TransitivelyImmutableType).toSeq.sortWith(order)
 
-            s"""
+        s"""
            |
            | Mutable Types: ${mutableTypes.size}
            | Non-Transitively Immutable Types: ${nonTransitivelyImmutableTypes.size}
@@ -111,9 +111,9 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
            | Transitively Immutable Types: ${transitivelyImmutableTypes.size}
            |
            | total fields: ${
-                mutableTypes.size + nonTransitivelyImmutableTypes.size + dependentlyImmutableTypes.size +
-                    transitivelyImmutableTypes.size
-            }
+            mutableTypes.size + nonTransitivelyImmutableTypes.size + dependentlyImmutableTypes.size +
+                transitivelyImmutableTypes.size
+        }
            | took : $analysisTime seconds
            |""".stripMargin
     }
