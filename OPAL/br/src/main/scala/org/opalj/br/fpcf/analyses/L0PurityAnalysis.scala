@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -35,16 +34,45 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
-import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
-import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.br.fpcf.properties.immutability.NonAssignableField
-import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.immutability.TypeImmutability
-import org.opalj.br.instructions._
+import org.opalj.br.fpcf.properties.immutability.{FieldImmutability, TransitivelyImmutableField, TransitivelyImmutableType, TypeImmutability}
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.ARRAYLENGTH
+import org.opalj.br.instructions.BALOAD
+import org.opalj.br.instructions.BASTORE
+import org.opalj.br.instructions.CALOAD
+import org.opalj.br.instructions.CASTORE
+import org.opalj.br.instructions.DALOAD
+import org.opalj.br.instructions.DASTORE
+import org.opalj.br.instructions.DRETURN
+import org.opalj.br.instructions.FALOAD
+import org.opalj.br.instructions.FASTORE
+import org.opalj.br.instructions.FRETURN
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.IALOAD
+import org.opalj.br.instructions.IASTORE
+import org.opalj.br.instructions.IF_ACMPEQ
+import org.opalj.br.instructions.IF_ACMPNE
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.LALOAD
+import org.opalj.br.instructions.LASTORE
+import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.MONITOREXIT
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.br.instructions.RETURN
+import org.opalj.br.instructions.SALOAD
+import org.opalj.br.instructions.SASTORE
 
 /**
  * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the
@@ -114,25 +142,12 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             if (fieldType.isArrayType) {
                                 return Result(context, ImpureByAnalysis);
                             }
-                            if (!fieldType.isBaseType) {
-                                propertyStore(fieldType, TypeImmutability.key) match {
-                                    case FinalP(TransitivelyImmutableType) =>
-                                    case _: FinalEP[_, TypeImmutability] =>
-                                        return Result(context, ImpureByAnalysis);
-                                    case ep =>
-                                        dependees += ep
+                            if (!fieldType.isBaseType || field.isNotFinal)
+                                propertyStore(field, FieldImmutability.key) match {
+                                    case FinalP(TransitivelyImmutableField) =>
+                                    case _: FinalEP[_, FieldImmutability]   => return Result(context, ImpureByAnalysis);
+                                    case ep                                 => dependees += ep
                                 }
-                            }
-                            if (field.isNotFinal) {
-                                propertyStore(field, FieldAssignability.key) match {
-                                    case FinalP(_: NonAssignableField) =>
-                                    case _: FinalEP[Field, FieldAssignability] =>
-                                        return Result(context, ImpureByAnalysis);
-                                    case ep =>
-                                        dependees += ep
-                                }
-                            }
-
                         case _ =>
                             // We know nothing about the target field (it is not
                             // found in the scope of the current project).
@@ -225,7 +240,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            import org.opalj.br.fpcf.properties.immutability.Assignable
+
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
@@ -237,21 +252,17 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) =>
-                    if (dependees.isEmpty) {
-                        Result(context, Pure)
-                    } else {
-                        // We still have dependencies regarding field mutability/type immutability;
-                        // hence, we have nothing to report.
-                        InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
-                    }
+                case FinalP(TransitivelyImmutableField | TransitivelyImmutableType) =>
+                  if (dependees.isEmpty) {
+                    Result(context, Pure)
+                  } else {
+                    // We still have dependencies regarding field mutability/type immutability;
+                    // hence, we have nothing to report.
+                    InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
+                  }
 
-                case FinalP(NonTransitivelyImmutableType | DependentlyImmutableType(_)) => //ImmutableContainerType) =>
-                    Result(context, ImpureByAnalysis)
-
-                // The type is at most conditionally immutable.
-                case FinalP(_: TypeImmutability) => Result(context, ImpureByAnalysis)
-                case FinalP(Assignable)          => Result(context, ImpureByAnalysis)
+                case FinalP(_: FieldImmutability)       => Result(context, ImpureByAnalysis)
+                case FinalP(_: TypeImmutability| _:FieldImmutability)        => Result(context, ImpureByAnalysis)
 
                 case FinalP(CompileTimePure | Pure) =>
                     if (dependees.isEmpty)
@@ -350,7 +361,7 @@ trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         Seq(DeclaredMethodsKey, SimpleContextsKey)
 
     final override def uses: Set[PropertyBounds] = {
-        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldAssignability))
+        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldImmutability))
     }
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
