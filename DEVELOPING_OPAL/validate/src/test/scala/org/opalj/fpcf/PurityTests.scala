@@ -104,7 +104,7 @@ class PurityTests extends PropertiesTest {
 
     describe(
         "the org.opalj.fpcf.analyses.L2PurityAnalysis is executed "+
-            "together with the L3FieldImmutabilityAnalysis"
+            "together with the L0FieldImmutabilityAnalysis and L2FieldAssignabilityAnalysis"
     ) {
 
             L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
@@ -125,6 +125,6 @@ class PurityTests extends PropertiesTest {
 
             as.propertyStore.shutdown()
 
-            validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
+            validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
         }
 }
