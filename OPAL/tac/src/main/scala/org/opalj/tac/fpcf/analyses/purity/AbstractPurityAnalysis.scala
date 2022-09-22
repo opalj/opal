@@ -384,14 +384,14 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case _ =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
-                handleUnknownFieldMutability(ep, objRef)
+                handleUnknownFieldAssignability(ep, objRef)
     }
 
     /**
      * Handles what to do when the mutability of a field is not yet known.
      * Analyses must implement this method with the behavior they need, e.g. registering dependees.
      */
-    def handleUnknownFieldMutability(
+    def handleUnknownFieldAssignability(
         ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit
@@ -437,7 +437,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     returnType,
                     ClassImmutability.key
                 ).asInstanceOf[EOptionP[ObjectType, ClassImmutability]]
-            checkTypeMutability(classImmutability, returnValue)
+            checkTypeImmutability(classImmutability, returnValue)
 
         } else { // Precise class unknown, use TypeImmutability
             // IMPROVE Use ObjectType once we attach the respective information to ObjectTypes
@@ -449,7 +449,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                         returnType,
                         TypeImmutability.key
                     ).asInstanceOf[EOptionP[ObjectType, TypeImmutability]]
-                checkTypeMutability(typeImmutability, returnValue)
+                checkTypeImmutability(typeImmutability, returnValue)
             }
         }
     }
@@ -458,7 +458,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Examines the effect that the mutability of a returned value's type has on the method's
      * purity.
      */
-    def checkTypeMutability(
+    def checkTypeImmutability(
         ep:          EOptionP[ObjectType, Property],
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
@@ -472,7 +472,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case _ =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
-                handleUnknownTypeMutability(ep, returnValue)
+                handleUnknownTypeImmutability(ep, returnValue)
             true
     }
 
@@ -480,7 +480,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Handles what to do when the mutability of a type is not yet known.
      * Analyses must implement this method with the behavior they need, e.g. registering dependees.
      */
-    def handleUnknownTypeMutability(
+    def handleUnknownTypeImmutability(
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: StateType): Unit
