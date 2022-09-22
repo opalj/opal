@@ -64,7 +64,7 @@ final public class ReferenceTypes {
     // Setting static fields is impure
 
     @Pure(value = "Uses final static immutable object",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"))
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"), analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
     @Impure(value = "DependentCalls not recognized as immutable",
             eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
             negate = true, analyses = L0PurityAnalysis.class)
