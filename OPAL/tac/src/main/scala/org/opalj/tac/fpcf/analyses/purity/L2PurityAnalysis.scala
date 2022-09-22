@@ -587,7 +587,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     /**
      * Adds the dependee necessary if a field mutability is not known yet.
      */
-    override def handleUnknownFieldMutability(
+    override def handleUnknownFieldAssignability(
         ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
@@ -597,7 +597,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     /**
      * Adds the dependee necessary if a type mutability is not known yet.
      */
-    override def handleUnknownTypeMutability(
+    override def handleUnknownTypeImmutability(
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
@@ -755,7 +755,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val dependees = state.classImmutabilityDependees(e)
                 state.removeClassImmutabilityDependee(e)
                 dependees._2.foreach { e =>
-                    checkTypeMutability(
+                    checkTypeImmutability(
                         eps.asInstanceOf[EOptionP[ObjectType, ClassImmutability]],
                         e
                     )
@@ -765,7 +765,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val dependees = state.typeImmutabilityDependees(e)
                 state.removeTypeImmutabilityDependee(e)
                 dependees._2.foreach { e =>
-                    checkTypeMutability(eps.asInstanceOf[EOptionP[ObjectType, TypeImmutability]], e)
+                    checkTypeImmutability(eps.asInstanceOf[EOptionP[ObjectType, TypeImmutability]], e)
                 }
             case ReturnValueFreshness.key =>
                 val e = eps.e.asInstanceOf[Context]

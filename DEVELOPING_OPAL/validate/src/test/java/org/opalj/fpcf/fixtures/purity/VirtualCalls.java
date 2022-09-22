@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.purity;
 
 import org.opalj.br.fpcf.analyses.L0PurityAnalysis;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.purity.*;
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis;
@@ -69,6 +70,7 @@ public class VirtualCalls {
 
     public class SubClassB extends BaseClass implements AnInterface {
 
+        @MutableField("")
         private int nonFinal = 5;
 
         @Impure("Uses native method System.nanoTime")

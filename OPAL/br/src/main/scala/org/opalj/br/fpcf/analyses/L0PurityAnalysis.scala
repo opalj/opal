@@ -253,16 +253,16 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
 
                 case FinalP(TransitivelyImmutableField | TransitivelyImmutableType) =>
-                  if (dependees.isEmpty) {
-                    Result(context, Pure)
-                  } else {
-                    // We still have dependencies regarding field mutability/type immutability;
-                    // hence, we have nothing to report.
-                    InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
-                  }
+                    if (dependees.isEmpty) {
+                        Result(context, Pure)
+                    } else {
+                        // We still have dependencies regarding field mutability/type immutability;
+                        // hence, we have nothing to report.
+                        InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
+                    }
 
-                case FinalP(_: FieldImmutability)       => Result(context, ImpureByAnalysis)
-                case FinalP(_: TypeImmutability| _:FieldImmutability)        => Result(context, ImpureByAnalysis)
+                case FinalP(_: FieldImmutability)                       => Result(context, ImpureByAnalysis)
+                case FinalP(_: TypeImmutability | _: FieldImmutability) => Result(context, ImpureByAnalysis)
 
                 case FinalP(CompileTimePure | Pure) =>
                     if (dependees.isEmpty)
