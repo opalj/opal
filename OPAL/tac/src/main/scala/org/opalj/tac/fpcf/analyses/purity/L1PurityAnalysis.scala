@@ -49,11 +49,12 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.isImmediateVMException
-import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.tac.cg.CallGraphKey
@@ -205,7 +206,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * If the given objRef is not local, adds the dependee necessary if the field mutability is not
      * known yet.
      */
-    override def handleUnknownFieldMutability(
+    override def handleUnknownFieldAssignability(
         ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
@@ -216,7 +217,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * If the given expression is not local, adds the dependee necessary if the type mutability is
      * not known yet.
      */
-    override def handleUnknownTypeMutability(
+    override def handleUnknownTypeImmutability(
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
@@ -281,9 +282,9 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.context, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalP(Assignable | EffectivelyNonAssignable | LazilyInitialized) => // Reading eff. final fields
+            case FinalP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) => // Reading eff. final fields
             case FinalP(TransitivelyImmutableType |
-                TransitivelyImmutableType) => // Returning immutable reference
+                TransitivelyImmutableClass) => // Returning immutable reference
 
             // Cases resulting in side-effect freeness
             case FinalP(_: FieldAssignability | // Reading non-final field
