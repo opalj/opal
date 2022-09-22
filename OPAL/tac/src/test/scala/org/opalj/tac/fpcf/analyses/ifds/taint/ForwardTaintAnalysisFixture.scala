@@ -20,6 +20,8 @@ class ForwardTaintAnalysisFixture(project: SomeProject)
     extends IFDSAnalysis()(project, new ForwardTaintProblemFixture(project), Taint)
 
 class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) {
+    override def useSummaries = true
+
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */

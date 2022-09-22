@@ -4,19 +4,16 @@ package fpcf
 
 import java.io.File
 import java.net.URL
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.bi.reader.ClassFileReader
+import org.opalj.bytecode.RTJar
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.log.LogContext
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.properties.PropertyMatcher
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.bytecode.RTJar
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey

@@ -6,7 +6,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.{CFG, CFGNode}
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
-import org.opalj.tac.{Assignment, Call, DUVar, ExprStmt, Return, ReturnValue, Stmt, TACStmts}
+import org.opalj.tac.{Assignment, Call, DUVar, Expr, ExprStmt, Return, ReturnValue, Stmt, TACStmts}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.value.ValueInformation
 
@@ -112,4 +112,17 @@ object JavaIFDSProblem {
             ).isReferenceType
         }
 
+    val NO_MATCH = 256
+    def getParameterIndex(allParamsWithIndex: Seq[(Expr[JavaIFDSProblem.V], Int)], index: Int): Int = {
+        getParameterIndex(allParamsWithIndex, index, isStaticMethod = false)
+    }
+
+    def getParameterIndex(allParamsWithIndex: Seq[(Expr[JavaIFDSProblem.V], Int)], index: Int, isStaticMethod: Boolean): Int = {
+        allParamsWithIndex.find {
+            case (param, paramI) => param.asVar.definedBy.contains(index)
+        } match {
+            case Some((param, paramI)) => JavaIFDSProblem.switchParamAndVariableIndex(paramI, isStaticMethod)
+            case None                  => NO_MATCH
+        }
+    }
 }

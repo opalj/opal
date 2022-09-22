@@ -16,6 +16,9 @@ import java.net.URL
  * @author Mario Trageser
  */
 class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
+    override def fixtureProjectPackage: List[String] = List(
+        "org/opalj/fpcf/fixtures/taint"
+    )
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(
