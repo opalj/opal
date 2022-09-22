@@ -42,12 +42,12 @@ final class DependentCalls { // This class is immutable
     }
 
     @CompileTimePure(value = "object returned is immutable",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "DeepImmutableClass"))
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"))
     @Pure(value = "object returned is immutable",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "DeepImmutableClass"),
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     @Impure(value = "object returned not recognized as immutable",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "DeepImmutableClass"),
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
             negate = true, analyses = L1PurityAnalysis.class)
     public DependentCalls pureIdentity() {
         return this;
@@ -55,11 +55,11 @@ final class DependentCalls { // This class is immutable
 
     @Pure(value = "field used is effectively final",
             eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldImmutability",
-                    p = "NonTransitivelyImmutableField"))
+                    p = "TransitivelyImmutableField"))
     @Impure(value = "field used not recognized as effectively final",
             eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldImmutability",
-                    p = "NonTransitivelyImmutableField"),
-            negate = true, analyses = L0PurityAnalysis.class)
+                    p = "MutableField"),
+            analyses = L0PurityAnalysis.class)
     public static int pureUsesEffectivelyFinalField(int i, int j) {
         return i * j * myValue;
     }
