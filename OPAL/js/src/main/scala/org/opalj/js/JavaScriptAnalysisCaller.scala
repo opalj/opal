@@ -39,6 +39,8 @@ class JavaScriptAnalysisCaller(p: SomeProject) {
      * @return set of taints
      */
     def analyze(stmt: JavaStatement, in: JSFact): Set[TaintFact] = {
+        // TODO: pool queries
+
         val sourceFiles = sourceFinder(stmt)
         in match {
             case b: BindingFact         => sourceFiles.flatMap(s => analyzeScript(s, b))
@@ -56,6 +58,8 @@ class JavaScriptAnalysisCaller(p: SomeProject) {
      * @return set of taints
      */
     def analyze(stmt: JavaStatement, in: ArrayElement, fName: String): Set[TaintFact] = {
+        // TODO: pool queries
+
         val sourceFiles = sourceFinder(stmt)
         sourceFiles.flatMap(s => analyzeFunction(s, in, fName, stmt.index)) + in
     }

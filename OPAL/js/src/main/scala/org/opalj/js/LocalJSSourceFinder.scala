@@ -127,6 +127,8 @@ class LocalJSSourceFinder(val p: SomeProject) extends (JavaStatement => Set[Java
     private def varToJavaScriptSource(method: Method, variable: JavaIFDSProblem.V): Set[JavaScriptSource] = {
         val resultSet: mutable.Set[JavaScriptSource] = mutable.Set()
 
+        // TODO: use a string analysis instead of 'Assignment with a.expr.isStringConst' here
+
         def findFileArg(sites: IntTrieSet): Unit = {
             val calls = findCallOnObject(method, sites, "<init>")
             calls.foreach(init => {

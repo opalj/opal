@@ -6,7 +6,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.{NO_MATCH, V}
-import org.opalj.tac.{AITACode, Assignment, Call, ComputeTACAIKey, Expr, ReturnValue, Stmt, TACMethodParameter, TACode}
+import org.opalj.tac.{AITACode, Assignment, Call, ComputeTACAIKey, Expr, ReturnValue, TACMethodParameter, TACode}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, FlowFact, ForwardTaintProblem, TaintFact, TaintNullFact, Variable}
 import org.opalj.value.ValueInformation
@@ -171,18 +171,6 @@ class JavaScriptAwareTaintProblem(p: SomeProject) extends ForwardTaintProblem(p)
     }
 
     /**
-     * Finds all definition/use sites inside the method.
-     *
-     * @param method method to be searched in
-     * @param sites  definition or use sites
-     * @return sites as JavaStatement
-     */
-    def searchStmts(method: Method, sites: IntTrieSet): Set[Stmt[JavaIFDSProblem.V]] = {
-        val taCode = tacaiKey(method)
-        sites.map(site => taCode.stmts.apply(site))
-    }
-
-    /**
      * Returns all possible constant strings. Contains the empty string if at least one was non-constant.
      *
      * @param method method
@@ -192,6 +180,7 @@ class JavaScriptAwareTaintProblem(p: SomeProject) extends ForwardTaintProblem(p)
     private def getPossibleStrings(method: Method, defSites: IntTrieSet): Set[String] = {
         val taCode = tacaiKey(method)
 
+        // TODO: use string analysis here
         defSites.map(site => taCode.stmts.apply(site)).map {
             case a: Assignment[JavaIFDSProblem.V] if a.expr.isStringConst =>
                 a.expr.asStringConst.value

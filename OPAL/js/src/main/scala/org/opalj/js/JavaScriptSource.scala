@@ -37,6 +37,7 @@ case class JavaScriptStringSource(source: String) extends JavaScriptSource {
     }
 }
 
+// TODO: Implement a way to read source files from disk and uncomment lines in LocalJSSourceFinder
 case class JavaScriptFileSource(path: String) extends JavaScriptSource {
     override def asString: String = throw new RuntimeException("Not implemented!")
 
