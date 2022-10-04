@@ -8,14 +8,14 @@ import org.opalj.br.{DeclaredMethod, ObjectType}
 import org.opalj.fpcf._
 import org.opalj.ifds.old.IFDSProblem
 import org.opalj.ifds.{AbstractIFDSFact, IFDSPropertyMetaInformation}
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.{Assignment, Call, ExprStmt, Stmt}
 
 abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, DeclaredMethod, DeclaredMethodJavaStatement, CFGNode](
-    new ForwardICFG[Fact]()(project.get(PropertyStoreKey), project.get(TypeProviderKey), project.get(DeclaredMethodsKey))
+    new ForwardICFG[Fact]()(project.get(PropertyStoreKey), project.get(TypeIteratorKey), project.get(DeclaredMethodsKey))
 ) {
     /**
      * All declared methods in the project.
@@ -23,7 +23,7 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject) e
     implicit final protected val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    implicit final protected val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit final protected val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     override def outsideAnalysisContext(callee: DeclaredMethod): Option[(DeclaredMethodJavaStatement, DeclaredMethodJavaStatement, Set[Fact]) => Set[Fact]] = callee.definedMethod.body.isDefined match {
         case true  => None

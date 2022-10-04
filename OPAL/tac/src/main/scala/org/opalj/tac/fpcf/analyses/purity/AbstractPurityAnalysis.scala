@@ -53,9 +53,9 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -96,7 +96,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
-    protected[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    protected[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 

@@ -55,10 +55,10 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.PCs
 import org.opalj.ai.ValueOrigin
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callers
 
@@ -77,7 +77,7 @@ class FieldLocalityAnalysis private[analyses] (
     type V = DUVar[ValueInformation]
 
     final implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
@@ -702,7 +702,7 @@ sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
         DefinitionSitesKey,
         TypeExtensibilityKey,
         ClosedPackagesKey,
-        TypeProviderKey
+        TypeIteratorKey
     )
 
     final override def uses: Set[PropertyBounds] = {

@@ -7,12 +7,12 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.fpcf.{FinalEP, PropertyStore}
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.old.ICFG
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callees
 
 class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit
-        propertyStore: PropertyStore,
-                                                typeProvider:    TypeProvider,
+                                                propertyStore: PropertyStore,
+                                                typeIterator:    TypeIterator,
                                                 declaredMethods: DeclaredMethods
 ) extends ICFG[IFDSFact, DeclaredMethod, DeclaredMethodJavaStatement, CFGNode] {
     /**
@@ -83,7 +83,7 @@ class ForwardICFG[IFDSFact <: AbstractIFDSFact](implicit
         val caller = declaredMethods(statement.method)
         val ep = propertyStore(caller, Callees.key)
         ep match {
-            case FinalEP(_, p) => Some(p.directCallees(typeProvider.newContext(caller), pc).map(_.method).toSet)
+            case FinalEP(_, p) => Some(p.directCallees(typeIterator.newContext(caller), pc).map(_.method).toSet)
             case _ =>
                 throw new IllegalStateException(
                     "call graph mut be computed before the analysis starts"

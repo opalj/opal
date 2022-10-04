@@ -72,10 +72,10 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callers
 
@@ -127,7 +127,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    implicit final val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit final val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = entity match {
         case field: Field => determineFieldMutability(field)
@@ -1112,7 +1112,7 @@ trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         FieldAccessInformationKey,
         DefinitionSitesKey,
         DeclaredMethodsKey,
-        TypeProviderKey
+        TypeIteratorKey
     )
 
     final override def uses: Set[PropertyBounds] = Set(

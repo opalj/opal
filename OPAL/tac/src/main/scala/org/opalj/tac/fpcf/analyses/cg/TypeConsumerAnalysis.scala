@@ -6,11 +6,11 @@ package analyses
 package cg
 
 import org.opalj.br.analyses.ProjectBasedAnalysis
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 trait TypeConsumerAnalysis extends ProjectBasedAnalysis {
-    implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
-    type ContextType = typeProvider.ContextType
-    type PropertyType = typeProvider.PropertyType
+    type ContextType = typeIterator.ContextType
+    type PropertyType = typeIterator.PropertyType
 }

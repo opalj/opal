@@ -18,10 +18,10 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     import reader.Java8Framework.ClassFile
 
-    val codeJARFile = locateTestResources("code.jar", "bi")
-    val immutableList = ClassFile(codeJARFile, "code/ImmutableList.class").head
-    val boundedBuffer = ClassFile(codeJARFile, "code/BoundedBuffer.class").head
-    val quicksort = ClassFile(codeJARFile, "code/Quicksort.class").head
+    lazy val codeJARFile = locateTestResources("code.jar", "bi")
+    lazy val immutableList = ClassFile(codeJARFile, "code/ImmutableList.class").head
+    lazy val boundedBuffer = ClassFile(codeJARFile, "code/BoundedBuffer.class").head
+    lazy val quicksort = ClassFile(codeJARFile, "code/Quicksort.class").head
 
     test("test that it can find the first constructor") {
         assert(
@@ -99,10 +99,10 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         boundedBuffer.findField("AnumberInBuffers") should be(List.empty)
     }
 
-    val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")
-    val outerClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass")).get
-    val innerPrinterOfXClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")).get
-    val formatterClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$Formatter")).get
+    lazy val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")
+    lazy val outerClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass")).get
+    lazy val innerPrinterOfXClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")).get
+    lazy val formatterClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$Formatter")).get
 
     test("that all direct nested classes of a top-level class are correctly identified") {
         outerClass.nestedClasses(innerclassesProject).toSet should be(Set(

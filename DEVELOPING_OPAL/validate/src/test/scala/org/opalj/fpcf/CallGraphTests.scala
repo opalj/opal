@@ -18,7 +18,7 @@ import org.opalj.tac.cg.CTACallGraphKey
 import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
@@ -59,9 +59,9 @@ class CallGraphTests extends PropertiesTest {
     var cgKey: CallGraphKey = null
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(TypeProviderKey) {
+        p.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
             case Some(_) => throw new IllegalArgumentException()
-            case None    => () => cgKey.getTypeProvider(p)
+            case None    => () => cgKey.getTypeIterator(p)
         }
     }
 

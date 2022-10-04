@@ -14,8 +14,8 @@ import org.opalj.fpcf._
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.ifds.old.{IFDSProblem, NumberOfCalls, Subsumable}
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProperty, IFDSPropertyMetaInformation, Statement}
-import org.opalj.tac.cg.{RTACallGraphKey, TypeProviderKey}
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.{JavaStatement, old}
 import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
@@ -45,7 +45,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
      */
     implicit final protected val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    implicit final protected val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit final protected val typeProvider: TypeIterator = project.get(TypeIteratorKey)
 
     /**
      * Counts, how many times the abstract methods were called.

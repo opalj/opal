@@ -16,7 +16,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * Provides methods in order to work with points-to sets.
@@ -31,7 +31,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
     protected[this] type State <: TACAIBasedAnalysisState[ContextType]
     protected[this] type DependerType
 
-    protected[this] implicit val typeProvider: TypeProvider
+    protected[this] implicit val typeIterator: TypeIterator
 
     protected[this] implicit val definitionSites: DefinitionSites = {
         p.get(DefinitionSitesKey)
