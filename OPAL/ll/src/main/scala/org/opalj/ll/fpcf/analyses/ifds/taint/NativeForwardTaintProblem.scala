@@ -111,9 +111,9 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
         val callee = exit.callable
         var flows: Set[NativeTaintFact] = if (sanitizesReturnValue(callee)) Set.empty else in match {
             case NativeVariable(value) => exit.instruction match {
-                case ret: Ret if ret.value == value => Set(NativeVariable(call.instruction))
-                case _: Ret                         => Set()
-                case _                              => Set()
+                case ret: Ret if ret.value.contains(value) => Set(NativeVariable(call.instruction))
+                case _: Ret                                => Set()
+                case _                                     => Set()
             }
             case NativeTaintNullFact => Set(NativeTaintNullFact)
             case NativeFlowFact(flow) if !flow.contains(call.function) =>

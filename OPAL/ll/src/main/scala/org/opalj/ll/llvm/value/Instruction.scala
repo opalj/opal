@@ -113,7 +113,7 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends User(ref) {
 }
 
 case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator {
-    def value: Value = operand(0)
+    def value: Option[Value] = if (numOperands == 0 /* return void */ ) None else Some(operand(0))
 }
 case class Br(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class Switch(ref: LLVMValueRef) extends Instruction(ref) with Terminator
@@ -185,7 +185,7 @@ case class Call(ref: LLVMValueRef) extends Instruction(ref) {
     def calledValue: Value = Value(LLVMGetCalledValue(ref)).get // corresponds to last operand
     def calledFunctionType: FunctionType = Type(LLVMGetCalledFunctionType(ref)).asInstanceOf[FunctionType]
     def indexOfArgument(argument: Value): Option[Int] = {
-        for (i <- 0 to numOperands)
+        for (i <- 0 until numOperands)
             if (operand(i) == argument) return Some(i)
         None
     }
