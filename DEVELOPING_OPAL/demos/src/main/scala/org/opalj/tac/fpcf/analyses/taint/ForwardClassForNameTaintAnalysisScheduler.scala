@@ -8,7 +8,7 @@ import org.opalj.fpcf.{FinalEP, PropertyBounds, PropertyStore}
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, ForwardTaintProblem, TaintFact, TaintProblem, Variable}
-import org.opalj.tac.fpcf.analyses.ifds.*
+import org.opalj.tac.fpcf.analyses.ifds._
 import org.opalj.tac.fpcf.properties.{TACAI, Taint}
 import org.opalj.tac.fpcf.properties.cg.Callers
 
