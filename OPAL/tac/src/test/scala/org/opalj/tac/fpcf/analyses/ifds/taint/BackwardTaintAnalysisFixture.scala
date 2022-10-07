@@ -1,15 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint.old
-
+/*  TODO Fix as soon as backwards analysis is implemented
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{DeclaredMethod, Method}
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds._
-import org.opalj.tac.fpcf.analyses.ifds.old._
-import org.opalj.tac.fpcf.analyses.ifds.old.taint.BackwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, Variable}
-import org.opalj.tac.fpcf.properties.OldTaint
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 
 case class UnbalancedTaintFact(index: Int, innerFact: TaintFact, callChain: Array[Method])
@@ -88,3 +85,4 @@ object BackwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Taint
 
     override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, TaintFact] = OldTaint
 }
+*/ 

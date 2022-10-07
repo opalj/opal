@@ -10,7 +10,7 @@ import org.opalj.br.Method
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.old.{VTAResult, VariableType}
+import org.opalj.tac.fpcf.analyses.ifds.{VTAResult, VariableType}
 
 class ExpectedTypeMatcher extends VTAMatcher {
 

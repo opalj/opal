@@ -1,12 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.taint
 
+/*  TODO Fix as soon as backwards analysis is implemented
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.{EPS, Entity, FinalEP, Property}
-import org.opalj.tac.fpcf.analyses.ifds.taint.old.BackwardTaintAnalysisFixtureScheduler
+import org.opalj.tac.fpcf.analyses.ifds.taint.BackwardTaintAnalysisFixtureScheduler
 import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact}
 import org.opalj.tac.fpcf.properties.OldTaint
 
@@ -48,3 +49,4 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
         }
     }
 }
+*/ 
