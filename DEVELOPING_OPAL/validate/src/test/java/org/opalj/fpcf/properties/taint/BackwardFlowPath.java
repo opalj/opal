@@ -8,7 +8,8 @@ import java.lang.annotation.*;
 /**
  * @author Mario Trageser
  */
-@PropertyValidator(key = BackwardFlowPath.PROPERTY_VALIDATOR_KEY, validator = BackwardFlowPathMatcher.class)
+// TODO Enable once Backward analysis is implemented
+//@PropertyValidator(key = BackwardFlowPath.PROPERTY_VALIDATOR_KEY, validator = BackwardFlowPathMatcher.class)
 @Target(ElementType.METHOD)
 @Documented
 @Retention(RetentionPolicy.CLASS)

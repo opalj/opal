@@ -23,7 +23,7 @@ import java.io.File
  * @author Michael Eichberg
  */
 class ForwardClassForNameTaintAnalysis(project: SomeProject)
-    extends IFDSAnalysis()(project,new ForwardClassForNameTaintProblem(project),Taint)
+    extends IFDSAnalysis()(project, new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
     extends ForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {
@@ -97,22 +97,22 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         method.declaringClassType == ObjectType.Class && method.name == "forName"
 }
 
-object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact,Method,JavaStatement] {
+object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
 
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardClassForNameTaintAnalysis(p)
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey,RTACallGraphKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 
-    override def uses: Set[PropertyBounds] =  Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
+    override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
 }
 
 class ForwardClassForNameAnalysisRunner extends EvaluationRunner {
 
     override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type = ForwardClassForNameTaintAnalysisScheduler
 
-    override def printAnalysisResults(analysis: IFDSAnalysis[?,?,?], ps: PropertyStore): Unit =
+    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit =
         for {
             e <- analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysisScheduler.property.key)
