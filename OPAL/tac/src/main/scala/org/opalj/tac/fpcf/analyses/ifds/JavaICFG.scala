@@ -7,40 +7,16 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{FinalEP, PropertyStore}
 import org.opalj.ifds.ICFG
 import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.{Assignment, DUVar, Expr, ExprStmt, LazyDetachedTACAIKey, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, TACMethodParameter, TACode, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.value.ValueInformation
+import org.opalj.tac.{Assignment, Expr, ExprStmt, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, VirtualFunctionCall, VirtualMethodCall}
 
-class ForwardICFG(implicit project: SomeProject)
+abstract class JavaICFG(implicit project: SomeProject)
     extends ICFG[Method, JavaStatement] {
-    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
+
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
-
-    /**
-     * Determines the statements at which the analysis starts.
-     *
-     * @param callable The analyzed callable.
-     * @return The statements at which the analysis starts.
-     */
-    override def startStatements(callable: Method): Set[JavaStatement] = {
-        val TACode(_, code, _, cfg, _) = tacai(callable)
-        Set(JavaStatement(callable, 0, code, cfg))
-    }
-
-    /**
-     * Determines the statement, that will be analyzed after some other `statement`.
-     *
-     * @param statement The source statement.
-     * @return The successor statements
-     */
-    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = {
-        statement.cfg
-            .successors(statement.index)
-            .map { index => JavaStatement(statement, index) }
-    }
 
     /**
      * Gets the set of all methods possibly called at some statement.
@@ -70,8 +46,8 @@ class ForwardICFG(implicit project: SomeProject)
      */
     private def getExpression(statement: Stmt[_]): Expr[_] = statement.astID match {
         case Assignment.ASTID => statement.asAssignment.expr
-        case ExprStmt.ASTID   => statement.asExprStmt.expr
-        case _                => throw new UnknownError("Unexpected statement")
+        case ExprStmt.ASTID => statement.asExprStmt.expr
+        case _ => throw new UnknownError("Unexpected statement")
     }
 
     private def getCallees(statement: JavaStatement): collection.Set[Method] = {
@@ -85,11 +61,6 @@ class ForwardICFG(implicit project: SomeProject)
                     "call graph must be computed before the analysis starts"
                 )
         }
-    }
-
-    override def isExitStatement(statement: JavaStatement): Boolean = {
-        statement.index == statement.node.asBasicBlock.endPC &&
-            statement.node.successors.exists(_.isExitNode)
     }
 
     /**

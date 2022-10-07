@@ -44,7 +44,7 @@ object JavaStatement {
 }
 
 abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
-    extends IFDSProblem[Fact, Method, JavaStatement](new ForwardICFG()(project)) {
+    extends IFDSProblem[Fact, Method, JavaStatement](new ForwardJavaICFG()(project)) {
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 
