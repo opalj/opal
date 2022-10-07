@@ -6,7 +6,7 @@ import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf.*
 import org.opalj.ifds.Dependees.Getter
 
-import scala.collection.{mutable, Set as SomeSet}
+import scala.collection.{mutable, Set => SomeSet}
 
 case class Dependees[Work]() {
     case class Dependee(eOptionP: SomeEOptionP, worklist: Set[Work] = Set.empty)
