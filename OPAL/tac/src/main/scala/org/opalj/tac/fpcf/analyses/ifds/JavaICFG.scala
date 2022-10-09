@@ -11,7 +11,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.{Assignment, Expr, ExprStmt, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, VirtualFunctionCall, VirtualMethodCall}
 
-abstract class JavaICFG(implicit project: SomeProject)
+abstract class JavaICFG(project: SomeProject)
     extends ICFG[Method, JavaStatement] {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)

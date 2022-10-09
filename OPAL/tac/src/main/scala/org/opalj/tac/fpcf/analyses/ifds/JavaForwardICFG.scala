@@ -6,15 +6,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
 import org.opalj.value.ValueInformation
 
-/**
- * An ICFG for an IFDS backwards analysis.
- *
- * @param project the project to which the ICFG belongs.
- *
- * @author Nicolas Gross
- */
-class BackwardJavaICFG(implicit project: SomeProject)
-    extends JavaICFG {
+class JavaForwardICFG(implicit project: SomeProject)
+    extends JavaICFG(project) {
 
     val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
 
@@ -26,8 +19,7 @@ class BackwardJavaICFG(implicit project: SomeProject)
      */
     override def startStatements(callable: Method): Set[JavaStatement] = {
         val TACode(_, code, _, cfg, _) = tacai(callable)
-        val exitStatements = cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors
-        exitStatements.map(s => JavaStatement(callable, s.asBasicBlock.endPC, code, cfg))
+        Set(JavaStatement(callable, 0, code, cfg))
     }
 
     /**
@@ -38,8 +30,8 @@ class BackwardJavaICFG(implicit project: SomeProject)
      */
     override def nextStatements(statement: JavaStatement): Set[JavaStatement] = {
         statement.cfg
-            .predecessors(statement.index)
-            .map(index => JavaStatement(statement, index))
+            .successors(statement.index)
+            .map { index => JavaStatement(statement, index) }
     }
 
     /**
@@ -48,5 +40,8 @@ class BackwardJavaICFG(implicit project: SomeProject)
      * @param statement The source statement.
      * @return Whether the statement flow may exit its callable (function/method)
      */
-    override def isExitStatement(statement: JavaStatement): Boolean = statement.index == 0
+    override def isExitStatement(statement: JavaStatement): Boolean = {
+        statement.index == statement.node.asBasicBlock.endPC &&
+            statement.node.successors.exists(_.isExitNode)
+    }
 }
