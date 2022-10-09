@@ -106,6 +106,7 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends User(ref) {
     def parent: BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
     def function: Function = parent.parent
     def next: Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
+    def previous: Option[Instruction] = OptionalInstruction(LLVMGetPreviousInstruction(ref))
 
     override def toString: String = {
         s"${this.getClass.getSimpleName}(${repr})"

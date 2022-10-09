@@ -7,7 +7,7 @@ import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
 import org.opalj.value.ValueInformation
 
 /**
- * An ICFG for an IFDS backwards analysis.
+ * An ICFG for a Java IFDS backwards analysis.
  *
  * @param project the project to which the ICFG belongs.
  *
