@@ -5,8 +5,8 @@ import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.ifds
-import org.opalj.ifds.IFDSProperty
+import org.opalj.fpcf.ifds
+import org.opalj.fpcf.ifds.IFDSProperty
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
 import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler, NativeTaintFact, NativeTaintNullFact}
 import org.opalj.ll.fpcf.analyses.ifds.taint.SimpleJavaForwardTaintAnalysis

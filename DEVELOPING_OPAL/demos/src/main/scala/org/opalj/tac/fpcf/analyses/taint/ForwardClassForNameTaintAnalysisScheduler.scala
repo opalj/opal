@@ -4,8 +4,8 @@ package org.opalj.tac.fpcf.analyses.taint
 import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
+import org.opalj.fpcf.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.fpcf.{FinalEP, PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, ForwardTaintProblem, TaintFact, TaintProblem, Variable}
 import org.opalj.tac.fpcf.analyses.ifds._

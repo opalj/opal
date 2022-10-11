@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ifds
+package org.opalj.fpcf.ifds
 
 import scala.collection.{Set => SomeSet}
 
