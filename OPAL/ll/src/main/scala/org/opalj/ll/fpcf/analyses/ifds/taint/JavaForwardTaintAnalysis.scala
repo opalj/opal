@@ -212,7 +212,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         exit.instruction match {
             case ret: Ret => {
                 in match {
-                    case NativeVariable(value) if value == ret.value && call.stmt.astID == Assignment.ASTID =>
+                    case NativeVariable(value) if ret.value.contains(value) && call.stmt.astID == Assignment.ASTID =>
                         flows += Variable(call.index)
                     // TODO
                     /*case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) =>

@@ -38,7 +38,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -62,7 +62,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
-    private[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // only constructors may initialize a class
@@ -255,7 +255,10 @@ class InstantiatedTypesAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        TypeIteratorKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
+        InitialInstantiatedTypesKey
+    )
 
     override type InitializationData = Null
 
@@ -290,6 +293,8 @@ class InstantiatedTypesAnalysisScheduler(
         // pre-initialized. Note: This set only contains ArrayTypes whose element type is an
         // ObjectType. Arrays of primitive types can be ignored.
         val seenArrayTypes = UIDSet.newBuilder[ArrayType]
+
+        import p.classHierarchy
 
         def initialize(setEntity: TypeSetEntity, types: UIDSet[ReferenceType]): Unit = {
             ps.preInitialize(setEntity, InstantiatedTypes.key) {
@@ -331,11 +336,8 @@ class InstantiatedTypesAnalysisScheduler(
 
                     val dim = pt.asArrayType.dimensions
                     val et = pt.asArrayType.elementType.asObjectType
-                    p.classHierarchy.allSubtypesForeachIterator(et, reflexive = true).foreach { subtype =>
-                        if (initialInstantiatedTypes.contains(subtype)) {
-                            val at = ArrayType(dim, subtype)
-                            arrayTypeAssignments += at
-                        }
+                    if (initialInstantiatedTypes.contains(et)) {
+                        arrayTypeAssignments += ArrayType(dim, et)
                     }
                 }
             }
@@ -344,7 +346,7 @@ class InstantiatedTypesAnalysisScheduler(
 
             // Initial assignments of ObjectTypes
             val objectTypeAssignments = initialInstantiatedTypes.filter(iit =>
-                typeFilterSet.exists(tf => p.classHierarchy.isSubtypeOf(iit, tf)))
+                typeFilterSet.exists(tf => classHierarchy.isSubtypeOf(iit, tf)))
 
             val initialAssignment = objectTypeAssignments ++ arrayTypeAssignments.result()
 
@@ -387,7 +389,6 @@ class InstantiatedTypesAnalysisScheduler(
                 case Some(cf) =>
                     for (f <- cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
                         val fieldType = f.fieldType.asReferenceType
-                        import p.classHierarchy
 
                         val initialAssignments = if (fieldType.isObjectType) {
                             val ot = fieldType.asObjectType
@@ -403,7 +404,7 @@ class InstantiatedTypesAnalysisScheduler(
                             seenArrayTypes += at
                             val dim = at.dimensions
                             val et = at.elementType.asObjectType
-                            val allSubtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
+                            val allSubtypes = classHierarchy.allSubtypes(et, reflexive = true)
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
                                 (assignments, iit) =>
                                     if (allSubtypes.contains(iit.asObjectType)) {

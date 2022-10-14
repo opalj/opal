@@ -148,6 +148,7 @@ lazy val `OPAL` = (project in file("."))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
+    javaCppVersion := Dependencies.javaCppVersion,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
       validate,
@@ -187,6 +188,7 @@ lazy val `Common` = (project in file("OPAL/common"))
   .settings(buildSettings: _*)
   .settings(
     name := "Common",
+    javaCppVersion := Dependencies.javaCppVersion,
     Compile / doc / scalacOptions := Opts.doc.title("OPAL-Common"),
     libraryDependencies ++= Dependencies.common(scalaVersion.value)
   )
@@ -357,8 +359,8 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     name := "LLVM",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
-    javaCppPresetLibs ++= Seq("llvm" -> "11.1.0"),
-    javaCppVersion := "1.5.5"
+    javaCppPresetLibs ++= Dependencies.javaCppPresetLibs,
+    javaCppVersion := Dependencies.javaCppVersion
 )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)

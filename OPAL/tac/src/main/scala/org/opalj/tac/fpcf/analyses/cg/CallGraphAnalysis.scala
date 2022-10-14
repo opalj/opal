@@ -40,11 +40,11 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * Generates call graphs based on the used [[TypeProvider]].
+ * Generates call graphs based on the used [[TypeIterator]].
  * It uses the AI information of the three-address code to get the most precise information for
  * virtual calls.
  * `handleImpreciseCall` will be invoked for each virtual call, that could not be resolved
@@ -82,7 +82,7 @@ class CallGraphAnalysis private[cg] (
 
                 for (cs <- relevantCallSites) {
                     val (receiver, cbsTargets) = state.callSiteData(cs)
-                    typeProvider.continuation(
+                    typeIterator.continuation(
                         receiver, eps.asInstanceOf[EPS[Entity, PropertyType]], cbsTargets
                     ) {
                         newType =>
@@ -149,11 +149,11 @@ class CallGraphAnalysis private[cg] (
                 }.getOrElse(Set.empty)
             } else Set.empty
 
-        val actualTypes = typeProvider.typesProperty(
+        val actualTypes = typeIterator.typesProperty(
             call.receiver.asVar, state.callContext, callSite, state.tac.stmts
         )
 
-        typeProvider.foreachType(call.receiver.asVar, actualTypes, cbsTargets) { possibleTgtType =>
+        typeIterator.foreachType(call.receiver.asVar, actualTypes, cbsTargets) { possibleTgtType =>
             val tgtR = project.instanceCall(
                 callerType, possibleTgtType, call.name, call.descriptor
             )
@@ -328,7 +328,7 @@ class CallGraphAnalysis private[cg] (
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
             calleesAndCallers.addCall(
-                callContext, pc, typeProvider.expandContext(callContext, tgtDM, pc)
+                callContext, pc, typeIterator.expandContext(callContext, tgtDM, pc)
             )
         } else {
             val packageName = callContext.method.definedMethod.classFile.thisType.packageName
@@ -371,18 +371,18 @@ class CallGraphAnalysis private[cg] (
         if (declTgt.hasSingleDefinedMethod) {
             if (declTgt.definedMethod.isStatic == isStatic)
                 calleesAndCallers.addCall(
-                    callContext, pc, typeProvider.expandContext(callContext, declTgt, pc)
+                    callContext, pc, typeIterator.expandContext(callContext, declTgt, pc)
                 )
         } else if (declTgt.isVirtualOrHasSingleDefinedMethod) {
             calleesAndCallers.addCall(
-                callContext, pc, typeProvider.expandContext(callContext, declTgt, pc)
+                callContext, pc, typeIterator.expandContext(callContext, declTgt, pc)
             )
         } else {
             declTgt.definedMethods foreach { m =>
                 if (m.isStatic == isStatic) {
                     val dm = declaredMethods(m)
                     calleesAndCallers.addCall(
-                        callContext, pc, typeProvider.expandContext(callContext, dm, pc)
+                        callContext, pc, typeIterator.expandContext(callContext, dm, pc)
                     )
                 }
             }
@@ -460,13 +460,13 @@ class CallGraphAnalysis private[cg] (
 object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, InitialEntryPointsKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, InitialEntryPointsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callers, Callees, TACAI)
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
-        p.get(TypeProviderKey).usedPropertyKinds
+        p.get(TypeIteratorKey).usedPropertyKinds
     }
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty

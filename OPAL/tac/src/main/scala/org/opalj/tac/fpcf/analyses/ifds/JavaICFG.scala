@@ -6,17 +6,17 @@ import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{FinalEP, PropertyStore}
 import org.opalj.ifds.ICFG
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.{Assignment, Expr, ExprStmt, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, VirtualFunctionCall, VirtualMethodCall}
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.properties.cg.Callees
 
 abstract class JavaICFG(project: SomeProject)
     extends ICFG[Method, JavaStatement] {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     /**
      * Gets the set of all methods possibly called at some statement.
@@ -55,7 +55,7 @@ abstract class JavaICFG(project: SomeProject)
         val caller = declaredMethods(statement.callable)
         val ep = propertyStore(caller, Callees.key)
         ep match {
-            case FinalEP(_, p) => definedMethods(p.directCallees(typeProvider.newContext(caller), pc).map(_.method))
+            case FinalEP(_, p) => definedMethods(p.directCallees(typeIterator.newContext(caller), pc).map(_.method))
             case _ =>
                 throw new IllegalStateException(
                     "call graph must be computed before the analysis starts"

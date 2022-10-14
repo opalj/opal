@@ -180,7 +180,9 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
         if(value.hasUBP)
             value.ub match {
                 case TransitivelyImmutableField    => /* Nothing to do here */
-                case NonTransitivelyImmutableField => immutability = NonTransitivelyImmutableClass
+                case NonTransitivelyImmutableField => 
+                    if(immutability != MutableClass)
+                        immutability = NonTransitivelyImmutableClass
                 case MutableField                  => immutability = MutableClass
             }
         if(value.isRefinable)
@@ -196,7 +198,7 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
 ```
 The `checkField` function is similar to `checkSuperclass`.  
 We assume that a lattice `FieldImmutability` exists that is essentially identical to the one defined above for class immutability.  
-Instead of using a predefined `meet` meh, here we check the possible values explicitly.
+Instead of using a predefined `meet` method, here we check the possible values explicitly.
 We could of course have defined a function to incorporate a `FieldImmutability` into a `ClassImmutability` in the class immutability lattice to make our life easier here.
 
 In order to get the immutability properties of the class' instance fields, we filter the classfile's fields for those that aren't static, then we use a second form of the property store's `apply` method to query several properties at once and finally pass each of the results to `checkField`.

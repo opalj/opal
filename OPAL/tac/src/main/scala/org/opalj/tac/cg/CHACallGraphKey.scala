@@ -9,7 +9,7 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider
+import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on class
@@ -30,6 +30,6 @@ object CHACallGraphKey extends CallGraphKey {
         project: SomeProject
     ): Iterable[FPCFAnalysisScheduler] = List.empty
 
-    override def getTypeProvider(project: SomeProject) = new CHATypeProvider(project)
+    override def getTypeIterator(project: SomeProject) = new CHATypeIterator(project)
 
 }

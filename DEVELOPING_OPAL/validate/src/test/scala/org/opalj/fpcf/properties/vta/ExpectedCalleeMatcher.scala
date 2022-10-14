@@ -8,13 +8,12 @@ import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
-import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.Method
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.old.{CalleeType, IFDSBasedVariableTypeAnalysisScheduler, VTAResult}
+import org.opalj.tac.fpcf.analyses.ifds.{CalleeType, IFDSBasedVariableTypeAnalysisScheduler, VTAResult}
 
 class ExpectedCalleeMatcher extends VTAMatcher {
 
@@ -29,11 +28,11 @@ class ExpectedCalleeMatcher extends VTAMatcher {
             elementValuePairs(2).value.asBooleanValue.value
         )
         val propertyStore = project.get(PropertyStoreKey)
-        val propertyKey = IFDSBasedVariableTypeAnalysisScheduler.property.key
+        val propertyKey = new IFDSBasedVariableTypeAnalysisScheduler().property.key
         // Get ALL the exit facts for the method for ALL input facts
         val allReachableExitFacts =
             propertyStore.entities(propertyKey).collect {
-                case EPS((m: DefinedMethod, inputFact)) if m.definedMethod == method =>
+                case EPS((m: Method, inputFact)) if m == method =>
                     (m, inputFact)
             }.flatMap(propertyStore(_, propertyKey) match {
                 case FinalEP(_, VTAResult(result, _)) =>
@@ -45,7 +44,7 @@ class ExpectedCalleeMatcher extends VTAMatcher {
                             ))
                     }
                 case _ => Seq.empty
-            }).flatten
+            }).flatten.toSet
         if (allReachableExitFacts.contains(expected)) None
         else Some(expected.toString)
     }

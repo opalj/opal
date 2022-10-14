@@ -7,7 +7,6 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.value.ValueInformation
 import org.opalj.br.AnnotationLike
-import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -19,7 +18,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.old.VTAFact
+import org.opalj.tac.fpcf.analyses.ifds.VTAFact
 
 abstract class VTAMatcher extends AbstractPropertyMatcher {
 
@@ -30,7 +29,7 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val method = entity.asInstanceOf[(DefinedMethod, VTAFact)]._1.definedMethod
+        val method = entity.asInstanceOf[(Method, VTAFact)]._1
         val taCode = p.get(PropertyStoreKey)(method, TACAI.key) match {
             case FinalP(TheTACAI(tac)) => tac
             case _ =>

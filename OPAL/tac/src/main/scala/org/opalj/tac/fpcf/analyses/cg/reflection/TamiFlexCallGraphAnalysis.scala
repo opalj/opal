@@ -25,7 +25,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -150,7 +150,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
             indirectCalls.addCall(
                 context,
                 pc,
-                typeProvider.expandContext(context, target, pc),
+                typeIterator.expandContext(context, target, pc),
                 persistentMethodInvokeActualParams,
                 persistentMethodInvokeReceiver
             )
@@ -161,7 +161,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
 object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TamiFlexKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, TamiFlexKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

@@ -17,7 +17,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 /**
  * A variable type analysis implemented as an IFDS analysis.
@@ -35,7 +35,7 @@ class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) exte
     override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeProviderKey, PropertyStoreKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey)
 }
 
 /**

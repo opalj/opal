@@ -22,8 +22,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.cg.CHACallGraphKey
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.CallersImplWithOtherCalls
 import org.opalj.tac.fpcf.properties.cg.CallersOnlyWithConcreteCallers
@@ -44,7 +44,7 @@ class CallersTest extends AnyFlatSpec with Matchers {
     typesProject.get(CHACallGraphKey)
     implicit val declaredMethods: DeclaredMethods = typesProject.get(DeclaredMethodsKey)
     val simpleContexts: SimpleContexts = typesProject.get(SimpleContextsKey)
-    implicit val typeProvider: TypeProvider = typesProject.get(TypeProviderKey)
+    implicit val typeIterator: TypeIterator = typesProject.get(TypeIteratorKey)
 
     val declaredMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ => true).get
     val otherMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ ne declaredMethod).get

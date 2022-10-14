@@ -47,10 +47,10 @@ import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
@@ -165,7 +165,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
                 (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
-        }
+        }.to(Iterable)
 
         var propertyStoreTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
@@ -232,7 +232,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
         }
 
-        val reachableContexts = cg.reachableMethods()
+        val reachableContexts = cg.reachableMethods().to(Iterable)
         val reachableMethods = reachableContexts.map(_.method).toSet
 
         val numEdges = cg.numEdges
@@ -242,7 +242,7 @@ object CallGraph extends ProjectAnalysisApplication {
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))
 
-        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
         for (m <- allMethods) {
             val mSig = m.descriptor.toJava(m.name)
