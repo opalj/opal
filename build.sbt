@@ -169,7 +169,7 @@ lazy val `OPAL` = (project in file("."))
     de,
     av,
     ll,
-    sql,
+    js,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -365,12 +365,12 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
-lazy val sql = `SQLTaint`
-lazy val `JavaScript` = (project in file("OPAL/sql"))
+lazy val js = `JavaScript`
+lazy val `JavaScript` = (project in file("OPAL/js"))
   .settings(buildSettings: _*)
   .settings(
-    name := "SQL",
-    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - SQL"),
+    name := "JavaScript",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - JS"),
     fork := true
   )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
@@ -389,7 +389,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     av  % "it->it;it->test;test->test;compile->compile",
     tac % "it->it;it->test;test->test;compile->compile",
     ll  % "it->it;it->test;test->test;compile->compile",
-    sql  % "it->it;it->test;test->test;compile->compile"
+    js  % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
