@@ -169,7 +169,7 @@ lazy val `OPAL` = (project in file("."))
     de,
     av,
     ll,
-    js,
+    sql,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -365,22 +365,13 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
-lazy val js = `JavaScript`
-lazy val `JavaScript` = (project in file("OPAL/js"))
+lazy val sql = `SQLTaint`
+lazy val `JavaScript` = (project in file("OPAL/sql"))
   .settings(buildSettings: _*)
   .settings(
-    name := "JavaScript",
-    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - JS"),
-    fork := true,
-    libraryDependencies ++= Seq("com.ibm.wala" % "com.ibm.wala.core" % "1.5.7",
-      "com.ibm.wala" % "com.ibm.wala.util" % "1.5.7",
-      "com.ibm.wala" % "com.ibm.wala.shrike" % "1.5.7",
-      "com.ibm.wala" % "com.ibm.wala.cast" % "1.5.7",
-      "com.ibm.wala" % "com.ibm.wala.cast.java" % "1.5.7",
-      "com.ibm.wala" % "com.ibm.wala.cast.java.ecj" % "1.5.7",
-      "com.ibm.wala" % "com.ibm.wala.cast.js" % "1.5.7",
-      "com.ibm.wala" % "com.ibm.wala.cast.js.rhino" % "1.5.7",
-      "org.mozilla" % "rhino" % "1.7.10")
+    name := "SQL",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - SQL"),
+    fork := true
   )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -398,7 +389,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     av  % "it->it;it->test;test->test;compile->compile",
     tac % "it->it;it->test;test->test;compile->compile",
     ll  % "it->it;it->test;test->test;compile->compile",
-    js  % "it->it;it->test;test->test;compile->compile"
+    sql  % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 

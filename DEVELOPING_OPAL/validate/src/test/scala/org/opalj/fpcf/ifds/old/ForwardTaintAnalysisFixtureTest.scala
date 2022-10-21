@@ -8,7 +8,7 @@ import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.ForwardFlowPath
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.taint.old.ForwardTaintAnalysisFixtureScheduler
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
+import org.opalj.tac.fpcf.properties.TaintNullFact
 
 import java.net.URL
 

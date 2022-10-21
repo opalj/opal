@@ -6,7 +6,7 @@ import org.opalj.br.{AnnotationLike, ElementValue, ElementValuePair, ObjectType}
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.{Entity, Property}
 import org.opalj.ifds.IFDSProperty
-import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.properties._
 
 /**
  * @author Mario Trageser

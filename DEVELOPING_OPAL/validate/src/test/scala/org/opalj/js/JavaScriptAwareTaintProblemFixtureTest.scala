@@ -1,14 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.js
 
-import org.opal.js.IFDSAnalysisJSFixtureScheduler
+import org.opalj.js.IFDSAnalysisJSFixtureScheduler
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.properties.taint.ForwardFlowPath
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
+import org.opalj.tac.fpcf.properties._
 
 import java.net.URL
 

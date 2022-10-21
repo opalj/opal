@@ -51,9 +51,9 @@ case class InstanceField(index: Int, classType: ObjectType, fieldName: String) e
  * @param flow A sequence of method calls, originating from but not including this method.
  */
 case class FlowFact(flow: Seq[Callable]) extends TaintFact {
-  override val hashCode: Int = {
-    var r = 1
-    flow.foreach(f => r = (r + f.hashCode()) * 31)
-    r
-  }
+    override val hashCode: Int = {
+        var r = 1
+        flow.foreach(f => r = (r + f.hashCode()) * 31)
+        r
+    }
 }

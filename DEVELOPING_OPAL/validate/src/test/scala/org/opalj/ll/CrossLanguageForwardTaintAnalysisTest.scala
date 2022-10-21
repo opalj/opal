@@ -15,7 +15,7 @@ import org.opalj.ll.llvm.value.Function
 import org.opalj.log.GlobalLogContext
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, TaintFact}
+import org.opalj.tac.fpcf.properties._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 

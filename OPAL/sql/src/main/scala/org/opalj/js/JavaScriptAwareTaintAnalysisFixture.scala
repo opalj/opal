@@ -27,11 +27,12 @@ class JavaScriptAwareTaintProblemProblemFixture(p: SomeProject) extends JavaScri
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, TaintFact)] = p.allProjectClassFiles.filter(classFile =>
-        classFile.thisType.fqn == "org/opalj/fpcf/fixtures/js/Java2JsTestClass")
-        .flatMap(classFile => classFile.methods)
-        .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
-        .map(method => method -> TaintNullFact)
+    override val entryPoints: Seq[(Method, TaintFact)] = p.allProjectClassFiles
+      .flatMap(classFile => classFile.methods)
+      .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
+      .map(
+          method =>
+              method -> TaintNullFact)
 
     /**
      * The sanitize method is a sanitizer.
@@ -60,5 +61,4 @@ class JavaScriptAwareTaintProblemProblemFixture(p: SomeProject) extends JavaScri
             Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
 }
-
 

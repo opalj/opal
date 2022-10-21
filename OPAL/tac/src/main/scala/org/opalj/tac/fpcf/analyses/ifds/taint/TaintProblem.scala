@@ -4,8 +4,6 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 import org.opalj.tac.{Assignment, Expr, Stmt}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 
-
-
 trait TaintProblem[C, Statement, IFDSFact] {
 
     /**

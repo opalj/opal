@@ -7,7 +7,7 @@ import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.BackwardFlowPath
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
+import org.opalj.tac.fpcf.properties.TaintNullFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.old.BackwardTaintAnalysisFixtureScheduler
 
 import java.net.URL

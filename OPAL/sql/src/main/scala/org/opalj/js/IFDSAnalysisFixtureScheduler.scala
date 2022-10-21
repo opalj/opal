@@ -14,8 +14,8 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.properties.{Taint, TaintFact}
 
 object IFDSAnalysisJSFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
-  override def init(p: SomeProject, ps: PropertyStore) = new JavaScriptAwareTaintAnalysisFixture(p)
-  override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
-  override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
-  override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey, DeclaredMethodsKey, PropertyStoreKey)
+    override def init(p: SomeProject, ps: PropertyStore) = new JavaScriptAwareTaintAnalysisFixture(p)
+    override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
+    override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey, DeclaredMethodsKey, PropertyStoreKey)
 }

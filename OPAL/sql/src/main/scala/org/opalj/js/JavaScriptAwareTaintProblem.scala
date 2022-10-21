@@ -3,7 +3,6 @@ package org.opalj.js
 
 import org.opalj.br.{Method, ObjectType}
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.{NO_MATCH, V}
 import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
@@ -178,7 +177,7 @@ class JavaScriptAwareTaintProblem(p: SomeProject) extends ForwardTaintProblem(p)
      * @param defSites def sites of the queried variable
      * @return
      */
-    private def getPossibleStrings(method: Method, defSites: IntTrieSet): Set[String] = {
+    /*private def getPossibleStrings(method: Method, defSites: IntTrieSet): Set[String] = {
         val taCode = tacaiKey(method)
 
         // TODO: use string analysis here
@@ -187,25 +186,23 @@ class JavaScriptAwareTaintProblem(p: SomeProject) extends ForwardTaintProblem(p)
                 a.expr.asStringConst.value
             case _ => ""
         }
-    }
-
-    val jsAnalysis = new JavaScriptAnalysisCaller(p)
+    } */
 
     override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: JavaStatement): Set[TaintFact] = {
         val callStmt = JavaIFDSProblem.asCall(call.stmt)
-        val allParams = callStmt.allParams
+        // val allParams = callStmt.allParams
         val allParamsWithIndex = callStmt.allParams.zipWithIndex
 
-        if (!invokesScriptFunction(callStmt)) {
-            in match {
-                case BindingFact(index, _) =>
-                    if (JavaIFDSProblem.getParameterIndex(allParamsWithIndex, index) == NO_MATCH)
-                        Set(in)
-                    else
-                        Set()
-                case _ => super.callToReturnFlow(call, in, successor)
-            }
-        } else {
+        // if (!invokesScriptFunction(callStmt)) {
+        in match {
+            case BindingFact(index, _) =>
+                if (JavaIFDSProblem.getParameterIndex(allParamsWithIndex, index) == NO_MATCH)
+                    Set(in)
+                else
+                    Set()
+            case _ => super.callToReturnFlow(call, in, successor)
+        }
+        /* } else {
             in match {
                 /* Call to invokeFunction. The variable length parameter list is an array in TACAI. */
                 case arrIn: ArrayElement if callStmt.name == "invokeFunction"
@@ -216,16 +213,16 @@ class JavaScriptAwareTaintProblem(p: SomeProject) extends ForwardTaintProblem(p)
                             /* Function name is unknown. We don't know what to call */
                             None
                         else
-                            Some(jsAnalysis.analyze(call, arrIn, fName))).filter(_.isDefined).flatMap(_.get) ++ Set(in)
+                            {}//Some(jsAnalysis.analyze(call, arrIn, fName))).filter(_.isDefined).flatMap(_.get) ++ Set(in)
                 /* Call to eval. */
                 case f: BindingFact if callStmt.name == "eval"
                     && (JavaIFDSProblem.getParameterIndex(allParamsWithIndex, f.index) == -1
                         || JavaIFDSProblem.getParameterIndex(allParamsWithIndex, f.index) == -3) =>
-                    jsAnalysis.analyze(call, f)
+                {}//jsAnalysis.analyze(call, f)
                 case f: WildcardBindingFact if callStmt.name == "eval"
                     && (JavaIFDSProblem.getParameterIndex(allParamsWithIndex, f.index) == -1
                         || JavaIFDSProblem.getParameterIndex(allParamsWithIndex, f.index) == -3) =>
-                    jsAnalysis.analyze(call, f)
+                {}//jsAnalysis.analyze(call, f)
                 /* Put obj in Binding */
                 case Variable(index) if callStmt.name == "put" && JavaIFDSProblem.getParameterIndex(allParamsWithIndex, index) == -3 =>
                     val keyNames = getPossibleStrings(call.method, allParams(1).asVar.definedBy)
@@ -268,7 +265,7 @@ class JavaScriptAwareTaintProblem(p: SomeProject) extends ForwardTaintProblem(p)
                     Set(Variable(call.index), in)
                 case _ => Set(in)
             }
-        }
+        } */
     }
 
     override def isTainted(expression: Expr[V], in: TaintFact): Boolean = {

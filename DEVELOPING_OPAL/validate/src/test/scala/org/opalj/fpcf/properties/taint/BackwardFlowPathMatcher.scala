@@ -7,7 +7,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.{EPS, Entity, FinalEP, Property}
 import org.opalj.tac.fpcf.analyses.ifds.taint.old.BackwardTaintAnalysisFixtureScheduler
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact}
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.fpcf.properties.OldTaint
 
 /**
