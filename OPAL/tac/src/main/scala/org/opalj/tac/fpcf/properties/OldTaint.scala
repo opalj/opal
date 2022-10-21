@@ -4,7 +4,7 @@ package org.opalj.tac.fpcf.properties
 import org.opalj.fpcf.PropertyKey
 import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.analyses.ifds.old.DeclaredMethodJavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.properties._
 
 case class OldTaint(flows: Map[DeclaredMethodJavaStatement, Set[TaintFact]], debugData: Map[DeclaredMethodJavaStatement, Set[TaintFact]] = Map.empty) extends IFDSProperty[DeclaredMethodJavaStatement, TaintFact] {
 

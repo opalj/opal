@@ -9,8 +9,8 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.old.taint.BackwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.old._
-import org.opalj.tac.fpcf.analyses.ifds.taint._
-import org.opalj.tac.fpcf.properties.OldTaint
+import org.opalj.tac.fpcf.properties._
+import org.opalj.tac.fpcf.properties.{FlowFact, OldTaint}
 
 import java.io.File
 

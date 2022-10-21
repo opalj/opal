@@ -8,12 +8,9 @@ import org.opalj.ll.fpcf.analyses.ifds.JNIMethod
 import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, GetElementPtr, Load, PHI, Ret, Store, Sub}
 
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintProblem}
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
-import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.ReturnValue
 
 abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeTaintFact, TaintFact](project) with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {

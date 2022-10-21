@@ -5,7 +5,7 @@ import org.opalj.br.{ArrayType, BooleanType, ByteType, CharType, DoubleType, Fie
 import org.opalj.tac.Call
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaStatement}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, InstanceField, TaintFact, TaintNullFact, Variable}
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.fpcf.analyses.ifds.taint.summaries.Flow.nodeToTaint
 import org.opalj.tac.fpcf.analyses.ifds.taint.summaries.ClassSummary.{signaturePattern, stringToFieldType, stringToType}
 

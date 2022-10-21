@@ -6,9 +6,10 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.{NO_MATCH, V}
+import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
 import org.opalj.tac.{AITACode, Assignment, Call, ComputeTACAIKey, Expr, ReturnValue, TACMethodParameter, TACode}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, FlowFact, ForwardTaintProblem, TaintFact, TaintNullFact, Variable}
+import org.opalj.tac.fpcf.properties._
 import org.opalj.value.ValueInformation
 
 import scala.annotation.nowarn

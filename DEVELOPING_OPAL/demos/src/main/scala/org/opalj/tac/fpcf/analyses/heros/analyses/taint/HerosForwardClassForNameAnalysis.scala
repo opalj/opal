@@ -13,6 +13,7 @@ import org.opalj.tac.fpcf.analyses.heros.cfg.OpalForwardICFG
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.util.Milliseconds
 

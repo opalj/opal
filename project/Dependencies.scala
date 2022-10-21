@@ -73,4 +73,7 @@ object Dependencies {
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
 
+  val javaCppVersion = "1.5.7"
+  val javaCppPresetLibs = Seq("llvm" -> "13.0.1")
+
 }

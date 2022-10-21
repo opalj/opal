@@ -33,7 +33,7 @@ import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysisRunner
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, TaintFact, FlowFact, InstanceField, StaticField, Variable}
+import org.opalj.tac.fpcf.properties._
 
 /**
  * An implementation of the BackwardClassForNameAnalysis in the Heros framework.

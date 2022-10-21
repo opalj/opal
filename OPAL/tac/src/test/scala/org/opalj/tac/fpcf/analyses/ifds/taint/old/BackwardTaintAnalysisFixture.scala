@@ -8,7 +8,7 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds._
 import org.opalj.tac.fpcf.analyses.ifds.old._
 import org.opalj.tac.fpcf.analyses.ifds.old.taint.BackwardTaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, Variable}
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.fpcf.properties.OldTaint
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 

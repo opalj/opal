@@ -8,7 +8,7 @@ import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.old._
-import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, TaintFact, Variable}
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.fpcf.analyses.ifds._
 import org.opalj.tac.fpcf.properties.OldTaint
 import java.io.File

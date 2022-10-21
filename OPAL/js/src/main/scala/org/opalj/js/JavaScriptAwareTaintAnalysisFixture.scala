@@ -1,16 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opal.js
+package org
+package opal
+package js
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.{PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
+import org.opalj.br.analyses.SomeProject
+import org.opalj.ifds.IFDSAnalysis
 import org.opalj.js.JavaScriptAwareTaintProblem
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, TaintNullFact, Variable}
-import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.properties.Taint
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.properties.{FlowFact, Taint, TaintFact, TaintNullFact, Variable}
 
 /**
  * An analysis that checks, if the return value of the method `source` can flow to the parameter of
@@ -62,9 +61,4 @@ class JavaScriptAwareTaintProblemProblemFixture(p: SomeProject) extends JavaScri
         else None
 }
 
-object IFDSAnalysisJSFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
-    override def init(p: SomeProject, ps: PropertyStore) = new JavaScriptAwareTaintAnalysisFixture(p)
-    override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
-    override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey, DeclaredMethodsKey, PropertyStoreKey)
-}
+

@@ -8,6 +8,7 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.old.{JavaIFDSProblem, DeclaredMethodJavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint._
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem => NewJavaIFDSProblem}
 
 abstract class ForwardTaintProblem(project: SomeProject) extends JavaIFDSProblem[TaintFact](project) with TaintProblem[DeclaredMethod, DeclaredMethodJavaStatement, TaintFact] {

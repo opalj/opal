@@ -8,7 +8,7 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.old.{DeclaredMethodJavaStatement, ForwardIFDSAnalysis, IFDSAnalysisScheduler}
 import org.opalj.tac.fpcf.analyses.ifds.old.taint.ForwardTaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, FlowFact, TaintNullFact, Variable}
+import org.opalj.tac.fpcf.properties._
 import org.opalj.tac.fpcf.properties.OldTaint
 
 /**

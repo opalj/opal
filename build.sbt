@@ -144,10 +144,11 @@ def getScalariformPreferences(dir: File) = {
  ******************************************************************************/
 lazy val opal = `OPAL`
 lazy val `OPAL` = (project in file("."))
-//  .configure(_.copy(id = "OPAL"))
+  //  .configure(_.copy(id = "OPAL"))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
+    javaCppVersion := Dependencies.javaCppVersion,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
       validate,
@@ -187,6 +188,7 @@ lazy val `Common` = (project in file("OPAL/common"))
   .settings(buildSettings: _*)
   .settings(
     name := "Common",
+    javaCppVersion := Dependencies.javaCppVersion,
     Compile / doc / scalacOptions := Opts.doc.title("OPAL-Common"),
     libraryDependencies ++= Dependencies.common(scalaVersion.value)
   )
@@ -245,7 +247,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Representation"),
     libraryDependencies ++= Dependencies.br,
     // Test / publishArtifact := true // Needed to get access to class TestResources and TestSupport
-   )
+  )
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -357,9 +359,9 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     name := "LLVM",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
-    javaCppPresetLibs ++= Seq("llvm" -> "11.1.0"),
-    javaCppVersion := "1.5.5"
-)
+    javaCppPresetLibs ++= Dependencies.javaCppPresetLibs,
+    javaCppVersion := Dependencies.javaCppVersion
+  )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
@@ -371,14 +373,14 @@ lazy val `JavaScript` = (project in file("OPAL/js"))
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - JS"),
     fork := true,
     libraryDependencies ++= Seq("com.ibm.wala" % "com.ibm.wala.core" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.util" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.shrike" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.java" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.java.ecj" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.js" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.js.rhino" % "1.5.7",
-                                "org.mozilla" % "rhino" % "1.7.10")
+      "com.ibm.wala" % "com.ibm.wala.util" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.shrike" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.java" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.java.ecj" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.js" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.js.rhino" % "1.5.7",
+      "org.mozilla" % "rhino" % "1.7.10")
   )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)

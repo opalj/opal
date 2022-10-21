@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.js
 
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.properties.TaintFact
 
 /* Common trait for facts for ScriptEngines. */
 trait JSFact extends TaintFact

@@ -10,7 +10,7 @@ import org.opalj.tac.fpcf.analyses.ifds.old.{JavaBackwardIFDSProblem, DeclaredMe
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 
 import org.opalj.tac.fpcf.analyses.ifds.old.UnbalancedReturnFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.properties._
 
 /**
  * The unbalanced return fact of this analysis.

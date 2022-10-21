@@ -8,7 +8,7 @@ import org.opalj.fpcf.{PropertyBounds, PropertyStore}
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.properties.Taint
+import org.opalj.tac.fpcf.properties._
 
 /**
  * An analysis that checks, if the return value of the method `source` can flow to the parameter of

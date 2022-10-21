@@ -8,6 +8,7 @@ import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.taint.summaries.TaintSummaries
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.properties._
 
 import java.io.File
 

@@ -14,7 +14,7 @@ import com.ibm.wala.util.intset.{IntIterator, IntSet, IntSetUtil, MutableIntSet}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.js.wala_ifds.WalaJavaScriptIFDSTaintAnalysis
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, TaintFact, Variable}
+import org.opalj.tac.fpcf.properties._
 import org.mozilla.javascript.{Parser, Token}
 import org.mozilla.javascript.ast.{AstNode, AstRoot, FunctionNode, NodeVisitor, Symbol}
 

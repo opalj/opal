@@ -4,7 +4,7 @@ package org.opalj.tac.fpcf.analyses.heros.analyses.taint
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.fpcf.analyses.heros.analyses.HerosAnalysis
 import org.opalj.tac.fpcf.analyses.heros.cfg.OpalICFG
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintNullFact}
+import org.opalj.tac.fpcf.properties._
 
 /**
  * A common subclass of all Heros taint analyses.

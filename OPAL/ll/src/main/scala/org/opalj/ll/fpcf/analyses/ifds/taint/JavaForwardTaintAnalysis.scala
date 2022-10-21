@@ -13,7 +13,7 @@ import org.opalj.ll.llvm.value.Ret
 import org.opalj.tac.Assignment
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.properties.{TACAI, Taint}
+import org.opalj.tac.fpcf.properties._
 
 class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     val llvmProject = p.get(LLVMProjectKey)

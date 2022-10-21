@@ -4,7 +4,7 @@ package org.opalj.tac.fpcf.properties
 import org.opalj.fpcf.PropertyKey
 import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.properties._
 
 case class Taint(flows: Map[JavaStatement, Set[TaintFact]], debugData: Map[JavaStatement, Set[TaintFact]] = Map.empty) extends IFDSProperty[JavaStatement, TaintFact] {
 
