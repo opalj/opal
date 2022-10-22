@@ -8,7 +8,8 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.properties.Taint
-import org.opalj.js.IFDSAnalysisJSFixtureScheduler
+//import org.opalj.js.IFDSAnalysisJSFixtureScheduler
+import org.opalj.tac.fpcf.analyses.sql.IFDSSqlAnalysisScheduler
 
 import java.net.URL
 
@@ -38,7 +39,7 @@ object TaintDemo extends ProjectAnalysisApplication {
     }
 
       propertyStore = analysesManager.runAll(
-        IFDSAnalysisJSFixtureScheduler
+        IFDSSqlAnalysisScheduler
       )._1
       propertyStore.waitOnPhaseCompletion();
     //Result:

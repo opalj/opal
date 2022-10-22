@@ -27,12 +27,15 @@ class JavaScriptAwareTaintProblemProblemFixture(p: SomeProject) extends JavaScri
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, TaintFact)] = p.allProjectClassFiles
+    override val entryPoints: Seq[(Method, TaintFact)] =
+        p.allProjectClassFiles
       .flatMap(classFile => classFile.methods)
       .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
       .map(
           method =>
               method -> TaintNullFact)
+
+
 
     /**
      * The sanitize method is a sanitizer.

@@ -6,11 +6,11 @@ import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.taint.summaries.TaintSummaries
+//import org.opalj.tac.fpcf.analyses.ifds.taint.summaries.TaintSummaries
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties._
 
-import java.io.File
+//import java.io.File
 
 abstract class ForwardTaintProblem(project: SomeProject)
     extends JavaIFDSProblem[TaintFact](project)
@@ -18,7 +18,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
     val declaredMethods = project.get(DeclaredMethodsKey)
 
     def useSummaries: Boolean = false
-    lazy val summaries: TaintSummaries = TaintSummaries(new File(getClass.getResource("/summaries/").getPath).listFiles().toList)
+    //lazy val summaries: TaintSummaries = TaintSummaries(new File(getClass.getResource("/summaries/").getPath).listFiles().toList)
 
     override def nullFact: TaintFact = TaintNullFact
 
@@ -215,9 +215,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
             }
         }
 
-        if (useSummaries && summaries.isSummarized(callStmt)) {
-            summaries.compute(call, callStmt, in)
-        } else if (icfg.getCalleesIfCallStatement(call).isEmpty) {
+        if (icfg.getCalleesIfCallStatement(call).isEmpty) {
             // If the call does not have any callees, the code is unknown
             // and we safely handle it as the identity
             Set(in)
@@ -265,10 +263,6 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * We assume that the callee does not call the source method.
      */
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
-        if (useSummaries && summaries.isSummarized(callee)) {
-            /* Kill the flow and apply the summary in CallToReturn. */
-            Some(((_: JavaStatement, _: JavaStatement, _: TaintFact, _: Getter) => Set.empty): OutsideAnalysisContextHandler)
-        } else
             super.outsideAnalysisContext(callee) match {
                 case Some(_) => Some(((call: JavaStatement, successor: JavaStatement, in: TaintFact, _: Getter) => {
                     val allParams = JavaIFDSProblem.asCall(call.stmt).receiverOption ++ JavaIFDSProblem.asCall(call.stmt).params
