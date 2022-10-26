@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ifds
+package org.opalj.ifds
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}

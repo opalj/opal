@@ -3,9 +3,9 @@ package org.opalj.fpcf.properties.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{AnnotationLike, ElementValue, ElementValuePair, ObjectType}
-import org.opalj.fpcf.ifds.IFDSProperty
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.{Entity, Property}
+import org.opalj.ifds.IFDSProperty
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 
 /**

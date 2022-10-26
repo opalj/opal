@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.opalj.log.LogContext
