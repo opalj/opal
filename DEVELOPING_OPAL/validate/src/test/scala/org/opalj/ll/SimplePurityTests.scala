@@ -2,7 +2,7 @@
 package org.opalj.ll
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
 import org.opalj.ll.fpcf.analyses.{EagerSimplePurityAnalysis, Impure, Pure}
 import org.opalj.ll.llvm.value.Function
 import org.scalatest.funspec.AnyFunSpec

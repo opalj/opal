@@ -18,14 +18,13 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.ai.fpcf.properties.NoAIResult
 import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.fpcf.scheduling.{FPCFEagerAnalysisScheduler, FPCFLazyAnalysisScheduler}
 import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 

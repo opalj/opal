@@ -62,10 +62,7 @@ import org.opalj.br.fpcf.properties.UsesConstantDataOnly
 import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
@@ -74,6 +71,7 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.isImmediateVMException
+import org.opalj.fpcf.scheduling.{FPCFAnalysisScheduler, FPCFEagerAnalysisScheduler, FPCFLazyAnalysisScheduler}
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.NoCallers

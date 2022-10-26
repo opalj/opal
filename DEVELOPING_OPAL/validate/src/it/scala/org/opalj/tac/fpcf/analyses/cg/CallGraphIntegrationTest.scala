@@ -26,8 +26,8 @@ import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.analyses.Project
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey

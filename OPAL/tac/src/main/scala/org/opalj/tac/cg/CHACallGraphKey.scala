@@ -6,13 +6,14 @@ package cg
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
+import org.opalj.si.ProjectInformationKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
 
 /**
- * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on class
+ * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on class
  * hierarchy analysis (CHA).
  *
  * @see [[CallGraphKey]] for further details.

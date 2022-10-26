@@ -16,7 +16,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
@@ -36,6 +35,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.DefinedMethod
+import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 

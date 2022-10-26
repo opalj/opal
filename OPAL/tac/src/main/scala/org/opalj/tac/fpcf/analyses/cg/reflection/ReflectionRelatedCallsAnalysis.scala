@@ -41,12 +41,12 @@ import org.opalj.br.NewInvokeSpecialMethodHandle
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.BooleanType
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.Method
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher

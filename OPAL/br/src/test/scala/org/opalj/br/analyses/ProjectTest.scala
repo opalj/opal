@@ -7,7 +7,6 @@ import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java11Framework.ClassFiles
 
@@ -703,17 +702,17 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     }
 }
 
-private class TestProjectInformationKey extends ProjectInformationKey[Object, Nothing] {
+private class TestProjectInformationKey extends JavaProjectInformationKey[Object, Nothing] {
 
     val theResult = new Object()
 
     override def compute(project: SomeProject): Object = theResult
 
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
 
 }
 
-private class TestProjectInformationWithDependenciesKey extends ProjectInformationKey[Object, Nothing] {
+private class TestProjectInformationWithDependenciesKey extends JavaProjectInformationKey[Object, Nothing] {
 
     val theResult = new Object()
 
@@ -721,7 +720,7 @@ private class TestProjectInformationWithDependenciesKey extends ProjectInformati
 
     override def compute(project: SomeProject): Object = theResult
 
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
 
 }
 

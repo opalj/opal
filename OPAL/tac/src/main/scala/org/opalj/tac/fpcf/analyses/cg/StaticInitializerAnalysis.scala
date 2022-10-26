@@ -29,8 +29,8 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers

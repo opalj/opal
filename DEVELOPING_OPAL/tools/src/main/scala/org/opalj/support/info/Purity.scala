@@ -20,11 +20,7 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
@@ -59,8 +55,10 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.scheduling.{FPCFAnalysesManagerKey, FPCFAnalysisScheduler, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey

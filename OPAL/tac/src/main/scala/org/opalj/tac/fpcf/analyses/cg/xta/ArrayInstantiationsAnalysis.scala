@@ -10,7 +10,6 @@ import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
@@ -23,6 +22,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
+import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
 import scala.collection.mutable
 

@@ -29,9 +29,9 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.ArrayType
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey

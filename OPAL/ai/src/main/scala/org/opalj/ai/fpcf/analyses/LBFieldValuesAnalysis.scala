@@ -33,11 +33,11 @@ import org.opalj.br.PC
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Field
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.FieldValue

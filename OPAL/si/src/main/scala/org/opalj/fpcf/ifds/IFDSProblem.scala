@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.ifds
 
-import org.opalj.ifds.Dependees.Getter
+import org.opalj.fpcf.ifds.Dependees.Getter
 
 /**
  * A framework for IFDS analyses.

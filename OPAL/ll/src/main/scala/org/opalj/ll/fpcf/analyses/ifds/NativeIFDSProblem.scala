@@ -3,11 +3,11 @@ package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, Property, PropertyKey, PropertyStore}
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSProperty}
 import org.opalj.ll.LLVMProjectKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, NativeFunction, LLVMStatement](new NativeForwardICFG(project)) {

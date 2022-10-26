@@ -27,9 +27,6 @@ import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.ClassFile
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -45,6 +42,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.DeclaredMethod
+import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey

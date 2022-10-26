@@ -14,13 +14,12 @@ import org.opalj.fpcf.Result
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler}
 
 /**
  * Performs an abstract interpretation of a method using a project's AIDomainFactoryKey.

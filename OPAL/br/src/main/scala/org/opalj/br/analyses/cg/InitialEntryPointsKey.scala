@@ -32,7 +32,7 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Michael Reif
  */
-object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Nothing] {
+object InitialEntryPointsKey extends JavaProjectInformationKey[Iterable[Method], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
     final val ConfigKey = ConfigKeyPrefix+"analysis"
@@ -44,7 +44,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = {
         Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey)
     }
 

@@ -33,10 +33,7 @@ import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -55,6 +52,7 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.PCs
 import org.opalj.ai.ValueOrigin
+import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey

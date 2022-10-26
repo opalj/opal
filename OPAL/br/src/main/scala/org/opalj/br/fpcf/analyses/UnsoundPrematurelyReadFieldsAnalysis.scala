@@ -8,10 +8,10 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.NotPrematurelyReadField
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Unsound 'analysis' that declares all fields to be
@@ -20,16 +20,16 @@ import org.opalj.br.fpcf.properties.NotPrematurelyReadField
  * @author Dominik Helm
  */
 class UnsoundPrematurelyReadFieldsAnalysis private[analyses] (val project: SomeProject)
-    extends FPCFAnalysis {
+    extends ProjectBasedAnalysis {
 
     def determinePrematureReads(field: Field): ProperPropertyComputationResult = {
         Result(field, NotPrematurelyReadField)
     }
 }
 
-trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends FPCFAnalysisScheduler {
+trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq.empty
 
     final override def uses: Set[PropertyBounds] = Set.empty
 
@@ -41,7 +41,7 @@ trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends FPCFAnalysisSchedule
  */
 object EagerUnsoundPrematurelyReadFieldsAnalysis
     extends UnsoundPrematurelyReadFieldsAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new UnsoundPrematurelyReadFieldsAnalysis(project)
@@ -59,13 +59,13 @@ object EagerUnsoundPrematurelyReadFieldsAnalysis
 
 object LazyUnsoundPrematurelyReadFieldsAnalysis
     extends UnsoundPrematurelyReadFieldsAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     def register(
         project:       SomeProject,
         propertyStore: PropertyStore,
         unused:        Null
-    ): FPCFAnalysis = {
+    ): ProjectBasedAnalysis = {
         val analysis = new UnsoundPrematurelyReadFieldsAnalysis(project)
         propertyStore.registerLazyPropertyComputation(
             FieldPrematurelyRead.key,

@@ -28,18 +28,16 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.ai.ValueOrigin
+import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI

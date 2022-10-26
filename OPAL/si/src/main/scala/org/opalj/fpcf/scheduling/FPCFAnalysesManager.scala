@@ -1,19 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package br
-package fpcf
+package org.opalj.fpcf.scheduling
 
 import com.typesafe.config.Config
-
+import org.opalj.fpcf._
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
+import org.opalj.si.{FPCFAnalysis, MetaProject, PropertyStoreKey}
 import org.opalj.util.PerformanceEvaluation._
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.AnalysisScenario
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Schedule
 
 /**
  * Enables the execution of a set of analyses.
@@ -23,7 +16,7 @@ import org.opalj.fpcf.Schedule
  * @author Michael Reif
  * @author Michael Eichberg
  */
-class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
+class FPCFAnalysesManager private[fpcf] (val project: MetaProject) {
 
     // caching (by means of using local fields) is not necessary
     private[this] implicit final def logContext: LogContext = project.logContext

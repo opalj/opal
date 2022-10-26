@@ -9,15 +9,14 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{FieldAccessInformationKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.DeclaredFinalField
 import org.opalj.br.fpcf.properties.EffectivelyFinalField
 import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
 import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Determines if a private, static, non-final field is always initialized at most once or
@@ -26,7 +25,7 @@ import org.opalj.br.instructions.PUTSTATIC
  * available data-store) are not considered. This is in-line with the semantics of final,
  * which also does not prevent reads of partially initialized objects.
  */
-class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends ProjectBasedAnalysis {
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
@@ -95,9 +94,9 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-trait L0FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L0FieldMutabilityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     final override def uses: Set[PropertyBounds] = Set.empty
 
@@ -113,7 +112,7 @@ trait L0FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -136,7 +135,7 @@ object EagerL0FieldMutabilityAnalysis
 
 object LazyL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

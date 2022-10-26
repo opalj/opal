@@ -26,10 +26,10 @@ import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis

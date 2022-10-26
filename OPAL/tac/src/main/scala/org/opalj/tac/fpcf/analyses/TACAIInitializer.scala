@@ -6,9 +6,9 @@ package analyses
 
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
 
 /**
  * Transforms an aiResult to the 3-address code.

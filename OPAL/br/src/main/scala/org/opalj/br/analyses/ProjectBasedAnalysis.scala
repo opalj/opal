@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.log.LogContext
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Common super trait of all analyses that use the fixpoint
@@ -14,14 +14,13 @@ import org.opalj.log.LogContext
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait ProjectBasedAnalysis {
+trait ProjectBasedAnalysis extends FPCFAnalysis {
 
     val project: SomeProject
-    implicit final def p: SomeProject = project
-
+    override implicit def p: SomeProject = project
     implicit final def classHierarchy: ClassHierarchy = project.classHierarchy
     final def ch: ClassHierarchy = classHierarchy
 
-    implicit final def logContext: LogContext = project.logContext
-
 }
+
+abstract class DefaultFPCFAnalysis(val project: SomeProject) extends ProjectBasedAnalysis

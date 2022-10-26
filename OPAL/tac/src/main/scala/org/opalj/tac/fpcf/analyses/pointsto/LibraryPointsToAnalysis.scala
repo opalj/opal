@@ -31,7 +31,7 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.NoContext
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.fpcf.scheduling.FPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.cg.Callers
 

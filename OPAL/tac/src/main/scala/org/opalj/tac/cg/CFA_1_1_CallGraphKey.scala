@@ -5,11 +5,12 @@ package cg
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
+import org.opalj.si.ProjectInformationKey
 import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
 
 /**
- * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
+ * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on
  * the points-to analysis.
  *
  * @see [[CallGraphKey]] for further details.

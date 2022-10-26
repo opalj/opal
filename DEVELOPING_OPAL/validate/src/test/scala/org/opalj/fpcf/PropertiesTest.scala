@@ -37,11 +37,11 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 

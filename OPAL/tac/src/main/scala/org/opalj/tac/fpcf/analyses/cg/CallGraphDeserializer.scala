@@ -25,7 +25,6 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -34,6 +33,7 @@ import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.instructions.Instruction
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 
 /**
  * Representation of all Methods that are reachable in the represented call graph.

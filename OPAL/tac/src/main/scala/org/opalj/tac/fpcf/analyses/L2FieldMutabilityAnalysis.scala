@@ -38,7 +38,6 @@ import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
 import org.opalj.br.fpcf.properties.NotPrematurelyReadField
 import org.opalj.br.fpcf.properties.PrematurelyReadField
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.ClassFile
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -61,17 +60,16 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.FinalField
 import org.opalj.br.fpcf.properties.NonFinalField
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
+import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey

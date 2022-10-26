@@ -21,7 +21,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
@@ -31,6 +30,7 @@ import org.opalj.br.IntegerType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V

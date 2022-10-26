@@ -1,14 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package br
-package fpcf
+package org.opalj.fpcf.scheduling
 
-import org.opalj.fpcf.ComputationType
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.TriggeredComputation
-import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf._
+import org.opalj.si.{FPCFAnalysis, MetaProject, PropertyStoreKey}
 
 /**
  *  The underlying analysis will only be registered with the property store and
@@ -20,14 +14,14 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
+trait FPCFTriggeredAnalysisScheduler[P <: MetaProject] extends FPCFAnalysisScheduler[P] {
 
     final override def computationType: ComputationType = TriggeredComputation
 
     final override def derivesLazily: Option[PropertyBounds] = None
 
     final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
-        register(ps.context(classOf[SomeProject]), ps, i)
+        register(ps.context(classOf[MetaProject]), ps, i)
     }
 
     /**
@@ -35,35 +29,35 @@ trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
      */
     def triggeredBy: PropertyKind
 
-    final def register(project: SomeProject, i: InitializationData): FPCFAnalysis = {
+    final def register(project: MetaProject, i: InitializationData): FPCFAnalysis = {
         register(project, project.get(PropertyStoreKey), i)
     }
 
     /**
      * Called when a schedule is executed and when this analysis shall register itself
      * with the property store using [[org.opalj.fpcf.PropertyStore#registerTriggeredComputation]].
-     * This method is typically called by the [[org.opalj.br.fpcf.FPCFAnalysesManager]].
+     * This method is typically called by the [[FPCFAnalysesManager]].
      *
      * @note This analysis must not call `registerLazyPropertyComputation` or a variant of
      *       `scheduleEagerComputationForEntity`.
      */
     def register(
-        project:       SomeProject,
+        project:       MetaProject,
         propertyStore: PropertyStore,
         i:             InitializationData
     ): FPCFAnalysis
 
 }
 
-trait BasicFPCFTriggeredAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait BasicFPCFTriggeredAnalysisScheduler[P <: MetaProject] extends FPCFTriggeredAnalysisScheduler[P] {
     override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def init(p: P, ps: PropertyStore): Null = null
+    override def beforeSchedule(p: P, ps: PropertyStore): Unit = {}
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
     override def afterPhaseCompletion(
-        p:        SomeProject,
+        p:        P,
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}

@@ -27,9 +27,9 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer

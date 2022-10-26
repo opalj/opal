@@ -3,9 +3,9 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{PropertyBounds, PropertyStore}
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties.Taint

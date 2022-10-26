@@ -3,12 +3,12 @@ package org.opalj
 package tac
 package common
 
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.si.ProjectInformationKey
 
 /**
- * The [[org.opalj.br.analyses.ProjectInformationKey]] to retrieve the
+ * The [[ProjectInformationKey]] to retrieve the
  * [[DefinitionSites]] object for a project.
  *
  * @author Dominik Helm

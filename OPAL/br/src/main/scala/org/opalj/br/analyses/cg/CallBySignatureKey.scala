@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.analyses.cg
 
-import org.opalj.br.analyses.ProjectIndexKey
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKey, JavaProjectInformationKeys, ProjectIndexKey, SomeProject}
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 
@@ -23,9 +20,9 @@ import scala.collection.mutable.ListBuffer
  *
  * @author Michael Reif
  */
-object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, Nothing] {
+object CallBySignatureKey extends JavaProjectInformationKey[CallBySignatureTargets, Nothing] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = List(
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = List(
         ProjectIndexKey,
         ClosedPackagesKey,
         ClassExtensibilityKey,

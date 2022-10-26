@@ -2,8 +2,9 @@
 package org.opalj.ll.fpcf.analyses
 
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis, FPCFAnalysisScheduler}
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf._
+import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysisScheduler}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.value.{Function, GlobalVariable, Store}
 

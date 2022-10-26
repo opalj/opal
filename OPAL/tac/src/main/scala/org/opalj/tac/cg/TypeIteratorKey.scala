@@ -5,14 +5,14 @@ package cg
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.si.ProjectInformationKey
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
- *  An [[org.opalj.br.analyses.ProjectInformationKey]] to get the [[TypeIterator]] used to compute
+ *  An [[ProjectInformationKey]] to get the [[TypeIterator]] used to compute
  *  the current project's call graph.
  *  This key is intended to be set up by a corresponding [[org.opalj.tac.cg.CallGraphKey]].
  */

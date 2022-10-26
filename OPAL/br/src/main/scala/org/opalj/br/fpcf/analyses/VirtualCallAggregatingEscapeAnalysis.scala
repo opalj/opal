@@ -14,16 +14,13 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject, VirtualFormalParameter, VirtualFormalParametersKey}
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Aggregates the escape information for virtual formal parameters.
@@ -35,7 +32,7 @@ import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
  *
  * @author Florian Kuebler
  */
-class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project: SomeProject) extends ProjectBasedAnalysis {
     private[this] val formalParameters = project.get(VirtualFormalParametersKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
@@ -110,9 +107,9 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
 }
 
-sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(
         VirtualFormalParametersKey,
         DeclaredMethodsKey
     )
@@ -125,7 +122,7 @@ sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisS
 
 object EagerVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -141,7 +138,7 @@ object EagerVirtualCallAggregatingEscapeAnalysis
 
 object LazyVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

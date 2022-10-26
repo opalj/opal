@@ -8,10 +8,10 @@ import scala.collection.concurrent.TrieMap
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.si.ProjectInformationKey
 
 /**
  * Key to get the result of the abstract interpretation of a method using a configured domain
@@ -27,13 +27,10 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  *      }
  *  )
  * }}}
- *
  * @note   To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
  *         pass in `this` object.
- *
  * @note   '''If you are developing analyses using the `PropertyStore` use an appropriate analysis
  *         that stores the results of an abstract interpretation in the store.'''
- *
  * @author Michael Eichberg
  */
 object SimpleAIKey

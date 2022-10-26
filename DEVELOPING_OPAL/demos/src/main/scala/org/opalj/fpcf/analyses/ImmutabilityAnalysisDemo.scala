@@ -15,10 +15,10 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.si.PropertyStoreKey
 
 /**
  * Determines the immutability of the classes of a project.

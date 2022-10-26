@@ -20,7 +20,6 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -30,6 +29,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI

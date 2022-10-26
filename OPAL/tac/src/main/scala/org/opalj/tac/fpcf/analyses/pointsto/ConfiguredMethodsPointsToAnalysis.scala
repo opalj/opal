@@ -22,7 +22,6 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -37,6 +36,7 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.fpcf.scheduling.FPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider

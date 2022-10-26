@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package br
-package analyses
+package org.opalj.si
 
 import java.util.concurrent.atomic.AtomicInteger
-
 /**
  * `ProjectInformationKey` objects are used to get/associate some
  * (immutable) information with a project that should be computed on demand.
@@ -50,7 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @author Michael Eichberg
  */
-trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
+trait ProjectInformationKey[-P <: MetaProject, T <: AnyRef, I <: AnyRef] {
 
     /**
      * The unique id of this key. The key is used to enable efficient access and
@@ -70,7 +67,7 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
      * @note   Classes/Objects that implement this trait should not make the method `public`
      *         to avoid that this method is called accidentally by regular user code.
      */
-    /*ABSTRACT*/ def requirements(project: SomeProject): ProjectInformationKeys
+    /*ABSTRACT*/ def requirements(project: MetaProject): ProjectInformationKeys[P]
 
     /**
      * Computes the information for the given project.
@@ -79,7 +76,7 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
      *      make this method public. This method is only expected to be called
      *      by an instance of a `Project`.
      */
-    /*ABSTRACT*/ def compute(project: SomeProject): T
+    /*ABSTRACT*/ def compute(project: MetaProject): T
 
 }
 

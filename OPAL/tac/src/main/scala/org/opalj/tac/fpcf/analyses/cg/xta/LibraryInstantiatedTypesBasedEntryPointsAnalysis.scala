@@ -25,7 +25,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
@@ -33,6 +32,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext

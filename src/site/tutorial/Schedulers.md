@@ -18,7 +18,7 @@ This consists of two parts:
 
 First, `requiredProjectInformation` gives the [`ProjectInformationKey`s](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectInformationKey.html) that your analysis uses.  
 ProjectInformationKeys provide aggregated information about a project, such as a call graph or the set of methods that access each field.  
-Here, we specified the [`FieldAccessInformationKey`](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformationKey$.html) that you can use with [`Project.get()`](/library/api/SNAPSHOT/org/opalj/br/analyses/Project.html#get[T%3C:AnyRef](pik:org.opalj.br.analyses.ProjectInformationKey[T,_]):T) to get [`FieldAccessInformation`](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformation.html), i.e., information about where each field is read or written.
+Here, we specified the [`FieldAccessInformationKey`](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformationKey$.html) that you can use with [`Project.get()`](/library/api/SNAPSHOT/org/opalj/br/analyses/Project.html#get[T%3C:AnyRef](pik:org.opalj.si.ProjectInformationKey[T,_]):T) to get [`FieldAccessInformation`](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformation.html), i.e., information about where each field is read or written.
 
 Second, `uses` gives the results of fixed-point analyses that your analysis requires.  
 Here, our analysis uses upper bounds for both `FieldImmutability` and `ClassImmutability`.  

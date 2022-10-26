@@ -16,7 +16,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callees

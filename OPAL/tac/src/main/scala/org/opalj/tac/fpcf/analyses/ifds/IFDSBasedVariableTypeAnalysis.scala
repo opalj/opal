@@ -16,7 +16,7 @@ import org.opalj.ifds.Statistics
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.TypeIteratorKey
 
 /**

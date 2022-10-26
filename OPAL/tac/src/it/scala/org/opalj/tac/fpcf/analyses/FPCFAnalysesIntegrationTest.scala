@@ -29,13 +29,12 @@ import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysesRegistry
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.scheduling.{FPCFAnalysesManagerKey, FPCFAnalysesRegistry}
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p

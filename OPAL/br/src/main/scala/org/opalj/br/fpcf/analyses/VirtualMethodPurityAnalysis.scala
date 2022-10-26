@@ -14,10 +14,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Context
@@ -27,13 +24,16 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
+import org.opalj.si.FPCFAnalysis
+
+import scala.reflect.{ClassTag, classTag}
 
 /**
  * Determines the aggregated purity for virtual methods.
  *
  * @author Dominik Helm
  */
-class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends ProjectBasedAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts = project.get(SimpleContextsKey)
 
@@ -107,9 +107,9 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 
 }
 
-trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait VirtualMethodPurityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
 
@@ -119,7 +119,9 @@ trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with JavaFPCFEagerAnalysisScheduler {
+
+    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -147,7 +149,7 @@ object EagerVirtualMethodPurityAnalysis
         p:    SomeProject,
         ps:   PropertyStore,
         data: InitializationData
-    ): FPCFAnalysis = {
+    ): ProjectBasedAnalysis = {
         val analysis = new VirtualMethodPurityAnalysis(p)
         val (declaredMethods, simpleContexts, configuredPurity) = data
 
@@ -164,7 +166,7 @@ object EagerVirtualMethodPurityAnalysis
 
 object LazyVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

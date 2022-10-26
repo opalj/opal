@@ -15,10 +15,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
@@ -26,6 +23,7 @@ import org.opalj.br.fpcf.properties.VFreshReturnValue
 import org.opalj.br.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.br.fpcf.properties.VNoFreshReturnValue
 import org.opalj.br.fpcf.properties.VPrimitiveReturnValue
+import org.opalj.si.FPCFAnalysis
 
 /**
  * An analysis that aggregates whether the return value for all possible methods represented by a
@@ -35,7 +33,7 @@ import org.opalj.br.fpcf.properties.VPrimitiveReturnValue
  */
 class VirtualReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -113,9 +111,9 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
 }
 
-sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(VirtualMethodReturnValueFreshness)
@@ -127,13 +125,13 @@ sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisSc
 
 object EagerVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods
         val analysis = new VirtualReturnValueFreshnessAnalysis(p)
         ps.scheduleEagerComputationsForEntities(declaredMethods)(
@@ -145,7 +143,7 @@ object EagerVirtualReturnValueFreshnessAnalysis
 
 object LazyVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

@@ -6,9 +6,9 @@ package properties
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.common.DomainRegistry
+import org.opalj.si.ProjectInformationKey
 
 /**
  * Encapsulates the information which domain will be used to perform the abstract interpretations

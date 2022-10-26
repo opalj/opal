@@ -15,10 +15,10 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.FieldType
 import org.opalj.br.ReferenceType
+import org.opalj.si.ProjectInformationKey
 
 /**
  * Container class, to represent a tamiflex log:

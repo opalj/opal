@@ -5,7 +5,7 @@ package fpcf
 import java.net.URL
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis

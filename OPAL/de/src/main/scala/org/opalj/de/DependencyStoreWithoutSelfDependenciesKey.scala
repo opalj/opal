@@ -3,7 +3,7 @@ package org.opalj
 package de
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.si.ProjectInformationKey
 
 /**
  * Key that can be used to get a `DependencyStore` that contains all dependencies

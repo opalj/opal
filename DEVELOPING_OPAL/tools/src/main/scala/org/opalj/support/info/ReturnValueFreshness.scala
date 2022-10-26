@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.properties.FreshReturnValue
 import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis

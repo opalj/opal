@@ -2,8 +2,9 @@
 package org.opalj
 package br
 
-import scala.collection.Map
+import org.opalj.si.{MetaProject, ProjectInformationKey}
 
+import scala.collection.Map
 import scala.collection.immutable.ArraySeq
 
 /**
@@ -20,7 +21,8 @@ package object analyses {
 
     type ProgressEvent = ProgressEvents.Value
 
-    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
+    //trait JavaProjectInformationKeys extends Seq[JavaProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
+    type JavaProjectInformationKeys = Seq[ProjectInformationKey[_ <: MetaProject, _ <: AnyRef, _ <: AnyRef]]
 
     type StringConstantsInformation = Map[String, ArraySeq[PCInMethod]]
 

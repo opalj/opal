@@ -3,7 +3,7 @@ package org.opalj
 package tac
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.si.ProjectInformationKey
 import org.opalj.value.ValueInformation
 
 /**

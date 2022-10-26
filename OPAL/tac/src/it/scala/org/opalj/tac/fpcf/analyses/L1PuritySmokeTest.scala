@@ -20,9 +20,9 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 

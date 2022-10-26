@@ -28,8 +28,7 @@ import org.opalj.fpcf.PropertyComputation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.FinalField
@@ -43,6 +42,9 @@ import org.opalj.br.fpcf.properties.MutableObjectDueToUnknownSupertypes
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.si.{FPCFAnalysis, MetaProject, ProjectInformationKey}
+
+import scala.reflect.{ClassTag, classTag}
 
 /**
  * Determines the mutability of instances of a specific class. In case the class
@@ -66,7 +68,7 @@ import org.opalj.br.fpcf.properties.TypeImmutability
  * @author Florian Kübler
  * @author Dominik Helm
  */
-class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class ClassImmutabilityAnalysis(val project: SomeProject) extends ProjectBasedAnalysis {
     /*
      * The analysis is implemented as an incremental analysis which starts with the analysis
      * of those types which directly inherit from java.lang.Object and then propagates the
@@ -402,9 +404,9 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 }
 
-trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait ClassImmutabilityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: Seq[ProjectInformationKey[MetaProject, Nothing, Nothing]] = Seq.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 
@@ -494,7 +496,9 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with JavaFPCFEagerAnalysisScheduler {
+
+    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -521,7 +525,9 @@ object EagerClassImmutabilityAnalysis
  */
 object LazyClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with JavaFPCFLazyAnalysisScheduler {
+
+    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

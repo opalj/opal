@@ -8,8 +8,8 @@ import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.Method
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode

@@ -11,10 +11,10 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTransformerScheduler
 import org.opalj.br.fpcf.DefaultFPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.fpcf.properties.BaseAIResult
+import org.opalj.fpcf.scheduling.BasicFPCFTransformerScheduler
 import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 

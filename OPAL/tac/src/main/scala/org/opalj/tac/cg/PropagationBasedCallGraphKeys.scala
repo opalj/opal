@@ -6,8 +6,9 @@ package cg
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
+import org.opalj.si.ProjectInformationKey
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
@@ -21,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
 
 /**
- * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
+ * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
  * Palsberg's propagation-based algorithms.
  *
  * @see [[CallGraphKey]] for further details.

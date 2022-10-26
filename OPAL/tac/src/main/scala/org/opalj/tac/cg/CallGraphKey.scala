@@ -12,21 +12,19 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.cg.CallBySignatureKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.scheduling.{FPCFAnalysesManagerKey, FPCFAnalysisScheduler}
+import org.opalj.si.{ProjectInformationKey, PropertyStoreKey}
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
- * An abstract [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]].
+ * An abstract [[ProjectInformationKey]] to compute a [[CallGraph]].
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *

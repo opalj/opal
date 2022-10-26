@@ -45,10 +45,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
@@ -56,6 +53,7 @@ import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.cg.Callees

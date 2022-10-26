@@ -15,14 +15,14 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.properties.cg.Callers
 

@@ -11,10 +11,10 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.domain.Origin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
 
 /**
  * Extracts the information about receivers of method calls.

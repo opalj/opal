@@ -43,9 +43,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.scheduling.FPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey

@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.ifds
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.{FPCFAnalysis, FPCFLazyAnalysisScheduler}
 import org.opalj.fpcf._
-import org.opalj.ifds.Dependees.Getter
+import org.opalj.fpcf.ifds.Dependees.Getter
+import org.opalj.fpcf.scheduling.FPCFLazyAnalysisScheduler
+import org.opalj.si.{FPCFAnalysis, MetaProject}
 
 import scala.collection.{mutable, Set => SomeSet}
 
@@ -137,7 +137,7 @@ class Statistics {
     var subsumptions = 0
 }
 
-protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalysis
+protected class ProjectFPCFAnalysis(val project: MetaProject) extends FPCFAnalysis
 
 /**
  *
@@ -147,7 +147,7 @@ protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalys
  */
 class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
         implicit
-        project:         SomeProject,
+        project:         MetaProject,
         val ifdsProblem: IFDSProblem[IFDSFact, C, S],
         val propertyKey: IFDSPropertyMetaInformation[S, IFDSFact]
 ) extends ProjectFPCFAnalysis(project) {
@@ -417,28 +417,30 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <
         else out
     }
 
-    private def subsumes(existingFacts: Set[IFDSFact], newFact: IFDSFact)(implicit project: SomeProject): Boolean = {
+    protected def subsumes(existingFact: IFDSFact, newFact: IFDSFact): Boolean = false
+
+    private def subsumes(existingFacts: Set[IFDSFact], newFact: IFDSFact): Boolean = {
         statistics.subsumeTries += 1
-        if (ifdsProblem.subsumeFacts && existingFacts.exists(_.subsumes(newFact, project))) {
+        if (ifdsProblem.subsumeFacts && existingFacts.exists(subsumes(_, newFact))) {
             statistics.subsumptions += 1
             true
         } else false
     }
 }
 
-abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
-    extends FPCFLazyAnalysisScheduler {
+abstract class IFDSAnalysisScheduler[P <: MetaProject, IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
+    extends FPCFLazyAnalysisScheduler[P] {
     final override type InitializationData = IFDSAnalysis[IFDSFact, C, S]
     def property: IFDSPropertyMetaInformation[S, IFDSFact]
     final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def beforeSchedule(p: P, ps: PropertyStore): Unit = {}
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
     override def register(
-        p:        SomeProject,
+        p:        P,
         ps:       PropertyStore,
         analysis: IFDSAnalysis[IFDSFact, C, S]
     ): FPCFAnalysis = {
@@ -454,7 +456,7 @@ abstract class IFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact, C <: AnyRef, 
     }
 
     override def afterPhaseCompletion(
-        p:        SomeProject,
+        p:        P,
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}

@@ -25,11 +25,11 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI

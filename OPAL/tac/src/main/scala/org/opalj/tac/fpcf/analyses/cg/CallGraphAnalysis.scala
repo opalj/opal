@@ -36,10 +36,10 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 

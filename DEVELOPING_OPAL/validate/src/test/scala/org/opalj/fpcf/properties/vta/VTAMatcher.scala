@@ -9,10 +9,10 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.DUVar

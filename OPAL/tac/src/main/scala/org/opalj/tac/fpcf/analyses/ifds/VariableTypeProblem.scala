@@ -4,22 +4,28 @@ package org.opalj.tac.fpcf.analyses.ifds
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.ifds.AbstractIFDSFact
-
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem => NewJavaIFDSProblem}
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
+
 import scala.annotation.tailrec
-
-import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Dependees.Getter
-
+import org.opalj.fpcf.ifds.{AbstractIFDSFact, AbstractIFDSNullFact}
+import org.opalj.fpcf.ifds.Dependees.Getter
 import org.opalj.fpcf.FinalEP
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.fpcf.properties.cg.Callers
 
-trait VTAFact extends AbstractIFDSFact
+trait VTAFact extends AbstractIFDSFact {
+    /**
+     * Checks, if this fact subsumes an `other` fact.
+     *
+     * @param other   The other fact.
+     * @param project The analyzed project.
+     * @return True, if this fact subsumes the `other`fact
+     */
+    def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean = false
+}
 case object VTANullFact extends VTAFact with AbstractIFDSNullFact
 
 /**

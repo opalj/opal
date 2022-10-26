@@ -7,9 +7,9 @@ package analyses
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.ai.fpcf.domain.PropertyStoreBased
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
 
 /**
  * Scheduler that can be used by analyses which perform abstract interpretations and where

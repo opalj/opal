@@ -6,8 +6,9 @@ package cg
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
+import org.opalj.si.ProjectInformationKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
@@ -20,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAna
 import org.opalj.tac.fpcf.analyses.pointsto.ReflectionAllocationsAnalysisScheduler
 
 /**
- * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
+ * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on
  * the points-to analysis.
  *
  * @see [[CallGraphKey]] for further details.

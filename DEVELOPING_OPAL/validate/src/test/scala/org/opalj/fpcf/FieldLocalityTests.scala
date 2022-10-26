@@ -5,9 +5,9 @@ package fpcf
 import java.net.URL
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis

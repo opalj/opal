@@ -41,7 +41,6 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoInstantiatedTypes
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
@@ -61,6 +60,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey

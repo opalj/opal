@@ -7,9 +7,9 @@ import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.SomeProject
+import org.opalj.si.{MetaProject, PropertyStoreKey}
 
 /**
  * @author Michael Eichberg
@@ -23,7 +23,7 @@ class PropertyStoreKeyTest extends AnyFunSpec with Matchers {
         val ps = p.get(PropertyStoreKey)
 
         it("the context should always contain the project") {
-            assert(p == ps.context(classOf[SomeProject]))
+            assert(p == ps.context(classOf[MetaProject]))
         }
     }
 }

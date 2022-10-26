@@ -27,8 +27,8 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.cg.NoCallers

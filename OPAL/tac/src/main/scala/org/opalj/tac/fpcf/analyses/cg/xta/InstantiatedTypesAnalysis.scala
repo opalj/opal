@@ -13,7 +13,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
@@ -38,6 +37,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 
 import scala.collection.mutable.ArrayBuffer

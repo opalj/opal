@@ -5,7 +5,6 @@ package analyses
 package cg
 
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.OPALLogger.error
 
 /**
@@ -35,7 +34,7 @@ import org.opalj.log.OPALLogger.error
  *
  * @author Michael Reif
  */
-object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] {
+object ClosedPackagesKey extends JavaProjectInformationKey[ClosedPackages, Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.ClosedPackagesKey."
 
@@ -46,7 +45,7 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] 
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
