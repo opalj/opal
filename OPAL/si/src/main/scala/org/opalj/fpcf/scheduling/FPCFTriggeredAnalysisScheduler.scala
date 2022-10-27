@@ -4,6 +4,8 @@ package org.opalj.fpcf.scheduling
 import org.opalj.fpcf._
 import org.opalj.si.{FPCFAnalysis, MetaProject, PropertyStoreKey}
 
+import scala.reflect.classTag
+
 /**
  *  The underlying analysis will only be registered with the property store and
  *  will be triggered if a property of the specified kind is derived for a specific entity.
@@ -21,7 +23,7 @@ trait FPCFTriggeredAnalysisScheduler[P <: MetaProject] extends FPCFAnalysisSched
     final override def derivesLazily: Option[PropertyBounds] = None
 
     final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
-        register(ps.context(classOf[MetaProject]), ps, i)
+        register(ps.context(classTag[P].runtimeClass).asInstanceOf[P], ps, i)
     }
 
     /**
@@ -29,7 +31,7 @@ trait FPCFTriggeredAnalysisScheduler[P <: MetaProject] extends FPCFAnalysisSched
      */
     def triggeredBy: PropertyKind
 
-    final def register(project: MetaProject, i: InitializationData): FPCFAnalysis = {
+    final def register(project: P, i: InitializationData): FPCFAnalysis = {
         register(project, project.get(PropertyStoreKey), i)
     }
 
@@ -42,7 +44,7 @@ trait FPCFTriggeredAnalysisScheduler[P <: MetaProject] extends FPCFAnalysisSched
      *       `scheduleEagerComputationForEntity`.
      */
     def register(
-        project:       MetaProject,
+        project:       P,
         propertyStore: PropertyStore,
         i:             InitializationData
     ): FPCFAnalysis

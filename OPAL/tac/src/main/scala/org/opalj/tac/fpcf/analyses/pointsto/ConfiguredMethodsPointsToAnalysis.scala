@@ -86,13 +86,14 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             else if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isEmpty &&
                 dm.descriptor.returnType.isReferenceType) {
                 val m = dm.definedMethod
-                val cf = m.classFile.thisType.toJVMTypeName
+                val cf = m.classFile.thisType.fqn
                 val name = m.name
                 val desc = m.descriptor.toJVMDescriptor
                 val tpe = m.returnType.asReferenceType.toJVMTypeName
-                val arrayTypes = if (m.returnType.isArrayType)
-                    Seq(m.returnType.asArrayType.elementType.toJVMTypeName)
-                else Seq.empty
+                val arrayTypes = // TODO We should probably handle ArrayTypes as well
+                    if (m.returnType.isArrayType && m.returnType.asArrayType.isObjectType)
+                        Seq(m.returnType.asArrayType.elementType.asObjectType.fqn)
+                    else Seq.empty
                 handleCallers(callers, null, Array(PointsToRelation(
                     MethodDescription(cf, name, desc),
                     AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
@@ -247,7 +248,6 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 val filter = { t: ReferenceType =>
                     classHierarchy.isSubtypeOf(t, returnType)
                 }
-                assert(method == state.callContext.method)
                 val entity = state.callContext
                 state.includeSharedPointsToSet(
                     entity,

@@ -17,16 +17,12 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.ReferenceType
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 
 import scala.collection.immutable.ArraySeq
 
@@ -38,7 +34,7 @@ import scala.collection.immutable.ArraySeq
  */
 class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
@@ -103,9 +99,9 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     }
 }
 
-object ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callers, InstantiatedTypes)
