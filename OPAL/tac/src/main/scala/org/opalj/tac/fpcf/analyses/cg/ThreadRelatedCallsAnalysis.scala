@@ -18,18 +18,18 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -538,7 +538,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
  */
 class ThreadRelatedCallsAnalysis private[cg] (
         val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
         val declaredMethods = p.get(DeclaredMethodsKey)
@@ -588,9 +588,9 @@ class ThreadRelatedCallsAnalysis private[cg] (
     }
 }
 
-object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+object ThreadRelatedCallsAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] =

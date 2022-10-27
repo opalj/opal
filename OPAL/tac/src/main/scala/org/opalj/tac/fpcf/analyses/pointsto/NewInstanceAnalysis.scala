@@ -25,13 +25,13 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.ArrayType
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -195,11 +195,11 @@ abstract class NewInstanceMethodAnalysis(
     }
 }
 
-trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait NewInstanceAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => NewInstanceAnalysis
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callees, propertyKind)
@@ -208,7 +208,7 @@ trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = createAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis

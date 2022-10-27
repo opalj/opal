@@ -4,34 +4,31 @@ package tac
 package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
-
 import scala.jdk.CollectionConverters._
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKey, JavaProjectInformationKeys, SomeProject}
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.cg.CallBySignatureKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.fpcf.scheduling.{FPCFAnalysesManagerKey, FPCFAnalysisScheduler}
-import org.opalj.si.{ProjectInformationKey, PropertyStoreKey}
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
+import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
- * An abstract [[ProjectInformationKey]] to compute a [[CallGraph]].
+ * An abstract [[JavaProjectInformationKey]] to compute a [[CallGraph]].
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
+trait CallGraphKey extends JavaProjectInformationKey[CallGraph, Nothing] {
 
     private[this] val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
 
@@ -43,9 +40,9 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
      */
     protected def callGraphSchedulers(
         project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler]
+    ): Iterable[JavaFPCFAnalysisScheduler]
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = {
         project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
             case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator =>
                 implicit val logContext: LogContext = project.logContext
@@ -74,7 +71,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             registeredAnalyses(project).flatMap(_.requiredProjectInformation)
     }
 
-    protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
+    protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[JavaFPCFAnalysisScheduler] = {
         implicit val logContext: LogContext = project.logContext
         val config = project.config
 
@@ -91,7 +88,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         // TODO make TACAI analysis configurable
-        var analyses: List[FPCFAnalysisScheduler] =
+        var analyses: List[JavaFPCFAnalysisScheduler] =
             List(
                 LazyTACAIProvider
             )
@@ -120,12 +117,12 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     private[this] def resolveAnalysisRunner(
         className: String
-    )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
+    )(implicit logContext: LogContext): Option[JavaFPCFAnalysisScheduler] = {
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
             val module = mirror.staticModule(className)
             import mirror.reflectModule
-            Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
+            Some(reflectModule(module).instance.asInstanceOf[JavaFPCFAnalysisScheduler])
         } catch {
             case sre: ScalaReflectionException =>
                 error("call graph", s"cannot find analysis scheduler $className", sre)
@@ -136,7 +133,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         }
     }
 
-    private[this] def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {
+    private[this] def requiresCallBySignatureKey(p: SomeProject): JavaProjectInformationKeys = {
         val config = p.config
         if (config.hasPath(CallBySignatureConfigKey)
             && config.getBoolean(CallBySignatureConfigKey)) {
@@ -148,9 +145,9 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     def getTypeIterator(project: SomeProject): TypeIterator
 }
 
-object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
+object CallGraphKey extends JavaProjectInformationKey[CallGraph, CallGraph] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeIteratorKey)
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def compute(project: SomeProject): CallGraph = {
 

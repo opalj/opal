@@ -9,7 +9,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.fpcf.domain.PropertyStoreBased
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
 
 /**
  * Scheduler that can be used by analyses which perform abstract interpretations and where
@@ -17,7 +17,7 @@ import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
  *
  * @author Michael Eichberg
  */
-trait DomainBasedFPCFAnalysisScheduler extends FPCFAnalysisScheduler {
+trait DomainBasedFPCFAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
         if (p.allMethodsWithBody.isEmpty)

@@ -9,12 +9,9 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.DefaultFPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.{DefaultFPCFAnalysis, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
+import org.opalj.br.fpcf.JavaBasicFPCFTransformerScheduler
 import org.opalj.ai.fpcf.properties.BaseAIResult
-import org.opalj.fpcf.scheduling.BasicFPCFTransformerScheduler
 import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -23,9 +20,9 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Michael Eichberg
  */
-object TACAITransformer extends BasicFPCFTransformerScheduler with TACAIInitializer {
+object TACAITransformer extends JavaBasicFPCFTransformerScheduler with TACAIInitializer {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq.empty
 
     def derivedProperty: PropertyBounds = PropertyBounds.finalP(TACAI)
 
@@ -33,7 +30,7 @@ object TACAITransformer extends BasicFPCFTransformerScheduler with TACAIInitiali
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, i: Null): ProjectBasedAnalysis = {
         class TheTACAITransformer
             extends DefaultFPCFAnalysis(p)
             with ((Entity, BaseAIResult) => FinalEP[Method, TACAI]) {

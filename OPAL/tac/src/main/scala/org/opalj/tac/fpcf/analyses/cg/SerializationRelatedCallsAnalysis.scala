@@ -6,7 +6,6 @@ package analyses
 package cg
 
 import scala.annotation.tailrec
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -21,7 +20,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ASObjectValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ElementReferenceType
 import org.opalj.br.MethodDescriptor
@@ -31,12 +30,12 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
 import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -471,7 +470,7 @@ class OISReadObjectAnalysis private[analyses] (
  */
 class SerializationRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
         val readObjectAnalysis = new OISReadObjectAnalysis(project)
@@ -482,9 +481,9 @@ class SerializationRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object SerializationRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+object SerializationRelatedCallsAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] =
@@ -498,7 +497,7 @@ object SerializationRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysis
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, i: Null): ProjectBasedAnalysis = {
         val analysis = new SerializationRelatedCallsAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis

@@ -14,15 +14,15 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.analyses.JavaProjectInformationKeys
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
@@ -39,7 +39,7 @@ import scala.collection.immutable.ArraySeq
  */
 class TamiFlexCallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     val ConstructorT: ObjectType = ObjectType("java/lang/reflect/Constructor")
@@ -158,9 +158,9 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
     }
 }
 
-object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+object TamiFlexCallGraphAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, TamiFlexKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
@@ -174,7 +174,7 @@ object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisSchedule
         Callees
     )
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new TamiFlexCallGraphAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis

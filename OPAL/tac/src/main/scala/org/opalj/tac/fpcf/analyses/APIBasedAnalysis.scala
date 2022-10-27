@@ -13,7 +13,7 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -33,7 +33,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  *
  * @author Florian Kuebler
  */
-trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
+trait APIBasedAnalysis extends ProjectBasedAnalysis with ContextualAnalysis {
     val apiMethod: DeclaredMethod
 
     implicit val typeIterator: TypeIterator

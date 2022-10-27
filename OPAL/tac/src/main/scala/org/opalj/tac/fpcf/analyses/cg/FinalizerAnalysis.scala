@@ -20,11 +20,11 @@ import org.opalj.fpcf.Results
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.DeclaredMethod
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
@@ -37,7 +37,7 @@ import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
  *
  * @author Florian Kuebler
  */
-class FinalizerAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class FinalizerAnalysis private[analyses] ( final val project: SomeProject) extends ProjectBasedAnalysis {
 
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -87,9 +87,9 @@ class FinalizerAnalysis private[analyses] ( final val project: SomeProject) exte
     }
 }
 
-object FinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object FinalizerAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)

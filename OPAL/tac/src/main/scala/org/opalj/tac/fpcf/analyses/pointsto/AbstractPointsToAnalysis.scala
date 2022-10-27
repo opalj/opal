@@ -6,7 +6,6 @@ package analyses
 package pointsto
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
@@ -38,14 +37,14 @@ import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.JavaFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.fpcf.scheduling.FPCFTriggeredAnalysisScheduler
+import org.opalj.si.FPCFAnalysis
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -591,13 +590,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 }
 
-trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait AbstractPointsToAnalysisScheduler extends JavaFPCFTriggeredAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => AbstractPointsToAnalysis
 
     override type InitializationData = Null
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(

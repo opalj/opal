@@ -11,7 +11,7 @@ import org.opalj.ai.BaseAI
 import org.opalj.value.ValueInformation
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
-import org.opalj.si.ProjectInformationKey
+import org.opalj.br.analyses.JavaProjectInformationKey
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
@@ -29,7 +29,7 @@ object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse]
     /**
      * TACAI code has no special prerequisites.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an factory which computes and caches the 3-address code of a method when required.

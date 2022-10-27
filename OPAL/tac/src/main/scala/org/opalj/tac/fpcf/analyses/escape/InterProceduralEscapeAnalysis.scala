@@ -26,9 +26,9 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.Context
@@ -37,7 +37,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.ai.ValueOrigin
-import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
+import org.opalj.br.fpcf.{JavaBasicFPCFEagerAnalysisScheduler, JavaBasicFPCFLazyAnalysisScheduler, JavaFPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -155,9 +155,9 @@ class InterProceduralEscapeAnalysis private[analyses] (
     }
 }
 
-sealed trait InterProceduralEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait InterProceduralEscapeAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, IsOverridableMethodKey, TypeIteratorKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
@@ -171,13 +171,13 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends FPCFAnalysisSchedule
 
 object EagerInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
     type V = DUVar[ValueInformation]
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         super.requiredProjectInformation ++ Seq(DefinitionSitesKey, SimpleContextsKey)
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)
 
         val declaredMethods = p.get(DeclaredMethodsKey)
@@ -215,13 +215,13 @@ object EagerInterProceduralEscapeAnalysis
 
 object LazyInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)
         ps.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
         analysis

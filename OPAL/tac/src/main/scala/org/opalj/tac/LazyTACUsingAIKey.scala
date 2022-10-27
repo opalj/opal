@@ -10,7 +10,7 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.si.ProjectInformationKey
+import org.opalj.br.analyses.JavaProjectInformationKey
 import org.opalj.value.ValueInformation
 
 /**
@@ -29,7 +29,7 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      */
     override def requirements(
         project: SomeProject
-    ): Seq[ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
+    ): Seq[JavaProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
         Seq(SimpleAIKey)
     }
 
@@ -39,7 +39,7 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      * All methods belonging to a project are converted using the same `domainFactory`. Hence,
      * the `domainFactory` needs to be set before compute is called/this key is passed to a
      * specific project. If multiple projects are instead concurrently, external synchronization
-     * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
+     * is necessary (e.g., on the JavaProjectInformationKey) to ensure that each project is
      * instantiated using the desired domain.
      */
     override def compute(

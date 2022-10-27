@@ -23,8 +23,8 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.analyses.JavaProjectInformationKeys
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
@@ -130,9 +130,9 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
 
 }
 
-object SystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object SystemPropertiesAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = Set(

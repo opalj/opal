@@ -5,21 +5,21 @@ package cg
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.si.ProjectInformationKey
+import org.opalj.br.analyses.JavaProjectInformationKey
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
- *  An [[ProjectInformationKey]] to get the [[TypeIterator]] used to compute
+ *  An [[JavaProjectInformationKey]] to get the [[TypeIterator]] used to compute
  *  the current project's call graph.
  *  This key is intended to be set up by a corresponding [[org.opalj.tac.cg.CallGraphKey]].
  */
 object TypeIteratorKey
-    extends ProjectInformationKey[TypeIterator, () => TypeIterator] {
+    extends JavaProjectInformationKey[TypeIterator, () => TypeIterator] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = Nil
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = Nil
 
     override def compute(project: SomeProject): TypeIterator = {
         project.getProjectInformationKeyInitializationData(this) match {

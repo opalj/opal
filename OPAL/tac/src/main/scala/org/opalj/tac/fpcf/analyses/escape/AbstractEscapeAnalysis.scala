@@ -21,7 +21,7 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
@@ -47,7 +47,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 
-trait AbstractEscapeAnalysis extends FPCFAnalysis {
+trait AbstractEscapeAnalysis extends ProjectBasedAnalysis {
 
     type AnalysisContext <: AbstractEscapeAnalysisContext
     type AnalysisState <: AbstractEscapeAnalysisState

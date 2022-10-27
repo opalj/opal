@@ -3,8 +3,8 @@ package org.opalj.tac.fpcf.analyses.ifds
 
 import org.opalj.br.{DeclaredMethod, Method}
 import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
+import org.opalj.fpcf.ifds.ICFG
 import org.opalj.fpcf.{FinalEP, PropertyStore}
-import org.opalj.ifds.ICFG
 import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.{Assignment, DUVar, Expr, ExprStmt, LazyDetachedTACAIKey, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, TACMethodParameter, TACode, VirtualFunctionCall, VirtualMethodCall}

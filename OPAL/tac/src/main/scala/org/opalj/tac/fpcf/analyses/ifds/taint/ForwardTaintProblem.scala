@@ -3,7 +3,7 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
-import org.opalj.ifds.Dependees.Getter
+import org.opalj.fpcf.ifds.Dependees.Getter
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}

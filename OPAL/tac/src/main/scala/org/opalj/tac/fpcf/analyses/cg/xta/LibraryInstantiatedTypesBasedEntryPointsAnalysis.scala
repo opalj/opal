@@ -7,7 +7,6 @@ package cg
 package xta
 
 import java.util.concurrent.ConcurrentHashMap
-
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEP
@@ -29,10 +28,10 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
@@ -51,7 +50,7 @@ import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
  */
 class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     // TODO: Use a Scala set
@@ -136,19 +135,19 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
     }
 }
 
-object LibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object LibraryInstantiatedTypesBasedEntryPointsAnalysis extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
     override def register(
         project:       SomeProject,
         propertyStore: PropertyStore,
         i:             Null
-    ): FPCFAnalysis = {
+    ): ProjectBasedAnalysis = {
         val analysis = new LibraryInstantiatedTypesBasedEntryPointsAnalysis(project)
         propertyStore.registerTriggeredComputation(InstantiatedTypes.key, analysis.analyze)
         analysis
     }
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(InstantiatedTypes)

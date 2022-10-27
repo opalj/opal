@@ -25,16 +25,16 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.NEW
 import org.opalj.br.ReferenceType
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 
 /**
@@ -47,7 +47,7 @@ import org.opalj.tac.cg.TypeIteratorKey
  */
 class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
@@ -205,9 +205,9 @@ object InstantiatedTypesAnalysis {
     }
 }
 
-object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object InstantiatedTypesAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,
@@ -220,7 +220,7 @@ object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSche
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new InstantiatedTypesAnalysis(p)
         ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis

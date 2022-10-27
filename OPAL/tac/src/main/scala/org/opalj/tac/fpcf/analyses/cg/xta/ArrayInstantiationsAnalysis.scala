@@ -8,9 +8,10 @@ package xta
 
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CreateNewArrayInstruction
@@ -22,10 +23,9 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
-import scala.collection.mutable
 
+import scala.collection.mutable
 import org.opalj.tac.cg.TypeIteratorKey
 
 /**
@@ -117,11 +117,11 @@ final class ArrayInstantiationsAnalysis(
 
 class ArrayInstantiationsAnalysisScheduler(
         selectSetEntity: TypeSetEntitySelector
-) extends BasicFPCFTriggeredAnalysisScheduler {
+) extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(TypeIteratorKey)
 
-    override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
+    override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): ProjectBasedAnalysis = {
         val analysis =
             new ArrayInstantiationsAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)

@@ -6,11 +6,8 @@ package analyses
 package purity
 
 import scala.annotation.switch
-
 import scala.collection.immutable.IntMap
-
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
@@ -33,7 +30,7 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.ClassifiedImpure
@@ -61,7 +58,7 @@ import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.properties.UsesConstantDataOnly
 import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.tac.fpcf.properties.cg.Callees
@@ -71,7 +68,8 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.isImmediateVMException
-import org.opalj.fpcf.scheduling.{FPCFAnalysisScheduler, FPCFEagerAnalysisScheduler, FPCFLazyAnalysisScheduler}
+import org.opalj.br.fpcf.{JavaFPCFAnalysisScheduler, JavaFPCFEagerAnalysisScheduler, JavaFPCFLazyAnalysisScheduler}
+import org.opalj.si.FPCFAnalysis
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.NoCallers
@@ -948,11 +946,11 @@ object L2PurityAnalysis {
     }
 }
 
-trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L2PurityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, SimpleContextsKey, ConfiguredPurityKey)
 
     override def uses: Set[PropertyBounds] = {
@@ -986,14 +984,14 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
 }
 
-object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with JavaFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         super.requiredProjectInformation :+ CallGraphKey
 
     override def start(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
-    ): FPCFAnalysis = {
+    ): ProjectBasedAnalysis = {
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
             case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
@@ -1014,11 +1012,11 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
-object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with JavaFPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
-    ): FPCFAnalysis = {
+    ): ProjectBasedAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }

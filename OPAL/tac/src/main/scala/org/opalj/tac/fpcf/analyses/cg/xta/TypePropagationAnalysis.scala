@@ -7,16 +7,15 @@ package cg
 package xta
 
 import scala.jdk.CollectionConverters._
-
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
@@ -35,7 +34,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.DefinedMethod
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -486,9 +485,9 @@ final class TypePropagationAnalysis private[analyses] (
 
 final class TypePropagationAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
-) extends BasicFPCFTriggeredAnalysisScheduler {
+) extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(TypeIteratorKey)
 
     override type InitializationData = Null
 
@@ -496,7 +495,7 @@ final class TypePropagationAnalysisScheduler(
 
     override def init(p: SomeProject, ps: PropertyStore): Null = null
 
-    override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
+    override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): ProjectBasedAnalysis = {
         val analysis = new TypePropagationAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis

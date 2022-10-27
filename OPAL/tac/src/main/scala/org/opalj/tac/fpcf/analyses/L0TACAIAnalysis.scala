@@ -15,16 +15,17 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.ai.fpcf.properties.NoAIResult
 import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
-import org.opalj.fpcf.scheduling.{FPCFEagerAnalysisScheduler, FPCFLazyAnalysisScheduler}
+import org.opalj.br.fpcf.{JavaFPCFEagerAnalysisScheduler, JavaFPCFLazyAnalysisScheduler}
+import org.opalj.si.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -34,7 +35,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Michael Eichberg
  */
-class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends ProjectBasedAnalysis {
 
     import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 
@@ -94,7 +95,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
 sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(AIDomainFactoryKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
 
@@ -112,13 +113,13 @@ sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
 
 }
 
-object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with JavaFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new L0TACAIAnalysis(p)
         val methods = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.computeTAC)
@@ -126,11 +127,11 @@ object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnaly
     }
 }
 
-object LazyL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL0TACAIAnalysis extends L0TACAIAnalysisScheduler with JavaFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new L0TACAIAnalysis(p)
         ps.registerLazyPropertyComputation(TACAI.key, analysis.computeTAC)
         analysis

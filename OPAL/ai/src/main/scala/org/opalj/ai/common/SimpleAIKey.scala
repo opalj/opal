@@ -4,14 +4,12 @@ package ai
 package common
 
 import scala.collection.concurrent.TrieMap
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKey, SomeProject}
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.si.ProjectInformationKey
 
 /**
  * Key to get the result of the abstract interpretation of a method using a configured domain
@@ -34,12 +32,12 @@ import org.opalj.si.ProjectInformationKey
  * @author Michael Eichberg
  */
 object SimpleAIKey
-    extends ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method => Domain with RecordDefUse] {
+    extends JavaProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method => Domain with RecordDefUse] {
 
     /**
      * The SimpleAIKey has no special prerequisites.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which performs and caches the result of the abstract interpretation of a

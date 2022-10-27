@@ -19,19 +19,20 @@ import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.Field
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.Type
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.JavaFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.NoContext
-import org.opalj.fpcf.scheduling.FPCFEagerAnalysisScheduler
+import org.opalj.si.FPCFAnalysis
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.cg.Callers
 
@@ -233,12 +234,12 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
 
 }
 
-trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler {
+trait LibraryPointsToAnalysisScheduler extends JavaFPCFEagerAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => LibraryPointsToAnalysis
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(
         TypeIteratorKey,
         ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey, VirtualFormalParametersKey,
         InitialInstantiatedTypesKey
@@ -252,7 +253,7 @@ trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, analysis: LibraryPointsToAnalysis): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, analysis: LibraryPointsToAnalysis): ProjectBasedAnalysis = {
         analysis
     }
 

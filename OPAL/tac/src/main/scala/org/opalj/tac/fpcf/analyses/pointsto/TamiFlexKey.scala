@@ -15,10 +15,10 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.FieldType
 import org.opalj.br.ReferenceType
-import org.opalj.si.ProjectInformationKey
+import org.opalj.br.analyses.JavaProjectInformationKey
 
 /**
  * Container class, to represent a tamiflex log:
@@ -86,10 +86,10 @@ class TamiFlexLogData(
  *
  * @author Florian Kuebler
  */
-object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
+object TamiFlexKey extends JavaProjectInformationKey[TamiFlexLogData, Nothing] {
     val configKey = "org.opalj.tac.fpcf.analyses.pointsto.TamiFlex.logFile"
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def compute(project: SomeProject): TamiFlexLogData = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)

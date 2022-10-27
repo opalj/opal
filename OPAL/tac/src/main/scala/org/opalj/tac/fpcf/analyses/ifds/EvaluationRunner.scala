@@ -6,10 +6,6 @@ import java.io.PrintWriter
 import scala.language.existentials
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.bytecode
-import org.opalj.ifds.Statistics
-import org.opalj.ifds.IFDSAnalysis
-import org.opalj.ifds.IFDSAnalysisScheduler
-
 import org.opalj.util.Milliseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.FinalEP
@@ -21,6 +17,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, Statistics}
 import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
 import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -28,7 +25,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 
 abstract class EvaluationRunner {
 
-    protected def analysisClass: IFDSAnalysisScheduler[_, _, _]
+    protected def analysisClass: IFDSAnalysisScheduler[_, _, _, _]
 
     protected def printAnalysisResults(analysis: IFDSAnalysis[_, _, _], ps: PropertyStore): Unit = ()
 

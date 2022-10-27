@@ -40,12 +40,12 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
@@ -53,7 +53,7 @@ import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
+import org.opalj.br.fpcf.{JavaBasicFPCFEagerAnalysisScheduler, JavaBasicFPCFLazyAnalysisScheduler, JavaFPCFAnalysisScheduler}
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.cg.Callees
@@ -171,7 +171,7 @@ class ReturnValueFreshnessState(val context: Context) {
  */
 class ReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
@@ -523,11 +523,11 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     }
 }
 
-sealed trait ReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait ReturnValueFreshnessAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReturnValueFreshness)
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DefinitionSitesKey, SimpleContextsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = {
@@ -543,9 +543,9 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler
 
 object EagerReturnValueFreshnessAnalysis
     extends ReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods()
 
@@ -563,9 +563,9 @@ object EagerReturnValueFreshnessAnalysis
 
 object LazyReturnValueFreshnessAnalysis
     extends ReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new ReturnValueFreshnessAnalysis(p)
         ps.registerLazyPropertyComputation(ReturnValueFreshness.key, analysis.determineFreshness)
         analysis

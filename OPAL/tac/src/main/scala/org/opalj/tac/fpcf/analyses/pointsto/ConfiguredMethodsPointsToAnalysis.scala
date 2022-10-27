@@ -21,7 +21,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -35,8 +34,9 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.fpcf.scheduling.FPCFTriggeredAnalysisScheduler
+import org.opalj.br.analyses.JavaProjectInformationKeys
+import org.opalj.br.fpcf.JavaFPCFTriggeredAnalysisScheduler
+import org.opalj.si.FPCFAnalysis
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
@@ -294,13 +294,13 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 }
 
-trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait ConfiguredMethodsPointsToAnalysisScheduler extends JavaFPCFTriggeredAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => ConfiguredMethodsPointsToAnalysis
 
     override type InitializationData = Null
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(

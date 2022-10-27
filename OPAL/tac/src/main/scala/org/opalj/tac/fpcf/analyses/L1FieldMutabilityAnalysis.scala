@@ -37,12 +37,12 @@ import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.JavaProjectInformationKeys
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.DeclaredMethod
-import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
+import org.opalj.br.fpcf.{JavaBasicFPCFEagerAnalysisScheduler, JavaBasicFPCFLazyAnalysisScheduler, JavaFPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -60,7 +60,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
  * @author Florian Kübler
  * @author Michael Eichberg
  */
-class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends ProjectBasedAnalysis {
 
     class State(
             val field:           Field,
@@ -354,9 +354,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-sealed trait L1FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait L1FieldMutabilityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(
         TypeExtensibilityKey,
         ClosedPackagesKey,
         FieldAccessInformationKey,
@@ -375,13 +375,13 @@ sealed trait L1FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
@@ -394,11 +394,11 @@ object EagerL1FieldMutabilityAnalysis
  */
 object LazyL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability

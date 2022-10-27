@@ -8,12 +8,13 @@ package xta
 
 import org.opalj.br._
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoCallers
@@ -37,7 +38,6 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 
 import scala.collection.mutable.ArrayBuffer
@@ -60,7 +60,7 @@ import scala.collection.mutable.ArrayBuffer
 class InstantiatedTypesAnalysis private[analyses] (
         final val project:     SomeProject,
         val setEntitySelector: TypeSetEntitySelector
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
@@ -253,9 +253,9 @@ class InstantiatedTypesAnalysis private[analyses] (
 
 class InstantiatedTypesAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
-) extends BasicFPCFTriggeredAnalysisScheduler {
+) extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(
         TypeIteratorKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
         InitialInstantiatedTypesKey
     )
@@ -270,7 +270,7 @@ class InstantiatedTypesAnalysisScheduler(
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new InstantiatedTypesAnalysis(p, selectSetEntity)
         ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis

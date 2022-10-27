@@ -53,7 +53,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
@@ -63,13 +63,13 @@ import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
-import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, BasicFPCFLazyAnalysisScheduler, FPCFAnalysisScheduler}
+import org.opalj.br.fpcf.{JavaBasicFPCFEagerAnalysisScheduler, JavaBasicFPCFLazyAnalysisScheduler, JavaFPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -87,7 +87,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
  * @author Florian Kübler
  * @author Michael Eichberg
  */
-class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends ProjectBasedAnalysis {
 
     case class State(
             field:                        Field,
@@ -1102,9 +1102,9 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L2FieldMutabilityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(
         TypeExtensibilityKey,
         ClosedPackagesKey,
         FieldAccessInformationKey,
@@ -1130,9 +1130,9 @@ trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerL2FieldMutabilityAnalysis
     extends L2FieldMutabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new L2FieldMutabilityAnalysis(p)
         val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
@@ -1149,13 +1149,13 @@ object EagerL2FieldMutabilityAnalysis
  */
 object LazyL2FieldMutabilityAnalysis
     extends L2FieldMutabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     final override def register(
         p:      SomeProject,
         ps:     PropertyStore,
         unused: Null
-    ): FPCFAnalysis = {
+    ): ProjectBasedAnalysis = {
         val analysis = new L2FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability

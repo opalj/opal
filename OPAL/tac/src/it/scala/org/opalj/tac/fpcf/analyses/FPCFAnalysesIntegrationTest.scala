@@ -29,7 +29,7 @@ import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -77,7 +77,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                                     requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
                             }
                         } else {
-                            // Recreate project keeping all ProjectInformationKeys other than the
+                            // Recreate project keeping all JavaProjectInformationKeys other than the
                             // PropertyStore as we are interested only in FPCF analysis results.
                             p = p.recreate { id =>
                                 id != PropertyStoreKey.uniqueId &&
@@ -165,7 +165,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
-    def getAnalysis(id: String): ComputationSpecification[FPCFAnalysis] = {
+    def getAnalysis(id: String): ComputationSpecification[ProjectBasedAnalysis] = {
         FPCFAnalysesRegistry.eagerFactory(id.trim)
     }
 
@@ -175,15 +175,15 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
         mirror.reflectModule(module).instance.asInstanceOf[PropertyMetaInformation]
     }
 
-    def getConfig: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] = {
+    def getConfig: Seq[(String, Set[ComputationSpecification[ProjectBasedAnalysis]], Seq[PropertyMetaInformation])] = {
         val configInputStream =
             this.getClass.getResourceAsStream("FPCFAnalysesIntegrationTest.config")
         val configLines = Source.fromInputStream(configInputStream).getLines()
 
-        var curConfig: (String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation]) = null
+        var curConfig: (String, Set[ComputationSpecification[ProjectBasedAnalysis]], Seq[PropertyMetaInformation]) = null
         var readProperties = false
 
-        var configurations: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] =
+        var configurations: Seq[(String, Set[ComputationSpecification[ProjectBasedAnalysis]], Seq[PropertyMetaInformation])] =
             List.empty
 
         for (line <- configLines) {

@@ -3,12 +3,11 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
-import org.opalj.si.ProjectInformationKey
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -22,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisSch
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
 
 /**
- * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on
+ * A [[JavaProjectInformationKey]] to compute a [[CallGraph]] based on
  * the points-to analysis.
  *
  * @see [[CallGraphKey]] for further details.
@@ -31,14 +30,14 @@ import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisSched
  */
 object TypeBasedPointsToCallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = {
         Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
             super.requirements(project)
     }
 
     override protected[cg] def callGraphSchedulers(
         project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
+    ): Iterable[JavaFPCFAnalysisScheduler] = {
         val isLibrary =
             project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
                 "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"

@@ -3,21 +3,18 @@ package org.opalj.tac.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
-import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
-
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callers
+
 import java.io.{File, PrintWriter}
-
-import org.opalj.ifds.IFDSAnalysis
-import org.opalj.ifds.IFDSAnalysisScheduler
-import org.opalj.ifds.Statistics
-
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
+import org.opalj.fpcf.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation, Statistics}
 import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.TypeIteratorKey
+
+import scala.reflect.{ClassTag, classTag}
 
 /**
  * A variable type analysis implemented as an IFDS analysis.
@@ -31,11 +28,16 @@ import org.opalj.tac.cg.TypeIteratorKey
 class IFDSBasedVariableTypeAnalysis(project: SomeProject, subsumeFacts: Boolean = false)
     extends IFDSAnalysis()(project, new VariableTypeProblem(project, subsumeFacts), VTAResult)
 
-class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement] {
+class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) extends IFDSAnalysisScheduler[SomeProject, VTAFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
+
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
+
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey)
+
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey)
+
+    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
 }
 
 /**

@@ -4,8 +4,8 @@ package org.opalj.tac.fpcf.analyses.ifds
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.{CFG, CFGNode}
-import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
+import org.opalj.fpcf.ifds.Dependees.Getter
+import org.opalj.fpcf.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
 import org.opalj.tac.{Assignment, Call, DUVar, ExprStmt, Return, ReturnValue, Stmt, TACStmts}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.value.ValueInformation

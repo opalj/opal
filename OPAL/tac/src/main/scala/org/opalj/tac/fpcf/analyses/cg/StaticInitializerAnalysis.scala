@@ -6,7 +6,6 @@ package analyses
 package cg
 
 import scala.language.existentials
-
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -27,10 +26,10 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
@@ -44,7 +43,7 @@ import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
  * @author Florian Kuebler
  */
 // TODO Instead of added the clinits for all super types, add all super types to be loaded
-class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class StaticInitializerAnalysis(val project: SomeProject) extends ProjectBasedAnalysis {
 
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -150,9 +149,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
 }
 
-object StaticInitializerAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+object StaticInitializerAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses)
 
@@ -162,7 +161,7 @@ object StaticInitializerAnalysisScheduler extends BasicFPCFEagerAnalysisSchedule
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new StaticInitializerAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(
             analysis.analyze

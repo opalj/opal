@@ -26,10 +26,10 @@ import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -163,7 +163,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
 
 class DoPrivilegedCGAnalysis private[cg] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     def analyze(p: SomeProject): PropertyComputationResult = {
         var analyses: List[DoPrivilegedMethodAnalysis] = Nil
@@ -309,9 +309,9 @@ class DoPrivilegedCGAnalysis private[cg] (
     }
 }
 
-object DoPrivilegedAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+object DoPrivilegedAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = Set.empty

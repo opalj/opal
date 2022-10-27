@@ -14,13 +14,13 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.BooleanType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.APIBasedAnalysis
@@ -34,7 +34,7 @@ import scala.collection.immutable.ArraySeq
  */
 class ReflectionAllocationsAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -185,8 +185,8 @@ class ReflectionMethodAllocationsAnalysis(
     }
 }
 
-object ReflectionAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
-    override def requiredProjectInformation: ProjectInformationKeys =
+object ReflectionAllocationsAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, AllocationSitePointsToSet)
@@ -196,7 +196,7 @@ object ReflectionAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisSche
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new ReflectionAllocationsAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis

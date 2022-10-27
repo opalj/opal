@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -23,21 +22,18 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{FieldAccessInformationKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
-import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Field
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.FieldValue
@@ -99,7 +95,7 @@ import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
  */
 class LBFieldValuesAnalysis private[analyses] (
         val project: SomeProject
-) extends FPCFAnalysis { analysis =>
+) extends ProjectBasedAnalysis { analysis =>
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
@@ -428,9 +424,9 @@ object FieldValuesAnalysis {
 
 }
 
-object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object EagerLBFieldValuesAnalysis extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         // To ensure that subsequent analyses are able to pick-up the results of this
@@ -450,7 +446,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new LBFieldValuesAnalysis(p)
         val classFiles =
             if (!p.libraryClassFilesAreInterfacesOnly)

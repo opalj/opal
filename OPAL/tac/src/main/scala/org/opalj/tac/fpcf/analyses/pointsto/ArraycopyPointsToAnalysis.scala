@@ -21,13 +21,13 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.fpcf.scheduling.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
@@ -90,21 +90,21 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
     }
 }
 
-trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait ArraycopyPointsToAnalysisScheduler extends JavaBasicFPCFEagerAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => ArraycopyPointsToAnalysis
 
     override type InitializationData = Null
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(propertyKind)
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = createAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis

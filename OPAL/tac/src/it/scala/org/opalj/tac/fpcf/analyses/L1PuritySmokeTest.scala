@@ -16,7 +16,7 @@ import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
@@ -38,12 +38,12 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
-    val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
+    val primaryAnalyses: Set[ComputationSpecification[ProjectBasedAnalysis]] = Set(
         EagerL1PurityAnalysis,
         EagerVirtualMethodPurityAnalysis
     )
 
-    val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
+    val supportAnalyses: Set[ComputationSpecification[ProjectBasedAnalysis]] = Set(
         EagerL1FieldMutabilityAnalysis,
         EagerClassImmutabilityAnalysis,
         EagerTypeImmutabilityAnalysis

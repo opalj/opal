@@ -43,7 +43,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.analyses.ConfiguredPurity
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.Context
@@ -63,7 +63,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * Provides types and methods needed for purity analyses.
  */
-trait AbstractPurityAnalysis extends FPCFAnalysis {
+trait AbstractPurityAnalysis extends ProjectBasedAnalysis {
 
     /** The type of the TAC domain. */
     type V = DUVar[ValueInformation]

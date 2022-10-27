@@ -20,12 +20,12 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.analyses.JavaProjectInformationKeys
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
@@ -49,7 +49,7 @@ import org.opalj.tac.cg.TypeIteratorKey
  */
 class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
 
@@ -126,8 +126,8 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     }
 }
 
-object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
-    override def requiredProjectInformation: ProjectInformationKeys =
+object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)

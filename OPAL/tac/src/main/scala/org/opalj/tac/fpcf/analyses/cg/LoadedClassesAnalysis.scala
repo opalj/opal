@@ -25,10 +25,10 @@ import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.scheduling.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.cg.NoCallers
@@ -42,7 +42,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class LoadedClassesAnalysis(
         val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
     /**
      * If the method in `callersOfMethod` has no callers
      * ([[NoCallers]]), it is not reachable, and its declaring class
@@ -235,9 +235,9 @@ class LoadedClassesAnalysis(
     }
 }
 
-object LoadedClassesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object LoadedClassesAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         LoadedClasses,
@@ -251,7 +251,7 @@ object LoadedClassesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSchedule
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses)
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new LoadedClassesAnalysis(p)
         ps.registerTriggeredComputation(triggeredBy, analysis.handleCaller)
         analysis

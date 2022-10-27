@@ -2,7 +2,7 @@
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, SomeProject}
 import org.opalj.fpcf.{PropertyBounds, PropertyStore}
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
 import org.opalj.si.PropertyStoreKey
@@ -60,5 +60,5 @@ object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintF
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture(p)
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey, DeclaredMethodsKey, PropertyStoreKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(TypeIteratorKey, DeclaredMethodsKey, PropertyStoreKey)
 }
