@@ -3,15 +3,13 @@ package org.opalj
 package fpcf
 
 import java.net.URL
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.properties.callgraph.TypePropagationVariant
 import org.opalj.br.analyses.Project
+import org.opalj.si.FPCFAnalysis
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.CTACallGraphKey

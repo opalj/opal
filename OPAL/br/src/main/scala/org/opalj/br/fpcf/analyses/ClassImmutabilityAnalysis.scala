@@ -44,7 +44,7 @@ import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.si.{FPCFAnalysis, MetaProject, ProjectInformationKey}
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
  * Determines the mutability of instances of a specific class. In case the class
@@ -498,7 +498,7 @@ object EagerClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with JavaFPCFEagerAnalysisScheduler {
 
-    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
+    override implicit val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -527,7 +527,7 @@ object LazyClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with JavaFPCFLazyAnalysisScheduler {
 
-    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
+    override implicit val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

@@ -2,8 +2,8 @@
 
 package org.opalj.ll.fpcf.analyses.ifds
 
-import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.ifds.{AbstractIFDSFact, IFDSAnalysis, IFDSAnalysisScheduler, IFDSProblem, IFDSPropertyMetaInformation}
+import org.opalj.br.analyses.{JavaProjectInformationKeys, SomeProject}
+import org.opalj.fpcf.ifds.{AbstractIFDSFact, IFDSAnalysis, IFDSAnalysisScheduler, IFDSProblem, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
 
 /**
@@ -19,6 +19,6 @@ class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
 )
     extends IFDSAnalysis[IFDSFact, NativeFunction, LLVMStatement]()(project, ifdsProblem, propertyKey)
 
-abstract class NativeIFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact] extends IFDSAnalysisScheduler[IFDSFact, NativeFunction, LLVMStatement] {
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
+abstract class NativeIFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact] extends IFDSAnalysisScheduler[SomeProject, IFDSFact, NativeFunction, LLVMStatement] {
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(LLVMProjectKey)
 }

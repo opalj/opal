@@ -3,11 +3,13 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
-import org.opalj.ifds.IFDSPropertyMetaInformation
+import org.opalj.fpcf.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Function
 import org.opalj.tac.fpcf.properties.Taint
+
+import scala.reflect.ClassTag
 
 class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaintProblem(p) {
     /**
@@ -54,4 +56,5 @@ object NativeForwardTaintAnalysisScheduler extends NativeIFDSAnalysisScheduler[N
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleNativeForwardTaintAnalysis(p)
     override def property: IFDSPropertyMetaInformation[LLVMStatement, NativeTaintFact] = NativeTaint
     override val uses: Set[PropertyBounds] = Set() // ++ PropertyBounds.ub(Taint) TODO: we do not use the native taint yet
+    override implicit val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
 }

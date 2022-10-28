@@ -4,11 +4,13 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 import org.opalj.br.Method
 import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, SomeProject}
 import org.opalj.fpcf.{PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
+import org.opalj.fpcf.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
 import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties.Taint
+
+import scala.reflect.ClassTag
 
 /**
  * An analysis that checks, if the return value of the method `source` can flow to the parameter of
@@ -56,9 +58,11 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
         else None
 }
 
-object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[SomeProject, TaintFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture(p)
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
     override def requiredProjectInformation: JavaProjectInformationKeys = Seq(TypeIteratorKey, DeclaredMethodsKey, PropertyStoreKey)
+
+    override implicit val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
 }

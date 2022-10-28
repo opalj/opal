@@ -3,11 +3,10 @@ package org.opalj
 package fpcf
 
 import java.net.URL
-
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
@@ -15,7 +14,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
 class FieldLocalityTests extends PropertiesTest {
 
-    val analyses = Set[FPCFAnalysisScheduler](
+    val analyses = Set[JavaFPCFAnalysisScheduler](
         EagerFieldLocalityAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyReturnValueFreshnessAnalysis

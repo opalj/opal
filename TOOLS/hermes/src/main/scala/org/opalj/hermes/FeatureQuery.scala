@@ -12,7 +12,6 @@ import javafx.beans.property.LongProperty
 import javafx.beans.property.SimpleLongProperty
 import org.opalj.io.processSource
 import org.opalj.br.analyses.Project
-import org.opalj.si.ProjectInformationKey
 
 /**
  * Extracts a feature/a set of closely related features of a given project.

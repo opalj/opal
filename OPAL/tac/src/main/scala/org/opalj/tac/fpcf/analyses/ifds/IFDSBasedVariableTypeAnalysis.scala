@@ -14,7 +14,7 @@ import org.opalj.fpcf.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, I
 import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.TypeIteratorKey
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
  * A variable type analysis implemented as an IFDS analysis.
@@ -37,7 +37,7 @@ class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) exte
 
     override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey)
 
-    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
+    override implicit val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
 }
 
 /**

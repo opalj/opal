@@ -5,18 +5,14 @@ package fpcf
 package analyses
 
 import scala.reflect.runtime.universe.runtimeMirror
-
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
-
 import scala.io.Source
-
 import com.typesafe.config.ConfigValueFactory
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.ComputationSpecification
@@ -29,12 +25,11 @@ import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.scheduling.{FPCFAnalysesManagerKey, FPCFAnalysesRegistry}
-import org.opalj.si.PropertyStoreKey
+import org.opalj.si.{FPCFAnalysis, PropertyStoreKey}
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
@@ -165,7 +160,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
-    def getAnalysis(id: String): ComputationSpecification[ProjectBasedAnalysis] = {
+    def getAnalysis(id: String): ComputationSpecification[FPCFAnalysis] = {
         FPCFAnalysesRegistry.eagerFactory(id.trim)
     }
 
@@ -175,15 +170,15 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
         mirror.reflectModule(module).instance.asInstanceOf[PropertyMetaInformation]
     }
 
-    def getConfig: Seq[(String, Set[ComputationSpecification[ProjectBasedAnalysis]], Seq[PropertyMetaInformation])] = {
+    def getConfig: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] = {
         val configInputStream =
             this.getClass.getResourceAsStream("FPCFAnalysesIntegrationTest.config")
         val configLines = Source.fromInputStream(configInputStream).getLines()
 
-        var curConfig: (String, Set[ComputationSpecification[ProjectBasedAnalysis]], Seq[PropertyMetaInformation]) = null
+        var curConfig: (String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation]) = null
         var readProperties = false
 
-        var configurations: Seq[(String, Set[ComputationSpecification[ProjectBasedAnalysis]], Seq[PropertyMetaInformation])] =
+        var configurations: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] =
             List.empty
 
         for (line <- configLines) {

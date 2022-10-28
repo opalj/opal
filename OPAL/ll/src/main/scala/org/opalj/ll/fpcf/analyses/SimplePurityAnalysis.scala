@@ -1,12 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses
 
-import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
+import org.opalj.br.fpcf.{JavaBasicFPCFEagerAnalysisScheduler, JavaFPCFAnalysisScheduler}
 import org.opalj.fpcf._
-import org.opalj.fpcf.scheduling.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysisScheduler}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.value.{Function, GlobalVariable, Store}
+import org.opalj.si.FPCFAnalysis
 
 sealed trait SimplePurityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = SimplePurity
@@ -40,7 +40,7 @@ object SimplePurity extends SimplePurityPropertyMetaInformation {
     )
 }
 
-class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class SimplePurityAnalysis(val project: SomeProject) extends ProjectBasedAnalysis {
     def analyzeSimplePurity(function: Function): ProperPropertyComputationResult = {
         function
             .basicBlocks
@@ -58,17 +58,17 @@ class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 }
 
-trait SimplePurityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait SimplePurityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
     def derivedProperty: PropertyBounds = PropertyBounds.ub(SimplePurity)
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(LLVMProjectKey)
 
     override def uses: Set[PropertyBounds] = Set.empty // TODO: check this later
 }
 
 object EagerSimplePurityAnalysis
     extends SimplePurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty

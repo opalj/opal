@@ -7,11 +7,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.collection.immutable.IntTrieSet
@@ -20,7 +18,6 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
@@ -54,10 +51,13 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
+import org.opalj.br.fpcf.JavaFPCFLazyAnalysisScheduler
 import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.scheduling.{FPCFAnalysesManagerKey, FPCFAnalysisScheduler, FPCFLazyAnalysisScheduler}
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
+import org.opalj.si.FPCFAnalysis
 import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
@@ -121,8 +121,8 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler,
-        support:               List[FPCFAnalysisScheduler],
+        analysis:              JavaFPCFLazyAnalysisScheduler,
+        support:               List[JavaFPCFAnalysisScheduler],
         domain:                Class[_ <: Domain with RecordDefUse],
         configurationName:     Option[String],
         schedulingStrategy:    Option[String],
@@ -518,8 +518,8 @@ object Purity {
             return ;
         }
 
-        var support: List[FPCFAnalysisScheduler] = Nil
-        val analysis: FPCFLazyAnalysisScheduler = analysisName match {
+        var support: List[JavaFPCFAnalysisScheduler] = Nil
+        val analysis: JavaFPCFLazyAnalysisScheduler = analysisName match {
             case Some("L0") => LazyL0PurityAnalysis
 
             case Some("L1") => LazyL1PurityAnalysis

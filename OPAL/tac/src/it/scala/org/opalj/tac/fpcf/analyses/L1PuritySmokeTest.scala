@@ -8,7 +8,6 @@ import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.ComputationSpecification
@@ -16,13 +15,12 @@ import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
-import org.opalj.si.PropertyStoreKey
+import org.opalj.si.{FPCFAnalysis, PropertyStoreKey}
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 
@@ -38,12 +36,12 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
-    val primaryAnalyses: Set[ComputationSpecification[ProjectBasedAnalysis]] = Set(
+    val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1PurityAnalysis,
         EagerVirtualMethodPurityAnalysis
     )
 
-    val supportAnalyses: Set[ComputationSpecification[ProjectBasedAnalysis]] = Set(
+    val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1FieldMutabilityAnalysis,
         EagerClassImmutabilityAnalysis,
         EagerTypeImmutabilityAnalysis

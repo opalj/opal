@@ -44,7 +44,8 @@ object PropertyStoreKey
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
             PropertyStoreContext(classOf[MetaProject], project),
-            PropertyStoreContext(classOf[Config], project.config)
+            PropertyStoreContext(classOf[Config], project.config),
+            PropertyStoreContext(project.getClass, project)
         )
         project.getProjectInformationKeyInitializationData(this) match {
             case Some(psFactory) =>

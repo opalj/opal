@@ -2,7 +2,7 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.ObjectType
-import org.opalj.ifds.{AbstractIFDSNullFact, Callable, AbstractIFDSFact}
+import org.opalj.fpcf.ifds.{AbstractIFDSNullFact, Callable, AbstractIFDSFact}
 import org.opalj.ll.llvm.value.Value
 
 trait NativeTaintFact extends AbstractIFDSFact

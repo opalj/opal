@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds
 import org.opalj.br.Method
-import org.opalj.ifds.Callable
+import org.opalj.fpcf.ifds.Callable
 import org.opalj.ll.llvm.value.Function
 
 abstract class NativeFunction extends Callable {

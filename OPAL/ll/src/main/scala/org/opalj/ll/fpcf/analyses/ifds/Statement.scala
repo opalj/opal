@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds
 
-import org.opalj.ifds.Statement
+import org.opalj.fpcf.ifds.Statement
 import org.opalj.ll.llvm.value.{BasicBlock, Instruction}
 
 /**

@@ -3,9 +3,8 @@ package org.opalj
 package fpcf
 
 import java.net.URL
-
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.scheduling.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
@@ -28,7 +27,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/return_freshness")
     }
 
-    val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
+    val analysisSchedulers: Set[JavaFPCFAnalysisScheduler] = Set[JavaFPCFAnalysisScheduler](
         LazyInterProceduralEscapeAnalysis,
         LazyFieldLocalityAnalysis,
         EagerReturnValueFreshnessAnalysis

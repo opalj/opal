@@ -43,6 +43,8 @@ import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 
+import scala.reflect.ClassTag
+
 /**
  * Generates call graphs based on the used [[TypeIterator]].
  * It uses the AI information of the three-address code to get the most precise information for
@@ -459,6 +461,7 @@ class CallGraphAnalysis private[cg] (
 
 object CallGraphAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
+    implicit override val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
     override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, InitialEntryPointsKey, TypeIteratorKey)
 

@@ -1,10 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.taint
 
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, SomeProject}
+import org.opalj.br.fpcf.JavaIFDSAnalysisScheduler
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
-import org.opalj.fpcf.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.fpcf.{FinalEP, PropertyBounds, PropertyStore}
+import org.opalj.fpcf.ifds.IFDSAnalysis
+import org.opalj.fpcf.ifds.IFDSProperty
+import org.opalj.fpcf.ifds.IFDSPropertyMetaInformation
 import org.opalj.si.PropertyStoreKey
 import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, ForwardTaintProblem, TaintFact, TaintProblem, Variable}
@@ -97,13 +100,13 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         method.declaringClassType == ObjectType.Class && method.name == "forName"
 }
 
-object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+object ForwardClassForNameTaintAnalysisScheduler extends JavaIFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
 
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardClassForNameTaintAnalysis(p)
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
 }

@@ -2,7 +2,7 @@
 package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
-import org.opalj.ifds.ICFG
+import org.opalj.fpcf.ifds.ICFG
 import org.opalj.ll.llvm.value.{Call, Function, Instruction, Ret, Terminator}
 
 class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMStatement] {

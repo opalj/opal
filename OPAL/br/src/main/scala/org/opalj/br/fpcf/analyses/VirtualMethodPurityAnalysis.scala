@@ -26,7 +26,7 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
 import org.opalj.si.FPCFAnalysis
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /**
  * Determines the aggregated purity for virtual methods.
@@ -121,7 +121,7 @@ object EagerVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
     with JavaFPCFEagerAnalysisScheduler {
 
-    override implicit val c: ClassTag[SomeProject] = classTag[SomeProject]
+    override implicit val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 

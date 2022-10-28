@@ -24,7 +24,7 @@ trait MetaProject {
      * Here, the usage of the project information key does not lead to its initialization!
      */
     private[this] val projectInformationKeyInitializationData = {
-        new ConcurrentHashMap[ProjectInformationKey[MetaProject, AnyRef, AnyRef], AnyRef]()
+        new ConcurrentHashMap[ProjectInformationKey[_ <: MetaProject, AnyRef, AnyRef], AnyRef]()
     }
 
     /**
@@ -49,7 +49,7 @@ trait MetaProject {
         info: => I
     ): I = {
         projectInformationKeyInitializationData.computeIfAbsent(
-            key.asInstanceOf[ProjectInformationKey[MetaProject, AnyRef, AnyRef]],
+            key.asInstanceOf[ProjectInformationKey[P, AnyRef, AnyRef]],
             (_: ProjectInformationKey[_, AnyRef, AnyRef]) => info
         ).asInstanceOf[I]
     }

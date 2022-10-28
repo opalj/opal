@@ -2,7 +2,7 @@
 package org.opalj.ll.fpcf.properties
 
 import org.opalj.fpcf.PropertyKey
-import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.fpcf.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.analyses.ifds.taint.NativeTaintFact
 

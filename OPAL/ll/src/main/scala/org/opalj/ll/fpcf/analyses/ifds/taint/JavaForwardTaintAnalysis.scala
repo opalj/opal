@@ -2,10 +2,10 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
+import org.opalj.br.analyses.{JavaProjectInformationKeys, SomeProject}
 import org.opalj.fpcf._
-import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.fpcf.ifds.Dependees.Getter
+import org.opalj.fpcf.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
 import org.opalj.ll.fpcf.properties.NativeTaint
@@ -14,6 +14,8 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties.{TACAI, Taint}
+
+import scala.reflect.ClassTag
 
 class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     val llvmProject = p.get(LLVMProjectKey)
@@ -238,9 +240,10 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
 class SimpleJavaForwardTaintAnalysis(project: SomeProject)
     extends IFDSAnalysis()(project, new SimpleJavaForwardTaintProblem(project), Taint)
 
-object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[SomeProject, TaintFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleJavaForwardTaintAnalysis(p)
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(LLVMProjectKey)
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.ub(NativeTaint))
+    override implicit val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
 }
