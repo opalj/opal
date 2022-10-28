@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.escape;
 
-import org.opalj.br.fpcf.FPCFAnalysis;
+import org.opalj.si.FPCFAnalysis;
 import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.tac.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
