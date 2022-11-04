@@ -10,6 +10,7 @@ import scala.language.existentials
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
@@ -28,8 +29,8 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
@@ -61,9 +62,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      */
     def analyze(p: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
-            case FinalP(loadedClasses)                          ⇒ None → Some(loadedClasses)
-            case eps @ InterimUBP(loadedClasses: LoadedClasses) ⇒ Some(eps) → Some(loadedClasses)
-            case epk                                            ⇒ Some(epk) → None
+            case FinalP(loadedClasses)                          => None -> Some(loadedClasses)
+            case eps @ InterimUBP(loadedClasses: LoadedClasses) => Some(eps) -> Some(loadedClasses)
+            case epk                                            => Some(epk) -> None
         }
 
         implicit val state: LCState = LCState(
@@ -97,18 +98,20 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         val callersResult =
             unseenLoadedClasses
-                .flatMap { lc ⇒ retrieveStaticInitializers(lc) }
-                .map { clInit ⇒
+                .flatMap { lc => retrieveStaticInitializers(lc) }
+                .map { clInit =>
                     PartialResult[DeclaredMethod, Callers](
                         clInit,
                         Callers.key,
                         {
-                            case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers ⇒
+                            case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers =>
                                 Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
-                            case _: InterimEP[_, _] ⇒ None
+                            case _: InterimEP[_, _]  => None
 
-                            case _: EPK[_, _]       ⇒ Some(InterimEUBP(clInit, OnlyVMLevelCallers))
+                            case _: EPK[_, _]        => Some(InterimEUBP(clInit, OnlyVMLevelCallers))
+                            case epk @ FinalEP(_, _) => throw new MatchError(epk)
+
                         }
                     )
                 }
@@ -124,11 +127,11 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     ): PropertyComputationResult = {
         (someEPS: @unchecked) match {
 
-            case FinalP(loadedClasses: LoadedClasses) ⇒
+            case FinalP(loadedClasses: LoadedClasses) =>
                 state.lcDependee = None
                 state.loadedClassesUB = Some(loadedClasses)
                 handleLoadedClasses()
-            case InterimUBP(loadedClasses: LoadedClasses) ⇒
+            case InterimUBP(loadedClasses: LoadedClasses) =>
                 state.lcDependee = Some(someEPS.asInstanceOf[EPS[SomeProject, LoadedClasses]])
                 state.loadedClassesUB = Some(loadedClasses)
                 handleLoadedClasses()
@@ -139,9 +142,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         declaringClassType: ObjectType
     ): Iterator[DefinedMethod] = {
         // TODO only for interfaces with default methods
-        ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf ⇒
+        ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf =>
             // IMPROVE Only return the static initializer if it is not already present
-            cf.staticInitializer map { clInit ⇒ declaredMethods(clInit) }
+            cf.staticInitializer map { clInit => declaredMethods(clInit) }
         }
     }
 

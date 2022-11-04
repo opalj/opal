@@ -32,7 +32,7 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val projectStore = project.get(PropertyStoreKey)
@@ -42,13 +42,13 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
             projectStore.setupPhase(Set[PropertyKind](SelfReferenceLeakage.Key))
             L0SelfReferenceLeakageAnalysis.start(project, null)
             projectStore.waitOnPhaseCompletion()
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t => analysisTime = t.toSeconds }
 
         val notLeakingEntities: Iterator[EPS[Entity, SelfReferenceLeakage]] =
-            projectStore.entities(SelfReferenceLeakage.Key) filter { eps ⇒
+            projectStore.entities(SelfReferenceLeakage.Key) filter { eps =>
                 eps.lb == DoesNotLeakSelfReference
             }
-        val notLeakingClasses = notLeakingEntities map { eps ⇒
+        val notLeakingClasses = notLeakingEntities map { eps =>
             val classFile = eps.e.asInstanceOf[ClassFile]
             val classType = classFile.thisType
             val className = classFile.thisType.toJava

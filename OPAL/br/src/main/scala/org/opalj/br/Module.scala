@@ -4,7 +4,8 @@ package br
 
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Definition of a Java 9 module.
@@ -15,11 +16,11 @@ case class Module(
         name:        String,
         moduleFlags: Int,
         versionInfo: Option[String],
-        requires:    RefArray[Requires],
-        exports:     RefArray[Exports],
-        opens:       RefArray[Opens],
-        uses:        RefArray[ObjectType],
-        provides:    RefArray[Provides]
+        requires:    ArraySeq[Requires],
+        exports:     ArraySeq[Exports],
+        opens:       ArraySeq[Opens],
+        uses:        ArraySeq[ObjectType],
+        provides:    ArraySeq[Provides]
 ) extends Attribute {
 
     final override def kindId: Int = Module.KindId
@@ -44,7 +45,7 @@ case class Requires(requires: String, flags: Int, version: Option[String]) {
     def toJava: String = {
         var flags = AccessFlags.toString(this.flags, AccessFlagsContexts.MODULE)
         if (flags.nonEmpty) flags += " "
-        val version = this.version.map(v ⇒ s" //$v").getOrElse("")
+        val version = this.version.map(v => s" //$v").getOrElse("")
         s"requires $flags$requires;$version"
     }
 }
@@ -54,7 +55,7 @@ case class Requires(requires: String, flags: Int, version: Option[String]) {
  * @param   exportsTo List of names of modules whose code can access the
  *          public types in this exported package (in internal form).
  */
-case class Exports(exports: String, flags: Int, exportsTo: RefArray[String]) {
+case class Exports(exports: String, flags: Int, exportsTo: ArraySeq[String]) {
 
     def toJava: String = {
         var flags = AccessFlags.toString(this.flags, AccessFlagsContexts.MODULE)
@@ -69,7 +70,7 @@ case class Exports(exports: String, flags: Int, exportsTo: RefArray[String]) {
 /**
  * @param opens The name of the package.
  */
-case class Opens(opens: String, flags: Int, toPackages: RefArray[String]) {
+case class Opens(opens: String, flags: Int, toPackages: ArraySeq[String]) {
 
     def toJava: String = {
         val toPackages =
@@ -80,7 +81,7 @@ case class Opens(opens: String, flags: Int, toPackages: RefArray[String]) {
 
 }
 
-case class Provides(provides: ObjectType, withInterfaces: RefArray[ObjectType]) {
+case class Provides(provides: ObjectType, withInterfaces: ArraySeq[ObjectType]) {
 
     def toJava: String = {
         val withInterfaces =

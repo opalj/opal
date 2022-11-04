@@ -5,7 +5,6 @@ package analyses
 package cg
 
 import scala.collection.mutable.ArrayBuffer
-import org.opalj.collection.immutable.Chain
 import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus._
 
@@ -25,7 +24,7 @@ trait EntryPointFinder {
     *
     * This method must be implemented by any subtype.
     */
-    def collectEntryPoints(project: SomeProject): Traversable[Method] = Set.empty[Method]
+    def collectEntryPoints(project: SomeProject): Iterable[Method] = Set.empty[Method]
 }
 
 /**
@@ -40,13 +39,13 @@ trait EntryPointFinder {
  */
 trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
 
         super.collectEntryPoints(project) ++ project.allMethodsWithBody.collect {
             case m: Method if m.isStatic
                 && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
-                && (m.name == "main") ⇒ m
+                && (m.name == "main") => m
         }
     }
 }
@@ -64,12 +63,12 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
         "com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax", "sunw"
     )
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        super.collectEntryPoints(project).filterNot { ep ⇒
-            packagesToExclude.exists { prefix ⇒
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+        super.collectEntryPoints(project).filterNot { ep =>
+            packagesToExclude.exists { prefix =>
                 ep.declaringClassFile.thisType.packageName.startsWith(prefix)
             }
-        }.filterNot { ep ⇒
+        }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
             // default package.
             ep.classFile.thisType == ObjectType("WrapperGenerator")
@@ -89,7 +88,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
  */
 trait LibraryEntryPointsFinder extends EntryPointFinder {
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
         val isExtensible = project.get(TypeExtensibilityKey)
         val classHierarchy = project.classHierarchy
@@ -100,7 +99,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
 
             if (isClosedPackage(ot.packageName)) {
                 if (method.isPublic) {
-                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st ⇒
+                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
                         val subtypeCFOption = project.classFile(st)
                         // Class file must be public to access it
                         subtypeCFOption.forall(_.isPublic) &&
@@ -109,17 +108,17 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                                 // Note: This is not enough to ensure that the type is instantiable
                                 // (supertype might have no accessible constructor),
                                 // but it soundly overapproximates
-                                subtypeCFOption.forall(_.constructors.exists { c ⇒
+                                subtypeCFOption.forall(_.constructors.exists { c =>
                                     c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
                                 }) || classFile.methods.exists {
-                                    m ⇒ m.isStatic && m.isPublic && m.returnType == ot
+                                    m => m.isStatic && m.isPublic && m.returnType == ot
                                 })
                     }
                 } else if (method.isProtected) {
                     isExtensible(ot).isYesOrUnknown &&
                         (method.isStatic ||
-                            classHierarchy.allSubtypes(ot, reflexive = true).exists { st ⇒
-                                project.classFile(st).forall(_.constructors.exists { c ⇒
+                            classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
+                                project.classFile(st).forall(_.constructors.exists { c =>
                                     c.isPublic || c.isProtected
                                 })
                             })
@@ -132,7 +131,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
 
         val eps = ArrayBuffer.empty[Method]
 
-        project.allMethodsWithBody.foreach { method ⇒
+        project.allMethodsWithBody.foreach { method =>
             if (isEntryPoint(method))
                 eps.append(method)
         }
@@ -174,7 +173,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         InitialEntryPointsKey.ConfigKeyPrefix+"entryPoints"
     }
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
         implicit val logContext = project.logContext
@@ -192,7 +191,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
             try {
                 project.config.as[List[EntryPointContainer]](additionalEPConfigKey)
             } catch {
-                case e: Throwable ⇒
+                case e: Throwable =>
                     OPALLogger.error(
                         "project configuration - recoverable",
                         s"configuration key $additionalEPConfigKey is invalid; "+
@@ -202,7 +201,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                     return entryPoints;
             }
 
-        configEntryPoints foreach { ep ⇒
+        configEntryPoints foreach { ep =>
             val EntryPointContainer(configuredType, name, descriptor) = ep
 
             OPALLogger.debug("project configuration - entry points", ep.toString)
@@ -215,11 +214,11 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
             }
 
             val objectType = ObjectType(typeName)
-            val methodDescriptor: Option[MethodDescriptor] = descriptor.map { md ⇒
+            val methodDescriptor: Option[MethodDescriptor] = descriptor.map { md =>
                 try {
                     Some(MethodDescriptor(md))
                 } catch {
-                    case _: IllegalArgumentException ⇒
+                    case _: IllegalArgumentException =>
                         OPALLogger.warn(
                             "project configuration",
                             s"illegal method descriptor: $typeName { $name or ${md}}"
@@ -230,8 +229,8 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             def findMethods(objectType: ObjectType, isSubtype: Boolean = false): Unit = {
                 project.classFile(objectType) match {
-                    case Some(cf) ⇒
-                        var methods: Chain[Method] = cf.findMethod(name)
+                    case Some(cf) =>
+                        var methods: List[Method] = cf.findMethod(name)
 
                         if (methods.size == 0)
                             OPALLogger.warn(
@@ -262,11 +261,13 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
                         entryPoints = entryPoints ++ methods
 
-                    case None if !isSubtype ⇒
+                    case None if !isSubtype =>
                         OPALLogger.warn(
                             "project configuration",
                             s"the declaring class $typeName of the entry point has not been found"
                         )
+
+                    case None => throw new MatchError(None) // TODO: Pattern match not exhaustive
                 }
 
             }
@@ -274,7 +275,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
             findMethods(objectType)
             if (considerSubtypes) {
                 project.classHierarchy.allSubtypes(objectType, false).foreach {
-                    ot ⇒ findMethods(ot, true)
+                    ot => findMethods(ot, true)
                 }
             }
 
@@ -342,7 +343,7 @@ object AllEntryPointsFinder extends EntryPointFinder {
     final val ConfigKey =
         InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         if (project.config.as[Boolean](ConfigKey))
             project.allProjectClassFiles.flatMap(_.methodsWithBody)
         else project.allMethodsWithBody

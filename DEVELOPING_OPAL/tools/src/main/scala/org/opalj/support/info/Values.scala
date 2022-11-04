@@ -32,7 +32,7 @@ object Values extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         implicit val classHierarchy = project.classHierarchy
@@ -43,7 +43,7 @@ object Values extends ProjectAnalysisApplication {
                     org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
                     org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
                 )
-            } { t ⇒
+            } { t =>
                 OPALLogger.info(
                     "analysis progress",
                     s"finished in ${t.toSeconds} "
@@ -54,7 +54,7 @@ object Values extends ProjectAnalysisApplication {
 
         val mFields =
             fieldValues
-                .filter { eps ⇒
+                .filter { eps =>
                     val m = eps.e.asInstanceOf[Field]
                     m.fieldType.isReferenceType && {
                         val fieldValue = eps.lb.value.asReferenceValue
@@ -63,7 +63,7 @@ object Values extends ProjectAnalysisApplication {
                     }
                 }
                 // we are deriving more precise lower bounds => eps.lb
-                .map(eps ⇒ eps.e.asInstanceOf[Field].toJava(" => "+eps.lb.value.toString))
+                .map(eps => eps.e.asInstanceOf[Field].toJava(" => "+eps.lb.value.toString))
                 .sorted
                 .mkString("Field Values:\n\t", "\n\t", s"\n(Overall: ${fieldValues.size})")
 
@@ -76,7 +76,7 @@ object Values extends ProjectAnalysisApplication {
 
         val mMethods =
             methodReturnValues
-                .filter { eps ⇒
+                .filter { eps =>
                     val m = eps.e.asInstanceOf[Method]
                     m.returnType.isReferenceType && {
                         eps.lb.returnValue.isEmpty || {
@@ -87,7 +87,7 @@ object Values extends ProjectAnalysisApplication {
                     }
                 }
                 // we are deriving more precise lower bounds => eps.lb
-                .map(eps ⇒ eps.e.asInstanceOf[Method].toJava(" => "+eps.lb.returnValue))
+                .map(eps => eps.e.asInstanceOf[Method].toJava(" => "+eps.lb.returnValue))
                 .sorted
                 .mkString(
                     "Method Return Values:\n\t",

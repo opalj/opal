@@ -11,7 +11,8 @@ import org.scalatest.matchers.should.Matchers
 import org.opalj.br.instructions.IADD
 import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.IRETURN
-import org.opalj.collection.immutable.RefArray
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the configuration of the similarity test.
@@ -28,34 +29,34 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
     // Test Fixtures
     // (The following classes do NOT represent valid class files!)
     //
-    def simpleFieldAttributes = RefArray(Synthetic, Deprecated)
+    def simpleFieldAttributes = ArraySeq(Synthetic, Deprecated)
     def simpleField = Field(ACC_PUBLIC.mask, "test", ByteType, simpleFieldAttributes)
     def field2Field = Field(ACC_PROTECTED.mask, "field 2", BooleanType, simpleFieldAttributes)
-    def simpleFields = RefArray(simpleField, field2Field)
+    def simpleFields = ArraySeq(simpleField, field2Field)
     def simpleCode = Code(2, 0, Array(ICONST_1, ICONST_1, IADD, IRETURN))
     def simpleMethod = Method(
         ACC_PUBLIC.mask,
         "simple_method",
         MethodDescriptor.JustReturnsBoolean,
-        RefArray(simpleCode, Deprecated)
+        ArraySeq(simpleCode, Deprecated)
     )
     def simpleMethod2 = Method(
         ACC_STATIC.mask | ACC_PRIVATE.mask,
         "simple_method_2",
         MethodDescriptor.NoArgsAndReturnVoid,
-        RefArray(Code(0, 0, Array()))
+        ArraySeq(Code(0, 0, Array()))
     )
-    def simpleMethods = RefArray(simpleMethod, simpleMethod2)
+    def simpleMethods = ArraySeq(simpleMethod, simpleMethod2)
     def simpleClass = ClassFile(
         minorVersion = 1,
         majorVersion = 2,
         accessFlags = ACC_PUBLIC.mask,
         thisType = ObjectType.Boolean,
         superclassType = Some(ObjectType.Object),
-        interfaceTypes = RefArray(ObjectType.Byte, ObjectType.Float),
+        interfaceTypes = ArraySeq(ObjectType.Byte, ObjectType.Float),
         fields = simpleFields,
         methods = simpleMethods,
-        attributes = RefArray(SourceFile("abc"), Deprecated)
+        attributes = ArraySeq(SourceFile("abc"), Deprecated)
     )
 
     //
@@ -113,13 +114,13 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             ): (Attributes, Attributes) = {
                 val (newLeft, newRight) = super.compareAttributes(leftContext, left, right)
                 (
-                    newLeft.filter(a ⇒ a.isInstanceOf[SourceFile]),
-                    newRight.filter(a ⇒ a.isInstanceOf[SourceFile])
+                    newLeft.filter(a => a.isInstanceOf[SourceFile]),
+                    newRight.filter(a => a.isInstanceOf[SourceFile])
                 )
             }
         }
         // the following class has less attributes
-        val noLongerDeprecatedClass = simpleClass.copy(attributes = RefArray(SourceFile("abc")))
+        val noLongerDeprecatedClass = simpleClass.copy(attributes = ArraySeq(SourceFile("abc")))
 
         // normal test fails
         assert(!simpleClass.similar(noLongerDeprecatedClass))
@@ -143,14 +144,14 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             ): (Attributes, Attributes) = {
                 val (superNewLeft, superNewRight) = super.compareAttributes(leftContext, left, right)
                 val (newLeft, newRight) = (
-                    superNewLeft.filter(a ⇒ a != Deprecated),
-                    superNewRight.filter(a ⇒ a != Deprecated)
+                    superNewLeft.filter(a => a != Deprecated),
+                    superNewRight.filter(a => a != Deprecated)
                 )
                 (newLeft, newRight)
             }
         }
         // the following class has less attributes
-        val noLongerDeprecatedClass = simpleClass.copy(attributes = RefArray(SourceFile("abc")))
+        val noLongerDeprecatedClass = simpleClass.copy(attributes = ArraySeq(SourceFile("abc")))
 
         // normal test fails
         assert(!simpleClass.similar(noLongerDeprecatedClass))
@@ -173,13 +174,13 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
                 right:       Iterable[JVMField]
             ): (Iterable[JVMField], Iterable[JVMField]) = {
                 (
-                    left.filter(a ⇒ a.accessFlags == 1),
-                    right.filter(a ⇒ a.accessFlags == 1)
+                    left.filter(a => a.accessFlags == 1),
+                    right.filter(a => a.accessFlags == 1)
                 )
             }
         }
         // the following class has less fields
-        val classWithLessFields = simpleClass.copy(fields = RefArray(simpleField))
+        val classWithLessFields = simpleClass.copy(fields = ArraySeq(simpleField))
 
         // normal test fails
         assert(!simpleClass.similar(classWithLessFields))
@@ -187,7 +188,7 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
         // ignoring certain fields works both ways
         assert(
             simpleClass.similar(classWithLessFields, FieldsWithAccessFlagsEquals1),
-            simpleClass.attributes+" vs. "+classWithLessFields.attributes
+            s"${simpleClass.attributes} vs. ${classWithLessFields.attributes}"
         )
         assert(
             classWithLessFields.similar(simpleClass, FieldsWithAccessFlagsEquals1)

@@ -66,8 +66,8 @@ class MethodDescriptorTest extends AnyFunSuite {
                     ObjectType(_),
                     ArrayType(LongType)
                     ),
-                ArrayType(ObjectType("java/lang/Object"))) ⇒ true
-            case _ ⇒ false
+                ArrayType(ObjectType("java/lang/Object"))) => true
+            case _ => false
         })
     }
 
@@ -80,7 +80,7 @@ class MethodDescriptorTest extends AnyFunSuite {
             "(IDLjava/lang/Thread;)Ljava/lang/Object;",
             "(IDLjava/lang/Thread;[J)[Ljava/lang/Object;"
         )
-        jvmDescriptors.foreach { jvmDescriptor ⇒
+        jvmDescriptors.foreach { jvmDescriptor =>
             test(s"recreating JVM descriptor $jvmDescriptor") {
                 assert(MethodDescriptor(jvmDescriptor).toJVMDescriptor === jvmDescriptor)
             }

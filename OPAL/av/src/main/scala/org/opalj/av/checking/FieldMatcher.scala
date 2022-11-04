@@ -3,7 +3,7 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.Set
+import scala.collection.immutable
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldType
 import org.opalj.br.Field
@@ -35,11 +35,11 @@ case class FieldMatcher(
             annotations(field.annotations)
     }
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
+    def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {
         val allMatchedFields = project.allClassFiles collect {
-            case classFile if doesClassFileMatch(classFile) ⇒ {
+            case classFile if doesClassFileMatch(classFile) => {
                 classFile.fields collect {
-                    case field if doesFieldMatch(field) ⇒ field.asVirtualField(classFile)
+                    case field if doesFieldMatch(field) => field.asVirtualField(classFile)
                 }
             }
         }
@@ -68,19 +68,19 @@ object FieldMatcher {
 
         val nameMatcher: Option[NamePredicate] =
             theName match {
-                case Some(f) ⇒
+                case Some(f) =>
                     if (matchPrefix)
                         Some(StartsWith(f))
                     else
                         Some(Equals(f))
-                case _ ⇒
+                case _ =>
                     None
             }
 
         new FieldMatcher(
             declaringClass,
             annotationsPredicate,
-            theType.map(fqn ⇒ FieldType(fqn.replace('.', '/'))),
+            theType.map(fqn => FieldType(fqn.replace('.', '/'))),
             nameMatcher
         )
     }

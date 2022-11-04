@@ -15,12 +15,12 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 
 /**
- * A trait to implement state classes that have to manage the state of a [[TypeProvider]], i.e.,
+ * A trait to implement state classes that have to manage the state of a [[TypeIterator]], i.e.,
  * the dependencies introduced by querying type information.
  *
  * @author Dominik Helm
  */
-trait TypeProviderState extends AnalysisState {
+trait TypeIteratorState extends AnalysisState {
     private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
     }
@@ -58,7 +58,7 @@ trait TypeProviderState extends AnalysisState {
 
         // for every depender we have to remove the dependee of the set of dependees
         val dependers = _dependeeToDependers(dependee)
-        for (depender ← dependers) {
+        for (depender <- dependers) {
             val dependees = _dependerToDependees(depender)
             if (!dependees.remove(dependee))
                 throw new RuntimeException(s"failed to remove dependee: $dependee")
@@ -77,7 +77,7 @@ trait TypeProviderState extends AnalysisState {
     final def removeDepender(depender: Entity): Unit = {
         // for every dependee of the given depender:
         // we have to remove the depender from the set of their dependers
-        for (dependee ← _dependerToDependees(depender)) {
+        for (dependee <- _dependerToDependees(depender)) {
             if (!_dependeeToDependers(dependee).remove(depender)) {
                 throw new RuntimeException(s"failed to remove depender: $depender")
             }
@@ -120,7 +120,7 @@ trait TypeProviderState extends AnalysisState {
         // IMPROVE: make it more efficient (maybe use immutable map and join traversables)
         var allDependees = super.dependees
 
-        _dependees.valuesIterator.foreach { d ⇒
+        _dependees.valuesIterator.foreach { d =>
             assert(_dependeeToDependers.contains(d.toEPK))
             allDependees += d
         }

@@ -99,7 +99,7 @@ import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
  */
 class LBFieldValuesAnalysis private[analyses] (
         val project: SomeProject
-) extends FPCFAnalysis { analysis ⇒
+) extends FPCFAnalysis { analysis =>
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
@@ -109,7 +109,7 @@ class LBFieldValuesAnalysis private[analyses] (
     def relevantFieldsIterable(classFile: ClassFile): Iterable[Field] = {
         val thisClassType = classFile.thisType
         for {
-            field ← classFile.fields
+            field <- classFile.fields
             if field.fieldType.isObjectType
 
             // Test that the initialization can be made by the declaring class only:
@@ -176,11 +176,11 @@ class LBFieldValuesAnalysis private[analyses] (
 
         def this(
             classFile:      ClassFile,
-            relevantFields: TraversableOnce[Field],
+            relevantFields: IterableOnce[Field],
             dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
-        ) {
+        ) = {
             this(classFile, dependees)
-            fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ → None).toMap
+            fieldInformation = relevantFields.iterator.map[(Field, Option[DomainValue])](_ -> None).toMap
         }
 
         final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
@@ -225,20 +225,20 @@ class LBFieldValuesAnalysis private[analyses] (
             if (declaringClassType ne thisClassType)
                 return ;
 
-            classFile.findField(name, fieldType).foreach { field ⇒
+            classFile.findField(name, fieldType).foreach { field =>
                 if (fieldInformation.contains(field)) {
                     fieldInformation(field) match {
-                        case Some(previousValue) ⇒
+                        case Some(previousValue) =>
                             if (previousValue ne value) {
                                 previousValue.join(Int.MinValue, value) match {
-                                    case SomeUpdate(newValue) ⇒
+                                    case SomeUpdate(newValue) =>
                                         // IMPROVE Remove "irrelevant fields" to check if we can stop the overall process...
-                                        fieldInformation += (field → Some(newValue))
-                                    case NoUpdate ⇒ /*nothing to do*/
+                                        fieldInformation += (field -> Some(newValue))
+                                    case NoUpdate => /*nothing to do*/
                                 }
                             }
-                        case None ⇒
-                            fieldInformation += (field → Some(value))
+                        case None =>
+                            fieldInformation += (field -> Some(value))
                     }
                 }
             }
@@ -273,10 +273,10 @@ class LBFieldValuesAnalysis private[analyses] (
         domain:    FieldValuesAnalysisDomain
     ): Unit = {
         val relevantMethods =
-            domain.fieldInformation.keys.foldLeft(Set.empty[Method]) { (ms, field) ⇒
+            domain.fieldInformation.keys.foldLeft(Set.empty[Method]) { (ms, field) =>
                 ms ++ fieldAccessInformation.writeAccesses(field).map(_._1)
             }
-        relevantMethods.foreach { method ⇒
+        relevantMethods.foreach { method =>
             domain.setMethodContext(method)
             BaseAI(method, domain)
             // The state is implicitly accumulated in the domain, which only works, because
@@ -288,7 +288,7 @@ class LBFieldValuesAnalysis private[analyses] (
         val relevantFields = relevantFieldsIterable(classFile)
         if (relevantFields.isEmpty) {
             return MultiResult(
-                classFile.fields.iterator map { f ⇒
+                classFile.fields.iterator map { f =>
                     FinalEP(f, TypeBasedFieldValueInformation(f.fieldType))
                 }
             )
@@ -296,17 +296,17 @@ class LBFieldValuesAnalysis private[analyses] (
         val domain = new FieldValuesAnalysisDomain(classFile, relevantFields)
         analyzeRelevantMethods(classFile, domain)
         val allFieldsIterator = classFile.fields.iterator
-        val results = allFieldsIterator.map[ProperPropertyComputationResult] { (f: Field) ⇒
+        val results = allFieldsIterator.map[ProperPropertyComputationResult] { (f: Field) =>
             domain.fieldInformation.get(f) match {
 
-                case Some(None) ⇒
+                case Some(None) =>
                     // relevant field, but obviously no writes were found...
                     val dv = domain.DefaultValue(-1, f.fieldType)
                     val fv = ValueBasedFieldValueInformation(dv)
                     // println(f.toJava+"!!!!!!>>>>>> "+fv)
                     Result(FinalEP(f, fv))
 
-                case Some(Some(domain.DomainReferenceValueTag(dv))) ⇒
+                case Some(Some(domain.DomainReferenceValueTag(dv))) =>
                     if ( /* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                         // println(f.toJava+"!!!!!!>>>>>> "+vi)
@@ -320,13 +320,13 @@ class LBFieldValuesAnalysis private[analyses] (
                         //    write the field.
                         val methodsWithFieldWrites =
                             fieldAccessInformation.writeAccesses(f).map(_._1).toSet
-                        val relevantDependees = domain.dependees.filter { eOptionP ⇒
+                        val relevantDependees = domain.dependees.filter { eOptionP =>
                             eOptionP match {
-                                case EOptionP(readField: Field, _) ⇒
-                                    fieldAccessInformation.readAccesses(readField).exists { mPCs ⇒
+                                case EOptionP(readField: Field, _) =>
+                                    fieldAccessInformation.readAccesses(readField).exists { mPCs =>
                                         methodsWithFieldWrites.contains(mPCs._1)
                                     }
-                                case EOptionP(calledMethod: Method, _) ⇒
+                                case EOptionP(calledMethod: Method, _) =>
                                     // Please note, that – if we get more precise type
                                     // information while carrying out the analysis – the set
                                     // of method dependees may increase after this initial
@@ -339,11 +339,12 @@ class LBFieldValuesAnalysis private[analyses] (
                                     //  // if now, m() is known to return only String objects
                                     //  // o.toString becomes resolvable!
                                     // }}}
-                                    methodsWithFieldWrites.exists { m ⇒
+                                    methodsWithFieldWrites.exists { m =>
                                         val methodsCalledByM = domain.calledMethods.get(m)
                                         methodsCalledByM.nonEmpty &&
                                             methodsCalledByM.get.contains(calledMethod)
                                     }
+                                case _ => throw new MatchError(eOptionP)
                             }
                         }
 
@@ -384,16 +385,16 @@ class LBFieldValuesAnalysis private[analyses] (
                         }
                     }
 
-                case _ ⇒
+                case _ =>
                     Result(FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)))
             }
         }
 
         /* ONLY RESULTS FOR REFERENCE-TYPED FIELDS FOR WHICH WE COULD GET BETTER RESULTS:
             var results: List[FinalEP[Field, FieldValue]] = Nil
-            domain.fieldInformation foreach { e ⇒
+            domain.fieldInformation foreach { e =>
                 val (field, domainValueOption: Option[IsReferenceValue @unchecked]) = e
-                domainValueOption.foreach { domainValue ⇒
+                domainValueOption.foreach { domainValue =>
                     if (domainValue.isPrecise || domainValue.isNull.isYesOrNo ||
                         // when we reach this point:
                         //      value.isNull == Unknown &&
@@ -419,10 +420,10 @@ object FieldValuesAnalysis {
      */
     // IMPROVE Move to configuration file.
     final val ignoredFields: Map[ObjectType, Set[String]] = Map(
-        ObjectType.System → Set("in", "out", "err"),
-        ObjectType("java/net/InterfaceAddress") → Set("address"),
-        ObjectType("java/util/concurrent/FutureTask") → Set("runner"),
-        ObjectType("java/nio/channels/SelectionKey") → Set("attachment")
+        ObjectType.System -> Set("in", "out", "err"),
+        ObjectType("java/net/InterfaceAddress") -> Set("address"),
+        ObjectType("java/util/concurrent/FutureTask") -> Set("runner"),
+        ObjectType("java/nio/channels/SelectionKey") -> Set("attachment")
     )
 
 }
@@ -436,7 +437,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelFieldAccessInstructions.
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            i ⇒ i.getOrElse(Set.empty) + classOf[RefinedTypeLevelFieldAccessInstructions]
+            i => i.getOrElse(Set.empty) + classOf[RefinedTypeLevelFieldAccessInstructions]
         )
         null
     }

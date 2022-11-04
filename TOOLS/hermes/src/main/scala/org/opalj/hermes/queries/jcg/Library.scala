@@ -4,20 +4,23 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.br.MethodWithBody
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
+
+import org.opalj.da.ClassFile
 import org.opalj.br.Field
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectIndex
 import org.opalj.br.analyses.ProjectIndexKey
-import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.da.ClassFile
-
-import scala.collection.mutable
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 
 /**
  * Groups test case features that test the support for libraries/partial programs. All test cases
@@ -42,7 +45,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -51,20 +54,20 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         //val declaredMethods = project.get(DeclaredMethodsKey)
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            fieldTypes = classFile.fields.filter(f ⇒ f.isNotFinal && !f.isPrivate).collect {
-                case f: Field if f.fieldType.id >= 0 ⇒ f.fieldType.id
+            fieldTypes = classFile.fields.filter(f => f.isNotFinal && !f.isPrivate).collect {
+                case f: Field if f.fieldType.id >= 0 => f.fieldType.id
             }
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             paramTypes = method.parameterTypes.map(_.id).filter(_ >= 0)
             if (fieldTypes.nonEmpty || paramTypes.nonEmpty)
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation ← body collect {
-                case iv: INVOKEVIRTUAL   ⇒ iv
-                case ii: INVOKEINTERFACE ⇒ ii
-            }
+            pcAndInvocation <- body collect ({
+                case iv: INVOKEVIRTUAL   => iv
+                case ii: INVOKEINTERFACE => ii
+            }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
         } {
             val pc = pcAndInvocation.pc
             val invokeKind = pcAndInvocation.value
@@ -88,14 +91,14 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         val cf = cfO.get
                         val cacheKey = s"${cf.thisType.id}-$name-${descriptor.toJVMDescriptor}"
                         val targets = cbsCache.get(cacheKey) match {
-                            case None ⇒ {
+                            case None => {
                                 val newTargets = cf.findMethod(name, descriptor)
                                     .map(getCBSTargets(projectIndex, project, _))
                                     .getOrElse(Set.empty[Method])
                                 cbsCache = cbsCache + ((cacheKey, newTargets))
                                 newTargets
                             }
-                            case Some(result) ⇒ result
+                            case Some(result) => result
                         }
 
                         var publicTarget = false
@@ -131,7 +134,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         }
 
-        instructionLocations;
+        ArraySeq.unsafeWrapArray(instructionLocations)
 
     }
 
@@ -209,13 +212,13 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         var isUnknown = false
 
         while (itr.hasNext) {
-            val subtype = itr.next
+            val subtype = itr.next()
             project.classFile(subtype) match {
-                case Some(subclassFile) ⇒
+                case Some(subclassFile) =>
                     if (subclassFile.findMethod(methodName, methodDescriptor).isEmpty
                         && classHierarchy.isSubtypeOf(subtype, interfaceType))
                         return Yes;
-                case None ⇒
+                case None =>
                     isUnknown = false
             }
         }

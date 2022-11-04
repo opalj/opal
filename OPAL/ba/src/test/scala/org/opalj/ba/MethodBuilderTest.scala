@@ -4,24 +4,22 @@ package ba
 
 import scala.language.postfixOps
 import scala.reflect.runtime.universe._
-
 import org.junit.runner.RunWith
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
 
 import java.io.ByteArrayInputStream
-
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.collection.immutable.RefArray
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions._
-import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ J8ClassFile}
+import org.opalj.br.reader.Java8Framework.{ClassFile => J8ClassFile}
 import org.opalj.br.MethodAttributeBuilder
 import org.opalj.br.ObjectType
 import org.opalj.br.IntegerType
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Tests the properties of a method in a class build with the BytecodeAssembler DSL. The class is
@@ -42,7 +40,7 @@ class MethodBuilderTest extends AnyFlatSpec {
                 METHOD(
                     FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
                     CODE(ACONST_NULL, ARETURN),
-                    RefArray[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
+                    ArraySeq[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
                 )
             )
         ).toDA()
@@ -51,7 +49,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     "the generated method 'SimpleMethodClass.testMethod'" should "execute correctly" in {
         val loader = new InMemoryClassLoader(
-            Map("SimpleMethodClass" → rawClassFile),
+            Map("SimpleMethodClass" -> rawClassFile),
             this.getClass.getClassLoader
         )
 
@@ -63,9 +61,9 @@ class MethodBuilderTest extends AnyFlatSpec {
         assert(mirror.reflectMethod(method)("test") == null)
     }
 
-    val brClassFile = J8ClassFile(() ⇒ new java.io.ByteArrayInputStream(rawClassFile)).head
+    val brClassFile = J8ClassFile(() => new java.io.ByteArrayInputStream(rawClassFile)).head
 
-    val testMethod = brClassFile.methods.find { m ⇒
+    val testMethod = brClassFile.methods.find { m =>
         val expectedMethodDescritor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
         m.name == "testMethod" && m.descriptor == expectedMethodDescritor
     }
@@ -81,7 +79,7 @@ class MethodBuilderTest extends AnyFlatSpec {
     }
 
     it should "have the Exception attribute set: 'java/lang/Exception" in {
-        val attribute = testMethod.get.attributes.collect { case e: br.ExceptionTable ⇒ e }
+        val attribute = testMethod.get.attributes.collect { case e: br.ExceptionTable => e }
         assert(attribute.head.exceptions.head.fqn == "java/lang/Exception")
     }
 
@@ -109,7 +107,7 @@ class MethodBuilderTest extends AnyFlatSpec {
                         ALOAD_0,
                         LINENUMBER(1),
                         INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                        'return,
+                        Symbol("return"),
                         LINENUMBER(2),
                         RETURN
                     ) MAXSTACK 2 MAXLOCALS 3
@@ -119,50 +117,50 @@ class MethodBuilderTest extends AnyFlatSpec {
                     CODE(
                         ICONST_1,
                         ISTORE_2,
-                        TRY('Try1),
-                        TRY('FinallyTry2),
-                        TRY('LastPCTry3),
+                        TRY(Symbol("Try1")),
+                        TRY(Symbol("FinallyTry2")),
+                        TRY(Symbol("LastPCTry3")),
                         ILOAD_1,
-                        IFGE('tryEnd),
+                        IFGE(Symbol("tryEnd")),
                         NEW("java/lang/Exception"),
                         DUP,
                         INVOKESPECIAL("java/lang/Exception", false, "<init>", "()V"),
                         ATHROW,
-                        'tryEnd,
-                        TRYEND('Try1),
-                        GOTO('finally),
-                        CATCH('Try1, 0, "java/lang/Exception"),
+                        Symbol("tryEnd"),
+                        TRYEND(Symbol("Try1")),
+                        GOTO(Symbol("finally")),
+                        CATCH(Symbol("Try1"), 0, "java/lang/Exception"),
                         POP,
                         ICONST_0,
                         ISTORE_2,
-                        TRYEND('FinallyTry2),
-                        GOTO('finally),
-                        CATCH('FinallyTry2, 1),
-                        CATCH('LastPCTry3, 2),
+                        TRYEND(Symbol("FinallyTry2")),
+                        GOTO(Symbol("finally")),
+                        CATCH(Symbol("FinallyTry2"), 1),
+                        CATCH(Symbol("LastPCTry3"), 2),
                         POP,
-                        'finally,
+                        Symbol("finally"),
                         ILOAD_1,
-                        IFLE('return),
+                        IFLE(Symbol("return")),
                         ICONST_2,
                         ISTORE_2,
-                        'return,
+                        Symbol("return"),
                         ILOAD_2,
                         IRETURN,
-                        TRYEND('LastPCTry3)
+                        TRYEND(Symbol("LastPCTry3"))
                     ) MAXLOCALS 3
                 )
             )
         ).toDA()
 
     val rawAttributeCF = Assembler(attributeMethodClass)
-    val attributeBrClassFile = J8ClassFile(() ⇒ new ByteArrayInputStream(rawAttributeCF)).head
+    val attributeBrClassFile = J8ClassFile(() => new ByteArrayInputStream(rawAttributeCF)).head
 
-    val attributeTestMethod = attributeBrClassFile.methods.find { m ⇒
+    val attributeTestMethod = attributeBrClassFile.methods.find { m =>
         m.name == "<init>" && m.descriptor == MethodDescriptor("()V")
     }.get
 
     val loader = new InMemoryClassLoader(
-        Map("AttributeMethodClass" → rawAttributeCF),
+        Map("AttributeMethodClass" -> rawAttributeCF),
         this.getClass.getClassLoader
     )
 
@@ -176,7 +174,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     it should "have the expected LineNumberTable" in {
         val lineNumberTable = attributeTestMethod.body.get.attributes.collect {
-            case l: br.LineNumberTable ⇒ l
+            case l: br.LineNumberTable => l
         }.head
         assert(lineNumberTable.lookupLineNumber(0).get == 0)
         assert(lineNumberTable.lookupLineNumber(1).get == 1)
@@ -185,7 +183,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     "the generated method `tryCatchFinallyTest`" should "have the correct exceptionTable set" in {
         val exceptionTable = attributeBrClassFile.methods.find {
-            m ⇒ m.name == "tryCatchFinallyTest"
+            m => m.name == "tryCatchFinallyTest"
         }.get.body.get.exceptionHandlers
         assert(
             exceptionTable(0) ==
@@ -206,7 +204,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             assert(mirror.reflectMethod(method)(0) == 1)
             assert(mirror.reflectMethod(method)(1) == 2)
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 info(
                     attributeBrClassFile.findMethod("tryCatchFinallyTest").head.toJava
                 )
@@ -222,13 +220,13 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     "removing dead code related to TRY/CATCH" should "work correctly with \"standard\" TRY/CATCH" in {
         val c = CODE(
-            LabeledGOTO('b),
-            TRY('try),
+            LabeledGOTO(Symbol("b")),
+            TRY(Symbol("try")),
             NOP,
-            TRYEND('try),
-            CATCH('try, 0),
+            TRYEND(Symbol("try")),
+            CATCH(Symbol("try"), 0),
             ATHROW,
-            'b,
+            Symbol("b"),
             ICONST_0,
             IRETURN
         )
@@ -239,13 +237,13 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     it should "work correctly with TRY/CATCH when the CATCH precedes the TRY" in {
         val c = CODE(
-            LabeledGOTO('b),
-            CATCH('try, 0),
+            LabeledGOTO(Symbol("b")),
+            CATCH(Symbol("try"), 0),
             ATHROW,
-            TRY('try),
+            TRY(Symbol("try")),
             ICONST_0,
-            TRYEND('try),
-            'b,
+            TRYEND(Symbol("try")),
+            Symbol("b"),
             ICONST_0,
             IRETURN
         )
@@ -257,13 +255,13 @@ class MethodBuilderTest extends AnyFlatSpec {
     it should "work correctly when the CATCH is between the TRY and the TRYEND" in {
         // this case is typically found in cases where we have synchronized methods
         val c = CODE(
-            LabeledGOTO('b),
-            TRY('try),
-            CATCH('try, 0),
+            LabeledGOTO(Symbol("b")),
+            TRY(Symbol("try")),
+            CATCH(Symbol("try"), 0),
             ICONST_1,
             IRETURN,
-            TRYEND('try),
-            'b,
+            TRYEND(Symbol("try")),
+            Symbol("b"),
             ICONST_0,
             IRETURN
         )
@@ -278,14 +276,14 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     it should "correctly remove useless TRY/CATCHs if no exceptions are thrown" in {
         val c = CODE(
-            LabeledGOTO('b),
-            CATCH('try, 0),
+            LabeledGOTO(Symbol("b")),
+            CATCH(Symbol("try"), 0),
             ATHROW,
-            TRY('try),
+            TRY(Symbol("try")),
             ICONST_0,
-            'b,
+            Symbol("b"),
             ICONST_0,
-            TRYEND('try),
+            TRYEND(Symbol("try")),
             IRETURN
         )
         assert(c.instructions(0) == GOTO(3))
@@ -297,24 +295,24 @@ class MethodBuilderTest extends AnyFlatSpec {
         // The following test is inspired by a regression posted by Jonathan in relation
         // to a PR fixing exception handler related issues.
         val c = CODE(
-            LabeledGOTO('EP1),
+            LabeledGOTO(Symbol("EP1")),
             LabelElement(PCLabel(0)),
             ALOAD_0,
             LabelElement(PCLabel(1)),
             NOP, // INVOKESTATIC(effekt.Effekt{ void beforeEffect() })),
             POP, ICONST_0, // INVOKEINTERFACE(run.parsers.CharParsers{ boolean alternative() })),
             ICONST_0, // INVOKESTATIC(effekt.Effekt{ boolean isEffectful() })),
-            LabeledIFEQ('EPResume1),
+            LabeledIFEQ(Symbol("EPResume1")),
             POP,
             ALOAD_0,
             POP, ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$1,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
             POP, //INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
             RETURN,
-            LabelElement('EP1),
+            LabelElement(Symbol("EP1")),
             ALOAD_0,
             ASTORE_0,
             ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
-            LabelElement('EPResume1),
+            LabelElement(Symbol("EPResume1")),
             LabelElement(PCLabel(6)),
             LabeledIFEQ(PCLabel(19)),
             LabelElement(PCLabel(9)),
@@ -323,17 +321,17 @@ class MethodBuilderTest extends AnyFlatSpec {
             NOP, // INVOKESTATIC(effekt.Effekt{ void beforeEffect() }),
             POP, // INVOKEINTERFACE(run.parsers.CharParsers{ int digit() }),
             ICONST_1, //INVOKESTATIC(effekt.Effekt{ boolean isEffectful() }),
-            LabeledIFEQ('EPResume2),
+            LabeledIFEQ(Symbol("EPResume2")),
             POP,
             ALOAD_0,
             POP, ACONST_NULL, //INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$2,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
             RETURN,
-            /*DEAD*/ LabelElement('EP2),
+            /*DEAD*/ LabelElement(Symbol("EP2")),
             /*DEAD*/ ALOAD_0,
             /*DEAD*/ ASTORE_0,
             /*DEAD*/ ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
-            LabelElement('EPResume2),
+            LabelElement(Symbol("EPResume2")),
             LabelElement(PCLabel(15)),
             POP,
             LabelElement(PCLabel(16)),
@@ -356,29 +354,29 @@ class MethodBuilderTest extends AnyFlatSpec {
         val ExceptionType = ObjectType("java/lang/Exception")
 
         val c = CODE(
-            LabeledGOTO('EP1),
+            LabeledGOTO(Symbol("EP1")),
             LabelElement(PCLabel(0)),
             /*DEAD*/ ICONST_0,
             LabelElement(PCLabel(1)),
             /*DEAD*/ ISTORE_0,
-            /*DEAD*/ TRY('eh0),
+            /*DEAD*/ TRY(Symbol("eh0")),
             LabelElement(PCLabel(2)),
             /*DEAD*/ ACONST_NULL, // INVOKEDYNAMIC ...
             /*DEAD*/ POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
-            /*DEAD*/ TRY('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ TRY(Symbol("EHeffectOp2$entrypoint$1")),
             /*DEAD*/ ICONST_1, // INVOKESTATIC(run.SimpleExceptions{ int effectOp1() }),
             /*DEAD*/ RETURN,
-            /*DEAD*/ TRYEND('EHeffectOp2$entrypoint$1),
-            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, 0, Some(ExceptionType)),
+            /*DEAD*/ TRYEND(Symbol("EHeffectOp2$entrypoint$1")),
+            /*DEAD*/ CATCH(Symbol("EHeffectOp2$entrypoint$1"), 0, Some(ExceptionType)),
             /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
             /*DEAD*/ RETURN,
-            LabelElement('EP1),
+            LabelElement(Symbol("EP1")),
             ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
             LabelElement(PCLabel(5)),
             ISTORE_0,
-            /*DEAD*/ TRYEND('eh0),
+            /*DEAD*/ TRYEND(Symbol("eh0")),
             LabeledGOTO(PCLabel(21)),
-            /*DEAD*/ CATCH('eh0, 0, Some(ExceptionType)),
+            /*DEAD*/ CATCH(Symbol("eh0"), 0, Some(ExceptionType)),
             LabelElement(PCLabel(9)),
             /*DEAD*/ ASTORE_1,
             LabelElement(PCLabel(10)),
@@ -409,31 +407,31 @@ class MethodBuilderTest extends AnyFlatSpec {
         val ExceptionType = ObjectType("java/lang/Exception")
 
         val c = CODE(
-            LabeledGOTO('EP1),
+            LabeledGOTO(Symbol("EP1")),
             LabelElement(PCLabel(0)),
             /*DEAD*/ ICONST_0,
             LabelElement(PCLabel(1)),
             /*DEAD*/ ISTORE_0,
-            TRY('eh0),
+            TRY(Symbol("eh0")),
             LabelElement(PCLabel(2)),
             /*DEAD*/ ACONST_NULL, // INVOKEDYNAMIC ...
             /*DEAD*/ POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
-            /*DEAD*/ TRY('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ TRY(Symbol("EHeffectOp2$entrypoint$1")),
             /*DEAD*/ ICONST_1, // INVOKESTATIC(run.SimpleExceptions{ int effectOp1() }),
             /*DEAD*/ RETURN,
-            /*DEAD*/ TRYEND('EHeffectOp2$entrypoint$1),
-            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, 0, Some(ExceptionType)),
+            /*DEAD*/ TRYEND(Symbol("EHeffectOp2$entrypoint$1")),
+            /*DEAD*/ CATCH(Symbol("EHeffectOp2$entrypoint$1"), 0, Some(ExceptionType)),
             /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
             /*DEAD*/ RETURN,
-            LabelElement('EP1),
+            LabelElement(Symbol("EP1")),
             ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
             ICONST_2,
             IDIV, // we need an instruction which potentially throws an exception...
             LabelElement(PCLabel(5)),
             ISTORE_0,
-            TRYEND('eh0),
+            TRYEND(Symbol("eh0")),
             LabeledGOTO(PCLabel(21)),
-            CATCH('eh0, 0, Some(ExceptionType)),
+            CATCH(Symbol("eh0"), 0, Some(ExceptionType)),
             LabelElement(PCLabel(9)),
             ASTORE_1,
             LabelElement(PCLabel(10)),

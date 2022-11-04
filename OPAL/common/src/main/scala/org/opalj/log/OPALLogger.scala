@@ -157,9 +157,9 @@ object OPALLogger extends OPALLogger {
      */
     @elidable(ASSERTION)
     final def debug(
-        p:        ⇒ Boolean,
+        p:        => Boolean,
         category: String,
-        message:  ⇒ String
+        message:  => String
     )(
         implicit
         ctx: LogContext

@@ -5,7 +5,6 @@ package queries
 package jcg
 
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.InstanceAPIMethod
@@ -21,11 +20,11 @@ import org.opalj.hermes.queries.util.InstanceAPIMethod
  */
 class Unsafe(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override val apiFeatures: Chain[APIFeature] = {
+    override val apiFeatures: List[APIFeature] = {
 
         val Unsafe = ObjectType("sun/misc/Unsafe")
 
-        Chain(
+        List(
             InstanceAPIMethod(Unsafe, "compareAndSwapObject", featureID = "Unsafe1"),
             InstanceAPIMethod(Unsafe, "putObject", featureID = "Unsafe2"),
             InstanceAPIMethod(Unsafe, "getObject", featureID = "Unsafe3"),

@@ -5,22 +5,26 @@
 # This file takes exactly one scalac flag per line; empty lines and whitespace at
 # the beginning and end are trimmed and "#" and "//" mark comment lines.
 
-–encoding UTF8
+-encoding UTF8
 -target:jvm-1.8
 -deprecation
 -feature
 -unchecked
--Xlint
--Xfuture
+// -Xfuture deprecated in Scala 2.13. Replaced by -Xsource
+-Xsource:3
 -Xfatal-warnings
--Ywarn-numeric-widen
--Ywarn-nullary-unit
--Ywarn-nullary-override
--Ywarn-unused:imports,privates,locals,implicits
+-Wnumeric-widen
+-Xlint:nullary-unit
+// -Xlint:nullary-override
+-Wunused:imports,privates,locals,implicits
 // Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
--Ywarn-infer-any
--Ywarn-dead-code
--Ywarn-inaccessible
--Ywarn-adapted-args
+-Xlint:infer-any
+-Wdead-code
+-Xlint:inaccessible
+-Xlint:adapted-args
 -Ybackend-parallelism 8
+// Scala 2.13 is not able to turn certain `match` expressions to `tableswitch` statements.
+// Therefore, we suppress the warnings of switch annotations. This issue is fixed in Scala 3.
+// TODO: remove this option in Scala 3
+-Wconf:cat=unused-nowarn:s,msg=could\snot\semit\sswitch:s
 // (Should be turned-off during development; i.e., assertions are enabled at development time) -Xdisable-assertions

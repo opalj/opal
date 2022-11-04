@@ -9,7 +9,7 @@ import java.io.PrintWriter
 import java.net.URL
 import java.util.Calendar
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.ConfigValueFactory
 
@@ -47,10 +47,10 @@ import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
@@ -110,9 +110,9 @@ object CallGraph extends ProjectAnalysisApplication {
     private val algorithmRegex =
         "-algorithm=(CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo|1-0-CFA|1-1-CFA)".r
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
-            parameters.filter { p ⇒
+            parameters.filter { p =>
                 !p.matches(algorithmRegex.regex) &&
                     !p.startsWith("-domain=") &&
                     !p.startsWith("-callers=") &&
@@ -148,7 +148,7 @@ object CallGraph extends ProjectAnalysisApplication {
     ): BasicReport = {
         project.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+            (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = project.logContext
                 val threads =
                     numThreads.getOrElse(org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks)
@@ -162,37 +162,37 @@ object CallGraph extends ProjectAnalysisApplication {
         )
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
+        val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
                 (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
-        }.toTraversable
+        }.to(Iterable)
 
         var propertyStoreTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
-        implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t ⇒
+        implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t =>
             propertyStoreTime = t.toSeconds
         }
 
         val cg = time {
             cgAlgorithm match {
-                case "CHA"               ⇒ project.get(CHACallGraphKey)
-                case "RTA"               ⇒ project.get(RTACallGraphKey)
-                case "MTA"               ⇒ project.get(MTACallGraphKey)
-                case "FTA"               ⇒ project.get(FTACallGraphKey)
-                case "CTA"               ⇒ project.get(CTACallGraphKey)
-                case "XTA"               ⇒ project.get(XTACallGraphKey)
-                case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
-                case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
-                case "1-0-CFA"           ⇒ project.get(CFA_1_0_CallGraphKey)
-                case "1-1-CFA"           ⇒ project.get(CFA_1_1_CallGraphKey)
+                case "CHA"               => project.get(CHACallGraphKey)
+                case "RTA"               => project.get(RTACallGraphKey)
+                case "MTA"               => project.get(MTACallGraphKey)
+                case "FTA"               => project.get(FTACallGraphKey)
+                case "CTA"               => project.get(CTACallGraphKey)
+                case "XTA"               => project.get(XTACallGraphKey)
+                case "TypeBasedPointsTo" => project.get(TypeBasedPointsToCallGraphKey)
+                case "PointsTo"          => project.get(AllocationSiteBasedPointsToCallGraphKey)
+                case "1-0-CFA"           => project.get(CFA_1_0_CallGraphKey)
+                case "1-1-CFA"           => project.get(CFA_1_1_CallGraphKey)
             }
-        } { t ⇒ callGraphTime = t.toSeconds }
+        } { t => callGraphTime = t.toSeconds }
 
         try {
             ps.shutdown()
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 Console.err.println("PropertyStore shutdown failed: ")
                 t.printStackTrace()
         }
@@ -201,7 +201,7 @@ object CallGraph extends ProjectAnalysisApplication {
             val ptss = ps.entities(AllocationSitePointsToSet.key).toList
 
             println(s"PTSs ${ptss.size}")
-            println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
+            println(s"PTS entries ${ptss.map(p => p.ub.elements.size).sum}")
 
             val byType = ptss.groupBy(_.e.getClass)
 
@@ -232,7 +232,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
         }
 
-        val reachableContexts = cg.reachableMethods().toTraversable
+        val reachableContexts = cg.reachableMethods().to(Iterable)
         val reachableMethods = reachableContexts.map(_.method).toSet
 
         val numEdges = cg.numEdges
@@ -242,29 +242,29 @@ object CallGraph extends ProjectAnalysisApplication {
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))
 
-        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
-        for (m ← allMethods) {
+        for (m <- allMethods) {
             val mSig = m.descriptor.toJava(m.name)
 
-            for (methodSignature ← calleesSigs) {
+            for (methodSignature <- calleesSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callees of ${m.toJava}:")
                     val calleesProperty = ps(m, Callees.key).ub
-                    println(calleesProperty.callerContexts.flatMap { context ⇒
+                    println(calleesProperty.callerContexts.flatMap { context =>
                         calleesProperty.callSites(context).map {
-                            case (pc, callees) ⇒ pc → callees.map(_.method.toJava).mkString(", ")
+                            case (pc, callees) => pc -> callees.map(_.method.toJava).mkString(", ")
                         }.toSet.mkString("\t", "\n\t", "\n")
                     })
                 }
             }
-            for (methodSignature ← callersSigs) {
+            for (methodSignature <- callersSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
-                    println(ps(m, Callers.key).ub.callers(m).map {
-                        case (caller, pc, isDirect) ⇒
+                    println(ps(m, Callers.key).ub.callers(m).iterator.map {
+                        case (caller, pc, isDirect) =>
                             s"${caller.toJava}, $pc${if (!isDirect) ", indirect" else ""}"
-                    }.mkString("\t", "\n\t", "\n"))
+                    }.iterator.mkString("\t", "\n\t", "\n"))
                 }
             }
         }
@@ -314,7 +314,7 @@ object CallGraph extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         var tacDomain: Option[String] = None
         var calleesSigs: List[String] = Nil
@@ -352,64 +352,64 @@ object CallGraph extends ProjectAnalysisApplication {
 
         def analyisOption(option: String, analysis: String): Unit = {
             option match {
-                case "yes" ⇒
+                case "yes" =>
                     modules += s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
-                case "no" ⇒
+                case "no" =>
                     modules -= s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
-                case "default" ⇒
-                case _         ⇒ throw new IllegalArgumentException(s"illegal value for $analysis")
+                case "default" =>
+                case _         => throw new IllegalArgumentException(s"illegal value for $analysis")
             }
         }
 
         parameters.foreach {
-            case domainRegex(domainClass) ⇒
+            case domainRegex(domainClass) =>
                 if (tacDomain.isEmpty)
                     tacDomain = Some(domainClass)
                 else throw new IllegalArgumentException("-domain was set twice")
-            case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
-            case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
-            case algorithmRegex(algo)    ⇒ cgAlgorithm = algo
-            case analysisNameRegex(name) ⇒
+            case callersRegex(methodSig) => callersSigs ::= methodSig
+            case calleesRegex(methodSig) => calleesSigs ::= methodSig
+            case algorithmRegex(algo)    => cgAlgorithm = algo
+            case analysisNameRegex(name) =>
                 if (analysisName.isEmpty)
                     analysisName = Some(name)
                 else throw new IllegalArgumentException("-analysisName was set twice")
-            case schedulingStrategyRegex(name) ⇒
+            case schedulingStrategyRegex(name) =>
                 if (schedulingStrategy.isEmpty)
                     schedulingStrategy = Some(name)
                 else throw new IllegalArgumentException("-schedulingStrategy was set twice")
-            case numThreadsRegex(threads) ⇒
+            case numThreadsRegex(threads) =>
                 if (numThreads.isEmpty)
                     numThreads = Some(Integer.parseInt(threads))
                 else throw new IllegalArgumentException("-j was set twice")
-            case writeCGRegex(fileName) ⇒
+            case writeCGRegex(fileName) =>
                 if (cgFile.isEmpty)
                     cgFile = Some(fileName)
                 else throw new IllegalArgumentException("-writeCG was set twice")
-            case writeOutputRegex(fileName) ⇒
+            case writeOutputRegex(fileName) =>
                 if (outputFile.isEmpty)
                     outputFile = Some(fileName)
                 else throw new IllegalArgumentException("-writeOutput was set twice")
-            case mainClassRegex(fileName) ⇒
+            case mainClassRegex(fileName) =>
                 if (mainClass.isEmpty)
                     mainClass = Some(fileName)
                 else throw new IllegalArgumentException("-main was set twice")
-            case tamiflexLogRegex(fileName) ⇒
+            case tamiflexLogRegex(fileName) =>
                 if (tamiflexLog.isEmpty)
                     tamiflexLog = Some(fileName)
                 else throw new IllegalArgumentException("-tamiflex-log was set twice")
-            case finalizerAnalysisRegex(option) ⇒
+            case finalizerAnalysisRegex(option) =>
                 analyisOption(option, "FinalizerAnalysis")
-            case loadedClassesAnalysisRegex(option) ⇒
+            case loadedClassesAnalysisRegex(option) =>
                 analyisOption(option, "LoadedClassesAnalysis")
-            case staticInitializerAnalysisRegex(option) ⇒
+            case staticInitializerAnalysisRegex(option) =>
                 analyisOption(option, "StaticInitializerAnalysis")
-            case reflectionAnalysisRegex(option) ⇒
+            case reflectionAnalysisRegex(option) =>
                 analyisOption(option, "reflection.ReflectionRelatedCallsAnalysis")
-            case serializationAnalysisRegex(option) ⇒
+            case serializationAnalysisRegex(option) =>
                 analyisOption(option, "SerializationRelatedCallsAnalysis")
-            case threadRelatedCallsAnalysisRegex(option) ⇒
+            case threadRelatedCallsAnalysisRegex(option) =>
                 analyisOption(option, "ThreadRelatedCallsAnalysis")
-            case configuredNativeMethodsAnalysisRegex(option) ⇒
+            case configuredNativeMethodsAnalysisRegex(option) =>
                 analyisOption(option, "ConfiguredNativeMethodsCallGraphAnalysis")
         }
 
@@ -432,8 +432,8 @@ object CallGraph extends ProjectAnalysisApplication {
             val key = s"${InitialEntryPointsKey.ConfigKeyPrefix}entryPoints"
             val currentValues = newConfig.getList(key).unwrapped()
             val configValue = Map(
-                "declaringClass" → mainClass.get.replace('.', '/'),
-                "name" → "main"
+                "declaringClass" -> mainClass.get.replace('.', '/'),
+                "name" -> "main"
             ).asJava
             currentValues.add(ConfigValueFactory.fromMap(configValue))
             newConfig = newConfig.withValue(key, ConfigValueFactory.fromIterable(currentValues))
@@ -455,13 +455,13 @@ object CallGraph extends ProjectAnalysisApplication {
 
         val newProject = time {
             Project.recreate(project, newConfig)
-        } { t ⇒ projectTime = t.toSeconds }
+        } { t => projectTime = t.toSeconds }
 
         val domainFQN = tacDomain.getOrElse("org.opalj.ai.domain.l0.PrimitiveTACAIDomain")
         val domain = Class.forName(domainFQN).asInstanceOf[Class[Domain with RecordDefUse]]
         newProject.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               ⇒ Set(domain)
-            case Some(requirements) ⇒ requirements + domain
+            case None               => Set(domain)
+            case Some(requirements) => requirements + domain
         }
 
         if (analysisName.isEmpty) {

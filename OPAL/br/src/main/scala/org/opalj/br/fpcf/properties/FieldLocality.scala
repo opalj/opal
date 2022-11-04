@@ -37,7 +37,7 @@ sealed abstract class FieldLocality extends Property with FieldLocalityMetaInfor
 object FieldLocality extends FieldLocalityMetaInformation {
     final lazy val key: PropertyKey[FieldLocality] = PropertyKey.create(
         "FieldLocality",
-        (_: PropertyStore, _: FallbackReason, f: Field) ⇒ {
+        (_: PropertyStore, _: FallbackReason, f: Field) => {
             if (f.fieldType.isBaseType) LocalField else NoLocalField
         }
     )
@@ -61,9 +61,9 @@ case object LocalField extends FieldLocality {
 case object ExtensibleLocalField extends FieldLocality {
 
     override def meet(other: FieldLocality): FieldLocality = other match {
-        case LocalField           ⇒ this
-        case LocalFieldWithGetter ⇒ ExtensibleLocalFieldWithGetter
-        case _                    ⇒ other
+        case LocalField           => this
+        case LocalFieldWithGetter => ExtensibleLocalFieldWithGetter
+        case _                    => other
     }
 }
 
@@ -75,9 +75,9 @@ case object ExtensibleLocalField extends FieldLocality {
 case object LocalFieldWithGetter extends FieldLocality {
 
     override def meet(other: FieldLocality): FieldLocality = other match {
-        case LocalField           ⇒ this
-        case ExtensibleLocalField ⇒ ExtensibleLocalFieldWithGetter
-        case _                    ⇒ other
+        case LocalField           => this
+        case ExtensibleLocalField => ExtensibleLocalFieldWithGetter
+        case _                    => other
     }
 }
 
@@ -89,8 +89,8 @@ case object LocalFieldWithGetter extends FieldLocality {
  */
 case object ExtensibleLocalFieldWithGetter extends FieldLocality {
     override def meet(other: FieldLocality): FieldLocality = other match {
-        case NoLocalField ⇒ other
-        case _            ⇒ this
+        case NoLocalField => other
+        case _            => this
     }
 }
 

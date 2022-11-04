@@ -16,7 +16,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * A trait for analyses that model the result of the invocation of a specific
@@ -36,7 +36,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
     val apiMethod: DeclaredMethod
 
-    implicit val typeProvider: TypeProvider
+    implicit val typeIterator: TypeIterator
     implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
     def handleNewCaller(
@@ -52,11 +52,11 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
         oldCallers: Callers
     )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
         (callersEOptP: @unchecked) match {
-            case EUBP(dm: DeclaredMethod, callersUB: Callers) ⇒
+            case EUBP(dm: DeclaredMethod, callersUB: Callers) =>
                 var results: List[ProperPropertyComputationResult] = Nil
                 if (callersUB.nonEmpty) {
                     callersUB.forNewCallerContexts(oldCallers, dm) {
-                        (calleeContext, callerContext, pc, isDirect) ⇒
+                        (calleeContext, callerContext, pc, isDirect) =>
                             if (callerContext.hasContext) {
                                 val caller = callerContext.method
 
@@ -81,6 +81,6 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
 
                 Results(results)
 
-            case _: EPK[_, _] ⇒ InterimPartialResult(Set(callersEOptP), c(null))
+            case _: EPK[_, _] => InterimPartialResult(Set(callersEOptP), c(null))
         }
 }

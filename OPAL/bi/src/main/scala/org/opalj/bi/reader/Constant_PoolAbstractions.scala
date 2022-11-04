@@ -4,6 +4,7 @@ package bi
 package reader
 
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 /**
  * Constant pool related type definitions.
@@ -15,6 +16,7 @@ trait Constant_PoolAbstractions {
     //
 
     type Constant_Pool_Entry <: ConstantPoolEntry
+    implicit val constantPoolEntryType: ClassTag[Constant_Pool_Entry]
 
     type CONSTANT_Utf8_info <: Constant_Pool_Entry
 
@@ -39,7 +41,7 @@ trait Constant_PoolAbstractions {
      * (The constant pool is the only structure that is passed around and hence it is the
      * only place where to store information/functions related to a specific class file).
      */
-    type DeferredActionsStore = mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
+    type DeferredActionsStore = mutable.Buffer[ClassFile => ClassFile] with Constant_Pool_Entry
 
     /**
      * This method is called/needs to be called after the class file was completely

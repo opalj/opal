@@ -59,15 +59,15 @@ private[xta] class TypePropagationTrace {
     }
 
     private def simplifiedName(e: Any): String = e match {
-        case defM: DefinedMethod ⇒ s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
-        case rt: ReferenceType   ⇒ rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
-        case _                   ⇒ e.toString
+        case defM: DefinedMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
+        case rt: ReferenceType   => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
+        case _                   => e.toString
     }
 
     @elidable(elidable.ASSERTION)
     def traceInit(
         method: DefinedMethod
-    )(implicit ps: PropertyStore, typeProvider: TypeProvider): Unit = {
+    )(implicit ps: PropertyStore, typeIterator: TypeIterator): Unit = {
         val initialTypes = {
             val typeEOptP = ps(method, InstantiatedTypes.key)
             if (typeEOptP.hasUBP) typeEOptP.ub.types
@@ -76,7 +76,7 @@ private[xta] class TypePropagationTrace {
         val initialCallees = {
             val calleesEOptP = ps(method, Callees.key)
             if (calleesEOptP.hasUBP)
-                calleesEOptP.ub.callSites(typeProvider.newContext(method)).flatMap(_._2)
+                calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
             else Iterator.empty
         }
         traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
@@ -124,7 +124,7 @@ object TypePropagationTrace {
             assert(false)
             false
         } catch {
-            case _: AssertionError ⇒ true
+            case _: AssertionError => true
         }
     }
 }

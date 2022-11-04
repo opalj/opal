@@ -15,7 +15,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration =>
 
     // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
     // FIELD READ ACCESS
@@ -38,10 +38,10 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     ): Computation[DomainValue, ExceptionValue] = {
 
         refIsNull(pc, objectref) match {
-            case Yes ⇒ throws(VMNullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnFieldAccess ⇒
+            case Yes => throws(VMNullPointerException(pc))
+            case Unknown if throwNullPointerExceptionOnFieldAccess =>
                 ComputedValueOrException(fieldValue, VMNullPointerException(pc))
-            case _ ⇒ ComputedValue(fieldValue)
+            case _ => ComputedValue(fieldValue)
         }
     }
 
@@ -74,10 +74,10 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         fieldType:      FieldType
     ): Computation[Nothing, ExceptionValue] = {
         refIsNull(pc, objectref) match {
-            case Yes ⇒ throws(VMNullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnFieldAccess ⇒
+            case Yes => throws(VMNullPointerException(pc))
+            case Unknown if throwNullPointerExceptionOnFieldAccess =>
                 ComputationWithSideEffectOrException(VMNullPointerException(pc))
-            case _ ⇒ ComputationWithSideEffectOnly
+            case _ => ComputationWithSideEffectOnly
         }
     }
 

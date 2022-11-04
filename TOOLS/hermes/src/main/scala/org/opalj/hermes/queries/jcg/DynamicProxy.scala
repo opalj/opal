@@ -5,7 +5,6 @@ package queries
 package jcg
 
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.StaticAPIMethod
@@ -17,9 +16,9 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 class DynamicProxy(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    override val apiFeatures: Chain[APIFeature] = {
+    override val apiFeatures: List[APIFeature] = {
 
-        Chain(
+        List(
             StaticAPIMethod(
                 ObjectType("java/lang/reflect/Proxy"), "newProxyInstance", featureID = "DP1"
             )

@@ -3,7 +3,9 @@ package org.opalj
 package da
 
 import org.opalj.bi.AttributeParent
-import org.opalj.collection.immutable.IntArray
+
+import scala.collection.immutable.ArraySeq
+import scala.reflect.ClassTag
 
 /**
  * Factory methods to read class files and create [[ClassFile]] objects.
@@ -65,10 +67,13 @@ object ClassFileReader
     type ClassFile = da.ClassFile
 
     type Attribute = da.Attribute
+    override implicit val attributeType: ClassTag[Attribute] = ClassTag(classOf[da.Attribute])
 
     type Field_Info = da.Field_Info
+    override implicit val fieldInfoType: ClassTag[Field_Info] = ClassTag(classOf[da.Field_Info])
 
     type Method_Info = da.Method_Info
+    override implicit val methodInfoType: ClassTag[Method_Info] = ClassTag(classOf[da.Method_Info])
 
     final override def reifyEmptyAttributes: Boolean = true
 
@@ -86,7 +91,7 @@ object ClassFileReader
     ): ClassFile = {
         new ClassFile(
             cp, minor_version, major_version, access_flags,
-            this_class, super_class, IntArray._UNSAFE_from(interfaces),
+            this_class, super_class, ArraySeq.from(interfaces),
             fields, methods, attributes
         )
     }
@@ -179,8 +184,10 @@ object ClassFileReader
     type BootstrapMethods_attribute = da.BootstrapMethods_attribute
 
     type BootstrapMethod = da.BootstrapMethod
+    override implicit val bootstrapMethodType: ClassTag[BootstrapMethod] = ClassTag(classOf[BootstrapMethod])
 
     type BootstrapArgument = da.BootstrapArgument
+    override implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] = ClassTag(classOf[BootstrapArgument])
 
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
@@ -216,6 +223,7 @@ object ClassFileReader
     }
 
     type InnerClassesEntry = da.InnerClassesEntry
+    override implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] = ClassTag(classOf[da.InnerClassesEntry])
     def InnerClassesEntry(
         cp:                       Constant_Pool,
         inner_class_info_index:   Constant_Pool_Index,
@@ -238,7 +246,7 @@ object ClassFileReader
         attribute_name_index:  Constant_Pool_Index,
         exception_index_table: ExceptionIndexTable
     ): Exceptions_attribute = {
-        new Exceptions_attribute(attribute_name_index, IntArray._UNSAFE_from(exception_index_table))
+        new Exceptions_attribute(attribute_name_index, ArraySeq.unsafeWrapArray(exception_index_table))
     }
 
     type Instructions = da.Code
@@ -252,6 +260,7 @@ object ClassFileReader
     }
 
     type ExceptionTableEntry = da.ExceptionTableEntry
+    override implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] = ClassTag(classOf[da.ExceptionTableEntry])
     def ExceptionTableEntry(
         cp:         Constant_Pool,
         start_pc:   Int,
@@ -320,6 +329,7 @@ object ClassFileReader
     }
 
     type LineNumberTableEntry = da.LineNumberTableEntry
+    override implicit val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] = ClassTag(classOf[da.LineNumberTableEntry])
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry = {
         new LineNumberTableEntry(start_pc, line_number)
     }
@@ -336,6 +346,7 @@ object ClassFileReader
     }
 
     type LocalVariableTableEntry = da.LocalVariableTableEntry
+    override implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] = ClassTag(classOf[da.LocalVariableTableEntry])
     def LocalVariableTableEntry(
         cp:               Constant_Pool,
         start_pc:         Int,
@@ -361,6 +372,7 @@ object ClassFileReader
     }
 
     type LocalVariableTypeTableEntry = da.LocalVariableTypeTableEntry
+    override implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableTypeTableEntry] = ClassTag(classOf[da.LocalVariableTypeTableEntry])
     def LocalVariableTypeTableEntry(
         cp:              Constant_Pool,
         start_pc:        Int,
@@ -375,7 +387,10 @@ object ClassFileReader
     }
 
     type ElementValuePair = da.ElementValuePair
+    override implicit val elementValuePairType: ClassTag[ElementValuePair] = ClassTag(classOf[da.ElementValuePair])
+
     type ElementValue = da.ElementValue
+    override implicit val elementValueType: ClassTag[ElementValue] = ClassTag(classOf[da.ElementValue])
     def ElementValuePair(
         cp:                 Constant_Pool,
         element_name_index: Constant_Pool_Index, element_value: ElementValue
@@ -432,6 +447,7 @@ object ClassFileReader
     }
 
     type Annotation = da.Annotation
+    override implicit val annotationType: ClassTag[Annotation] = ClassTag(classOf[da.Annotation])
     def AnnotationValue(cp: Constant_Pool, annotation: Annotation): ElementValue = {
         new AnnotationValue(annotation)
     }
@@ -506,6 +522,8 @@ object ClassFileReader
     }
 
     type StackMapFrame = da.StackMapFrame
+    override implicit val stackMapFrameType: ClassTag[StackMapFrame] = ClassTag(classOf[da.StackMapFrame])
+
     type StackMapTable_attribute = da.StackMapTable_attribute
     def StackMapTable_attribute(
         cp:                   Constant_Pool,
@@ -520,6 +538,7 @@ object ClassFileReader
     def SameFrame(frame_type: Int): StackMapFrame = new SameFrame(frame_type)
 
     type VerificationTypeInfo = da.VerificationTypeInfo
+    override implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] = ClassTag(classOf[da.VerificationTypeInfo])
 
     def SameLocals1StackItemFrame(
         frame_type:                   Int,
@@ -608,6 +627,7 @@ object ClassFileReader
     }
 
     type MethodParameter = da.MethodParameter
+    override implicit val methodParameterType: ClassTag[MethodParameter] = ClassTag(classOf[da.MethodParameter])
     def MethodParameter(
         cp:           Constant_Pool,
         name_index:   Constant_Pool_Index,
@@ -666,6 +686,7 @@ object ClassFileReader
     }
 
     type LocalvarTableEntry = da.LocalvarTableEntry
+    override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[da.LocalvarTableEntry])
     def LocalvarTableEntry(
         start_pc:                   Int,
         length:                     Int,
@@ -724,7 +745,7 @@ object ClassFileReader
     def TypeAnnotationDirectlyOnType: da.TypeAnnotationDirectlyOnType.type = da.TypeAnnotationDirectlyOnType
 
     type TypeAnnotationPathElement = da.TypeAnnotationPathElement
-
+    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] = ClassTag(classOf[da.TypeAnnotationPathElement])
     def TypeAnnotationPath(path: TypeAnnotationPathElementsTable): TypeAnnotationPath = {
         TypeAnnotationPathElements(path)
     }
@@ -757,6 +778,7 @@ object ClassFileReader
     }
 
     type TypeAnnotation = da.TypeAnnotation
+    override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[da.TypeAnnotation])
     def TypeAnnotation(
         cp:                  Constant_Pool,
         target:              TypeAnnotationTarget,
@@ -796,12 +818,16 @@ object ClassFileReader
     type Module_attribute = da.Module_attribute
 
     type RequiresEntry = da.RequiresEntry
+    override implicit val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[da.RequiresEntry])
 
     type ExportsEntry = da.ExportsEntry
+    override implicit val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[da.ExportsEntry])
 
     type OpensEntry = da.OpensEntry
+    override implicit val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[da.OpensEntry])
 
     type ProvidesEntry = da.ProvidesEntry
+    override implicit val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[da.ProvidesEntry])
 
     def Module_attribute(
         constant_pool:        Constant_Pool,
@@ -820,7 +846,7 @@ object ClassFileReader
         new Module_attribute(
             attribute_name_index,
             module_name_index, module_flags, module_version_index,
-            requires, exports, opens, IntArray._UNSAFE_from(uses), provides
+            requires, exports, opens, ArraySeq.from(uses), provides
         )
     }
 
@@ -842,7 +868,7 @@ object ClassFileReader
         new ExportsEntry(
             exports_index,
             exports_flags,
-            IntArray._UNSAFE_from(exports_to_index_table)
+            ArraySeq.from(exports_to_index_table)
         )
     }
 
@@ -852,7 +878,7 @@ object ClassFileReader
         opens_flags:          Int,
         opens_to_index_table: OpensToIndexTable
     ): OpensEntry = {
-        new OpensEntry(opens_index, opens_flags, IntArray._UNSAFE_from(opens_to_index_table))
+        new OpensEntry(opens_index, opens_flags, ArraySeq.from(opens_to_index_table))
     }
 
     def ProvidesEntry(
@@ -860,7 +886,7 @@ object ClassFileReader
         provides_index:            Constant_Pool_Index, // CONSTANT_Class
         provides_with_index_table: ProvidesWithIndexTable
     ): ProvidesEntry = {
-        new ProvidesEntry(provides_index, IntArray._UNSAFE_from(provides_with_index_table))
+        new ProvidesEntry(provides_index, ArraySeq.from(provides_with_index_table))
     }
 
     type ModulePackages_attribute = da.ModulePackages_attribute
@@ -872,7 +898,7 @@ object ClassFileReader
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
         new ModulePackages_attribute(
-            attribute_name_index, IntArray._UNSAFE_from(package_index_table)
+            attribute_name_index, ArraySeq.from(package_index_table)
         )
     }
 
@@ -911,7 +937,7 @@ object ClassFileReader
         classes_array:        ClassesArray
     ): NestMembers_attribute = {
         new NestMembers_attribute(
-            attribute_name_index, IntArray._UNSAFE_from(classes_array)
+            attribute_name_index, ArraySeq.from(classes_array)
         )
     }
 
@@ -931,6 +957,7 @@ object ClassFileReader
     }
 
     type RecordComponent = da.RecordComponent
+    override implicit val recordComponentType: ClassTag[RecordComponent] = ClassTag(classOf[da.RecordComponent])
     def RecordComponent(
         cp:               Constant_Pool,
         name_index:       Constant_Pool_Index,
@@ -939,4 +966,5 @@ object ClassFileReader
     ): RecordComponent = {
         new RecordComponent(name_index, descriptor_index, attributes)
     }
+
 }

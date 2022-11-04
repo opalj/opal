@@ -91,7 +91,7 @@ class InterimResultTest extends AnyFunSuite {
             InterimResult(
                 InterimEUBP(new Object, NilProperty),
                 Set(EPK(new Object, NilProperty.key)),
-                _ ⇒ ???
+                _ => ???
             )
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(!r.isInstanceOf[FinalPropertyComputationResult])
@@ -102,7 +102,7 @@ class InterimResultTest extends AnyFunSuite {
             InterimResult(
                 InterimELBP(new Object, NilProperty),
                 Set(EPK(new Object, NilProperty.key)),
-                _ ⇒ ???
+                _ => ???
             )
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(!r.isInstanceOf[FinalPropertyComputationResult])
@@ -113,7 +113,7 @@ class InterimResultTest extends AnyFunSuite {
             InterimResult(
                 InterimELUBP("c", NoPalindrome, Palindrome),
                 Set(EPK(new Object, NilProperty.key)),
-                _ ⇒ ???
+                _ => ???
             )
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(!r.isInstanceOf[FinalPropertyComputationResult])
@@ -124,7 +124,7 @@ class InterimResultTest extends AnyFunSuite {
             InterimResult(
                 InterimELUBP("c", NoPalindrome, Palindrome),
                 Set(EPK(new Object, NilProperty.key)),
-                _ ⇒ ???
+                _ => ???
             )
         assert(r.isInterimResult)
     }
@@ -134,7 +134,7 @@ class InterimResultTest extends AnyFunSuite {
             InterimResult(
                 InterimELUBP("c", NoPalindrome, Palindrome),
                 Set(EPK(new Object, NilProperty.key)),
-                _ ⇒ ???
+                _ => ???
             )
         assert(r.asInterimResult eq r)
     }
@@ -142,27 +142,27 @@ class InterimResultTest extends AnyFunSuite {
     test("the specialized factory method for InterimResults with a lower and and upper bound creates the same EPS as if the EPS was created explicitly") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult =
-            InterimResult(InterimELUBP("c", NoPalindrome, Palindrome), dependees, _ ⇒ ???)
+            InterimResult(InterimELUBP("c", NoPalindrome, Palindrome), dependees, _ => ???)
         val rFactory: PropertyComputationResult =
-            InterimResult("c", NoPalindrome, Palindrome, dependees, _ ⇒ ???)
+            InterimResult("c", NoPalindrome, Palindrome, dependees, _ => ???)
         assert(r == rFactory)
     }
 
     test("two InterimResults for upper bounds are equal when property and dependency lists are equal") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult =
-            InterimResult(InterimEUBP("c", Palindrome), dependees, _ ⇒ ???)
+            InterimResult(InterimEUBP("c", Palindrome), dependees, _ => ???)
         val rFactory: PropertyComputationResult =
-            InterimResult.forUB("c", Palindrome, dependees, _ ⇒ ???)
+            InterimResult.forUB("c", Palindrome, dependees, _ => ???)
         assert(r == rFactory)
     }
 
     test("two InterimResults for lower bounds are equal when property and dependency lists are equal") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult =
-            InterimResult(InterimELBP("c", Palindrome), dependees, _ ⇒ ???)
+            InterimResult(InterimELBP("c", Palindrome), dependees, _ => ???)
         val rFactory: PropertyComputationResult =
-            InterimResult.forLB("c", Palindrome, dependees, _ ⇒ ???)
+            InterimResult.forLB("c", Palindrome, dependees, _ => ???)
         assert(r == rFactory)
     }
 
@@ -195,26 +195,26 @@ class PartialResultTest extends AnyFunSuite {
 class InterimPartialResultTest extends AnyFunSuite {
     test("an InterimPartialResult is a proper result") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
-        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ => ???)
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(!r.isInstanceOf[FinalPropertyComputationResult])
     }
 
     test("an InterimPartialResult is not an InterimResult") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
-        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ => ???)
         assert(!r.isInterimResult)
     }
 
     test("an InterimPartialResult cannot be cast to an InterimResult") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
-        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ => ???)
         assertThrows[ClassCastException](r.asInterimResult)
     }
 
     test("an InterimPartialResult cannot be cast to a Result") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
-        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ => ???)
         assertThrows[ClassCastException](r.asResult)
     }
 }

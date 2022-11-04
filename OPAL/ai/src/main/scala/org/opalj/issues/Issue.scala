@@ -100,13 +100,13 @@ case class Issue(
 
     override def toIDL: JsValue = {
         Json.obj(
-            "analysis" → analysis,
-            "relevance" → relevance,
-            "summary" → summary,
-            "categories" → categories,
-            "kinds" → kinds,
-            "details" → details,
-            "locations" → locations
+            "analysis" -> analysis,
+            "relevance" -> relevance,
+            "summary" -> summary,
+            "categories" -> categories,
+            "kinds" -> kinds,
+            "details" -> details,
+            "locations" -> locations
         )
     }
 }

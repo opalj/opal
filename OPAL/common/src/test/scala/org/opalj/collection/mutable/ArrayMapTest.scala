@@ -19,8 +19,8 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
     behavior of "an ArrayMap data structure"
 
     it should ("be empty if it is newly created") in {
-        ArrayMap.empty.foreachValue { e ⇒ fail("non empty") }
-        ArrayMap(100).foreachValue { e ⇒ fail("non empty") }
+        ArrayMap.empty.foreachValue { e => fail("non empty") }
+        ArrayMap(100).foreachValue { e => fail("non empty") }
     }
 
     it should ("should only contain those elements that are added even if some keys are not used") in {
@@ -89,8 +89,8 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("correctly implement a deep equals for empty array with different size hints") in {
-        val m1 = ArrayMap.empty.foreachValue { e ⇒ fail("non empty") }
-        val m2 = ArrayMap(100).foreachValue { e ⇒ fail("non empty") }
+        val m1 = ArrayMap.empty.foreachValue { e => fail("non empty") }
+        val m2 = ArrayMap(100).foreachValue { e => fail("non empty") }
 
         m1 should equal(m2)
         m2 should equal(m1)
@@ -138,8 +138,8 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("correctly implement the hashCode method ") in {
-        val m1 = ArrayMap.empty.foreachValue { e ⇒ fail("non empty") }
-        val m2 = ArrayMap(100).foreachValue { e ⇒ fail("non empty") }
+        val m1 = ArrayMap.empty.foreachValue { e => fail("non empty") }
+        val m2 = ArrayMap(100).foreachValue { e => fail("non empty") }
 
         m1.hashCode() should be(m2.hashCode())
         m2.hashCode() should be(m1.hashCode())
@@ -174,7 +174,7 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
         map(0) = 0
         map(2) = 2
         map(4) = 4
-        val rs = map.map { (i, e) ⇒ i * e }
+        val rs = map.map { (i, e) => i * e }
         rs.size should be(3)
         rs.sum should be(20)
     }
@@ -191,7 +191,7 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
         map(1) = 1
         map(2) = 2
         map.entries.size should be(3)
-        map.entries.forall { iv ⇒ val (i, v) = iv; i == v.intValue } should be(true)
+        map.entries.forall { iv => val (i, v) = iv; i == v.intValue } should be(true)
     }
 
     it should ("be able to correctly iterate over the elements of a non-continues map") in {
@@ -201,7 +201,7 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
         map(4) = 4
         map(100) = 100
         map.entries.size should be(4)
-        map.entries.forall { iv ⇒ val (i, v) = iv; i == v.intValue } should be(true)
+        map.entries.forall { iv => val (i, v) = iv; i == v.intValue } should be(true)
     }
 
     it should ("create a toString representation that enables the creation of a map") in {

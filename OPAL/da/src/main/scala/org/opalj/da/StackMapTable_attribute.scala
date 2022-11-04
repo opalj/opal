@@ -17,7 +17,7 @@ case class StackMapTable_attribute(
 ) extends Attribute {
 
     final override def attribute_length: Int = {
-        stack_map_frames.foldLeft(2 /*count*/ )((c, n) ⇒ c + n.attribute_length)
+        stack_map_frames.foldLeft(2 /*count*/ )((c, n) => c + n.attribute_length)
     }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
@@ -32,7 +32,7 @@ case class StackMapTable_attribute(
     def stack_map_framestoXHTML(implicit cp: Constant_Pool): Node = {
         var offset: Int = -1
         val framesAsXHTML =
-            for (stack_map_frame ← stack_map_frames) yield {
+            for (stack_map_frame <- stack_map_frames) yield {
                 val (frameAsXHTML, newOffset) = stack_map_frame.toXHTML(cp, offset)
                 offset = newOffset
                 frameAsXHTML

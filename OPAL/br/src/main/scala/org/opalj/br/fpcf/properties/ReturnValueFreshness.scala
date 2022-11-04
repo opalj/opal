@@ -55,8 +55,8 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
 case object FreshReturnValue extends ReturnValueFreshness {
 
     override def meet(other: ReturnValueFreshness): ReturnValueFreshness = other match {
-        case PrimitiveReturnValue ⇒ throw new UnsupportedOperationException()
-        case _                    ⇒ other
+        case PrimitiveReturnValue => throw new UnsupportedOperationException()
+        case _                    => other
     }
 
     override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = {
@@ -72,9 +72,9 @@ case object FreshReturnValue extends ReturnValueFreshness {
 case object Getter extends ReturnValueFreshness {
 
     override def meet(other: ReturnValueFreshness): ReturnValueFreshness = other match {
-        case FreshReturnValue     ⇒ this
-        case PrimitiveReturnValue ⇒ throw new UnsupportedOperationException()
-        case _                    ⇒ other
+        case FreshReturnValue     => this
+        case PrimitiveReturnValue => throw new UnsupportedOperationException()
+        case _                    => other
     }
 
     override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = VGetter
@@ -93,10 +93,10 @@ case object ExtensibleGetter extends ReturnValueFreshness {
     }
 
     override def meet(other: ReturnValueFreshness): ReturnValueFreshness = other match {
-        case FreshReturnValue     ⇒ this
-        case Getter               ⇒ this
-        case PrimitiveReturnValue ⇒ throw new UnsupportedOperationException()
-        case _                    ⇒ other
+        case FreshReturnValue     => this
+        case Getter               => this
+        case PrimitiveReturnValue => throw new UnsupportedOperationException()
+        case _                    => other
     }
 
 }
@@ -123,8 +123,8 @@ case object PrimitiveReturnValue extends ReturnValueFreshness {
 case object NoFreshReturnValue extends ReturnValueFreshness {
 
     override def meet(other: ReturnValueFreshness): ReturnValueFreshness = other match {
-        case PrimitiveReturnValue ⇒ throw new UnsupportedOperationException()
-        case _                    ⇒ this
+        case PrimitiveReturnValue => throw new UnsupportedOperationException()
+        case _                    => this
     }
 
     override def asVirtualMethodReturnValueFreshness: VirtualMethodReturnValueFreshness = {

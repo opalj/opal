@@ -23,6 +23,6 @@ case class ExceptionHandler(
 ) {
     override def toString: String = {
         val exceptionType = catchType.map(_.toJava).getOrElse("<FINALLY>")
-        s"ExceptionHandler([$startPC, $endPC) → $handlerPC, $exceptionType)"
+        s"ExceptionHandler([$startPC, $endPC) -> $handlerPC, $exceptionType)"
     }
 }

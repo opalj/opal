@@ -37,11 +37,11 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     final def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
         (callersEOptP: @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -88,10 +88,10 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
         eOptP: EOptionP[DeclaredMethod, Callers], seen: Callers, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         var results: List[ProperPropertyComputationResult] = Nil
-        eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext ⇒
+        eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
             val theCalleeContext =
                 if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
-                else typeProvider.newContext(eOptP.e)
+                else typeIterator.newContext(eOptP.e)
             results ::= processMethod(theCalleeContext, tacEP)
         }
 
@@ -109,13 +109,13 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
         declaredMethod: DeclaredMethod
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         someEPS match {
-            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
+            case UBP(tac: TACAI) if tac.tac.isDefined =>
                 processMethod(
                     propertyStore(declaredMethod, Callers.key),
                     null,
                     someEPS.asInstanceOf[EPS[Method, TACAI]]
                 )
-            case _ ⇒
+            case _ =>
                 throw new IllegalArgumentException(s"unexpected eps $someEPS")
         }
     }

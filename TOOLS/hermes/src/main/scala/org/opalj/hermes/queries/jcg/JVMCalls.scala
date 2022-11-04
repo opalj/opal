@@ -4,10 +4,13 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.da.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
-import org.opalj.da.ClassFile
 
 /**
  * Groups test case features for features that explicitly must be modeled to imitate the JVM's
@@ -35,7 +38,7 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
@@ -50,18 +53,18 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val relevantTypes = threadSubtypes + Runtime
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method ← classFile.methods
+            method <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
         } {
             if (method.isNotStatic && method.isPublic && method.name == "finalize") {
                 locations(1) += methodLocation
             } else if (method.body.nonEmpty) {
                 val body = method.body.get
-                val pcAndInvocation = body collect { case mii: VirtualMethodInvocationInstruction ⇒ mii }
-                pcAndInvocation.foreach { pcAndInvocation ⇒
+                val pcAndInvocation = body collect ({ case mii: VirtualMethodInvocationInstruction => mii }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
+                pcAndInvocation.foreach { pcAndInvocation =>
                     val pc = pcAndInvocation.pc
                     val mii = pcAndInvocation.value
                     val declClass = mii.declaringClass
@@ -86,6 +89,6 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
         }
 
-        locations;
+        ArraySeq.unsafeWrapArray(locations)
     }
 }

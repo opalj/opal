@@ -6,7 +6,6 @@ package analyses
 package cg
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
@@ -31,9 +30,11 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Models the behavior for `java.security.AccessController.doPrivileged*`.
@@ -77,12 +78,12 @@ class DoPrivilegedMethodAnalysis private[cg] (
 
             val thisActual = persistentUVar(param)(state.tac.stmts)
 
-            typeProvider.foreachType(
+            typeIterator.foreachType(
                 param,
-                typeProvider.typesProperty(
+                typeIterator.typesProperty(
                     param, callerContext, callPC.asInstanceOf[Entity], tac.stmts
                 )
-            ) { tpe ⇒ handleType(tpe, callerContext, callPC, thisActual, indirectCalls) }
+            ) { tpe => handleType(tpe, callerContext, callPC, thisActual, indirectCalls) }
 
             returnResult(param, thisActual, indirectCalls)
         } else {
@@ -125,7 +126,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
             calleesAndCallers.addCall(
                 callContext,
                 callPC,
-                typeProvider.expandContext(callContext, tgtMethod, callPC),
+                typeIterator.expandContext(callContext, tgtMethod, callPC),
                 Seq.empty,
                 thisActual
             )
@@ -144,7 +145,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
         // ensures, that we only add new vm reachable methods
         val indirectCalls = new IndirectCalls()
 
-        typeProvider.continuation(thisVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType ⇒
+        typeIterator.continuation(thisVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
             handleType(newType, state.callContext, pc, thisActual, indirectCalls)
         }(state)
 
@@ -199,7 +200,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedActionType, accessControlContextType),
+                ArraySeq(privilegedActionType, accessControlContextType),
                 ObjectType.Object
             )
         )
@@ -212,7 +213,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )
@@ -235,7 +236,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType, accessControlContextType),
+                ArraySeq(privilegedExceptionActionType, accessControlContextType),
                 ObjectType.Object
             )
         )
@@ -248,7 +249,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedExceptionActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )
@@ -271,7 +272,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                RefArray(privilegedActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )
@@ -284,7 +285,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType),
+                ArraySeq(privilegedExceptionActionType),
                 ObjectType.Object
             )
         )
@@ -297,7 +298,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                RefArray(privilegedExceptionActionType, accessControlContextType, permissionsArray),
+                ArraySeq(privilegedExceptionActionType, accessControlContextType, permissionsArray),
                 ObjectType.Object
             )
         )
@@ -311,7 +312,7 @@ class DoPrivilegedCGAnalysis private[cg] (
 object DoPrivilegedAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = Set.empty
 

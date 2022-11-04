@@ -2,7 +2,7 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * An annotation of a class, field, method or method parameter.
@@ -50,7 +50,7 @@ object Annotation {
     def apply(annotationType: FieldType, elementValuePairs: ElementValuePair*): Annotation = {
         new Annotation(
             annotationType,
-            RefArray._UNSAFE_from(elementValuePairs.toArray)
+            ArraySeq.unsafeWrapArray(elementValuePairs.toArray)
         )
     }
 
@@ -60,9 +60,7 @@ object Annotation {
     ): Annotation = {
         new Annotation(
             annotationType,
-            RefArray
-                ._UNSAFE_from[(String, ElementValue)](elementValuePairs.toArray)
-                ._UNSAFE_mapped[ElementValuePair](e ⇒ ElementValuePair(e))
+            ArraySeq.from(elementValuePairs.map(ElementValuePair(_)))
         )
     }
 

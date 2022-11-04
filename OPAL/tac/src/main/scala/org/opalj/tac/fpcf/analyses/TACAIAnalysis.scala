@@ -10,7 +10,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.tac.{TACAI ⇒ TACAIFactory}
+import org.opalj.tac.{TACAI => TACAIFactory}
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 object TACAIAnalysis {
@@ -25,7 +25,7 @@ object TACAIAnalysis {
     ): TheTACAI = {
         val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
         val taCode = TACAIFactory(p, m, typedAIResult)
-        val theTACode = if (detachFromAIResult) taCode.detach else taCode
+        val theTACode = if (detachFromAIResult) taCode.detach() else taCode
         val tacaiProperty = TheTACAI(
             // the following cast is safe - see TACode for details
             theTACode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]

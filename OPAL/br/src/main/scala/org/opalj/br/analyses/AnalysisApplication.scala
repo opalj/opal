@@ -5,12 +5,9 @@ package analyses
 
 import java.net.URL
 import java.io.File
-
 import scala.util.control.ControlThrowable
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.info
@@ -18,6 +15,8 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.LogMessage
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -73,7 +72,7 @@ trait AnalysisApplication {
      * issues if it can't validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
-    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         if (parameters.isEmpty) Nil else parameters.map("unknown parameter: "+_)
     }
 
@@ -119,7 +118,7 @@ trait AnalysisApplication {
         //
         def splitCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
         def splitLibCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
-        args.foreach { arg ⇒
+        args.foreach { arg =>
             if (arg == "-help") {
                 printUsage
                 sys.exit(0)
@@ -172,7 +171,7 @@ trait AnalysisApplication {
 
         def verifyFiles(filenames: IndexedSeq[String]): Seq[File] = filenames.flatMap(verifyFile)
 
-        if (cp.isEmpty) cp = Array(System.getProperty("user.dir"))
+        if (cp.isEmpty) cp = ArraySeq.unsafeWrapArray(Array(System.getProperty("user.dir")))
         info("project configuration", s"the classpath is ${cp.mkString}")
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
@@ -187,7 +186,7 @@ trait AnalysisApplication {
             info("project configuration", "analysis specific parameters: "+unknownArgs.mkString(", "))
         val issues = checkAnalysisSpecificParameters(unknownArgs)
         if (issues.nonEmpty) {
-            issues.foreach { i ⇒ error("project configuration", i) }
+            issues.foreach { i => error("project configuration", i) }
             printUsage
             sys.exit(2)
         }
@@ -203,8 +202,8 @@ trait AnalysisApplication {
                     ConfigFactory.load(projectConfig.get)
             setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
-            case t: Throwable ⇒
+            case ct: ControlThrowable => throw ct;
+            case t: Throwable =>
                 error("fatal", "setting up the project failed", t)
                 printUsage
                 sys.exit(2)
@@ -228,13 +227,13 @@ trait AnalysisApplication {
 
     protected def handleParsingExceptions(
         project:    SomeProject,
-        exceptions: Traversable[Throwable]
+        exceptions: Iterable[Throwable]
     ): Unit = {
         if (exceptions.isEmpty)
             return ;
 
         implicit val logContext: LogContext = project.logContext
-        for (exception ← exceptions) {
+        for (exception <- exceptions) {
             error("creating project", "ignoring invalid class file", exception)
         }
     }
@@ -255,7 +254,7 @@ trait AnalysisApplication {
             reader.readClassFiles(
                 cpFiles,
                 JavaClassFileReader.ClassFiles,
-                file ⇒ info("creating project", "\tfile: "+file)
+                file => info("creating project", "\tfile: "+file)
             )
 
         val (libraryClassFiles, exceptions2) = {
@@ -268,7 +267,7 @@ trait AnalysisApplication {
                     } else {
                         Java9LibraryFramework.ClassFiles
                     },
-                    file ⇒ info("creating project", "\tfile: "+file)
+                    file => info("creating project", "\tfile: "+file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
@@ -279,13 +278,13 @@ trait AnalysisApplication {
                 classFiles,
                 libraryClassFiles,
                 libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
-                Traversable.empty
+                Iterable.empty
             )(config = configuredConfig)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         val statistics =
             project
-                .statistics.map(kv ⇒ "- "+kv._1+": "+kv._2)
+                .statistics.map(kv => "- "+kv._1+": "+kv._2)
                 .toList.sorted.reverse
                 .mkString("project statistics:\n\t", "\n\t", "\n")
         info("project", statistics)(project.logContext)

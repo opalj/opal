@@ -48,7 +48,7 @@ trait ConstantValue_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt
         ConstantValue_attribute(
             cp,
@@ -59,5 +59,5 @@ trait ConstantValue_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(ConstantValueAttribute.Name → parserFactory())
+    registerAttributeReader(ConstantValueAttribute.Name -> parserFactory())
 }

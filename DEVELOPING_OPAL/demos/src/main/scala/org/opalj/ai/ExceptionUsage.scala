@@ -3,10 +3,11 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
+
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
  * Analyses the usage of exceptions in a program.
@@ -22,7 +23,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         implicit val ch: ClassHierarchy = theProject.classHierarchy
@@ -36,8 +37,8 @@ object ExceptionUsage extends ProjectAnalysisApplication {
         }
 
         val usages = (for {
-            classFile ← theProject.allProjectClassFiles.par
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- theProject.allProjectClassFiles.par
+            method @ MethodWithBody(body) <- classFile.methods
             result = BaseAI(method, new ExceptionUsageAnalysisDomain(theProject, method))
         } yield {
             import scala.collection.mutable._
@@ -62,16 +63,16 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             }
 
             for {
-                operands ← result.operandsArray;
+                operands <- result.operandsArray;
                 if (operands ne null)
-                operand ← operands
+                operand <- operands
             } {
                 operand match {
-                    case v: result.domain.SingleOriginReferenceValue ⇒
+                    case v: result.domain.SingleOriginReferenceValue =>
                         collectExceptions(v)
-                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) ⇒
+                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) =>
                         singleOriginReferenceValues.foreach(collectExceptions)
-                    case _ ⇒ /*not relevant*/
+                    case _ => /*not relevant*/
                 }
             }
 
@@ -87,43 +88,43 @@ object ExceptionUsage extends ProjectAnalysisApplication {
                 usageKind: UsageKind.Value
             ): Unit = {
                 value match {
-                    case v: result.domain.SingleOriginReferenceValue ⇒
+                    case v: result.domain.SingleOriginReferenceValue =>
                         updateUsageKindForValue(v, usageKind)
-                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) ⇒
-                        singleOriginReferenceValues.foreach { v ⇒
+                    case result.domain.MultipleReferenceValues(singleOriginReferenceValues) =>
+                        singleOriginReferenceValues.foreach { v =>
                             updateUsageKindForValue(v, usageKind)
                         }
-                    case _ ⇒ /*not relevant*/
+                    case _ => /*not relevant*/
                 }
             }
 
-            body.iterate { (pc, instruction) ⇒
+            body.iterate { (pc, instruction) =>
                 val operands = result.operandsArray(pc)
                 if (operands != null) { // the instruction is reached...
                     instruction match {
-                        case ATHROW ⇒
+                        case ATHROW =>
                             updateUsageKind(operands.head, UsageKind.IsThrown)
-                        case i: MethodInvocationInstruction ⇒
+                        case i: MethodInvocationInstruction =>
                             val methodDescriptor = i.methodDescriptor
                             val parametersCount = methodDescriptor.parametersCount
                             operands.take(parametersCount).foreach(updateUsageKind(_, UsageKind.UsedAsParameter))
                             if (i.isVirtualMethodCall) {
                                 updateUsageKind(operands.drop(parametersCount).head, UsageKind.UsedAsReceiver)
                             }
-                        case _: FieldWriteAccess ⇒
+                        case _: FieldWriteAccess =>
                             updateUsageKind(operands.head, UsageKind.StoredInField)
-                        case ARETURN ⇒
+                        case ARETURN =>
                             updateUsageKind(operands.head, UsageKind.IsReturned)
-                        case AASTORE ⇒
+                        case AASTORE =>
                             updateUsageKind(operands.head, UsageKind.StoredInArray)
-                        case _ ⇒
+                        case _ =>
                         /*nothing to do*/
                     }
                 }
             }
 
             val usages =
-                for { ((pc, typeName), exceptionUsage) ← exceptionUsages }
+                for { ((pc, typeName), exceptionUsage) <- exceptionUsages }
                     yield ExceptionUsage(method, pc, typeName, exceptionUsage)
 
             if (usages.isEmpty)

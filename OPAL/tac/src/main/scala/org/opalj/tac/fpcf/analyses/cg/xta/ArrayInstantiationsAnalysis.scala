@@ -26,7 +26,7 @@ import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TACAI
 import scala.collection.mutable
 
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation
@@ -45,7 +45,7 @@ final class ArrayInstantiationsAnalysis(
         selectSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-    override implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    override implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     override def processMethod(
         callContext: ContextType,
@@ -57,7 +57,7 @@ final class ArrayInstantiationsAnalysis(
 
         // We only care about arrays of reference types.
         val instantiatedArrays = code.instructions.collect {
-            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType ⇒ arr.arrayType
+            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType => arr.arrayType
         }
 
         val multidimensionalArrayPartialResults = multidimensionalArrayInitialAssignments(instantiatedArrays)
@@ -98,8 +98,8 @@ final class ArrayInstantiationsAnalysis(
         // Note: Since 'until' is an exclusive range, all array types in 'arrays' with
         // dimension 1 are not processed here.
         for (
-            at ← arrays;
-            dim ← 1 until at.dimensions
+            at <- arrays;
+            dim <- 1 until at.dimensions
         ) {
 
             val targetAT = ArrayType(dim + 1, at.elementType)
@@ -119,7 +119,7 @@ class ArrayInstantiationsAnalysisScheduler(
         selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis =

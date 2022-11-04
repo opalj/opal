@@ -3,6 +3,7 @@ package org.opalj
 package collection
 package mutable
 
+import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
 
 /**
@@ -28,7 +29,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         private var theKeys:        Array[K],
         private var theValues:      Array[V],
         private var hashCodeOffset: Int // basically -minValue
-) { self ⇒
+) { self =>
 
     /**
      * Returns the value stored for the given key.
@@ -47,7 +48,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         this
     }
 
-    def foreach(f: ((K, V)) ⇒ Unit): Unit = {
+    def foreach(f: ((K, V)) => Unit): Unit = {
         val keys = this.theKeys
         val values = this.theValues
         var i = 0
@@ -60,7 +61,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         }
     }
 
-    def iterate(f: (K, V) ⇒ Unit): Unit = {
+    def iterate(f: (K, V) => Unit): Unit = {
         val keys = this.theKeys
         val values = this.theValues
         var i = 0
@@ -73,9 +74,9 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         }
     }
 
-    def keys: RefIterator[K] = RefIterator.fromNonNullValues(theKeys)
+    def keys: Iterator[K] = ArraySeq.unsafeWrapArray(theKeys).iterator.filter(key => key != null)
 
-    def entries: RefIterator[(K, V)] = new RefIterator[(K, V)] {
+    def entries: Iterator[(K, V)] = new Iterator[(K, V)] {
         private[this] def getNextIndex(lastIndex: Int): Int = {
             val keys = self.theKeys
             val max = keys.length

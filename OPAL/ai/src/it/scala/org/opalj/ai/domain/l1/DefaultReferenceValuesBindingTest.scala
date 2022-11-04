@@ -25,9 +25,7 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
 @RunWith(classOf[JUnitRunner])
 class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
-    private object ValuesDomain extends {
-        final val project: Project[java.net.URL] = TestSupport.createJREProject
-    } with ValuesCoordinatingDomain
+    private object ValuesDomain extends ValuesCoordinatingDomain
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
@@ -35,7 +33,9 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
         with l0.TypeLevelPrimitiveValuesConversions
         with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelDynamicLoads
-        with TheProject
+        with TheProject {
+        override final val project: Project[java.net.URL] = TestSupport.createJREProject()
+    }
 
     behavior of "instances of domains of type DomainReferenceValuesBinding"
 
@@ -60,7 +60,7 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
             val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
 
             if (!stValue.abstractsOver(mtValue))
-                fail(stValue+" does not abstract over "+mtValue+" (Result of the join was: "+stValue.join(-1, mtValue)+")")
+                fail(s"$stValue does not abstract over $mtValue (Result of the join was: ${stValue.join(-1, mtValue)})")
 
         }
 
@@ -75,7 +75,7 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
         val expectedValue = domain.ReferenceValue(-1, l1)
         val joinedValue = lValue.join(-1, rValue).value
         if (joinedValue != expectedValue)
-            fail(lValue+" join "+rValue+" was "+joinedValue+" expected "+expectedValue)
+            fail(s"$lValue join $rValue was $joinedValue expected $expectedValue")
     }
 
     it should "calculate the correct least upper type bound if one of the types of a MultipleReferenceValues already defines that bound" in {
@@ -85,7 +85,7 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
         val rValue = ValuesDomain.ObjectValue(-2, r)
         val value = ValuesDomain.MultipleReferenceValues(UIDSet2(lValue, rValue))
         if (value.upperTypeBound.head != l)
-            fail("unexpected upper type bound:"+value.upperTypeBound+" expected "+l.toJava)
+            fail(s"unexpected upper type bound:${value.upperTypeBound} expected ${l.toJava}")
     }
 
 }

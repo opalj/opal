@@ -10,9 +10,9 @@ package instructions
  */
 trait ConditionalBranchInstructionLike extends ControlTransferInstructionLike {
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = operandCount
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = operandCount
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def readsLocal: Boolean = false
 

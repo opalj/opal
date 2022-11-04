@@ -25,10 +25,10 @@ object AllocationsUtil {
         allocationContext: ContextType,
         allocationPC:      Int,
         data:              AnyRef,
-        failure:           () ⇒ Unit
-    )(process: (ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
+        failure:           () => Unit
+    )(process: (ContextType, Int, Array[Stmt[V]]) => Unit)(
         implicit
-        state: TypeProviderState,
+        state: TypeIteratorState,
         ps:    PropertyStore
     ): Unit = {
         if (allocationContext eq NoContext) {
@@ -63,8 +63,8 @@ object AllocationsUtil {
         allocationContext: ContextType,
         allocationPC:      Int,
         tacEOptP:          EPS[Method, TACAI],
-        failure:           () ⇒ Unit
-    )(process: (ContextType, Int, Array[Stmt[V]]) ⇒ Unit): Unit = {
+        failure:           () => Unit
+    )(process: (ContextType, Int, Array[Stmt[V]]) => Unit): Unit = {
         val tacO = tacEOptP.ub.tac
         if (tacO.isDefined) {
             val tac = tacO.get
@@ -84,19 +84,19 @@ object AllocationsUtil {
         context:    ContextType,
         depender:   Entity,
         stmts:      Array[Stmt[V]],
-        typeFilter: ReferenceType ⇒ Boolean,
-        failure:    () ⇒ Unit
-    )(process: (ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
+        typeFilter: ReferenceType => Boolean,
+        failure:    () => Unit
+    )(process: (ContextType, Int, Array[Stmt[V]]) => Unit)(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Unit = {
-        val allocations = typeProvider.typesProperty(
-            value, context.asInstanceOf[typeProvider.ContextType], depender, stmts
+        val allocations = typeIterator.typesProperty(
+            value, context.asInstanceOf[typeIterator.ContextType], depender, stmts
         )
-        typeProvider.foreachAllocation(value, context, stmts, allocations) {
-            (tpe, allocationContext, pc) ⇒
+        typeIterator.foreachAllocation(value, context, stmts, allocations) {
+            (tpe, allocationContext, pc) =>
                 if (typeFilter(tpe)) {
                     handleAllocation(
                         context,
@@ -118,15 +118,15 @@ object AllocationsUtil {
         allocationContext: ContextType,
         allocationPC:      Int,
         data:              AnyRef,
-        failure:           () ⇒ Unit
-    )(process: (ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
+        failure:           () => Unit
+    )(process: (ContextType, Int, Array[Stmt[V]]) => Unit)(
         implicit
-        state: TypeProviderState,
+        state: TypeIteratorState,
         ps:    PropertyStore
     ): Unit = {
         if (allocationContext eq NoContext) {
             failure()
-            value.definedBy.foreach { index ⇒
+            value.definedBy.foreach { index =>
                 if (index >= 0) {
                     process(context, index, stmts)
                 } else {
@@ -148,13 +148,13 @@ object AllocationsUtil {
     def continuationForAllocation[DataType, ContextType <: Context](
         eps:      SomeEPS,
         context:  ContextType,
-        value:    DataType ⇒ (V, Array[Stmt[V]]),
-        dataType: Entity ⇒ Boolean,
-        failure:  DataType ⇒ Unit
-    )(process: (DataType, ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
+        value:    DataType => (V, Array[Stmt[V]]),
+        dataType: Entity => Boolean,
+        failure:  DataType => Unit
+    )(process: (DataType, ContextType, Int, Array[Stmt[V]]) => Unit)(
         implicit
-        typeProvider: TypeProvider,
-        state:        TypeProviderState,
+        typeIterator: TypeIterator,
+        state:        TypeIteratorState,
         ps:           PropertyStore
     ): Unit = {
         val epk = eps.toEPK
@@ -163,15 +163,15 @@ object AllocationsUtil {
             val deps = state.dependersOf(epk)
 
             eps.ub match {
-                case _: TACAI ⇒
+                case _: TACAI =>
                     deps.foreach {
-                        case (allocationContext, allocationPC: Int, data: Entity) if dataType(data) ⇒
+                        case (allocationContext, allocationPC: Int, data: Entity) if dataType(data) =>
                             handleAllocation(
                                 allocationContext.asInstanceOf[ContextType],
                                 allocationPC,
                                 eps.asInstanceOf[EPS[Method, TACAI]],
-                                () ⇒ failure(data.asInstanceOf[DataType])
-                            ) { (_allocationContext, allocationIndex, _stmts) ⇒
+                                () => failure(data.asInstanceOf[DataType])
+                            ) { (_allocationContext, allocationIndex, _stmts) =>
                                     process(
                                         data.asInstanceOf[DataType],
                                         _allocationContext.asInstanceOf[ContextType],
@@ -180,20 +180,20 @@ object AllocationsUtil {
                                     )
                                 }
 
-                        case _ ⇒
+                        case _ =>
                     }
-                case _ ⇒
+                case _ =>
                     deps.foreach {
-                        case data: Entity if dataType(data) ⇒
+                        case data: Entity if dataType(data) =>
                             val (expr, stmts) = value(data.asInstanceOf[DataType])
-                            typeProvider.continuationForAllocations(
-                                expr, eps.asInstanceOf[EPS[Entity, typeProvider.PropertyType]]
-                            ) { (_, allocationContext, allocationPC) ⇒
+                            typeIterator.continuationForAllocations(
+                                expr, eps.asInstanceOf[EPS[Entity, typeIterator.PropertyType]]
+                            ) { (_, allocationContext, allocationPC) =>
                                 handleAllocation(
                                     context, expr, stmts,
                                     allocationContext, allocationPC, data,
-                                    () ⇒ failure(data.asInstanceOf[DataType])
-                                ) { (_allocationContext, allocationIndex, _stmts) ⇒
+                                    () => failure(data.asInstanceOf[DataType])
+                                ) { (_allocationContext, allocationIndex, _stmts) =>
                                         process(
                                             data.asInstanceOf[DataType],
                                             _allocationContext.asInstanceOf[ContextType],
@@ -202,7 +202,7 @@ object AllocationsUtil {
                                         )
                                     }
                             }
-                        case _ ⇒
+                        case _ =>
                     }
             }
         }

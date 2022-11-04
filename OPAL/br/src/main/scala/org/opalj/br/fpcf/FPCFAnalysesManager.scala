@@ -9,7 +9,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.AnalysisScenario
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyKey
@@ -42,12 +41,12 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
     final def runAll(
         analyses: ComputationSpecification[FPCFAnalysis]*
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = {
-        runAll(analyses.toIterable)
+        runAll(analyses.to(Iterable))
     }
 
     final def runAll(
         analyses:             Iterable[ComputationSpecification[FPCFAnalysis]],
-        afterPhaseScheduling: Chain[ComputationSpecification[FPCFAnalysis]] ⇒ Unit = _ ⇒ ()
+        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
         val scenario = AnalysisScenario(analyses, propertyStore)
@@ -58,7 +57,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (trace) { debug("analysis progress", "executing "+schedule) }
         val as = time {
             schedule(propertyStore, trace, afterPhaseScheduling = afterPhaseScheduling)
-        } { t ⇒
+        } { t =>
             if (trace) {
                 debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
             }
@@ -66,7 +65,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (trace) {
             debug(
                 "analysis progress",
-                scenario.allProperties.map(p ⇒ PropertyKey.name(p.pk.id)).mkString(
+                scenario.allProperties.map(p => PropertyKey.name(p.pk.id)).mkString(
                     "used and derived properties = {", ", ", "}"
                 )
             )

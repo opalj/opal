@@ -27,19 +27,19 @@ class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val locations = Array.fill(4)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             if (classFile.sourceFile.isDefined) locations(0) += classFileLocation
 
             for {
-                method @ MethodWithBody(body) ← classFile.methods
+                method @ MethodWithBody(body) <- classFile.methods
                 methodLocation = MethodLocation(classFileLocation, method)
             } {
                 if (body.localVariableTable.isDefined) locations(1) += methodLocation
@@ -48,7 +48,7 @@ class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        for { (locations, index) ← locations.iterator.zipWithIndex } yield {
+        for { (locations, index) <- locations.iterator.zipWithIndex } yield {
             Feature[S](featureIDs(index), locations)
         }
     }

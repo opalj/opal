@@ -37,7 +37,7 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal with Serializable {
     }
 
     def toString(withUnit: Boolean): String = {
-        if (withUnit) timeSpan+" ns" else timeSpan.toString
+        if (withUnit) s"$timeSpan ns" else timeSpan.toString
     }
 
     override def toString: String = toString(withUnit = true)

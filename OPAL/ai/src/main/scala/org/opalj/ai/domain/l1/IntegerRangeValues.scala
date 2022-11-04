@@ -4,8 +4,8 @@ package ai
 package domain
 package l1
 
-import scala.Int.{MinValue ⇒ MinInt}
-import scala.Int.{MaxValue ⇒ MaxInt}
+import scala.Int.{MinValue => MinInt}
+import scala.Int.{MaxValue => MaxInt}
 
 import org.opalj.value.IsIntegerValue
 import org.opalj.br.CTIntType
@@ -86,7 +86,7 @@ trait IntegerRangeValues
     extends IntegerValuesDomain
     with IntegerRangeValuesFactory
     with ConcreteIntegerValues {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -98,7 +98,7 @@ trait IntegerRangeValues
      * Determines the maximum number of values captured by an integer value range.
      *
      * This setting is only used when true ranges are merged; in case of a join of two
-     * concrete values we will always create an [[IntegerRange]] value. If the cardinality
+     * concrete values we will always create an [[IntegerRangeLike]] value. If the cardinality
      * is exceeded, we will also first create ranges based on the boundaries determined
      * by the defaul data types (byte,short,char).
      *
@@ -118,7 +118,7 @@ trait IntegerRangeValues
     sealed trait IntegerLikeValue
         extends TypedValue[CTIntType]
         with IsIntegerValue {
-        this: DomainTypedValue[CTIntType] ⇒
+        this: DomainTypedValue[CTIntType] =>
 
         final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
@@ -130,8 +130,8 @@ trait IntegerRangeValues
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnIntegerValue extends IntegerLikeValue {
-        this: DomainTypedValue[CTIntType] ⇒
+    trait AnIntegerValueLike extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] =>
         final override def lowerBound: Int = Int.MinValue
         final override def upperBound: Int = Int.MaxValue
         final override def constantValue: Option[ValueOrigin] = None
@@ -142,8 +142,8 @@ trait IntegerRangeValues
      * Unless a range has only one value it is impossible to tell whether or not
      * a value that is in the range will potentially occur at runtime.
      */
-    abstract class IntegerRange extends IntegerLikeValue {
-        this: DomainTypedValue[CTIntType] ⇒
+    abstract class IntegerRangeLike extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] =>
 
         val lowerBound: Int // inclusive
 
@@ -177,8 +177,8 @@ trait IntegerRangeValues
     /**
      * Extractor for `IntegerRange` values.
      */
-    object IntegerRange {
-        def unapply(v: IntegerRange): Some[(Int, Int)] = Some((v.lowerBound, v.upperBound))
+    object IntegerRangeLike {
+        def unapply(v: IntegerRangeLike): Some[(Int, Int)] = Some((v.lowerBound, v.upperBound))
     }
 
     // -----------------------------------------------------------------------------------
@@ -194,28 +194,28 @@ trait IntegerRangeValues
     @inline final override def intValue[T](
         value: DomainValue
     )(
-        f: Int ⇒ T
-    )(orElse: ⇒ T): T =
+        f: Int => T
+    )(orElse: => T): T =
         value match {
-            case v: IntegerRange if v.lowerBound == v.upperBound ⇒ f(v.lowerBound)
-            case _                                               ⇒ orElse
+            case v: IntegerRangeLike if v.lowerBound == v.upperBound => f(v.lowerBound)
+            case _                                                   => orElse
         }
 
     @inline final override def intValueOption(value: DomainValue): Option[Int] = // IMPROVE Define and use IntOption
         value match {
-            case v: IntegerRange if v.lowerBound == v.upperBound ⇒ Some(v.lowerBound)
-            case _                                               ⇒ None
+            case v: IntegerRangeLike if v.lowerBound == v.upperBound => Some(v.lowerBound)
+            case _                                                   => None
         }
 
     @inline protected final def intValues[T](
         value1: DomainValue, value2: DomainValue
     )(
-        f: (Int, Int) ⇒ T
+        f: (Int, Int) => T
     )(
-        orElse: ⇒ T
+        orElse: => T
     ): T = {
-        intValue(value1) { v1 ⇒
-            intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
+        intValue(value1) { v1 =>
+            intValue(value2) { v2 => f(v1, v2) } { orElse }
         } {
             orElse
         }
@@ -229,19 +229,19 @@ trait IntegerRangeValues
             return Yes
 
         value1 match {
-            case IntegerRange(lb1, ub1) ⇒
+            case IntegerRangeLike(lb1, ub1) =>
                 value2 match {
-                    case IntegerRange(lb2, ub2) ⇒
+                    case IntegerRangeLike(lb2, ub2) =>
                         if (ub1 < lb2 || lb1 > ub2)
                             No
                         else if (lb1 == lb2 && lb1 == ub2 && ub1 == ub2 /* or...*/ )
                             Yes
                         else
                             Unknown
-                    case _ ⇒
+                    case _ =>
                         Unknown
                 }
-            case _ ⇒ Unknown
+            case _ => Unknown
         }
     }
 
@@ -255,8 +255,8 @@ trait IntegerRangeValues
             Yes
         else
             value match {
-                case IntegerRange(lb, ub) ⇒ Answer(ub >= lowerBound && lb <= upperBound)
-                case _                    ⇒ Unknown
+                case IntegerRangeLike(lb, ub) => Answer(ub >= lowerBound && lb <= upperBound)
+                case _                        => Unknown
             }
     }
 
@@ -270,8 +270,8 @@ trait IntegerRangeValues
             No
         else
             value match {
-                case IntegerRange(lb, ub) ⇒ Answer(lb < lowerBound || ub > upperBound)
-                case _                    ⇒ Unknown
+                case IntegerRangeLike(lb, ub) => Answer(lb < lowerBound || ub > upperBound)
+                case _                        => Unknown
             }
     }
 
@@ -282,25 +282,25 @@ trait IntegerRangeValues
             return No
 
         right match {
-            case IntegerRange(rightLB, rightUB) ⇒
+            case IntegerRangeLike(rightLB, rightUB) =>
                 if (rightUB == Int.MinValue)
                     No
                 else
                     left match {
-                        case IntegerRange(leftLB, leftUB) ⇒
+                        case IntegerRangeLike(leftLB, leftUB) =>
                             if (leftUB < rightLB)
                                 Yes
                             else if (leftLB >= rightUB)
                                 No
                             else
                                 Unknown
-                        case _ ⇒
+                        case _ =>
                             Unknown
                     }
-            case _ ⇒
+            case _ =>
                 left match {
-                    case IntegerRange(Int.MaxValue, _ /* Int.MaxValue*/ ) ⇒ No
-                    case _                                                ⇒ Unknown
+                    case IntegerRangeLike(Int.MaxValue, _ /* Int.MaxValue*/ ) => No
+                    case _ => Unknown
                 }
         }
     }
@@ -317,25 +317,25 @@ trait IntegerRangeValues
             return Yes;
 
         right match {
-            case IntegerRange(rightLB, rightUB) ⇒
+            case IntegerRangeLike(rightLB, rightUB) =>
                 if (rightLB == Int.MaxValue)
                     Yes
                 else
                     left match {
-                        case IntegerRange(leftLB, leftUB) ⇒
+                        case IntegerRangeLike(leftLB, leftUB) =>
                             if (leftUB <= rightLB)
                                 Yes
                             else if (leftLB > rightUB)
                                 No
                             else
                                 Unknown
-                        case _ ⇒
+                        case _ =>
                             Unknown
                     }
-            case _ ⇒
+            case _ =>
                 left match {
-                    case IntegerRange(_, Int.MinValue) ⇒ Yes
-                    case _                             ⇒ Unknown
+                    case IntegerRangeLike(_, Int.MinValue) => Yes
+                    case _                                 => Unknown
                 }
         }
     }
@@ -354,10 +354,10 @@ trait IntegerRangeValues
         locals:   Locals
     ): (Operands, Locals) = {
         value match {
-            case IntegerRange(`theValue`, `theValue`) ⇒
+            case IntegerRangeLike(`theValue`, `theValue`) =>
                 // "nothing to do"
                 (operands, locals)
-            case _ ⇒
+            case _ =>
                 updateMemoryLayout(
                     value, IntegerRange(theValue, theValue),
                     operands, locals
@@ -380,9 +380,9 @@ trait IntegerRangeValues
             // constraint applies to both values (independent of
             // the implicit origin).
             value1 match {
-                case IntegerRange(lb1, ub1) ⇒
+                case IntegerRangeLike(lb1, ub1) =>
                     value2 match {
-                        case IntegerRange(lb2, ub2) ⇒
+                        case IntegerRangeLike(lb2, ub2) =>
                             val lb = Math.max(lb1, lb2)
                             val ub = Math.min(ub1, ub2)
                             val newValue = IntegerRange(lb, ub)
@@ -391,11 +391,11 @@ trait IntegerRangeValues
                                 updateMemoryLayout(value1, newValue, operands, locals)
                             updateMemoryLayout(value2, newValue, operands1, locals1)
 
-                        case _ ⇒
+                        case _ =>
                             // value1 remains unchanged
                             updateMemoryLayout(value2, value1, operands, locals)
                     }
-                case _ ⇒
+                case _ =>
                     updateMemoryLayout(value1, value2, operands, locals)
             }
     }
@@ -413,12 +413,12 @@ trait IntegerRangeValues
         // and this value is a boundary value of the other range it is possible
         // to establish "something"
         val (lb1, ub1) = value1 match {
-            case IntegerRange(lb1, ub1) ⇒ (lb1, ub1)
-            case _                      ⇒ (Int.MinValue, Int.MaxValue)
+            case IntegerRangeLike(lb1, ub1) => (lb1, ub1)
+            case _                          => (Int.MinValue, Int.MaxValue)
         }
         val (lb2, ub2) = value2 match {
-            case IntegerRange(lb2, ub2) ⇒ (lb2, ub2)
-            case _                      ⇒ (Int.MinValue, Int.MaxValue)
+            case IntegerRangeLike(lb2, ub2) => (lb2, ub2)
+            case _                          => (Int.MinValue, Int.MaxValue)
         }
         if (lb1 == ub1) {
             if (lb2 == ub1)
@@ -448,12 +448,12 @@ trait IntegerRangeValues
     ): (Operands, Locals) = {
 
         val (lb1, ub1) = left match {
-            case IntegerRange(lb1, ub1) ⇒ (lb1, ub1)
-            case _                      ⇒ (Int.MinValue, Int.MaxValue)
+            case IntegerRangeLike(lb1, ub1) => (lb1, ub1)
+            case _                          => (Int.MinValue, Int.MaxValue)
         }
         val (lb2, ub2) = right match {
-            case IntegerRange(lb2, ub2) ⇒ (lb2, ub2)
-            case _                      ⇒ (Int.MinValue, Int.MaxValue)
+            case IntegerRangeLike(lb2, ub2) => (lb2, ub2)
+            case _                          => (Int.MinValue, Int.MaxValue)
         }
         // establish new bounds // e.g. l=(0,0) & r=(-10,0)
         assert(lb1 < ub2, s"the value $left cannot be less than $right")
@@ -486,12 +486,12 @@ trait IntegerRangeValues
     ): (Operands, Locals) = {
 
         val (lb1, ub1) = left match {
-            case IntegerRange(lb1, ub1) ⇒ (lb1, ub1)
-            case _                      ⇒ (Int.MinValue, Int.MaxValue)
+            case IntegerRangeLike(lb1, ub1) => (lb1, ub1)
+            case _                          => (Int.MinValue, Int.MaxValue)
         }
         val (lb2, ub2) = right match {
-            case IntegerRange(lb2, ub2) ⇒ (lb2, ub2)
-            case _                      ⇒ (Int.MinValue, Int.MaxValue)
+            case IntegerRangeLike(lb2, ub2) => (lb2, ub2)
+            case _                          => (Int.MinValue, Int.MaxValue)
         }
         // establish new bounds
         val ub = Math.min(ub2, ub1)
@@ -520,10 +520,10 @@ trait IntegerRangeValues
     // UNARY EXPRESSIONS
     //
     override def ineg(pc: Int, value: DomainValue) = value match {
-        case IntegerRange(_, Int.MinValue) /* => lb is also Int.MinValue*/ ⇒ value
-        case IntegerRange(Int.MinValue, _) ⇒ IntegerValue(pc)
-        case IntegerRange(lb, ub) ⇒ IntegerRange(-ub, -lb)
-        case _ ⇒ IntegerValue(pc)
+        case IntegerRangeLike(_, Int.MinValue) /* => lb is also Int.MinValue*/ => value
+        case IntegerRangeLike(Int.MinValue, _) => IntegerValue(pc)
+        case IntegerRangeLike(lb, ub) => IntegerRange(-ub, -lb)
+        case _ => IntegerValue(pc)
     }
 
     //
@@ -532,12 +532,12 @@ trait IntegerRangeValues
 
     override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
-            case IntegerRange(lb1, ub1) ⇒
+            case IntegerRangeLike(lb1, ub1) =>
                 if (lb1 == 0 && ub1 == 0)
                     value2
                 else
                     value2 match {
-                        case IntegerRange(lb2, ub2) ⇒
+                        case IntegerRangeLike(lb2, ub2) =>
                             if (lb2 == 0 && ub2 == 0)
                                 value1
                             else {
@@ -550,14 +550,14 @@ trait IntegerRangeValues
                                 else
                                     IntegerRange(lb.toInt, ub.toInt)
                             }
-                        case _ ⇒
+                        case _ =>
                             IntegerValue(pc)
                     }
 
-            case _ ⇒
+            case _ =>
                 value2 match {
-                    case IntegerRange(0, 0) ⇒ value1
-                    case _                  ⇒ IntegerValue(pc)
+                    case IntegerRangeLike(0, 0) => value1
+                    case _                      => IntegerValue(pc)
                 }
         }
     }
@@ -567,14 +567,14 @@ trait IntegerRangeValues
             return value;
 
         value match {
-            case IntegerRange(lb, ub) ⇒
+            case IntegerRangeLike(lb, ub) =>
                 val newLB = lb.toLong + increment.toLong
                 val newUB = ub.toLong + increment.toLong
                 if (newLB < Int.MinValue || newUB > Int.MaxValue)
                     IntegerValue(pc)
                 else
                     IntegerRange(newLB.toInt, newUB.toInt)
-            case _ ⇒
+            case _ =>
                 IntegerValue(pc)
         }
     }
@@ -582,17 +582,17 @@ trait IntegerRangeValues
     override def isub(pc: Int, left: DomainValue, right: DomainValue): DomainValue = {
         if (left eq right) {
             return left /* or right*/ match {
-                case IntegerRange(0, 0) ⇒ left
-                case _                  ⇒ IntegerRange(0, 0)
+                case IntegerRangeLike(0, 0) => left
+                case _                      => IntegerRange(0, 0)
             }
         }
 
         right match {
-            case IntegerRange(0, 0) ⇒
+            case IntegerRangeLike(0, 0) =>
                 left
-            case IntegerRange(rlb, rub) ⇒
+            case IntegerRangeLike(rlb, rub) =>
                 left match {
-                    case IntegerRange(llb, lub) ⇒
+                    case IntegerRangeLike(llb, lub) =>
 
                         // to identify overflows we simply do the "add" on long values
                         // and check afterwards
@@ -602,11 +602,11 @@ trait IntegerRangeValues
                             IntegerValue(pc)
                         else
                             IntegerRange(lb.toInt, ub.toInt)
-                    case _ ⇒
+                    case _ =>
                         IntegerValue(pc)
                 }
 
-            case _ ⇒
+            case _ =>
                 // we don't know what we are subtracting
                 IntegerValue(pc)
         }
@@ -632,14 +632,14 @@ trait IntegerRangeValues
         }
 
         denominator match {
-            case IntegerRange(1, 1) ⇒ ComputedValue(numerator)
-            case IntegerRange(dlb, dub) ⇒
+            case IntegerRangeLike(1, 1) => ComputedValue(numerator)
+            case IntegerRangeLike(dlb, dub) =>
                 if (dlb > 0) {
                     // no div by "0"
                     numerator match {
-                        case IntegerRange(nlb, nub) ⇒
+                        case IntegerRangeLike(nlb, nub) =>
                             ComputedValue(IntegerRange(nlb / dlb, nub / dlb))
-                        case _ ⇒
+                        case _ =>
                             ComputedValue(IntegerValue(pc))
                     }
                 } else if (dlb == 0 && dub == 0) {
@@ -652,19 +652,19 @@ trait IntegerRangeValues
 
             // IMPROVE [IntegerRangeValues] handling of divisors that span values in the range[-X,+Y]
 
-            case _ ⇒
-                genericResult
+            case _ =>
+                genericResult()
         }
     }
 
     override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, IntegerRange(0, 0)) ⇒ value2
-            case (_, IntegerRange(1, 1)) ⇒ value1
-            case (IntegerRange(0, 0), _) ⇒ value1
-            case (IntegerRange(1, 1), _) ⇒ value2
+            case (_, IntegerRangeLike(0, 0)) => value2
+            case (_, IntegerRangeLike(1, 1)) => value1
+            case (IntegerRangeLike(0, 0), _) => value1
+            case (IntegerRangeLike(1, 1), _) => value2
 
-            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
+            case (IntegerRangeLike(lb1, ub1), IntegerRangeLike(lb2, ub2)) =>
                 // to identify overflows we simply do the "mul" on long values
                 // and check afterwards
                 val lb1l = lb1.toLong
@@ -687,7 +687,7 @@ trait IntegerRangeValues
                 else
                     IntegerRange(lb.toInt, ub.toInt)
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(pc)
         }
     }
@@ -699,11 +699,11 @@ trait IntegerRangeValues
     ): IntegerValueOrArithmeticException = {
 
         right match {
-            case IntegerRange(0, 0)   ⇒ ThrowsException(VMArithmeticException(pc))
-            case IntegerRange(1, 1)   ⇒ ComputedValue(IntegerRange(0))
-            case IntegerRange(-1, -1) ⇒ ComputedValue(IntegerRange(0))
+            case IntegerRangeLike(0, 0)   => ThrowsException(VMArithmeticException(pc))
+            case IntegerRangeLike(1, 1)   => ComputedValue(IntegerRange(0))
+            case IntegerRangeLike(-1, -1) => ComputedValue(IntegerRange(0))
 
-            case IntegerRange(rightLB, rightUB) ⇒
+            case IntegerRangeLike(rightLB, rightUB) =>
                 def result(newValue: DomainValue) =
                     if (rightLB > 0 || rightUB < 0 || !throwArithmeticExceptions)
                         ComputedValue(newValue)
@@ -712,7 +712,7 @@ trait IntegerRangeValues
 
                 left match {
 
-                    case IntegerRange(leftLB, leftUB) ⇒
+                    case IntegerRangeLike(leftLB, leftUB) =>
                         if (leftLB == leftUB && rightLB == rightUB) {
                             // two point ranges...
                             val result = leftLB % rightLB
@@ -740,15 +740,15 @@ trait IntegerRangeValues
                             result(newValue)
                         }
 
-                    case _ /*AnIntegerValue*/ if rightLB > Int.MinValue ⇒
+                    case _ /*AnIntegerValue*/ if rightLB > Int.MinValue =>
                         val maxDivisor = Math.max(Math.abs(rightLB), Math.abs(rightUB))
                         val newValue = IntegerRange(-(maxDivisor - 1), maxDivisor - 1)
                         result(newValue)
-                    case _ /*AnIntegerValue*/ ⇒
+                    case _ /*AnIntegerValue*/ =>
                         result(IntegerValue(origin = pc))
                 }
 
-            case _ ⇒ // right is "AnIntegerValue"
+            case _ => // right is "AnIntegerValue"
                 val newValue =
                     if (left eq right) // "a value % itself is always 0 unless the value is 0"
                         IntegerValue(pc, 0)
@@ -766,12 +766,12 @@ trait IntegerRangeValues
             return value1 // or value2
 
         (value1, value2) match {
-            case (_, IntegerRange(0, 0))   ⇒ value2
-            case (_, IntegerRange(-1, -1)) ⇒ value1
-            case (IntegerRange(0, 0), _)   ⇒ value1
-            case (IntegerRange(-1, -1), _) ⇒ value2
+            case (_, IntegerRangeLike(0, 0))   => value2
+            case (_, IntegerRangeLike(-1, -1)) => value1
+            case (IntegerRangeLike(0, 0), _)   => value1
+            case (IntegerRangeLike(-1, -1), _) => value2
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+            case (IntegerRangeLike(vlb, vub), IntegerRangeLike(slb, sub)) =>
                 if (vlb == vub && slb == sub) {
                     // "two point values"
                     val r = vlb & slb
@@ -784,9 +784,9 @@ trait IntegerRangeValues
                     IntegerValue(pc)
 
             // IMPROVE [IntegerRangeValues] General handling of "and" for two integer range values
-            case (_, IntegerRange(lb2, ub2)) if (lb2 >= 0) ⇒ IntegerRange(0, ub2)
-            case (IntegerRange(lb1, ub1), _) if (lb1 >= 0) ⇒ IntegerRange(0, ub1)
-            case _                                         ⇒ IntegerValue(pc)
+            case (_, IntegerRangeLike(lb2, ub2)) if (lb2 >= 0) => IntegerRange(0, ub2)
+            case (IntegerRangeLike(lb1, ub1), _) if (lb1 >= 0) => IntegerRange(0, ub1)
+            case _                                             => IntegerValue(pc)
         }
     }
 
@@ -795,12 +795,12 @@ trait IntegerRangeValues
             return value1
 
         (value1, value2) match {
-            case (_, IntegerRange(0, 0))   ⇒ value1
-            case (_, IntegerRange(-1, -1)) ⇒ value2
-            case (IntegerRange(0, 0), _)   ⇒ value2
-            case (IntegerRange(-1, -1), _) ⇒ value1
+            case (_, IntegerRangeLike(0, 0))   => value1
+            case (_, IntegerRangeLike(-1, -1)) => value2
+            case (IntegerRangeLike(0, 0), _)   => value2
+            case (IntegerRangeLike(-1, -1), _) => value1
 
-            case (IntegerRange(llb, lub), IntegerRange(rlb, rub)) ⇒
+            case (IntegerRangeLike(llb, lub), IntegerRangeLike(rlb, rub)) =>
                 // We have two "arbitrary" ranges.
                 // Recall that negative values always have a "1" in the highest Bit
                 // and that -1 is the value where all 32 bits are "1".
@@ -817,7 +817,7 @@ trait IntegerRangeValues
                 } else {
                     // both values are positive (lbs are >= 0) and at least one
                     // value is not just 0.
-                    import java.lang.Integer.{numberOfLeadingZeros ⇒ nlz}
+                    import java.lang.Integer.{numberOfLeadingZeros => nlz}
                     val max = Math.max(rub, lub)
                     val nlzMax = nlz(max)
                     val ub =
@@ -829,7 +829,7 @@ trait IntegerRangeValues
                     IntegerRange(lb, ub)
                 }
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(pc)
         }
     }
@@ -838,10 +838,10 @@ trait IntegerRangeValues
         // RECALL THAT ONLY THE FIVE LOWEST BITS OF THE SHIFT VALUE ARE CONSIDERED!
         // I.E. THE SHIFT IS ALWAYS BETWEEN 0 AND 31 BITS
         (value, shift) match {
-            case (_, IntegerRange(0, 0)) ⇒ value
-            case (IntegerRange(0, 0), _) ⇒ value
+            case (_, IntegerRangeLike(0, 0)) => value
+            case (IntegerRangeLike(0, 0), _) => value
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+            case (IntegerRangeLike(vlb, vub), IntegerRangeLike(slb, sub)) =>
                 val maxShift = if (sub > 31 || sub < 0) 31 else sub
                 val minShift = if (slb >= 0 && slb <= 31) slb else 0
 
@@ -873,29 +873,29 @@ trait IntegerRangeValues
                     IntegerRange((1 << maxShift) | MinInt, (-1 << minShift) & MaxInt)
                 }
 
-            case (IntegerRange(-1, -1), _) ⇒ IntegerRange(Int.MinValue, -1)
-            case (_, IntegerRange(31, 31)) ⇒
+            case (IntegerRangeLike(-1, -1), _) => IntegerRange(Int.MinValue, -1)
+            case (_, IntegerRangeLike(31, 31)) =>
                 // the value is either Int.MinValue or 0
                 IntegerRange(Int.MinValue, 0)
 
-            case _ ⇒ IntegerValue(pc)
+            case _ => IntegerValue(pc)
         }
     }
 
     override def ishr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-            case (_, IntegerRange(0, 0))   ⇒ value
-            case (IntegerRange(0, 0), _)   ⇒ value
+            case (_, IntegerRangeLike(0, 0))   => value
+            case (IntegerRangeLike(0, 0), _)   => value
 
             // In this case a signed shift does not change the value ([-1,-1]).
-            case (IntegerRange(-1, -1), _) ⇒ value
-            case (_, IntegerRange(31, 31)) ⇒ IntegerRange(-1, 0)
+            case (IntegerRangeLike(-1, -1), _) => value
+            case (_, IntegerRangeLike(31, 31)) => IntegerRange(-1, 0)
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
+            case (IntegerRangeLike(vlb, vub), IntegerRangeLike(slb, sub)) if vlb == vub && slb == sub =>
                 val r = vlb >> slb
                 IntegerRange(r)
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+            case (IntegerRangeLike(vlb, vub), IntegerRangeLike(slb, sub)) =>
                 // We have one "arbitrary" range of numbers to shift and one range that
                 // should be between 0 and 31. Every number above 31 or any negative number
                 // does not make sense, since only the five least significant bits are used
@@ -919,17 +919,17 @@ trait IntegerRangeValues
                     IntegerRange(lb, ub)
                 }
 
-            case _ ⇒ IntegerValue(pc)
+            case _ => IntegerValue(pc)
         }
 
     }
 
     override def iushr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-            case (IntegerRange(0, 0), _) ⇒ value
-            case (_, IntegerRange(0, 0)) ⇒ value
+            case (IntegerRangeLike(0, 0), _) => value
+            case (_, IntegerRangeLike(0, 0)) => value
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+            case (IntegerRangeLike(vlb, vub), IntegerRangeLike(slb, sub)) =>
                 if (vlb == vub && slb == sub) {
                     val result = vlb >>> slb
                     IntegerRange(result)
@@ -966,7 +966,7 @@ trait IntegerRangeValues
                     }
                 }
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(pc)
         }
     }
@@ -977,7 +977,7 @@ trait IntegerRangeValues
 
         (value1, value2) match {
 
-            case (IntegerRange(v1lb, v1ub), IntegerRange(v2lb, v2ub)) ⇒
+            case (IntegerRangeLike(v1lb, v1ub), IntegerRangeLike(v2lb, v2ub)) =>
                 if (v1lb == v1ub && v2lb == v2ub)
                     IntegerRange(v1lb ^ v2lb)
 
@@ -1130,7 +1130,7 @@ trait IntegerRangeValues
                     IntegerRange(lb, ub)
                 }
 
-            case _ ⇒
+            case _ =>
                 IntegerValue(pc)
         }
     }
@@ -1141,25 +1141,25 @@ trait IntegerRangeValues
 
     override def i2b(pc: Int, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) if lb >= Byte.MinValue && ub <= Byte.MaxValue ⇒
+            case IntegerRangeLike(lb, ub) if lb >= Byte.MinValue && ub <= Byte.MaxValue =>
                 value
-            case _ ⇒
+            case _ =>
                 IntegerRange(Byte.MinValue, Byte.MaxValue)
         }
 
     override def i2c(pc: Int, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) if lb >= 0 && ub <= Char.MaxValue ⇒
+            case IntegerRangeLike(lb, ub) if lb >= 0 && ub <= Char.MaxValue =>
                 value
-            case _ ⇒
+            case _ =>
                 IntegerRange(0, 65535)
         }
 
     override def i2s(pc: Int, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) if lb >= Short.MinValue && ub <= Short.MaxValue ⇒
+            case IntegerRangeLike(lb, ub) if lb >= Short.MinValue && ub <= Short.MaxValue =>
                 value
-            case _ ⇒
+            case _ =>
                 IntegerRange(Short.MinValue, Short.MaxValue)
         }
 }

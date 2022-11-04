@@ -22,8 +22,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.cg.CHACallGraphKey
-import org.opalj.tac.cg.TypeProviderKey
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.CallersImplWithOtherCalls
 import org.opalj.tac.fpcf.properties.cg.CallersOnlyWithConcreteCallers
@@ -37,16 +37,16 @@ class CallersTest extends AnyFlatSpec with Matchers {
     val typesProject: SomeProject =
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             libraryClassFilesAreInterfacesOnly = true
         )
 
     typesProject.get(CHACallGraphKey)
     implicit val declaredMethods: DeclaredMethods = typesProject.get(DeclaredMethodsKey)
     val simpleContexts: SimpleContexts = typesProject.get(SimpleContextsKey)
-    implicit val typeProvider: TypeProvider = typesProject.get(TypeProviderKey)
+    implicit val typeIterator: TypeIterator = typesProject.get(TypeIteratorKey)
 
-    val declaredMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ ⇒ true).get
+    val declaredMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ => true).get
     val otherMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ ne declaredMethod).get
 
     behavior of "the no caller object"
@@ -58,15 +58,15 @@ class CallersTest extends AnyFlatSpec with Matchers {
             simpleContexts(otherMethod), simpleContexts(declaredMethod), pc = 0, isDirect = true
         )
         assert(oneCaller.isInstanceOf[CallersOnlyWithConcreteCallers])
-        assert(oneCaller.callers(otherMethod).size == 1 && oneCaller.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(oneCaller.callers(otherMethod).iterator.size == 1 && oneCaller.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
 
     }
 
     it should "behave correctly" in {
         assert(NoCallers.size == 0)
-        assert(NoCallers.callers(otherMethod).isEmpty)
+        assert(NoCallers.callers(otherMethod).iterator.isEmpty)
         assert(!NoCallers.hasVMLevelCallers)
         assert(!NoCallers.hasCallersWithUnknownContext)
     }
@@ -80,8 +80,8 @@ class CallersTest extends AnyFlatSpec with Matchers {
             simpleContexts(otherMethod), simpleContexts(declaredMethod), pc = 0, isDirect = true
         )
         assert(oneCaller.isInstanceOf[CallersImplWithOtherCalls])
-        assert(oneCaller.callers(otherMethod).size == 1 && oneCaller.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(oneCaller.callers(otherMethod).iterator.size == 1 && oneCaller.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
         assert(oneCaller.hasVMLevelCallers)
         assert(!oneCaller.hasCallersWithUnknownContext)
@@ -89,7 +89,7 @@ class CallersTest extends AnyFlatSpec with Matchers {
 
     it should "behave correctly" in {
         assert(OnlyVMLevelCallers.size == 0)
-        assert(OnlyVMLevelCallers.callers(otherMethod).isEmpty)
+        assert(OnlyVMLevelCallers.callers(otherMethod).iterator.isEmpty)
         assert(OnlyVMLevelCallers.hasVMLevelCallers)
         assert(!OnlyVMLevelCallers.hasCallersWithUnknownContext)
     }
@@ -103,8 +103,8 @@ class CallersTest extends AnyFlatSpec with Matchers {
             simpleContexts(otherMethod), simpleContexts(declaredMethod), pc = 0, isDirect = true
         )
         assert(oneCaller.isInstanceOf[CallersImplWithOtherCalls])
-        assert(oneCaller.callers(otherMethod).size == 1 && oneCaller.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(oneCaller.callers(otherMethod).iterator.size == 1 && oneCaller.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
         assert(!oneCaller.hasVMLevelCallers)
         assert(oneCaller.hasCallersWithUnknownContext)
@@ -112,7 +112,7 @@ class CallersTest extends AnyFlatSpec with Matchers {
 
     it should "behave correctly" in {
         assert(OnlyCallersWithUnknownContext.size == 0)
-        assert(OnlyCallersWithUnknownContext.callers(otherMethod).isEmpty)
+        assert(OnlyCallersWithUnknownContext.callers(otherMethod).iterator.isEmpty)
         assert(!OnlyCallersWithUnknownContext.hasVMLevelCallers)
         assert(OnlyCallersWithUnknownContext.hasCallersWithUnknownContext)
     }
@@ -130,8 +130,8 @@ class CallersTest extends AnyFlatSpec with Matchers {
             simpleContexts(otherMethod), simpleContexts(declaredMethod), pc = 0, isDirect = true
         )
         assert(oneCaller.isInstanceOf[CallersImplWithOtherCalls])
-        assert(oneCaller.callers(otherMethod).size == 1 && oneCaller.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(oneCaller.callers(otherMethod).iterator.size == 1 && oneCaller.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
         assert(oneCaller.hasVMLevelCallers)
         assert(oneCaller.hasCallersWithUnknownContext)
@@ -139,7 +139,7 @@ class CallersTest extends AnyFlatSpec with Matchers {
 
     it should "behave correctly" in {
         assert(OnlyVMCallersAndWithUnknownContext.size == 0)
-        assert(OnlyVMCallersAndWithUnknownContext.callers(otherMethod).isEmpty)
+        assert(OnlyVMCallersAndWithUnknownContext.callers(otherMethod).iterator.isEmpty)
         assert(OnlyVMCallersAndWithUnknownContext.hasVMLevelCallers)
         assert(OnlyVMCallersAndWithUnknownContext.hasCallersWithUnknownContext)
     }
@@ -178,8 +178,8 @@ class CallersTest extends AnyFlatSpec with Matchers {
             simpleContexts(otherMethod), simpleContexts(declaredMethod), pc = 0, isDirect = true
         )
         assert(callers.size == 1)
-        assert(callers.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(callers.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
         assert(!callers.hasCallersWithUnknownContext)
         assert(!callers.hasVMLevelCallers)
@@ -195,9 +195,9 @@ class CallersTest extends AnyFlatSpec with Matchers {
         val callersWithBothUnknownCalls1 = callersWithVMLevelCall.updatedWithUnknownContext()
         assert(callersWithBothUnknownCalls1.hasCallersWithUnknownContext)
         assert(callersWithBothUnknownCalls1.hasVMLevelCallers)
-        assert(callersWithBothUnknownCalls1.callers(otherMethod).size == 1)
-        assert(callersWithBothUnknownCalls1.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(callersWithBothUnknownCalls1.callers(otherMethod).iterator.size == 1)
+        assert(callersWithBothUnknownCalls1.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
 
         val callersWithUnknownCallers = OnlyCallersWithUnknownContext.updated(
@@ -207,34 +207,34 @@ class CallersTest extends AnyFlatSpec with Matchers {
         val callersWithBothUnknownCalls2 = callersWithUnknownCallers.updatedWithVMLevelCall()
         assert(callersWithBothUnknownCalls2.hasCallersWithUnknownContext)
         assert(callersWithBothUnknownCalls2.hasVMLevelCallers)
-        assert(callersWithBothUnknownCalls2.callers(otherMethod).size == 1)
-        assert(callersWithBothUnknownCalls2.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(callersWithBothUnknownCalls2.callers(otherMethod).iterator.size == 1)
+        assert(callersWithBothUnknownCalls2.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
 
         val twoCallers = callersWithVMLevelCall.updated(
             simpleContexts(otherMethod), simpleContexts(otherMethod), pc = 1, isDirect = true
         )
         assert(twoCallers.size == 2)
-        assert(twoCallers.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(twoCallers.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
-        assert(twoCallers.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq otherMethod) && (pc == 1) && isDirect
+        assert(twoCallers.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq otherMethod) && (pc == 1) && isDirect
         })
     }
 
     it should "behave correctly" in {
         val encodedCallers = IntMap(
-            otherMethod.id →
+            otherMethod.id ->
                 LongLinkedTrieSet(Callers.toLong(declaredMethod.id, pc = 0, isDirect = true))
         )
         val withVM = CallersImplWithOtherCalls(
             encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = false
         )
         assert(withVM.size == 1)
-        assert(withVM.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(withVM.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
         assert(!withVM.hasCallersWithUnknownContext)
         assert(withVM.hasVMLevelCallers)
@@ -243,8 +243,8 @@ class CallersTest extends AnyFlatSpec with Matchers {
             encodedCallers, hasVMLevelCallers = false, hasCallersWithUnknownContext = true
         )
         assert(withUnknwonContext.size == 1)
-        assert(withUnknwonContext.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(withUnknwonContext.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
         assert(withUnknwonContext.hasCallersWithUnknownContext)
         assert(!withUnknwonContext.hasVMLevelCallers)
@@ -253,8 +253,8 @@ class CallersTest extends AnyFlatSpec with Matchers {
             encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = true
         )
         assert(withBoth.size == 1)
-        assert(withBoth.callers(otherMethod).exists {
-            case (dm, pc, isDirect) ⇒ (dm eq declaredMethod) && (pc == 0) && isDirect
+        assert(withBoth.callers(otherMethod).iterator.exists {
+            case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
         assert(withBoth.hasCallersWithUnknownContext)
         assert(withBoth.hasVMLevelCallers)

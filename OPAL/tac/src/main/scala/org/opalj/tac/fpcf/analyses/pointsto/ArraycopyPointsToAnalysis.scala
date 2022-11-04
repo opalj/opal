@@ -6,7 +6,6 @@ package analyses
 package pointsto
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -29,10 +28,12 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Handles the effect of `java.lang.System.arraycopy*` to points-to sets.
@@ -47,7 +48,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
         ObjectType.System, "", ObjectType.System,
         "arraycopy",
         MethodDescriptor(
-            RefArray(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+            ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     )
@@ -92,12 +93,12 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
 trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
-    val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis
+    val createAnalysis: SomeProject => ArraycopyPointsToAnalysis
 
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
@@ -114,12 +115,12 @@ trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
 
 object TypeBasedArraycopyPointsToAnalysisScheduler extends ArraycopyPointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis =
+    override val createAnalysis: SomeProject => ArraycopyPointsToAnalysis =
         new ArraycopyPointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedArraycopyPointsToAnalysisScheduler extends ArraycopyPointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis =
+    override val createAnalysis: SomeProject => ArraycopyPointsToAnalysis =
         new ArraycopyPointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

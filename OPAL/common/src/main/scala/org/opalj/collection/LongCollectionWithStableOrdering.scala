@@ -7,7 +7,7 @@ package org.opalj.collection
  *
  * @author Michael Eichberg
  */
-trait LongCollectionWithStableOrdering[T <: LongCollectionWithStableOrdering[T]] { this: T ⇒
+trait LongCollectionWithStableOrdering[T <: LongCollectionWithStableOrdering[T]] { this: T =>
 
     def size: Int
     def iterator: LongIterator

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.pointsto
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
@@ -22,9 +21,11 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.APIBasedAnalysis
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Introduces additional allocation sites for reflection methods.
@@ -57,7 +58,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                     ObjectType.Class,
                     "forName",
                     MethodDescriptor(
-                        RefArray(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+                        ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
                         ObjectType.Class
                     )
                 )
@@ -70,7 +71,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                     ObjectType.Class,
                     "forName",
                     MethodDescriptor(
-                        RefArray(ObjectType("java/lang/Module"), ObjectType.String),
+                        ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
                         ObjectType.Class
                     )
                 )
@@ -96,7 +97,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.Class, "", ObjectType.Class,
                     "getMethod",
-                    MethodDescriptor(RefArray(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
+                    MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
@@ -104,7 +105,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.Class, "", ObjectType.Class,
                     "getDeclaredMethod",
-                    MethodDescriptor(RefArray(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
+                    MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
@@ -120,7 +121,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
                     "findStatic",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
@@ -128,7 +129,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
                     "findVirtual",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType), ObjectType.MethodHandle)
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
@@ -136,7 +137,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
                     "findConstructor",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.MethodType), ObjectType.MethodHandle)
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.MethodType), ObjectType.MethodHandle)
                 )
             ),
             new ReflectionMethodAllocationsAnalysis(
@@ -144,7 +145,7 @@ class ReflectionAllocationsAnalysis private[analyses] (
                 declaredMethods(
                     ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
                     "findSpecial",
-                    MethodDescriptor(RefArray(ObjectType.Class, ObjectType.String, ObjectType.MethodType, ObjectType.Class), ObjectType.MethodHandle)
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType, ObjectType.Class), ObjectType.MethodHandle)
                 )
             )
         )
@@ -186,7 +187,7 @@ class ReflectionMethodAllocationsAnalysis(
 
 object ReflectionAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, AllocationSitePointsToSet)
 

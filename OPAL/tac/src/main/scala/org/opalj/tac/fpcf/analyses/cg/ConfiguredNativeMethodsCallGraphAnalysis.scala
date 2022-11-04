@@ -29,7 +29,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 
 /**
  * Add calls from configured native methods to the call graph.
@@ -54,22 +54,22 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredMethods.reader.read(
             p.config, configKey
-        ).nativeMethods.map { v ⇒ (v.method, v.methodInvocations) }.toMap
+        ).nativeMethods.map { v => (v.method, v.methodInvocations) }.toMap
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
         val callers = propertyStore(dm, Callers.key)
         (callers: @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -111,12 +111,12 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         val callers = eOptP.ub
 
         var results: Iterator[PartialResult[_, _ >: Null <: Property]] = Iterator.empty
-        callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext ⇒
+        callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
             val directCalls = new DirectCalls()
-            for (tgt ← tgts) {
+            for (tgt <- tgts) {
                 val tgtMethod = tgt.method(declaredMethods)
                 directCalls.addCall(
-                    calleeContext, 0, typeProvider.expandContext(calleeContext, tgtMethod, 0)
+                    calleeContext, 0, typeIterator.expandContext(calleeContext, tgtMethod, 0)
                 )
             }
             results ++= directCalls.partialResults(calleeContext)
@@ -128,7 +128,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
 object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 

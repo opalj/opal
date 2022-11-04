@@ -39,12 +39,12 @@ object ClassHierarchy {
     /*
     val ownMethods = project.classFile(ArrayListType).get.methods
     val superMethods = ch.supertypes(ArrayListType).map(ch.allMethods(project, _)).flatten
-    val allMethods = ch.allMethods(project, ArrayListType, (m) ⇒ !m.isPrivate && !m.isAbstract)
-    val inheritedAndNotOverriddenMethods = allMethods.filter(am ⇒ !ownMethods.exists(om ⇒ om.hasSameSignature(am)))
+    val allMethods = ch.allMethods(project, ArrayListType, (m) => !m.isPrivate && !m.isAbstract)
+    val inheritedAndNotOverriddenMethods = allMethods.filter(am => !ownMethods.exists(om => om.hasSameSignature(am)))
     inheritedAndNotOverriddenMethods.size
     inheritedAndNotOverriddenMethods.map(_.toJava).mkString("\n")
 
-    val overriddenMethods = superMethods.filter(sm ⇒ ownMethods.exists(_.hasSameSignature(sm)))
+    val overriddenMethods = superMethods.filter(sm => ownMethods.exists(_.hasSameSignature(sm)))
     overriddenMethods.map(_.toJava).mkString("\n")
     */
 }

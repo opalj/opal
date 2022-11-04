@@ -107,7 +107,7 @@ trait TraversingVisitor extends SignatureVisitor[Unit] {
  * case, however, the given function `f` also has to be thread safe or you have
  * to use different functions.
  */
-class TypesVisitor(val f: Type ⇒ Unit) extends TraversingVisitor {
+class TypesVisitor(val f: Type => Unit) extends TraversingVisitor {
 
     override def visit(cts: ClassTypeSignature): Unit = {
         f(cts.objectType)

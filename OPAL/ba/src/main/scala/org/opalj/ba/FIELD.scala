@@ -2,7 +2,7 @@
 package org.opalj
 package ba
 
-import org.opalj.collection.immutable.RefArray
+import scala.collection.immutable.ArraySeq
 
 /**
  * Builder for a [[org.opalj.br.Field]]; a `FIELD` object is intended to be stored in a
@@ -15,7 +15,7 @@ case class FIELD(
         accessModifiers:    AccessModifier,
         name:               String,
         descriptor:         String,
-        attributesBuilders: RefArray[br.FieldAttributeBuilder] = RefArray.empty
+        attributesBuilders: ArraySeq[br.FieldAttributeBuilder] = ArraySeq.empty
 ) {
 
     /**
@@ -24,7 +24,7 @@ case class FIELD(
     def result(): br.FieldTemplate = {
         val fieldType = br.FieldType(descriptor)
         val accessFlags = accessModifiers.accessFlags
-        val attributes = attributesBuilders.map[br.Attribute] { attributeBuilder ⇒
+        val attributes = attributesBuilders.map[br.Attribute] { attributeBuilder =>
             attributeBuilder(accessFlags, name, fieldType)
         }
 

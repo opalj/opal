@@ -2,8 +2,6 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.collection.mutable.IntArrayStack
@@ -22,7 +20,7 @@ import org.opalj.collection.mutable.IntArrayStack
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain ⇒
+trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain =>
 
     /**
      * Replaces all occurrences of `oldValue` (using reference-quality) with `newValue`. If no
@@ -36,8 +34,8 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         locals:   Locals
     ): (Operands, Locals) = {
         (
-            operands.mapConserve(o ⇒ if (o eq oldValue) newValue else o),
-            locals.mapConserve(l ⇒ if (l eq oldValue) newValue else l)
+            operands.mapConserve(o => if (o eq oldValue) newValue else o),
+            locals.mapConserve(l => if (l eq oldValue) newValue else l)
         )
     }
 
@@ -132,16 +130,20 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (thisOperands eq otherOperands) {
                 thisOperands
             } else {
-                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue) = {
-                    val updatedOperand = joinValues(pc, thisValue, otherValue)
-                    if (updatedOperand eq NoUpdate) {
+                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue): DomainValue = {
+                    if (thisValue eq otherValue)
                         thisValue
-                    } else {
-                        operandsUpdated &:= updatedOperand
-                        updatedOperand.value
+                    else {
+                        val updatedOperand = joinValues(pc, thisValue, otherValue)
+                        if (updatedOperand eq NoUpdate) {
+                            thisValue
+                        } else {
+                            operandsUpdated &:= updatedOperand
+                            updatedOperand.value
+                        }
                     }
                 }
-                thisOperands.fuse(otherOperands, fuseOperands)
+                thisOperands.zip(otherOperands).map { case (o1, o2) => fuseOperands(o1, o2) }
             }
 
         var localsUpdated: UpdateType = NoUpdateType
@@ -421,17 +423,17 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             var header: List[Int /*PC*/ ] = Nil
             val relevantWorklist = {
                 var subroutinesToTerminate = abruptSubroutineTerminationCount
-                worklist.dropWhile { pc ⇒
+                worklist.dropWhile { pc =>
                     if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
                         if (subroutinesToTerminate > 0) {
-                            header :&:= pc
+                            header ::= pc
                             true
                         } else {
                             false
                         }
                     } else {
-                        header :&:= pc
+                        header ::= pc
                         true
                     }
                 }.tail /* drop SUBROUTINE MARKER */
@@ -439,13 +441,13 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)) {
                 worklist
             } else {
-                header.reverse :&:: (SUBROUTINE :&: successorPC :&: relevantWorklist)
+                header.reverse ::: (SUBROUTINE :: successorPC :: relevantWorklist)
             }
         } else {
             if (containsInPrefix(worklist, successorPC, SUBROUTINE_START)) {
                 worklist
             } else {
-                successorPC :&: worklist
+                successorPC :: worklist
             }
         }
     }

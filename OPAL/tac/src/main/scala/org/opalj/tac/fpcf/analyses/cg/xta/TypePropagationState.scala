@@ -17,11 +17,11 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.properties.TACAI
-import java.util.{HashSet ⇒ JHashSet}
-import java.util.{HashMap ⇒ JHashMap}
-import java.util.{Set ⇒ JSet}
+import java.util.{HashSet => JHashSet}
+import java.util.{HashMap => JHashMap}
+import java.util.{Set => JSet}
 
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
@@ -64,7 +64,7 @@ final class TypePropagationState[ContextType <: Context](
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
+    def newInstantiatedTypes(seenTypes: Int): IterableOnce[ReferenceType] = {
         if (_ownInstantiatedTypesDependee.hasUBP) {
             _ownInstantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {
@@ -139,7 +139,7 @@ final class TypePropagationState[ContextType <: Context](
             true
         } else {
             val existingTypeFilters = _forwardPropagationFilters.get(typeSetEntity)
-            val newFilters = rootTypes(existingTypeFilters union typeFilters)
+            val newFilters = rootTypes(existingTypeFilters ++ typeFilters)
             _forwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }
@@ -185,7 +185,7 @@ final class TypePropagationState[ContextType <: Context](
             true
         } else {
             val existingTypeFilters = _backwardPropagationFilters.get(typeSetEntity)
-            val newFilters = rootTypes(existingTypeFilters union typeFilters)
+            val newFilters = rootTypes(existingTypeFilters ++ typeFilters)
             _backwardPropagationFilters.put(typeSetEntity, newFilters)
             newFilters != existingTypeFilters
         }
@@ -226,7 +226,7 @@ final class TypePropagationState[ContextType <: Context](
 
         // Note: The values are copied here. The "++" operator on List
         // forces immediate evaluation of the map values iterator.
-        dependees ++= _backwardPropagationDependees.values().iterator().asScala
+        dependees ++= _backwardPropagationDependees.values().iterator.asScala
 
         dependees
     }
@@ -257,6 +257,6 @@ final class TypePropagationState[ContextType <: Context](
         if (types.size <= 1)
             return types;
 
-        types.filter(t1 ⇒ !types.exists(t2 ⇒ t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
+        types.filter(t1 => !types.exists(t2 => t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
     }
 }

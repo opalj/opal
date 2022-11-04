@@ -5,19 +5,24 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-
-import org.scalatestplus.junit.JUnitRunner
+import org.opalj.io.OpeningFileFailedException
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.{ObjectType, ArrayType}
-import org.opalj.br.{IntegerType, ByteType, ShortType}
-import org.opalj.br.{LongType, FloatType, DoubleType}
-import org.opalj.br.{BooleanType, CharType}
+import org.opalj.br.ArrayType
+import org.opalj.br.BooleanType
+import org.opalj.br.ByteType
+import org.opalj.br.CharType
+import org.opalj.br.DoubleType
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.ObjectType
+import org.opalj.br.ShortType
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.io.OpeningFileFailedException
 
 /**
  * Tests the ArrayValues domain.
@@ -28,9 +33,9 @@ import org.opalj.io.OpeningFileFailedException
 @RunWith(classOf[JUnitRunner])
 class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
-    import DefaultArraysTest._
+    import org.opalj.ai.domain.l1.DefaultArraysTest._
 
-    private def evaluateMethod(name: String)(f: DefaultConcreteArraysTestDomain ⇒ Unit): Unit = {
+    private def evaluateMethod(name: String)(f: DefaultConcreteArraysTestDomain => Unit): Unit = {
         val domain = new DefaultConcreteArraysTestDomain()
 
         val method = classFile.methods.find(_.name == name).get
@@ -42,14 +47,14 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 f(domain)
             }
         } catch {
-            case t: OpeningFileFailedException ⇒ info(s"ignored ${t.toString}")
+            case t: OpeningFileFailedException => info(s"ignored ${t.toString}")
         }
     }
 
     describe("array initializations") {
 
         it("should be able to analyze a simple int array initialization") {
-            evaluateMethod("simpleIntArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleIntArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 21
@@ -70,7 +75,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple byte array initialization") {
-            evaluateMethod("simpleByteArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleByteArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 21
@@ -92,7 +97,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple short array initialization") {
-            evaluateMethod("simpleShortArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleShortArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 21
@@ -114,7 +119,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple long array initialization") {
-            evaluateMethod("simpleLongArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleLongArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 27
@@ -136,7 +141,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple float array initialization") {
-            evaluateMethod("simpleFloatArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleFloatArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 23
@@ -158,7 +163,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple double array initialization") {
-            evaluateMethod("simpleDoubleArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleDoubleArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 27
@@ -180,7 +185,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple boolean array initialization") {
-            evaluateMethod("simpleBooleanArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleBooleanArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 13
@@ -207,7 +212,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple char array initialization") {
-            evaluateMethod("simpleCharArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleCharArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 25
@@ -229,7 +234,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple string array initialization") {
-            evaluateMethod("simpleStringArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleStringArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 26
@@ -258,7 +263,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple object array initialization") {
-            evaluateMethod("simpleObjectArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleObjectArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 46
@@ -277,7 +282,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a an object array initialization with different concrete types") {
-            evaluateMethod("differentTypesInOneArrayInitialization") { domain ⇒
+            evaluateMethod("differentTypesInOneArrayInitialization") { domain =>
                 import domain._
 
                 val returnIndex = 44
@@ -372,7 +377,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple 4-dimensional array initialization") {
-            evaluateMethod("a4DimensionalArray") { domain ⇒
+            evaluateMethod("a4DimensionalArray") { domain =>
                 import domain._
                 val twoDimIntArray = ArrayType(ArrayType(IntegerType))
                 val fourDimIntArray = ArrayType(ArrayType(twoDimIntArray))
@@ -384,7 +389,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple 2-dimensional array initialization") {
-            evaluateMethod("a2DimensionalArray") { domain ⇒
+            evaluateMethod("a2DimensionalArray") { domain =>
                 import domain._
                 val twoDimIntArray = ArrayType(ArrayType(IntegerType))
                 val operandsArray = domain.operandsArray
@@ -396,7 +401,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze a simple 3-dimensional array initialization") {
-            evaluateMethod("a3DimensionalArray") { domain ⇒
+            evaluateMethod("a3DimensionalArray") { domain =>
                 import domain._
                 val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
                 val operandsArray = domain.operandsArray
@@ -417,7 +422,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         ignore("should be able to analyze a 3-dimensional array initialization with potential exceptions") {
-            evaluateMethod("a3DimensionalArrayWithPotentialExceptions") { domain ⇒
+            evaluateMethod("a3DimensionalArrayWithPotentialExceptions") { domain =>
                 import domain._
                 val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
                 val operandsArray = domain.operandsArray
@@ -452,7 +457,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
     describe("array accesses that lead to exceptions") {
 
         it("if an index is out of bounds a corresponding exception should be thrown even if the store is potentially impossible") {
-            evaluateMethod("simpleByteArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleByteArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 21
@@ -474,7 +479,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should lead to an array store exception if the value cannot be stored in the array") {
-            evaluateMethod("simpleStringArrayInitializationWithLength4") { domain ⇒
+            evaluateMethod("simpleStringArrayInitializationWithLength4") { domain =>
                 import domain._
 
                 val returnIndex = 26
@@ -498,7 +503,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
     describe("array stores") {
 
         ignore("should be able to analyze a method that updates a value stored in an array in a branch") {
-            evaluateMethod("setValInBranch") { domain ⇒
+            evaluateMethod("setValInBranch") { domain =>
                 import domain._
 
                 val returnIndex = 20
@@ -526,7 +531,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         ignore("should be able to detect a possible array store exception and the default array value") {
-            evaluateMethod("arrayStoreException") { domain ⇒
+            evaluateMethod("arrayStoreException") { domain =>
                 import domain._
 
                 val returnIndex = 20
@@ -546,7 +551,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
     describe("complex array operations") {
         it("should be able to analyze that every returned array is null") {
-            evaluateMethod("setArrayNull") { domain ⇒
+            evaluateMethod("setArrayNull") { domain =>
                 import domain._
 
                 val returnIndex = 7
@@ -567,7 +572,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
         }
 
         it("should be able to analyze array initializations of different number types with different length") {
-            evaluateMethod("branchInits") { domain ⇒
+            evaluateMethod("branchInits") { domain =>
                 import domain._
 
                 val returnIndex = 98

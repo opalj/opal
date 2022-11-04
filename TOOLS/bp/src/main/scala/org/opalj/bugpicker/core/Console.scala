@@ -18,7 +18,10 @@ import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.br.analyses.{Analysis, AnalysisApplication, BasicReport, Project}
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.AnalysisApplication
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analyses.BugPickerAnalysis
@@ -50,7 +53,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         try {
             super.main(unparsedArgs)
         } catch {
-            case t: Throwable ⇒ t.printStackTrace()
+            case t: Throwable => t.printStackTrace()
         }
     }
 
@@ -129,7 +132,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
     override def analyze(
         theProject:             Project[URL],
         parameters:             Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement
+        initProgressManagement: (Int) => ProgressManagement
     ): BasicReport = {
 
         import theProject.logContext
@@ -147,29 +150,29 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         // Filter the report
         val minRelevance: Int =
             parameters.
-                collectFirst { case MinRelevancePattern(i) ⇒ parseInt(i) }.
+                collectFirst { case MinRelevancePattern(i) => parseInt(i) }.
                 getOrElse(MinRelevance)
-        val issues1 = issues0.filter { i ⇒ i.relevance.value >= minRelevance }
+        val issues1 = issues0.filter { i => i.relevance.value >= minRelevance }
 
-        val issues = parameters.collectFirst { case IssueKindsPattern(ks) ⇒ ks } match {
-            case Some(ks) ⇒
+        val issues = parameters.collectFirst { case IssueKindsPattern(ks) => ks } match {
+            case Some(ks) =>
                 val relevantKinds = ks.split(',').map(_.replace('_', ' ')).toSet
-                issues1.filter(issue ⇒ (issue.kinds intersect (relevantKinds)).nonEmpty)
-            case None ⇒
+                issues1.filter(issue => (issue.kinds intersect (relevantKinds)).nonEmpty)
+            case None =>
                 issues1
         }
 
         // Generate the report well suited for the eclipse console
         //
         if (parameters.contains("-eclipse")) {
-            val formattedIssues = issues.map { issue ⇒ issue.toEclipseConsoleString }
+            val formattedIssues = issues.map { issue => issue.toEclipseConsoleString }
             println(formattedIssues.toSeq.sorted.mkString("\n"))
         }
 
         // Generate a report using the bug description language
         //
         if (parameters.contains("-idl")) {
-            val formattedIssues = issues.map { issue ⇒ issue.toIDL.toString }
+            val formattedIssues = issues.map { issue => issue.toIDL.toString }
             println(s"Analysis of "+cpFiles.mkString(", "))
             println("Parameters")
             println(parameters.mkString("\n"))
@@ -184,13 +187,13 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         //
 
         lazy val htmlReport = resultsAsXHTML(parameters, issues, showSearch = false, analysisTime).toString
-        parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
-            case Some(fileName) ⇒
+        parameters.collectFirst { case HTMLFileOutputNameMatcher(name) => name } match {
+            case Some(fileName) =>
                 val file = new File(fileName).toPath
-                process { Files.newBufferedWriter(file, StandardCharsets.UTF_8) } { fos ⇒
+                process { Files.newBufferedWriter(file, StandardCharsets.UTF_8) } { fos =>
                     fos.write(htmlReport, 0, htmlReport.length)
                 }
-            case _ ⇒ // Nothing to do
+            case _ => // Nothing to do
         }
         if (parameters.contains("-html")) {
             writeAndOpen(htmlReport, "BugPickerAnalysisResults", ".html")
@@ -204,7 +207,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
                 "internal error",
                 s"the analysis threw ${exceptions.size} exceptions"
             )
-            exceptions.foreach { e ⇒
+            exceptions.foreach { e =>
                 OPALLogger.error(
                     "internal error", "the analysis failed", e
                 )
@@ -214,7 +217,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
             def getExceptionsReport = {
                 if (exceptionsReport eq null) {
                     val exceptionNodes =
-                        exceptions.take(10).map { e ⇒
+                        exceptions.take(10).map { e =>
                             <p>{ XHTML.throwableToXHTML(e) }</p>
                         }
                     exceptionsReport =
@@ -225,12 +228,12 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
                 }
                 exceptionsReport
             }
-            parameters.collectFirst { case DebugFileOutputNameMatcher(name) ⇒ name } match {
-                case Some(fileName) ⇒
-                    process { new java.io.FileOutputStream(fileName) } { fos ⇒
+            parameters.collectFirst { case DebugFileOutputNameMatcher(name) => name } match {
+                case Some(fileName) =>
+                    process { new java.io.FileOutputStream(fileName) } { fos =>
                         fos.write(getExceptionsReport.toString.getBytes("UTF-8"))
                     }
-                case _ ⇒ // Nothing to do
+                case _ => // Nothing to do
             }
             if (parameters.contains("-debug")) {
                 org.opalj.io.writeAndOpen(getExceptionsReport, "Exceptions", ".html")
@@ -242,8 +245,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         //
         val groupedIssues =
             issues.groupBy(_.relevance).toList.
-                sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
-        val groupedAndCountedIssues = groupedIssues.map(e ⇒ e._1+": "+e._2.size)
+                sortWith((e1, e2) => e1._1.value < e2._1.value)
+        val groupedAndCountedIssues = groupedIssues.map(e => e._1+": "+e._2.size)
 
         BasicReport(
             groupedAndCountedIssues.mkString(
@@ -263,59 +266,59 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         import org.opalj.bugpicker.core.analyses.BugPickerAnalysis._
 
         val issues =
-            parameters.filterNot(parameter ⇒ parameter match {
-                case MaxEvalFactorPattern(d) ⇒
+            parameters.filterNot(parameter => parameter match {
+                case MaxEvalFactorPattern(d) =>
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
                         (factor >= 0.1d && factor < 100.0d) ||
                             factor == Double.PositiveInfinity
                     } catch {
-                        case _: NumberFormatException ⇒ false
+                        case _: NumberFormatException => false
                     }
-                case MaxEvalTimePattern(l) ⇒
+                case MaxEvalTimePattern(l) =>
                     try {
                         val maxTime = java.lang.Long.parseLong(l).toLong
                         maxTime >= 10L && maxTime <= 1000000L
                     } catch {
-                        case _: NumberFormatException ⇒ false
+                        case _: NumberFormatException => false
                     }
-                case MaxCardinalityOfIntegerRangesPattern(i) ⇒
+                case MaxCardinalityOfIntegerRangesPattern(i) =>
                     try {
                         val cardinality = java.lang.Long.parseLong(i).toLong
                         cardinality >= 1L && cardinality <= 4294967295L
                     } catch {
-                        case _: NumberFormatException ⇒ false
+                        case _: NumberFormatException => false
                     }
-                case MaxCardinalityOfLongSetsPattern(i) ⇒
+                case MaxCardinalityOfLongSetsPattern(i) =>
                     try {
                         val cardinality = java.lang.Integer.parseInt(i).toInt
                         cardinality >= 1 && cardinality <= 1024
                     } catch {
-                        case _: NumberFormatException ⇒ false
+                        case _: NumberFormatException => false
                     }
-                case MaxCallChainLengthPattern(_) ⇒
+                case MaxCallChainLengthPattern(_) =>
                     // the pattern ensures that the value is legal...
                     true
 
-                case IssueKindsPattern(ks) ⇒
+                case IssueKindsPattern(ks) =>
                     val kinds = ks.split(',').map(_.replace('_', ' '))
                     kinds.nonEmpty && kinds.forall { IssueKind.AllKinds.contains(_) }
 
-                case MinRelevancePattern(_) ⇒
+                case MinRelevancePattern(_) =>
                     // the pattern ensures that the value is legal...
                     true
 
-                case HTMLFileOutputNameMatcher(_) ⇒
+                case HTMLFileOutputNameMatcher(_) =>
                     outputFormatGiven = true; true
-                case "-html" ⇒
+                case "-html" =>
                     outputFormatGiven = true; true
-                case "-eclipse" ⇒
+                case "-eclipse" =>
                     outputFormatGiven = true; true
-                case "-idl" ⇒
+                case "-idl" =>
                     outputFormatGiven = true; true
-                case "-debug"                      ⇒ true
-                case DebugFileOutputNameMatcher(_) ⇒ true
-                case _                             ⇒ false
+                case "-debug"                      => true
+                case DebugFileOutputNameMatcher(_) => true
+                case _                             => false
             })
 
         if (!outputFormatGiven)

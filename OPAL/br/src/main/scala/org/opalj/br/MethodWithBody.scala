@@ -9,8 +9,8 @@ package br
  * Matching all methods that have a method body:
  * {{{
  * for {
- *      classFile ← project.classFiles
- *      method @ MethodWithBody(code) ← classFile.methods
+ *      classFile <- project.classFiles
+ *      method @ MethodWithBody(code) <- classFile.methods
  * } {
  *      // the type of method is "..resolved.Method"
  *      // the type of code is "..resolved.Code"

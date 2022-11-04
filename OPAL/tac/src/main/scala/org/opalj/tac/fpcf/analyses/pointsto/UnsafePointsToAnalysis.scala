@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -32,10 +31,12 @@ import org.opalj.br.IntegerType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Models effects of `sun.misc.Unsafe` to points-to sets.
@@ -44,7 +45,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  */
 abstract class UnsafePointsToAnalysis private[pointsto] (
         final val project: SomeProject
-) extends PointsToAnalysisBase { self ⇒
+) extends PointsToAnalysisBase { self =>
 
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -95,7 +96,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
@@ -103,7 +104,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, IntegerType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
@@ -111,7 +112,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getObjectVolatile",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -120,7 +121,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -129,7 +130,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -138,7 +139,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putObjectVolatile",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -147,7 +148,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "putOrderedObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), VoidType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -156,7 +157,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "compareAndSwapObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object, ObjectType.Object), BooleanType)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object, ObjectType.Object), BooleanType)
                 )
             ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
@@ -164,7 +165,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getAndSetObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
                 )
             ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
@@ -173,7 +174,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                 declaredMethods(
                     UnsafeT, "", UnsafeT,
                     "getAndSetObject",
-                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
                 )
             ) with PointsToBase
         )
@@ -248,12 +249,12 @@ abstract class UnsafePutPointsToAnalysis(
 trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
-    val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis
+    val createAnalysis: SomeProject => UnsafePointsToAnalysis
 
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
@@ -270,13 +271,13 @@ trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
 object TypeBasedUnsafePointsToAnalysisScheduler extends UnsafePointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
+    override val createAnalysis: SomeProject => UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedUnsafePointsToAnalysisScheduler
     extends UnsafePointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
+    override val createAnalysis: SomeProject => UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

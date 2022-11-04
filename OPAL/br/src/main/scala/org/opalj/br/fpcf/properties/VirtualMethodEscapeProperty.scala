@@ -33,31 +33,31 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     def apply(
         escapeProperty: EscapeProperty
     ): VirtualMethodEscapeProperty = escapeProperty match {
-        case GlobalEscape ⇒ VGlobalEscape
-        case EscapeViaStaticField ⇒ VEscapeViaStaticField
-        case EscapeViaHeapObject ⇒ VEscapeViaHeapObject
+        case GlobalEscape => VGlobalEscape
+        case EscapeViaStaticField => VEscapeViaStaticField
+        case EscapeViaHeapObject => VEscapeViaHeapObject
 
-        case NoEscape ⇒ VNoEscape
-        case EscapeInCallee ⇒ VEscapeInCallee
-        case EscapeViaParameter ⇒ VEscapeViaParameter
-        case EscapeViaReturn ⇒ VEscapeViaReturn
-        case EscapeViaAbnormalReturn ⇒ VEscapeViaAbnormalReturn
-        case EscapeViaParameterAndReturn ⇒ VEscapeViaParameterAndReturn
-        case EscapeViaParameterAndAbnormalReturn ⇒ VEscapeViaParameterAndAbnormalReturn
-        case EscapeViaNormalAndAbnormalReturn ⇒ VEscapeViaNormalAndAbnormalReturn
-        case EscapeViaParameterAndNormalAndAbnormalReturn ⇒ VEscapeViaParameterAndNormalAndAbnormalReturn
+        case NoEscape => VNoEscape
+        case EscapeInCallee => VEscapeInCallee
+        case EscapeViaParameter => VEscapeViaParameter
+        case EscapeViaReturn => VEscapeViaReturn
+        case EscapeViaAbnormalReturn => VEscapeViaAbnormalReturn
+        case EscapeViaParameterAndReturn => VEscapeViaParameterAndReturn
+        case EscapeViaParameterAndAbnormalReturn => VEscapeViaParameterAndAbnormalReturn
+        case EscapeViaNormalAndAbnormalReturn => VEscapeViaNormalAndAbnormalReturn
+        case EscapeViaParameterAndNormalAndAbnormalReturn => VEscapeViaParameterAndNormalAndAbnormalReturn
 
-        case AtMost(NoEscape) ⇒ VAtMostNoEscape
-        case AtMost(EscapeInCallee) ⇒ VAtMostEscapeInCallee
-        case AtMost(EscapeViaParameter) ⇒ VAtMostEscapeViaParameter
-        case AtMost(EscapeViaReturn) ⇒ VAtMostEscapeViaReturn
-        case AtMost(EscapeViaAbnormalReturn) ⇒ VAtMostEscapeViaAbnormalReturn
-        case AtMost(EscapeViaParameterAndReturn) ⇒ VAtMostEscapeViaParameterAndReturn
-        case AtMost(EscapeViaParameterAndAbnormalReturn) ⇒ VAtMostEscapeViaParameterAndAbnormalReturn
-        case AtMost(EscapeViaNormalAndAbnormalReturn) ⇒ VAtMostEscapeViaNormalAndAbnormalReturn
-        case AtMost(EscapeViaParameterAndNormalAndAbnormalReturn) ⇒ VAtMostEscapeViaParameterAndNormalAndAbnormalReturn
+        case AtMost(NoEscape) => VAtMostNoEscape
+        case AtMost(EscapeInCallee) => VAtMostEscapeInCallee
+        case AtMost(EscapeViaParameter) => VAtMostEscapeViaParameter
+        case AtMost(EscapeViaReturn) => VAtMostEscapeViaReturn
+        case AtMost(EscapeViaAbnormalReturn) => VAtMostEscapeViaAbnormalReturn
+        case AtMost(EscapeViaParameterAndReturn) => VAtMostEscapeViaParameterAndReturn
+        case AtMost(EscapeViaParameterAndAbnormalReturn) => VAtMostEscapeViaParameterAndAbnormalReturn
+        case AtMost(EscapeViaNormalAndAbnormalReturn) => VAtMostEscapeViaNormalAndAbnormalReturn
+        case AtMost(EscapeViaParameterAndNormalAndAbnormalReturn) => VAtMostEscapeViaParameterAndNormalAndAbnormalReturn
 
-        case _ ⇒ throw new RuntimeException(s"Unsupported property: $escapeProperty")
+        case _ => throw new RuntimeException(s"Unsupported property: $escapeProperty")
 
     }
 

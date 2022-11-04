@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.support.debug
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.Code
@@ -20,7 +19,7 @@ import org.opalj.ai.domain.TheCode
  *
  * @author Michael Eichberg
  */
-trait ConsoleTracer extends AITracer { tracer ⇒
+trait ConsoleTracer extends AITracer { tracer =>
 
     import Console._
 
@@ -34,9 +33,9 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         if (locals eq null)
             "\tlocals: not available (null);\n"
         else
-            locals.zipWithIndex.map { vi ⇒
+            locals.zipWithIndex.map { vi =>
                 val (v, i) = vi
-                i+":"+(
+                s"$i:"+(
                     if (v == null)
                         correctIndent("-", false)
                     else
@@ -64,18 +63,18 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
         if (printOIDs) {
             value match {
-                case rv: IsReferenceValue if rv.allValues.size > 1 ⇒
+                case rv: IsReferenceValue if rv.allValues.size > 1 =>
                     val values = rv.allValues
                     val t =
-                        if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])
-                            s";refId=${rv.asInstanceOf[org.opalj.ai.domain.l1.ReferenceValues#ReferenceValue].refId}"
+                        if (rv.isInstanceOf[domain.l1.ReferenceValues#TheReferenceValue])
+                            s";refId=${rv.asInstanceOf[org.opalj.ai.domain.l1.ReferenceValues#TheReferenceValue].refId}"
                         else
                             ""
                     values.map(toStringWithOID(_)).mkString("OneOf["+values.size+"](", ",", ")") +
                         rv.upperTypeBound.map(_.toJava).mkString(";lutb=", " with ", ";") +
                         s"isPrecise=${rv.isPrecise};isNull=${rv.isNull}$t "+
                         oidString(rv)
-                case _ ⇒
+                case _ =>
                     toStringWithOID(value)
             }
         } else {
@@ -85,8 +84,8 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
     private def line(domain: Domain, pc: Int): String = {
         domain match {
-            case d: TheCode ⇒ d.code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
-            case _          ⇒ ""
+            case d: TheCode => d.code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
+            case _          => ""
         }
     }
 
@@ -103,7 +102,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
             if (operands eq null)
                 "\toperands: not available (null);\n"
             else {
-                val os = operands.map { o ⇒
+                val os = operands.map { o =>
                     correctIndent(o, printOIDs)
                 }
                 if (os.isEmpty)
@@ -199,14 +198,14 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
         print(Console.BLUE + pc + line(domain, pc)+": JOIN: ")
         result match {
-            case NoUpdate ⇒ println("no changes")
-            case u @ SomeUpdate((updatedOperands, updatedLocals)) ⇒
+            case NoUpdate => println("no changes")
+            case u @ SomeUpdate((updatedOperands, updatedLocals)) =>
                 println(u.updateType)
                 println(
                     thisOperands.
                         zip(otherOperands).
                         zip(updatedOperands).
-                        map { v ⇒
+                        map { v =>
                             val ((thisOp, thatOp), updatedOp) = v
                             val s = if (thisOp eq updatedOp)
                                 "✓ "+Console.GREEN + updatedOp.toString
@@ -222,11 +221,11 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                 println(
                     thisLocals.
                         zip(otherLocals).
-                        zip(updatedLocals.iterator).map(v ⇒ (v._1._1, v._1._2, v._2)).
-                        zipWithIndex.map(v ⇒ (v._2, v._1._1, v._1._2, v._1._3)).
-                        filterNot(v ⇒ (v._2 eq null) && (v._3 eq null)).
-                        map(v ⇒
-                            v._1 + {
+                        zip(updatedLocals.iterator).map(v => (v._1._1, v._1._2, v._2)).
+                        zipWithIndex.map(v => (v._2, v._1._1, v._1._2, v._1._3)).
+                        filterNot(v => (v._2 eq null) && (v._3 eq null)).
+                        map(v =>
+                            s"${v._1}"+{
                                 if (v._2 == v._3)
                                     if (v._2 eq v._3)
                                         Console.GREEN+": ✓ "
@@ -260,22 +259,22 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         newLocals:   domain.Locals
     ): Unit = {
         println(
-            pc + line(domain, pc)+":"+
-                YELLOW_B + BLUE+"Establishing Constraint w.r.t. "+
+            s"$pc${line(domain, pc)}:$YELLOW_B$BLUE"+
+                "Establishing Constraint w.r.t. "+
                 effectivePC + line(domain, effectivePC)+":"
         )
-        val changedOperands = operands.zip(newOperands).filter(ops ⇒ ops._1 ne ops._2)
+        val changedOperands = operands.zip(newOperands).filter(ops => ops._1 ne ops._2)
         if (changedOperands.nonEmpty) {
             println(YELLOW_B + BLUE+"\tUpdated Operands:")
-            changedOperands.foreach(ops ⇒ print(YELLOW_B + BLUE+"\t\t"+ops._1+" => "+ops._2+"\n"))
+            changedOperands.foreach(ops => print(YELLOW_B + BLUE+"\t\t"+ops._1+" => "+ops._2+"\n"))
         }
         val changedLocals =
-            locals.zip(newLocals).zipWithIndex.map(localsWithIdx ⇒
+            locals.zip(newLocals).zipWithIndex.map(localsWithIdx =>
                 (localsWithIdx._1._1, localsWithIdx._1._2, localsWithIdx._2)).
-                filter(ops ⇒ ops._1 ne ops._2)
+                filter(ops => ops._1 ne ops._2)
         if (changedLocals.hasNext) {
             println(YELLOW_B + BLUE+"\tUpdated Locals:")
-            changedLocals.foreach(locals ⇒
+            changedLocals.foreach(locals =>
                 print(YELLOW_B + BLUE+"\t\t"+locals._3+":"+
                     toStringWithOID(locals._1)+" => "+
                     toStringWithOID(locals._2)+"\n"))
@@ -304,8 +303,8 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     ): Unit = {
         import Console._
         println(
-            pc + line(domain, pc)+":"+YELLOW_B + BOLD+
-                "JUMP TO SUBROUTINE(Nesting level: "+nestingLevel+"): "+target +
+            s"$pc${line(domain, pc)}:$YELLOW_B$BOLD"+
+                s"JUMP TO SUBROUTINE(Nesting level: $nestingLevel): $target"+
                 RESET
         )
     }
@@ -318,9 +317,9 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         subroutinePCs: List[Int /*PC*/ ]
     ): Unit = {
         println(
-            YELLOW_B + BOLD + pc + line(domain, pc)+
-                ":RETURN FROM SUBROUTINE: target="+returnAddress+
-                " : RESETTING : "+subroutinePCs.mkString(", ") +
+            s"$YELLOW_B$BOLD$pc${line(domain, pc)}"+
+                s":RETURN FROM SUBROUTINE: target=$returnAddress"+
+                s" : RESETTING : ${subroutinePCs.mkString(", ")}"+
                 RESET
         )
     }
@@ -373,9 +372,9 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[Int], message: ⇒ String
+        pc: Option[Int], message: => String
     ): Unit = {
-        val loc = pc.map(pc ⇒ s"$pc:").getOrElse("<NO PC>")
+        val loc = pc.map(pc => s"$pc:").getOrElse("<NO PC>")
         println(
             s"$loc[Domain:${source.getSimpleName().split('$')(0)} - $typeID] $message"
         )

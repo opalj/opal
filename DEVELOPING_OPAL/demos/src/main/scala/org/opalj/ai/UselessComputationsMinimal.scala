@@ -5,7 +5,7 @@ package ai
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
@@ -43,11 +43,11 @@ object UselessComputationsMinimal extends ProjectAnalysisApplication {
     def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val results = new ConcurrentLinkedQueue[String]()
-        theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
+        theProject.parForeachMethodWithBody(isInterrupted) { m =>
             val method = m.method
             val result = BaseAI(method, new AnalysisDomain(theProject, method))
             import result.domain.ConcreteIntegerValue
@@ -56,7 +56,7 @@ object UselessComputationsMinimal extends ProjectAnalysisApplication {
                     pc,
                     _: IFICMPInstruction[_],
                     Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
-                    ) ⇒
+                    ) =>
                     val context = method.toJava
                     val result = s"$context: /*pc=$pc:*/ comparison of constant values: $a and $b"
                     results.add(result)

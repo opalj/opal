@@ -53,9 +53,9 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
-import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -96,7 +96,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
-    protected[this] implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+    protected[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 
@@ -143,32 +143,32 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         def evaluationMayCauseVMLevelException(expr: Expr[V]): Boolean = {
             (expr.astID: @switch) match {
 
-                case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+                case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID =>
                     val rcvr = expr.asInstanceFunctionCall.receiver
                     !rcvr.isVar || rcvr.asVar.value.asReferenceValue.isNull.isYesOrUnknown
 
-                case StaticFunctionCall.ASTID ⇒ false
+                case StaticFunctionCall.ASTID => false
 
-                case _                        ⇒ true
+                case _                        => true
             }
         }
 
         val stmt = state.tac.stmts(origin)
         (stmt.astID: @switch) match {
-            case StaticMethodCall.ASTID ⇒ false // We are looking for implicit exceptions only
+            case StaticMethodCall.ASTID => false // We are looking for implicit exceptions only
 
-            case Throw.ASTID ⇒
+            case Throw.ASTID =>
                 stmt.asThrow.exception.asVar.value.asReferenceValue.isNull.isNotNo
 
-            case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+            case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID =>
                 val rcvr = stmt.asInstanceMethodCall.receiver
                 !rcvr.isVar || rcvr.asVar.value.asReferenceValue.isNull.isNotNo
 
-            case Assignment.ASTID ⇒ evaluationMayCauseVMLevelException(stmt.asAssignment.expr)
+            case Assignment.ASTID => evaluationMayCauseVMLevelException(stmt.asAssignment.expr)
 
-            case ExprStmt.ASTID   ⇒ evaluationMayCauseVMLevelException(stmt.asExprStmt.expr)
+            case ExprStmt.ASTID   => evaluationMayCauseVMLevelException(stmt.asExprStmt.expr)
 
-            case _                ⇒ true
+            case _                => true
         }
     }
 
@@ -196,28 +196,28 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         val isStmtNotImpure = (stmt.astID: @switch) match {
             // For method calls, purity will be checked later
             case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID |
-                InvokedynamicMethodCall.ASTID ⇒
+                InvokedynamicMethodCall.ASTID =>
                 true
 
             // Returning objects/arrays is pure, if the returned object/array is locally initialized
             // and non-escaping or the object is immutable
-            case ReturnValue.ASTID ⇒
+            case ReturnValue.ASTID =>
                 checkPurityOfReturn(stmt.asReturnValue.expr)
                 true
-            case Throw.ASTID ⇒
+            case Throw.ASTID =>
                 checkPurityOfReturn(stmt.asThrow.exception)
                 true
 
             // Synchronization on non-escaping locally initialized objects/arrays is pure (and
             // useless...)
-            case MonitorEnter.ASTID | MonitorExit.ASTID ⇒
+            case MonitorEnter.ASTID | MonitorExit.ASTID =>
                 isLocal(stmt.asSynchronizationStmt.objRef, ImpureByAnalysis)
 
             // Storing into non-escaping locally initialized objects/arrays is pure
-            case ArrayStore.ASTID ⇒ isLocal(stmt.asArrayStore.arrayRef, ImpureByAnalysis)
-            case PutField.ASTID   ⇒ isLocal(stmt.asPutField.objRef, ImpureByAnalysis)
+            case ArrayStore.ASTID => isLocal(stmt.asArrayStore.arrayRef, ImpureByAnalysis)
+            case PutField.ASTID   => isLocal(stmt.asPutField.objRef, ImpureByAnalysis)
 
-            case PutStatic.ASTID ⇒
+            case PutStatic.ASTID =>
                 // Note that a putstatic is not necessarily pure/sideeffect free, even if it
                 // is executed within a static initializer to initialize a field of
                 // `the` class; it is possible that the initialization triggers the
@@ -232,9 +232,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
             // but it may be ignored as domain-specific
-            case CaughtException.ASTID ⇒
+            case CaughtException.ASTID =>
                 for {
-                    origin ← stmt.asCaughtException.origins
+                    origin <- stmt.asCaughtException.origins
                     if isImmediateVMException(origin)
                 } {
                     val baseOrigin = state.tac.stmts(ai.underlyingPC(origin))
@@ -245,7 +245,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 true
 
             // Reference comparisons may have different results for structurally equal values
-            case If.ASTID ⇒
+            case If.ASTID =>
                 val If(_, left, _, right, _) = stmt
                 if (left.cTpe eq ComputationalTypeReference)
                     if (!(isLocal(left, CompileTimePure) || isLocal(right, CompileTimePure)))
@@ -254,7 +254,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // The following statements do not further influence purity
             case Goto.ASTID | JSR.ASTID | Ret.ASTID | Switch.ASTID | Assignment.ASTID |
-                Return.ASTID | Nop.ASTID | ExprStmt.ASTID | Checkcast.ASTID ⇒
+                Return.ASTID | Nop.ASTID | ExprStmt.ASTID | Checkcast.ASTID =>
                 true
         }
 
@@ -269,28 +269,28 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         val isExprNotImpure = (expr.astID: @switch) match {
             // For function calls, purity will be checked later
             case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID |
-                VirtualFunctionCall.ASTID ⇒
+                VirtualFunctionCall.ASTID =>
                 true
 
             // Field/array loads are pure if the field is (effectively) final or the object/array is
             // local and non-escaping
-            case GetStatic.ASTID ⇒
+            case GetStatic.ASTID =>
                 implicit val code: Array[Stmt[V]] = state.tac.stmts
                 val ratedResult = rater.handleGetStatic(expr.asGetStatic)
                 if (ratedResult.isDefined) atMost(ratedResult.get)
                 else checkPurityOfFieldRef(expr.asGetStatic)
                 true
-            case GetField.ASTID ⇒
+            case GetField.ASTID =>
                 checkPurityOfFieldRef(expr.asGetField)
                 true
-            case ArrayLoad.ASTID ⇒
+            case ArrayLoad.ASTID =>
                 if (state.ubPurity.isDeterministic)
                     isLocal(expr.asArrayLoad.arrayRef, SideEffectFree)
                 true
 
             // We don't handle unresolved Invokedynamic
             // - either OPAL removes it or we forget about it
-            case InvokedynamicFunctionCall.ASTID ⇒
+            case InvokedynamicFunctionCall.ASTID =>
                 atMost(ImpureByAnalysis)
                 false
 
@@ -300,7 +300,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 MethodTypeConst.ASTID | MethodHandleConst.ASTID | IntConst.ASTID | LongConst.ASTID |
                 FloatConst.ASTID | DoubleConst.ASTID | StringConst.ASTID | ClassConst.ASTID |
                 NullExpr.ASTID | BinaryExpr.ASTID | PrefixExpr.ASTID | PrimitiveTypecastExpr.ASTID |
-                ArrayLength.ASTID | Var.ASTID ⇒
+                ArrayLength.ASTID | Var.ASTID =>
                 true
 
         }
@@ -321,12 +321,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def getCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
-        case StaticMethodCall.ASTID     ⇒ stmt.asStaticMethodCall
-        case NonVirtualMethodCall.ASTID ⇒ stmt.asNonVirtualMethodCall
-        case VirtualMethodCall.ASTID    ⇒ stmt.asVirtualMethodCall
-        case Assignment.ASTID           ⇒ stmt.asAssignment.expr.asFunctionCall
-        case ExprStmt.ASTID             ⇒ stmt.asExprStmt.expr.asFunctionCall
-        case _ ⇒
+        case StaticMethodCall.ASTID     => stmt.asStaticMethodCall
+        case NonVirtualMethodCall.ASTID => stmt.asNonVirtualMethodCall
+        case VirtualMethodCall.ASTID    => stmt.asVirtualMethodCall
+        case Assignment.ASTID           => stmt.asAssignment.expr.asFunctionCall
+        case ExprStmt.ASTID             => stmt.asExprStmt.expr.asFunctionCall
+        case _ =>
             throw new IllegalStateException(s"unexpected stmt $stmt")
     }
 
@@ -351,13 +351,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         // Don't do dependee checks if already non-deterministic
         if (state.ubPurity.isDeterministic) {
             fieldRef.asFieldRead.resolveField match {
-                case Some(field) if field.isStatic ⇒
+                case Some(field) if field.isStatic =>
                     checkFieldMutability(propertyStore(field, FieldMutability.key), None)
-                case Some(field) ⇒
+                case Some(field) =>
                     checkFieldMutability(
                         propertyStore(field, FieldMutability.key), Some(fieldRef.asGetField.objRef)
                     )
-                case _ ⇒ // Unknown field
+                case _ => // Unknown field
                     if (fieldRef.isGetField) isLocal(fieldRef.asGetField.objRef, SideEffectFree)
                     else atMost(SideEffectFree)
             }
@@ -371,13 +371,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case LBP(_: FinalField) ⇒ // Final fields don't impede purity
-        case _: FinalEP[Field, FieldMutability] ⇒ // Mutable field
+        case LBP(_: FinalField) => // Final fields don't impede purity
+        case _: FinalEP[Field, FieldMutability] => // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
                     isLocal(objRef.get, SideEffectFree)
             } else atMost(SideEffectFree)
-        case _ ⇒
+        case _ =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
                 handleUnknownFieldMutability(ep, objRef)
@@ -439,7 +439,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // IMPROVE Use ObjectType once we attach the respective information to ObjectTypes
             val returnTypes = value.upperTypeBound
 
-            returnTypes.forall { returnType ⇒
+            returnTypes.forall { returnType =>
                 val typeImmutability =
                     propertyStore(
                         returnType,
@@ -459,13 +459,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case LBP(ImmutableType | ImmutableObject) ⇒ true
-        case _: FinalEP[ObjectType, Property] ⇒
+        case LBP(ImmutableType | ImmutableObject) => true
+        case _: FinalEP[ObjectType, Property] =>
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
                 isLocal(returnValue, SideEffectFree)
             false // Return early if we are already side-effect free
-        case _ ⇒
+        case _ =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
                 handleUnknownTypeMutability(ep, returnValue)
@@ -492,11 +492,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     ): Boolean = {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
-            case UBPS(p: Callees, isFinal) ⇒
+            case UBPS(p: Callees, isFinal) =>
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
 
                 val hasIncompleteCallSites =
-                    p.incompleteCallSites(state.context).exists { pc ⇒
+                    p.incompleteCallSites(state.context).exists { pc =>
                         val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
                             false // call will not be executed
@@ -512,14 +512,14 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 }
 
                 val noDirectCalleeIsImpure = p.directCallSites(state.context).forall {
-                    case (pc, callees) ⇒
+                    case (pc, callees) =>
                         val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
                             true // call will not be executed
                         else {
                             val call = getCall(state.tac.stmts(index))
                             isDomainSpecificCall(call, call.receiverOption) ||
-                                callees.forall { callee ⇒
+                                callees.forall { callee =>
                                     checkPurityOfMethod(
                                         callee,
                                         call.receiverOption.orNull +: call.params
@@ -532,22 +532,22 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     return false;
 
                 val noIndirectCalleeIsImpure = p.indirectCallSites(state.context).forall {
-                    case (pc, callees) ⇒
+                    case (pc, callees) =>
                         val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
                             true // call will not be executed
                         else {
                             val call = getCall(state.tac.stmts(index))
                             isDomainSpecificCall(call, call.receiverOption) ||
-                                callees.forall { callee ⇒
+                                callees.forall { callee =>
                                     checkPurityOfMethod(
                                         callee,
                                         p.indirectCallReceiver(state.context, pc, callee).map(
-                                            receiver ⇒
+                                            receiver =>
                                                 uVarForDefSites(receiver, state.tac.pcToIndex)
                                         ).orNull +:
                                             p.indirectCallParameters(state.context, pc, callee).map {
-                                                paramO ⇒
+                                                paramO =>
                                                     paramO.map(
                                                         uVarForDefSites(_, state.tac.pcToIndex)
                                                     ).orNull
@@ -559,7 +559,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 noIndirectCalleeIsImpure
 
-            case _ ⇒
+            case _ =>
                 reducePurityLB(ImpureByAnalysis)
                 true
         }
@@ -585,10 +585,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def baseMethodPurity(context: Context): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) ⇒ Result(context, p)
-            case ep @ InterimLUBP(lb, ub) ⇒
+            case FinalP(p) => Result(context, p)
+            case ep @ InterimLUBP(lb, ub) =>
                 InterimResult.create(context, lb, ub, Set(ep), c)
-            case epk ⇒
+            case epk =>
                 InterimResult(context, ImpureByAnalysis, CompileTimePure, Set(epk), c)
         }
 
@@ -608,10 +608,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case context: Context if context.method.definedMethod.body.isDefined ⇒
+            case context: Context if context.method.definedMethod.body.isDefined =>
                 determinePurity(context)
-            case context: Context ⇒ Result(context, ImpureByLackOfInformation)
-            case _ ⇒
+            case context: Context => Result(context, ImpureByLackOfInformation)
+            case _ =>
                 throw new IllegalArgumentException(s"$e is not a declared method")
         }
     }
@@ -623,14 +623,14 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         method: Method
     )(implicit state: StateType): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalEP[Method, TACAI] ⇒
+            case finalEP: FinalEP[Method, TACAI] =>
                 handleTACAI(finalEP)
                 finalEP.ub.tac
-            case eps @ InterimUBP(ub: TACAI) ⇒
+            case eps @ InterimUBP(ub: TACAI) =>
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(eps)
                 ub.tac
-            case epk ⇒
+            case epk =>
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(epk)
                 None
@@ -644,7 +644,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             val module = mirror.staticModule(fqn)
             mirror.reflectModule(module).instance.asInstanceOf[DomainSpecificRater]
         } catch {
-            case ex @ (_: ScalaReflectionException | _: ClassCastException) ⇒
+            case ex @ (_: ScalaReflectionException | _: ClassCastException) =>
                 OPALLogger.error(
                     "analysis configuration",
                     "resolve of domain specific rater failed, change "+

@@ -28,7 +28,7 @@ class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
     }
 
     //    import domain.l0.BaseDomain
-    //    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
+    //    private def evaluateMethod(name: String, f: BaseDomain => Unit) {
     //        val domain = new BaseDomain()
     //        val method = classFile.methods.find(_.name == name).get
     //        val result = BaseAI(method, domain)

@@ -27,7 +27,5 @@ case class IncompatibleNumericConstraints(
     def this(
         constraint1: NumericConstraint,
         constraint2: NumericConstraint
-    ) {
-        this(null, constraint1, constraint2)
-    }
+    ) = this(null, constraint1, constraint2)
 }

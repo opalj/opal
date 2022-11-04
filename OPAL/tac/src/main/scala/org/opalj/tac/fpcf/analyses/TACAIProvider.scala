@@ -16,9 +16,6 @@ import org.opalj.fpcf.Result
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.DomainBasedFPCFAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -38,7 +35,7 @@ class TACAIProvider private[analyses] (val project: SomeProject) extends FPCFAna
     final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
     def computeTAC(e: Entity): ProperPropertyComputationResult = e match {
-        case m: Method ⇒
+        case m: Method =>
             val aiResult = L0BaseAIResultAnalysis.performAI(m)
             Result(FinalEP(m, computeTheTACAI(m, aiResult, detachFromAIResult = true)))
     }

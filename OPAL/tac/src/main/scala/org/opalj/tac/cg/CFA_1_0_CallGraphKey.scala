@@ -7,8 +7,8 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.CallStringContextProvider
-import org.opalj.tac.fpcf.analyses.cg.TypeProvider
-import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
@@ -26,10 +26,10 @@ object CFA_1_0_CallGraphKey extends CallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         TypeBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
 
-    override def getTypeProvider(project: SomeProject): TypeProvider =
-        new TypeProvider(project) with TypesBasedPointsToTypeProvider with CallStringContextProvider { val k = 1 }
+    override def getTypeIterator(project: SomeProject): TypeIterator =
+        new TypeIterator(project) with TypesBasedPointsToTypeIterator with CallStringContextProvider { val k = 1 }
 }

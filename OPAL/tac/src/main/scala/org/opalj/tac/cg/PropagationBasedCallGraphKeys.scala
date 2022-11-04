@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeProvider
+import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
@@ -48,7 +48,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         val theTypeSetEntitySelector = typeSetEntitySelector()
 
         val isLibrary =
@@ -63,8 +63,8 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
 
-    override def getTypeProvider(project: SomeProject) =
-        new PropagationBasedTypeProvider(project, typeSetEntitySelector())
+    override def getTypeIterator(project: SomeProject) =
+        new PropagationBasedTypeIterator(project, typeSetEntitySelector())
 }
 
 object XTACallGraphKey extends PropagationBasedCallGraphKey {

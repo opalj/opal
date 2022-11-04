@@ -24,7 +24,7 @@ class ExpectedExceptionsByOverridingMethodsMatcher
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)
@@ -32,15 +32,15 @@ class ExpectedExceptionsByOverridingMethodsMatcher
         val annotationType = a.annotationType.asObjectType
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val requiredAnalysis = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
             properties.forall {
-                case ate: ThrownExceptionsByOverridingMethods ⇒
+                case ate: ThrownExceptionsByOverridingMethods =>
                     ate.exceptions.nonEmpty &&
                         concreteTypeExceptions.forall(ate.exceptions.concreteTypes.contains(_)) &&
                         upperBoundTypeExceptions.forall(ate.exceptions.upperTypeBounds.contains(_))
-                case _ ⇒ true
+                case _ => true
             }
 
         if (isPropertyValid) {

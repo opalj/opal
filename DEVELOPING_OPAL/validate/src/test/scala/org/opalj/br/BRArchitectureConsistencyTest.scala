@@ -3,13 +3,12 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-
 import org.opalj.av.checking.Specification
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Tests that the implemented architecture of the bytecode representation project
@@ -25,42 +24,42 @@ class BRArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
     it should "be consistent with the specified architecture" in {
         val expected =
             new Specification(
-                Specification.ProjectDirectory("OPAL/br/target/scala-2.12/classes"),
+                Specification.ProjectDirectory(s"OPAL/br/target/scala-$ScalaMajorVersion/classes"),
                 useAnsiColors = true
             ) {
 
-                ensemble('Br) {
+                ensemble(Symbol("Br")) {
                     "org.opalj.br.*" except
                         classes("""org\.opalj\.br\..+Test.*""".r)
                 }
 
-                ensemble('Reader) {
+                ensemble(Symbol("Reader")) {
                     "org.opalj.br.reader.*" except
                         classes("""org\.opalj\.br\.reader\..+Test.*""".r)
                 }
 
-                ensemble('Instructions) {
+                ensemble(Symbol("Instructions")) {
                     "org.opalj.br.instructions.*" except
                         classes("""org\.opalj\.br\.instructions\..+Test.*""".r)
                 }
 
-                ensemble('CFG) {
+                ensemble(Symbol("CFG")) {
                     "org.opalj.br.cfg.*" except
                         classes("""org\.opalj\.br\.cfg\..+Test.*""".r)
                 }
 
-                ensemble('Analyses) {
+                ensemble(Symbol("Analyses")) {
                     "org.opalj.br.analyses.*" except
                         classes("""org\.opalj\.br\.analyses\..+Test.*""".r)
                 }
 
                 // BR and Instructions are considered as one...
-                'Br is_only_allowed_to (USE, 'Instructions, 'CFG)
-                'Instructions is_only_allowed_to (USE, 'Br, 'CFG)
-                'CFG is_only_allowed_to (USE, 'Br, 'Instructions)
+                Symbol("Br") is_only_allowed_to (USE, Symbol("Instructions"), Symbol("CFG"))
+                Symbol("Instructions") is_only_allowed_to (USE, Symbol("Br"), Symbol("CFG"))
+                Symbol("CFG") is_only_allowed_to (USE, Symbol("Br"), Symbol("Instructions"))
 
-                'Reader is_only_allowed_to (USE, 'Br, 'Instructions)
-                'Analyses is_only_allowed_to (USE, 'Br, 'CFG, 'Instructions, 'Reader)
+                Symbol("Reader") is_only_allowed_to (USE, Symbol("Br"), Symbol("Instructions"))
+                Symbol("Analyses") is_only_allowed_to (USE, Symbol("Br"), Symbol("CFG"), Symbol("Instructions"), Symbol("Reader"))
 
                 // 'Reader is allowed to use everything
 

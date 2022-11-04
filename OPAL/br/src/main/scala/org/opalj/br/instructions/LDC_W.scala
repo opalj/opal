@@ -57,9 +57,9 @@ final case class LoadFloat_W(value: Float) extends PrimitiveLDC_W[Float] {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case LoadFloat_W(thatValue) ⇒
+            case LoadFloat_W(thatValue) =>
                 thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
-            case _ ⇒ false
+            case _ => false
         }
     }
 }
@@ -127,13 +127,13 @@ object LDC_W {
 
     def apply(constantValue: ConstantValue[_]): LDC_W[_] = {
         constantValue.value match {
-            case i: Int               ⇒ LoadInt_W(i)
-            case f: Float             ⇒ LoadFloat_W(f)
-            case r: ReferenceType     ⇒ LoadClass_W(r)
-            case s: String            ⇒ LoadString_W(s)
-            case mh: MethodHandle     ⇒ LoadMethodHandle_W(mh)
-            case md: MethodDescriptor ⇒ LoadMethodType_W(md)
-            case _                    ⇒ throw BytecodeProcessingFailedException("unsupported value: "+constantValue)
+            case i: Int               => LoadInt_W(i)
+            case f: Float             => LoadFloat_W(f)
+            case r: ReferenceType     => LoadClass_W(r)
+            case s: String            => LoadString_W(s)
+            case mh: MethodHandle     => LoadMethodHandle_W(mh)
+            case md: MethodDescriptor => LoadMethodType_W(md)
+            case _                    => throw BytecodeProcessingFailedException("unsupported value: "+constantValue)
         }
     }
 

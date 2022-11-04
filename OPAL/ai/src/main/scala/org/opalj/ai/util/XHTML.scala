@@ -28,12 +28,12 @@ object XHTML {
         )
 
     def jquery: String =
-        process(this.getClass.getResourceAsStream("jquery-1.6.2.min.js"))(
+        process(this.getClass.getResourceAsStream("jquery-3.6.1.min.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
     def colResizable: String =
-        process(this.getClass.getResourceAsStream("colResizable-1.3.min.js"))(
+        process(this.getClass.getResourceAsStream("colResizable-1.6.min.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
@@ -41,7 +41,7 @@ object XHTML {
         htmlTitle: Option[String] = None,
         body:      NodeSeq
     ): Node = {
-        val theTitle = htmlTitle.map(t ⇒ Seq(<title>{ t }</title>)).getOrElse(Seq.empty[Node])
+        val theTitle = htmlTitle.map(t => Seq(<title>{ t }</title>)).getOrElse(Seq.empty[Node])
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
@@ -61,7 +61,7 @@ object XHTML {
 
     def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
         val typeName = classFile.map(_.thisType.toJava).getOrElse("")
-        val methodName = method.map(m ⇒ m.signatureToJava(false)).getOrElse("&lt; method &gt;")
+        val methodName = method.map(m => m.signatureToJava(false)).getOrElse("&lt; method &gt;")
         s"$typeName{ $methodName }"
     }
 
@@ -72,7 +72,7 @@ object XHTML {
         )
     }
 
-    def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String = {
+    def valueToString(value: AnyRef)(implicit ids: Option[AnyRef => Int]): String = {
         if (value != null)
             value.toString + ids.map("@"+_.apply(value)).getOrElse("")
         else
@@ -86,7 +86,7 @@ object XHTML {
                 <div>{ throwable.getClass.getSimpleName+" "+throwable.getMessage }</div>
             } else {
                 val stackElements =
-                    for { stackElement ← throwable.getStackTrace } yield {
+                    for { stackElement <- throwable.getStackTrace } yield {
                         <tr>
                             <td>{ stackElement.getClassName }</td>
                             <td>{ stackElement.getMethodName }</td>
@@ -126,13 +126,13 @@ object XHTML {
 
         var openSubroutines = 0
         val asStrings = evaluatedPCs.reverse.map {
-            case SUBROUTINE_START ⇒
+            case SUBROUTINE_START =>
                 openSubroutines += 1
                 subroutineStart
-            case SUBROUTINE_END ⇒
+            case SUBROUTINE_END =>
                 openSubroutines -= 1
                 subroutineEnd
-            case instruction ⇒ instruction.toString+" "
+            case instruction => instruction.toString+" "
         }
 
         header+"Evaluation Order:<br><div style=\"margin-left:2em;\">"+

@@ -4,11 +4,15 @@ package hermes
 package queries
 package jcg
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.da.ClassFile
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.da.ClassFile
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 
 /**
  * Groups test case features that perform a pre Java 8 polymorhpic method call.
@@ -31,21 +35,21 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation ← body collect {
-                case iv: INVOKEVIRTUAL   ⇒ iv
-                case ii: INVOKEINTERFACE ⇒ ii
-            }
+            pcAndInvocation <- body collect ({
+                case iv: INVOKEVIRTUAL   => iv
+                case ii: INVOKEINTERFACE => ii
+            }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
         } {
             val pc = pcAndInvocation.pc
             val invokeKind = pcAndInvocation.value
@@ -53,22 +57,22 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind.opcode match {
-                case INVOKEVIRTUAL.opcode ⇒ {
+                case INVOKEVIRTUAL.opcode => {
                     val targets =
                         project.virtualCall(callerType, invokeKind.asInstanceOf[INVOKEVIRTUAL])
                     targets.size match {
-                        case 0 ⇒ -1 /* boring call site */
-                        case 1 ⇒ 0 /* single target cs */
-                        case _ ⇒ 1 /* multiple target cs*/
+                        case 0 => -1 /* boring call site */
+                        case 1 => 0 /* single target cs */
+                        case _ => 1 /* multiple target cs*/
                     }
                 }
-                case INVOKEINTERFACE.opcode ⇒ {
+                case INVOKEINTERFACE.opcode => {
                     val targets =
                         project.interfaceCall(callerType, invokeKind.asInstanceOf[INVOKEINTERFACE])
                     targets.size match {
-                        case 0 ⇒ -1 /* boring call site */
-                        case 1 ⇒ 2 /* single target cs */
-                        case _ ⇒ 3 /* multiple target cs*/
+                        case 0 => -1 /* boring call site */
+                        case 1 => 2 /* single target cs */
+                        case _ => 3 /* multiple target cs*/
                     }
                 }
             }
@@ -78,6 +82,6 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
         }
 
-        instructionsLocations;
+        ArraySeq.unsafeWrapArray(instructionsLocations)
     }
 }
