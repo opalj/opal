@@ -3,8 +3,7 @@ package org.opalj.tac.fpcf.analyses.ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
-import org.opalj.value.ValueInformation
+import org.opalj.tac.TACode
 
 /**
  * An ICFG for a Java IFDS backwards analysis.
@@ -13,10 +12,8 @@ import org.opalj.value.ValueInformation
  *
  * @author Nicolas Gross
  */
-class JavaBackwardICFG(implicit project: SomeProject)
+class JavaBackwardICFG(project: SomeProject)
     extends JavaICFG(project) {
-
-    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
 
     /**
      * Determines the statements at which the analysis starts.
@@ -36,11 +33,10 @@ class JavaBackwardICFG(implicit project: SomeProject)
      * @param statement The source statement.
      * @return The successor statements
      */
-    override def nextStatements(statement: JavaStatement): Set[JavaStatement] = {
+    override def nextStatements(statement: JavaStatement): Set[JavaStatement] =
         statement.cfg
             .predecessors(statement.index)
             .map(index => JavaStatement(statement, index))
-    }
 
     /**
      * Determines whether the statement is an exit statement.
@@ -49,4 +45,5 @@ class JavaBackwardICFG(implicit project: SomeProject)
      * @return Whether the statement flow may exit its callable (function/method)
      */
     override def isExitStatement(statement: JavaStatement): Boolean = statement.index == 0
+
 }

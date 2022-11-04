@@ -6,18 +6,18 @@ import org.opalj.ifds.Dependees.Getter
 /**
  * A framework for IFDS analyses.
  *
- * @tparam IFDSFact The type of flow facts, which are tracked by the concrete analysis.
+ * @tparam Fact The type of flow facts, which are tracked by the concrete analysis.
  * @author Dominik Helm
  * @author Mario Trageser
  * @author Marc Clement
  */
-abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](val icfg: ICFG[C, S]) {
-    type Work = (S, IFDSFact, Option[S])
+abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](val icfg: ICFG[C, S]) {
+    type Work = (S, Fact, Option[S])
 
     /**
      * The null fact of this analysis.
      */
-    def nullFact: IFDSFact
+    def nullFact: Fact
 
     /**
      * @return Whether the null Fact is automatically added to the result of every flow function where it is passed into
@@ -32,77 +32,77 @@ abstract class IFDSProblem[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: State
     /**
      * The entry points of this analysis.
      */
-    def entryPoints: Seq[(C, IFDSFact)]
+    def entryPoints: Seq[(C, IFDSFact[Fact, C])]
+
+    /**
+     * @return Whether the analysis should follow unbalanced return flows
+     *         (return of a method for which no matching previous call was processed).
+     */
+    def followUnbalancedReturns: Boolean = false
 
     /**
      * Computes the data flow for a normal statement.
      *
-     * @param statement The analyzed statement.
-     * @param in The fact which holds before the execution of the `statement`.
+     * @param statement   The analyzed statement.
+     * @param in          The fact which holds before the execution of the `statement`.
      * @param predecessor The predecessor of the analyzed `statement`, for which the data flow shall be
-     *                  computed. Used for phi statements to distinguish the flow.
+     *                    computed. Used for phi statements to distinguish the flow.
      * @return The facts, which hold after the execution of `statement` under the assumption
      *         that the facts in `in` held before `statement` and `successor` will be
      *         executed next.
      */
     def normalFlow(
         statement:   S,
-        in:          IFDSFact,
+        in:          Fact,
         predecessor: Option[S]
-    ): Set[IFDSFact]
+    ): Set[Fact]
 
     /**
      * Computes the data flow for a call to start edge.
      *
-     * @param call The analyzed call statement.
+     * @param call   The statement, which called the `callee`.
+     * @param in     The fact which holds before the execution of the `call`.
      * @param callee The called method, for which the data flow shall be computed.
-     * @param in The fact which holds before the execution of the `call`.
-     * @param source The entity, which is analyzed.
-     * @return The facts, which hold after the execution of `statement` under the assumption that
-     *         the facts in `in` held before `statement` and `statement` calls `callee`.
+     * @param entry  The entry statement of the 'callee'.
+     * @return The facts, which hold after the execution of `call` under the assumption that
+     *         the fact `in` held before `call` and `call` calls `callee`.
      */
-    def callFlow(
-        call:   S,
-        callee: C,
-        in:     IFDSFact
-    ): Set[IFDSFact]
+    def callFlow(entry: S, in: Fact, call: S, callee: C): Set[Fact]
 
     /**
      * Computes the data flow for an exit to return edge.
      *
-     * @param call The statement, which called the `callee`.
-     * @param exit The statement, which terminated the `callee`.
-     * @param in The fact which holds before the execution of the `exit`.
+     * @param exit     The statement, which terminated the `callee`.
+     * @param in       The fact which holds before the execution of the `exit`.
+     * @param call     The statement, which called the `callee`.
+     * @param successor The successor statement of the call, might be None if unbalanced return.
+     * @param unbCallChain The current call chain of unbalanced returns.
      * @return The facts, which hold after the execution of `exit` in the caller's context
      *         under the assumption that `in` held before the execution of `exit` and that
      *         `successor` will be executed next.
      */
-    def returnFlow(
-        exit:      S,
-        in:        IFDSFact,
-        call:      S,
-        callFact:  IFDSFact,
-        successor: S
-    ): Set[IFDSFact]
+    def returnFlow(exit: S, in: Fact, call: S, successor: Option[S], unbCallChain: Seq[C]): Set[Fact]
 
     /**
      * Computes the data flow for a call to return edge.
      *
      * @param call The statement, which invoked the call.
-     * @param in The facts, which hold before the `call`.
+     * @param in   The facts, which hold before the `call`.
+     * @param unbCallChain The current call chain of unbalanced returns.
      * @return The facts, which hold after the call independently of what happens in the callee
      *         under the assumption that `in` held before `call`.
      */
     def callToReturnFlow(
-        call:      S,
-        in:        IFDSFact,
-        successor: S
-    ): Set[IFDSFact]
+        call:         S,
+        in:           Fact,
+        successor:    Option[S],
+        unbCallChain: Seq[C]
+    ): Set[Fact]
 
     def needsPredecessor(statement: S): Boolean
 
-    type OutsideAnalysisContextHandler = ((S, S, IFDSFact, Getter) => Set[IFDSFact]) {
-        def apply(call: S, successor: S, in: IFDSFact, dependeesGetter: Getter): Set[IFDSFact]
+    type OutsideAnalysisContextHandler = ((S, Option[S], Fact, Getter) => Set[Fact]) {
+        def apply(call: S, successor: Option[S], in: Fact, dependeesGetter: Getter): Set[Fact]
     }
 
     /**

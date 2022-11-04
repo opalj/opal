@@ -3,13 +3,10 @@ package org.opalj.tac.fpcf.analyses.ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
-import org.opalj.value.ValueInformation
+import org.opalj.tac.TACode
 
-class JavaForwardICFG(implicit project: SomeProject)
+class JavaForwardICFG(project: SomeProject)
     extends JavaICFG(project) {
-
-    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
 
     /**
      * Determines the statements at which the analysis starts.

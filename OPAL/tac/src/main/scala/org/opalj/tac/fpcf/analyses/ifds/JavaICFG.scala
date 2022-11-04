@@ -7,13 +7,15 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{FinalEP, PropertyStore}
 import org.opalj.ifds.ICFG
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.{Assignment, Expr, ExprStmt, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, VirtualFunctionCall, VirtualMethodCall}
+import org.opalj.tac.{Assignment, DUVar, Expr, ExprStmt, LazyDetachedTACAIKey, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, TACMethodParameter, TACode, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.{Callees, Callers}
+import org.opalj.value.ValueInformation
 
 abstract class JavaICFG(project: SomeProject)
     extends ICFG[Method, JavaStatement] {
 
+    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
@@ -46,8 +48,8 @@ abstract class JavaICFG(project: SomeProject)
      */
     private def getExpression(statement: Stmt[_]): Expr[_] = statement.astID match {
         case Assignment.ASTID => statement.asAssignment.expr
-        case ExprStmt.ASTID => statement.asExprStmt.expr
-        case _ => throw new UnknownError("Unexpected statement")
+        case ExprStmt.ASTID   => statement.asExprStmt.expr
+        case _                => throw new UnknownError("Unexpected statement")
     }
 
     private def getCallees(statement: JavaStatement): collection.Set[Method] = {
@@ -83,5 +85,36 @@ abstract class JavaICFG(project: SomeProject)
                         .foreachDefinedMethod(defineMethod => result.add(defineMethod))
             )
         result
+    }
+
+    /**
+     * Get the method's statement with the given index.
+     *
+     * @param callable the method containing the statement.
+     * @param index    the index of the statement.
+     * @return the corresponding statement.
+     */
+    override def getStatement(callable: Method, index: Int): JavaStatement = {
+        val TACode(_, code, _, cfg, _) = tacai(callable)
+        JavaStatement(callable, index, code, cfg)
+    }
+
+    override def getCallers(callee: Method): Seq[(Method, Int)] = {
+        val declaredCallee = declaredMethods(callee)
+        propertyStore(declaredCallee, Callers.key) match {
+            case FinalEP(_, p: Callers) =>
+                p.callers(declaredCallee).iterator
+                    // We do not handle indirect calls.
+                    .filter(callersProperty => callersProperty._3)
+                    .map {
+                        case (caller, callPc, _) =>
+                            (caller.definedMethod, tacai(caller.definedMethod).pcToIndex(callPc))
+                    }
+                    .toSeq
+            case _ =>
+                throw new IllegalStateException(
+                    "call graph must be computed before the analysis starts"
+                )
+        }
     }
 }

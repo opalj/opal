@@ -95,7 +95,7 @@ class ApkParser(val apkPath: String) {
                 .filter(_.isFile)
                 .filter(_.getName.endsWith(".dex"))
 
-            jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/jars"))
+            jarsDir = Files.createDirectory(Paths.get(tmpDir.get.toString+"/jars"))
             val getCmd = (dex: File) => {
                 val dexBaseName = ApkParser.getFileBaseName(dex.toString)
                 val cmd = if (dexParser == DexParser.Enjarify) {
@@ -103,9 +103,9 @@ class ApkParser(val apkPath: String) {
                 } else {
                     s"d2j-dex2jar.sh -o /jar/$dexBaseName.jar /dex/$dexBaseName.dex"
                 }
-                s"docker run --rm " +
-                    s"-v ${dex.getParent}:/dex " +
-                    s"-v $jarsDir:/jar " +
+                s"docker run --rm "+
+                    s"-v ${dex.getParent}:/dex "+
+                    s"-v $jarsDir:/jar "+
                     s"opal-apk-parser $cmd"
             }
 
@@ -117,7 +117,7 @@ class ApkParser(val apkPath: String) {
                     if (retval != 0) {
                         throw ApkParserException("could not convert .dex files to .jar files, check if docker container was built")
                     }
-                    OPALLogger.info(LogCategory, s"${i+1} of ${dexFiles.length} dex code files parsed")
+                    OPALLogger.info(LogCategory, s"${i + 1} of ${dexFiles.length} dex code files parsed")
             }
         } {
             t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
@@ -141,7 +141,7 @@ class ApkParser(val apkPath: String) {
         val llvmFiles: ListBuffer[Path] = ListBuffer.empty
         time {
             unzipApk()
-            val apkLibPath = tmpDir.get.toString + ApkUnzippedDir + "/lib"
+            val apkLibPath = tmpDir.get.toString + ApkUnzippedDir+"/lib"
             val archs = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
             if (!Files.isDirectory(Paths.get(apkLibPath)) || archs.isEmpty) {
                 // APK does not contain native code
@@ -149,7 +149,7 @@ class ApkParser(val apkPath: String) {
             }
 
             val soFilesPerArch = archs.map(arch => {
-                val archDir = new File(apkLibPath + "/" + arch)
+                val archDir = new File(apkLibPath+"/"+arch)
                 val soFiles = archDir.listFiles.filter(_.isFile).filter(_.getName.endsWith(".so"))
                 (archDir, soFiles)
             })
@@ -157,18 +157,18 @@ class ApkParser(val apkPath: String) {
             // prefer arm64, then arm, then anything else that comes first
             val selectedArchSoFiles = soFilesPerArch.find(t => t._1.getName.startsWith("arm64")) match {
                 case None => soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
-                    case None => soFilesPerArch.head
+                    case None    => soFilesPerArch.head
                     case Some(t) => t
                 }
                 case Some(t) => t
             }
 
             // generate .bc files from .so files, this can take some time ...
-            llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString + "/llvm"))
-            val getCmd = (soBaseName: String) => s"docker run --rm " +
-                s"-v ${selectedArchSoFiles._1}:/so " +
-                s"-v $llvmDir:/llvm " +
-                s"opal-apk-parser " +
+            llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString+"/llvm"))
+            val getCmd = (soBaseName: String) => s"docker run --rm "+
+                s"-v ${selectedArchSoFiles._1}:/so "+
+                s"-v $llvmDir:/llvm "+
+                s"opal-apk-parser "+
                 s"retdec-decompiler -o /llvm/$soBaseName.c /so/$soBaseName.so"
             selectedArchSoFiles._2.map(so => ApkParser.getFileBaseName(so.toString)).zipWithIndex.foreach {
                 case (soBaseName, i) =>
@@ -177,7 +177,7 @@ class ApkParser(val apkPath: String) {
                     if (retval != 0) {
                         throw ApkParserException("could not convert .so files to .bc files, check if docker container was built")
                     }
-                    OPALLogger.info(LogCategory, s"${i+1} of ${selectedArchSoFiles._2.length} native code files parsed")
+                    OPALLogger.info(LogCategory, s"${i + 1} of ${selectedArchSoFiles._2.length} native code files parsed")
             }
 
         } {
@@ -194,7 +194,7 @@ class ApkParser(val apkPath: String) {
      */
     def cleanUp(): Unit = tmpDir match {
         case Some(tmpDirPath) => {
-            ApkParser.runCmd("rm -r " + tmpDirPath)
+            ApkParser.runCmd("rm -r "+tmpDirPath)
             tmpDir = None
             OPALLogger.info(LogCategory, s"temporary unzip directory cleaned")
 
@@ -206,7 +206,7 @@ class ApkParser(val apkPath: String) {
         case Some(_) =>
         case None => {
             val fileName = Paths.get(apkPath).getFileName
-            tmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
+            tmpDir = Some(Files.createTempDirectory("opal_apk_"+fileName).toFile)
             val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkUnzippedDir))
             ApkParser.unzip(Paths.get(apkPath), unzipDir)
             OPALLogger.info(LogCategory, s"APK successfully unzipped")

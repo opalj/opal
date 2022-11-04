@@ -6,6 +6,7 @@ package org.opalj.apk.parser
  *
  * @author Nicolas Gross
  */
-case class ApkParserException(message: String,
-                              cause: Throwable = null
-                             ) extends Exception(message, cause)
+case class ApkParserException(
+        message: String,
+        cause:   Throwable = null
+) extends Exception(message, cause)

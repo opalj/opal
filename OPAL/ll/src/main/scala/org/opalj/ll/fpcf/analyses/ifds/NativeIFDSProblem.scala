@@ -15,16 +15,16 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
     val llvmProject = project.get(LLVMProjectKey)
     val javaPropertyKey: PropertyKey[Property]
 
-    override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, LLVMStatement, Fact, Getter) => Set[Fact]] = callee match {
+    override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Getter) => Set[Fact]] = callee match {
         case LLVMFunction(function) =>
             function.basicBlockCount match {
-                case 0 => Some((_: LLVMStatement, _: LLVMStatement, in: Fact, _: Getter) => Set(in))
+                case 0 => Some((_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Getter) => Set(in))
                 case _ => None
             }
         case JNIMethod(method) => Some(handleJavaMethod(method))
     }
 
-    private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: LLVMStatement, in: Fact, dependeesGetter: Getter): Set[Fact] = {
+    private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: Option[LLVMStatement], in: Fact, dependeesGetter: Getter): Set[Fact] = {
         var result = Set.empty[Fact]
         val entryFacts = javaCallFlow(call, callee, in)
         for (entryFact <- entryFacts) { // ifds line 14
@@ -69,6 +69,6 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
         in:        JavaFact,
         call:      LLVMStatement,
         callFact:  Fact,
-        successor: LLVMStatement
+        successor: Option[LLVMStatement]
     ): Set[Fact]
 }

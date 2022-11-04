@@ -31,7 +31,7 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
         if (basicBlockCount == 0) throw new IllegalStateException("this function does not contain any basic block and may not be defined")
         basicBlocks.filter(bb => bb.lastInstruction match {
             case Ret(_) => true
-            case _ => false
+            case _      => false
         })
     }
 

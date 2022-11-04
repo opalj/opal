@@ -5,7 +5,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties.Taint
@@ -19,15 +19,15 @@ import org.opalj.tac.fpcf.properties.Taint
 class ForwardTaintAnalysisFixture(project: SomeProject)
     extends IFDSAnalysis()(project, new ForwardTaintProblemFixture(project), Taint)
 
-class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) {
+class ForwardTaintProblemFixture(p: SomeProject) extends JavaForwardTaintProblem(p) {
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, TaintFact)] = p.allProjectClassFiles.filter(classFile =>
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = p.allProjectClassFiles.filter(classFile =>
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(classFile => classFile.methods)
         .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
-        .map(method => method -> TaintNullFact)
+        .map(method => (method, new IFDSFact(TaintNullFact)))
 
     /**
      * The sanitize method is a sanitizer.

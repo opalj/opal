@@ -2,19 +2,19 @@
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.{JavaForwardIFDSProblem, JavaIFDSProblem, JavaMethod, JavaStatement}
 
-abstract class ForwardTaintProblem(project: SomeProject)
-    extends JavaIFDSProblem[TaintFact](project)
+abstract class JavaForwardTaintProblem(project: SomeProject)
+    extends JavaForwardIFDSProblem[TaintFact](project)
     with TaintProblem[Method, JavaStatement, TaintFact] {
-    val declaredMethods = project.get(DeclaredMethodsKey)
-    override def nullFact: TaintFact = TaintNullFact
 
-    override def needsPredecessor(statement: JavaStatement): Boolean = false
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+
+    override def nullFact: TaintFact = TaintNullFact
 
     /**
      * If a variable gets assigned a tainted value, the variable will be tainted.
@@ -57,10 +57,9 @@ abstract class ForwardTaintProblem(project: SomeProject)
 
     /**
      * Propagates tainted parameters to the callee. If a call to the sink method with a tainted
-     * parameter is detected, no call-to-start
-     * edges will be created.
+     * parameter is detected, no call-to-start edges will be created.
      */
-    override def callFlow(call: JavaStatement, callee: Method, in: TaintFact): Set[TaintFact] = {
+    override def callFlow(entry: JavaStatement, in: TaintFact, call: JavaStatement, callee: Method): Set[TaintFact] = {
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
 
@@ -110,6 +109,21 @@ abstract class ForwardTaintProblem(project: SomeProject)
     }
 
     /**
+     * Checks if the return flow is actually possible from the given exit statement to the given successor.
+     * This is used to filter flows of exceptions into normal code without being caught
+     *
+     * @param exit      the exit statement of the returning method
+     * @param successor the successor statement of the call within the callee function
+     * @return whether successor might actually be the next statement after the exit statement
+     */
+    private def isPossibleReturnFlow(exit: JavaStatement, successor: JavaStatement): Boolean = {
+        (successor.node.isBasicBlock || successor.node.isNormalReturnExitNode) &&
+            (exit.stmt.astID == Return.ASTID || exit.stmt.astID == ReturnValue.ASTID) ||
+            (successor.node.isCatchNode || successor.node.isAbnormalReturnExitNode) &&
+            (exit.stmt.astID != Return.ASTID && exit.stmt.astID != ReturnValue.ASTID)
+    }
+
+    /**
      * Taints an actual parameter, if the corresponding formal parameter was tainted in the callee.
      * If the callee's return value was tainted and it is assigned to a variable in the callee, the
      * variable will be tainted.
@@ -118,8 +132,8 @@ abstract class ForwardTaintProblem(project: SomeProject)
      * Creates new taints and FlowFacts, if necessary.
      * If the sanitize method was called, nothing will be tainted.
      */
-    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, callFact: TaintFact, successor: JavaStatement): Set[TaintFact] = {
-        if (!isPossibleReturnFlow(exit, successor)) return Set.empty
+    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, successor: Option[JavaStatement], unbCallChain: Seq[Method]): Set[TaintFact] = {
+        if (successor.isDefined && !isPossibleReturnFlow(exit, successor.get)) return Set.empty
 
         val callee = exit.callable
         if (sanitizesReturnValue(callee)) return Set.empty
@@ -182,7 +196,8 @@ abstract class ForwardTaintProblem(project: SomeProject)
     /**
      * Removes taints according to `sanitizesParameter`.
      */
-    override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: JavaStatement): Set[TaintFact] =
+    override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: Option[JavaStatement],
+                                  unbCallChain: Seq[Method]): Set[TaintFact] =
         if (sanitizesParameter(call, in)) Set() else Set(in)
 
     /**
@@ -213,7 +228,7 @@ abstract class ForwardTaintProblem(project: SomeProject)
      */
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         super.outsideAnalysisContext(callee) match {
-            case Some(_) => Some(((call: JavaStatement, successor: JavaStatement, in: TaintFact, _: Getter) => {
+            case Some(_) => Some(((call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, _: Getter) => {
                 val allParams = JavaIFDSProblem.asCall(call.stmt).receiverOption ++ JavaIFDSProblem.asCall(call.stmt).params
                 if (call.stmt.astID == Assignment.ASTID && (in match {
                     case Variable(index) =>

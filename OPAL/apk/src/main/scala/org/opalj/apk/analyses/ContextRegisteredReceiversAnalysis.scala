@@ -63,7 +63,8 @@ object ContextRegisteredReceiversAnalysis {
                                     val (actions, categories) = assembleIntentFilter(tacMethod, intentDef)
 
                                     foundReceivers.append(new ApkContextRegisteredReceiver(
-                                        receiverClass, actions, categories, m, s.pc))
+                                        receiverClass, actions, categories, m, s.pc
+                                    ))
                                 }
                             }
                         })
@@ -90,7 +91,7 @@ object ContextRegisteredReceiversAnalysis {
             }
             tmpClazz = project.classFile(tmpClazz) match {
                 case Some(c) => c.superclassType.get
-                case _ => return false
+                case _       => return false
             }
         }
         true
@@ -100,9 +101,10 @@ object ContextRegisteredReceiversAnalysis {
      * Tries to rebuild the IntentFilter for a registerReceiver() call. Only works with IntentFilters that are
      * created and its actions and categories are added in the same method as where registerReceiver() is called.
      */
-    private def assembleIntentFilter(tacMethod: AITACode[TACMethodParameter, ValueInformation],
-                                     intentDef: Stmt[DUVar[ValueInformation]]
-                                    ): (Seq[String], Seq[String]) = {
+    private def assembleIntentFilter(
+        tacMethod: AITACode[TACMethodParameter, ValueInformation],
+        intentDef: Stmt[DUVar[ValueInformation]]
+    ): (Seq[String], Seq[String]) = {
         val foundActions: ListBuffer[String] = ListBuffer.empty
         val foundCategories: ListBuffer[String] = ListBuffer.empty
         if (intentDef.isAssignment && intentDef.asAssignment.expr.isNew &&

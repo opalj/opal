@@ -6,7 +6,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.{CFG, CFGNode}
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
-import org.opalj.tac.{Assignment, Call, DUVar, ExprStmt, Return, ReturnValue, Stmt, TACStmts}
+import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.value.ValueInformation
 
@@ -43,29 +43,20 @@ object JavaStatement {
         JavaStatement(referenceStatement.method, newIndex, referenceStatement.code, referenceStatement.cfg)
 }
 
-abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
-    extends IFDSProblem[Fact, Method, JavaStatement](new JavaForwardICFG()(project)) {
+abstract class JavaForwardIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
+    extends JavaIFDSProblem[Fact](project, new JavaForwardICFG(project))
+
+abstract class JavaBackwardIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
+    extends JavaIFDSProblem[Fact](project, new JavaBackwardICFG(project))
+
+abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject, icfg: JavaICFG)
+    extends IFDSProblem[Fact, Method, JavaStatement](icfg) {
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 
-    /**
-     * Checks if the return flow is actually possible from the given exit statement to the given successor.
-     * This is used to filter flows of exceptions into normal code without being caught
-     *
-     * @param exit the exit statement of the returning method
-     * @param successor the successor statement of the call within the callee function
-     * @return whether successor might actually be the next statement after the exit statement
-     */
-    protected def isPossibleReturnFlow(exit: JavaStatement, successor: JavaStatement): Boolean = {
-        (successor.node.isBasicBlock || successor.node.isNormalReturnExitNode) &&
-            (exit.stmt.astID == Return.ASTID || exit.stmt.astID == ReturnValue.ASTID) ||
-            (successor.node.isCatchNode || successor.node.isAbnormalReturnExitNode) &&
-            (exit.stmt.astID != Return.ASTID && exit.stmt.astID != ReturnValue.ASTID)
-    }
-
-    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact, Getter) => Set[Fact]] = callee.body.isDefined match {
+    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, Option[JavaStatement], Fact, Getter) => Set[Fact]] = callee.body.isDefined match {
         case true  => None
-        case false => Some((_: JavaStatement, _: JavaStatement, in: Fact, _: Getter) => Set(in))
+        case false => Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, _: Getter) => Set(in))
     }
 }
 
@@ -111,5 +102,4 @@ object JavaIFDSProblem {
                     - parameterOffset
             ).isReferenceType
         }
-
 }

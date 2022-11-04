@@ -5,9 +5,9 @@ import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomePr
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.fpcf.{FinalEP, PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, ForwardTaintProblem, TaintFact, TaintProblem, Variable}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, JavaForwardTaintProblem, TaintFact, TaintProblem, Variable}
 import org.opalj.tac.fpcf.analyses.ifds._
 import org.opalj.tac.fpcf.properties.{TACAI, Taint}
 import org.opalj.tac.fpcf.properties.cg.Callers
@@ -26,7 +26,7 @@ class ForwardClassForNameTaintAnalysis(project: SomeProject)
     extends IFDSAnalysis()(project, new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
-    extends ForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {
+    extends JavaForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {
     private val propertyStore = project.get(PropertyStoreKey)
     /**
      * Returns all methods, that can be called from outside the library.
@@ -52,13 +52,13 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * The string parameters of all public methods are entry points.
      */
-    override def entryPoints: Seq[(Method, TaintFact)] = for {
+    override def entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = for {
         m <- methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index <- m.descriptor.parameterTypes.zipWithIndex.collect {
             case (pType, index) if pType == ObjectType.String => index
         }
-    } yield (m.definedMethod, Variable(-2 - index))
+    } yield (m.definedMethod, new IFDSFact(Variable(-2 - index)))
 
     /**
      * There is no sanitizing in this analysis.

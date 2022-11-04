@@ -2,22 +2,18 @@
 package org.opalj.tac.fpcf.analyses.ifds
 
 import org.opalj.br._
-import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.ifds.AbstractIFDSFact
-
-import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem => NewJavaIFDSProblem}
-import org.opalj.tac._
-import org.opalj.value.ValueInformation
-import scala.annotation.tailrec
-
-import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Dependees.Getter
-
-import org.opalj.fpcf.FinalEP
-import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.fpcf.FinalEP
+import org.opalj.ifds.Dependees.Getter
+import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, IFDSFact}
+import org.opalj.tac._
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.value.ValueInformation
+
+import scala.annotation.tailrec
 
 trait VTAFact extends AbstractIFDSFact
 case object VTANullFact extends VTAFact with AbstractIFDSNullFact
@@ -66,7 +62,7 @@ case class CalleeType(line: Int, t: ReferenceType, upperBound: Boolean) extends 
     }
 }
 
-class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boolean = false) extends JavaIFDSProblem[VTAFact](project) {
+class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boolean = false) extends JavaForwardIFDSProblem[VTAFact](project) {
     val propertyStore = project.get(PropertyStoreKey)
     val declaredMethods = project.get(DeclaredMethodsKey)
 
@@ -75,7 +71,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
     /**
      * The analysis starts with all public methods in java.lang or org.opalj.
      */
-    override def entryPoints: Seq[(Method, VTAFact)] = {
+    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, Method])] = {
         project.allProjectClassFiles
             .filter(classInsideAnalysisContext)
             .flatMap(classFile => classFile.methods)
@@ -127,11 +123,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * For each variable, which can be passed as an argument to the call, a new VariableType is
      * created for the callee context.
      */
-    override def callFlow(
-        call:   JavaStatement,
-        callee: Method,
-        in:     VTAFact
-    ): Set[VTAFact] = {
+    override def callFlow(entry: JavaStatement, in: VTAFact, call: JavaStatement, callee: Method): Set[VTAFact] = {
         val inSet = Set(in)
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
@@ -147,7 +139,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                     case (parameter, parameterIndex) if parameter.asVar.definedBy.contains(definedBy) =>
                         // If this is the case, create a new fact for the method's formal parameter.
                         flow += VariableType(
-                            NewJavaIFDSProblem
+                            JavaIFDSProblem
                                 .switchParamAndVariableIndex(parameterIndex, callee.isStatic),
                             t,
                             upperBound
@@ -164,9 +156,10 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * VariableType, which could be the call's target.
      */
     override def callToReturnFlow(
-        call:      JavaStatement,
-        in:        VTAFact,
-        successor: JavaStatement
+        call:         JavaStatement,
+        in:           VTAFact,
+        successor:    Option[JavaStatement],
+        unbCallChain: Seq[Method]
     ): Set[VTAFact] = {
         val inSet = Set(in)
         // Check, to which variables the callee may refer
@@ -186,13 +179,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * If the call returns a value which is assigned to a variable, a new VariableType will be
      * created in the caller context with the returned variable's type.
      */
-    override def returnFlow(
-        exit:      JavaStatement,
-        in:        VTAFact,
-        call:      JavaStatement,
-        callFact:  VTAFact,
-        successor: JavaStatement
-    ): Set[VTAFact] =
+    override def returnFlow(exit: JavaStatement, in: VTAFact, call: JavaStatement, successor: Option[JavaStatement], unbCallChain: Seq[Method]): Set[VTAFact] =
         // We only create a new fact, if the call returns a value, which is assigned to a variable.
         if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
             val inSet = Set(in)
@@ -215,7 +202,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             super.outsideAnalysisContext(callee).isEmpty)
             None
         else {
-            Some(((call: JavaStatement, successor: JavaStatement, in: VTAFact, getter: Getter) => {
+            Some(((call: JavaStatement, successor: Option[JavaStatement], in: VTAFact, getter: Getter) => {
                 val returnType = callee.descriptor.returnType
                 if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
                     Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))
@@ -334,7 +321,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * @return All pairs (`method`, inputFact) where inputFact is a VariableType for one of the
      *         method's parameter with its compile time type as an upper bound.
      */
-    private def entryPointsForMethod(method: Method): Seq[(Method, VTAFact)] = {
+    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, Method])] = {
         // Iterate over all parameters, which have a reference type.
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType =>
@@ -343,7 +330,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
 * subtype of its compile time type.
 */
                 VariableType(
-                    NewJavaIFDSProblem.switchParamAndVariableIndex(index, method.isStatic),
+                    JavaIFDSProblem.switchParamAndVariableIndex(index, method.isStatic),
                     t.asReferenceType,
                     upperBound = true
                 )
@@ -352,6 +339,6 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
 * which hold independently of other source facts.
 * Map the input facts, in which we are interested, to a pair of the method and the fact.
 */
-        } :+ VTANullFact).map(fact => (method, fact))
+        } :+ VTANullFact).map(fact => (method, new IFDSFact(fact)))
     }
 }

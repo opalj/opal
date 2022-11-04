@@ -3,8 +3,8 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.br.ObjectType
 import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
-import org.opalj.tac.{Assignment, Expr, Stmt}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.{Assignment, Expr, Stmt}
 
 trait TaintFact extends AbstractIFDSFact
 

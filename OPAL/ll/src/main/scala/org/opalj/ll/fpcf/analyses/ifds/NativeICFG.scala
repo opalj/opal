@@ -18,7 +18,7 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
     override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[_ <: NativeFunction]] = {
         statement.instruction match {
             case call: Call => Some(resolveCallee(call))
-            case _ => None
+            case _          => None
         }
     }
 
@@ -28,4 +28,14 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
         else if (JNICallUtil.isJNICall(call))
             JNICallUtil.resolve(call)
         else Set()
+
+    override def getCallers(callee: NativeFunction): Seq[(NativeFunction, Int)] = {
+        // TODO
+        ???
+    }
+
+    override def getStatement(callable: NativeFunction, index: Int): LLVMStatement = {
+        // TODO
+        ???
+    }
 }

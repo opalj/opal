@@ -33,8 +33,8 @@ class NativeBackwardICFG(implicit project: SomeProject) extends NativeICFG(proje
      */
     override def nextStatements(statement: LLVMStatement): Set[LLVMStatement] =
         statement.instruction.previous match {
-            case Some(i) => Set(i)
-            case None => statement.basicBlock.predecessors.map(bb => LLVMStatement(bb.lastInstruction))
+            case Some(i) => Set(LLVMStatement(i))
+            case None    => statement.basicBlock.predecessors.map(bb => LLVMStatement(bb.lastInstruction))
         }
 
     /**
@@ -44,6 +44,6 @@ class NativeBackwardICFG(implicit project: SomeProject) extends NativeICFG(proje
      * @return Whether the statement flow may exit its callable (function/method)
      */
     override def isExitStatement(statement: LLVMStatement): Boolean = statement.function match {
-            case LLVMFunction(function) => function.entryBlock.firstInstruction.equals(statement.instruction)
-        }
+        case LLVMFunction(function) => function.entryBlock.firstInstruction.equals(statement.instruction)
+    }
 }

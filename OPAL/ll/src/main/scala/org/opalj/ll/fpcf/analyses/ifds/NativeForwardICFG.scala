@@ -4,7 +4,7 @@ package org.opalj.ll.fpcf.analyses.ifds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.llvm.value.{Instruction, Ret, Terminator}
 
-class NativeForwardICFG(implicit project: SomeProject) extends NativeICFG(project) {
+class NativeForwardICFG(project: SomeProject) extends NativeICFG(project) {
     /**
      * Determines the statements at which the analysis starts.
      *

@@ -17,10 +17,12 @@ import org.opalj.apk.ApkComponentType.ApkComponentType
  *
  * @author Nicolas Gross
  */
-class ApkComponent(val componentType: ApkComponentType,
-                   val clazz: String,
-                   val intentActions: Seq[String],
-                   val intentCategories: Seq[String]) {
+class ApkComponent(
+        val componentType:    ApkComponentType,
+        val clazz:            String,
+        val intentActions:    Seq[String],
+        val intentCategories: Seq[String]
+) {
 
     private val ActivityEntryPoints = Seq("onActionModeFinished", "onActionModeStarted", "onActivityReenter",
         "onAttachFragment", "onAttachedToWindow", "onBackPressed", "onConfigurationChanged", "onContentChanged",
@@ -52,10 +54,10 @@ class ApkComponent(val componentType: ApkComponentType,
      */
     def entryFunctions(): Seq[String] = {
         componentType match {
-            case ApkComponentType.Activity => ActivityEntryPoints
-            case ApkComponentType.Service => ServiceEntryPoints
+            case ApkComponentType.Activity          => ActivityEntryPoints
+            case ApkComponentType.Service           => ServiceEntryPoints
             case ApkComponentType.BroadcastReceiver => ReceiverEntryPoints
-            case ApkComponentType.ContentProvider => ProviderEntryPoints
+            case ApkComponentType.ContentProvider   => ProviderEntryPoints
         }
     }
 

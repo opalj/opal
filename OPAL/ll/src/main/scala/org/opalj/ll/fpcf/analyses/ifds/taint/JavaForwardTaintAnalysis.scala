@@ -5,7 +5,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.fpcf._
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
 import org.opalj.ll.fpcf.properties.NativeTaint
@@ -15,15 +15,15 @@ import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties.{TACAI, Taint}
 
-class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
+class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProblem(p) {
     val llvmProject = p.get(LLVMProjectKey)
 
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, TaintFact)] = for {
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = for {
         m <- p.allMethodsWithBody
-    } yield m -> TaintNullFact
+    } yield m -> new IFDSFact(TaintNullFact)
 
     /**
      * The sanitize method is a sanitizer.
@@ -58,7 +58,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
 
     // Multilingual additions here
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
-        def handleNativeMethod(call: JavaStatement, successor: JavaStatement, in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
+        def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
             // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
             val calleeName = callee.name.map(c => c match {
                 case c if isAlphaNumeric(c) => c
@@ -170,7 +170,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
         call:         JavaStatement,
         callFact:     TaintFact,
         nativeCallee: Method,
-        successor:    JavaStatement
+        successor:    Option[JavaStatement]
     ): Set[TaintFact] = {
         if (sanitizesReturnValue(nativeCallee)) return Set.empty
         val callStatement = JavaIFDSProblem.asCall(call.stmt)

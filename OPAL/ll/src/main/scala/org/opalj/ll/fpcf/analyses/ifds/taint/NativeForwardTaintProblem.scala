@@ -78,7 +78,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return The facts, which hold after the execution of `statement` under the assumption that
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
-    override def callFlow(call: LLVMStatement, callee: NativeFunction, in: NativeTaintFact): Set[NativeTaintFact] = callee match {
+    override def callFlow(entry: LLVMStatement, in: NativeTaintFact, call: LLVMStatement, callee: NativeFunction): Set[NativeTaintFact] = callee match {
         case LLVMFunction(callee) =>
             in match {
                 // Taint formal parameter if actual parameter is tainted
@@ -107,7 +107,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      *         under the assumption that `in` held before the execution of `exit` and that
      *         `successor` will be executed next.
      */
-    override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement, callFact: NativeTaintFact, successor: LLVMStatement): Set[NativeTaintFact] = {
+    override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement, successor: Option[LLVMStatement], unbCallChain: Seq[NativeFunction]): Set[NativeTaintFact] = {
         val callee = exit.callable
         var flows: Set[NativeTaintFact] = if (sanitizesReturnValue(callee)) Set.empty else in match {
             case NativeVariable(value) => exit.instruction match {
@@ -139,7 +139,8 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
      * @return The facts, which hold after the call independently of what happens in the callee
      *         under the assumption that `in` held before `call`.
      */
-    override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: LLVMStatement): Set[NativeTaintFact] = Set(in)
+    override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: Option[LLVMStatement],
+                                  unbCallChain: Seq[NativeFunction]): Set[NativeTaintFact] = Set(in)
 
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
         case PHI(_) => true
@@ -190,7 +191,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
         in:        TaintFact,
         call:      LLVMStatement,
         callFact:  NativeTaintFact,
-        successor: LLVMStatement
+        successor: Option[LLVMStatement]
     ): Set[NativeTaintFact] = {
         val callee = exit.callable
         if (sanitizesReturnValue(JNIMethod(callee))) return Set.empty
