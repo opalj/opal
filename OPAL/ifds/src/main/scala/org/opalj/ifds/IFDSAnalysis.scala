@@ -208,14 +208,16 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
             .empty[Work]
 
         // if method is analyzed for unbalanced return fact, start with next statements after call statement
-        val startStatements = if (sourceFact.isUnbalancedReturn) {
+        val startStatements: Set[(Option[S], Option[S])] = if (sourceFact.isUnbalancedReturn) {
             val call = icfg.getStatement(function, sourceFact.index.get)
-            icfg.nextStatements(call)
-        } else icfg.startStatements(function)
+            val startStmts: Set[(Option[S], Option[S])] = icfg.nextStatements(call).map(stmt => (Some(stmt), Some(call)))
+            if (startStmts.isEmpty) Set((None, Some(call))) // unbalanced return to call with index 0
+            else startStmts
+        } else icfg.startStatements(function).map(stmt => (Some(stmt), None))
 
         startStatements.foreach(start => {
-            state.pathEdges.add(start, sourceFact.fact) // ifds line 2
-            queue.enqueue((Some(start), sourceFact, None)) // ifds line 3
+            if (start._1.isDefined) state.pathEdges.add(start._1.get, sourceFact.fact) // ifds line 2
+            queue.enqueue((start._1, sourceFact, start._2)) // ifds line 3
         })
         process()
         createResult()
