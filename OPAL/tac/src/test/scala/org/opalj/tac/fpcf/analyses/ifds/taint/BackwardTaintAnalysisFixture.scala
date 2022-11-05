@@ -63,9 +63,9 @@ class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProbl
     /**
      * When a callee calls the source, we create a FlowFact with the caller's call chain.
      */
-    override protected def applyFlowFactFromCallee(calleeFact: FlowFact, callee: Method, in: TaintFact,
+    override protected def applyFlowFactFromCallee(calleeFact: FlowFact, caller: Method, in: TaintFact,
                                                    unbCallChain: Seq[Method]): Option[FlowFact] =
-        Some(FlowFact(unbCallChain.prepended(callee).map(JavaMethod)))
+        Some(FlowFact(unbCallChain.prepended(caller).map(JavaMethod)))
 
     // TODO
     ///**

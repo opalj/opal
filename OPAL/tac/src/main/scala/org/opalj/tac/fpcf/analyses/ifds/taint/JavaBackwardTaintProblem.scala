@@ -156,7 +156,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
             case staticField: StaticField => facts.add(staticField)
             // If the source was reached in a callee, create a flow fact from this method to the sink.
             case calleeFact: FlowFact =>
-                val callerFact = applyFlowFactFromCallee(calleeFact, callee, in, unbCallChain)
+                val callerFact = applyFlowFactFromCallee(calleeFact, call.callable, in, unbCallChain)
                 if (callerFact.isDefined) facts.add(callerFact.get)
             case _ => // Nothing to do
         }
@@ -294,14 +294,14 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * context if necessary.
      *
      * @param calleeFact The FlowFact, which holds at the start node of the callee.
-     * @param callee The analyzed entity.
+     * @param caller The caller.
      * @param in the fact
      * @param callChain the current call chain
      * @return Some FlowFact, if necessary. Otherwise None.
      */
     protected def applyFlowFactFromCallee(
         calleeFact: FlowFact,
-        callee:     Method,
+        caller:     Method,
         in:         TaintFact,
         callChain:  Seq[Method]
     ): Option[FlowFact]
