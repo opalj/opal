@@ -21,7 +21,7 @@ class BackwardTaintAnalysisFixture(project: SomeProject)
 
 class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProblem(p) {
 
-    override def followUnbalancedReturns: Boolean = true
+    override def enableUnbalancedReturns: Boolean = true
 
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = p.allProjectClassFiles.filter(classFile =>
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
@@ -67,38 +67,13 @@ class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProbl
                                                    unbCallChain: Seq[Method]): Option[FlowFact] =
         Some(FlowFact(unbCallChain.prepended(caller).map(JavaMethod)))
 
-    // TODO
-    ///**
-    // * This analysis does not create FlowFacts at the beginning of a method.
-    // * Instead, FlowFacts are created, when the return value of source is tainted.
-    // */
-    //override protected def createFlowFactAtBeginningOfMethod(
-    //    in:     Set[TaintFact],
-    //    source: (DeclaredMethod, TaintFact)
-    //): Option[FlowFact] =
-    //    None
+    /**
+     * This analysis does not create FlowFacts at the beginning of a method.
+     * Instead, FlowFacts are created, when the return value of source is tainted.
+     */
+    override def createFlowFactAtExit(callee: Method, in: TaintFact,
+                                      unbCallChain: Seq[Method]): Option[FlowFact] = None
 }
-
-///**
-// * Called, when a new fact is found at the entry (entry of analysis) of a method.
-// * Creates a fact if necessary.
-// *
-// * @param in     The newly found fact.
-// * @param callee The callee.
-// * @return Some fact, if necessary. Otherwise None.
-// */
-//def createFlowFactAtEntry(callee: C, in: Fact): Option[Fact] = None
-//
-///**
-// * Called, when the analysis found a new output fact at a function's exit (exit of analysis).
-// * A concrete analysis may overwrite this method to create additional facts, which will be added
-// * to the analysis' result.
-// *
-// * @param in     The new output fact at the exit (exit of analysis) node.
-// * @param callee The function containing the respective exit statement.
-// * @return Nothing by default.
-// */
-//def createFactsAtExit(in: Fact, callee: C): Set[Fact] = Set.empty
 
 object BackwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
 

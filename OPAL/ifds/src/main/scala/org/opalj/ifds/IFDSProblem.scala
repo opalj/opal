@@ -38,7 +38,17 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      * @return Whether the analysis should follow unbalanced return flows
      *         (return of a method for which no matching previous call was processed).
      */
-    def followUnbalancedReturns: Boolean = false
+    def enableUnbalancedReturns: Boolean = false
+
+    /**
+     * Whether at this exit of a function, an unbalanced return should be performed.
+     * Only if enableUnbalancedReturns == true.
+     *
+     * @param source the source fact of the analysis of the current function.
+     * @return true if an unbalanced return should be performed.
+     */
+    def shouldPerformUnbalancedReturn(source: (C, IFDSFact[Fact, C])): Boolean =
+        source._2.isUnbalancedReturn || entryPoints.contains(source)
 
     /**
      * Computes the data flow for a normal statement.
@@ -98,6 +108,17 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
         successor:    Option[S],
         unbCallChain: Seq[C]
     ): Set[Fact]
+
+    /**
+     * Called, when new FlowFacts are found at the analysis exit of a method.
+     * Creates a FlowFact in the callee context if necessary.
+     *
+     * @param callee    The callee.
+     * @param in        The newly found facts.
+     * @param callChain the current call chain.
+     * @return Some FlowFact, if necessary. Otherwise None.
+     */
+    def createFlowFactAtExit(callee: C, in: Fact, unbCallChain: Seq[C]): Option[Fact] = None
 
     def needsPredecessor(statement: S): Boolean
 

@@ -19,7 +19,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
 
     override def nullFact: TaintFact = TaintNullFact
 
-    override def followUnbalancedReturns: Boolean = true
+    override def enableUnbalancedReturns: Boolean = true
 
     /**
      * If a tainted variable gets assigned a value, this value will be tainted.
@@ -290,7 +290,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         }
 
     /**
-     * Called, when a FlowFact holds at the start node of a callee. Creates a FlowFact in the caller
+     * Called, when a FlowFact holds at the index 0 node of a callee. Creates a FlowFact in the caller
      * context if necessary.
      *
      * @param calleeFact The FlowFact, which holds at the start node of the callee.

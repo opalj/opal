@@ -4,13 +4,13 @@ package org.opalj.tac.fpcf.analyses.taint
 import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
-import org.opalj.fpcf.{FinalEP, PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.fpcf.{PropertyBounds, PropertyStore}
+import org.opalj.ifds._
 import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, JavaForwardTaintProblem, TaintFact, TaintProblem, Variable}
 import org.opalj.tac.fpcf.analyses.ifds._
-import org.opalj.tac.fpcf.properties.{TACAI, Taint}
+import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.{TACAI, Taint}
 
 import java.io.File
 
@@ -27,33 +27,12 @@ class ForwardClassForNameTaintAnalysis(project: SomeProject)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
     extends JavaForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {
-    private val propertyStore = project.get(PropertyStoreKey)
-    /**
-     * Returns all methods, that can be called from outside the library.
-     * The call graph must be computed, before this method may be invoked.
-     *
-     * @return All methods, that can be called from outside the library.
-     */
-    protected def methodsCallableFromOutside: Set[DeclaredMethod] = {
-        declaredMethods.declaredMethods.filter(canBeCalledFromOutside).toSet
-    }
 
-    /**
-     * Checks, if some `method` can be called from outside the library.
-     * The call graph must be computed, before this method may be invoked.
-     *
-     * @param method The method, which may be callable from outside.
-     * @return True, if `method` can be called from outside the library.
-     */
-    protected def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
-        val FinalEP(_, callers) = propertyStore(method, Callers.key)
-        callers.hasCallersWithUnknownContext
-    }
     /**
      * The string parameters of all public methods are entry points.
      */
     override def entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = for {
-        m <- methodsCallableFromOutside.toSeq
+        m <- icfg.methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index <- m.descriptor.parameterTypes.zipWithIndex.collect {
             case (pType, index) if pType == ObjectType.String => index

@@ -42,16 +42,8 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
             if (allReachableFlowFacts.nonEmpty) return Some(s"There should be no flow for $entity")
             None
         } else {
-            if (allReachableFlowFacts.contains(expectedFlow)) {
-                // TODO
-                println(s"SUCCESS: ${method.name}")
-                None
-            }
-            else {
-                // TODO
-                println(s"FAIL: ${method.name}")
-                Some(expectedFlow.mkString(", "))
-            }
+            if (allReachableFlowFacts.contains(expectedFlow)) None
+            else Some(expectedFlow.mkString(", "))
         }
     }
 }

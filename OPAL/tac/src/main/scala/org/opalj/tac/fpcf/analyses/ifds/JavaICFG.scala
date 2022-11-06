@@ -117,4 +117,30 @@ abstract class JavaICFG(project: SomeProject)
                 )
         }
     }
+
+    /**
+     * Returns all methods, that can be called from outside the library.
+     * The call graph must be computed, before this method may be invoked.
+     *
+     * @return All methods, that can be called from outside the library.
+     */
+    def methodsCallableFromOutside: Set[DeclaredMethod] = {
+        declaredMethods.declaredMethods.filter(canBeCalledFromOutside).toSet
+    }
+
+    /**
+     * Checks, if some `method` can be called from outside the library.
+     * The call graph must be computed, before this method may be invoked.
+     *
+     * @param method The method, which may be callable from outside.
+     * @return True, if `method` can be called from outside the library.
+     */
+    def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
+        val FinalEP(_, callers) = propertyStore(method, Callers.key)
+        callers.hasCallersWithUnknownContext
+    }
+
+    def canBeCalledFromOutside(method: Method): Boolean =
+        canBeCalledFromOutside(declaredMethods(method))
+
 }

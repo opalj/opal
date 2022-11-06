@@ -410,14 +410,22 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 
     private def handleExit(statement: S, in: Fact)(implicit state: State, worklist: Worklist, work: Work): Unit = {
-        val newEdge = (statement, in)
-        if (!state.endSummaries.contains(newEdge)) {
-            state.endSummaries += ((statement, in)) // ifds line 21.1
-            state.selfDependees.foreach(selfDependee =>
-                worklist.enqueue(selfDependee))
+        // analysis might create new facts at exit
+        val unbCallChain = state.source._2.callChain.getOrElse(Seq.empty)
+        val createdFact = ifdsProblem.createFlowFactAtExit(statement.callable, in, unbCallChain)
+        val newEdges =
+            if (createdFact.isDefined) Set((statement, in), (statement, createdFact.get))
+            else Set((statement, in))
 
-            if (ifdsProblem.followUnbalancedReturns && isUnbalancedReturn(state.source)) {
-                handleUnbalancedReturn(statement, in)
+        for (newEdge <- newEdges) {
+            if (!state.endSummaries.contains(newEdge)) {
+                state.endSummaries += ((statement, in)) // ifds line 21.1
+                state.selfDependees.foreach(selfDependee =>
+                    worklist.enqueue(selfDependee))
+
+                if (ifdsProblem.enableUnbalancedReturns && ifdsProblem.shouldPerformUnbalancedReturn(state.source)) {
+                    handleUnbalancedReturn(statement, in)
+                }
             }
         }
         // ifds lines 22 - 31 are handled by the dependency propagation of the property store
@@ -543,9 +551,6 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
             true
         } else false
     }
-
-    private def isUnbalancedReturn(source: (C, IFDSFact[Fact, C])): Boolean =
-        source._2.isUnbalancedReturn || ifdsProblem.entryPoints.contains(source)
 }
 
 abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]

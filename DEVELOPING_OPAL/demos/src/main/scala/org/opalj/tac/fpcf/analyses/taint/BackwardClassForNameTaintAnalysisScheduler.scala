@@ -1,16 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.taint
-/*  TODO Fix as soon as backwards analysis is implemented
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{DeclaredMethod, DefinedMethod, Method}
-import org.opalj.fpcf.{EPS, FinalEP, PropertyStore}
-import org.opalj.ifds.IFDSPropertyMetaInformation
-import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.old.taint.BackwardTaintProblem
-import org.opalj.tac.fpcf.analyses.ifds.old._
+
+import org.opalj.br.Method
+import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.{EPS, FinalEP, PropertyBounds, PropertyStore}
+import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
 import org.opalj.tac.fpcf.analyses.ifds.taint._
-import org.opalj.tac.fpcf.properties.OldTaint
+import org.opalj.tac.fpcf.analyses.ifds.{EvaluationRunner, JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.{TACAI, Taint}
 
 import java.io.File
 
@@ -20,37 +20,37 @@ import java.io.File
  *
  * @author Mario Trageser
  */
-class BackwardClassForNameTaintAnalysisScheduler private (implicit val project: SomeProject)
-    extends BackwardIFDSAnalysis(new BackwardClassForNameTaintProblem(project), OldTaint)
+class BackwardClassForNameTaintAnalysisScheduler private (implicit project: SomeProject)
+    extends IFDSAnalysis()(project, new BackwardClassForNameTaintProblem(project), Taint)
 
-class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProblem(p) {
+class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaintProblem(p) {
 
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(DeclaredMethod, TaintFact)] =
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] =
         p.allProjectClassFiles.filter(classFile =>
             classFile.thisType.fqn == "java/lang/Class")
             .flatMap(classFile => classFile.methods)
             .filter(_.name == "forName")
-            .map(method => declaredMethods(method) -> Variable(-2))
+            .map(method => method -> new IFDSFact(Variable(-2)))
 
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizesReturnValue(callee: DeclaredMethod): Boolean = false
+    override protected def sanitizesReturnValue(callee: Method): Boolean = false
 
     /**
      * There is no sanitizing in this analysis.
      */
-    override protected def sanitizesParameter(call: DeclaredMethodJavaStatement, in: TaintFact): Boolean = false
+    override protected def sanitizesParameter(call: JavaStatement, in: TaintFact): Boolean = false
 
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.
      */
-    override def shouldPerformUnbalancedReturn(source: (DeclaredMethod, TaintFact)): Boolean = {
+    override def shouldPerformUnbalancedReturn(source: (Method, IFDSFact[TaintFact, Method])): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
-            (!canBeCalledFromOutside(source._1) ||
+            (!icfg.canBeCalledFromOutside(source._1) ||
                 // The source is callable from outside, but should create unbalanced return facts.
                 entryPoints.contains(source))
     }
@@ -59,60 +59,64 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends BackwardTaintProb
      * This analysis does not create FlowFacts at calls.
      * Instead, FlowFacts are created at the start node of methods.
      */
-    override protected def createFlowFactAtCall(call: DeclaredMethodJavaStatement, in: Set[TaintFact],
-                                                source: (DeclaredMethod, TaintFact)): Option[FlowFact] = None
+    override protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact,
+                                                unbCallChain: Seq[Method]): Option[FlowFact] = None
 
     /**
      * This analysis does not create FlowFacts at returns.
      * Instead, FlowFacts are created at the start node of methods.
      */
-    protected def applyFlowFactFromCallee(
+    override protected def applyFlowFactFromCallee(
         calleeFact: FlowFact,
-        source:     (DeclaredMethod, TaintFact)
+        caller: Method,
+        in: TaintFact,
+        unbCallChain: Seq[Method]
     ): Option[FlowFact] = None
 
     /**
      * If we analyzed a transitive caller of the sink, which is callable from outside the library,
      * and a formal parameter is tainted, we create a FlowFact.
      */
-    override protected def createFlowFactAtBeginningOfMethod(
-        in:     Set[TaintFact],
-        source: (DeclaredMethod, TaintFact)
-    ): Option[FlowFact] = {
-        if (source._2.isInstanceOf[UnbalancedReturnFact[TaintFact @unchecked]] &&
-            canBeCalledFromOutside(source._1) && in.exists {
+    override def createFlowFactAtExit(callee: Method, in: TaintFact,
+                                      unbCallChain: Seq[Method]): Option[FlowFact] = {
+        if (unbCallChain.nonEmpty && // source fact is unbalanced return fact
+            icfg.canBeCalledFromOutside(callee) && (in match {
                 // index < 0 means, that it is a parameter.
                 case Variable(index) if index < 0            => true
                 case ArrayElement(index, _) if index < 0     => true
                 case InstanceField(index, _, _) if index < 0 => true
                 case _                                       => false
-            }) {
-            Some(FlowFact(currentCallChain(source).map(JavaMethod(_))))
+            })) {
+            Some(FlowFact(unbCallChain.prepended(callee).map(JavaMethod)))
         } else None
     }
 }
 
-object BackwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact] {
+object BackwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
 
     override def init(p: SomeProject, ps: PropertyStore): BackwardClassForNameTaintAnalysisScheduler = {
         p.get(RTACallGraphKey)
         new BackwardClassForNameTaintAnalysisScheduler()(p)
     }
 
-    override def property: IFDSPropertyMetaInformation[DeclaredMethodJavaStatement, TaintFact] = OldTaint
+    override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
+
+    override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers)) // TODO check
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey) // TODO check
 }
 
-class BackwardClassForNameTaintAnalysisRunner extends AbsractIFDSAnalysisRunner {
+class BackwardClassForNameTaintAnalysisRunner extends EvaluationRunner {
 
     override def analysisClass: BackwardClassForNameTaintAnalysisScheduler.type = BackwardClassForNameTaintAnalysisScheduler
 
-    override def printAnalysisResults(analysis: AbstractIFDSAnalysis[_], ps: PropertyStore): Unit = {
+    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit = {
         val propertyKey = BackwardClassForNameTaintAnalysisScheduler.property.key
         val flowFactsAtSources = ps.entities(propertyKey).collect {
-            case EPS((m: DefinedMethod, inputFact)) if canBeCalledFromOutside(m, ps) =>
-                (m, inputFact)
+            case EPS((m: Method, inputFact)) if analysis.ifdsProblem.asInstanceOf[BackwardClassForNameTaintProblem]
+                .icfg.canBeCalledFromOutside(m) => (m, inputFact)
         }.flatMap(ps(_, propertyKey) match {
-            case FinalEP(_, OldTaint(result, _)) =>
+            case FinalEP(_, Taint(result, _)) =>
                 result.values.fold(Set.empty)((acc, facts) => acc ++ facts).filter {
                     case FlowFact(_) => true
                     case _           => false
@@ -151,4 +155,4 @@ object BackwardClassForNameTaintAnalysisRunner {
             )
         }
     }
-}*/ 
+}
