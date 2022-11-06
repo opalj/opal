@@ -9,9 +9,8 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.{JavaBackwardIFDSProblem, JavaIFDSProblem, JavaStatement}
 
 /**
- * TODO
+ * Implementation of a backward taint analysis for Java code.
  *
- * @param project
  */
 abstract class JavaBackwardTaintProblem(project: SomeProject)
     extends JavaBackwardIFDSProblem[TaintFact](project)

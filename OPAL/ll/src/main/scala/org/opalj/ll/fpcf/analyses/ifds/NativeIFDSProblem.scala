@@ -6,7 +6,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, Property, PropertyKey, PropertyStore}
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSProperty}
+import org.opalj.ifds.{AbstractIFDSFact, IFDSFact, IFDSProblem, IFDSProperty}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
@@ -26,7 +26,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
 
     private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: Option[LLVMStatement], in: Fact, dependeesGetter: Getter): Set[Fact] = {
         var result = Set.empty[Fact]
-        val entryFacts = javaCallFlow(call, callee, in)
+        val entryFacts = javaCallFlow(call, callee, in).map(new IFDSFact(_))
         for (entryFact <- entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[JavaStatement, Set[JavaFact]] =

@@ -2,16 +2,14 @@
 package org.opalj.ll
 
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ifds
-import org.opalj.ifds.IFDSProperty
+import org.opalj.ifds.{IFDSFact, IFDSProperty}
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
 import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler, NativeTaintFact, NativeTaintNullFact}
 import org.opalj.ll.fpcf.analyses.ifds.taint.SimpleJavaForwardTaintAnalysis
 import org.opalj.ll.llvm.value.Function
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
@@ -64,7 +62,7 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
         }
 
         val function: Function = project.get(LLVMProjectKey).function("Java_TaintTest_native_1array_1tainted").get
-        val debugData = ps((LLVMFunction(function), NativeTaintNullFact), NativeForwardTaintAnalysisScheduler.property.key).ub.asInstanceOf[IFDSProperty[LLVMStatement, NativeTaintFact]].debugData
+        val debugData = ps((LLVMFunction(function), new IFDSFact(NativeTaintNullFact)), NativeForwardTaintAnalysisScheduler.property.key).ub.asInstanceOf[IFDSProperty[LLVMStatement, NativeTaintFact]].debugData
         for {
             bb <- function.basicBlocks
             instruction <- bb.instructions

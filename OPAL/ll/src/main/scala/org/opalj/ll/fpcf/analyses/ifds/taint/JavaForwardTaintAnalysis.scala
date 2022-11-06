@@ -7,7 +7,7 @@ import org.opalj.fpcf._
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Ret
 import org.opalj.tac.Assignment
@@ -60,21 +60,21 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
             // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
-            val calleeName = callee.name.map(c => c match {
+            val calleeName = callee.name.map {
                 case c if isAlphaNumeric(c) => c
-                case '_'                    => "_1"
-                case ';'                    => "_2"
-                case '['                    => "_3"
-                case c                      => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
-            }).mkString
+                case '_' => "_1"
+                case ';' => "_2"
+                case '[' => "_3"
+                case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
+            }.mkString
             val nativeFunctionName = "Java_"+callee.classFile.fqn+"_"+calleeName
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
-            val entryFacts = nativeCallFlow(call, function, in, callee)
+            val entryFacts = nativeCallFlow(call, function, in, callee).map(new IFDSFact(_))
             for (entryFact <- entryFacts) { // ifds line 14
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
-                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, NativeTaintFact), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
+                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, NativeFunction]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
                         case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
