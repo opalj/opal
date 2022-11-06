@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, TaintFact}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matchers {
+class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
     describe("CrossLanguageForwardTaintAnalysis") {
         implicit val config = BaseConfig.withValue(ifds.ConfigKeyPrefix+"debug", ConfigValueFactory.fromAnyRef(true))
         val project =
