@@ -23,11 +23,12 @@ class ForwardTaintProblemFixture(p: SomeProject) extends JavaForwardTaintProblem
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = p.allProjectClassFiles.filter(classFile =>
-        classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
-        .flatMap(classFile => classFile.methods)
-        .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
-        .map(method => (method, new IFDSFact(TaintNullFact)))
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
+        p.allProjectClassFiles.filter(classFile =>
+            classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
+            .flatMap(classFile => classFile.methods)
+            .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
+            .map(method => (method, new IFDSFact(TaintNullFact)))
 
     /**
      * The sanitize method is a sanitizer.

@@ -19,7 +19,8 @@ import scala.collection.{mutable, Set => SomeSet}
  * @param index if unbalanced return, the index of the call in the caller.
  * @param callChain if unbalanced return, the current call chain.
  */
-class IFDSFact[Fact <: AbstractIFDSFact, C <: AnyRef](val fact: Fact, val isUnbalancedReturn: Boolean, val index: Option[Int], val callChain: Option[Seq[C]]) {
+class IFDSFact[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
+(val fact: Fact, val isUnbalancedReturn: Boolean, val callStmt: Option[S], val callChain: Option[Seq[C]]) {
 
     def this(fact: Fact) = {
         this(fact, false, None, None)
@@ -30,16 +31,16 @@ class IFDSFact[Fact <: AbstractIFDSFact, C <: AnyRef](val fact: Fact, val isUnba
     // thus, ignore call chain such that property store works accordingly
 
     override def equals(obj: Any): Boolean = obj match {
-        case other: IFDSFact[Fact @unchecked, C @unchecked] => this.eq(other) ||
+        case other: IFDSFact[Fact @unchecked, C @unchecked, S @unchecked] => this.eq(other) ||
             (this.hashCode() == other.hashCode()
                 && this.fact == other.fact
                 && this.isUnbalancedReturn == other.isUnbalancedReturn
-                && this.index == other.index)
+                && this.callStmt == other.callStmt)
         case _ => false
     }
 
     override def hashCode(): Int = {
-        64 * (fact.hashCode() + isUnbalancedReturn.hashCode() + index.hashCode())
+        64 * (fact.hashCode() + isUnbalancedReturn.hashCode() + callStmt.hashCode())
     }
 }
 
@@ -150,7 +151,8 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
  * @param source The callable and input fact for which the callable is analyzed.
  * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
-protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], Work](val source: (C, IFDSFact[Fact, C]), subsumes: (Set[Fact], Fact) => Boolean) {
+protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], Work]
+(val source: (C, IFDSFact[Fact, C, S]), subsumes: (Set[Fact], Fact) => Boolean) {
     val dependees: Dependees[Work] = Dependees()
     val pathEdges: PathEdges[Fact, S, C] = PathEdges(subsumes)
     var endSummaries: Set[(S, Fact)] = Set.empty
@@ -184,7 +186,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         val ifdsProblem: IFDSProblem[Fact, C, S],
         val propertyKey: IFDSPropertyMetaInformation[S, Fact]
 ) extends ProjectFPCFAnalysis(project) {
-    type Work = (Option[S], IFDSFact[Fact, C], Option[S]) // statement, fact, predecessor
+    type Work = (Option[S], IFDSFact[Fact, C, S], Option[S]) // statement, fact, predecessor
     type Worklist = mutable.Queue[Work]
     type State = IFDSState[Fact, C, S, Work]
 
@@ -199,7 +201,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      *         statements. Returns an interim result, if the TAC or call graph of this method or the
      *         IFDS analysis for a callee is still pending.
      */
-    def performAnalysis(entity: (C, IFDSFact[Fact, C])): ProperPropertyComputationResult = {
+    def performAnalysis(entity: (C, IFDSFact[Fact, C, S])): ProperPropertyComputationResult = {
         val (function, sourceFact) = entity
 
         // Start processing at the start of the icfg with the given source fact
@@ -209,7 +211,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 
         // if method is analyzed for unbalanced return fact, start with next statements after call statement
         val startStatements: Set[(Option[S], Option[S])] = if (sourceFact.isUnbalancedReturn) {
-            val call = icfg.getStatement(function, sourceFact.index.get)
+            val call = sourceFact.callStmt.get
             val startStmts: Set[(Option[S], Option[S])] = icfg.nextStatements(call).map(stmt => (Some(stmt), Some(call)))
             if (startStmts.isEmpty) Set((None, Some(call))) // unbalanced return to call with index 0
             else startStmts
@@ -389,7 +391,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
             } else {
                 // handle all other dependencies using property store
                 val callFlows = state.dependees.get(newEntity, propertyKey.key)
-                    .asInstanceOf[EOptionP[(C, IFDSFact[Fact, C]), IFDSProperty[S, Fact]]]
+                    .asInstanceOf[EOptionP[(C, IFDSFact[Fact, C, S]), IFDSProperty[S, Fact]]]
                 callFlows match {
                     case ep: FinalEP[_, IFDSProperty[S, Fact]] =>
                         ep.p.flows
@@ -453,25 +455,22 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         if (existingCallChain.contains(callee)) return
         val callers = icfg.getCallers(callee)
 
-        for {
-            (caller, callIndex) <- callers
-            call = icfg.getStatement(caller, callIndex)
-        } {
-            val normalReturnFacts = ifdsProblem.returnFlow(exit, in, call, None, existingCallChain)
+        for (callStmt <- callers) {
+            val normalReturnFacts = ifdsProblem.returnFlow(exit, in, callStmt, None, existingCallChain)
             val unbalancedReturnFacts = normalReturnFacts
                 // map to unbalanced return facts
-                .map(new IFDSFact(_, true, Some(callIndex), Some(existingCallChain.prepended(callee))))
+                .map(new IFDSFact(_, true, Some(callStmt), Some(existingCallChain.prepended(callee))))
 
             // Add the caller with the unbalanced return facts as a dependency to start its analysis
             for (unbRetFact <- unbalancedReturnFacts) {
-                val newEntity = (caller, unbRetFact)
+                val newEntity = (callStmt.callable, unbRetFact)
                 if (newEntity == state.source) {
                     // handle self dependency on our own because property store can't handle it
                     state.selfDependees += work
                 } else {
                     // handle all other dependencies using property store
                     state.dependees.get(newEntity, propertyKey.key)
-                        .asInstanceOf[EOptionP[(C, IFDSFact[Fact, C]), IFDSProperty[S, Fact]]]
+                        .asInstanceOf[EOptionP[(C, IFDSFact[Fact, C, S]), IFDSProperty[S, Fact]]]
                 }
             }
         }

@@ -21,7 +21,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = for {
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] = for {
         m <- p.allMethodsWithBody
     } yield m -> new IFDSFact(TaintNullFact)
 
@@ -74,7 +74,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
             for (entryFact <- entryFacts) { // ifds line 14
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
-                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, NativeFunction]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
+                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
                         case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>

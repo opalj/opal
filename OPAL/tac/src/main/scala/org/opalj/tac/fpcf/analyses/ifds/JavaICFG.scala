@@ -87,19 +87,7 @@ abstract class JavaICFG(project: SomeProject)
         result
     }
 
-    /**
-     * Get the method's statement with the given index.
-     *
-     * @param callable the method containing the statement.
-     * @param index    the index of the statement.
-     * @return the corresponding statement.
-     */
-    override def getStatement(callable: Method, index: Int): JavaStatement = {
-        val TACode(_, code, _, cfg, _) = tacai(callable)
-        JavaStatement(callable, index, code, cfg)
-    }
-
-    override def getCallers(callee: Method): Seq[(Method, Int)] = {
+    override def getCallers(callee: Method): Seq[JavaStatement] = {
         val declaredCallee = declaredMethods(callee)
         propertyStore(declaredCallee, Callers.key) match {
             case FinalEP(_, p: Callers) =>
@@ -108,7 +96,9 @@ abstract class JavaICFG(project: SomeProject)
                     .filter(callersProperty => callersProperty._3)
                     .map {
                         case (caller, callPc, _) =>
-                            (caller.definedMethod, tacai(caller.definedMethod).pcToIndex(callPc))
+                            val TACode(_, code, _, cfg, _) = tacai(caller.definedMethod)
+                            val callIndex = tacai(caller.definedMethod).pcToIndex(callPc)
+                            JavaStatement(caller.definedMethod, callIndex, code, cfg)
                     }
                     .toSeq
             case _ =>

@@ -32,7 +32,7 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
     /**
      * The entry points of this analysis.
      */
-    def entryPoints: Seq[(C, IFDSFact[Fact, C])]
+    def entryPoints: Seq[(C, IFDSFact[Fact, C, S])]
 
     /**
      * @return Whether the analysis should follow unbalanced return flows
@@ -47,7 +47,7 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      * @param source the source fact of the analysis of the current function.
      * @return true if an unbalanced return should be performed.
      */
-    def shouldPerformUnbalancedReturn(source: (C, IFDSFact[Fact, C])): Boolean =
+    def shouldPerformUnbalancedReturn(source: (C, IFDSFact[Fact, C, S])): Boolean =
         source._2.isUnbalancedReturn || entryPoints.contains(source)
 
     /**

@@ -23,13 +23,14 @@ class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProbl
 
     override def enableUnbalancedReturns: Boolean = true
 
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = p.allProjectClassFiles.filter(classFile =>
-        classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
-        .flatMap(_.methods)
-        .filter(_.name == "sink")
-        .map(method => method -> new IFDSFact(
-            Variable(JavaIFDSProblem.switchParamAndVariableIndex(0, isStaticMethod = true))
-        ))
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
+        p.allProjectClassFiles.filter(classFile =>
+            classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
+            .flatMap(_.methods)
+            .filter(_.name == "sink")
+            .map(method => method -> new IFDSFact(
+                Variable(JavaIFDSProblem.switchParamAndVariableIndex(0, isStaticMethod = true))
+            ))
 
     /**
      * The sanitize method is the sanitizer.

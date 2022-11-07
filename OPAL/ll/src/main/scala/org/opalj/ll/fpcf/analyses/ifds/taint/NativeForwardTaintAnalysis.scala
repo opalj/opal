@@ -13,7 +13,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, NativeFunction])] = Seq.empty
+    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement])] = Seq.empty
     override val javaPropertyKey: PropertyKey[Taint] = Taint.key
 
     /**

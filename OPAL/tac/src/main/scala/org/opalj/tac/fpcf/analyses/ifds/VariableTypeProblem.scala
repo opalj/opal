@@ -71,7 +71,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
     /**
      * The analysis starts with all public methods in java.lang or org.opalj.
      */
-    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, Method])] = {
+    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
         project.allProjectClassFiles
             .filter(classInsideAnalysisContext)
             .flatMap(classFile => classFile.methods)
@@ -321,7 +321,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * @return All pairs (`method`, inputFact) where inputFact is a VariableType for one of the
      *         method's parameter with its compile time type as an upper bound.
      */
-    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, Method])] = {
+    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
         // Iterate over all parameters, which have a reference type.
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType =>

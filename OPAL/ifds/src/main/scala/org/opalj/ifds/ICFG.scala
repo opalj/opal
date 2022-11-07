@@ -38,19 +38,10 @@ abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
     def isExitStatement(statement: S): Boolean
 
     /**
-     * Get the callable's statement with the given index.
-     *
-     * @param callable the callable containing the statement.
-     * @param index the index of the statement.
-     * @return the corresponding statement.
-     */
-    def getStatement(callable: C, index: Int): S
-
-    /**
      * Get all instances where a function is called.
      *
      * @param callee the function whose callers should be found.
-     * @return a seq of (caller, index-of-call) pairs.
+     * @return a seq of statements where the callee is called.
      */
-    def getCallers(callee: C): Seq[(C, Int)]
+    def getCallers(callee: C): Seq[S]
 }
