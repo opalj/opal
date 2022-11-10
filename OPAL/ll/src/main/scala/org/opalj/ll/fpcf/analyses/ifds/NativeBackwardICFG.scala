@@ -2,6 +2,7 @@
 package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ll.cg.PhasarCallGraphParser.PhasarCallGraph
 
 /**
  * An ICFG for a native IFDS backwards analysis.
@@ -10,7 +11,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Nicolas Gross
  */
-class NativeBackwardICFG(implicit project: SomeProject) extends NativeICFG(project) {
+class NativeBackwardICFG(project: SomeProject) extends NativeICFG(project) {
     /**
      * Determines the statements at which the analysis starts.
      *

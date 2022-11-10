@@ -87,7 +87,7 @@ abstract class JavaICFG(project: SomeProject)
         result
     }
 
-    override def getCallers(callee: Method): Seq[JavaStatement] = {
+    override def getCallers(callee: Method): Set[JavaStatement] = {
         val declaredCallee = declaredMethods(callee)
         propertyStore(declaredCallee, Callers.key) match {
             case FinalEP(_, p: Callers) =>
@@ -99,8 +99,7 @@ abstract class JavaICFG(project: SomeProject)
                             val TACode(_, code, _, cfg, _) = tacai(caller.definedMethod)
                             val callIndex = tacai(caller.definedMethod).pcToIndex(callPc)
                             JavaStatement(caller.definedMethod, callIndex, code, cfg)
-                    }
-                    .toSeq
+                    }.toSet
             case _ =>
                 throw new IllegalStateException(
                     "call graph must be computed before the analysis starts"

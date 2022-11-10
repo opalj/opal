@@ -43,5 +43,5 @@ abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
      * @param callee the function whose callers should be found.
      * @return a seq of statements where the callee is called.
      */
-    def getCallers(callee: C): Seq[S]
+    def getCallers(callee: C): Set[S]
 }

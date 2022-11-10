@@ -3,6 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
 import org.opalj.ifds.ICFG
+import org.opalj.ll.cg.PhasarCallGraphKey
 import org.opalj.ll.llvm.value.{Call, Function}
 
 abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMStatement] {
@@ -29,8 +30,24 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
             else Set()
         }
 
-    override def getCallers(callee: NativeFunction): Seq[LLVMStatement] = {
-        // TODO
-        ???
+    private def getCallStatements(caller: Function, callee: Function): Set[LLVMStatement] = {
+        caller.basicBlocks.flatMap(_.instructions).filter {
+            case call: Call => call.calledValue match {
+                case function: Function => function == callee
+                case _ => false
+            }
+            case _ => false
+        }.map(LLVMStatement).toSet
+    }
+
+    override def getCallers(callee: NativeFunction): Set[LLVMStatement] = {
+        val callGraph = project.get(PhasarCallGraphKey)
+        callee match {
+            case LLVMFunction(calleeFunction) =>
+                callGraph(calleeFunction).flatMap(getCallStatements(_, calleeFunction)).toSet
+            // TODO xlang: handle unbalanced returns to java code that was calling a native function
+            // TODO xlang: handle unbalanced returns to native code that was calling a JNI function
+            case JNIMethod(method) => Set.empty // TODO, but irrelevant for unbalanced returns so no priority
+        }
     }
 }
