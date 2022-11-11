@@ -28,7 +28,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] =
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
         p.allProjectClassFiles.filter(classFile =>
             classFile.thisType.fqn == "java/lang/Class")
             .flatMap(classFile => classFile.methods)
@@ -48,7 +48,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.
      */
-    override def shouldPerformUnbalancedReturn(source: (Method, IFDSFact[TaintFact, Method])): Boolean = {
+    override def shouldPerformUnbalancedReturn(source: (Method, IFDSFact[TaintFact, Method, JavaStatement])): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
             (!icfg.canBeCalledFromOutside(source._1) ||
                 // The source is callable from outside, but should create unbalanced return facts.
@@ -67,9 +67,9 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * Instead, FlowFacts are created at the start node of methods.
      */
     override protected def applyFlowFactFromCallee(
-        calleeFact: FlowFact,
-        caller: Method,
-        in: TaintFact,
+        calleeFact:   FlowFact,
+        caller:       Method,
+        in:           TaintFact,
         unbCallChain: Seq[Method]
     ): Option[FlowFact] = None
 

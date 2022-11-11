@@ -68,21 +68,23 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
     ): Set[Fact]
 
     /**
-     * Computes the data flow for a call to start edge.
+     * Computes the data flow for a call to start edge. The start node depends on the analysis
+     * direction (forward: entry of callee, backward: an exit/return statement).
      *
      * @param call   The statement, which called the `callee`.
      * @param in     The fact which holds before the execution of the `call`.
      * @param callee The called method, for which the data flow shall be computed.
-     * @param entry  The entry statement of the 'callee'.
+     * @param start  The statement, which starts the analysis of the 'callee'.
      * @return The facts, which hold after the execution of `call` under the assumption that
      *         the fact `in` held before `call` and `call` calls `callee`.
      */
-    def callFlow(entry: S, in: Fact, call: S, callee: C): Set[Fact]
+    def callFlow(start: S, in: Fact, call: S, callee: C): Set[Fact]
 
     /**
-     * Computes the data flow for an exit to return edge.
+     * Computes the data flow for an exit to return edge. The exit node depends on the analysis
+     * direction (forward: an exit/return statement, backward: entry of callee).
      *
-     * @param exit     The statement, which terminated the `callee`.
+     * @param exit     The statement, which terminated the analysis of the `callee`.
      * @param in       The fact which holds before the execution of the `exit`.
      * @param call     The statement, which called the `callee`.
      * @param successor The successor statement of the call, might be None if unbalanced return.

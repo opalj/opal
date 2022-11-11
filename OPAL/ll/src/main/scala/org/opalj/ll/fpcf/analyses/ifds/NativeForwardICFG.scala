@@ -2,7 +2,6 @@
 package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ll.cg.PhasarCallGraphParser.PhasarCallGraph
 import org.opalj.ll.llvm.value.{Instruction, Ret, Terminator}
 
 class NativeForwardICFG(project: SomeProject) extends NativeICFG(project) {

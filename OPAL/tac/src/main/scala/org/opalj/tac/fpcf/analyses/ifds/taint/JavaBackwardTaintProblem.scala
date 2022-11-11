@@ -77,19 +77,19 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * context will be tainted. If an actual pass-by-reference-parameter in the caller context is
      * tainted, the formal parameter in the callee context will be tainted.
      */
-    override def callFlow(entry: JavaStatement, in: TaintFact, call: JavaStatement, callee: Method): Set[TaintFact] = {
+    override def callFlow(start: JavaStatement, in: TaintFact, call: JavaStatement, callee: Method): Set[TaintFact] = {
         // taint expression of return value in callee if return value in caller is tainted
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         val flow = collection.mutable.Set.empty[TaintFact]
-        if (call.stmt.astID == Assignment.ASTID && entry.stmt.astID == ReturnValue.ASTID) {
+        if (call.stmt.astID == Assignment.ASTID && start.stmt.astID == ReturnValue.ASTID) {
             in match {
                 case Variable(index) if index == call.index =>
-                    flow ++= createNewTaints(entry.stmt.asReturnValue.expr, entry)
+                    flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
                 case ArrayElement(index, taintedElement) if index == call.index =>
-                    flow ++= createNewArrayElementTaints(entry.stmt.asReturnValue.expr, taintedElement,
+                    flow ++= createNewArrayElementTaints(start.stmt.asReturnValue.expr, taintedElement,
                         call)
                 case InstanceField(index, declaringClass, name) if index == call.index =>
-                    flow ++= createNewInstanceFieldTaints(entry.stmt.asReturnValue.expr, declaringClass,
+                    flow ++= createNewInstanceFieldTaints(start.stmt.asReturnValue.expr, declaringClass,
                         name, call)
                 case _ => // Nothing to do
             }

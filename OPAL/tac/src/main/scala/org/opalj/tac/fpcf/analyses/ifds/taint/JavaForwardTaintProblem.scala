@@ -59,7 +59,7 @@ abstract class JavaForwardTaintProblem(project: SomeProject)
      * Propagates tainted parameters to the callee. If a call to the sink method with a tainted
      * parameter is detected, no call-to-start edges will be created.
      */
-    override def callFlow(entry: JavaStatement, in: TaintFact, call: JavaStatement, callee: Method): Set[TaintFact] = {
+    override def callFlow(start: JavaStatement, in: TaintFact, call: JavaStatement, callee: Method): Set[TaintFact] = {
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
 

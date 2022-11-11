@@ -31,7 +31,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * The string parameters of all public methods are entry points.
      */
-    override def entryPoints: Seq[(Method, IFDSFact[TaintFact, Method])] = for {
+    override def entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] = for {
         m <- icfg.methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index <- m.descriptor.parameterTypes.zipWithIndex.collect {

@@ -7,6 +7,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.{EPS, Entity, FinalEP, Property}
 import org.opalj.ifds.IFDSFact
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.{BackwardTaintAnalysisFixtureScheduler, FlowFact, TaintFact}
 import org.opalj.tac.fpcf.properties.Taint
 
@@ -22,7 +23,7 @@ class BackwardFlowPathMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val method = entity.asInstanceOf[(Method, IFDSFact[TaintFact, Method])]._1
+        val method = entity.asInstanceOf[(Method, IFDSFact[TaintFact, Method, JavaStatement])]._1
         val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) =>
             evp.value.asArrayValue.values.map((value: ElementValue) =>
                 value.asStringValue.value)).head

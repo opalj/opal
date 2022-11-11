@@ -123,7 +123,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * For each variable, which can be passed as an argument to the call, a new VariableType is
      * created for the callee context.
      */
-    override def callFlow(entry: JavaStatement, in: VTAFact, call: JavaStatement, callee: Method): Set[VTAFact] = {
+    override def callFlow(start: JavaStatement, in: VTAFact, call: JavaStatement, callee: Method): Set[VTAFact] = {
         val inSet = Set(in)
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
