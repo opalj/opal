@@ -113,6 +113,16 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends User(ref) {
     }
 }
 
+sealed abstract class BinaryOperation(ref: LLVMValueRef) extends Instruction(ref) {
+    def op1: Value = operand(0)
+    def op2: Value = operand(1)
+}
+
+sealed abstract class ConversionOperation(ref: LLVMValueRef) extends Instruction(ref) {
+    def value: Value = operand(0) // value
+    def newType: Value = operand(1) // type
+}
+
 case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator {
     def value: Option[Value] = if (numOperands == 0 /* return void */ ) None else Some(operand(0))
 }
@@ -123,30 +133,24 @@ case class Invoke(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class Unreachable(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class CallBr(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class FNeg(ref: LLVMValueRef) extends Instruction(ref)
-case class Add(ref: LLVMValueRef) extends Instruction(ref) {
-    def op1: Value = operand(0)
-    def op2: Value = operand(1)
-}
-case class FAdd(ref: LLVMValueRef) extends Instruction(ref)
-case class Sub(ref: LLVMValueRef) extends Instruction(ref) {
-    def op1: Value = operand(0)
-    def op2: Value = operand(1)
-}
-case class FSub(ref: LLVMValueRef) extends Instruction(ref)
-case class Mul(ref: LLVMValueRef) extends Instruction(ref)
-case class FMul(ref: LLVMValueRef) extends Instruction(ref)
-case class UDiv(ref: LLVMValueRef) extends Instruction(ref)
-case class SDiv(ref: LLVMValueRef) extends Instruction(ref)
-case class FDiv(ref: LLVMValueRef) extends Instruction(ref)
-case class URem(ref: LLVMValueRef) extends Instruction(ref)
-case class SRem(ref: LLVMValueRef) extends Instruction(ref)
-case class FRem(ref: LLVMValueRef) extends Instruction(ref)
-case class Shl(ref: LLVMValueRef) extends Instruction(ref)
-case class LShr(ref: LLVMValueRef) extends Instruction(ref)
-case class AShr(ref: LLVMValueRef) extends Instruction(ref)
-case class And(ref: LLVMValueRef) extends Instruction(ref)
-case class Or(ref: LLVMValueRef) extends Instruction(ref)
-case class Xor(ref: LLVMValueRef) extends Instruction(ref)
+case class Add(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class FAdd(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class Sub(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class FSub(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class Mul(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class FMul(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class UDiv(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class SDiv(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class FDiv(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class URem(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class SRem(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class FRem(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class Shl(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class LShr(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class AShr(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class And(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class Or(ref: LLVMValueRef) extends BinaryOperation(ref)
+case class Xor(ref: LLVMValueRef) extends BinaryOperation(ref)
 case class Alloca(ref: LLVMValueRef) extends Instruction(ref) {
     def allocatedType: Type = Type(LLVMGetAllocatedType(ref))
 }
@@ -166,19 +170,19 @@ case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref) {
     def numIndices: Int = LLVMGetNumIndices(ref)
     def indices: Iterable[Int] = LLVMGetIndices(ref).asBuffer().array()
 }
-case class Trunc(ref: LLVMValueRef) extends Instruction(ref)
-case class ZExt(ref: LLVMValueRef) extends Instruction(ref)
-case class SExt(ref: LLVMValueRef) extends Instruction(ref)
-case class FPToUI(ref: LLVMValueRef) extends Instruction(ref)
-case class FPToSI(ref: LLVMValueRef) extends Instruction(ref)
-case class UIToFP(ref: LLVMValueRef) extends Instruction(ref)
-case class SIToFP(ref: LLVMValueRef) extends Instruction(ref)
-case class FPTrunc(ref: LLVMValueRef) extends Instruction(ref)
-case class FPExt(ref: LLVMValueRef) extends Instruction(ref)
-case class PtrToInt(ref: LLVMValueRef) extends Instruction(ref)
-case class IntToPtr(ref: LLVMValueRef) extends Instruction(ref)
-case class BitCast(ref: LLVMValueRef) extends Instruction(ref)
-case class AddrSpaceCast(ref: LLVMValueRef) extends Instruction(ref)
+case class Trunc(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class ZExt(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class SExt(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class FPToUI(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class FPToSI(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class UIToFP(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class SIToFP(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class FPTrunc(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class FPExt(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class PtrToInt(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class IntToPtr(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class BitCast(ref: LLVMValueRef) extends ConversionOperation(ref)
+case class AddrSpaceCast(ref: LLVMValueRef) extends ConversionOperation(ref)
 case class ICmp(ref: LLVMValueRef) extends Instruction(ref)
 case class FCmp(ref: LLVMValueRef) extends Instruction(ref)
 case class PHI(ref: LLVMValueRef) extends Instruction(ref)
@@ -196,11 +200,36 @@ case class Select(ref: LLVMValueRef) extends Instruction(ref)
 case class UserOp1(ref: LLVMValueRef) extends Instruction(ref)
 case class UserOp2(ref: LLVMValueRef) extends Instruction(ref)
 case class VAArg(ref: LLVMValueRef) extends Instruction(ref)
-case class ExtractElement(ref: LLVMValueRef) extends Instruction(ref)
-case class InsertElement(ref: LLVMValueRef) extends Instruction(ref)
-case class ShuffleVector(ref: LLVMValueRef) extends Instruction(ref)
-case class ExtractValue(ref: LLVMValueRef) extends Instruction(ref)
-case class InsertValue(ref: LLVMValueRef) extends Instruction(ref)
+case class ExtractElement(ref: LLVMValueRef) extends Instruction(ref) {
+    def vec: Value = operand(0)
+    def index: Value = operand(1)
+    def isConstant = index.isInstanceOf[ConstantIntValue]
+    def constant = index.asInstanceOf[ConstantIntValue].zeroExtendedValue
+}
+case class InsertElement(ref: LLVMValueRef) extends Instruction(ref) {
+    def vec: Value = operand(0)
+    def value: Value = operand(1)
+    def index: Value = operand(2)
+    def isConstant = index.isInstanceOf[ConstantIntValue]
+    def constant = index.asInstanceOf[ConstantIntValue].zeroExtendedValue
+}
+case class ShuffleVector(ref: LLVMValueRef) extends Instruction(ref) {
+    def vec1: Value = operand(0)
+    def vec2: Value = operand(1)
+}
+case class ExtractValue(ref: LLVMValueRef) extends Instruction(ref) {
+    def aggregVal: Value = operand(0)
+
+    // always constant values
+    def constants = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+}
+case class InsertValue(ref: LLVMValueRef) extends Instruction(ref) {
+    def aggregVal: Value = operand(0)
+    def value: Value = operand(1)
+
+    // always constant values
+    def constants = (2 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+}
 case class Freeze(ref: LLVMValueRef) extends Instruction(ref)
 case class Fence(ref: LLVMValueRef) extends Instruction(ref)
 case class AtomicCmpXchg(ref: LLVMValueRef) extends Instruction(ref)

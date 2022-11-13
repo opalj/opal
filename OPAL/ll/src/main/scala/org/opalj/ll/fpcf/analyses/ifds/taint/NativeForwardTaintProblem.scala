@@ -3,10 +3,8 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSProblem}
-import org.opalj.ll.fpcf.analyses.ifds.JNIMethod
+import org.opalj.ll.fpcf.analyses.ifds.{JNIMethod, LLVMFunction, LLVMStatement, NativeForwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, GetElementPtr, Load, PHI, Ret, Store, Sub}
-
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintProblem}
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
@@ -16,7 +14,9 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 import org.opalj.tac.ReturnValue
 
-abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFDSProblem[NativeTaintFact, TaintFact](project) with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
+abstract class NativeForwardTaintProblem(project: SomeProject)
+    extends NativeForwardIFDSProblem[NativeTaintFact, TaintFact](project)
+        with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
     override def nullFact: NativeTaintFact = NativeTaintNullFact
 
     /**

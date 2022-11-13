@@ -10,7 +10,14 @@ import org.opalj.ifds.{AbstractIFDSFact, IFDSFact, IFDSProblem, IFDSProperty}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
-abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, NativeFunction, LLVMStatement](new NativeForwardICFG(project)) {
+abstract class NativeForwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
+    extends NativeIFDSProblem[Fact, JavaFact](project, new NativeForwardICFG(project))
+
+abstract class NativeBackwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
+    extends NativeIFDSProblem[Fact, JavaFact](project, new NativeBackwardICFG(project))
+
+abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject, icfg: NativeICFG)
+    extends IFDSProblem[Fact, NativeFunction, LLVMStatement](icfg) {
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val llvmProject = project.get(LLVMProjectKey)
     val javaPropertyKey: PropertyKey[Property]
