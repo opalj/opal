@@ -2,7 +2,7 @@
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.value._
 import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintProblem}
 
@@ -11,6 +11,10 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
 
     override def nullFact: NativeTaintFact = NativeTaintNullFact
+
+    override def enableUnbalancedReturns: Boolean = true
+
+    override def needsPredecessor(statement: LLVMStatement): Boolean = false
 
     override def normalFlow(statement: LLVMStatement, in: NativeTaintFact,
                             predecessor: Option[LLVMStatement]): Set[NativeTaintFact] = statement.instruction match {
@@ -101,6 +105,67 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
             case _ => Set(in)
         }
         case _ => Set(in)
+    }
+
+    override def callFlow(start: LLVMStatement, in: NativeTaintFact, call: LLVMStatement,
+                          callee: NativeFunction): Set[NativeTaintFact] = callee match {
+        // taint return value in callee, if tainted in caller
+        case LLVMFunction(_) => in match {
+            case NativeVariable(value) if value == call.instruction => start.instruction match {
+                case ret: Ret if ret.value.isDefined => Set(NativeVariable(ret.value.get))
+                case _ => Set.empty
+            }
+            case NativeArrayElement(base, indices) if base == call.instruction => start.instruction match {
+                case ret: Ret if ret.value.isDefined => Set(NativeArrayElement(ret.value.get, indices))
+                case _ => Set.empty
+            }
+            case NativeTaintNullFact => Set(in)
+            case _ => Set.empty
+        }
+        case _ => throw new RuntimeException("this case should be handled by outsideAnalysisContext")
+    }
+
+    override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement,
+                            successor: Option[LLVMStatement], unbCallChain: Seq[NativeFunction]): Set[NativeTaintFact] = {
+        val callee = exit.callable;
+        if (sanitizesReturnValue(callee)) return Set.empty
+
+        val callInstr = call.instruction.asInstanceOf[Call]
+        // taint parameters in caller context if they were tainted in the callee context
+        var flows: Set[NativeTaintFact] = in match {
+            case NativeTaintNullFact => Set(in)
+            case NativeVariable(value) => callee.function.arguments.find(_.ref == value.ref) match {
+                case Some(arg) => Set(NativeVariable(callInstr.argument(arg.index).get))
+                case None => Set.empty
+            }
+            case NativeArrayElement(base, indices) => callee.function.arguments.find(_.ref == base.ref) match {
+                case Some(arg) => Set(NativeArrayElement(callInstr.argument(arg.index).get, indices))
+                case None => Set.empty
+            }
+            case NativeFlowFact(flow) if !flow.contains(call.function) =>
+                Set(NativeFlowFact(call.function +: flow))
+            case _ => Set.empty
+        }
+
+        flows
+    }
+
+    override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: Option[LLVMStatement],
+                                  unbCallChain: Seq[NativeFunction]): Set[NativeTaintFact] = {
+        // create flow facts if callee is source or sink
+        val callInstr = call.instruction.asInstanceOf[Call]
+        val callees = icfg.resolveCallee(callInstr)
+        val sourceCallee = callees.find(_.name == "source")
+        if (callees.exists(_.name == "sink")) in match {
+            // taint variable that is put into sink
+            case NativeTaintNullFact => Set(NativeVariable(callInstr.argument(0).get))
+            case _ => Set.empty
+        } else if (sourceCallee.isDefined) in match {
+            // create flow fact if source is reached with tainted value
+            case NativeVariable(value) if value == call.instruction && !unbCallChain.contains(call.callable) =>
+                Set(NativeFlowFact(unbCallChain.prepended(call.callable)))
+            case _ => Set.empty
+        } else Set.empty
     }
 
 }

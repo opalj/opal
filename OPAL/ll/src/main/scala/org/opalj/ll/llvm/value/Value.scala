@@ -6,7 +6,7 @@ import org.bytedeco.llvm.LLVM.{LLVMUseRef, LLVMValueRef}
 import org.bytedeco.llvm.global.LLVM._
 import org.opalj.ll.llvm.value.constant.{ConstantDataArray, ConstantDataVector, ConstantExpression, ConstantIntValue}
 
-class Value(ref: LLVMValueRef) {
+class Value(val ref: LLVMValueRef) {
     def repr: String = {
         val bytePointer = LLVMPrintValueToString(ref)
         val string = bytePointer.getString

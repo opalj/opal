@@ -194,6 +194,10 @@ case class Call(ref: LLVMValueRef) extends Instruction(ref) {
             if (operand(i) == argument) return Some(i)
         None
     }
+    def argument(index: Int): Option[Value] = {
+        if (index >= numOperands) None
+        else Some(operand(index))
+    }
     def numArgOperands: Int = LLVMGetNumArgOperands(ref)
 }
 case class Select(ref: LLVMValueRef) extends Instruction(ref)

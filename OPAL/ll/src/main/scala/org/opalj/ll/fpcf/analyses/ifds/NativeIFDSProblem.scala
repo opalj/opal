@@ -16,7 +16,7 @@ abstract class NativeForwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: Ab
 abstract class NativeBackwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
     extends NativeIFDSProblem[Fact, JavaFact](project, new NativeBackwardICFG(project))
 
-abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject, icfg: NativeICFG)
+abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject, override val icfg: NativeICFG)
     extends IFDSProblem[Fact, NativeFunction, LLVMStatement](icfg) {
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val llvmProject = project.get(LLVMProjectKey)

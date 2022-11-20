@@ -23,7 +23,7 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
         }
     }
 
-    private def resolveCallee(call: Call): Set[_ <: NativeFunction] =
+    def resolveCallee(call: Call): Set[_ <: NativeFunction] =
         call.calledValue match {
             case function: Function => Set(LLVMFunction(function))
             case _ => if (JNICallUtil.isJNICall(call)) JNICallUtil.resolve(call)
