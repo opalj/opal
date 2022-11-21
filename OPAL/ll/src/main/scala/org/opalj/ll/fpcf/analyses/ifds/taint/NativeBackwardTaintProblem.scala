@@ -136,15 +136,15 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         val callInstr = call.instruction.asInstanceOf[Call]
         // taint parameters in caller context if they were tainted in the callee context
         in match {
-            case NativeTaintNullFact => Set(in)
-            case NativeVariable(value) => callee.function.arguments.find(_.ref == value.ref) match {
+            case NativeVariable(value) => callee.function.arguments.find(_.address == value.address) match {
                 case Some(arg) => Set(NativeVariable(callInstr.argument(arg.index).get))
                 case None => Set.empty
             }
-            case NativeArrayElement(base, indices) => callee.function.arguments.find(_.ref == base.ref) match {
+            case NativeArrayElement(base, indices) => callee.function.arguments.find(_.address == base.address) match {
                 case Some(arg) => Set(NativeArrayElement(callInstr.argument(arg.index).get, indices))
                 case None => Set.empty
             }
+            case NativeTaintNullFact => Set(in)
             case NativeFlowFact(flow) if !flow.contains(call.function) =>
                 Set(NativeFlowFact(call.function +: flow))
             case _ => Set.empty
