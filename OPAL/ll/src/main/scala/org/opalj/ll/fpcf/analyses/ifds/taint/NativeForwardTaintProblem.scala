@@ -12,7 +12,7 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.ReturnValue
+import org.opalj.tac.{ReturnValue, TACode}
 
 abstract class NativeForwardTaintProblem(project: SomeProject)
     extends NativeForwardIFDSProblem[NativeTaintFact, TaintFact](project)
@@ -147,6 +147,11 @@ abstract class NativeForwardTaintProblem(project: SomeProject)
         case _      => false
     }
 
+    override def javaStartStatements(callable: Method): Set[JavaStatement] = {
+        val TACode(_, code, _, cfg, _) = tacai(callable)
+        Set(JavaStatement(callable, 0, code, cfg))
+    }
+
     /**
      * Computes the data flow for a call to start edge.
      *
@@ -158,6 +163,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject)
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
     override protected def javaCallFlow(
+        start:  JavaStatement,
         call:   LLVMStatement,
         callee: Method,
         in:     NativeTaintFact

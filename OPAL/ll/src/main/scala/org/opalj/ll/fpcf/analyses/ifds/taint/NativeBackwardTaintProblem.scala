@@ -1,10 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds.taint
 
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
+import org.opalj.ll.fpcf.analyses.ifds.{JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.value._
-import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintProblem}
+import org.opalj.tac.{ReturnValue, TACode}
+import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, FlowFact, InstanceField, StaticField, TaintFact, TaintNullFact, TaintProblem, Variable}
 
 abstract class NativeBackwardTaintProblem(project: SomeProject)
     extends NativeBackwardIFDSProblem[NativeTaintFact, TaintFact](project)
@@ -132,7 +135,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         val callInstr = call.instruction.asInstanceOf[Call]
         // taint parameters in caller context if they were tainted in the callee context
-        var flows: Set[NativeTaintFact] = in match {
+        in match {
             case NativeTaintNullFact => Set(in)
             case NativeVariable(value) => callee.function.arguments.find(_.ref == value.ref) match {
                 case Some(arg) => Set(NativeVariable(callInstr.argument(arg.index).get))
@@ -146,8 +149,6 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 Set(NativeFlowFact(call.function +: flow))
             case _ => Set.empty
         }
-
-        flows
     }
 
     override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: Option[LLVMStatement],
@@ -155,17 +156,63 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         // create flow facts if callee is source or sink
         val callInstr = call.instruction.asInstanceOf[Call]
         val callees = icfg.resolveCallee(callInstr)
-        val sourceCallee = callees.find(_.name == "source")
         if (callees.exists(_.name == "sink")) in match {
             // taint variable that is put into sink
             case NativeTaintNullFact => Set(NativeVariable(callInstr.argument(0).get))
             case _ => Set.empty
-        } else if (sourceCallee.isDefined) in match {
+        } else if (callees.exists(_.name == "source")) in match {
             // create flow fact if source is reached with tainted value
             case NativeVariable(value) if value == call.instruction && !unbCallChain.contains(call.callable) =>
                 Set(NativeFlowFact(unbCallChain.prepended(call.callable)))
             case _ => Set.empty
         } else Set.empty
+    }
+
+    override def javaStartStatements(callable: Method): Set[JavaStatement] = {
+        val TACode(_, code, _, cfg, _) = tacai(callable)
+        val exitStatements = cfg.normalReturnNode.predecessors ++ cfg.abnormalReturnNode.predecessors
+        exitStatements.map(s => JavaStatement(callable, s.asBasicBlock.endPC, code, cfg))
+    }
+
+    override protected def javaCallFlow(start: JavaStatement, call: LLVMStatement, callee: Method,
+                                        in: NativeTaintFact): Set[TaintFact] = in match {
+        // taint return value in callee, if tainted in caller
+        case NativeVariable(_) if start.stmt.astID == ReturnValue.ASTID =>
+            Set(Variable(start.index))
+        case NativeArrayElement(_, _) if start.stmt.astID == ReturnValue.ASTID =>
+            Set(Variable(start.index))
+        case NativeTaintNullFact => Set(TaintNullFact)
+        case JavaStaticField(classType, fieldName) => Set(StaticField(classType, fieldName))
+        case _ => Set.empty
+    }
+
+    override protected def javaReturnFlow(exit: JavaStatement, in: TaintFact, call: LLVMStatement, callFact: NativeTaintFact,
+                                          successor: Option[LLVMStatement]): Set[NativeTaintFact] = {
+        val callee = exit.callable
+        if (sanitizesReturnValue(JNIMethod(callee))) return Set.empty
+
+        // Track the call chain to the sink back
+        val callInstr = call.instruction.asInstanceOf[Call]
+        val formalParameterIndices = (0 until callInstr.numArgOperands)
+            .map(index => JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
+
+        in match {
+            // Taint formal parameter if actual parameter is tainted
+            case Variable(index) if formalParameterIndices.contains(index) =>
+                val nativeIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+                Set(NativeVariable(callInstr.argument(nativeIndex).get))
+            case ArrayElement(index, _) if formalParameterIndices.contains(index) =>
+                val nativeIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+                Set(NativeVariable(callInstr.argument(nativeIndex).get))
+            case InstanceField(index, _, _) if formalParameterIndices.contains(index) =>
+                val nativeIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+                Set(NativeVariable(callInstr.argument(nativeIndex).get))
+            // also propagate tainted static fields
+            case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
+            case TaintNullFact => Set(NativeTaintNullFact)
+            case FlowFact(flow) if !flow.contains(call.function) => Set(NativeFlowFact(call.function +: flow))
+            case _ => Set.empty
+        }
     }
 
 }

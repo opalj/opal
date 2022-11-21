@@ -8,7 +8,9 @@ import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, Property, PropertyKey, Pr
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{AbstractIFDSFact, IFDSFact, IFDSProblem, IFDSProperty}
 import org.opalj.ll.LLVMProjectKey
+import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.value.ValueInformation
 
 abstract class NativeForwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
     extends NativeIFDSProblem[Fact, JavaFact](project, new NativeForwardICFG(project))
@@ -21,6 +23,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val llvmProject = project.get(LLVMProjectKey)
     val javaPropertyKey: PropertyKey[Property]
+    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
 
     override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Getter) => Set[Fact]] = callee match {
         case LLVMFunction(function) =>
@@ -31,9 +34,17 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
         case JNIMethod(method) => Some(handleJavaMethod(method))
     }
 
+    /**
+     * Determines the statements at which the analysis of the java method starts.
+     *
+     * @param callable The analyzed callable.
+     * @return The statements at which the analysis starts.
+     */
+    def javaStartStatements(callable: Method): Set[JavaStatement]
+
     private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: Option[LLVMStatement], in: Fact, dependeesGetter: Getter): Set[Fact] = {
         var result = Set.empty[Fact]
-        val entryFacts = javaCallFlow(call, callee, in).map(new IFDSFact(_))
+        val entryFacts = javaStartStatements(callee).flatMap(javaCallFlow(_, call, callee, in)).map(new IFDSFact(_))
         for (entryFact <- entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[JavaStatement, Set[JavaFact]] =
@@ -66,6 +77,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
     protected def javaCallFlow(
+        start:  JavaStatement,
         call:   LLVMStatement,
         callee: Method,
         in:     Fact
