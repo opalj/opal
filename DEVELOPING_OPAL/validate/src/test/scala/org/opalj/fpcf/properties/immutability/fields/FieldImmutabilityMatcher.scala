@@ -21,7 +21,7 @@ import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
  */
 class FieldImmutabilityMatcher(val property: FieldImmutability) extends AbstractPropertyMatcher {
 
-    private final val PropertyReasonID = 0
+    //private final val PropertyReasonID = 0
 
     override def isRelevant(
         p:      SomeProject,
@@ -46,19 +46,9 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         properties: Iterable[Property]
     ): Option[String] = {
 
-        if (!properties.exists(p => p match {
-            case DependentlyImmutableField(_) =>
-                //val annotationType = a.annotationType.asFieldType.asObjectType
-                /*val parameters =
-                    getValue(project, annotationType, a.elementValuePairs, "parameter").
-                        asArrayValue.values.map(x => x.asStringValue.value) */
-                property.isInstanceOf[DependentlyImmutableField] /* &&
-                    p.asInstanceOf[DependentlyImmutableField].parameter.size == parameters.size &&
-                    parameters.toList.forall(param => p.asInstanceOf[DependentlyImmutableField].parameter.contains(param)) */
-            case _ => p == property
-        })) {
+        if (!properties.exists(p => p == property)) {
             // ... when we reach this point the expected property was not found.
-            Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
+            Some(a.elementValuePairs(0).value.asStringValue.value)
         } else {
             None
         }
@@ -69,7 +59,31 @@ class MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.im
 
 class NonTransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.NonTransitivelyImmutableField)
 
-class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(Set.empty))
+class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(Set.empty)) {
+    override def validateProperty(
+        project:    SomeProject,
+        as:         Set[ObjectType],
+        entity:     Entity,
+        a:          AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String] = {
+
+        if (!properties.exists(p => p match {
+            case DependentlyImmutableField(annotationParameters) =>
+                val annotationType = a.annotationType.asFieldType.asObjectType
+                val analysisParameters =
+                    getValue(project, annotationType, a.elementValuePairs, "parameter").
+                        asArrayValue.values.map(x => x.asStringValue.value)
+                annotationParameters.equals(analysisParameters.toSet)
+            case _ => p == property
+        })) {
+            // ... when we reach this point the expected property was not found.
+            Some(a.elementValuePairs(0).value.asStringValue.value)
+        } else {
+            None
+        }
+    }
+}
 
 class TransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.TransitivelyImmutableField)
 
