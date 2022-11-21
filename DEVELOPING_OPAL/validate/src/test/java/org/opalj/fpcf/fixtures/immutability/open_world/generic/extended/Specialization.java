@@ -13,14 +13,14 @@ public class Specialization<T> {
 
     @DependentlyImmutableClass(value = "The field type is generic", parameter = {"A"})
     class G<A>{
-        @DependentlyImmutableField(value="Has only a generic type", parameter = "A")
+        @DependentlyImmutableField(value="Has only a generic type", parameter = {"A"})
         private final A a;
         public G(A a){
             this.a = a;
         }
     }
 
-    @TransitivelyImmutableClass("Generic Parameter specified with transitively immutable types")
+    @DependentlyImmutableClass("The analysis is not aware of the specialization")
     class G2 extends G<FinalClassWithNoFields>{
         public G2(FinalClassWithNoFields finalClassWithNoFields){
             super(finalClassWithNoFields);
