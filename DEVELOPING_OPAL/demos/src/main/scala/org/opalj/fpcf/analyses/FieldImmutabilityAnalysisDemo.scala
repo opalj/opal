@@ -4,11 +4,6 @@ package fpcf
 package analyses
 
 import java.net.URL
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
-import java.util.Calendar
-import java.io.IOException
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport

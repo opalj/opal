@@ -3,11 +3,7 @@ package org.opalj
 package fpcf
 package analyses
 
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
 import java.net.URL
-import java.util.Calendar
 
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
@@ -30,7 +26,6 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import java.io.IOException
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 

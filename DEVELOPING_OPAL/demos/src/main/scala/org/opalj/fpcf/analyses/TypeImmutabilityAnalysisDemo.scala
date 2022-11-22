@@ -1,11 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.analyses
+package org
+package opalj
+package fpcf
+package analyses
 
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
 import java.net.URL
-import java.util.Calendar
 
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
@@ -31,7 +30,6 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import java.io.IOException
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
 

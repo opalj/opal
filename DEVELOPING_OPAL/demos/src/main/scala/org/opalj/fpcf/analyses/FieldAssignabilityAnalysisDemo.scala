@@ -5,11 +5,6 @@ package analyses
 
 import org.opalj.br.analyses.ProjectAnalysisApplication
 
-import java.util.Calendar
-import java.io.IOException
-import java.io.BufferedWriter
-import java.io.FileWriter
-import java.io.File
 import java.net.URL
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
@@ -31,6 +26,7 @@ import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.Field
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
@@ -98,12 +94,12 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         val threadSafeLazyInitializedFields = groupedResults(LazilyInitialized).toSeq.
             sortWith(order)
         val EffectivelynonAssignableFields = groupedResults(EffectivelyNonAssignable).toSeq.sortWith(order)
-        val NonAssignableFields = groupedResults(NonAssignableField).toSeq.sortWith(order)
+        val NonAssignableFields = groupedResults(NonAssignable).toSeq.sortWith(order)
 
         s"""
           |
           | Assignable Fields: ${assignableFields.size}
-           Lazy Initialized Fields : ${unsafelyLazilyInitializedFields.size}
+          | Lazy Initialized Fields : ${unsafelyLazilyInitializedFields.size}
           | Lazy Initialized Thread Safe Fields: ${threadSafeLazyInitializedFields.size}
           | Effectively Non Assignable Fields: ${EffectivelynonAssignableFields.size}
           | Non Assignable Fields: ${NonAssignableFields.size}
@@ -111,7 +107,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
           | total Fields: ${
             assignableFields.size + unsafelyLazilyInitializedFields.size +
                 threadSafeLazyInitializedFields.size +
-                EffectivelynonAssignableFields.size + NonAssignableFields.siize
+                EffectivelynonAssignableFields.size + NonAssignableFields.size
         }
           | took : $analysisTime seconds
           |""".stripMargin
