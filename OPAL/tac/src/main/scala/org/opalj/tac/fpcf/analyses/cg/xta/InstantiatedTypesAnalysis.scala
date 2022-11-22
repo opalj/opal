@@ -6,8 +6,6 @@ package analyses
 package cg
 package xta
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.br._
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -41,6 +39,8 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.cg.TypeIteratorKey
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
