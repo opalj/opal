@@ -5,6 +5,7 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
+
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -34,7 +35,10 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.immutability.{FieldImmutability, TransitivelyImmutableField, TransitivelyImmutableType, TypeImmutability}
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARETURN
@@ -240,7 +244,6 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
