@@ -27,7 +27,6 @@ import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.ReferenceType
-
 import scala.collection.immutable.ArraySeq
 
 /**

@@ -28,12 +28,12 @@ object XHTML {
         )
 
     def jquery: String =
-        process(this.getClass.getResourceAsStream("jquery-1.6.2.min.js"))(
+        process(this.getClass.getResourceAsStream("jquery-3.6.1.min.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
     def colResizable: String =
-        process(this.getClass.getResourceAsStream("colResizable-1.3.min.js"))(
+        process(this.getClass.getResourceAsStream("colResizable-1.6.min.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 

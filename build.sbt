@@ -28,9 +28,7 @@ ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licens
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-// TODO: Use release version of Scala 2.13.9 instead of nightly
-Global / resolvers += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/"
-ThisBuild / scalaVersion := "2.13.9-bin-7952071"
+ThisBuild / scalaVersion := "2.13.10"
 
 ScalacConfiguration.globalScalacOptions
 
