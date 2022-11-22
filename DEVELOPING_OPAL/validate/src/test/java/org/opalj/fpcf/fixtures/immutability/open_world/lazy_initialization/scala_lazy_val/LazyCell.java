@@ -19,7 +19,6 @@ import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssig
 */
 @MutableType("non final class")
 @TransitivelyImmutableClass(value = "Class has only transitive immutable fields.", analyses = {})
-@NonTransitivelyImmutableClass(value = "the analysis only recognize non transitively immutable fields", analyses = {ClassImmutabilityAnalysis.class})
 public class LazyCell {
 
 @TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
