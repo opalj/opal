@@ -41,6 +41,8 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.immutable.ArraySeq
@@ -64,8 +66,6 @@ object UnusedResults extends ProjectAnalysisApplication {
     override def doAnalyze(
         project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
     ): BasicReport = {
-        import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
-        import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 
         val issues = new ConcurrentLinkedQueue[String]
 
