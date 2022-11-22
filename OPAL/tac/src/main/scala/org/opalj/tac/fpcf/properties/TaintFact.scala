@@ -10,6 +10,8 @@ import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
 
 trait TaintFact extends AbstractIFDSFact
 
+trait extraInfor
+
 case object TaintNullFact extends TaintFact with AbstractIFDSNullFact
 
 /**

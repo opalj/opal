@@ -6,7 +6,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication}
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.{AllocationSiteBasedPointsToCallGraphKey}
 import org.opalj.tac.fpcf.properties.Taint
 //import org.opalj.js.IFDSAnalysisJSFixtureScheduler
 import org.opalj.tac.fpcf.analyses.sql.IFDSSqlAnalysisScheduler
@@ -32,7 +32,7 @@ object TaintDemo extends ProjectAnalysisApplication {
 
     var propertyStore: PropertyStore = null
     val analysesManager = project.get(FPCFAnalysesManagerKey)
-    project.get(RTACallGraphKey)
+    project.get(AllocationSiteBasedPointsToCallGraphKey)
 
     project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
       Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
@@ -44,5 +44,6 @@ object TaintDemo extends ProjectAnalysisApplication {
       propertyStore.waitOnPhaseCompletion();
     //Result:
     propertyStore.entities(Taint.key).mkString("\n")
+
   }
 }

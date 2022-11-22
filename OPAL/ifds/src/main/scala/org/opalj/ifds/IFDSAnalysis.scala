@@ -158,7 +158,7 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <
     implicit var statistics = new Statistics
     val icfg = ifdsProblem.icfg
 
-    val DEBUG = false
+    val DEBUG = true
 
     /**
      * Performs an IFDS analysis for a method-fact-pair.
@@ -248,7 +248,8 @@ class IFDSAnalysis[IFDSFact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <
             implicit val work = worklist.dequeue() // ifds line 11
             val (statement, in, predecessor) = work
             icfg.getCalleesIfCallStatement(statement) match {
-                case Some(callees) => handleCall(statement, callees, in) // ifds line 13
+                case Some(callees) =>
+                    handleCall(statement, callees, in) // ifds line 13
                 case None => {
                     if (icfg.isExitStatement(statement)) handleExit(statement, in) // ifds line 21
                     // in case of exceptions exit statements may also have some normal flow so no else here

@@ -1,12 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.sql
 
-import org.opalj.br.{Method}
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.IFDSAnalysis
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.{V}
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
-import org.opalj.tac.{AITACode,ComputeTACAIKey, Expr, TACMethodParameter, TACode}
+import org.opalj.tac.{AITACode, ComputeTACAIKey, Expr, StaticFunctionCall, Stmt, StringConst, TACMethodParameter, TACode, VirtualFunctionCall}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties._
 import org.opalj.value.ValueInformation
@@ -82,12 +82,90 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
      */
     override protected def sanitizesParameter(call: JavaStatement, in: TaintFact): Boolean = false
 
+    override def normalFlow(statement:JavaStatement,in:TaintFact,predecessor:Option[JavaStatement]): Set[TaintFact] ={
+
+
+        super.normalFlow(statement, in, predecessor)
+    }
+
     override def callFlow(call: JavaStatement, callee: Method, in: TaintFact): Set[TaintFact] = {
+
+        /*
+        val callObject = JavaIFDSProblem.asCall(call.stmt)
+        val allParams = callObject.allParams
+        val allParamsWithIndices = allParams.zipWithIndex
+
+        var facts:Set[TaintFact] =  Set()
+
+        for( (param,paramINdex) <- allParamsWithIndices){
+           if(callee.descriptor.parameterTypes.head == ObjectType.String){
+               val x = getPossibleString(param,call.code,in)
+              /* println(call.index)
+               println(in)
+               println(x)
+               */
+               if(x._1.nonEmpty ){
+                   facts += StringValue(JavaIFDSProblem.switchParamAndVariableIndex(paramINdex,callee.isStatic),x._1,x._2)
+               }
+           }
+        }
+
+
+        def getPossibleString(param:Expr[V], stmts:  Array[Stmt[V]],in:TaintFact):Tuple2[Set[String],Boolean] = {
+
+            val defsites = param.asVar.definedBy
+            var result:Tuple2[Set[String],Boolean] = (Set.empty[String],false)
+            for (index <- defsites) {
+
+                if(index < 0 )return result
+                val expr = call.code(index).asAssignment.expr
+
+                val taintStatuts = in match {
+                    case Variable(indexF) => indexF == index
+                    case StringValue(indexF,values,taintStatus) => indexF == index
+                    case _ => false
+                }
+
+                expr match {
+                    case StaticFunctionCall(pc, declaringClass, isInterface, name, descriptor, params) if name == "source" =>
+                        result =  (Set("TAINTED"), true)
+
+                    case StringConst(_, v) =>  result =  (Set(v), false)
+
+                    case VirtualFunctionCall(pc,declaringClass,isInterface,name,descriptor,receiver,params) if name == "toString" =>
+                        val tmp = getPossibleString(receiver.asVar, stmts, in)
+
+                        result =  (tmp._1,tmp._2 || taintStatuts )
+
+                    case VirtualFunctionCall(pc,declaringClass,isInterface,name,descriptor,receiver,params) if name == "append" =>
+                        val leftSideString = getPossibleString(receiver.asVar, stmts, in)
+                        val rightSideString = getPossibleString(params.head.asVar, stmts, in)
+                        var possibleString: Set[String] = Set()
+
+                        for {
+                            l <- leftSideString._1
+                            r <- rightSideString._1
+                        } {
+                            possibleString += l + r
+                        }
+                        result =  (possibleString, leftSideString._2 || rightSideString._2 || taintStatuts)
+
+                    case _ =>  result =  (Set(""), false)
+                }
+
+            }
+            result
+        }
+
+
+
+
        /*
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
-
         val allParamsWithIndices = allParams.zipWithIndex
+
+
         in match {
             case BindingFact(index, keyName) => allParamsWithIndices.flatMap {
                 case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
@@ -101,11 +179,29 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
         }
 
         */
+        if(callee.name == "sink")Set.empty
+        else super.callFlow(call, callee, in)
+
+         */
         super.callFlow(call, callee, in)
     }
 
     override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement,
                             callFact: TaintFact, successor: JavaStatement): Set[TaintFact] = {
+
+        /*
+        println(call.method)
+        println(exit.method)
+        println(callFact)
+        println(in)
+        println(call.method)
+        println(exit.method)
+
+
+
+         */
+        super.returnFlow(exit, in, call, callFact, successor)
+
 
         /*
         if (!isPossibleReturnFlow(exit, successor)) return Set.empty
@@ -115,25 +211,25 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
         val allParams = callStatement.allParams
 
         in match {
-            case BindingFact(index, keyName) =>
+            case StringValue(index, values, taintStatus) =>
                 var flows: Set[TaintFact] = Set.empty
                 if (index < 0 && index > -100) {
                     val param = allParams(
                         JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
                     )
-                    flows ++= param.asVar.definedBy.map(i => BindingFact(i, keyName))
+                    flows ++= param.asVar.definedBy.map(i => StringValue(i, values, taintStatus))
                 }
                 if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
                     val returnValueDefinedBy = exit.stmt.asReturnValue.expr.asVar.definedBy
                     if (returnValueDefinedBy.contains(index))
-                        flows += BindingFact(call.index, keyName)
+                        flows += StringValue(call.index, values, taintStatus)
                 }
                 flows
+
             case _ => super.returnFlow(exit, in, call, callFact, successor)
         }
-         */
 
-        super.returnFlow(exit, in, call, callFact, successor)
+         */
     }
 
 
@@ -157,7 +253,109 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
 
     override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: JavaStatement): Set[TaintFact] = {
 
-        super.callToReturnFlow(call, in, successor)
+        /*
+        val callObject = JavaIFDSProblem.asCall(call.stmt)
+
+        var flow:Set[TaintFact] = Set.empty
+
+        if(callObject.name =="append") {
+            val leftsideVar = callObject.receiverOption.get.asVar
+            val rightsideVar = callObject.params.head.asVar
+            flow += in
+
+            in match {
+                case Variable(index) =>
+                    if(leftsideVar.definedBy.contains(index) || rightsideVar.definedBy.contains(index)) flow += Variable(call.index)
+                case _ => flow += in
+            }
+        }
+
+        if(callObject.name =="toString") {
+            val leftsideVar = callObject.receiverOption.get.asVar
+            flow += in
+
+            in match {
+                case Variable(index) =>
+                    if(leftsideVar.definedBy.contains(index)) flow += Variable(call.index)
+                case _ => flow += in
+            }
+        }
+
+
+        if(callObject.name == "sink"){
+
+            in match {
+                case Variable(index) if callObject.params.head.asVar.definedBy.contains(index) =>
+
+                    val calleeFact = Variable(
+                        JavaIFDSProblem.switchParamAndVariableIndex(0, call.callable.isStatic)
+                    )
+                    println("hier 008")
+                    val flowFact = createFlowFact(call.callable, call, calleeFact)
+                    if (flowFact.isDefined) {
+                        flow += flowFact.get
+
+                    }
+
+                case _=>
+            }
+            flow
+
+        }else
+
+
+         */
+        var flow:Set[TaintFact] = Set.empty
+        val callObject = JavaIFDSProblem.asCall(call.stmt)
+        if(callObject.name =="append"){
+            flow += in
+            val rightsideVar = callObject.params.head.asVar
+            val leftsideVar = callObject.receiverOption.get.asVar
+            in match {
+                case Variable(index) =>
+                    if(leftsideVar.definedBy.contains(index)||rightsideVar.definedBy.contains(index)) flow += Variable(call.index)
+                case _=>
+            }
+            flow
+        } else if(callObject.name =="toString"){
+            val leftsideVar = callObject.receiverOption.get.asVar
+            flow += in
+
+            in match {
+                case Variable(index) =>
+                    if(leftsideVar.definedBy.contains(index)) flow += Variable(call.index)
+                case _ =>
+            }
+            flow
+        }else if(callObject.name =="executeUpdate"){
+            flow += in
+            val possibleParamStrings = getPossibleString(callObject.params(0),call.code,in)
+            if(possibleParamStrings._2){
+                possibleParamStrings._1.foreach(input =>
+                    SqlStringTaintAnalyzer.doAnalyze(input)
+                )
+            }
+            flow
+        } else if(callObject.name =="executeQuery"){
+            flow += in
+            val possibleParamStrings = getPossibleString(callObject.params(0),call.code,in)
+            possibleParamStrings._1.foreach(input => {
+                val sqlResult =  SqlStringTaintAnalyzer.doAnalyze(input)
+                if(sqlResult &&  call.stmt.isAssignment){
+                    flow += Variable(call.index)
+                }
+            })
+            flow
+        }
+        else{
+                icfg.getCalleesIfCallStatement(call) match {
+                    case Some(callee) if(callee.isEmpty) =>
+                        Set(in)
+                    case _ => super.callToReturnFlow(call, in, successor)
+                }
+            }
+
+
   /*
         val callStmt = JavaIFDSProblem.asCall(call.stmt)
         // val allParams = callStmt.allParams
@@ -252,9 +450,64 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
 
         */
     }
+    /*
+
+
+    def getPossibleStrings(call: JavaStatement,defSites: IntTrieSet):Set[String]={
+
+    }
+
+
+     */
+
+    def getPossibleString(param:Expr[V], stmts:  Array[Stmt[V]],in:TaintFact):(Set[String], Boolean) = {
+        val defSites = param.asVar.definedBy
+        var result: (Set[String], Boolean) = (Set(""), false)
+        for (defSiteIndex <- defSites) {
+            if (defSiteIndex >= 0) {
+                val expr = stmts(defSiteIndex).asAssignment.expr
+
+                val taintStatuts = in match {
+                    case Variable(index) => index == defSiteIndex
+                    case StringValue(index, values, taintStatus) => index == defSiteIndex
+                    case _ => false
+                }
+                expr match {
+                    case StaticFunctionCall(pc, declaringClass, isInterface, name, descriptor, params) if name == "source" =>
+                        result = (result._1 ++ Set("TAINTED_VALUE"), true)
+
+                    case StringConst(_, value) =>
+                        result = (result._1 ++ Set(value), result._2 ||taintStatuts)
+
+                    case VirtualFunctionCall(_, _, _, name, _, receiver, _) if name == "toString" =>
+                        val tmp = getPossibleString(receiver.asVar, stmts, in)
+                        result = (result._1 ++ tmp._1, result._2 || tmp._2 || taintStatuts)
+
+                    case VirtualFunctionCall(_, _, _, name, _, receiver, params) if name == "append" =>
+                        val leftSideString = getPossibleString(receiver.asVar, stmts, in)
+                        val rightSideString = getPossibleString(params.head.asVar, stmts, in)
+                        var possibleString: Set[String] = Set()
+
+                        for {
+                            leftString <- leftSideString._1
+                            rightString <- rightSideString._1
+                        } {
+                            possibleString += leftString + rightString
+                        }
+                        result = (result._1 ++ possibleString, result._2 || leftSideString._2 || rightSideString._2 || taintStatuts)
+
+                    case _ =>
+                }
+            }
+        }
+        result
+    }
+
 
 
     //TODO
+    // Stringfacts
+    // AppendMethode
     //Get Strings used by foo bar.
     //Handle Concatenation.
     //put the Strings in the Prototype

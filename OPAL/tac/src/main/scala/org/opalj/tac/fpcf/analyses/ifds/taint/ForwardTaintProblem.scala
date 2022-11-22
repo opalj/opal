@@ -215,6 +215,9 @@ abstract class ForwardTaintProblem(project: SomeProject)
             }
         }
 
+
+
+
         if (icfg.getCalleesIfCallStatement(call).isEmpty) {
             // If the call does not have any callees, the code is unknown
             // and we safely handle it as the identity
