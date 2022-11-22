@@ -151,21 +151,23 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         }
     }
 
+    /**
+     * Called in callToReturnFlow. Creates a fact if necessary.
+     *
+     * @param call The call.
+     * @param in   The fact, which holds before the call.
+     * @return Some fact, if necessary. Otherwise None.
+     */
+    protected def createFlowFactAtCall(call: LLVMStatement, in: NativeTaintFact,
+                                       callChain: Seq[NativeFunction]): Option[NativeTaintFact] = None
+
     override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: Option[LLVMStatement],
                                   unbCallChain: Seq[NativeFunction]): Set[NativeTaintFact] = {
-        // create flow facts if callee is source or sink
-        val callInstr = call.instruction.asInstanceOf[Call]
-        val callees = icfg.resolveCallee(callInstr)
-        if (callees.exists(_.name == "sink")) in match {
-            // taint variable that is put into sink
-            case NativeTaintNullFact => Set(NativeVariable(callInstr.argument(0).get))
-            case _ => Set.empty
-        } else if (callees.exists(_.name == "source")) in match {
-            // create flow fact if source is reached with tainted value
-            case NativeVariable(value) if value == call.instruction && !unbCallChain.contains(call.callable) =>
-                Set(NativeFlowFact(unbCallChain.prepended(call.callable)))
-            case _ => Set.empty
-        } else Set.empty
+        val flowFact = createFlowFactAtCall(call, in, unbCallChain)
+        val result = collection.mutable.Set.empty[NativeTaintFact]
+        if (!sanitizesParameter(call, in)) result.add(in)
+        if (flowFact.isDefined) result.add(flowFact.get)
+        result.toSet
     }
 
     override def javaStartStatements(callable: Method): Set[JavaStatement] = {
