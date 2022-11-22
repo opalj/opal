@@ -97,8 +97,8 @@ class DoPrivilegedMethodAnalysis private[cg] (
         thisActual: Some[(ValueInformation, IntTrieSet)],
         calls:      IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val partialResults = calls.partialResults(state.callContext)
 
+        val partialResults = calls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(state, thisVar, thisActual)),
