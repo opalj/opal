@@ -748,7 +748,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val dependees = state.fieldAssignabilityDependees(e)
                 state.removeFieldMutabilityDependee(e)
                 dependees._2.foreach { e =>
-                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldAssignability]], e)
+                    checkFieldAssignability(eps.asInstanceOf[EOptionP[Field, FieldAssignability]], e)
                 }
             case ClassImmutability.key =>
                 val e = eps.e.asInstanceOf[ObjectType]

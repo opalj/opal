@@ -355,9 +355,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         if (state.ubPurity.isDeterministic) {
             fieldRef.asFieldRead.resolveField match {
                 case Some(field) if field.isStatic =>
-                    checkFieldMutability(propertyStore(field, FieldAssignability.key), None)
+                    checkFieldAssignability(propertyStore(field, FieldAssignability.key), None)
                 case Some(field) =>
-                    checkFieldMutability(
+                    checkFieldAssignability(
                         propertyStore(field, FieldAssignability.key), Some(fieldRef.asGetField.objRef)
                     )
                 case _ => // Unknown field
@@ -370,7 +370,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /**
      * Examines the influence that a given field mutability has on the method's purity.
      */
-    def checkFieldMutability(
+    def checkFieldAssignability(
         ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
