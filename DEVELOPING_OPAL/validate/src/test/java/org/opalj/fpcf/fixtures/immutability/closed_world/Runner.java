@@ -27,6 +27,7 @@ public class Runner {
 @NonTransitivelyImmutableType("The class is non-transitively immutable and not inherited by a mutable class.")
 @NonTransitivelyImmutableClass("The class has a non-transitively immutable field")
 class DifferentObjectAssigned{
+
     @TransitivelyImmutableField("Field only refers to transitively immutable objects")
     @NonAssignableField("field is final")
     final SuperClass transitivelyImmutableField;
@@ -75,5 +76,3 @@ class MutableClass extends SuperClass {
     @AssignableField("The field is public and as a result assignable")
     public int n = 10;
 }
-
-
