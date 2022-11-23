@@ -40,7 +40,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "Determines field immutability"
 
-    override def description: String = "Identifies transitively immutable fields"
+    override def description: String = "Identifies (non-)transitively immutable fields"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -106,10 +106,9 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | Dependent Immutable Fields: ${dependentImmutableFields.size}
              | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
              |
-             | total fields: ${
-            mutableFields.size + nonTransitivelyImmutableFields.size +
+             | total fields: ${mutableFields.size + nonTransitivelyImmutableFields.size +
                 dependentImmutableFields.size + transitivelyImmutableFields.size
-        }
+              }
              |
              | took : $analysisTime seconds
              |

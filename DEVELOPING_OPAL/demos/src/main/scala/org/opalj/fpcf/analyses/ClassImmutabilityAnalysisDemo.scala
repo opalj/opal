@@ -38,7 +38,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "Determines class immutability"
 
-    override def description: String = "Identifies classes that are (non) transitively immutable"
+    override def description: String = "Identifies classes that are (non-)transitively immutable"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -97,29 +97,27 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val transitivelyImmutableClassesOrInterfaces = groupedResults(TransitivelyImmutableClass).toSeq.sortWith(order)
 
-        val allInterfaces =
-            project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
+        val allInterfaces = project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val transitivelyImmutableInterfaces = transitivelyImmutableClassesOrInterfaces
             .filter(eps => allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
 
-        val transitivelyImmutableClasses =
-            transitivelyImmutableClassesOrInterfaces
+        val transitivelyImmutableClasses = transitivelyImmutableClassesOrInterfaces
                 .filter(eps => !allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
 
         s"""
              |
              | Mutable Classes: ${mutableClasses.size}
              | Non Transitively Immutable Classes: ${nonTransitivelyImmutableClasses.size}
-             | Dependent Immutable Classes: ${dependentlyImmutableClasses.size}
+             | Dependently Immutable Classes: ${dependentlyImmutableClasses.size}
              | Transitively Immutable Classes: ${transitivelyImmutableClasses.size}
              | Transitively Immutable Interfaces: ${transitivelyImmutableInterfaces.size}
              | Transitively Immutables Classes or Interfaces: ${transitivelyImmutableClassesOrInterfaces.size}
              |
              | total classes or interfaces: ${
-            mutableClasses.size + nonTransitivelyImmutableClasses.size + dependentlyImmutableClasses.size +
+                mutableClasses.size + nonTransitivelyImmutableClasses.size + dependentlyImmutableClasses.size +
                 transitivelyImmutableClasses.size + transitivelyImmutableInterfaces.size
-        }
+              }
              | analysis took : $analysisTime seconds
              |"""".stripMargin
     }

@@ -89,26 +89,23 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         val order = (eps1: EPS[Entity, FieldAssignability], eps2: EPS[Entity, FieldAssignability]) =>
             eps1.e.toString < eps2.e.toString
         val assignableFields = groupedResults(Assignable).toSeq.sortWith(order)
-        val unsafelyLazilyInitializedFields = groupedResults(UnsafelyLazilyInitialized).
-            toSeq.sortWith(order)
-        val threadSafeLazyInitializedFields = groupedResults(LazilyInitialized).toSeq.
-            sortWith(order)
+        val unsafelyLazilyInitializedFields = groupedResults(UnsafelyLazilyInitialized).toSeq.sortWith(order)
+        val lazilyInitializedFields = groupedResults(LazilyInitialized).toSeq.sortWith(order)
         val EffectivelynonAssignableFields = groupedResults(EffectivelyNonAssignable).toSeq.sortWith(order)
         val NonAssignableFields = groupedResults(NonAssignable).toSeq.sortWith(order)
 
         s"""
           |
           | Assignable Fields: ${assignableFields.size}
-          | Lazy Initialized Fields : ${unsafelyLazilyInitializedFields.size}
-          | Lazy Initialized Thread Safe Fields: ${threadSafeLazyInitializedFields.size}
+          | Unsafely Lazily Initialized Fields : ${unsafelyLazilyInitializedFields.size}
+          | Lazily Initialized Fields: ${lazilyInitializedFields.size}
           | Effectively Non Assignable Fields: ${EffectivelynonAssignableFields.size}
           | Non Assignable Fields: ${NonAssignableFields.size}
           |
           | total Fields: ${
-            assignableFields.size + unsafelyLazilyInitializedFields.size +
-                threadSafeLazyInitializedFields.size +
+            assignableFields.size + unsafelyLazilyInitializedFields.size + lazilyInitializedFields.size +
                 EffectivelynonAssignableFields.size + NonAssignableFields.size
-        }
+            }
           | took : $analysisTime seconds
           |""".stripMargin
     }
