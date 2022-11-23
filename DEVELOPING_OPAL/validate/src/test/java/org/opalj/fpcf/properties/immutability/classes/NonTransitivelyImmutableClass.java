@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.tac.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
 
 /**
- * Annotation to state that the annotated class is non-transitively immutable
+ * Annotation to state that the annotated class is non-transitively immutable.
  *
  * @author Tobias Roth
  */
