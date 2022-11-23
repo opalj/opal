@@ -77,20 +77,4 @@ class DependentlyImmutableClassMatcher
 class NonTransitivelyImmutableClassMatcher
     extends ClassImmutabilityMatcher(properties.immutability.NonTransitivelyImmutableClass)
 
-class MutableClassMatcher extends AbstractPropertyMatcher {
-    override def validateProperty(
-        p:          Project[_],
-        as:         Set[ObjectType],
-        entity:     scala.Any,
-        a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
-        if (properties.exists {
-            case _: MutableClass => true
-            case _               => false
-        })
-            Some(a.elementValuePairs.head.value.asStringValue.value)
-        else
-            None
-    }
-}
+class MutableClassMatcher extends ClassImmutabilityMatcher(properties.immutability.MutableClass)

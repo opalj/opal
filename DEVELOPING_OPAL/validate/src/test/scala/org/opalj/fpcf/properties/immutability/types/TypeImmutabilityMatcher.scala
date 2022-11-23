@@ -79,4 +79,3 @@ class NonTransitiveImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType)
 class MutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.MutableType)
-
