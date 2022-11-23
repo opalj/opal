@@ -11,11 +11,8 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 /**
  * Class encompasses two possible cases of assigning the effectively non assignable field o.
  */
-@MutableType("Class is not final")
-@NonTransitivelyImmutableClass("Class has only a transitively immutable field")
 public class DifferentAssignmentPossibilitiesOfEffectivelyNonAssignableField {
 
-    @NonTransitivelyImmutableField("")
     @EffectivelyNonAssignableField("Field is only once assigned in the constructor via new created object or parameter")
     private Object object;
 

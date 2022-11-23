@@ -14,11 +14,11 @@ import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType
 public final class PrivateFinalArraysEscapeViaConstructor {
 
     @NonTransitivelyImmutableField("Array has a primitive type but is assigned in the constructor and, thus, escapes")
-    @NonAssignableField("Array is final")
+    @NonAssignableField("Field is final")
     private final char[] charArray;
 
     @NonTransitivelyImmutableField("Array has a primitive type but is assigned in the constructor and, thus, escapes")
-    @NonAssignableField("Array is final")
+    @NonAssignableField("Field is final")
     private final byte[] byteArray;
 
     @NonTransitivelyImmutableField("Array has a primitive type but is assigned in the constructor and, thus, escapes")
@@ -26,11 +26,11 @@ public final class PrivateFinalArraysEscapeViaConstructor {
     private final int[] intArray;
 
     @NonTransitivelyImmutableField("Array has a primitive type but is assigned in the constructor and, thus, escapes")
-    @NonAssignableField("Array is final")
+    @NonAssignableField("Field is final")
     private final long[] longArray;
 
     @NonTransitivelyImmutableField("Array has a primitive type but is assigned in the constructor and, thus, escapes")
-    @NonAssignableField("Array is final")
+    @NonAssignableField("Field is final")
     private final Object[] objectArray;
 
     public PrivateFinalArraysEscapeViaConstructor(char[] charArray, byte[] byteArray, int[] intArray,
