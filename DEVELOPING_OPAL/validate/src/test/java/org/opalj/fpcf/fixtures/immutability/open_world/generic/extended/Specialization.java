@@ -20,7 +20,7 @@ public class Specialization<T> {
         }
     }
 
-    @DependentlyImmutableClass("The analysis is not aware of the specialization")
+    @DependentlyImmutableClass(value = "The analysis is not aware of the specialization", parameter = {"A"})
     class G2 extends G<FinalClassWithNoFields>{
         public G2(FinalClassWithNoFields finalClassWithNoFields){
             super(finalClassWithNoFields);

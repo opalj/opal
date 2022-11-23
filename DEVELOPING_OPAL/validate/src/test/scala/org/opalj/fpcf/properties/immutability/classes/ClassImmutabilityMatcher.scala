@@ -12,7 +12,7 @@ import org.opalj.br.fpcf.properties
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 
-class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
+class ClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject
 
@@ -47,10 +47,10 @@ class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends 
 }
 
 class TransitivelyImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.immutability.TransitivelyImmutableClass)
+    extends ClassImmutabilityMatcher(properties.immutability.TransitivelyImmutableClass)
 
 class DependentlyImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.immutability.DependentlyImmutableClass(Set.empty)) {
+    extends ClassImmutabilityMatcher(properties.immutability.DependentlyImmutableClass(Set.empty)) {
     override def validateProperty(
         project:    Project[_],
         as:         Set[ObjectType],
@@ -58,15 +58,13 @@ class DependentlyImmutableClassMatcher
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-
         if (!properties.exists(p => p match {
             case DependentlyImmutableClass(latticeParameters) =>
-
                 val annotationType = a.annotationType.asFieldType.asObjectType
                 val annotationParameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
                         asArrayValue.values.map(x => x.asStringValue.value)
-                !annotationParameters.toSet.equals(latticeParameters) || annotationParameters.toSet.equals(latticeParameters)
+                annotationParameters.toSet.equals(latticeParameters)
             case _ => p == property
         })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
@@ -74,11 +72,10 @@ class DependentlyImmutableClassMatcher
             None
         }
     }
-
 }
 
 class NonTransitivelyImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.immutability.NonTransitivelyImmutableClass)
+    extends ClassImmutabilityMatcher(properties.immutability.NonTransitivelyImmutableClass)
 
 class MutableClassMatcher extends AbstractPropertyMatcher {
     override def validateProperty(
