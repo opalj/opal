@@ -82,6 +82,7 @@ import org.opalj.br.ReferenceType
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
+ * with the ad-hoc CHA implementation
  * @author Tobias Roth
  */
 class L0FieldImmutabilityAnalysis_adHocCHA private[analyses] (val project: SomeProject)
@@ -471,7 +472,7 @@ object EagerL0FieldImmutabilityAnalysis_adHocCHA
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldImmutabilityAnalysis_adHocCHA(p)
-        val fields = p.allFields // p.allProjectClassFiles.flatMap(classfile ⇒ classfile.fields) //p.allFields
+        val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
