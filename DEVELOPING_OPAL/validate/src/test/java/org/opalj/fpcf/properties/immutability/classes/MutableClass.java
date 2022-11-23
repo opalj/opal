@@ -10,7 +10,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated class is mutable
+ * Annotation to state that the annotated class is mutable.
  *
  * @author Tobias Roth
  */
