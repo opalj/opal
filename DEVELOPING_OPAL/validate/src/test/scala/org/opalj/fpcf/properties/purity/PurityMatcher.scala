@@ -20,6 +20,8 @@ import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
@@ -72,6 +74,8 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         val pk = getValue(project, annotationType, ep.elementValuePairs, "pk").asStringValue.value match {
             case "Purity"               => Purity.key
             case "ClassImmutability"    => ClassImmutability.key
+            case "TypeImmutability"     => TypeImmutability.key
+            case "FieldAssignability"   => FieldAssignability.key
             case "FieldImmutability"    => FieldImmutability.key
             case "ReturnValueFreshness" => ReturnValueFreshness.key
             case "FieldLocality"        => FieldLocality.key

@@ -121,17 +121,17 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def createConfig(): Config = {
         val configForEntryPoints = BaseConfig.withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
-            ).withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
                 InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
                 ConfigValueFactory.fromAnyRef(true)
             )
 
         configForEntryPoints.withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
-            ).withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
                 InitialInstantiatedTypesKey.ConfigKeyPrefix+
                     "AllInstantiatedTypesFinder.projectClassesOnly",
                 ConfigValueFactory.fromAnyRef(true)
@@ -317,7 +317,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             (
                 fp,
                 (a: String) => s"VirtualFormalParameter: (origin ${fp.origin} in "+
-                        s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
+                    s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
                 annotations
             )
         }
@@ -343,7 +343,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             (
                 as,
                 (a: String) => s"AllocationSite: (pc ${as.pc} in "+
-                        s"${m.toJava(s"@$a").substring(24)})",
+                    s"${m.toJava(s"@$a").substring(24)})",
                 annotations
             )
         }
@@ -406,7 +406,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         if (fixtureProjectPackage.nonEmpty) {
             classFilePaths = classFilePaths ++ propertyPaths.map(new File(_))
             classFilePaths = classFilePaths ++ relevantPackages.map {
-              path => new File({ s"$testFilePath$path" })
+                path => new File({ s"$testFilePath$path" })
             }
         } else {
             classFilePaths = new File(testFilePath) :: classFilePaths
