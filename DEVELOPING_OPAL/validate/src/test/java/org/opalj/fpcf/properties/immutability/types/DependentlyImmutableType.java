@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.tac.fpcf.analyses.immutability.TypeImmutabilityAnalysis;
 
 /**
- * Annotation to state that the annotated type shallow immutable.
+ * Annotation to state that the annotated type is dependently immutable.
  *
  * @author Tobias Peter Roth
  */

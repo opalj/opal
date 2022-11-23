@@ -22,7 +22,7 @@ public @interface DependentlyImmutableField {
      */
     String value();
 
-String[] parameter() default {""};
+    String[] parameter() default {""};
 
     Class<? extends FPCFAnalysis>[] analyses() default {L0FieldImmutabilityAnalysis.class};
 }

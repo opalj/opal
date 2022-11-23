@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 /**
- * Annotation to state that the annotated field is shallow immutable.
+ * Annotation to state that the annotated field is non-transitively immutable.
  */
 @PropertyValidator(key="FieldImmutability",validator= NonTransitiveImmutableFieldMatcher.class)
 @Documented
