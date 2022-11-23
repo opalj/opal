@@ -37,6 +37,7 @@ import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
  */
 @RunWith(classOf[JUnitRunner])
 class L1PuritySmokeTest extends AnyFunSpec with Matchers {
+
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
     val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
