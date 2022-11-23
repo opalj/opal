@@ -14,7 +14,7 @@ class InitializationInConstructorAssignable {
 
 class InitializationInConstructorNonAssignable {
 
-    @EffectivelyNonAssignableField("The class is only assigned once in its own constructor.")
+    @EffectivelyNonAssignableField("The field is only assigned once in its own constructor.")
     private InitializationInConstructorNonAssignable parent;
     public InitializationInConstructorNonAssignable(InitializationInConstructorNonAssignable parent) {
         this.parent = parent.parent;
