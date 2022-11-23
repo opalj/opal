@@ -199,7 +199,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 }
                 state.upperBound = tmpImmutability
                 //handle generics -> potentially unsound
-            } else if (objectType.isArrayType) { //Because the entries of an array can be reassigned we state it as mutable
+            } else if (objectType.isArrayType) { //Because the entries of an array can be reassigned we state it mutable
                 state.upperBound = NonTransitivelyImmutableField
             } else {
                 propertyStore(objectType, TypeImmutability.key) match {
@@ -233,11 +233,13 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                         state.field.attributes.foreach {
                             case TypeVariableSignature(_) =>
-                                state.upperBound = DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
+                                state.upperBound =
+                                  DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
                             case ClassTypeSignature(_, SimpleClassTypeSignature(_, typeArguments), _) =>
                                 typeArguments.foreach {
                                     case ProperTypeArgument(_, TypeVariableSignature(_)) =>
-                                        state.upperBound = DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
+                                        state.upperBound =
+                                          DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
                                     case _ =>
                                 }
                             case _ =>
@@ -312,7 +314,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                 typeArguments.foreach {
                                     case ProperTypeArgument(_, TypeVariableSignature(_)) =>
                                         state.upperBound =
-                                            DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
+                                            DependentlyImmutableField(state.genericTypeParameters).
+                                              meet(state.upperBound)
                                     case _ =>
                                 }
                             case _ =>
@@ -320,8 +323,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         if (!state.upperBound.isInstanceOf[DependentlyImmutableField])
                             state.upperBound = NonTransitivelyImmutableField
 
-                    case UBP(NonTransitivelyImmutableClass | NonTransitivelyImmutableType | MutableType | MutableClass) =>
-                        state.upperBound = NonTransitivelyImmutableField
+                    case UBP(NonTransitivelyImmutableClass | NonTransitivelyImmutableType |
+                             MutableType | MutableClass) => state.upperBound = NonTransitivelyImmutableField
 
                     case EUBP(t, DependentlyImmutableType(_) | DependentlyImmutableClass(_)) =>
                         if (t.asInstanceOf[FieldType] != state.field.fieldType || state.innerType.contains(t))
@@ -394,7 +397,7 @@ object EagerL0FieldImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldImmutabilityAnalysis(p)
-        val fields = p.allFields // allProjectClassFiles.flatMap(classfile => classfile.fields)
+        val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
