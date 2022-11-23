@@ -22,13 +22,6 @@ public @interface MutableField {
      */
     String value();
 
-    /**
-     * True if the field is non-final because it is read prematurely.
-     * Tests may ignore @Mutable annotations if the FieldPrematurelyRead property for the field
-     * did not identify the premature read.
-     */
-    boolean prematurelyRead() default false;
-
     Class<? extends FPCFAnalysis>[] analyses() default { L0FieldImmutabilityAnalysis.class};
 
 }

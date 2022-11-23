@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssignabilityAnalysis;
 
 /**
- * Annotation to state that the annotated field is lazily initialized
+ * Annotation to state that the annotated field is lazily initialized.
  *
  * @author Tobias Peter Roth
  */

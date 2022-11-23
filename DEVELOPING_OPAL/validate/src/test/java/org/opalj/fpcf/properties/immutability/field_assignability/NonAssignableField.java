@@ -10,7 +10,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated field is final
+ * Annotation to state that the annotated field is final.
  *
  * @author Tobias Peter Roth
  */
