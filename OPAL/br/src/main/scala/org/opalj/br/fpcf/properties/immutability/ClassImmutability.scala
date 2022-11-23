@@ -20,10 +20,10 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * [[NonTransitivelyImmutableClass]] A class which transitive state is not immutable but the values or objects representing
  * this transitive state (are not / can not be) exchanged.
  *
- * [[DependentlyImmutableClass]] A class that is at least shallow immutable.
- * Whether it is shallow or deep immutable depends on generic parameters.
+ * [[DependentlyImmutableClass]] A class that is at least non-transitively immutable.
+ * Whether it is non-transitively or transitively immutable depends on (a) generic parameter(s).
  *
- * [[TransitivelyImmutableClass]] A class with a transitive immutable state.
+ * [[TransitivelyImmutableClass]] A class with a transitively immutable state.
  *
  * @author Tobias Roth
  */

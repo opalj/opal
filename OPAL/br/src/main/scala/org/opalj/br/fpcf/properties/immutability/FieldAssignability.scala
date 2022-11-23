@@ -19,16 +19,16 @@ sealed trait FieldAssignabilityPropertyMetaInformation extends PropertyMetaInfor
  *
  * [[Assignable]] The referenced object can be exchanged.
  *
- * [[UnsafelyLazilyInitialized]] The field reference is lazy initialized in a not thread safe way.
+ * [[UnsafelyLazilyInitialized]] The field reference is lazily initialized in a not thread safe way.
  *
- * [[LazilyInitialized]] The field reference is lazy initialized in a thread safe way. The write
- * is atomic
+ * [[LazilyInitialized]] The field reference is lazily initialized in a thread safe way.
+ * The write is atomic
  *
- * [[EffectivelyNonAssignable]] The value or object the field reference refer can not be exchanged.
+ * [[EffectivelyNonAssignable]] The value or object the field reference refer to can not be exchanged.
  *
- * [[NonAssignable]]
+ * [[NonAssignable]] The field is final
  *
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  */
 sealed trait FieldAssignability extends OrderedProperty with FieldAssignabilityPropertyMetaInformation {
 

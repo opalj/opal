@@ -18,15 +18,15 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
 /**
  * Describes the field immutability of org.opalj.br.Field
  *
- * [[MutableField]] A field with a mutable field reference
+ * [[MutableField]] The field is assignable
  *
- * [[NonTransitivelyImmutableField]] A field with an immutable field reference and a shallow immutable or mutable data type
+ * [[NonTransitivelyImmutableField]] A not assignable field and a non-transitively immutable or mutable data type
  *
- * [[DependentlyImmutableField]] A field with an immutable field reference and a generic type and parts of it are no
- * substantiated in an shallow or mutable way.
+ * [[DependentlyImmutableField]] A not assignable field with a generic type and parts of it are not
+ * substantiated in an non-transitively or transitively immutable
  *
- * [[TransitivelyImmutableField]] A field with an immutable field reference and a deep immutable field type or with an
- * immutable field reference and a referenced object that can not escape or its state be mutated.
+ * [[TransitivelyImmutableField]] A not assignable field with a transitively immutable field type or
+ * a referenced object that can not escape or its state cannot be mutated.
  *
  * @author Tobias Roth
  */

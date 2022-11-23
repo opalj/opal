@@ -16,13 +16,7 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
 }
 
 /**
- * Specifies whether all instances of a respective type (this includes the instances of the
- * type's subtypes) are (conditionally) immutable. Conditionally immutable means that only the
- * type's subtypes) are (conditionally) immutable. Conditionally immutable means that only the
- * instance of the type itself is guaranteed to be immutable, but not all reachable objects.
- * In general, all -- so called -- immutable collections are only conditionally immutable. I.e.,
- * the collection as a whole is only immutable if only immutable objects are stored in the
- * collection. If this is not the case, the collection is only conditionally immutable.
+ * Specifies the immutability of a given type.
  *
  * This property is of particular interest if the precise type cannot be computed statically. This
  * property basically depends on the [[org.opalj.br.analyses.cg.TypeExtensibilityKey]] and
