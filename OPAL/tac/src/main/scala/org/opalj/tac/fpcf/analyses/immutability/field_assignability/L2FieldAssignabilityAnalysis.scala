@@ -48,7 +48,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
     val considerLazyInitialization: Boolean =
         project.config.getBoolean(
-            "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization"
+            "org.opalj.fpcf.analyses.L2FieldAssignabilityAnalysis.considerLazyInitialization"
         )
 
     /**
