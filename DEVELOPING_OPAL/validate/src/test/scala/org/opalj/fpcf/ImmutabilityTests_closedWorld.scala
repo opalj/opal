@@ -17,9 +17,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
 /**
- * Tests if the properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * Tests the immutability analysis with a closed world assumption.
  *
  * @author Tobias Roth
  */
@@ -43,7 +41,7 @@ class ImmutabilityTests_closedWorld extends PropertiesTest {
         p.get(TypeBasedPointsToCallGraphKey)
     }
 
-    describe("run all immutability analysis with closed world assumption (without type provider") {
+    describe("run all immutability analysis with a closed world assumption (with type provider") {
 
         val as = executeAnalyses(
             Set(
