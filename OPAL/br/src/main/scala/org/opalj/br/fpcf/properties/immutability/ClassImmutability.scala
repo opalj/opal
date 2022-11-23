@@ -15,9 +15,9 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * The immutability of the classes are represented via the lower bound of the immutability of
  * their instance fields and the immutability of its supertype.
  *
- * [[MutableClass]] A class with a mutable state.
+ * [[MutableClass]] The class has mutable fields.
  *
- * [[NonTransitivelyImmutableClass]] A class which transitive state is not immutable but the values or objects representing
+ * [[NonTransitivelyImmutableClass]] A class that's transitive state is not immutable but the values or objects representing
  * this transitive state (are not / can not be) exchanged.
  *
  * [[DependentlyImmutableClass]] A class that is at least non-transitively immutable.
@@ -27,10 +27,10 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  *
  * @author Tobias Roth
  */
-sealed trait ClassImmutability
-    extends OrderedProperty
-    with ClassImmutabilityPropertyMetaInformation {
+sealed trait ClassImmutability extends OrderedProperty with ClassImmutabilityPropertyMetaInformation {
+
     final def key: PropertyKey[ClassImmutability] = ClassImmutability.key
+
     def correspondingTypeImmutability: TypeImmutability
     def isDependentlyImmutable: Boolean = false
 }

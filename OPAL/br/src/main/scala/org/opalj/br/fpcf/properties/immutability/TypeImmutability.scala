@@ -11,7 +11,6 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
-
     final type Self = TypeImmutability
 }
 
@@ -25,9 +24,7 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
  * @author Michael Eichberg
  * @author Tobias Roth
  */
-sealed trait TypeImmutability
-    extends OrderedProperty
-    with TypeImmutabilityPropertyMetaInformation {
+sealed trait TypeImmutability extends OrderedProperty with TypeImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `TypeImmutability` properties.

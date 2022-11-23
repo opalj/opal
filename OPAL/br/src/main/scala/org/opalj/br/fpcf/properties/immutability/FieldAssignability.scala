@@ -15,18 +15,17 @@ sealed trait FieldAssignabilityPropertyMetaInformation extends PropertyMetaInfor
 }
 
 /**
- * Describes the reference immutability of org.opalj.br.Field.
+ * Describes the assignability of org.opalj.br.Field.
  *
  * [[Assignable]] The referenced object can be exchanged.
  *
- * [[UnsafelyLazilyInitialized]] The field reference is lazily initialized in a not thread safe way.
+ * [[UnsafelyLazilyInitialized]] The field is lazily initialized in a not thread safe way.
  *
  * [[LazilyInitialized]] The field reference is lazily initialized in a thread safe way.
- * The write is atomic
  *
- * [[EffectivelyNonAssignable]] The value or object the field reference refer to can not be exchanged.
+ * [[EffectivelyNonAssignable]] The value or object the field refers to is not exchanged.
  *
- * [[NonAssignable]] The field is final
+ * [[NonAssignable]] The field is final.
  *
  * @author Tobias Roth
  */
