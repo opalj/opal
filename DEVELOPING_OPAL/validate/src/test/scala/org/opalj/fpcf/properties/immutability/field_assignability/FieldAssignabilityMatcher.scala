@@ -11,7 +11,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 
 /**
- * This is the basis for the matchers that match the immutability of a field reference
  * @author Tobias Roth
  */
 class FieldAssignabilityMatcher(val property: FieldAssignability)
@@ -59,4 +58,3 @@ class UnsafelyLazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br
 class EffectivelyNonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.EffectivelyNonAssignable)
 
 class NonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.NonAssignable)
-
