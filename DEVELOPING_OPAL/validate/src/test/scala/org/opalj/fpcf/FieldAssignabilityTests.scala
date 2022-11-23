@@ -104,21 +104,4 @@ class FieldAssignabilityTests extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
     }
-
-    describe("the org.opalj.fpcf.analyses.L3FieldAssignability is executed") {
-
-        val as = executeAnalyses(
-            Set(
-                EagerL2FieldAssignabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL2PurityAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis
-            )
-        )
-        as.propertyStore.shutdown()
-        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
-    }
 }
