@@ -71,8 +71,8 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis_
 import org.opalj.tac.cg.CallGraphKey
 
 /**
- * Determines the assignability of fields and the immutability  of fields, classes and types and provides several
- * setting options for the evaluation.
+ * Determines the assignability of fields and the immutability of fields, classes and types and provides several
+ * setting options for evaluation.
  *
  * @author Tobias Roth
  */
@@ -95,7 +95,6 @@ object Immutability {
         withoutJDK:                        Boolean,
         isLibrary:                         Boolean,
         level:                             Int,
-        withoutConsiderGenericity:         Boolean,
         withoutConsiderLazyInitialization: Boolean,
         configurationName:                 Option[String],
         times:                             Int,
@@ -117,17 +116,11 @@ object Immutability {
             if (withoutJDK) Iterable.empty
             else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
-        // TODO: use variables for the constants
         implicit var config: Config =
             if (isLibrary)
                 ConfigFactory.load("LibraryProject.conf")
             else
                 ConfigFactory.load("CommandLineProject.conf")
-
-        config = config.withValue(
-            "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.considerGenericity",
-            ConfigValueFactory.fromAnyRef(!withoutConsiderGenericity)
-        )
 
         config = config.withValue(
             "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization",
@@ -154,8 +147,7 @@ object Immutability {
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
         val dependencies: List[FPCFAnalysisScheduler] =
-            List(
-                LazyL2FieldAssignabilityAnalysis,
+            List(LazyL2FieldAssignabilityAnalysis,
                 {
                     if (adHocCHA)
                         LazyL0FieldImmutabilityAnalysis_adHocCHA
@@ -198,17 +190,14 @@ object Immutability {
         )
 
         val propertyStore = project.get(PropertyStoreKey)
-
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
         time {
             analysesManager.runAll(
                 dependencies, {
-
                 css: List[ComputationSpecification[FPCFAnalysis]] =>
                     analysis match {
                         case Assignability =>
-
                             if (css.contains(LazyL2FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f => propertyStore.force(f, FieldAssignability.key)
@@ -255,9 +244,7 @@ object Immutability {
                     }
             }
             )
-        } { t =>
-            analysisTime = t.toSeconds
-        }
+        } { t => analysisTime = t.toSeconds }
 
         val stringBuilderResults: StringBuilder = new StringBuilder()
 
@@ -284,14 +271,14 @@ object Immutability {
                 .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
-        val notThreadSafeLazilyInitializedFields =
+        val unsafelyLazilyInitializedFields =
             fieldAssignabilityGroupedResults
                 .getOrElse(UnsafelyLazilyInitialized, Iterator.empty)
                 .toSeq
                 .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
-        val threadSafeLazilyInitializedFields =
+        val lazilyInitializedFields =
             fieldAssignabilityGroupedResults
                 .getOrElse(LazilyInitialized, Iterator.empty)
                 .toSeq
@@ -317,14 +304,14 @@ object Immutability {
                 |
                 | Lazy Initialized Not Thread Safe Field:
                 | ${
-                    notThreadSafeLazilyInitializedFields
+                    unsafelyLazilyInitializedFields
                         .map(_+" | Lazy Initialized Not Thread Safe Field")
                         .mkString("\n")
                 }
                 |
                 | Lazy Initialized Thread Safe Field:
                 | ${
-                    threadSafeLazilyInitializedFields
+                    lazilyInitializedFields
                         .map(_+" | Lazy Initialized Thread Safe Field")
                         .mkString("\n")
                 }
@@ -550,8 +537,8 @@ object Immutability {
             stringBuilderNumber.append(
                 s"""
                 | Assignable Fields: ${assignableFields.size}
-                | Lazily Initialized Not Thread Safe Assigned Fields: ${notThreadSafeLazilyInitializedFields.size}
-                | Lazily Initialized Thread Safe Assigned Fields: ${threadSafeLazilyInitializedFields.size}
+                | Unsafely Lazily Initialized  Fields: ${unsafelyLazilyInitializedFields.size}
+                | lazily Initialized Fields: ${lazilyInitializedFields.size}
                 | Effectively Non Assignable Fields: ${effectivelyNonAssignableFields.size}
                 | Non Assignable Fields: ${nonAssignableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
@@ -636,11 +623,6 @@ object Immutability {
 
         val fileNameExtension = {
             {
-                if (withoutConsiderGenericity) {
-                    println("withoutConsiderGenericity")
-                    "_withoutConsiderGenericity"
-                } else ""
-            } + {
                 if (withoutConsiderLazyInitialization) {
                     println("withoutConsiderLazyInitialization")
                     "_withoutConsiderLazyInitialization"
@@ -654,7 +636,6 @@ object Immutability {
                 if (numThreads == 0) ""
                 else s"_${numThreads}threads"
             } + s"_l$level"
-
         }
 
         if (resultsFolder != null) {
@@ -744,7 +725,6 @@ object Immutability {
         var callGraphName: Option[String] = None
         var level = 2
         var withoutConsiderLazyInitialization = false
-        var withoutConsiderGenericity = false
         var times = 1
         var multiProjects = false
         var configurationName: Option[String] = None
@@ -793,7 +773,6 @@ object Immutability {
                 case "-callGraph"                         => callGraphName = Some(readNextArg())
                 case "-level"                             => level = Integer.parseInt(readNextArg())
                 case "-times"                             => times = Integer.parseInt(readNextArg())
-                case "-withoutConsiderGenericity"         => withoutConsiderGenericity = true
                 case "-withoutConsiderLazyInitialization" => withoutConsiderLazyInitialization = true
                 case "-multi"                             => multiProjects = true
                 case "-analysisName"                      => configurationName = Some(readNextArg())
@@ -835,7 +814,6 @@ object Immutability {
                         withoutJDK,
                         isLibrary || (subp eq JRELibraryFolder),
                         level,
-                        withoutConsiderGenericity,
                         withoutConsiderLazyInitialization,
                         configurationName,
                         nIndex,
@@ -854,7 +832,6 @@ object Immutability {
                     withoutJDK,
                     isLibrary,
                     level,
-                    withoutConsiderGenericity,
                     withoutConsiderLazyInitialization,
                     configurationName,
                     nIndex,
