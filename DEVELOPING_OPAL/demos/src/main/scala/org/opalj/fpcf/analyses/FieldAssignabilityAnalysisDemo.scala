@@ -105,7 +105,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
           | total Fields: ${
             assignableFields.size + unsafelyLazilyInitializedFields.size + lazilyInitializedFields.size +
                 EffectivelynonAssignableFields.size + NonAssignableFields.size
-            }
+        }
           | took : $analysisTime seconds
           |""".stripMargin
     }

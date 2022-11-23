@@ -103,7 +103,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             .filter(eps => allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
 
         val transitivelyImmutableClasses = transitivelyImmutableClassesOrInterfaces
-                .filter(eps => !allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
+            .filter(eps => !allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
 
         s"""
              |
@@ -115,9 +115,9 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | Transitively Immutables Classes or Interfaces: ${transitivelyImmutableClassesOrInterfaces.size}
              |
              | total classes or interfaces: ${
-                mutableClasses.size + nonTransitivelyImmutableClasses.size + dependentlyImmutableClasses.size +
+            mutableClasses.size + nonTransitivelyImmutableClasses.size + dependentlyImmutableClasses.size +
                 transitivelyImmutableClasses.size + transitivelyImmutableInterfaces.size
-              }
+        }
              | analysis took : $analysisTime seconds
              |"""".stripMargin
     }

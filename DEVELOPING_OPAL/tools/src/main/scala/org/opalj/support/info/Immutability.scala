@@ -147,7 +147,8 @@ object Immutability {
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
         val dependencies: List[FPCFAnalysisScheduler] =
-            List(LazyL2FieldAssignabilityAnalysis,
+            List(
+                LazyL2FieldAssignabilityAnalysis,
                 {
                     if (adHocCHA)
                         LazyL0FieldImmutabilityAnalysis_adHocCHA

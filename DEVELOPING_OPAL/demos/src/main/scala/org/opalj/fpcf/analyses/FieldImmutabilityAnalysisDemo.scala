@@ -106,9 +106,10 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | Dependent Immutable Fields: ${dependentImmutableFields.size}
              | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
              |
-             | total fields: ${mutableFields.size + nonTransitivelyImmutableFields.size +
+             | total fields: ${
+            mutableFields.size + nonTransitivelyImmutableFields.size +
                 dependentImmutableFields.size + transitivelyImmutableFields.size
-              }
+        }
              |
              | took : $analysisTime seconds
              |

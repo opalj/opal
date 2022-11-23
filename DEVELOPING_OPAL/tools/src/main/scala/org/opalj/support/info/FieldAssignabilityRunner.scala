@@ -29,7 +29,7 @@ object FieldAssignabilityRunner extends ProjectAnalysisApplication {
 
     override def title: String = "Field immutability"
 
-    override def description: String = {"Provides information about the immutability of fields." }
+    override def description: String = { "Provides information about the immutability of fields." }
 
     override def doAnalyze(
         project:       Project[URL],

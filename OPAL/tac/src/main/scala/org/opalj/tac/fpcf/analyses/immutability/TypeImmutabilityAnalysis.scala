@@ -105,7 +105,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
             ps(t, ClassImmutability.key) match {
                 case FinalP(p) =>
-                    Result(t, p.correspondingTypeImmutability);
+                    Result(t, p.correspondingTypeImmutability)
 
                 case eps @ InterimLUBP(lb, ub) =>
                     val thisUB = ub.correspondingTypeImmutability
