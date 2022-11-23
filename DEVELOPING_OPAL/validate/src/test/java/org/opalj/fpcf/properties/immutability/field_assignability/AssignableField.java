@@ -14,7 +14,7 @@ import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssig
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "FieldAssignability",validator = AssignableFieldReferenceMatcher.class)
+@PropertyValidator(key = "FieldAssignability",validator = AssignableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface AssignableField {

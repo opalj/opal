@@ -50,6 +50,8 @@ class FieldAssignabilityMatcher(val property: FieldAssignability)
     }
 }
 
+class AssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.Assignable)
+
 class LazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.LazilyInitialized)
 
 class UnsafelyLazilyInitializedFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.immutability.UnsafelyLazilyInitialized)
