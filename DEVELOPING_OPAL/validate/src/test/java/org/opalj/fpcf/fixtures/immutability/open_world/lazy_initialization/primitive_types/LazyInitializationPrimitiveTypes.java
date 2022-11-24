@@ -8,7 +8,8 @@ import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssignabilityAnalysis;
 
 /**
- * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
+ * This class encompasses different cases of lazily initialized fields with primitive types without synchronization
+ * but with determinism.
  *
  * @author Dominik Helm
  * @author Tobias Roth
