@@ -38,76 +38,6 @@ public class DifferentLazyInitializedFieldTypes {
 
     @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazilyInitializedField("lazy initialization in a synchronized getter method")
-    private double inGetterSynchronizedLazyInitializedDoubleField;
-
-    public synchronized double getD3(){
-        if(inGetterSynchronizedLazyInitializedDoubleField==0d)
-            inGetterSynchronizedLazyInitializedDoubleField = 5;
-        return inGetterSynchronizedLazyInitializedDoubleField;
-    }
-
-    @TransitivelyImmutableField("field has an immutable reference and a deep immutable type")
-    @LazilyInitializedField("field is in a synchronized getter lazy initialized")
-    private Double inAGetterLazyInitializedObjectDoubleField;
-
-    public synchronized Double getInAGetterLazyInitializedObjectDoubleField(){
-        if(inAGetterLazyInitializedObjectDoubleField==0)
-            inAGetterLazyInitializedObjectDoubleField = 5d;
-        return inAGetterLazyInitializedObjectDoubleField;
-    }
-    
-    @TransitivelyImmutableField("immutable reference and deep immutable type")
-    @LazilyInitializedField("lazy initialization in a synchronized getter method")
-    private float inGetterSynchronizedLazyInitializedFloatField;
-
-    public synchronized float getf3(){
-        if(inGetterSynchronizedLazyInitializedFloatField==0)
-            inGetterSynchronizedLazyInitializedFloatField = 5f;
-        return inGetterSynchronizedLazyInitializedFloatField;
-    }
-
-    @TransitivelyImmutableField("field has an immutable field reference and a deep immutable type")
-    @LazilyInitializedField("the field is in a getter thread safely lazy initialized")
-    private float inAGetterLazyInitializedFloatObjectField;
-
-    public synchronized Float getInAGetterLazyInitializedFloatObjectField(){
-        if(inAGetterLazyInitializedFloatObjectField==0)
-            inAGetterLazyInitializedFloatObjectField = 5f;
-        return inAGetterLazyInitializedFloatObjectField;
-    }
-
-    @TransitivelyImmutableField("immutable reference and deep immutable type")
-    @LazilyInitializedField("lazy initialization in a synchronized getter method")
-    private byte inGetterSynchronizedLazyInitializedByteField;
-
-    public synchronized byte getInGetterSynchronizedLazyInitializedByteField(){
-        if(inGetterSynchronizedLazyInitializedByteField==0)
-            inGetterSynchronizedLazyInitializedByteField = 5;
-        return inGetterSynchronizedLazyInitializedByteField;
-    }
-
-    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
-    @LazilyInitializedField("field is thread safely lazy initialized in a getter")
-    private Byte inAGetterLazyInitializedByteObjectField;
-
-    public synchronized Byte getInAGetterLazyInitializedByteObjectField(){
-        if(inAGetterLazyInitializedByteObjectField==0)
-            inAGetterLazyInitializedByteObjectField = 5;
-        return inAGetterLazyInitializedByteObjectField;
-    }
-
-    @TransitivelyImmutableField("immutable reference and deep immutable type")
-    @LazilyInitializedField("lazy initialization in a synchronized getter method")
-    private char inGetterSynchronizedLazyInitializedCharField;
-
-    public synchronized char c3(){
-        if(inGetterSynchronizedLazyInitializedCharField == '\u0000')
-            inGetterSynchronizedLazyInitializedCharField = 5;
-        return inGetterSynchronizedLazyInitializedCharField;
-    }
-
-    @TransitivelyImmutableField("immutable reference and deep immutable type")
-    @LazilyInitializedField("lazy initialization in a synchronized getter method")
     private long inGetterSynchronizedLazyInitializedLongField;
 
     public synchronized long getInGetterSynchronizedLazyInitializedLongField(){
@@ -118,12 +48,12 @@ public class DifferentLazyInitializedFieldTypes {
 
     @TransitivelyImmutableField("The field is not assignable and has a primitive value")
     @LazilyInitializedField("The field is assigned deterministic with always the same value")
-    private Long lO3;
+    private Long lazyintializedLongObject;
 
     public synchronized Long lO3(){
-        if(lO3 == 0l)
-            lO3 = 5l;
-        return lO3;
+        if(lazyintializedLongObject == 0l)
+            lazyintializedLongObject = 5l;
+        return lazyintializedLongObject;
     }
 
     @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
