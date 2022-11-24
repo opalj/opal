@@ -4,7 +4,9 @@ import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-
+/*
+ * This class represents a generic class whose immutability does not depend on all generic type parameters
+ */
 @MutableType("Class is not final")
 @DependentlyImmutableClass(value="Generic class whose immutability does not depend on all generic type parameters",
         parameter={"C", "B"})

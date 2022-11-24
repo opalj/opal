@@ -16,7 +16,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 @MutableClass("The class has mutable fields")
 public class ArraysWithDifferentTypes {
 
-    @NonTransitivelyImmutableField("The elements of the array are manipulated after initialization.")
+    @NonTransitivelyImmutableField("The elements of the array can be manipulated after initialization.")
     @NonAssignableField("The field is final")
     private final Object[] finalArrayWithSetterForOneElement =
             new Object[]{new Object(), new Object()};

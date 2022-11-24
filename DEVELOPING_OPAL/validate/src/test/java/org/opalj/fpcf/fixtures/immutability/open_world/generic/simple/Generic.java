@@ -13,8 +13,8 @@ import org.opalj.fpcf.properties.immutability.types.DependentlyImmutableType;
 @DependentlyImmutableClass(value = "class has a dependently immutable field", parameter = {"T"})
 public final class Generic<T> {
 
-    @DependentlyImmutableField(value = "field has a generic type parameter", parameter= {"T"} )
-    @NonAssignableField("field is final")
+    @DependentlyImmutableField(value = "field t has a generic type parameter", parameter= {"T"} )
+    @NonAssignableField("field t is final")
     private final T t;
 
     public Generic(T t){this.t = t;}

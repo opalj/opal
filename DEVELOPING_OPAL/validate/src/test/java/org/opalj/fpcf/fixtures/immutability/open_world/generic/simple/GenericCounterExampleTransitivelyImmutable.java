@@ -11,7 +11,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableF
 @TransitivelyImmutableClass("class has only a transitively immutable field")
 class GenericCounterExampleTransitivelyImmutable<T> {
 
-    @TransitivelyImmutableField("field is non assignable and has a primitive type")
+    @TransitivelyImmutableField("field n is non assignable and has a primitive type")
     @NonAssignableField("field is final")
     private final int n = 5;
 }

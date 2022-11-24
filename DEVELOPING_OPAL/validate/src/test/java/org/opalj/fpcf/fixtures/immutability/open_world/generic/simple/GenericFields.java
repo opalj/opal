@@ -18,7 +18,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 @NonTransitivelyImmutableClass("The class has non transitively immutable fields")
 public class GenericFields<T> {
 
-    @NonTransitivelyImmutableField("The generic type parameter is concretized with a mutable type")
+    @NonTransitivelyImmutableField("The generic type parameter is concreted with a mutable type")
     @NonAssignableField("field is final")
     private final Generic<ClassWithMutableFields> singleMutable;
 
@@ -26,28 +26,28 @@ public class GenericFields<T> {
     @NonAssignableField("field is final")
     private final Generic<FinalClassWithNoFields> singleTransitive;
 
-    @NonTransitivelyImmutableField("Two generic type parameters are conretized with a mutable type")
+    @NonTransitivelyImmutableField("Two generic type parameters are concreted with a mutable type")
     @NonAssignableField("field is final")
     private final MultipleGeneric<T,ClassWithMutableFields,FinalClassWithNoFields> multipleMutable;
 
-    @NonTransitivelyImmutableField("only a non transitively immutable type parameter")
+    @NonTransitivelyImmutableField("There is only a non transitively immutable type parameter")
     @NonAssignableField("field is final")
     private final Generic<FinalClassWithNonTransitivelyImmutableField> singleNonTransitivelyImmutable;
 
-    @NonTransitivelyImmutableField("only a non transitively immutable type parameter and no better one")
+    @NonTransitivelyImmutableField("There is only a non transitively immutable type parameter and no better one")
     @NonAssignableField("field is final")
     private final MultipleGeneric<FinalClassWithNoFields,
             FinalClassWithNonTransitivelyImmutableField, T> multipleNonTransitivelyImmutable;
 
-    @DependentlyImmutableField(value = "The generic type parameter is not concretized", parameter = {"T"})
-    @NonAssignableField("field is final")
+    @DependentlyImmutableField(value = "The generic type parameter is not concreted", parameter = {"T"})
+    @NonAssignableField("The field is final")
     private final Generic<T> singleDependentlyImmutable;
 
-    @DependentlyImmutableField(value = "At least one generic type parameter is not concretized", parameter = {"T"})
-    @NonAssignableField("field is final")
+    @DependentlyImmutableField(value = "At least one generic type parameter is not concreted", parameter = {"T"})
+    @NonAssignableField("The field is final")
     private final MultipleGeneric<T,T,T> multipleDependentUniform;
 
-    @DependentlyImmutableField(value = "The generic type parameter T is not concretized", parameter = {"T"})
+    @DependentlyImmutableField(value = "The generic type parameter T is not concreted", parameter = {"T"})
     @NonAssignableField("field is final")
     private final MultipleGeneric<FinalClassWithNoFields,T, FinalClassWithNoFields> multipleDependent;
 
