@@ -12,8 +12,7 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 
 /**
- * This class encompasses different cases of lazily initialized fields with primitive types without synchronization
- * but with determinism.
+ * This class encompasses different cases of lazily initialized fields.
  */
 public class DifferentLazyInitializedFieldTypes {
 
