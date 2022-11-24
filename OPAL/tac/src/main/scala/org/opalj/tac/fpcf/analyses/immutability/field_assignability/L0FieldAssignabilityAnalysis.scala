@@ -28,7 +28,7 @@ import org.opalj.fpcf.Result
 /**
  * Determines if a private, static, non-final field is always initialized at most once or
  * if a field is or can be mutated after (lazy) initialization. Field read and writes at
- * initialization time (e.g., if the current class object is registered in some publically
+ * initialization time (e.g., if the current class object is registered in some publicly
  * available data-store) are not considered. This is in-line with the semantics of final,
  * which also does not prevent reads of partially initialized objects.
  */
