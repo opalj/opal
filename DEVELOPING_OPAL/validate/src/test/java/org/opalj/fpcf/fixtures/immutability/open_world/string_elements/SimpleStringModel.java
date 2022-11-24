@@ -7,6 +7,7 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssignabilityAnalysis;
 
 /**
@@ -15,9 +16,10 @@ import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssig
  */
 public final class SimpleStringModel {
 
-    @TransitivelyImmutableField(value = "The array values are not mutated anymore after the assignment ", analyses = {})
-    @NonTransitivelyImmutableField("")
-    @NonAssignableField("Field is final")
+    @TransitivelyImmutableField(value = "The array values are not mutated after the assignment ", analyses = {})
+    @NonTransitivelyImmutableField(value = "The analysis can not recognize transitive immutable arrays",
+            analyses = {L0FieldImmutabilityAnalysis.class})
+    @NonAssignableField("The field is final")
     private final char value[];
 
     public char[] getValue(){
@@ -25,9 +27,8 @@ public final class SimpleStringModel {
     }
 
     @TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
-    @MutableField("The field is not non-assignable")
     @LazilyInitializedField(value = "Field is lazily initialized", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis cannot reconizes determinism",
+    @UnsafelyLazilyInitializedField(value = "The analysis cannot recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
     private int hash; // Default value 0
 

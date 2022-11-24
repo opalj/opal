@@ -13,24 +13,23 @@ import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L1FieldAssig
 import org.opalj.tac.fpcf.analyses.immutability.field_assignability.L2FieldAssignabilityAnalysis;
 
 /**
-*  This class represents the implementation of Scala lazy val from Scala 2.12.
+*  This class represents the implementation of a Scala lazy val from Scala 2.12.
 *  https://docs.scala-lang.org/sips/improved-lazy-val-initialization.html
 *
 */
-@MutableType("non final class")
-@TransitivelyImmutableClass(value = "Class has only transitive immutable fields.", analyses = {})
+@TransitivelyImmutableClass(value = "The class has only transitive immutable fields", analyses = {})
 public class LazyCell {
 
-@TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
+@TransitivelyImmutableField(value = "The field is lazily initialized and has a primitive type", analyses = {})
 @LazilyInitializedField(value = "The field is only set once in a synchronized way.", analyses = {})
-@AssignableField(value = "The analyses do no recognize lazy initialization over multiple methods",
+@AssignableField(value = "The analyses cannot recognize lazy initialization over multiple methods",
         analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
                 L2FieldAssignabilityAnalysis.class})
 private volatile boolean bitmap_0 = false;
 
-@TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
+@TransitivelyImmutableField(value = "The field is lazily initialized and has a primitive type", analyses = {})
 @LazilyInitializedField(value = "The field is only set once in a synchronized way.", analyses = {})
-@AssignableField(value = "The analysis is not able to recognize lazy initialization over multiple methods",
+@AssignableField(value = "The analysis cannot recognize lazy initialization over multiple methods",
         analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
                 L2FieldAssignabilityAnalysis.class})
 Integer value_0;

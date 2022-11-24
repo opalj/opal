@@ -85,5 +85,4 @@ class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.
     }
 }
 
-class TransitiveImmutableFieldMatcher extends
-  FieldImmutabilityMatcher(br.fpcf.properties.immutability.TransitivelyImmutableField)
+class TransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.TransitivelyImmutableField)
