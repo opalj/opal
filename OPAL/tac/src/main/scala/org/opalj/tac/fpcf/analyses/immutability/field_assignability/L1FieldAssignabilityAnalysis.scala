@@ -42,7 +42,8 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
  * @author Florian Kübler
  * @author Michael Eichberg
  */
-class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends AbstractFieldAssignabilityAnalysis {
+class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
+    extends AbstractFieldAssignabilityAnalysis {
 
     case class State(field: Field) extends AbstractFieldAssignabilityAnalysisState
     type AnalysisState = State
