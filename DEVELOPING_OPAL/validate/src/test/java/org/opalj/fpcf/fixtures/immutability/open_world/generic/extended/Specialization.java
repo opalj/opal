@@ -20,13 +20,11 @@ public class Specialization<T> {
         }
     }
 
+    @TransitivelyImmutableClass("The generic type parameter is specialized as transitively immutable")
     @DependentlyImmutableClass(value = "The analysis is not aware of the specialization", parameter = {"A"})
     class G2 extends G<FinalClassWithNoFields>{
         public G2(FinalClassWithNoFields finalClassWithNoFields){
             super(finalClassWithNoFields);
         }
     }
-
-    //@TransitivelyImmutableField("The field is assigned with a concretized transitively immutable object.")
-    //private final Object o = new G<>(new FinalClassWithNoFields());
 }
