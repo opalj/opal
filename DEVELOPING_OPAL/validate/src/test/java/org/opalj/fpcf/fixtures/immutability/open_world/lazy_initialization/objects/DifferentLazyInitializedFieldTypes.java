@@ -50,7 +50,7 @@ public class DifferentLazyInitializedFieldTypes {
     @LazilyInitializedField("The field is assigned deterministic with always the same value")
     private Long lazyintializedLongObject;
 
-    public synchronized Long lO3(){
+    public synchronized Long getLongObject(){
         if(lazyintializedLongObject == 0l)
             lazyintializedLongObject = 5l;
         return lazyintializedLongObject;
