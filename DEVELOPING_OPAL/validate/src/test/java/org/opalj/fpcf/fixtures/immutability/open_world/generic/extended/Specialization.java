@@ -20,7 +20,8 @@ public class Specialization<T> {
         }
     }
 
-    @TransitivelyImmutableClass("The generic type parameter is specialized as transitively immutable")
+    @TransitivelyImmutableClass(value = "The generic type parameter is specialized as transitively immutable",
+            analyses = {})
     @DependentlyImmutableClass(value = "The analysis is not aware of the specialization", parameter = {"A"})
     class G2 extends G<FinalClassWithNoFields>{
         public G2(FinalClassWithNoFields finalClassWithNoFields){
