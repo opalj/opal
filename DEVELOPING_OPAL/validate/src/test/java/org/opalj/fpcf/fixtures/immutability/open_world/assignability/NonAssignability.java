@@ -26,7 +26,7 @@ public class NonAssignability {
     @NonAssignableField("Field is final")
     final Integer packagePrivateInteger = new Integer(5);
 
-    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @TransitivelyImmutableField("Field is final and has a primitive type.")
     @NonAssignableField("Field is final and initialized directly")
     private final int privateIntDirectlyAssigned = 1;
 
@@ -34,7 +34,7 @@ public class NonAssignability {
     @NonAssignableField("Field is final and initialized through instance initializer")
     private final int privateIntAssignedToInstanceInitializer;
 
-    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @TransitivelyImmutableField("Field is final and has a primitive type.")
     @NonAssignableField("Field is final and initialized through constructor")
     private final int privateIntAssignedThroughConstructor;
 
@@ -45,11 +45,11 @@ public class NonAssignability {
         privateIntAssignedToInstanceInitializer = 1;
     }
 
-    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @TransitivelyImmutableField("Field is final and has a primitive type.")
     @NonAssignableField("Field is final")
     public static final int publicStaticFinalInt = 5;
 
-    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @TransitivelyImmutableField("Field is final and has a primitive type.")
     @NonAssignableField("Field is final")
     protected static final int protectedStaticFinalInt = 5;
 

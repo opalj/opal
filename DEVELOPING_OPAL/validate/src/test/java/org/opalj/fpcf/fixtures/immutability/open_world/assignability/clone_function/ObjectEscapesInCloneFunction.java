@@ -65,7 +65,7 @@ final class EscapesViaMethod {
 final class EscapingThroughIdentityFunction {
     
     @MutableField("Field is assignable")
-    @AssignableField("The field value is assigned t the field integerCopy before it is set and, thus, " +
+    @AssignableField("The field value is assigned to the field integerCopy before it is set and, thus, " +
             "it can be seen with multiple values")
     private Integer integer;
 
@@ -114,7 +114,7 @@ class EscapesViaGetterCall {
 
     public EscapesViaGetterCall clone(){
         EscapesViaGetterCall c = new EscapesViaGetterCall();
-        this.n = c.getI(); //c.i;
+        this.n = c.getI();
         c.i = this.i;
         return c;
     }

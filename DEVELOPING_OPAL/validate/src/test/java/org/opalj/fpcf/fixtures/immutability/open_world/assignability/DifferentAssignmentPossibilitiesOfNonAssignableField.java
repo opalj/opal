@@ -2,14 +2,12 @@
 package org.opalj.fpcf.fixtures.immutability.open_world.assignability;
 
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
-import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
- * Class encompasses two cases of assigning non assignable fields.
+ * Class encompasses two cases of assigning the non-assignable field object.
  */
 @MutableType("Class is not final.")
 @NonTransitivelyImmutableClass("Class has only a transitively immutable field.")

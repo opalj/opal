@@ -75,7 +75,7 @@ final class MultipleFieldsAssignedInCloneFunction {
 
 class ConstructorWithParameter {
 
-    @TransitivelyImmutableField("field is effectively non assignable but has a transitively immutable type")
+    @TransitivelyImmutableField("field is effectively non assignable and has a transitively immutable type")
     @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
     private Integer integer;
 
