@@ -67,7 +67,6 @@ import org.opalj.br.fpcf.properties.immutability.MutableField
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis_adHocCHA
 import org.opalj.tac.cg.CallGraphKey
 
 /**
@@ -98,8 +97,7 @@ object Immutability {
         withoutConsiderLazyInitialization: Boolean,
         configurationName:                 Option[String],
         times:                             Int,
-        callgraphKey:                      CallGraphKey,
-        adHocCHA:                          Boolean
+        callgraphKey:                      CallGraphKey
     ): BasicReport = {
 
         val classFiles = projectDir match {
@@ -149,12 +147,7 @@ object Immutability {
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyL2FieldAssignabilityAnalysis,
-                {
-                    if (adHocCHA)
-                        LazyL0FieldImmutabilityAnalysis_adHocCHA
-                    else
-                        LazyL0FieldImmutabilityAnalysis
-                },
+                LazyL0FieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
@@ -204,12 +197,7 @@ object Immutability {
                                     f => propertyStore.force(f, FieldAssignability.key)
                                 )
                         case Fields =>
-                            if (css.contains({
-                                if (adHocCHA)
-                                    LazyL0FieldImmutabilityAnalysis_adHocCHA
-                                else
-                                    LazyL0FieldImmutabilityAnalysis
-                            }))
+                            if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f => propertyStore.force(f, FieldImmutability.key)
                                 )
@@ -729,7 +717,6 @@ object Immutability {
         var times = 1
         var multiProjects = false
         var configurationName: Option[String] = None
-        var adHocCHA = false
 
         def readNextArg(): String = {
             i = i + 1
@@ -762,7 +749,6 @@ object Immutability {
                         println(usage)
                         throw new IllegalArgumentException(s"unknown parameter: $result")
                     }
-                case "-adHocCHA"                          => adHocCHA = true
                 case "-threads"                           => numThreads = readNextArg().toInt
                 case "-cp"                                => cp = new File(readNextArg())
                 case "-resultFolder"                      => resultFolder = FileSystems.getDefault.getPath(readNextArg())
@@ -818,8 +804,7 @@ object Immutability {
                         withoutConsiderLazyInitialization,
                         configurationName,
                         nIndex,
-                        callGraphKey,
-                        adHocCHA
+                        callGraphKey
                     )
                 }
             } else {
@@ -836,8 +821,7 @@ object Immutability {
                     withoutConsiderLazyInitialization,
                     configurationName,
                     nIndex,
-                    callGraphKey,
-                    adHocCHA
+                    callGraphKey
                 )
             }
             nIndex = nIndex + 1
