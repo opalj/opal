@@ -187,7 +187,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
     /**
      * If the returned value is tainted, all actual parameters will be tainted.
      */
-    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, Option[JavaStatement], TaintFact, Getter) => Set[TaintFact]] = {
+    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         super.outsideAnalysisContext(callee) match {
             case Some(_) => Some((call: JavaStatement, _: Option[JavaStatement], in: TaintFact, _: Getter) => {
                 val callStatement = JavaIFDSProblem.asCall(call.stmt)

@@ -54,10 +54,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](override val icfg: Java
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 
-    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, Option[JavaStatement], Fact, Getter) => Set[Fact]] = callee.body.isDefined match {
-        case true  => None
-        case false => Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, _: Getter) => Set(in))
-    }
+    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] =
+        if (callee.body.isDefined) None
+        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, _: Getter) => Set(in))
 }
 
 object JavaIFDSProblem {

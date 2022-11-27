@@ -5,15 +5,24 @@ import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
 import org.opalj.ifds.{IFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.ll.cg.PhasarCallGraphKey
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
+import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Call
 import org.opalj.tac.fpcf.properties.Taint
 
 class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTaintProblem(p) {
 
-    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement])] = Seq.empty
     override val javaPropertyKey: PropertyKey[Taint] = Taint.key
+
+    /**
+     * The analysis starts with the sink function.
+     */
+    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement])] = {
+        val sinkFunc = llvmProject.function("sink")
+        if (sinkFunc.isDefined)
+            Seq((LLVMFunction(sinkFunc.get), new IFDSFact(NativeTaintNullFact)))
+        else Seq.empty
+    }
 
     /**
      * The sanitize method is a sanitizer.
@@ -27,7 +36,7 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
     override protected def sanitizesParameter(call: LLVMStatement, in: NativeTaintFact): Boolean = false
 
     override protected def createFlowFactAtCall(call: LLVMStatement, in: NativeTaintFact,
-                                               callChain: Seq[NativeFunction]): Option[NativeTaintFact] = {
+                                                callChain: Seq[NativeFunction]): Option[NativeTaintFact] = {
         // create flow facts if callee is source or sink
         val callInstr = call.instruction.asInstanceOf[Call]
         val callees = icfg.resolveCallee(callInstr)

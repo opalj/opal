@@ -7,7 +7,7 @@ import org.opalj.fpcf._
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, LLVMFunction, LLVMStatement, NativeFunction}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Ret
 import org.opalj.tac.Assignment
@@ -56,18 +56,11 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
             Some(FlowFact(Seq(JavaMethod(call.method), JavaMethod(callee))))
         else None
 
+
     // Multilingual additions here
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
-            // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
-            val calleeName = callee.name.map {
-                case c if isAlphaNumeric(c) => c
-                case '_' => "_1"
-                case ';' => "_2"
-                case '[' => "_3"
-                case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
-            }.mkString
-            val nativeFunctionName = "Java_"+callee.classFile.fqn+"_"+calleeName
+            val nativeFunctionName = JNICallUtil.resolveNativeMethodName(callee)
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
             val entryFacts = nativeCallFlow(call, function, in, callee).map(new IFDSFact(_))
@@ -228,10 +221,6 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
             case _ =>
         }
         flows
-    }
-
-    private def isAlphaNumeric(char: Char): Boolean = {
-        char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' || char >= '0' && char <= '9'
     }
 }
 

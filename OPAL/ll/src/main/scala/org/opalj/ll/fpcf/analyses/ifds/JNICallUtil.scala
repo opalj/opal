@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ll.fpcf.analyses.ifds
 
+import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.ll.llvm.value.constant.{ConstantDataArray, GetElementPtrConst}
 import org.opalj.ll.llvm.value.{Argument, Call, GetElementPtr, GlobalVariable, Load, Store, Value}
@@ -33,6 +34,29 @@ object JNICallUtil {
     def resolve(call: Call)(implicit declaredMethods: DeclaredMethods): Set[_ <: NativeFunction] = resolveJNIFunction(call) match {
         case Symbol("CallTypeMethod") => resolveMethodId(call.operand(2)) // methodID is the third parameter
         case _                        => Set()
+    }
+
+    /**
+     * Resolves a Java native method name to the actual function name in the .so file.
+     *
+     * https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
+     *
+     * @param nativeMethod the 'native' tagged Java method.
+     * @return the resolved function name.
+     */
+    def resolveNativeMethodName(nativeMethod: Method): String = {
+        val calleeName = nativeMethod.name.map {
+            case c if isAlphaNumeric(c) => c
+            case '_' => "_1"
+            case ';' => "_2"
+            case '[' => "_3"
+            case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
+        }.mkString
+        "Java_" + nativeMethod.classFile.fqn + "_" + calleeName
+    }
+
+    private def isAlphaNumeric(char: Char): Boolean = {
+        char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' || char >= '0' && char <= '9'
     }
 
     private def resolveJNIFunction(call: Call): Symbol = call.calledValue match {

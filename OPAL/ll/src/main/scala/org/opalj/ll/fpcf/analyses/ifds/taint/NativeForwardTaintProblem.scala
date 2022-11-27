@@ -5,18 +5,19 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ll.fpcf.analyses.ifds.{JNIMethod, LLVMFunction, LLVMStatement, NativeForwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, GetElementPtr, Load, PHI, Ret, Store, Sub}
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.{JavaForwardICFG, JavaIFDSProblem, JavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{TaintFact, TaintProblem}
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.{ReturnValue, TACode}
+import org.opalj.tac.ReturnValue
 
 abstract class NativeForwardTaintProblem(project: SomeProject)
     extends NativeForwardIFDSProblem[NativeTaintFact, TaintFact](project)
         with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
+    override val javaICFG = new JavaForwardICFG(project)
+
     override def nullFact: NativeTaintFact = NativeTaintNullFact
 
     /**
@@ -145,11 +146,6 @@ abstract class NativeForwardTaintProblem(project: SomeProject)
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
         case PHI(_) => true
         case _      => false
-    }
-
-    override def javaStartStatements(callable: Method): Set[JavaStatement] = {
-        val TACode(_, code, _, cfg, _) = tacai(callable)
-        Set(JavaStatement(callable, 0, code, cfg))
     }
 
     /**
