@@ -5,7 +5,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.{CFG, CFGNode}
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, Statement}
+import org.opalj.ifds.{AbstractIFDSFact, Callable, IFDSProblem, Statement}
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.value.ValueInformation
@@ -54,9 +54,13 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](override val icfg: Java
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 
-    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] =
+    override def createCallable(callable: Method): Callable = JavaMethod(callable)
+
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (callee.body.isDefined) None
         else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, _: Getter) => Set(in))
+
+    override def outsideAnalysisContextUnbReturn(callee: Method): Option[OutsideAnalysisContextUnbReturnHandler] = None
 }
 
 object JavaIFDSProblem {

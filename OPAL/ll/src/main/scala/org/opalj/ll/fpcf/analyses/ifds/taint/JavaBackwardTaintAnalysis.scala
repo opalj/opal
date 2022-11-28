@@ -5,9 +5,9 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, PropertyBounds, PropertyStore}
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, LLVMFunction, LLVMStatement, NativeBackwardICFG, NativeFunction}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, LLVMFunction, LLVMStatement, NativeBackwardICFG}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.{Ret, Value}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
@@ -21,7 +21,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
     /**
      * The analysis starts with the sink function.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
         p.allProjectClassFiles.filter(classFile =>
             classFile.thisType.fqn == "TaintTest")
             .flatMap(_.methods)
@@ -41,15 +41,15 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
      * In this case, callFlow would never be called and no FlowFact would be created.
      */
     override protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact,
-                                                unbCallChain: Seq[Method]): Option[FlowFact] = {
+                                                unbCallChain: Seq[Callable]): Option[FlowFact] = {
         if ((in match {
             case Variable(index) => index == call.index
             case _               => false
         }) && icfg.getCalleesIfCallStatement(call).get.exists(_.name == "source")) {
             val currentMethod = call.callable
             // Avoid infinite loops.
-            if (unbCallChain.contains(currentMethod)) None
-            else Some(FlowFact(unbCallChain.prepended(currentMethod).map(JavaMethod)))
+            if (unbCallChain.contains(JavaMethod(currentMethod))) None
+            else Some(FlowFact(unbCallChain.prepended(JavaMethod(currentMethod))))
         } else None
     }
 
@@ -57,21 +57,21 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
      * When a callee calls the source, we create a FlowFact with the caller's call chain.
      */
     override protected def applyFlowFactFromCallee(calleeFact: FlowFact, caller: Method, in: TaintFact,
-                                                   unbCallChain: Seq[Method]): Option[FlowFact] =
-        Some(FlowFact(unbCallChain.prepended(caller).map(JavaMethod)))
+                                                   unbCallChain: Seq[Callable]): Option[FlowFact] =
+        Some(FlowFact(unbCallChain.prepended(JavaMethod(caller))))
 
     /**
      * This analysis does not create FlowFacts at the beginning of a method.
      * Instead, FlowFacts are created, when the return value of source is tainted.
      */
     override def createFlowFactAtExit(callee: Method, in: TaintFact,
-                                      unbCallChain: Seq[Method]): Option[FlowFact] = None
+                                      unbCallChain: Seq[Callable]): Option[FlowFact] = None
 
     // Multilingual additions here
-    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
         def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement],
                                in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
-            val nativeFunctionName = JNICallUtil.resolveNativeMethodName(callee)
+            val nativeFunctionName = JNICallUtil.resolveNativeFunctionName(callee)
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
             val entryFacts = nativeICFG.startStatements(function)
@@ -80,7 +80,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
             for (entryFact <- entryFacts) { // ifds line 14
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
-                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
+                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
                         case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
@@ -92,14 +92,29 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                     (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
                     exitStatementFact <- exitStatementFacts // ifds line 15.3
                 } {
-                    result ++= nativeReturnFlow(exitStatement, exitStatementFact, call, function, callee)
+                    result ++= nativeReturnFlow(exitStatementFact, call, function, callee)
                 }
             }
             result
         }
 
         if (callee.isNative) Some(handleNativeMethod _)
-        else super.outsideAnalysisContext(callee)
+        else super.outsideAnalysisContextCall(callee)
+    }
+
+    override def outsideAnalysisContextUnbReturn(callee: Method): Option[OutsideAnalysisContextUnbReturnHandler] = {
+        def handleNativeUnbalancedReturn(callee: Method, in: TaintFact, callChain: Seq[Callable],
+                                         dependeesGetter: Getter): Unit = {
+            // find calls of java method in native code
+            // TODO
+            ???
+        }
+        Some(handleNativeUnbalancedReturn _)
+    }
+
+    private def nativeUnbalancedReturnFlow(callee: Method, call: LLVMStatement, in: TaintFact): Set[NativeTaintFact] = {
+        // TODO
+        ???
     }
 
     private def nativeCallFlow(start: LLVMStatement, call: JavaStatement, javaCallee: Method,
@@ -113,6 +128,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                 case ArrayElement(index, _) if index == call.index => flow += NativeVariable(ret.value.get)
                 case InstanceField(index, _, _) if index == call.index => flow += NativeVariable(ret.value.get)
             }
+            case _ =>
         }
 
         // check for tainted 'this' and pass-by-reference parameters
@@ -142,9 +158,9 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         flow.toSet
     }
 
-    private def nativeReturnFlow(exit: LLVMStatement, in: NativeTaintFact, call: JavaStatement, callee: LLVMFunction,
-                                 nativeCallee: Method): Set[TaintFact] = {
-        if (sanitizesReturnValue(nativeCallee)) return Set.empty
+    private def nativeReturnFlow(in: NativeTaintFact, call: JavaStatement, callee: LLVMFunction,
+                                 javaNativeCallee: Method): Set[TaintFact] = {
+        if (sanitizesReturnValue(javaNativeCallee)) return Set.empty
 
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
         callStatement.allParams
@@ -169,8 +185,6 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
             case _ => Set.empty
         }
     }
-
-    // TODO xlang unbalanced returns
 }
 
 class SimpleJavaBackwardTaintAnalysis(project: SomeProject)

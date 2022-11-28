@@ -3,6 +3,7 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
+import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
@@ -132,7 +133,8 @@ abstract class JavaForwardTaintProblem(project: SomeProject)
      * Creates new taints and FlowFacts, if necessary.
      * If the sanitize method was called, nothing will be tainted.
      */
-    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, successor: Option[JavaStatement], unbCallChain: Seq[Method]): Set[TaintFact] = {
+    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, successor: Option[JavaStatement],
+                            unbCallChain: Seq[Callable]): Set[TaintFact] = {
         if (successor.isDefined && !isPossibleReturnFlow(exit, successor.get)) return Set.empty
 
         val callee = exit.callable
@@ -197,7 +199,7 @@ abstract class JavaForwardTaintProblem(project: SomeProject)
      * Removes taints according to `sanitizesParameter`.
      */
     override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: Option[JavaStatement],
-                                  unbCallChain: Seq[Method]): Set[TaintFact] =
+                                  unbCallChain: Seq[Callable]): Set[TaintFact] =
         if (sanitizesParameter(call, in)) Set() else Set(in)
 
     /**
@@ -226,8 +228,8 @@ abstract class JavaForwardTaintProblem(project: SomeProject)
      * If a parameter is tainted, the result will also be tainted.
      * We assume that the callee does not call the source method.
      */
-    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
-        super.outsideAnalysisContext(callee) match {
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
+        super.outsideAnalysisContextCall(callee) match {
             case Some(_) => Some(((call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, _: Getter) => {
                 val allParams = JavaIFDSProblem.asCall(call.stmt).receiverOption ++ JavaIFDSProblem.asCall(call.stmt).params
                 if (call.stmt.astID == Assignment.ASTID && (in match {
@@ -244,7 +246,7 @@ abstract class JavaForwardTaintProblem(project: SomeProject)
                     case _ => false
                 })) Set(Variable(call.index))
                 else Set.empty
-            }): OutsideAnalysisContextHandler)
+            }): OutsideAnalysisContextCallHandler)
             case None => None
         }
 

@@ -3,7 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
-import org.opalj.ifds.{IFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{Callable, IFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Function
@@ -13,7 +13,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement])] = Seq.empty
+    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, LLVMStatement])] = Seq.empty
     override val javaPropertyKey: PropertyKey[Taint] = Taint.key
 
     /**
@@ -47,6 +47,9 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     ): Option[NativeFlowFact] =
         if (callee.name == "sink" && in.contains(JavaVariable(-2))) Some(NativeFlowFact(Seq(call.function)))
         else None
+
+    override def createFlowFactAtExit(callee: NativeFunction, in: NativeTaintFact,
+                                      unbCallChain: Seq[Callable]): Option[NativeTaintFact] = None
 }
 
 class SimpleNativeForwardTaintAnalysis(project: SomeProject)

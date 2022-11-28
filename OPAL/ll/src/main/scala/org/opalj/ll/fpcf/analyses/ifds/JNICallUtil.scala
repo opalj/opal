@@ -44,7 +44,7 @@ object JNICallUtil {
      * @param nativeMethod the 'native' tagged Java method.
      * @return the resolved function name.
      */
-    def resolveNativeMethodName(nativeMethod: Method): String = {
+    def resolveNativeFunctionName(nativeMethod: Method): String = {
         val calleeName = nativeMethod.name.map {
             case c if isAlphaNumeric(c) => c
             case '_' => "_1"
@@ -53,6 +53,26 @@ object JNICallUtil {
             case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
         }.mkString
         "Java_" + nativeMethod.classFile.fqn + "_" + calleeName
+    }
+
+    /**
+     * Resolves a native function to the class and method name of the corresponding Java companion method.
+     *
+     * @param nativeFunction the native function from the .so file.
+     * @return A tuple (fqn, method name) if function has native Java companion, otherwise None.
+     */
+    def resolveNativeMethodName(nativeFunction: LLVMFunction): Option[(String, String)] = {
+        if (!nativeFunction.name.startsWith("Java_")) return None
+
+        val parts = nativeFunction.name.split("_", 3)
+        val tmpDecoded = parts(2)
+            .replace("_1", "_")
+            .replace("_2", ";")
+            .replace("_3", "[")
+        val regexHexEnc = "_([0-9A-Fa-f]{4})".r
+        val methodDecoded = regexHexEnc
+            .replaceAllIn(tmpDecoded, m => Integer.parseInt(m.group(1), 16).toChar.toString)
+        Some((parts(1), methodDecoded))
     }
 
     private def isAlphaNumeric(char: Char): Boolean = {

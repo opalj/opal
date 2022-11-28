@@ -6,7 +6,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, Property, PropertyKey, PropertyStore}
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{AbstractIFDSFact, IFDSFact, IFDSProblem, IFDSProperty}
+import org.opalj.ifds.{AbstractIFDSFact, Callable, IFDSFact, IFDSProblem, IFDSProperty}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaICFG, JavaStatement}
@@ -26,7 +26,9 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
     val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
     val javaICFG: JavaICFG
 
-    override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Getter) => Set[Fact]] = callee match {
+    override def createCallable(callable: NativeFunction): Callable = callable
+
+    override def outsideAnalysisContextCall(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Getter) => Set[Fact]] = callee match {
         case LLVMFunction(function) =>
             function.basicBlockCount match {
                 case 0 => Some((_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Getter) => Set(in))

@@ -5,7 +5,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties.Taint
@@ -23,11 +23,11 @@ class ForwardTaintProblemFixture(p: SomeProject) extends JavaForwardTaintProblem
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
         p.allProjectClassFiles.filter(classFile =>
             classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
             .flatMap(classFile => classFile.methods)
-            .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
+            .filter(method => method.isPublic && outsideAnalysisContextCall(method).isEmpty)
             .map(method => (method, new IFDSFact(TaintNullFact)))
 
     /**
@@ -55,6 +55,8 @@ class ForwardTaintProblemFixture(p: SomeProject) extends JavaForwardTaintProblem
                                           in: TaintFact): Option[FlowFact] =
         if (callee.name == "sink" && in == Variable(-2)) Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
+
+    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] = None
 }
 
 object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {

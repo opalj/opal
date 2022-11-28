@@ -45,9 +45,7 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
         callee match {
             case LLVMFunction(calleeFunction) =>
                 callGraph(calleeFunction).flatMap(getCallStatements(_, calleeFunction)).toSet
-            // TODO xlang: handle unbalanced returns to java code that was calling a native function
-            // TODO xlang: handle unbalanced returns to native code that was calling a JNI function
-            case JNIMethod(method) => Set.empty // TODO, but irrelevant for unbalanced returns so no priority
+            case JNIMethod(_) => Set.empty // handled outside analysis context
         }
     }
 }

@@ -3,7 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
-import org.opalj.ifds.{IFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{Callable, IFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.ll.cg.PhasarCallGraphKey
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
@@ -17,7 +17,7 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
     /**
      * The analysis starts with the sink function.
      */
-    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement])] = {
+    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, LLVMStatement])] = {
         val sinkFunc = llvmProject.function("sink")
         if (sinkFunc.isDefined)
             Seq((LLVMFunction(sinkFunc.get), new IFDSFact(NativeTaintNullFact)))
@@ -36,7 +36,7 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
     override protected def sanitizesParameter(call: LLVMStatement, in: NativeTaintFact): Boolean = false
 
     override protected def createFlowFactAtCall(call: LLVMStatement, in: NativeTaintFact,
-                                                callChain: Seq[NativeFunction]): Option[NativeTaintFact] = {
+                                                callChain: Seq[Callable]): Option[NativeTaintFact] = {
         // create flow facts if callee is source or sink
         val callInstr = call.instruction.asInstanceOf[Call]
         val callees = icfg.resolveCallee(callInstr)
@@ -51,6 +51,9 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
             case _ => None
         } else None
     }
+
+    override def createFlowFactAtExit(callee: NativeFunction, in: NativeTaintFact,
+                                      unbCallChain: Seq[Callable]): Option[NativeTaintFact] = None
 }
 
 class SimpleNativeBackwardTaintAnalysis(project: SomeProject)

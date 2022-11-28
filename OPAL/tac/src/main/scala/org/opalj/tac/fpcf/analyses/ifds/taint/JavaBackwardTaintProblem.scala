@@ -3,6 +3,7 @@ package org.opalj.tac.fpcf.analyses.ifds.taint
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{Method, ObjectType}
+import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
@@ -127,7 +128,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * context were tainted.
      * Does not taint anything, if the sanitize method was called.
      */
-    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, successor: Option[JavaStatement], unbCallChain: Seq[Method]): Set[TaintFact] = {
+    override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement, successor: Option[JavaStatement], unbCallChain: Seq[Callable]): Set[TaintFact] = {
         val callee = exit.callable
         if (sanitizesReturnValue(callee)) return Set.empty
 
@@ -167,7 +168,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * Removes taints according to `sanitizeParamters`.
      */
     override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: Option[JavaStatement],
-                                  unbCallChain: Seq[Method]): Set[TaintFact] = {
+                                  unbCallChain: Seq[Callable]): Set[TaintFact] = {
         val flowFact = createFlowFactAtCall(call, in, unbCallChain)
         val result = collection.mutable.Set.empty[TaintFact]
         if (!sanitizesParameter(call, in)) result.add(in)
@@ -182,13 +183,13 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      * @param in   The fact, which holds before the call.
      * @return Some fact, if necessary. Otherwise None.
      */
-    protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact, callChain: Seq[Method]): Option[TaintFact] = None
+    protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact, callChain: Seq[Callable]): Option[TaintFact] = None
 
     /**
      * If the returned value is tainted, all actual parameters will be tainted.
      */
-    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
-        super.outsideAnalysisContext(callee) match {
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
+        super.outsideAnalysisContextCall(callee) match {
             case Some(_) => Some((call: JavaStatement, _: Option[JavaStatement], in: TaintFact, _: Getter) => {
                 val callStatement = JavaIFDSProblem.asCall(call.stmt)
                 Set(in) ++ (in match {
@@ -302,6 +303,6 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         calleeFact: FlowFact,
         caller:     Method,
         in:         TaintFact,
-        callChain:  Seq[Method]
+        callChain:  Seq[Callable]
     ): Option[FlowFact]
 }

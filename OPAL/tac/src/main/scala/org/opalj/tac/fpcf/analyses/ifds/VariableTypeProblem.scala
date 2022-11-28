@@ -7,7 +7,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.fpcf.FinalEP
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, IFDSFact}
+import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable, IFDSFact}
 import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.properties.cg.Callers
@@ -71,7 +71,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
     /**
      * The analysis starts with all public methods in java.lang or org.opalj.
      */
-    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
+    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = {
         project.allProjectClassFiles
             .filter(classInsideAnalysisContext)
             .flatMap(classFile => classFile.methods)
@@ -159,7 +159,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         call:         JavaStatement,
         in:           VTAFact,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Method]
+        unbCallChain: Seq[Callable]
     ): Set[VTAFact] = {
         val inSet = Set(in)
         // Check, to which variables the callee may refer
@@ -179,7 +179,8 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * If the call returns a value which is assigned to a variable, a new VariableType will be
      * created in the caller context with the returned variable's type.
      */
-    override def returnFlow(exit: JavaStatement, in: VTAFact, call: JavaStatement, successor: Option[JavaStatement], unbCallChain: Seq[Method]): Set[VTAFact] =
+    override def returnFlow(exit: JavaStatement, in: VTAFact, call: JavaStatement, successor: Option[JavaStatement],
+                            unbCallChain: Seq[Callable]): Set[VTAFact] =
         // We only create a new fact, if the call returns a value, which is assigned to a variable.
         if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
             val inSet = Set(in)
@@ -191,15 +192,17 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             }
         } else Set.empty
 
+    override def createFlowFactAtExit(callee: Method, in: VTAFact, unbCallChain: Seq[Callable]): Option[VTAFact] = None
+
     /**
      * Only methods in java.lang and org.opalj are inside the analysis context.
      *
      * @param callee The callee.
      * @return True, if the callee is inside the analysis context.
      */
-    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] =
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (classInsideAnalysisContext(callee.classFile) &&
-            super.outsideAnalysisContext(callee).isEmpty)
+            super.outsideAnalysisContextCall(callee).isEmpty)
             None
         else {
             Some(((call: JavaStatement, successor: Option[JavaStatement], in: VTAFact, getter: Getter) => {
@@ -207,7 +210,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                 if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
                     Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))
                 } else Set.empty[VTAFact]
-            }): OutsideAnalysisContextHandler)
+            }): OutsideAnalysisContextCallHandler)
         }
 
     /**
@@ -321,7 +324,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * @return All pairs (`method`, inputFact) where inputFact is a VariableType for one of the
      *         method's parameter with its compile time type as an upper bound.
      */
-    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
+    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = {
         // Iterate over all parameters, which have a reference type.
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType =>

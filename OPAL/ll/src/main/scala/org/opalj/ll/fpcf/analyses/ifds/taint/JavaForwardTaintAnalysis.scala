@@ -5,9 +5,9 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.fpcf._
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, LLVMFunction, LLVMStatement, NativeFunction}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, LLVMFunction, LLVMStatement}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Ret
 import org.opalj.tac.Assignment
@@ -21,7 +21,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] = for {
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = for {
         m <- p.allMethodsWithBody
     } yield m -> new IFDSFact(TaintNullFact)
 
@@ -56,18 +56,19 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
             Some(FlowFact(Seq(JavaMethod(call.method), JavaMethod(callee))))
         else None
 
+    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] = None
 
     // Multilingual additions here
-    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
         def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
-            val nativeFunctionName = JNICallUtil.resolveNativeMethodName(callee)
+            val nativeFunctionName = JNICallUtil.resolveNativeFunctionName(callee)
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
             val entryFacts = nativeCallFlow(call, function, in, callee).map(new IFDSFact(_))
             for (entryFact <- entryFacts) { // ifds line 14
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
-                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, NativeFunction, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
+                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
                         case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
@@ -88,7 +89,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
         if (callee.isNative) {
             Some(handleNativeMethod _)
         } else {
-            super.outsideAnalysisContext(callee)
+            super.outsideAnalysisContextCall(callee)
         }
     }
 

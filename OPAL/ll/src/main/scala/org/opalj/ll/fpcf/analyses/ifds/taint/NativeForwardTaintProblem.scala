@@ -3,6 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ifds.Callable
 import org.opalj.ll.fpcf.analyses.ifds.{JNIMethod, LLVMFunction, LLVMStatement, NativeForwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.value.{Add, Alloca, BitCast, Call, GetElementPtr, Load, PHI, Ret, Store, Sub}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaForwardICFG, JavaIFDSProblem, JavaStatement}
@@ -108,7 +109,8 @@ abstract class NativeForwardTaintProblem(project: SomeProject)
      *         under the assumption that `in` held before the execution of `exit` and that
      *         `successor` will be executed next.
      */
-    override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement, successor: Option[LLVMStatement], unbCallChain: Seq[NativeFunction]): Set[NativeTaintFact] = {
+    override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement, successor: Option[LLVMStatement],
+                            unbCallChain: Seq[Callable]): Set[NativeTaintFact] = {
         val callee = exit.callable
         var flows: Set[NativeTaintFact] = if (sanitizesReturnValue(callee)) Set.empty else in match {
             case NativeVariable(value) => exit.instruction match {
@@ -141,12 +143,14 @@ abstract class NativeForwardTaintProblem(project: SomeProject)
      *         under the assumption that `in` held before `call`.
      */
     override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: Option[LLVMStatement],
-                                  unbCallChain: Seq[NativeFunction]): Set[NativeTaintFact] = Set(in)
+                                  unbCallChain: Seq[Callable]): Set[NativeTaintFact] = Set(in)
 
     override def needsPredecessor(statement: LLVMStatement): Boolean = statement.instruction match {
         case PHI(_) => true
         case _      => false
     }
+
+    override def outsideAnalysisContextUnbReturn(callee: NativeFunction): Option[OutsideAnalysisContextUnbReturnHandler] = None
 
     /**
      * Computes the data flow for a call to start edge.

@@ -5,7 +5,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.{EPS, FinalEP, PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSPropertyMetaInformation}
+import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSPropertyMetaInformation}
 import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
 import org.opalj.tac.fpcf.analyses.ifds.taint._
 import org.opalj.tac.fpcf.analyses.ifds.{EvaluationRunner, JavaMethod, JavaStatement}
@@ -28,7 +28,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
         p.allProjectClassFiles.filter(classFile =>
             classFile.thisType.fqn == "java/lang/Class")
             .flatMap(classFile => classFile.methods)
@@ -48,7 +48,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.
      */
-    override def shouldPerformUnbalancedReturn(source: (Method, IFDSFact[TaintFact, Method, JavaStatement])): Boolean = {
+    override def shouldPerformUnbalancedReturn(source: (Method, IFDSFact[TaintFact, JavaStatement])): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
             (!icfg.canBeCalledFromOutside(source._1) ||
                 // The source is callable from outside, but should create unbalanced return facts.
@@ -60,7 +60,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * Instead, FlowFacts are created at the start node of methods.
      */
     override protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact,
-                                                unbCallChain: Seq[Method]): Option[FlowFact] = None
+                                                unbCallChain: Seq[Callable]): Option[FlowFact] = None
 
     /**
      * This analysis does not create FlowFacts at returns.
@@ -70,7 +70,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
         calleeFact:   FlowFact,
         caller:       Method,
         in:           TaintFact,
-        unbCallChain: Seq[Method]
+        unbCallChain: Seq[Callable]
     ): Option[FlowFact] = None
 
     /**
@@ -78,7 +78,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * and a formal parameter is tainted, we create a FlowFact.
      */
     override def createFlowFactAtExit(callee: Method, in: TaintFact,
-                                      unbCallChain: Seq[Method]): Option[FlowFact] = {
+                                      unbCallChain: Seq[Callable]): Option[FlowFact] = {
         if (unbCallChain.nonEmpty && // source fact is unbalanced return fact
             icfg.canBeCalledFromOutside(callee) && (in match {
                 // index < 0 means, that it is a parameter.
@@ -87,7 +87,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
                 case InstanceField(index, _, _) if index < 0 => true
                 case _                                       => false
             })) {
-            Some(FlowFact(unbCallChain.prepended(callee).map(JavaMethod)))
+            Some(FlowFact(unbCallChain.prepended(JavaMethod(callee))))
         } else None
     }
 }
