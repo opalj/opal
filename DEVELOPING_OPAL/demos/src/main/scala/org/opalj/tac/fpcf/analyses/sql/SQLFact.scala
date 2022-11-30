@@ -6,3 +6,5 @@ import org.opalj.tac.fpcf.properties.TaintFact
 trait SQLFact extends TaintFact
 
 case class StringValue(index: Int, values: Set[String], taintStatus: Boolean) extends SQLFact with TaintFact
+
+case class SqlTaintFact(sqlTaintMemory: SqlTaintMemory) extends TaintFact

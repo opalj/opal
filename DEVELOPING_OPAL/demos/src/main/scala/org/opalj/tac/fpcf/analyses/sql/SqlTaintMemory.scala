@@ -1,9 +1,9 @@
 
 package org.opalj.tac.fpcf.analyses.sql
 
-class TaintMemorySQL(dummyTaintRecognitionWord:String) {
+class SqlTaintMemory(dummyTaintRecognitionWords:Set[String]) {
 
-  var tainted: Set[String] = Set(dummyTaintRecognitionWord)
+  var tainted: Set[String] = dummyTaintRecognitionWords
   var taintedTableAndColumns = scala.collection.mutable.Map[String, Set[String]]()
 
   def taint(toTaintedElement: String): Unit = {
