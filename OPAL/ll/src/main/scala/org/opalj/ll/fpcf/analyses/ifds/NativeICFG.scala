@@ -3,7 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
 import org.opalj.ifds.ICFG
-import org.opalj.ll.cg.PhasarCallGraphKey
+import org.opalj.ll.fpcf.analyses.cg.SimpleCallGraphKey
 import org.opalj.ll.llvm.value.{Call, Function}
 
 abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMStatement] {
@@ -23,29 +23,16 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
         }
     }
 
-    def resolveCallee(call: Call): Set[_ <: NativeFunction] =
-        call.calledValue match {
-            case function: Function => Set(LLVMFunction(function))
-            case _ => if (JNICallUtil.isJNICall(call)) JNICallUtil.resolve(call)
-            else Set()
-        }
-
-    private def getCallStatements(caller: Function, callee: Function): Set[LLVMStatement] = {
-        caller.basicBlocks.flatMap(_.instructions).filter {
-            case call: Call => call.calledValue match {
-                case function: Function => function == callee
-                case _ => false
-            }
-            case _ => false
-        }.map(LLVMStatement).toSet
+    def resolveCallee(call: Call): Set[_ <: NativeFunction] = call.calledValue match {
+        case function: Function => Set(LLVMFunction(function))
+        case _ if JNICallUtil.isJNICall(call) => JNICallUtil.resolve(call)
+        case _ => Set()
     }
 
     override def getCallers(callee: NativeFunction): Set[LLVMStatement] = {
-        val callGraph = project.get(PhasarCallGraphKey)
         callee match {
-            case LLVMFunction(calleeFunction) =>
-                callGraph(calleeFunction).flatMap(getCallStatements(_, calleeFunction)).toSet
-            case JNIMethod(_) => Set.empty // handled outside analysis context
+            case LLVMFunction(_) => project.get(SimpleCallGraphKey)(callee).getOrElse(Set.empty).map(LLVMStatement)
+            case JNIMethod(_) => Set.empty // JNIMethod can never be the current callee, since its code is in Java context
         }
     }
 }
