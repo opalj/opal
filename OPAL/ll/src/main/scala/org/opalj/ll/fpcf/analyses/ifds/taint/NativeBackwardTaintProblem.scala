@@ -210,11 +210,10 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 .filter(classFile => classFile.thisType.fqn == fqn)
                 .flatMap(_.methods)
                 .filter(_.name == javaMethodName)
-            val javaCallers = javaCompanions.flatMap(javaICFG.getCallers)
+            val javaCalls = javaCompanions.flatMap(javaICFG.getCallers)
 
-            for (callStmt <- javaCallers) {
-                val normalReturnFacts = javaUnbalancedReturnFlow(llvmCallee, callStmt, in)
-                val unbalancedReturnFacts = normalReturnFacts
+            for (callStmt <- javaCalls) {
+                val unbalancedReturnFacts = javaUnbalancedReturnFlow(llvmCallee, callStmt, in)
                     .map(new IFDSFact(_, true, Some(callStmt), Some(callChain.prepended(callee))))
 
                 // Add the caller with the unbalanced return facts as a dependency to start its analysis
@@ -229,7 +228,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         callee match {
             case f: LLVMFunction if JNICallUtil.resolveNativeMethodName(f).isDefined =>
                 Some(handleJavaUnbalancedReturn _)
-            case _ => super.outsideAnalysisContextUnbReturn(callee)
+            case _ => None
         }
     }
 
@@ -237,12 +236,12 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         if (sanitizesReturnValue(callee)) return Set.empty
 
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
-        callStatement.allParams
 
         def taintActualIfFormal(in: Value): Set[TaintFact] = {
             callee.function.arguments.find(_.address == in.address) match {
-                case Some(arg) => callStatement.params(arg.index).asVar.definedBy.map(Variable)
-                case None => Set.empty
+                // arg.index - 1 because JNIEnv is first argument in native function
+                case Some(arg) if arg.index > 0 => callStatement.allParams(arg.index - 1).asVar.definedBy.map(Variable)
+                case _ => Set.empty
             }
         }
 

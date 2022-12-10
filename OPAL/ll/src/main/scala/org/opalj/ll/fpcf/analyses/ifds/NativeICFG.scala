@@ -29,10 +29,6 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
         case _ => Set()
     }
 
-    override def getCallers(callee: NativeFunction): Set[LLVMStatement] = {
-        callee match {
-            case LLVMFunction(_) => project.get(SimpleCallGraphKey)(callee).getOrElse(Set.empty).map(LLVMStatement)
-            case JNIMethod(_) => Set.empty // JNIMethod can never be the current callee, since its code is in Java context
-        }
-    }
+    override def getCallers(callee: NativeFunction): Set[LLVMStatement] =
+        project.get(SimpleCallGraphKey)(callee).getOrElse(Set.empty).map(LLVMStatement)
 }

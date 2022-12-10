@@ -4,7 +4,7 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
 import org.opalj.ifds.{Callable, IFDSFact, IFDSPropertyMetaInformation}
-import org.opalj.ll.cg.PhasarCallGraphKey
+import org.opalj.ll.fpcf.analyses.cg.SimpleCallGraphKey
 import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Call
@@ -63,5 +63,5 @@ object NativeBackwardTaintAnalysisScheduler extends NativeIFDSAnalysisScheduler[
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleNativeBackwardTaintAnalysis(p)
     override def property: IFDSPropertyMetaInformation[LLVMStatement, NativeTaintFact] = NativeTaint
     override val uses: Set[PropertyBounds] = Set()
-    override def requiredProjectInformation: ProjectInformationKeys = PhasarCallGraphKey +: super.requiredProjectInformation
+    override def requiredProjectInformation: ProjectInformationKeys = SimpleCallGraphKey +: super.requiredProjectInformation
 }

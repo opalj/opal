@@ -8,14 +8,15 @@ import org.opalj.ll.llvm.{FunctionType, Type}
 
 object OptionalInstruction {
     def apply(ref: LLVMValueRef): Option[Instruction] = {
-        if (ref.isNull) return None
+        if (ref == null || ref.isNull) return None
         Some(Instruction(ref))
     }
 }
 
 object Instruction {
     def apply(ref: LLVMValueRef): Instruction = {
-        assert(ref != null && !ref.isNull(), "ref may not be null")
+        assert(ref != null, "ref may not be null")
+        assert(!ref.isNull, "ref may not be null")
         assert(LLVMGetValueKind(ref) == LLVMInstructionValueKind, "ref has to be an instruction")
         LLVMGetInstructionOpcode(ref) match {
             case LLVMRet            => Ret(ref)

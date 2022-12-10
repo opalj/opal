@@ -7,9 +7,9 @@ import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, PropertyBounds, PropertyS
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, LLVMFunction, LLVMStatement, NativeBackwardICFG}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardICFG}
 import org.opalj.ll.fpcf.properties.NativeTaint
-import org.opalj.ll.llvm.value.{Ret, Value}
+import org.opalj.ll.llvm.value.{Call, Ret, Value}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, FlowFact, InstanceField, JavaBackwardTaintProblem, StaticField, TaintFact, TaintNullFact, Variable}
 import org.opalj.tac.fpcf.properties.{TACAI, Taint}
@@ -89,7 +89,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                             Map.empty
                     }
                 for {
-                    (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
+                    (_, exitStatementFacts) <- exitFacts // ifds line 15.2
                     exitStatementFact <- exitStatementFacts // ifds line 15.3
                 } {
                     result ++= nativeReturnFlow(exitStatementFact, call, function, callee)
@@ -106,15 +106,50 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         def handleNativeUnbalancedReturn(callee: Method, in: TaintFact, callChain: Seq[Callable],
                                          dependeesGetter: Getter): Unit = {
             // find calls of java method in native code
-            // TODO
-            ???
+            val nativeCalls = nativeICFG.getCallers(JNIMethod(callee))
+            if (nativeCalls.isEmpty) return // no native callers
+
+            for (callStmt <- nativeCalls) {
+                val unbalancedReturnFacts = nativeUnbalancedReturnFlow(callee, callStmt, in)
+                    .map(new IFDSFact(_, true, Some(callStmt), Some(callChain.prepended(JavaMethod(callee)))))
+
+                // Add the caller with the unbalanced return facts as a dependency to start its analysis
+                for (unbRetFact <- unbalancedReturnFacts) {
+                    val newEntity = (callStmt.callable, unbRetFact)
+                    dependeesGetter(newEntity, NativeTaint.key)
+                        .asInstanceOf[EOptionP[(Method, IFDSFact[TaintFact, JavaStatement]), IFDSProperty[JavaStatement, TaintFact]]]
+                }
+            }
         }
         Some(handleNativeUnbalancedReturn _)
     }
 
     private def nativeUnbalancedReturnFlow(callee: Method, call: LLVMStatement, in: TaintFact): Set[NativeTaintFact] = {
-        // TODO
-        ???
+        if (sanitizesReturnValue(callee)) return Set.empty
+
+        val callInstr = call.instruction.asInstanceOf[Call]
+        val formalParameterIndices = (0 until callInstr.numArgOperands)
+            .map(index => JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
+
+        def taintActualIfFormal(index: Int): Set[NativeTaintFact] = {
+            if (formalParameterIndices.contains(index)) {
+                val nativeIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+                Set(NativeVariable(callInstr.argument(nativeIndex + 1).get)) // +1 offset JNIEnv
+            } else Set.empty
+        }
+
+        in match {
+            // Taint actual parameter if formal parameter is tainted
+            case Variable(index) => taintActualIfFormal(index)
+            case ArrayElement(index, _) => taintActualIfFormal(index)
+            case InstanceField(index, _, _) => taintActualIfFormal(index)
+            // also propagate tainted static fields
+            case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
+            case TaintNullFact => Set(NativeTaintNullFact)
+            // Track the call chain to the sink back
+            case FlowFact(flow) if !flow.contains(call.function) => Set(NativeFlowFact(call.function +: flow))
+            case _ => Set.empty
+        }
     }
 
     private def nativeCallFlow(start: LLVMStatement, call: JavaStatement, javaCallee: Method,
@@ -127,6 +162,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                 case Variable(index) if index == call.index => flow += NativeVariable(ret.value.get)
                 case ArrayElement(index, _) if index == call.index => flow += NativeVariable(ret.value.get)
                 case InstanceField(index, _, _) if index == call.index => flow += NativeVariable(ret.value.get)
+                case _ =>
             }
             case _ =>
         }
@@ -147,6 +183,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                         flow += NativeVariable(start.callable.function.argument(paramIndex + 1)) // +1 offset JNIEnv
                     case InstanceField(index, _, _) if param.definedBy.contains(index) =>
                         flow += NativeVariable(start.callable.function.argument(paramIndex + 1)) // +1 offset JNIEnv
+                    case _ =>
                 }
             }
 
@@ -154,6 +191,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         in match {
             case StaticField(classType, fieldName) => flow += JavaStaticField(classType, fieldName)
             case TaintNullFact => flow += NativeTaintNullFact
+            case _ =>
         }
         flow.toSet
     }
@@ -163,12 +201,12 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         if (sanitizesReturnValue(javaNativeCallee)) return Set.empty
 
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
-        callStatement.allParams
 
         def taintActualIfFormal(in: Value): Set[TaintFact] = {
             callee.function.arguments.find(_.address == in.address) match {
-                case Some(arg) => callStatement.params(arg.index).asVar.definedBy.map(Variable)
-                case None => Set.empty
+                // arg.index - 1 because JNIEnv is first argument in native function
+                case Some(arg) if arg.index > 0 => callStatement.allParams(arg.index - 1).asVar.definedBy.map(Variable)
+                case _ => Set.empty
             }
         }
 
