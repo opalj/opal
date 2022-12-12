@@ -3,7 +3,7 @@ package org.opalj
 package tac
 package fpcf
 package analyses
-
+/*
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -107,3 +107,4 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
         }
     }
 }
+*/

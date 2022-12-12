@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import sbt.Test
@@ -159,6 +160,7 @@ lazy val `OPAL` = (project in file("."))
     ba,
     ai,
     tac,
+    xl,
     de,
     av,
     framework,
@@ -415,6 +417,19 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
     name := "Demos",
     publishArtifact := false,
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Demos"),
+    Compile / unmanagedSourceDirectories := (Compile / javaSource).value :: (Compile / scalaSource).value :: Nil,
+    run / fork := true
+  )
+  .dependsOn(framework)
+  .configs(IntegrationTest)
+
+lazy val xl = `XLanguage`
+lazy val `XLanguage` = (project in file("OPAL/xl"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "XLanguage",
+    publishArtifact := false,
+    Compile / doc / scalacOptions ++= Opts.doc.title("Crosslanguage"),
     Compile / unmanagedSourceDirectories := (Compile / javaSource).value :: (Compile / scalaSource).value :: Nil,
     run / fork := true
   )
