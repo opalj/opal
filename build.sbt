@@ -361,7 +361,6 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     fork := true,
     javaCppPresetLibs ++= Dependencies.javaCppPresetLibs,
     javaCppVersion := Dependencies.javaCppVersion,
-    libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.4"
 )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -372,8 +371,7 @@ lazy val `APK` = (project in file("OPAL/apk"))
   .settings(
     name := "APK",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - APK"),
-    libraryDependencies += "net.dongliu" % "apk-parser" % "2.6.10",
-    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
+    libraryDependencies ++= Dependencies.apk,
   )
   .dependsOn(
     br % "it->it;it->test;test->test;compile->compile",

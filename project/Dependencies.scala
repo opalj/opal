@@ -24,6 +24,7 @@ object Dependencies {
     val txtmark = "0.16"
     val jacksonDF = "2.12.2"
     val fastutil = "8.5.4"
+    val apkparser = "2.6.10"
 
     val openjfx = "16"
   }
@@ -50,7 +51,8 @@ object Dependencies {
     val txtmark = "es.nitaur.markdown"                      % "txtmark"                     % version.txtmark withSources () withJavadoc ()
     val jacksonDF = "com.fasterxml.jackson.dataformat"      % "jackson-dataformat-csv"      % version.jacksonDF withSources () withJavadoc ()
     val fastutil = "it.unimi.dsi"                           % "fastutil"                    % version.fastutil withSources () withJavadoc ()
-    val javafxBase = "org.openjfx" % "javafx-base" % version.openjfx classifier osName
+    val javafxBase = "org.openjfx"                          % "javafx-base"                 % version.openjfx classifier osName
+    val apkparser = "net.dongliu"                           % "apk-parser"                  % version.apkparser
 
     // --- test related dependencies
 
@@ -72,8 +74,9 @@ object Dependencies {
   val ifds = Seq()
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
+  val apk = Seq(apkparser, scalaxml)
 
-  val javaCppVersion = "1.5.7"
-  val javaCppPresetLibs = Seq("llvm" -> "13.0.1")
+  val javaCppVersion = "1.5.8"
+  val javaCppPresetLibs = Seq("llvm" -> "15.0.3")
 
 }
