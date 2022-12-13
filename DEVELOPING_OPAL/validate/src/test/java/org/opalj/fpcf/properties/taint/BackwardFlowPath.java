@@ -2,7 +2,6 @@
 package org.opalj.fpcf.properties.taint;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.taint.BackwardFlowPathMatcher;
 
 import java.lang.annotation.*;
 

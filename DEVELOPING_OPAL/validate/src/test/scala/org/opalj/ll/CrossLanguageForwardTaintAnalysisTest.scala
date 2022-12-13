@@ -22,7 +22,7 @@ class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
         implicit val config = BaseConfig.withValue(ifds.ConfigKeyPrefix+"debug", ConfigValueFactory.fromAnyRef(true))
         val project =
             Project(
-                new java.io.File("./DEVELOPING_OPAL/validate/target/scala-2.13/it-classes/org/opalj/fpcf/fixtures/taint_xlang"),
+                new java.io.File("./DEVELOPING_OPAL/validate/target/scala-2.13/test-classes/org/opalj/fpcf/fixtures/taint_xlang/TaintTest.class"),
                 GlobalLogContext,
                 config
             )

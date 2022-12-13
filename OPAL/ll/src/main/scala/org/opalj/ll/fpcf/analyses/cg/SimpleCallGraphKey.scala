@@ -7,7 +7,6 @@ import org.opalj.fpcf.{EPK, FinalEP}
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.value.Function
 
-
 object SimpleCallGraphKey extends ProjectInformationKey[SimpleNativeCallGraph, Set[Function]] {
 
     /**

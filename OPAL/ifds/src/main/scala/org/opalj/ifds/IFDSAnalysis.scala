@@ -472,7 +472,6 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 } else {
                     // handle all other dependencies using property store
                     state.dependees.get(newEntity, propertyKey.key)
-                        .asInstanceOf[EOptionP[(C, IFDSFact[Fact, S]), IFDSProperty[S, Fact]]]
                 }
             }
         }

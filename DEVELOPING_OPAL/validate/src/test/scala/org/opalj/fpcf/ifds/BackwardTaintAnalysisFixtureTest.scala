@@ -32,10 +32,12 @@ class BackwardTaintAnalysisFixtureTest extends PropertiesTest {
     describe("Test the BackwardFlowPath annotations") {
         val testContext = executeAnalyses(BackwardTaintAnalysisFixtureScheduler)
         val project = testContext.project
-        val eas = methodsWithAnnotations(project).map {
-            case (method, entityString, annotations) =>
-                ((method, new IFDSFact(TaintNullFact)), entityString, annotations)
-        }
+        val eas = methodsWithAnnotations(project)
+            .filter(_._1.classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
+            .map {
+                case (method, entityString, annotations) =>
+                    ((method, new IFDSFact(TaintNullFact)), entityString, annotations)
+            }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(BackwardFlowPath.PROPERTY_VALIDATOR_KEY))
     }

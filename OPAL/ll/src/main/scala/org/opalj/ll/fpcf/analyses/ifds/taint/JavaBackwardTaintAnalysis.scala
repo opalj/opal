@@ -23,7 +23,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
      */
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
         p.allProjectClassFiles.filter(classFile =>
-            classFile.thisType.fqn == "TaintTest")
+            classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint_xlang/TaintTest")
             .flatMap(_.methods)
             .filter(_.name == "sink")
             .map(method => method -> new IFDSFact(
@@ -117,7 +117,6 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                 for (unbRetFact <- unbalancedReturnFacts) {
                     val newEntity = (callStmt.callable, unbRetFact)
                     dependeesGetter(newEntity, NativeTaint.key)
-                        .asInstanceOf[EOptionP[(Method, IFDSFact[TaintFact, JavaStatement]), IFDSProperty[JavaStatement, TaintFact]]]
                 }
             }
         }

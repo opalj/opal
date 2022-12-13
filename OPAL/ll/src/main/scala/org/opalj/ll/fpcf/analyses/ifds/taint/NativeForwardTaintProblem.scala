@@ -16,7 +16,7 @@ import org.opalj.tac.ReturnValue
 
 abstract class NativeForwardTaintProblem(project: SomeProject)
     extends NativeForwardIFDSProblem[NativeTaintFact, TaintFact](project)
-        with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
+    with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
     override val javaICFG = new JavaForwardICFG(project)
 
     override def nullFact: NativeTaintFact = NativeTaintNullFact

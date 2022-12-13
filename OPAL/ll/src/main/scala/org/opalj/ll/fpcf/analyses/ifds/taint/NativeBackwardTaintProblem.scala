@@ -3,9 +3,8 @@ package org.opalj.ll.fpcf.analyses.ifds.taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.EOptionP
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{Callable, IFDSFact, IFDSProperty}
+import org.opalj.ifds.{Callable, IFDSFact}
 import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.PointerType
 import org.opalj.ll.llvm.value._
@@ -15,7 +14,7 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, FlowFact, InstanceF
 
 abstract class NativeBackwardTaintProblem(project: SomeProject)
     extends NativeBackwardIFDSProblem[NativeTaintFact, TaintFact](project)
-        with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
+    with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
     override val javaICFG: JavaICFG = new JavaBackwardICFG(project)
 
     override def nullFact: NativeTaintFact = NativeTaintNullFact
@@ -220,7 +219,6 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 for (unbRetFact <- unbalancedReturnFacts) {
                     val newEntity = (callStmt.callable, unbRetFact)
                     dependeesGetter(newEntity, javaPropertyKey)
-                        .asInstanceOf[EOptionP[(Method, IFDSFact[TaintFact, JavaStatement]), IFDSProperty[JavaStatement, TaintFact]]]
                 }
             }
         }

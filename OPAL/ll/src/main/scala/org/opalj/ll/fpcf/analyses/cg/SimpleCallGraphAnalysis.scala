@@ -7,9 +7,6 @@ import org.opalj.fpcf._
 import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, LLVMFunction, NativeFunction}
 import org.opalj.ll.llvm.value.{Call, Function}
 
-
-// maps function a ==> Map(x -> a_call1, y -> a_call2, ...)
-
 sealed trait SimpleCallGraphPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = SimpleNativeCallGraph
 }
