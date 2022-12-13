@@ -58,7 +58,7 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](override val icfg: Java
 
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (callee.body.isDefined) None
-        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, _: Getter) => Set(in))
+        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Callable], _: Getter) => Set(in))
 
     override def outsideAnalysisContextUnbReturn(callee: Method): Option[OutsideAnalysisContextUnbReturnHandler] = None
 }

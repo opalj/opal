@@ -70,7 +70,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
     // Multilingual additions here
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
         def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement],
-                               in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
+                               in: TaintFact, unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[TaintFact] = {
             val nativeFunctionName = JNICallUtil.resolveNativeFunctionName(callee)
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
@@ -92,7 +92,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
                     (_, exitStatementFacts) <- exitFacts // ifds line 15.2
                     exitStatementFact <- exitStatementFacts // ifds line 15.3
                 } {
-                    result ++= nativeReturnFlow(exitStatementFact, call, function, callee)
+                    result ++= nativeReturnFlow(exitStatementFact, call, function, callee, unbCallChain)
                 }
             }
             result
@@ -196,7 +196,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
     }
 
     private def nativeReturnFlow(in: NativeTaintFact, call: JavaStatement, callee: LLVMFunction,
-                                 javaNativeCallee: Method): Set[TaintFact] = {
+                                 javaNativeCallee: Method, unbCallChain: Seq[Callable]): Set[TaintFact] = {
         if (sanitizesReturnValue(javaNativeCallee)) return Set.empty
 
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
@@ -216,8 +216,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
             // keep static field taints
             case JavaStaticField(classType, fieldName) => Set(StaticField(classType, fieldName))
             // propagate flow facts
-            case NativeFlowFact(flow) if !flow.contains(JavaMethod(call.method)) =>
-                Set(FlowFact(JavaMethod(call.method) +: flow))
+            case NativeFlowFact(flow)  => Set(FlowFact(unbCallChain.prepended(JavaMethod(call.method))))
             case NativeTaintNullFact => Set(TaintNullFact)
             case _ => Set.empty
         }

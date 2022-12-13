@@ -190,7 +190,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      */
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
         super.outsideAnalysisContextCall(callee) match {
-            case Some(_) => Some((call: JavaStatement, _: Option[JavaStatement], in: TaintFact, _: Getter) => {
+            case Some(_) => Some((call: JavaStatement, _: Option[JavaStatement], in: TaintFact, unbCallChain: Seq[Callable], _: Getter) => {
                 val callStatement = JavaIFDSProblem.asCall(call.stmt)
                 Set(in) ++ (in match {
                     case Variable(index) if index == call.index =>

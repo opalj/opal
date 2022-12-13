@@ -8,7 +8,8 @@ import org.opalj.ifds.{Callable, IFDSFact}
 import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.PointerType
 import org.opalj.ll.llvm.value._
-import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.{ArrayLength, ArrayLoad, BinaryExpr, Compare, Expr, GetField, GetStatic, NewArray, PrefixExpr, PrimitiveTypecastExpr, ReturnValue, Var}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaBackwardICFG, JavaICFG, JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, FlowFact, InstanceField, StaticField, TaintFact, TaintNullFact, TaintProblem, Variable}
 
@@ -188,7 +189,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
      * @return Some fact, if necessary. Otherwise None.
      */
     protected def createFlowFactAtCall(call: LLVMStatement, in: NativeTaintFact,
-                                       callChain: Seq[Callable]): Option[NativeTaintFact] = None
+                                       unbCallChain: Seq[Callable]): Option[NativeTaintFact] = None
 
     override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: Option[LLVMStatement],
                                   unbCallChain: Seq[Callable]): Set[NativeTaintFact] = {
@@ -262,10 +263,54 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         val flow = collection.mutable.Set.empty[TaintFact]
         val callInstr = call.instruction.asInstanceOf[Call]
 
+        def createNewTaints(expression: Expr[V], statement: JavaStatement): Set[TaintFact] = {
+            /* TODO alias references and nested objects are not correctly handled, same for forward analysis
+             if new variable is tainted, check if it holds a reference type value, if yes:
+              1. taint aliases of that variable
+              2. taint variables holding references to inner objects/arrays
+             repeat 1 and 2 for variables found in 1 and 2
+
+             code example showcasing the problem:
+             ============================================================
+             def nested_ret_array():
+                a = new int[4][4]               "
+                b = a[3]                        "
+                c = source()                    "
+                b[0] = c                        "
+                d = a[3]                        {d[2], a[3]}
+                return d                        {arr[2] -> d[2]}
+
+             arr = nested_ret_array()            {arr[2]}
+             sink(arr[2])
+             ============================================================
+             */
+            expression.astID match {
+                case Var.ASTID => expression.asVar.definedBy.map(Variable)
+                case ArrayLoad.ASTID =>
+                    val arrayLoad = expression.asArrayLoad
+                    val arrayIndex = TaintProblem.getIntConstant(arrayLoad.index, statement.code)
+                    val arrayDefinedBy = arrayLoad.arrayRef.asVar.definedBy
+                    if (arrayIndex.isDefined) arrayDefinedBy.map(ArrayElement(_, arrayIndex.get))
+                    else arrayDefinedBy.map(Variable)
+                case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID |
+                     PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID =>
+                    (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) =>
+                        acc ++ createNewTaints(expression.subExpr(subExpr), statement))
+                case GetField.ASTID =>
+                    val getField = expression.asGetField
+                    getField.objRef.asVar.definedBy
+                        .map(InstanceField(_, getField.declaringClass, getField.name))
+                case GetStatic.ASTID =>
+                    val getStatic = expression.asGetStatic
+                    Set(StaticField(getStatic.declaringClass, getStatic.name))
+                case _ => Set.empty
+            }
+        }
+
         // taint return value in callee, if tainted in caller
         if (start.stmt.astID == ReturnValue.ASTID) in match {
-            case NativeVariable(_) => flow += Variable(start.index)
-            case NativeArrayElement(_, _) => flow += Variable(start.index)
+            case NativeVariable(value) if value == callInstr => flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
+            case NativeArrayElement(base, _) if base == callInstr => flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
             case _ =>
         }
 
@@ -291,7 +336,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
     }
 
     override protected def javaReturnFlow(exit: JavaStatement, in: TaintFact, call: LLVMStatement, callFact: NativeTaintFact,
-                                          successor: Option[LLVMStatement]): Set[NativeTaintFact] = {
+                                          unbCallChain: Seq[Callable], successor: Option[LLVMStatement]): Set[NativeTaintFact] = {
         val callee = exit.callable
         if (sanitizesReturnValue(JNIMethod(callee))) return Set.empty
 
@@ -315,7 +360,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
             case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
             case TaintNullFact => Set(NativeTaintNullFact)
             // Track the call chain to the sink back
-            case FlowFact(flow) if !flow.contains(call.function) => Set(NativeFlowFact(call.function +: flow))
+            case FlowFact(flow) => Set(NativeFlowFact(unbCallChain.prepended(call.function)))
             case _ => Set.empty
         }
     }

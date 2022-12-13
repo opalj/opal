@@ -205,7 +205,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             super.outsideAnalysisContextCall(callee).isEmpty)
             None
         else {
-            Some(((call: JavaStatement, successor: Option[JavaStatement], in: VTAFact, getter: Getter) => {
+            Some(((call: JavaStatement, successor: Option[JavaStatement], in: VTAFact, unbCallChain: Seq[Callable], getter: Getter) => {
                 val returnType = callee.descriptor.returnType
                 if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
                     Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))

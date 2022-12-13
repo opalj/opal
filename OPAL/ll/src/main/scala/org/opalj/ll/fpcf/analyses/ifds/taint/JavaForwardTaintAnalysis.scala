@@ -60,7 +60,7 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends JavaForwardTaintProb
 
     // Multilingual additions here
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
-        def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
+        def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[TaintFact] = {
             val nativeFunctionName = JNICallUtil.resolveNativeFunctionName(callee)
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]

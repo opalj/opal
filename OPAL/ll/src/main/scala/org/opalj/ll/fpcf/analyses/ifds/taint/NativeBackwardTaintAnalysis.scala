@@ -27,7 +27,7 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
     override protected def sanitizesParameter(call: LLVMStatement, in: NativeTaintFact): Boolean = false
 
     override protected def createFlowFactAtCall(call: LLVMStatement, in: NativeTaintFact,
-                                                callChain: Seq[Callable]): Option[NativeTaintFact] = {
+                                                unbCallChain: Seq[Callable]): Option[NativeTaintFact] = {
         // create flow facts if callee is source or sink
         val callInstr = call.instruction.asInstanceOf[Call]
         val callees = icfg.resolveCallee(callInstr)
@@ -37,8 +37,8 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
             case _ => None
         } else if (callees.exists(_.name == "source")) in match {
             // create flow fact if source is reached with tainted value
-            case NativeVariable(value) if value == call.instruction && !callChain.contains(call.callable) =>
-                Some(NativeFlowFact(callChain.prepended(call.callable)))
+            case NativeVariable(value) if value == call.instruction && !unbCallChain.contains(call.callable) =>
+                Some(NativeFlowFact(unbCallChain.prepended(call.callable)))
             case _ => None
         } else None
     }

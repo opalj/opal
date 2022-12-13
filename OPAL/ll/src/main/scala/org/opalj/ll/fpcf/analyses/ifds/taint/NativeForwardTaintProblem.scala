@@ -193,11 +193,12 @@ abstract class NativeForwardTaintProblem(project: SomeProject)
      *         `successor` will be executed next.
      */
     override protected def javaReturnFlow(
-        exit:      JavaStatement,
-        in:        TaintFact,
-        call:      LLVMStatement,
-        callFact:  NativeTaintFact,
-        successor: Option[LLVMStatement]
+        exit:         JavaStatement,
+        in:           TaintFact,
+        call:         LLVMStatement,
+        callFact:     NativeTaintFact,
+        unbCallChain: Seq[Callable],
+        successor:    Option[LLVMStatement]
     ): Set[NativeTaintFact] = {
         val callee = exit.callable
         if (sanitizesReturnValue(JNIMethod(callee))) return Set.empty

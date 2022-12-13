@@ -322,20 +322,21 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         work:     Work
     ): Unit = {
         val successors = icfg.nextStatements(call)
+        val existingCallChain = state.source._2.callChain.getOrElse(Seq.empty)
         for (callee <- callees) {
             ifdsProblem.outsideAnalysisContextCall(callee) match {
                 case Some(outsideAnalysisHandler) =>
                     // Let the concrete analysis decide what to do.
                     if (successors.isEmpty) {
                         for {
-                            out <- outsideAnalysisHandler(call, None, in, state.dependees.getter()) // ifds line 17 (only summary edges)
+                            out <- outsideAnalysisHandler(call, None, in, existingCallChain, state.dependees.getter()) // ifds line 17 (only summary edges)
                         } {
                             propagate(None, out, call) // ifds line 18
                         }
                     } else {
                         for {
                             successor <- successors
-                            out <- outsideAnalysisHandler(call, Some(successor), in, state.dependees.getter()) // ifds line 17 (only summary edges)
+                            out <- outsideAnalysisHandler(call, Some(successor), in, existingCallChain, state.dependees.getter()) // ifds line 17 (only summary edges)
                         } {
                             propagate(Some(successor), out, call) // ifds line 18
                         }
@@ -357,7 +358,6 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                     }
             }
         }
-        val existingCallChain = state.source._2.callChain.getOrElse(Seq.empty)
         if (successors.isEmpty) {
             for {
                 out <- callToReturnFlow(call, in, None, existingCallChain) // ifds line 17 (without summary edge propagation)

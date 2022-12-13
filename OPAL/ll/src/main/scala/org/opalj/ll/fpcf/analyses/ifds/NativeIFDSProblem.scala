@@ -28,16 +28,18 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
 
     override def createCallable(callable: NativeFunction): Callable = callable
 
-    override def outsideAnalysisContextCall(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Getter) => Set[Fact]] = callee match {
+    override def outsideAnalysisContextCall(callee: NativeFunction):
+    Option[(LLVMStatement, Option[LLVMStatement], Fact, Seq[Callable], Getter) => Set[Fact]] = callee match {
         case LLVMFunction(function) =>
             function.basicBlockCount match {
-                case 0 => Some((_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Getter) => Set(in))
+                case 0 => Some((_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Seq[Callable], _: Getter) => Set(in))
                 case _ => None
             }
         case JNIMethod(method) => Some(handleJavaMethod(method))
     }
 
-    private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: Option[LLVMStatement], in: Fact, dependeesGetter: Getter): Set[Fact] = {
+    private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: Option[LLVMStatement], in: Fact,
+                                                 unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[Fact] = {
         var result = Set.empty[Fact]
         val entryFacts = javaICFG.startStatements(callee).flatMap(javaCallFlow(_, call, callee, in)).map(new IFDSFact(_))
         for (entryFact <- entryFacts) { // ifds line 14
@@ -55,7 +57,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
                 (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
                 exitStatementFact <- exitStatementFacts // ifds line 15.3
             } {
-                result ++= javaReturnFlow(exitStatement, exitStatementFact, call, in, successor)
+                result ++= javaReturnFlow(exitStatement, exitStatementFact, call, in, unbCallChain, successor)
             }
         }
         result
@@ -79,10 +81,11 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
     ): Set[JavaFact]
 
     protected def javaReturnFlow(
-        exit:      JavaStatement,
-        in:        JavaFact,
-        call:      LLVMStatement,
-        callFact:  Fact,
-        successor: Option[LLVMStatement]
+        exit:         JavaStatement,
+        in:           JavaFact,
+        call:         LLVMStatement,
+        callFact:     Fact,
+        unbCallChain: Seq[Callable],
+        successor:    Option[LLVMStatement]
     ): Set[Fact]
 }

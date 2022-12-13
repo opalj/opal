@@ -230,7 +230,7 @@ abstract class JavaForwardTaintProblem(project: SomeProject)
      */
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
         super.outsideAnalysisContextCall(callee) match {
-            case Some(_) => Some(((call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, _: Getter) => {
+            case Some(_) => Some(((call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, unbCallChain: Seq[Callable], _: Getter) => {
                 val allParams = JavaIFDSProblem.asCall(call.stmt).receiverOption ++ JavaIFDSProblem.asCall(call.stmt).params
                 if (call.stmt.astID == Assignment.ASTID && (in match {
                     case Variable(index) =>
