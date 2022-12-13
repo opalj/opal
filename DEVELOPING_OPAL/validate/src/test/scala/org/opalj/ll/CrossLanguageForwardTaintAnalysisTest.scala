@@ -22,7 +22,7 @@ class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
         implicit val config = BaseConfig.withValue(ifds.ConfigKeyPrefix+"debug", ConfigValueFactory.fromAnyRef(true))
         val project =
             Project(
-                new java.io.File("./DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint"),
+                new java.io.File("./DEVELOPING_OPAL/validate/target/scala-2.13/it-classes/org/opalj/fpcf/fixtures/taint_xlang"),
                 GlobalLogContext,
                 config
             )
@@ -61,7 +61,7 @@ class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
             }
         }
 
-        val function: Function = project.get(LLVMProjectKey).function("Java_TaintTest_native_1array_1tainted").get
+        val function: Function = project.get(LLVMProjectKey).function("Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted").get
         val debugData = ps((LLVMFunction(function), new IFDSFact(NativeTaintNullFact)), NativeForwardTaintAnalysisScheduler.property.key).ub.asInstanceOf[IFDSProperty[LLVMStatement, NativeTaintFact]].debugData
         for {
             bb <- function.basicBlocks

@@ -170,6 +170,7 @@ case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref) {
 
     def numIndices: Int = LLVMGetNumIndices(ref)
     def indices: Iterable[Int] = LLVMGetIndices(ref).asBuffer().array()
+    def sourceElementType: Type = Type(LLVMGetGEPSourceElementType(ref))
 }
 case class Trunc(ref: LLVMValueRef) extends ConversionOperation(ref)
 case class ZExt(ref: LLVMValueRef) extends ConversionOperation(ref)
