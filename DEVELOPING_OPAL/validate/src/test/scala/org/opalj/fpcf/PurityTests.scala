@@ -14,16 +14,18 @@ import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
+
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
  * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
@@ -32,8 +34,6 @@ import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldA
  * @author Dominik Helm
  */
 class PurityTests extends PropertiesTest {
-
-    import org.opalj.br.analyses.Project
 
     override def withRT = true
 
@@ -60,6 +60,7 @@ class PurityTests extends PropertiesTest {
                     LazyTypeImmutabilityAnalysis
                 )
             )
+
         as.propertyStore.shutdown()
         validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
     }
@@ -69,11 +70,11 @@ class PurityTests extends PropertiesTest {
 
         val as = executeAnalyses(
             Set(
+                EagerL1PurityAnalysis,
                 LazyL1FieldAssignabilityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
+                LazyFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                EagerL1PurityAnalysis
+                LazyTypeImmutabilityAnalysis
             )
         )
 
@@ -81,50 +82,30 @@ class PurityTests extends PropertiesTest {
         validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
     }
 
-    describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
-
-        L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-
-        val as = executeAnalyses(Set(
-            EagerL2PurityAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyInterProceduralEscapeAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis,
-            LazyL1FieldAssignabilityAnalysis,
-            LazyL0FieldImmutabilityAnalysis,
-            LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis
-        ))
-
-        as.propertyStore.shutdown()
-        validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
-    }
-
     describe(
         "the org.opalj.fpcf.analyses.L2PurityAnalysis is executed "+
-            "together with the L0FieldImmutabilityAnalysis and L2FieldAssignabilityAnalysis"
+            "together with the FieldImmutabilityAnalysis and L2FieldAssignabilityAnalysis"
     ) {
 
             L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
-            val as = executeAnalyses(Set(
-                EagerL2PurityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
-                LazyL2FieldAssignabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis,
-                LazyInterProceduralEscapeAnalysis
-            ))
+            val as = executeAnalyses(
+                Set(
+                    EagerL2PurityAnalysis,
+                    LazyL2FieldAssignabilityAnalysis,
+                    LazyFieldImmutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis,
+                    LazyStaticDataUsageAnalysis,
+                    LazyL0CompileTimeConstancyAnalysis,
+                    LazyInterProceduralEscapeAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyFieldLocalityAnalysis,
+                    LazyInterProceduralEscapeAnalysis
+                )
+            )
 
             as.propertyStore.shutdown()
-
             validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
         }
 }

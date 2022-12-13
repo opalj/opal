@@ -6,7 +6,6 @@ package analyses
 package purity
 
 import scala.annotation.switch
-import scala.reflect.runtime.universe.runtimeMirror
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -642,6 +641,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def resolveDomainSpecificRater(fqn: String): DomainSpecificRater = {
+        import scala.reflect.runtime.universe.runtimeMirror
 
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {

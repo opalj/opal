@@ -207,7 +207,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                     val nonFinalPSs = epss.filter(_.isRefinable)
                     assert(
                         nonFinalPSs.isEmpty,
-                        nonFinalPSs.mkString("some eps are not final:\n\t", "\n\t", "\n")
+                        nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
                     )
                     val properties = epss.map(_.toFinalEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {

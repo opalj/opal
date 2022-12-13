@@ -282,14 +282,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.context, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) => // Reading eff. final fields
+            case FinalP(NonAssignable | EffectivelyNonAssignable |
+                LazilyInitialized) => // Reading not assignable fields
             case FinalP(TransitivelyImmutableType |
-                TransitivelyImmutableClass) => // Returning immutable reference
+                TransitivelyImmutableClass) => // Returning not assignable field
 
             // Cases resulting in side-effect freeness
-            case FinalP(_: FieldAssignability | // Reading non-final field
-                _: TypeImmutability |
-                _: ClassImmutability) => // Returning mutable reference
+            case FinalP(_: FieldAssignability | // Reading assignable field
+                _: TypeImmutability | _: ClassImmutability) => // Returning assignable field
                 atMost(SideEffectFree)
 
             case _: SomeInterimEP => state.dependees += eps
@@ -476,7 +476,8 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
-            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
+            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
+                !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
                 c
         }
 

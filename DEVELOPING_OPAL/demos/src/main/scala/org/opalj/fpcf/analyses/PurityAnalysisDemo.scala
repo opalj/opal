@@ -18,7 +18,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.

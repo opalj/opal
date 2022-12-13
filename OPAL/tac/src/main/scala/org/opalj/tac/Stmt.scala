@@ -49,7 +49,6 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     ): Stmt[DUVar[ValueInformation]]
 
     // TYPE CONVERSION METHODS
-
     def asIf: If[V] = throw new ClassCastException();
     def asGoto: Goto = throw new ClassCastException();
     def asRet: Ret = throw new ClassCastException();
@@ -57,6 +56,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asSwitch: Switch[V] = throw new ClassCastException();
     def asAssignmentLike: AssignmentLikeStmt[V] = throw new ClassCastException();
     def asAssignment: Assignment[V] = throw new ClassCastException();
+    def isReturnValue: Boolean = false
     def asReturnValue: ReturnValue[V] = throw new ClassCastException();
     def asReturn: Return = throw new ClassCastException();
     def asNop: Nop = throw new ClassCastException();
@@ -65,12 +65,10 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asMonitorExit: MonitorExit[V] = throw new ClassCastException();
     def asArrayStore: ArrayStore[V] = throw new ClassCastException();
     def asThrow: Throw[V] = throw new ClassCastException();
-    def isThrow: Boolean = false
     def asFieldWriteAccessStmt: FieldWriteAccessStmt[V] = throw new ClassCastException();
     def asPutStatic: PutStatic[V] = throw new ClassCastException();
     def asPutField: PutField[V] = throw new ClassCastException();
     /*inner type*/ def asMethodCall: MethodCall[V] = throw new ClassCastException();
-    def isMethodCall: Boolean = false
     /*inner type*/ def asInstanceMethodCall: InstanceMethodCall[V] = throw new ClassCastException();
     def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
@@ -79,23 +77,22 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asExprStmt: ExprStmt[V] = throw new ClassCastException();
     def asCaughtException: CaughtException[V] = throw new ClassCastException();
     def asCheckcast: Checkcast[V] = throw new ClassCastException();
-    def isCheckcast: Boolean = false;
-
+    def isIf: Boolean = false
     def isAssignment: Boolean = false
-    def isArrayStore: Boolean = false
-    def isExprStmt: Boolean = false
+    def isNop: Boolean = false
     def isNonVirtualMethodCall: Boolean = false
     def isVirtualMethodCall: Boolean = false
     def isStaticMethodCall: Boolean = false
+    def isExprStmt: Boolean = false
     def isCaughtException: Boolean = false
-
-    def isIf: Boolean = false
+    def isCheckcast: Boolean = false;
     def isMonitorEnter: Boolean = false
     def isMonitorExit: Boolean = false
+    def isThrow: Boolean = false
+    def isArrayStore: Boolean = false
     def isPutStatic: Boolean = false
     def isPutField: Boolean = false
-    def isNop: Boolean = false
-    def isReturnValue: Boolean = false
+    def isMethodCall: Boolean = false
 }
 
 /**
@@ -522,9 +519,7 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
     final override def asMonitorEnter: this.type = this
-
     final override def isMonitorEnter: Boolean = true
-
     final override def astID: Int = MonitorEnter.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = {
         p(objRef)
@@ -551,7 +546,6 @@ object MonitorEnter {
 case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
     final override def asMonitorExit: this.type = this
-
     final override def isMonitorExit: Boolean = true
     final override def astID: Int = MonitorExit.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = {
@@ -721,8 +715,9 @@ case class PutField[+V <: Var[V]](
         objRef:            Expr[V],
         value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
-    final override def isPutField: Boolean = true
+
     final override def asPutField: this.type = this
+    final override def isPutField: Boolean = true
     final override def astID: Int = PutField.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] => Boolean): Boolean = {
         p(objRef) && p(value)
@@ -765,9 +760,7 @@ object PutField {
 sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 
     final override def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
-
     final override def asMethodCall: this.type = this
-
     final override def isMethodCall: Boolean = true
 
 }
@@ -875,8 +868,7 @@ case class VirtualMethodCall[+V <: Var[V]](
         descriptor:     MethodDescriptor,
         receiver:       Expr[V],
         params:         Seq[Expr[V]]
-) extends InstanceMethodCall[V]
-    with VirtualCall[V] {
+) extends InstanceMethodCall[V] with VirtualCall[V] {
 
     final override def asVirtualMethodCall: this.type = this
     final override def isVirtualMethodCall: Boolean = true
@@ -918,7 +910,6 @@ case class StaticMethodCall[+V <: Var[V]](
 ) extends MethodCall[V] {
 
     final override def allParams: Seq[Expr[V]] = params
-
     final override def asStaticMethodCall: this.type = this
     final override def isStaticMethodCall: Boolean = true
     final override def astID: Int = StaticMethodCall.ASTID

@@ -999,7 +999,8 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
-            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
+            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
+                !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
                 c
         }
 

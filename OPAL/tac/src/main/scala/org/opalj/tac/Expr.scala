@@ -85,15 +85,14 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def isValueExpression: Boolean
     def isVar: Boolean
     def asVar: V = throw new ClassCastException();
-
     def asInstanceOf: InstanceOf[V] = throw new ClassCastException();
+    def isCompare: Boolean = false
     def asCompare: Compare[V] = throw new ClassCastException();
     def asParam: Param = throw new ClassCastException();
     def isMethodTypeConst: Boolean = false
     def asMethodTypeConst: MethodTypeConst = throw new ClassCastException();
     def isMethodHandleConst: Boolean = false
     def asMethodHandleConst: MethodHandleConst = throw new ClassCastException();
-    def isCompare: Boolean = false
     def isConst: Boolean = false
     def isIntConst: Boolean = false
     def asIntConst: IntConst = throw new ClassCastException();
@@ -128,8 +127,8 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def isGetStatic: Boolean = false
     def asGetStatic: GetStatic = throw new ClassCastException();
     def asInvokedynamicFunctionCall: InvokedynamicFunctionCall[V] = throw new ClassCastException();
-    def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
     def isFunctionCall: Boolean = false
+    def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
     def isStaticFunctionCall: Boolean = false
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
     def asInstanceFunctionCall: InstanceFunctionCall[V] = throw new ClassCastException();
@@ -562,8 +561,8 @@ object NewArray { final val ASTID = -18 }
 
 case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends ArrayExpr[V] {
 
-    final override def asArrayLoad: this.type = this
     final override def isArrayLoad: Boolean = true
+    final override def asArrayLoad: this.type = this
     final override def astID: Int = ArrayLoad.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
     final override def isSideEffectFree: Boolean = false
@@ -785,8 +784,8 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
     final override def cTpe: ComputationalType = descriptor.returnType.computationalType
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
-    final override def asFunctionCall: this.type = this
     final override def isFunctionCall: Boolean = true
+    final override def asFunctionCall: this.type = this
 }
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {

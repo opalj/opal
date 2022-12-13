@@ -14,9 +14,9 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater

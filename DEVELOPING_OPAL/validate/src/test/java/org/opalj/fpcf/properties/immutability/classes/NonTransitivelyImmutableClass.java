@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.immutability.ClassImmutabilityAnalysis;
 
 /**
  * Annotation to state that the annotated class is non-transitively immutable.

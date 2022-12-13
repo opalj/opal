@@ -52,11 +52,9 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
 
         var dependee: EOptionP[Entity, Property] = {
             propertyStore(field, FieldAssignability.key) match {
-                case LBP(NonAssignable) => return Result(field, CompileTimeConstantField);
-                case UBP(EffectivelyNonAssignable |
-                    UnsafelyLazilyInitialized |
-                    LazilyInitialized) => return Result(field, CompileTimeVaryingField);
-                case ep => ep
+                case LBP(NonAssignable | EffectivelyNonAssignable)      => return Result(field, CompileTimeConstantField);
+                case UBP(UnsafelyLazilyInitialized | LazilyInitialized) => return Result(field, CompileTimeVaryingField);
+                case ep                                                 => ep
             }
         }
 

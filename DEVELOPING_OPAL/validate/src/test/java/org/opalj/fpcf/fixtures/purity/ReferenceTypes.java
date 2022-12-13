@@ -16,25 +16,25 @@ final public class ReferenceTypes {
 
     // Fields with different attributes for use in test methods
 
-    private static final DependentCalls staticFinalImmutableObj =
+    private static final DependentCalls staticNonAssignableTransitivelyImmutableObj =
             DependentCalls.createDependentCalls();
 
-    private static DependentCalls staticEffectivelyFinalImmutableObj =
+    private static DependentCalls staticEffectivelyNonAssignableTransitivelyImmutableObj =
             DependentCalls.createDependentCalls();
 
-    private static final Object staticFinalObj = new Object();
+    private static final Object staticNonAssignableObj = new Object();
 
-    private static Object staticEffectivelyFinalObj = new Object();
+    private static Object staticEffectivelyNonAssignableObj = new Object();
 
-    private static Object staticNonFinalObj = new Object();
+    private static Object staticAssignableObj = new Object();
 
-    private final int[] nonConstFinalArr = new int[]{1, 2, 3};
+    private final int[] nonConstNonAssignableArr = new int[]{1, 2, 3};
 
-    private int[] constEffectivelyFinalArr = new int[]{2, 3, 4};
+    private int[] constEffectivelyNonAssignableArr = new int[]{2, 3, 4};
 
-    public int[] nonFinalArr = new int[]{5, 6, 7};
+    public int[] nonAssignableArr = new int[]{5, 6, 7};
 
-    private int nonFinalField;
+    private int assignableField;
 
     // Constructors are pure even if they write fields of the currently created object
     // (Unless the object escapes the thread)
@@ -44,70 +44,72 @@ final public class ReferenceTypes {
     @Pure(value = "Only initializes fields", analyses = L1PurityAnalysis.class)
     @Impure(value = "Sets array entries", analyses = L0PurityAnalysis.class)
     public ReferenceTypes() {
-        nonFinalField = 5;
+        assignableField = 5;
     }
 
     @ContextuallyPure(value = "Only modifies fields of parameters", modifies = {1})
     @Impure(value = "Modifies field of different instance",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     public ReferenceTypes(ReferenceTypes other) {
-        nonFinalField = 7;
+        assignableField = 7;
         if (other != null) {
-            other.nonFinalField = 27;
+            other.assignableField = 27;
         }
     }
 
-    // Using (effectively) final static fields is pure
-    // Returning mutable references is side-effect free,
+    // Using (effectively) non-assignable static fields is pure
+    // Returning assignable references is side-effect free,
     // if the reference is not fresh and non-escaping
-    // Using non final static fields is side-effect free
+    // Using assignable static fields is side-effect free
     // Setting static fields is impure
 
-    @Pure(value = "Uses final static immutable object",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"), analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @Pure(value = "Uses non-assignable static immutable object",
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
+            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
     @Impure(value = "DependentCalls not recognized as immutable",
             eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
             negate = true, analyses = L0PurityAnalysis.class)
-    public static DependentCalls getStaticFinalImmutableObj() {
-        return staticFinalImmutableObj;
+    public static DependentCalls getStaticNonAssignableTransitivelyImmutableObj() {
+        return staticNonAssignableTransitivelyImmutableObj;
     }
 
-    @Pure(value = "Uses effectively final static immutable object", eps = {
+    @Pure(value = "Uses effectively non-assignable static immutable object", eps = {
             @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
-            @EP(cf = ReferenceTypes.class, field = "staticEffectivelyFinalImmutableObj",
+            @EP(cf = ReferenceTypes.class, field = "staticEffectivelyNonAssignableTransitivelyImmutableObj",
                     pk = "FieldImmutability", p = "NonTransitivelyImmutableField")
     })
-    @Impure(value = "staticEffectivelyFinalImmutableObj not recognized as effectively final static immutable object",
+    @Impure(value = "staticEffectivelyNonAssignableTransitivelyImmutableObj not recognized " +
+            "as effectively final static immutable object",
             negate = true, eps = {
             @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
-            @EP(cf = ReferenceTypes.class, field = "staticEffectivelyFinalImmutableObj",
+            @EP(cf = ReferenceTypes.class, field = "staticEffectivelyNonAssignableTransitivelyImmutableObj",
                     pk = "FieldImmutability", p = "NonTransitivelyImmutableField")
     }, analyses = L0PurityAnalysis.class)
-    public static DependentCalls getStaticEffectivelyFinalImmutableObj() {
-        return staticEffectivelyFinalImmutableObj;
+    public static DependentCalls getStaticEffectivelyNonAssignableTransitivelyImmutableObj() {
+        return staticEffectivelyNonAssignableTransitivelyImmutableObj;
     }
 
     @SideEffectFree("Returns mutable object")
     @Impure(value = "Returns mutable object", analyses = L0PurityAnalysis.class)
-    public static Object getStaticFinalObj() {
-        return staticFinalObj;
+    public static Object getStaticNonAssignableObj() {
+        return staticNonAssignableObj;
     }
 
     @SideEffectFree("Returns mutable object")
     @Impure(value = "Uses mutable object", analyses = L0PurityAnalysis.class)
-    public static Object getStaticEffectivelyFinalObj() {
-        return staticEffectivelyFinalObj;
+    public static Object getStaticEffectivelyNonAssignableObj() {
+        return staticEffectivelyNonAssignableObj;
     }
 
     @SideEffectFree("Returns object from non-final field")
     @Impure(value = "Returns object from non-final field", analyses = L0PurityAnalysis.class)
-    public static Object getStaticNonFinalObj() {
-        return staticNonFinalObj;
+    public static Object getStaticAssignableObj() {
+        return staticAssignableObj;
     }
 
     @Impure("Modifies static field")
     public static void setStaticObj(Object newObject) {
-        staticNonFinalObj = newObject;
+        staticAssignableObj = newObject;
     }
 
     // Objects returned from methods are local if they are fresh and therefore the method can be
@@ -136,7 +138,7 @@ final public class ReferenceTypes {
     @SideEffectFree("Returns mutable object")
     @Impure(value = "Returns mutable object", analyses = L0PurityAnalysis.class)
     public static Object getStaticFinalObjIndirect() {
-        return getStaticFinalObj();
+        return getStaticNonAssignableObj();
     }
 
     @Pure(value = "Returns a new object", analyses = L2PurityAnalysis.class,
@@ -158,7 +160,7 @@ final public class ReferenceTypes {
     @Impure(value = "Allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNonFreshObject(boolean b) {
         if (b) return new Object();
-        else return staticFinalObj;
+        else return staticNonAssignableObj;
     }
 
     @SideEffectFree("Returns a potentially non-fresh object")
@@ -174,7 +176,7 @@ final public class ReferenceTypes {
     @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
     public static int getFreshObjectField() {
         ReferenceTypes obj = new ReferenceTypes();
-        return obj.nonFinalField;
+        return obj.assignableField;
     }
 
     @Pure(value = "Modifies field of fresh object",
@@ -182,7 +184,7 @@ final public class ReferenceTypes {
     @Impure(value = "Modifies instance field", analyses = L0PurityAnalysis.class)
     public static Object setFreshObjectField(int value) {
         ReferenceTypes obj = new ReferenceTypes();
-        obj.nonFinalField = value;
+        obj.assignableField = value;
         return obj;
     }
 
@@ -194,25 +196,25 @@ final public class ReferenceTypes {
     // Array access may throw IndexOutOfBounds exceptions, but this is pure
 
     @CompileTimePure("Uses array length of final array")
-    @Pure(value = "Uses array length of final array", analyses = L1PurityAnalysis.class)
+    @Pure(value = "Uses array length of non assignable array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getFinalArrLength() {
-        int[] arr = nonConstFinalArr;
+        int[] arr = nonConstNonAssignableArr;
         if (arr == null)
             return 0; // Work around unknown null-ness
         return arr.length;
     }
 
-    @CompileTimePure(value = "Uses array length of effectively final array",
-            eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
+    @CompileTimePure(value = "Uses array length of effectively non-assignable array",
+            eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyNonAssignableArr",
                     pk = "FieldImmutability", p = "NonTransitivelyImmutableField"))
-    @Pure(value = "Uses array length of effectively final array",
-            eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
+    @Pure(value = "Uses array length of effectively non-assignable array",
+            eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyNonAssignableArr",
                     pk = "FieldImmutability", p = "NonTransitivelyImmutableField"),
             analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getEffectivelyFinalArrLength() {
-        int[] arr = constEffectivelyFinalArr;
+        int[] arr = constEffectivelyNonAssignableArr;
         if (arr == null)
             return 0; // Work around unknown null-ness
         return arr.length;
@@ -221,7 +223,7 @@ final public class ReferenceTypes {
     @SideEffectFree("Uses array length")
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getNonFinalArrLength() {
-        int[] arr = nonFinalArr;
+        int[] arr = nonAssignableArr;
         if (arr == null)
             return 0;
         return arr.length;
@@ -240,7 +242,7 @@ final public class ReferenceTypes {
             "Array entry used is non-deterministic, potential IndexOutOfBoundsException")
     @Impure(value = "Uses array entries", analyses = L0PurityAnalysis.class)
     public int getArrayEntries(int index) {
-        return nonConstFinalArr[index] + nonFinalArr[index];
+        return nonConstNonAssignableArr[index] + nonAssignableArr[index];
     }
 
     @DomainSpecificPure(value = "Potential IndexOutOfBoundsException", analyses = {})
@@ -250,7 +252,7 @@ final public class ReferenceTypes {
     )
     @Impure(value = "Uses array entry", analyses = L0PurityAnalysis.class)
     public int getConstArrayEntry(int index) {
-        return constEffectivelyFinalArr[index];
+        return constEffectivelyNonAssignableArr[index];
     }
 
     @DomainSpecificSideEffectFree(
@@ -261,13 +263,13 @@ final public class ReferenceTypes {
     }
 
     @DomainSpecificContextuallyPure(value = "Modified array is local", modifies = {0},
-            eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
+            eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstNonAssignableArr",
                     p = "LocalField"))
     @Impure(value = "Modifies array entry/array not recognized as local", negate = true,
-            eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
+            eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstNonAssignableArr",
                     p = "LocalField", analyses = L2PurityAnalysis.class))
     public void setArrayEntry(int index, int value) {
-        nonConstFinalArr[index] = value;
+        nonConstNonAssignableArr[index] = value;
     }
 
     @DomainSpecificContextuallyPure(
@@ -299,8 +301,6 @@ final public class ReferenceTypes {
         }
         return arr;
     }
-
-    //
 
     @SideEffectFree("hashCode is not deterministic on new objects")
     @Impure(value = "Analysis doesn't recognize side-effect free methods",

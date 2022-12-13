@@ -16,10 +16,10 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -67,7 +67,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 .runAll(
                     LazyL2FieldAssignabilityAnalysis,
                     LazyL2PurityAnalysis,
-                    EagerL0FieldImmutabilityAnalysis,
+                    EagerFieldImmutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis,
                     LazyStaticDataUsageAnalysis,

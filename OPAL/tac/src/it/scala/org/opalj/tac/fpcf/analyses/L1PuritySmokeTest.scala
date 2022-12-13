@@ -20,14 +20,12 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
-
 /**
  * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not
  * cause any exceptions.
@@ -47,7 +45,7 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1FieldAssignabilityAnalysis,
-        EagerL0FieldImmutabilityAnalysis,
+        EagerFieldImmutabilityAnalysis,
         EagerClassImmutabilityAnalysis,
         EagerTypeImmutabilityAnalysis
     )

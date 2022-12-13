@@ -27,11 +27,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.Field
 import org.opalj.fpcf.Entity
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreContext
@@ -43,6 +40,8 @@ import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.br.fpcf.properties.immutability.Assignable
@@ -66,8 +65,9 @@ import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.MutableField
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
-import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.tac.cg.CallGraphKey
+import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several
@@ -147,7 +147,7 @@ object Immutability {
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyL2FieldAssignabilityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
+                LazyFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
@@ -197,7 +197,7 @@ object Immutability {
                                     f => propertyStore.force(f, FieldAssignability.key)
                                 )
                         case Fields =>
-                            if (css.contains(LazyL0FieldImmutabilityAnalysis))
+                            if (css.contains(LazyFieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f => propertyStore.force(f, FieldImmutability.key)
                                 )
@@ -217,7 +217,7 @@ object Immutability {
                                     import org.opalj.br.fpcf.properties.immutability
                                     propertyStore.force(f, immutability.FieldAssignability.key)
                                 })
-                            if (css.contains(LazyL0FieldImmutabilityAnalysis))
+                            if (css.contains(LazyFieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f => propertyStore.force(f, FieldImmutability.key)
                                 )

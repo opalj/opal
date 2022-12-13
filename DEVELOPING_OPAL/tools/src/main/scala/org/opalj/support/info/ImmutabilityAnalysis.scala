@@ -12,11 +12,11 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.

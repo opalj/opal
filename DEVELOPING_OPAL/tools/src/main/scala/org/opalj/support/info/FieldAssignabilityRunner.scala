@@ -17,7 +17,7 @@ import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 
 /**
  * Computes the field assignability.
@@ -38,12 +38,14 @@ object FieldAssignabilityRunner extends ProjectAnalysisApplication {
     ): BasicReport = {
 
         project.get(RTACallGraphKey)
-        val (ps, _) = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL2FieldAssignabilityAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazySimpleEscapeAnalysis
-        )
+        val (ps, _) = project
+            .get(FPCFAnalysesManagerKey)
+            .runAll(
+                LazyL2FieldAssignabilityAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazySimpleEscapeAnalysis
+            )
 
         val nonAssignable = ps.finalEntities(NonAssignable).toSeq
         val effectivelyNonAssignable = ps.finalEntities(EffectivelyNonAssignable).toSeq

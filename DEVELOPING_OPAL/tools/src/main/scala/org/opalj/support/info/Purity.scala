@@ -7,11 +7,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.collection.immutable.IntTrieSet
@@ -50,6 +48,10 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
@@ -57,27 +59,23 @@ import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.tac.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL0FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL0FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.EagerL2FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.field_assignability.LazyL2FieldAssignabilityAnalysis
-
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
  *
@@ -444,7 +442,7 @@ object Purity {
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var analysisName: Option[String] = None
-        var fieldMutabilityAnalysisName: Option[String] = None
+        var fieldAssignabilityAnalysisName: Option[String] = None
         var escapeAnalysisName: Option[String] = None
         var domainName: Option[String] = None
         var raterName: Option[String] = None
@@ -481,7 +479,7 @@ object Purity {
                 case "-projectDir"         => projectDir = Some(readNextArg())
                 case "-libDir"             => libDir = Some(readNextArg())
                 case "-analysis"           => analysisName = Some(readNextArg())
-                case "-fieldMutability"    => fieldMutabilityAnalysisName = Some(readNextArg())
+                case "-fieldMutability"    => fieldAssignabilityAnalysisName = Some(readNextArg())
                 case "-escape"             => escapeAnalysisName = Some(readNextArg())
                 case "-domain"             => domainName = Some(readNextArg())
                 case "-rater"              => raterName = Some(readNextArg())
@@ -526,6 +524,7 @@ object Purity {
 
             case None | Some("L2") =>
                 support = List(
+                    LazyFieldImmutabilityAnalysis,
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyStaticDataUsageAnalysis,
                     LazyReturnValueFreshnessAnalysis,
@@ -538,16 +537,13 @@ object Purity {
                 Console.println(usage)
                 return ;
         }
-        if (!fieldMutabilityAnalysisName.contains("L3")) {
-            if (eager) {
 
-                support ::= EagerClassImmutabilityAnalysis
-                support ::= EagerTypeImmutabilityAnalysis
-            } else {
-
-                support ::= LazyClassImmutabilityAnalysis
-                support ::= LazyTypeImmutabilityAnalysis
-            }
+        if (eager) {
+            support ::= EagerClassImmutabilityAnalysis
+            support ::= EagerTypeImmutabilityAnalysis
+        } else {
+            support ::= LazyClassImmutabilityAnalysis
+            support ::= LazyTypeImmutabilityAnalysis
         }
 
         escapeAnalysisName match {
@@ -565,7 +561,7 @@ object Purity {
                 return ;
         }
 
-        fieldMutabilityAnalysisName match {
+        fieldAssignabilityAnalysisName match {
             case Some("L0") if eager => support ::= EagerL0FieldAssignabilityAnalysis
 
             case Some("L0")          => support ::= LazyL0FieldAssignabilityAnalysis
@@ -583,13 +579,13 @@ object Purity {
             case Some("none") =>
 
             case None => analysis match {
-                case LazyL0PurityAnalysis => LazyL0FieldAssignabilityAnalysis
-                case LazyL1PurityAnalysis => LazyL1FieldAssignabilityAnalysis
-                case LazyL2PurityAnalysis => LazyL1FieldAssignabilityAnalysis
+                case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
+                case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
             }
 
             case Some(a) =>
-                Console.println(s"unknown field mutability analysis: $a")
+                Console.println(s"unknown field assignability analysis: $a")
                 Console.println(usage)
                 return ;
         }

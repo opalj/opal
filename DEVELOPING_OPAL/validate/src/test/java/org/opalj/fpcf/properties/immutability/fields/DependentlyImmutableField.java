@@ -3,7 +3,7 @@ package org.opalj.fpcf.properties.immutability.fields;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L0FieldImmutabilityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
