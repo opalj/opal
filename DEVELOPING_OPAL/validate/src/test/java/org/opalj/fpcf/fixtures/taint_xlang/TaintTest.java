@@ -1,3 +1,11 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.fpcf.fixtures.taint_xlang;
+
+import org.opalj.fpcf.properties.taint.BackwardFlowPath;
+
+/**
+ * Add VM argument to run this test: -Djava.library.path=DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint
+ */
 public class TaintTest {
         private native int sum (int a, int b);
         private native int propagate_source ();
@@ -42,90 +50,91 @@ public class TaintTest {
             System.out.println("done");
         }
 
+        @BackwardFlowPath({"test_java_flow", "sink"})
         public void test_java_flow() {
             System.out.println("java");
-            int tainted = this.source();
-            this.sink(tainted);
+            int tainted = source();
+            sink(tainted);
         }
 
         public void test_java_sanitize_no_flow() {
             System.out.println("java sanitize");
-            int tainted = this.source();
-            this.sink(this.sanitize(tainted));
+            int tainted = source();
+            sink(sanitize(tainted));
         }
 
         public void test_java_untainted_no_flow() {
             System.out.println("java untainted");
             int untainted = 23;
-            this.sink(untainted);
+            sink(untainted);
         }
 
         public void test_native_sum_flow() {
             System.out.println("native sum");
-            int tainted = this.source();
+            int tainted = source();
             int untainted = 23;
-            int native_tainted = this.sum(tainted, untainted);
-            this.sink(native_tainted);
+            int native_tainted = sum(tainted, untainted);
+            sink(native_tainted);
         }
 
         public void test_native_to_java_to_native_flow() {
             System.out.println("native to java to native");
-            int taint = this.propagate_source();
-            this.propagate_sink(taint);
+            int taint = propagate_source();
+            propagate_sink(taint);
         }
 
         public void test_native_to_java_to_native_sanitized_no_flow() {
             System.out.println("native to java to native sanitized");
-            this.propagate_sink(this.propagate_sanitize(this.propagate_source()));
+            propagate_sink(propagate_sanitize(propagate_source()));
         }
 
         public void test_native_indirect_sanitized_no_flow() {
             System.out.println("native indirect sanitized");
-            int tainted = this.source();
+            int tainted = source();
             int untainted = 23;
-            this.sink(this.sanitize_only_a_into_sink(tainted, untainted));
+            sink(sanitize_only_a_into_sink(tainted, untainted));
         }
 
         public void test_native_indirect_flow() {
             System.out.println("native indirect");
-            int tainted = this.source();
+            int tainted = source();
             int untainted = 23;
-            this.sink(this.sanitize_only_a_into_sink(untainted, tainted));
+            sink(sanitize_only_a_into_sink(untainted, tainted));
         }
 
         public void test_native_identity_flow() {
             System.out.println("native identity");
-            this.propagate_identity_to_sink(source());
+            propagate_identity_to_sink(source());
         }
 
         public void test_native_zero_no_flow() {
             System.out.println("native zero");
-            this.propagate_zero_to_sink(source());
+            propagate_zero_to_sink(source());
         }
 
         public void test_native_array_tainted_flow() {
             System.out.println("native array tainted");
-            this.native_array_tainted();
+            native_array_tainted();
         }
 
         public void test_native_array_untainted_no_flow() {
             System.out.println("native array untainted");
-            this.native_array_untainted();
+            native_array_untainted();
         }
 
         public void test_native_call_java_sink_flow() {
             System.out.println("native call java sink");
-            this.propagate_to_java_sink(source());
+            propagate_to_java_sink(source());
         }
 
         public void test_native_call_java_source_flow() {
             System.out.println("native call java source");
-            this.sink(this.propagate_from_java_source());
+            sink(propagate_from_java_source());
         }
 
         public void test_native_call_java_sanitize_no_flow() {
             System.out.println("native call java sanitize");
-            this.sink(this.propagate_java_sanitize(this.source()));
+            sink(propagate_java_sanitize(source()));
         }
 
         public int indirect_source() {

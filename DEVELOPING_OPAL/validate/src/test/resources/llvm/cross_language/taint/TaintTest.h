@@ -8,29 +8,29 @@
 extern "C" {
 #endif
 
-JNIEXPORT int JNICALL Java_TaintTest_sum(JNIEnv *env, jobject obj, jint a, jint b);
+JNIEXPORT int JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_sum(JNIEnv *env, jobject obj, jint a, jint b);
 
-JNIEXPORT int JNICALL Java_TaintTest_propagate_1source(JNIEnv *env, jobject obj);
+JNIEXPORT int JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1source(JNIEnv *env, jobject obj);
 
-JNIEXPORT int JNICALL Java_TaintTest_propagate_1sanitize(JNIEnv *env, jobject obj, jint a);
+JNIEXPORT int JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1sanitize(JNIEnv *env, jobject obj, jint a);
 
-JNIEXPORT int JNICALL Java_TaintTest_propagate_1sink(JNIEnv *env, jobject obj, jint a);
+JNIEXPORT int JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1sink(JNIEnv *env, jobject obj, jint a);
 
-JNIEXPORT int JNICALL Java_TaintTest_sanitize_1only_1a_1into_1sink(JNIEnv *env, jobject obj, jint a, jint b);
+JNIEXPORT int JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_sanitize_1only_1a_1into_1sink(JNIEnv *env, jobject obj, jint a, jint b);
 
-JNIEXPORT void JNICALL Java_TaintTest_propagate_1identity_1to_1sink(JNIEnv *env, jobject obj, jint a);
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1identity_1to_1sink(JNIEnv *env, jobject obj, jint a);
 
-JNIEXPORT void JNICALL Java_TaintTest_propagate_1zero_1to_1sink(JNIEnv *env, jobject obj, jint a);
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1zero_1to_1sink(JNIEnv *env, jobject obj, jint a);
 
-JNIEXPORT void JNICALL Java_TaintTest_native_1array_1tainted(JNIEnv *env, jobject obj);
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted(JNIEnv *env, jobject obj);
 
-JNIEXPORT void JNICALL Java_TaintTest_native_1array_1untainted(JNIEnv *env, jobject obj);
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1untainted(JNIEnv *env, jobject obj);
 
-JNIEXPORT void JNICALL Java_TaintTest_propagate_1to_1java_1sink(JNIEnv *env, jobject obj, jint a);
+JNIEXPORT void JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1to_1java_1sink(JNIEnv *env, jobject obj, jint a);
 
-JNIEXPORT int JNICALL Java_TaintTest_propagate_1from_1java_1source(JNIEnv *env, jobject obj);
+JNIEXPORT int JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1from_1java_1source(JNIEnv *env, jobject obj);
 
-JNIEXPORT int JNICALL Java_TaintTest_propagate_1java_1sanitize(JNIEnv *env, jobject obj, jint a);
+JNIEXPORT int JNICALL Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1java_1sanitize(JNIEnv *env, jobject obj, jint a);
 
 int identity(int a);
 
