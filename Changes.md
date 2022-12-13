@@ -1,16 +1,23 @@
 # Changes
 
-Scala 2.13 changes
-- Replace unicode arrows (⇒,->,<-) by ascii arrows (=>,->,<-)
-- Replace Traversable by scala.collection.Iterable
-- Replace TraversableOnce by scala.collection.IterableOnce
-- Changes to OPAL's custom data structures:
-  - Replace RefIterator by scala.collection.iterator
-  - Replace Chain by scala.collection.immutable.List
-  - Replace RefArray and IntArray by scala.collection.immutable.ArraySeq
-  - Replace RefArrayStack by scala.collection.immutable.Stack
-  - Replace RefAppendChain by scala.collection.mutable.ArrayDeque
-  - Replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+## 5.0.0 - Release date tba (expected December 2022)
+
+- *we are now using Scala 2.13*
+  - Scala 2.13 changes:
+    - Replace unicode arrows (⇒,->,<-) by ascii arrows (=>,->,<-)
+    - Replace Traversable by scala.collection.Iterable
+    - Replace TraversableOnce by scala.collection.IterableOnce
+    - Changes to OPAL's custom data structures:
+      - Replace RefIterator by scala.collection.iterator
+      - Replace Chain by scala.collection.immutable.List
+      - Replace RefArray and IntArray by scala.collection.immutable.ArraySeq
+      - Replace RefArrayStack by scala.collection.immutable.Stack
+      - Replace RefAppendChain by scala.collection.mutable.ArrayDeque
+      - Replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+ - full support for Java 11 up to 18
+ - optimized call graph analyses
+ - introduced immutability analysis of our paper: [CiFi: Versatile Analysis of Class and Field Immutability](https://ieeexplore.ieee.org/document/9678903)
+      
 
 ## 4.0.0 - Released May 7th 2021
 
