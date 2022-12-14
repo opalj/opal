@@ -27,15 +27,16 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
     override def normalFlow(statement: LLVMStatement, in: NativeTaintFact,
                             predecessor: Option[LLVMStatement]): Set[NativeTaintFact] = statement.instruction match {
         case store: Store => in match {
-            case NativeVariable(value) if value == store.dst => Set(in, NativeVariable(store.src))
+            // do not propagate in if in == store.dst, tainted value is overwritten
+            case NativeVariable(value) if value == store.dst => Set(NativeVariable(store.src))
             case NativeArrayElement(base, indices) => store.dst match { // dst is pointer type
                 // value is array and is stored to tainted alloca
-                case dst: Alloca if dst == base => Set(in, NativeArrayElement(store.src, indices))
+                case dst: Alloca if dst == base => Set(NativeArrayElement(store.src, indices))
                 // value is stored into tainted array element
                 case gep: GetElementPtr if gep.base == base =>
                     // if indices are not constant, assume the tainted element is written
                     if ((gep.isConstant && gep.constants.exists(indices.toSeq.contains(_))) || !gep.isConstant)
-                        Set(in, NativeVariable(store.src))
+                        Set(NativeVariable(store.src))
                     else Set(in)
             }
             case _ => Set(in)
