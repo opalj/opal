@@ -101,7 +101,7 @@ public class TaintTest {
             sink(sanitize_only_a_into_sink(tainted, untainted));
         }
 
-        @XlangBackwardFlowPath({"test_native_indirect_flow", "Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_sanitize_1only_1a_1into_1sink", "sink"})
+        @XlangBackwardFlowPath({"test_native_indirect_flow", "sink"})
         public void test_native_indirect_flow() {
             System.out.println("native indirect");
             int tainted = source();
