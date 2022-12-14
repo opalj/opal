@@ -25,7 +25,8 @@ object JNICallUtil {
     }
 
     /**
-     * Converts a Java parameter index to the respective index in a JNICall of this method.
+     * Converts a Java parameter index (param 0 == this if non-static) to the respective index
+     * in a JNICall of this method.
      *
      * @param index the Java parameter index.
      * @param isStatic whether the Java method is static.
@@ -47,25 +48,16 @@ object JNICallUtil {
     }
 
     /**
-     * Converts a native JNICall parameter index to a Java parameter index.
+     * Converts a native JNI function parameter index to a Java parameter index (arg 0 == this if non-static).
      *
      * @param index the native JNICall parameter index.
      * @param isStatic whether the Java method is static.
      * @return the respective Java parameter index.
      */
     def nativeParamIndexToJava(index: Int, isStatic: Boolean): Int = {
-        // JNI call args if static: JNIEnv, class, method, arg 0, arg 1, ...
-        // JNI call args if non-static: JNIEnv, this, method, arg 0, arg 1, ...
-        if (isStatic) {
-            // static call, tainted arg
-            index - 3
-        } else if (index == 1) {
-            // non-static call, tainted this
-            0
-        } else {
-            // non-static call, tainted arg
-            index - 2
-        }
+        // JNI function args if static: JNIEnv, arg 0, arg 1, ...
+        // JNI function args if non-static: JNIEnv, this, arg 0, arg 1, ...
+        index - 1
     }
 
     def resolve(call: Call)(implicit declaredMethods: DeclaredMethods): Set[_ <: NativeFunction] = resolveJNIFunction(call) match {
