@@ -14,9 +14,28 @@
       - Replace RefArrayStack by scala.collection.immutable.Stack
       - Replace RefAppendChain by scala.collection.mutable.ArrayDeque
       - Replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
- - full support for Java 11 up to 18
- - optimized call graph analyses
- - introduced immutability analysis of our paper: [CiFi: Versatile Analysis of Class and Field Immutability](https://ieeexplore.ieee.org/document/9678903)
+ - full support for Java 17 up to 19
+ - improved call graph analyses
+ - introduced immutability analyses:
+      - Field-Assignability Analysis
+        - new immutability properties:
+          - unsafe lazy initialization
+          - lazy initialization
+      - Fieldimmutability Analysis
+        - new immutability properties:
+            - dependent immutability
+            - non-transitive immutability
+            - transitive immutability
+      - Classimmutability Analysis
+        - new immutability properties:
+            - dependent immutability
+            - non-transitive immutability
+            - transitive immutability
+      - Typeimmutability Analyis
+         - new immutability properties:
+            - dependent immutability
+            - non-transitive immutability
+            - transitive immutability
       
 
 ## 4.0.0 - Released May 7th 2021
