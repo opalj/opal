@@ -31,10 +31,9 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
         // create flow facts if callee is source or sink
         val callInstr = call.instruction.asInstanceOf[Call]
         val callees = icfg.resolveCallee(callInstr)
-        if (callees.exists(_.name == "sink")) in match {
+        if (callees.exists(_.name == "sink")) {
             // taint variable that is put into sink
-            case NativeTaintNullFact => Some(NativeVariable(callInstr.argument(0).get))
-            case _ => None
+            Some(NativeVariable(callInstr.argument(0).get))
         } else if (callees.exists(_.name == "source")) in match {
             // create flow fact if source is reached with tainted value
             case NativeVariable(value) if value == call.instruction && !unbCallChain.contains(call.callable) =>
