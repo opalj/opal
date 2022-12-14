@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import sbt.Test
@@ -144,7 +145,7 @@ def getScalariformPreferences(dir: File) = {
  ******************************************************************************/
 lazy val opal = `OPAL`
 lazy val `OPAL` = (project in file("."))
-//  .configure(_.copy(id = "OPAL"))
+  //  .configure(_.copy(id = "OPAL"))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
@@ -169,6 +170,7 @@ lazy val `OPAL` = (project in file("."))
     av,
     ll,
     js,
+    python,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -245,7 +247,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Representation"),
     libraryDependencies ++= Dependencies.br,
     // Test / publishArtifact := true // Needed to get access to class TestResources and TestSupport
-   )
+  )
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -359,7 +361,7 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     fork := true,
     javaCppPresetLibs ++= Seq("llvm" -> "11.1.0"),
     javaCppVersion := "1.5.5"
-)
+  )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
@@ -371,14 +373,26 @@ lazy val `JavaScript` = (project in file("OPAL/js"))
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - JS"),
     fork := true,
     libraryDependencies ++= Seq("com.ibm.wala" % "com.ibm.wala.core" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.util" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.shrike" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.java" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.java.ecj" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.js" % "1.5.7",
-                                "com.ibm.wala" % "com.ibm.wala.cast.js.rhino" % "1.5.7",
-                                "org.mozilla" % "rhino" % "1.7.10")
+      "com.ibm.wala" % "com.ibm.wala.util" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.shrike" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.java" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.java.ecj" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.js" % "1.5.7",
+      "com.ibm.wala" % "com.ibm.wala.cast.js.rhino" % "1.5.7",
+      "org.mozilla" % "rhino" % "1.7.10")
+  )
+  .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
+lazy val python = `Python`
+lazy val `Python` = (project in file ("OPAL/python"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "Python",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Python"),
+    fork := true,
+    libraryDependencies ++= Seq("org.python" % "jython" % "2.7.3")
   )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -396,7 +410,8 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     av  % "it->it;it->test;test->test;compile->compile",
     tac % "it->it;it->test;test->test;compile->compile",
     ll  % "it->it;it->test;test->test;compile->compile",
-    js  % "it->it;it->test;test->test;compile->compile"
+    js  % "it->it;it->test;test->test;compile->compile",
+    python  % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
@@ -457,7 +472,9 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
     name := "Validate",
     publishArtifact := false,
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Validate"),
-    Test / compileOrder := CompileOrder.Mixed
+    Test / compileOrder := CompileOrder.Mixed,
+    libraryDependencies ++= Seq("org.python" % "jython-standalone" % "2.7.3")
+
   )
   .dependsOn(
     tools  % "it->it;it->test;test->test;compile->compile",
