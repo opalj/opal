@@ -5,6 +5,7 @@
 # This file takes exactly one scalac flag per line; empty lines and whitespace at
 # the beginning and end are trimmed and "#" and "//" mark comment lines.
 
+
 -encoding UTF8
 -release:8
 -deprecation
