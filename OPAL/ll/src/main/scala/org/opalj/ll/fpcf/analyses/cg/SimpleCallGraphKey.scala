@@ -34,7 +34,7 @@ object SimpleCallGraphKey extends ProjectInformationKey[SimpleNativeCallGraph, S
         val entryPoints = project.getOrCreateProjectInformationKeyInitializationData(this, Set.empty[Function])
         ps(EPK(entryPoints, SimpleNativeCallGraph.key)) match {
             case ep: FinalEP[Set[Function], SimpleNativeCallGraph] => ep.p
-            case _ => throw new RuntimeException("unexpected error while computing SimpleNativeCallGraph")
+            case _                                                 => throw new RuntimeException("unexpected error while computing SimpleNativeCallGraph")
         }
     }
 }

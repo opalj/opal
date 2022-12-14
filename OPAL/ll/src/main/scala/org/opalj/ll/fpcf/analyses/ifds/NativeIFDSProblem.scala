@@ -28,8 +28,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
 
     override def createCallable(callable: NativeFunction): Callable = callable
 
-    override def outsideAnalysisContextCall(callee: NativeFunction):
-    Option[(LLVMStatement, Option[LLVMStatement], Fact, Seq[Callable], Getter) => Set[Fact]] = callee match {
+    override def outsideAnalysisContextCall(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Seq[Callable], Getter) => Set[Fact]] = callee match {
         case LLVMFunction(function) =>
             function.basicBlockCount match {
                 case 0 => Some((_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Seq[Callable], _: Getter) => Set(in))

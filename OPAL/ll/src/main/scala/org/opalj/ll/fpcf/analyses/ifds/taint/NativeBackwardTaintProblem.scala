@@ -61,15 +61,15 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         }
         case fneg: FNeg => in match {
             case NativeVariable(value) if value == fneg => Set(in, NativeVariable(fneg.operand(0)))
-            case _ => Set(in)
+            case _                                      => Set(in)
         }
         case binOp: BinaryOperation => in match {
             case NativeVariable(value) if value == binOp => Set(in, NativeVariable(binOp.op1), NativeVariable(binOp.op2))
-            case _ => Set(in)
+            case _                                       => Set(in)
         }
         case convOp: ConversionOperation => in match {
             case NativeVariable(value) if value == convOp => Set(in, NativeVariable(convOp.value))
-            case _ => Set(in)
+            case _                                        => Set(in)
         }
         case extrElem: ExtractElement =>
             def taintExtElemVec: Set[NativeTaintFact] = {
@@ -77,9 +77,9 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 else Set(in, NativeVariable(extrElem.vec)) // taint whole array if index not constant
             }
             in match {
-                case NativeVariable(value) if value == extrElem => taintExtElemVec
+                case NativeVariable(value) if value == extrElem      => taintExtElemVec
                 case NativeArrayElement(base, _) if base == extrElem => taintExtElemVec
-                case _ => Set(in)
+                case _                                               => Set(in)
             }
         case insElem: InsertElement => in match {
             case NativeVariable(value) if insElem.vec == value => Set(in, NativeVariable(insElem.value))
@@ -140,19 +140,19 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                     case NativeVariable(value) => callInstr.indexOfArgument(value) match {
                         case Some(index) => callInstr.argument(index).get.typ match {
                             case PointerType(_) => flow += NativeVariable(callee.argument(index))
-                            case _ =>
+                            case _              =>
                         }
                         case None =>
                     }
                     case NativeArrayElement(base, indices) => callInstr.indexOfArgument(base) match {
                         case Some(index) => callInstr.argument(index).get.typ match {
                             case PointerType(_) => flow += NativeArrayElement(callee.argument(index), indices)
-                            case _ =>
+                            case _              =>
                         }
                         case None =>
                     }
                     case NativeTaintNullFact => flow += in
-                    case _ =>
+                    case _                   =>
                 }
             case _ => throw new RuntimeException("this case should be handled by outsideAnalysisContext")
         }
@@ -169,11 +169,11 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         in match {
             case NativeVariable(value) => callee.function.arguments.find(_.address == value.address) match {
                 case Some(arg) => Set(NativeVariable(callInstr.argument(arg.index).get))
-                case None => Set.empty
+                case None      => Set.empty
             }
             case NativeArrayElement(base, indices) => callee.function.arguments.find(_.address == base.address) match {
                 case Some(arg) => Set(NativeArrayElement(callInstr.argument(arg.index).get, indices))
-                case None => Set.empty
+                case None      => Set.empty
             }
             case NativeTaintNullFact => Set(in)
             case NativeFlowFact(flow) if !flow.contains(call.function) =>
@@ -248,15 +248,15 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case NativeVariable(value) => taintActualIfFormal(value)
-            case NativeArrayElement(base, _) => taintActualIfFormal(base)
+            case NativeVariable(value)                 => taintActualIfFormal(value)
+            case NativeArrayElement(base, _)           => taintActualIfFormal(base)
             // keep static field taints
             case JavaStaticField(classType, fieldName) => Set(StaticField(classType, fieldName))
             // propagate flow facts
             case NativeFlowFact(flow) if !flow.contains(JavaMethod(call.method)) =>
                 Set(FlowFact(JavaMethod(call.method) +: flow))
             case NativeTaintNullFact => Set(TaintNullFact)
-            case _ => Set.empty
+            case _                   => Set.empty
         }
     }
 
@@ -295,7 +295,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                     if (arrayIndex.isDefined) arrayDefinedBy.map(ArrayElement(_, arrayIndex.get))
                     else arrayDefinedBy.map(Variable)
                 case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID |
-                     PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID =>
+                    PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID =>
                     (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) =>
                         acc ++ createNewTaints(expression.subExpr(subExpr), statement))
                 case GetField.ASTID =>
@@ -311,9 +311,9 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         // taint return value in callee, if tainted in caller
         if (start.stmt.astID == ReturnValue.ASTID) in match {
-            case NativeVariable(value) if value == callInstr => flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
+            case NativeVariable(value) if value == callInstr      => flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
             case NativeArrayElement(base, _) if base == callInstr => flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
-            case _ =>
+            case _                                                =>
         }
 
         def taintRefParam(callInstr: Call, in: Value): Set[TaintFact] = callInstr.indexOfArgument(in) match {
@@ -328,11 +328,11 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         // check for tainted pass-by-reference parameters (pointer)
         in match {
-            case NativeVariable(value) => flow ++= taintRefParam(callInstr, value)
-            case NativeArrayElement(base, _) => flow ++= taintRefParam(callInstr, base)
-            case NativeTaintNullFact => flow += TaintNullFact
+            case NativeVariable(value)                 => flow ++= taintRefParam(callInstr, value)
+            case NativeArrayElement(base, _)           => flow ++= taintRefParam(callInstr, base)
+            case NativeTaintNullFact                   => flow += TaintNullFact
             case JavaStaticField(classType, fieldName) => flow += StaticField(classType, fieldName)
-            case _ =>
+            case _                                     =>
         }
         flow.toSet
     }
@@ -352,15 +352,15 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case Variable(index) => taintActualIfFormal(index)
-            case ArrayElement(index, _) => taintActualIfFormal(index)
-            case InstanceField(index, _, _) => taintActualIfFormal(index)
+            case Variable(index)                   => taintActualIfFormal(index)
+            case ArrayElement(index, _)            => taintActualIfFormal(index)
+            case InstanceField(index, _, _)        => taintActualIfFormal(index)
             // also propagate tainted static fields
             case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
-            case TaintNullFact => Set(NativeTaintNullFact)
+            case TaintNullFact                     => Set(NativeTaintNullFact)
             // Track the call chain to the sink back
-            case FlowFact(flow) => Set(NativeFlowFact(unbCallChain.prepended(call.function)))
-            case _ => Set.empty
+            case FlowFact(flow)                    => Set(NativeFlowFact(unbCallChain.prepended(call.function)))
+            case _                                 => Set.empty
         }
     }
 }

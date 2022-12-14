@@ -18,8 +18,7 @@ import scala.collection.{mutable, Set => SomeSet}
  * @param index if unbalanced return, the call statement in the caller.
  * @param callChain if unbalanced return, the current call chain.
  */
-class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]]
-(val fact: Fact, val isUnbalancedReturn: Boolean, val callStmt: Option[S], val callChain: Option[Seq[Callable]]) {
+class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](val fact: Fact, val isUnbalancedReturn: Boolean, val callStmt: Option[S], val callChain: Option[Seq[Callable]]) {
 
     def this(fact: Fact) = {
         this(fact, false, None, None)
@@ -150,8 +149,7 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
  * @param source The callable and input fact for which the callable is analyzed.
  * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
-protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], Work]
-(val source: (C, IFDSFact[Fact, S]), subsumes: (Set[Fact], Fact) => Boolean) {
+protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], Work](val source: (C, IFDSFact[Fact, S]), subsumes: (Set[Fact], Fact) => Boolean) {
     val dependees: Dependees[Work] = Dependees()
     val pathEdges: PathEdges[Fact, S, C] = PathEdges(subsumes)
     var endSummaries: Set[(S, Fact)] = Set.empty
@@ -292,7 +290,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
             statement match {
                 case Some(stmt) => icfg.getCalleesIfCallStatement(stmt) match {
                     case Some(callees) => handleCall(stmt, callees, in.fact) // ifds line 13
-                    case None => handleOther(stmt, in.fact, predecessor) // ifds line 33
+                    case None          => handleOther(stmt, in.fact, predecessor) // ifds line 33
                 }
                 case None if icfg.isExitStatement(predecessor.get) =>
                     handleExit(predecessor.get, in.fact) // ifds line 21
@@ -479,12 +477,11 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         // unbalanced returns outside analysis context (java -> native or native -> java)
         ifdsProblem.outsideAnalysisContextUnbReturn(callee) match {
             case Some(handler) => handler(callee, in, existingCallChain, state.dependees.getter())
-            case None => // unbalanced returns outside analysis context are not handled
+            case None          => // unbalanced returns outside analysis context are not handled
         }
     }
 
-    private def propagate(successor: Option[S], out: Fact, predecessor: S)
-                         (implicit state: State, worklist: Worklist): Unit = {
+    private def propagate(successor: Option[S], out: Fact, predecessor: S)(implicit state: State, worklist: Worklist): Unit = {
         val predecessorOption =
             if (successor.isDefined && ifdsProblem.needsPredecessor(successor.get)) Some(predecessor)
             else None

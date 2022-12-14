@@ -48,7 +48,8 @@ class SimpleNativeBackwardTaintProblem(p: SomeProject) extends NativeBackwardTai
             case NativeVariable(value) if value == call.instruction && !unbCallChain.contains(call.callable) =>
                 Some(NativeFlowFact(unbCallChain.prepended(call.callable)))
             case _ => None
-        } else None
+        }
+        else None
     }
 
     override def createFlowFactAtExit(callee: NativeFunction, in: NativeTaintFact,

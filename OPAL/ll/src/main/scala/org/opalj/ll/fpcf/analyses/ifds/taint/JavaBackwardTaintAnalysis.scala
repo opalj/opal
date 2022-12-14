@@ -139,15 +139,15 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case Variable(index) => taintActualIfFormal(index)
-            case ArrayElement(index, _) => taintActualIfFormal(index)
-            case InstanceField(index, _, _) => taintActualIfFormal(index)
+            case Variable(index)                                 => taintActualIfFormal(index)
+            case ArrayElement(index, _)                          => taintActualIfFormal(index)
+            case InstanceField(index, _, _)                      => taintActualIfFormal(index)
             // also propagate tainted static fields
-            case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
-            case TaintNullFact => Set(NativeTaintNullFact)
+            case StaticField(classType, fieldName)               => Set(JavaStaticField(classType, fieldName))
+            case TaintNullFact                                   => Set(NativeTaintNullFact)
             // Track the call chain to the sink back
             case FlowFact(flow) if !flow.contains(call.function) => Set(NativeFlowFact(call.function +: flow))
-            case _ => Set.empty
+            case _                                               => Set.empty
         }
     }
 
@@ -158,10 +158,10 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         // taint return value in callee, if tainted in caller
         start.instruction match {
             case ret: Ret if ret.value.isDefined => in match {
-                case Variable(index) if index == call.index => flow += NativeVariable(ret.value.get)
-                case ArrayElement(index, _) if index == call.index => flow += NativeVariable(ret.value.get)
+                case Variable(index) if index == call.index            => flow += NativeVariable(ret.value.get)
+                case ArrayElement(index, _) if index == call.index     => flow += NativeVariable(ret.value.get)
                 case InstanceField(index, _, _) if index == call.index => flow += NativeVariable(ret.value.get)
-                case _ =>
+                case _                                                 =>
             }
             case _ =>
         }
@@ -189,8 +189,8 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
         // keep tainted static fields and null fact
         in match {
             case StaticField(classType, fieldName) => flow += JavaStaticField(classType, fieldName)
-            case TaintNullFact => flow += NativeTaintNullFact
-            case _ =>
+            case TaintNullFact                     => flow += NativeTaintNullFact
+            case _                                 =>
         }
         flow.toSet
     }
@@ -212,14 +212,14 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
 
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case NativeVariable(value) => taintActualIfFormal(value)
-            case NativeArrayElement(base, _) => taintActualIfFormal(base)
+            case NativeVariable(value)                 => taintActualIfFormal(value)
+            case NativeArrayElement(base, _)           => taintActualIfFormal(base)
             // keep static field taints
             case JavaStaticField(classType, fieldName) => Set(StaticField(classType, fieldName))
             // propagate flow facts
-            case NativeFlowFact(flow)  => Set(FlowFact(unbCallChain.prepended(JavaMethod(call.method))))
-            case NativeTaintNullFact => Set(TaintNullFact)
-            case _ => Set.empty
+            case NativeFlowFact(flow)                  => Set(FlowFact(unbCallChain.prepended(JavaMethod(call.method))))
+            case NativeTaintNullFact                   => Set(TaintNullFact)
+            case _                                     => Set.empty
         }
     }
 }

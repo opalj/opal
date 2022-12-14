@@ -31,7 +31,7 @@ class SimpleCallGraphAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def lazilyAnalyze(entity: Entity): ProperPropertyComputationResult = {
         entity match {
             case entryPoints: Set[Function @unchecked] => analyze(entryPoints)
-            case _ => throw new IllegalArgumentException("Simple Call Graph Analysis can only process Sets of Functions!")
+            case _                                     => throw new IllegalArgumentException("Simple Call Graph Analysis can only process Sets of Functions!")
         }
     }
 
@@ -75,7 +75,7 @@ class SimpleCallGraphAnalysis(val project: SomeProject) extends FPCFAnalysis {
             .map(e => propertyStore(EPK(Set(e), SimpleNativeCallGraph.key)))
             .map {
                 case ep: FinalEP[Set[Function], SimpleNativeCallGraph] => ep.p.cg
-                case _ => throw new RuntimeException("unexpected error while computing SimpleNativeCallGraph")
+                case _                                                 => throw new RuntimeException("unexpected error while computing SimpleNativeCallGraph")
             }
         cgs.fold(Map.empty)(mergeCallGraphs)
     }

@@ -76,15 +76,15 @@ object JNICallUtil {
     def resolveNativeFunctionName(nativeMethod: Method): String = {
         val calleeName = nativeMethod.name.map {
             case c if isAlphaNumeric(c) => c
-            case '_' => "_1"
-            case ';' => "_2"
-            case '[' => "_3"
-            case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
+            case '_'                    => "_1"
+            case ';'                    => "_2"
+            case '['                    => "_3"
+            case c                      => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
         }.mkString
         val classFile = nativeMethod.classFile.fqn
             .replace("_", "_1")
             .replace('/', '_')
-        "Java_" + classFile + "_" + calleeName
+        "Java_"+classFile+"_"+calleeName
     }
 
     /**
@@ -111,7 +111,7 @@ object JNICallUtil {
 
         // decode class name
         val fqnDecoded = "_([^0-9])".r
-            .replaceAllIn(parts._1, m => "/" + m.group(1))
+            .replaceAllIn(parts._1, m => "/"+m.group(1))
             .replace("_1", "_")
 
         // decode method name
