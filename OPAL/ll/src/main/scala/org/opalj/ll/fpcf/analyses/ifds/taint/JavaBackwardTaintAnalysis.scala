@@ -7,7 +7,7 @@ import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, PropertyBounds, PropertyS
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardICFG}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardICFG, NativeIFDSProblem}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.{Call, Ret, Value}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
@@ -125,16 +125,16 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
 
     private def nativeUnbalancedReturnFlow(callee: Method, call: LLVMStatement, in: TaintFact): Set[NativeTaintFact] = {
         if (sanitizesReturnValue(callee)) return Set.empty
-
         val callInstr = call.instruction.asInstanceOf[Call]
-        val formalParameterIndices = (0 until callInstr.numArgOperands)
-            .map(index => JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
 
+        // JNI call args if static: JNIEnv, class, method, arg 0, arg 1, ...
+        // JNI call args if non-static: JNIEnv, this, method, arg 0, arg 1, ...
         def taintActualIfFormal(index: Int): Set[NativeTaintFact] = {
-            if (formalParameterIndices.contains(index)) {
-                val nativeIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
-                Set(NativeVariable(callInstr.argument(nativeIndex + 1).get)) // +1 offset JNIEnv
-            } else Set.empty
+            if (index > -1) Set.empty // tac parameter indices are < 0, index is no argument
+
+            val javaParamIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+            val nativeParamIndex = NativeIFDSProblem.javaParamIndexToNative(javaParamIndex, callee.isStatic)
+            Set(NativeVariable(callInstr.argument(nativeParamIndex).get))
         }
 
         in match {

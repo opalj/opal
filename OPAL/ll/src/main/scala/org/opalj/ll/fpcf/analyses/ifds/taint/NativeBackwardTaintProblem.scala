@@ -5,7 +5,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{Callable, IFDSFact}
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction, NativeIFDSProblem}
 import org.opalj.ll.llvm.PointerType
 import org.opalj.ll.llvm.value._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
@@ -339,16 +339,13 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                                           unbCallChain: Seq[Callable], successor: Option[LLVMStatement]): Set[NativeTaintFact] = {
         val callee = exit.callable
         if (sanitizesReturnValue(JNIMethod(callee))) return Set.empty
-
         val callInstr = call.instruction.asInstanceOf[Call]
-        val formalParameterIndices = (0 until callInstr.numArgOperands)
-            .map(index => JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic))
 
         def taintActualIfFormal(index: Int): Set[NativeTaintFact] = {
-            if (formalParameterIndices.contains(index)) {
-                val nativeIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
-                Set(NativeVariable(callInstr.argument(nativeIndex + 1).get)) // +1 offset JNIEnv
-            } else Set.empty
+            if (index > -1) Set.empty // tac parameter indices are < 0, index is no parameter
+            val javaParamIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
+            val nativeParamIndex = NativeIFDSProblem.javaParamIndexToNative(javaParamIndex, callee.isStatic)
+            Set(NativeVariable(callInstr.argument(nativeParamIndex).get))
         }
 
         in match {
@@ -364,5 +361,4 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
             case _ => Set.empty
         }
     }
-
 }
