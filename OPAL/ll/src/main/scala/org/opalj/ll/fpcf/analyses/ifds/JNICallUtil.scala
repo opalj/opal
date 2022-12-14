@@ -24,6 +24,50 @@ object JNICallUtil {
         case _ => false
     }
 
+    /**
+     * Converts a Java parameter index to the respective index in a JNICall of this method.
+     *
+     * @param index the Java parameter index.
+     * @param isStatic whether the Java method is static.
+     * @return the respective native parameter index in the JNICall.
+     */
+    def javaParamIndexToNative(index: Int, isStatic: Boolean): Int = {
+        // JNI call args if static: JNIEnv, class, method, arg 0, arg 1, ...
+        // JNI call args if non-static: JNIEnv, this, method, arg 0, arg 1, ...
+        if (isStatic) {
+            // static call, tainted arg
+            index + 3
+        } else if (index == 0) {
+            // non-static call, tainted this
+            1
+        } else {
+            // non-static call, tainted arg
+            index + 2
+        }
+    }
+
+    /**
+     * Converts a native JNICall parameter index to a Java parameter index.
+     *
+     * @param index the native JNICall parameter index.
+     * @param isStatic whether the Java method is static.
+     * @return the respective Java parameter index.
+     */
+    def nativeParamIndexToJava(index: Int, isStatic: Boolean): Int = {
+        // JNI call args if static: JNIEnv, class, method, arg 0, arg 1, ...
+        // JNI call args if non-static: JNIEnv, this, method, arg 0, arg 1, ...
+        if (isStatic) {
+            // static call, tainted arg
+            index - 3
+        } else if (index == 1) {
+            // non-static call, tainted this
+            0
+        } else {
+            // non-static call, tainted arg
+            index - 2
+        }
+    }
+
     def resolve(call: Call)(implicit declaredMethods: DeclaredMethods): Set[_ <: NativeFunction] = resolveJNIFunction(call) match {
         case Symbol("CallTypeMethod") => resolveMethodId(call.operand(2)) // methodID is the third parameter
         case _                        => Set()

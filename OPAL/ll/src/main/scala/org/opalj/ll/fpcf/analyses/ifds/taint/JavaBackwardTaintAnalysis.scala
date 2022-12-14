@@ -7,7 +7,7 @@ import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, PropertyBounds, PropertyS
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardICFG, NativeIFDSProblem}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardICFG}
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.{Call, Ret, Value}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
@@ -133,7 +133,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
             if (index > -1) Set.empty // tac parameter indices are < 0, index is no argument
 
             val javaParamIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
-            val nativeParamIndex = NativeIFDSProblem.javaParamIndexToNative(javaParamIndex, callee.isStatic)
+            val nativeParamIndex = JNICallUtil.javaParamIndexToNative(javaParamIndex, callee.isStatic)
             Set(NativeVariable(callInstr.argument(nativeParamIndex).get))
         }
 
@@ -198,13 +198,14 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
     private def nativeReturnFlow(in: NativeTaintFact, call: JavaStatement, callee: LLVMFunction,
                                  javaNativeCallee: Method, unbCallChain: Seq[Callable]): Set[TaintFact] = {
         if (sanitizesReturnValue(javaNativeCallee)) return Set.empty
-
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
 
         def taintActualIfFormal(in: Value): Set[TaintFact] = {
             callee.function.arguments.find(_.address == in.address) match {
-                // arg.index - 1 because JNIEnv is first argument in native function
-                case Some(arg) if arg.index > 0 => callStatement.allParams(arg.index - 1).asVar.definedBy.map(Variable)
+                case Some(arg) =>
+                    val javaParamIndex = JNICallUtil.nativeParamIndexToJava(arg.index, javaNativeCallee.isStatic)
+                    if (javaParamIndex < 0) Set.empty
+                    else callStatement.allParams(javaParamIndex).asVar.definedBy.map(Variable)
                 case _ => Set.empty
             }
         }

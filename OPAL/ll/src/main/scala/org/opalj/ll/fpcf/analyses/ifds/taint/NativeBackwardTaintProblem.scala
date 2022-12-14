@@ -5,7 +5,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.{Callable, IFDSFact}
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction, NativeIFDSProblem}
+import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
 import org.opalj.ll.llvm.PointerType
 import org.opalj.ll.llvm.value._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
@@ -211,10 +211,10 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 .filter(classFile => classFile.thisType.fqn == fqn)
                 .flatMap(_.methods)
                 .filter(_.name == javaMethodName)
-            val javaCalls = javaCompanions.flatMap(javaICFG.getCallers)
+            val javaCalls = javaCompanions.flatMap(comp => javaICFG.getCallers(comp).map((_, comp)))
 
-            for (callStmt <- javaCalls) {
-                val unbalancedReturnFacts = javaUnbalancedReturnFlow(llvmCallee, callStmt, in)
+            for ((callStmt, comp) <- javaCalls) {
+                val unbalancedReturnFacts = javaUnbalancedReturnFlow(llvmCallee, comp, callStmt, in)
                     .map(new IFDSFact(_, true, Some(callStmt), Some(callChain.prepended(callee))))
 
                 // Add the caller with the unbalanced return facts as a dependency to start its analysis
@@ -232,15 +232,16 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         }
     }
 
-    private def javaUnbalancedReturnFlow(callee: LLVMFunction, call: JavaStatement, in: NativeTaintFact): Set[TaintFact] = {
+    private def javaUnbalancedReturnFlow(callee: LLVMFunction, javaCallee: Method, call: JavaStatement, in: NativeTaintFact): Set[TaintFact] = {
         if (sanitizesReturnValue(callee)) return Set.empty
-
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
 
         def taintActualIfFormal(in: Value): Set[TaintFact] = {
             callee.function.arguments.find(_.address == in.address) match {
-                // arg.index - 1 because JNIEnv is first argument in native function
-                case Some(arg) if arg.index > 0 => callStatement.allParams(arg.index - 1).asVar.definedBy.map(Variable)
+                case Some(arg) =>
+                    val javaParamIndex = JNICallUtil.nativeParamIndexToJava(arg.index, javaCallee.isStatic)
+                    if (javaParamIndex < 0) Set.empty
+                    else callStatement.allParams(javaParamIndex).asVar.definedBy.map(Variable)
                 case _ => Set.empty
             }
         }
@@ -345,7 +346,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         def taintActualIfFormal(index: Int): Set[NativeTaintFact] = {
             if (index > -1) Set.empty // tac parameter indices are < 0, index is no parameter
             val javaParamIndex = JavaIFDSProblem.switchParamAndVariableIndex(index, callee.isStatic)
-            val nativeParamIndex = NativeIFDSProblem.javaParamIndexToNative(javaParamIndex, callee.isStatic)
+            val nativeParamIndex = JNICallUtil.javaParamIndexToNative(javaParamIndex, callee.isStatic)
             Set(NativeVariable(callInstr.argument(nativeParamIndex).get))
         }
 
