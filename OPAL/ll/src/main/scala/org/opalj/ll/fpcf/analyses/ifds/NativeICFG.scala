@@ -3,7 +3,7 @@ package org.opalj.ll.fpcf.analyses.ifds
 
 import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
 import org.opalj.ifds.ICFG
-import org.opalj.ll.fpcf.analyses.cg.SimpleCallGraphKey
+import org.opalj.ll.fpcf.analyses.cg.SimpleNativeCallGraphKey
 import org.opalj.ll.llvm.value.{Call, Function}
 
 abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMStatement] {
@@ -30,5 +30,5 @@ abstract class NativeICFG(project: SomeProject) extends ICFG[NativeFunction, LLV
     }
 
     override def getCallers(callee: NativeFunction): Set[LLVMStatement] =
-        project.get(SimpleCallGraphKey)(callee).getOrElse(Set.empty).map(LLVMStatement)
+        project.get(SimpleNativeCallGraphKey)(callee).getOrElse(Set.empty).map(LLVMStatement)
 }
