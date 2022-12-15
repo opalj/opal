@@ -14,8 +14,8 @@ public class TaintTest {
         private native int sanitize_only_a_into_sink (int a, int b);
         private native void propagate_identity_to_sink(int a);
         private native void propagate_zero_to_sink(int a);
-        private native void native_array_tainted();
-        private native void native_array_untainted();
+        private native void native_array_tainted(int a);
+        private native void native_array_untainted(int a);
         private native void propagate_to_java_sink(int a);
         private native int propagate_from_java_source();
         private native int propagate_java_sanitize(int a);
@@ -124,13 +124,13 @@ public class TaintTest {
         @XlangBackwardFlowPath({"test_native_array_tainted_flow", "Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted", "sink"})
         public void test_native_array_tainted_flow() {
             System.out.println("native array tainted");
-            native_array_tainted();
+            native_array_tainted(source());
         }
 
         @XlangBackwardFlowPath({})
         public void test_native_array_untainted_no_flow() {
             System.out.println("native array untainted");
-            native_array_untainted();
+            native_array_untainted(source());
         }
 
         @XlangBackwardFlowPath({"test_native_call_java_sink_flow", "Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1to_1java_1sink", "indirect_sink", "sink"})

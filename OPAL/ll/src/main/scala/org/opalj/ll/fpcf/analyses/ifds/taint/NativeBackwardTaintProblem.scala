@@ -35,9 +35,10 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 // value is stored into tainted array element
                 case gep: GetElementPtr if gep.base == base =>
                     // if indices are not constant, assume the tainted element is written
-                    if ((gep.isConstant && gep.constants.exists(indices.toSeq.contains(_))) || !gep.isConstant)
+                    if ((gep.isConstant && gep.constants == indices) || !gep.isConstant)
                         Set(NativeVariable(store.src))
                     else Set(in)
+                case _ => Set(in)
             }
             case _ => Set(in)
         }
@@ -55,8 +56,12 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
             case _ => Set(in)
         }
         case gep: GetElementPtr => in match {
-            case NativeVariable(value) if value == gep => Set(in, NativeVariable(gep.base))
-            case NativeArrayElement(base, indices) if base == gep && gep.isZero => Set(in, NativeArrayElement(gep.base, indices))
+            case NativeVariable(base) if base == gep =>
+                if (gep.isConstant) Set(in, NativeArrayElement(gep.base, gep.constants))
+                else Set(in, NativeVariable(gep.base))
+            case NativeArrayElement(base, indices) if base == gep =>
+                if (gep.isConstant) Set(in, NativeArrayElement(gep.base, gep.constants)) // not nested array taints, taint whole subarray
+                else Set(in, NativeVariable(gep.base))
             case _ => Set(in)
         }
         case fneg: FNeg => in match {
@@ -73,7 +78,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         }
         case extrElem: ExtractElement =>
             def taintExtElemVec: Set[NativeTaintFact] = {
-                if (extrElem.isConstant) Set(in, NativeArrayElement(extrElem.vec, Seq(extrElem.constant)))
+                if (extrElem.isConstant) Set(in, NativeArrayElement(extrElem.vec, Seq(0, extrElem.constant)))
                 else Set(in, NativeVariable(extrElem.vec)) // taint whole array if index not constant
             }
             in match {
@@ -82,10 +87,10 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 case _                                               => Set(in)
             }
         case insElem: InsertElement => in match {
-            case NativeVariable(value) if insElem.vec == value => Set(in, NativeVariable(insElem.value))
-            case NativeArrayElement(base, indices) if insElem.vec == base =>
+            case NativeVariable(value) if insElem.vec == value => Set(in, NativeVariable(insElem.value)) // whole vector tainted
+            case NativeArrayElement(base, indices) if insElem.vec == base => // specific vector element tainted
                 // check if tainted element is written. if index is not constant, assume tainted element is written.
-                if ((insElem.isConstant && indices.exists(_ == insElem.constant)) || !insElem.isConstant)
+                if ((insElem.isConstant && indices == Seq(0, insElem.constant)) || !insElem.isConstant)
                     Set(in, NativeVariable(insElem.value))
                 else Set(in)
             case _ => Set(in)
@@ -100,17 +105,17 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         }
         case extrValue: ExtractValue => in match {
             case NativeVariable(value) if extrValue == value =>
-                Set(in, NativeArrayElement(extrValue.aggregVal, extrValue.constants))
+                extrValue.constants.map(c => NativeArrayElement(extrValue.aggregVal, Seq(0, c))).toSet ++ Set(in)
             case NativeArrayElement(base, _) if base == extrValue =>
                 // array loaded from array element -> nested arrays
-                Set(in, NativeArrayElement(extrValue.aggregVal, extrValue.constants))
+                extrValue.constants.map(c => NativeArrayElement(extrValue.aggregVal, Seq(0, c))).toSet ++ Set(in)
             case _ => Set(in)
         }
         case insValue: InsertValue => in match {
             case NativeVariable(value) if insValue.aggregVal == value => Set(in, NativeVariable(insValue.value))
             // check if tainted element is written
-            case NativeArrayElement(base, indices) if insValue.aggregVal == base &&
-                insValue.constants.exists(indices.toSeq.contains(_)) => Set(in, NativeVariable(insValue.value))
+            case NativeArrayElement(base, indices) if insValue.aggregVal == base && indices.head == 0 &&
+                insValue.constants.contains(indices.toSeq(1)) => Set(in, NativeVariable(insValue.value))
             case _ => Set(in)
         }
         case _ => Set(in)
