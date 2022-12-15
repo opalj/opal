@@ -3,18 +3,18 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
 
 /**
- * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
+ * A [[JavaProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
  * analysis (RTA).
  *
  * @see [[CallGraphKey]] for further details.
@@ -33,13 +33,13 @@ import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
  */
 object RTACallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = {
         Seq(InitialInstantiatedTypesKey, SimpleContextsKey) ++: super.requirements(project)
     }
 
     override def callGraphSchedulers(
         project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
+    ): Iterable[JavaFPCFAnalysisScheduler] = {
         // in case the library entrypoints finder is configured, we want to use the
         // EagerLibraryEntryPointsAnalysis
         val isLibrary =

@@ -43,7 +43,7 @@ ThisBuild / logBuffered := false
 
 ThisBuild / javacOptions ++= Seq("-encoding", "utf8", "-source", "1.8")
 
-ThisBuild /testOptions := {
+ThisBuild / testOptions := {
   baseDirectory
     .map(bd => Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
     .value
@@ -60,7 +60,7 @@ ScalaUnidoc / unidoc / scalacOptions := {
 
 ScalaUnidoc / unidoc / scalacOptions ++=
   Opts.doc.sourceUrl(
-  	"https://raw.githubusercontent.com/stg-tud/opal/" +
+    "https://raw.githubusercontent.com/stg-tud/opal/" +
       (if (isSnapshot.value) "develop" else "master") +
       "/€{FILE_PATH}.scala"
   )
@@ -102,7 +102,10 @@ lazy val buildSettings =
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
     Seq(Defaults.itSettings: _*) ++
-    Seq(unmanagedSourceDirectories.withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil) ++
+    Seq(
+      unmanagedSourceDirectories
+        .withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil
+    ) ++
     Seq(
       Test / unmanagedSourceDirectories := (Test / javaSource).value :: (Test / scalaSource).value :: Nil
     ) ++
@@ -118,6 +121,9 @@ lazy val buildSettings =
     // see https://github.com/sbt/sbt-assembly/issues/391
     Seq(assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
+      case PathList("META-INF", "versions", xs @ _, "module-info.class") => MergeStrategy.discard
+      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "jni-config.json") => MergeStrategy.discard
+      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "reflect-config.json") => MergeStrategy.discard
       case other => (assembly / assemblyMergeStrategy).value(other)
     })
 
@@ -140,6 +146,7 @@ lazy val `OPAL` = (project in file("."))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
+    javaCppVersion := Dependencies.javaCppVersion,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
       validate,
@@ -159,6 +166,7 @@ lazy val `OPAL` = (project in file("."))
     tac,
     de,
     av,
+    ll,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -177,6 +185,7 @@ lazy val `Common` = (project in file("OPAL/common"))
   .settings(buildSettings: _*)
   .settings(
     name := "Common",
+    javaCppVersion := Dependencies.javaCppVersion,
     Compile / doc / scalacOptions := Opts.doc.title("OPAL-Common"),
     libraryDependencies ++= Dependencies.common(scalaVersion.value)
   )
@@ -276,6 +285,19 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+lazy val ifds = `IFDS`
+lazy val `IFDS` = (project in file("OPAL/ifds"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "IFDS",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
+    fork := true,
+    libraryDependencies ++= Dependencies.ifds
+  )
+  .dependsOn(si % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(br % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
 lazy val tac = `ThreeAddressCode`
 lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
   .settings(buildSettings: _*)
@@ -288,6 +310,7 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
     run / fork := true
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 lazy val ba = `BytecodeAssembler`
@@ -326,6 +349,19 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+lazy val ll = `LLVM`
+lazy val `LLVM` = (project in file("OPAL/ll"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "LLVM",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
+    fork := true,
+    javaCppPresetLibs ++= Dependencies.javaCppPresetLibs,
+    javaCppVersion := Dependencies.javaCppVersion
+)
+  .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
 lazy val framework = `Framework`
 lazy val `Framework` = (project in file("OPAL/framework"))
   .settings(buildSettings: _*)
@@ -337,7 +373,8 @@ lazy val `Framework` = (project in file("OPAL/framework"))
   .dependsOn(
     ba  % "it->it;it->test;test->test;compile->compile",
     av  % "it->it;it->test;test->test;compile->compile",
-    tac % "it->it;it->test;test->test;compile->compile"
+    tac % "it->it;it->test;test->test;compile->compile",
+    ll  % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 

@@ -406,7 +406,7 @@ class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with Before
                                 (0xff & 176).toByte // areturn
                             ))
                         ))
-                    ),
+                    )
                 ),
                 attributes = ArraySeq(
                     BootstrapMethods_attribute(17, ArraySeq(

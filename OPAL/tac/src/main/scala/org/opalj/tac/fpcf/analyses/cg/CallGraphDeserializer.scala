@@ -7,13 +7,10 @@ package cg
 
 import java.io.File
 import java.io.FileInputStream
-
 import scala.collection.mutable.ArrayBuffer
-
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
-
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
@@ -25,10 +22,10 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.PCAndInstruction
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
+import org.opalj.br.fpcf.JavaBasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.tac.fpcf.properties.cg.Callees
@@ -120,7 +117,7 @@ object MethodDesc {
 private class CallGraphDeserializer private[analyses] (
         final val serializedCG: File,
         final val project:      SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
     private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
@@ -199,12 +196,12 @@ private class CallGraphDeserializer private[analyses] (
     }
 }
 
-class CallGraphDeserializerScheduler(serializedCG: File) extends BasicFPCFEagerAnalysisScheduler {
+class CallGraphDeserializerScheduler(serializedCG: File) extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, SimpleContextsKey)
 
-    override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, i: Null): ProjectBasedAnalysis = {
         val analysis = new CallGraphDeserializer(serializedCG, p)
         ps.scheduleEagerComputationForEntity(p)(analysis.analyze)
         analysis

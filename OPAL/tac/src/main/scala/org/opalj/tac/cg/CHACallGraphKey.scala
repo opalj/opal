@@ -3,16 +3,16 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
 
 /**
- * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on class
+ * A [[JavaProjectInformationKey]] to compute a [[CallGraph]] based on class
  * hierarchy analysis (CHA).
  *
  * @see [[CallGraphKey]] for further details.
@@ -21,14 +21,14 @@ import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
  */
 object CHACallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = {
         Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
             super.requirements(project)
     }
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = List.empty
+    ): Iterable[JavaFPCFAnalysisScheduler] = List.empty
 
     override def getTypeIterator(project: SomeProject) = new CHATypeIterator(project)
 

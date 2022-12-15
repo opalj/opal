@@ -12,11 +12,8 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
+import org.opalj.br.fpcf.{JavaBasicFPCFEagerAnalysisScheduler, JavaBasicFPCFLazyAnalysisScheduler}
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
@@ -27,7 +24,7 @@ import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
  *
  * @author Michael Eichberg
  */
-class L0BaseAIResultAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L0BaseAIResultAnalysis private[analyses] (val project: SomeProject) extends ProjectBasedAnalysis {
 
     final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
@@ -74,7 +71,7 @@ object L0BaseAIResultAnalysis {
 
 sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(AIDomainFactoryKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(BaseAIResult)
 
@@ -82,13 +79,13 @@ sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisSche
 
 object EagerL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new L0BaseAIResultAnalysis(p) // <= NOT TO BE CREATED IN INIT!
         val methods = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.performAI)
@@ -98,11 +95,11 @@ object EagerL0BaseAIAnalysis
 
 object LazyL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new L0BaseAIResultAnalysis(p) // <= NOT TO BE CREATED IN INIT!
         ps.registerLazyPropertyComputation(BaseAIResult.key, analysis.performAI)
         analysis

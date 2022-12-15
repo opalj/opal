@@ -14,11 +14,11 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.Field
 import org.opalj.br.DefinedMethod
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.si.PropertyStoreKey
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.

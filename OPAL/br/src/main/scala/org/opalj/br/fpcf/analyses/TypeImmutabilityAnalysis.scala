@@ -22,9 +22,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.ImmutableContainer
 import org.opalj.br.fpcf.properties.ImmutableContainerType
@@ -33,6 +32,7 @@ import org.opalj.br.fpcf.properties.ImmutableType
 import org.opalj.br.fpcf.properties.MutableObject
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Determines the mutability of a specific type by checking if all subtypes of a specific
@@ -40,7 +40,7 @@ import org.opalj.br.fpcf.properties.TypeImmutability
  *
  * @author Michael Eichberg
  */
-class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
+class TypeImmutabilityAnalysis( final val project: SomeProject) extends ProjectBasedAnalysis {
 
     def doDetermineTypeMutability(
         typeExtensibility: ObjectType => Answer
@@ -226,9 +226,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
     }
 }
 
-trait TypeImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait TypeImmutabilityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(TypeExtensibilityKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TypeImmutability)
 
@@ -244,7 +244,7 @@ trait TypeImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -267,7 +267,7 @@ object EagerTypeImmutabilityAnalysis
 
 object LazyTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
     /**

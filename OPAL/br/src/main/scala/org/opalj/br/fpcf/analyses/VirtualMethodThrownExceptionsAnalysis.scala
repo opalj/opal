@@ -15,9 +15,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
@@ -39,7 +38,7 @@ import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods.SomeExce
  */
 class VirtualMethodThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[analyses] def lazilyAggregateExceptionsThrownByOverridingMethods(
         e: Entity
@@ -136,9 +135,9 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
     }
 }
 
-trait VirtualMethodThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
+trait VirtualMethodThrownExceptionsAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(IsOverridableMethodKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(IsOverridableMethodKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
@@ -156,13 +155,13 @@ trait VirtualMethodThrownExceptionsAnalysisScheduler extends FPCFAnalysisSchedul
  */
 object EagerVirtualMethodThrownExceptionsAnalysis
     extends VirtualMethodThrownExceptionsAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
         val allMethods = p.allMethodsWithBody // FIXME we need this information also for abstract methods ...
         ps.scheduleEagerComputationsForEntities(allMethods) {
@@ -181,12 +180,12 @@ object EagerVirtualMethodThrownExceptionsAnalysis
  */
 object LazyVirtualMethodThrownExceptionsAnalysis
     extends VirtualMethodThrownExceptionsAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
         ps.registerLazyPropertyComputation(
             ThrownExceptionsByOverridingMethods.key,

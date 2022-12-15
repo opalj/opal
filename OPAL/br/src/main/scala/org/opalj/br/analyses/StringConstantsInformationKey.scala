@@ -22,14 +22,14 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 object StringConstantsInformationKey
-    extends ProjectInformationKey[StringConstantsInformation, Nothing] {
+    extends JavaProjectInformationKey[StringConstantsInformation, Nothing] {
 
     /**
      * The analysis has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the field access information.

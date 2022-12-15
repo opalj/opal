@@ -15,9 +15,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.StaticDataUsage
 import org.opalj.br.fpcf.properties.UsesConstantDataOnly
 import org.opalj.br.fpcf.properties.UsesNoStaticData
@@ -33,7 +31,7 @@ import org.opalj.br.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingDat
  */
 class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineUsage(dm: DeclaredMethod): ProperPropertyComputationResult = {
@@ -115,9 +113,9 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
 }
 
-trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
+trait VirtualMethodStaticDataUsageAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
 
@@ -127,13 +125,13 @@ trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisSchedule
 
 object EagerVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
         val vms = p.get(DeclaredMethodsKey)
         ps.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineUsage)
@@ -143,11 +141,11 @@ object EagerVirtualMethodStaticDataUsageAnalysis
 
 object LazyVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
         ps.registerLazyPropertyComputation(
             VirtualMethodAllocationFreeness.key,

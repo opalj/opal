@@ -20,6 +20,7 @@ sealed trait ElementValue extends Attribute {
     def toJava: String
 
     def asIntValue: IntValue = throw new ClassCastException();
+    def asBooleanValue: BooleanValue = throw new ClassCastException();
     def asEnumValue: EnumValue = throw new ClassCastException();
     def asAnnotationValue: AnnotationValue = throw new ClassCastException();
     def asStringValue: StringValue = throw new ClassCastException();
@@ -167,6 +168,8 @@ case class BooleanValue(value: Boolean) extends BaseTypeElementValue {
     override def toJava: String = value.toString
 
     override def kindId: Int = BooleanValue.KindId
+
+    final override def asBooleanValue: BooleanValue = this
 
 }
 object BooleanValue {

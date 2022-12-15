@@ -34,14 +34,16 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.br.fpcf.JavaBasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.reflect.ClassTag
 
 /**
  * Generates call graphs based on the used [[TypeIterator]].
@@ -457,9 +459,10 @@ class CallGraphAnalysis private[cg] (
     }
 }
 
-object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object CallGraphAnalysisScheduler extends JavaBasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    implicit override val c: ClassTag[SomeProject] = ClassTag(classOf[SomeProject])
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, InitialEntryPointsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] =

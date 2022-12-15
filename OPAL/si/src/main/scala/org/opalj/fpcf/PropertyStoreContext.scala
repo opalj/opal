@@ -18,7 +18,7 @@ class PropertyStoreContext[+T <: AnyRef] private (val key: Class[_], val data: T
 
 object PropertyStoreContext {
 
-    def apply[T <: AnyRef](key: Class[T], data: T): PropertyStoreContext[T] = {
+    def apply[T <: AnyRef, R <: T](key: Class[R], data: T): PropertyStoreContext[T] = {
         new PropertyStoreContext(key, data)
     }
 

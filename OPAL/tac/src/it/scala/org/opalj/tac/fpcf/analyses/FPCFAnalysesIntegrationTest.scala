@@ -5,18 +5,14 @@ package fpcf
 package analyses
 
 import scala.reflect.runtime.universe.runtimeMirror
-
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
-
 import scala.io.Source
-
 import com.typesafe.config.ConfigValueFactory
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.ComputationSpecification
@@ -29,13 +25,11 @@ import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysesRegistry
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.scheduling.{FPCFAnalysesManagerKey, FPCFAnalysesRegistry}
+import org.opalj.si.{FPCFAnalysis, PropertyStoreKey}
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
@@ -78,7 +72,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                                     requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
                             }
                         } else {
-                            // Recreate project keeping all ProjectInformationKeys other than the
+                            // Recreate project keeping all JavaProjectInformationKeys other than the
                             // PropertyStore as we are interested only in FPCF analysis results.
                             p = p.recreate { id =>
                                 id != PropertyStoreKey.uniqueId &&

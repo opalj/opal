@@ -6,14 +6,10 @@ package analyses
 
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, JavaProjectInformationKey, JavaProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.si.PropertyStoreKey
 
 /**
  * @author Dominik Helm
@@ -83,9 +79,9 @@ class ConfiguredPurity(
 
 }
 
-object ConfiguredPurityKey extends ProjectInformationKey[ConfiguredPurity, Nothing] {
+object ConfiguredPurityKey extends JavaProjectInformationKey[ConfiguredPurity, Nothing] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
 
     override def compute(project: SomeProject): ConfiguredPurity = {
         val declaredMethods = project.get(DeclaredMethodsKey)

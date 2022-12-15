@@ -10,7 +10,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyKey
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSites
@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
+trait AbstractPointsToBasedAnalysis extends ProjectBasedAnalysis with ContextualAnalysis {
 
     protected[this] type ElementType
     protected[this] type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]

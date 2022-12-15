@@ -6,11 +6,7 @@ package properties
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, JavaProjectInformationKey, JavaProjectInformationKeys, SomeProject}
 
 import scala.collection.mutable
 
@@ -54,9 +50,9 @@ case class SimpleContext private[properties] (method: DeclaredMethod) extends Co
     override def id: Int = method.id
 }
 
-object SimpleContextsKey extends ProjectInformationKey[SimpleContexts, Nothing] {
+object SimpleContextsKey extends JavaProjectInformationKey[SimpleContexts, Nothing] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys =
+    override def requirements(project: SomeProject): JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey)
 
     override def compute(p: SomeProject): SimpleContexts = {
@@ -122,9 +118,9 @@ class CallStringContext private[properties] (
     }
 }
 
-object CallStringContextsKey extends ProjectInformationKey[CallStringContexts, Nothing] {
+object CallStringContextsKey extends JavaProjectInformationKey[CallStringContexts, Nothing] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys =
+    override def requirements(project: SomeProject): JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey)
 
     override def compute(p: SomeProject): CallStringContexts = {

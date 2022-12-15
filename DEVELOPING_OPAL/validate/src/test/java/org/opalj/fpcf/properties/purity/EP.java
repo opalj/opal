@@ -1,6 +1,6 @@
 package org.opalj.fpcf.properties.purity;
 
-import org.opalj.br.fpcf.FPCFAnalysis;
+import org.opalj.si.FPCFAnalysis;
 
 public @interface EP {
 

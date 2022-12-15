@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -22,9 +21,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
 import org.opalj.br.fpcf.properties.CompileTimeVaryingField
@@ -34,6 +31,7 @@ import org.opalj.br.fpcf.properties.UsesConstantDataOnly
 import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
 import org.opalj.br.instructions._
+import org.opalj.si.FPCFAnalysis
 
 /**
  * A simple analysis that identifies methods that use global state that may vary during one or
@@ -42,7 +40,7 @@ import org.opalj.br.instructions._
  * @author Dominik Helm
  */
 class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject)
-    extends FPCFAnalysis {
+    extends ProjectBasedAnalysis {
 
     import project.nonVirtualCall
     import project.resolveFieldReference
@@ -227,9 +225,9 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     }
 }
 
-trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
+trait StaticDataUsageAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final def derivedProperty: PropertyBounds = {
         // FIXME Just seems to derive the upper bound...
@@ -245,7 +243,7 @@ trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -263,7 +261,7 @@ object EagerStaticDataUsageAnalysis
 
 object LazyStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

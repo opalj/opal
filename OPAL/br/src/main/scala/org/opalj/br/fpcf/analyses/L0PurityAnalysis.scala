@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -22,10 +21,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.FieldMutability
@@ -42,6 +38,7 @@ import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.instructions._
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the
@@ -55,7 +52,7 @@ import org.opalj.br.instructions._
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-class L0PurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class L0PurityAnalysis private[analyses] ( final val project: SomeProject) extends ProjectBasedAnalysis {
 
     import project.nonVirtualCall
     import project.resolveFieldReference
@@ -340,9 +337,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
 }
 
-trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L0PurityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
+    override def requiredProjectInformation: JavaProjectInformationKeys =
         Seq(DeclaredMethodsKey, SimpleContextsKey)
 
     final override def uses: Set[PropertyBounds] = {
@@ -355,7 +352,7 @@ trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerL0PurityAnalysis
     extends L0PurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -376,7 +373,7 @@ object EagerL0PurityAnalysis
 
 object LazyL0PurityAnalysis
     extends L0PurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

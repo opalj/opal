@@ -5,7 +5,6 @@ package analyses
 package cg
 
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.OPALLogger
 
 /**
@@ -15,7 +14,7 @@ import org.opalj.log.OPALLogger
  * @see [[ClassExtensibility]] for further information.
  * @author Michael Reif
  */
-object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, Nothing] {
+object ClassExtensibilityKey extends JavaProjectInformationKey[ClassExtensibility, Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.ClassExtensibilityKey."
 
@@ -26,7 +25,7 @@ object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, N
     /**
      * The [[ClassExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
      */
-    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = Seq(ClosedPackagesKey)
 
     /**
      * Computes the direct type extensibility information for the given project.

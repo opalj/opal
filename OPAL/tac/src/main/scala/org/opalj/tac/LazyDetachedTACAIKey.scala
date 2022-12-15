@@ -6,12 +6,12 @@ import scala.collection.concurrent.TrieMap
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.BaseAI
 import org.opalj.value.ValueInformation
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
+import org.opalj.br.analyses.JavaProjectInformationKey
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
@@ -22,7 +22,6 @@ import org.opalj.ai.Domain
  *
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
  *          pass in `this` object.
- *
  * @author Michael Eichberg
  */
 object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
@@ -30,7 +29,7 @@ object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse]
     /**
      * TACAI code has no special prerequisites.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an factory which computes and caches the 3-address code of a method when required.

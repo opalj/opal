@@ -53,7 +53,7 @@ class ClassBasedMethodMatcher(
         val onlyMethodsExactlyInClass: Boolean
 ) extends MethodMatcher {
 
-    // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
+    // TODO use a JavaProjectInformationKey or WeakHashMap to cache methods per project
     // (for the contains check)
     private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c =>
         // todo what about "inherited" static methods?

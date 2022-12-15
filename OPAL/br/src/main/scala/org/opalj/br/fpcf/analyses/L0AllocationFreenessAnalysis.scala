@@ -4,28 +4,14 @@ package br
 package fpcf
 package analyses
 
-import scala.annotation.switch
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimLUBP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomeInterimEP
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.AllocationFreeMethod
-import org.opalj.br.fpcf.properties.AllocationFreeness
-import org.opalj.br.fpcf.properties.MethodWithAllocations
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
+import org.opalj.br.fpcf.properties.{AllocationFreeMethod, AllocationFreeness, MethodWithAllocations}
 import org.opalj.br.instructions._
+import org.opalj.fpcf.{EOptionP, Entity, FinalP, InterimLUBP, InterimResult, InterimUBP, ProperPropertyComputationResult, Property, PropertyBounds, PropertyStore, Result, SomeEOptionP, SomeEPS, SomeInterimEP}
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
+import org.opalj.si.FPCFAnalysis
+
+import scala.annotation.switch
 
 /**
  * A simple analysis that identifies methods that never allocate any objects/arrays.
@@ -34,8 +20,7 @@ import org.opalj.br.instructions._
  */
 class L0AllocationFreenessAnalysis private[analyses] (
         final val project: SomeProject
-)
-    extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     import project.nonVirtualCall
 
@@ -248,9 +233,9 @@ class L0AllocationFreenessAnalysis private[analyses] (
     }
 }
 
-trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L0AllocationFreenessAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set.empty
 
@@ -260,7 +245,7 @@ trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -278,7 +263,7 @@ object EagerL0AllocationFreenessAnalysis
 
 object LazyL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

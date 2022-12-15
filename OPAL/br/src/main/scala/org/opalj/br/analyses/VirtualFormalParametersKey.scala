@@ -41,12 +41,12 @@ class VirtualFormalParameters private[analyses] (
  *          `this` object.
  * @author  Florian Kuebler
  */
-object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalParameters, Nothing] {
+object VirtualFormalParametersKey extends JavaProjectInformationKey[VirtualFormalParameters, Nothing] {
 
     /**
      * The key uses the `VirtualForwardingMethodsKey`.
      */
-    override def requirements(project: SomeProject): ProjectInformationKeys = List(DeclaredMethodsKey)
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = List(DeclaredMethodsKey)
 
     /**
      * Collects all virtual formal parameters.

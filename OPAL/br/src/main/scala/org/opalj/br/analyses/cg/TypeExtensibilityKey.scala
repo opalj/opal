@@ -10,10 +10,11 @@ package cg
  * A type is extensible if a developer could define a sub(*)type that is not part of the given
  * application/library.
  *
+ *
  * @author Michael Eichberg
  * @author Michael Reif
  */
-object TypeExtensibilityKey extends ProjectInformationKey[ObjectType => Answer, Nothing] {
+object TypeExtensibilityKey extends JavaProjectInformationKey[ObjectType => Answer, Nothing] {
 
     /**
      * The [[TypeExtensibilityKey]] has the [[ClassExtensibilityKey]] as prerequisite.

@@ -3,17 +3,13 @@ package org.opalj
 package hermes
 
 import java.net.URL
-
 import scala.io.Source
 import scala.io.Codec
-
 import com.github.rjeschke.txtmark.Processor
-
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.LongProperty
 import javafx.beans.property.SimpleLongProperty
-
 import org.opalj.io.processSource
 import org.opalj.br.analyses.Project
 
@@ -40,9 +36,9 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
      * The function which analyzes the project and extracts the feature information.
      *
      * @param  project A representation of the project. To speed up queries, intermediate
-     *         information that may also be required by other queries can/should be stored in the
-     *         project using the [[org.opalj.fpcf.PropertyStore]] or using a
-     *         [[org.opalj.br.analyses.ProjectInformationKey]].
+     *                 information that may also be required by other queries can/should be stored in the
+     *                 project using the [[org.opalj.fpcf.PropertyStore]] or using a
+     *                 [[ProjectInformationKey]].
      * @param  rawClassFiles A direct 1:1 representation of the class files. This makes it possible
      *         to write queries that need to get an understanding of an unprocessed class file; e.g.
      *         that need to analyze the constant pool in detail.

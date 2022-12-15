@@ -14,15 +14,14 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{DeclaredMethodsKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.AllocationFreeMethod
 import org.opalj.br.fpcf.properties.AllocationFreeness
 import org.opalj.br.fpcf.properties.MethodWithAllocations
 import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness
 import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFreeMethod
 import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Determines the aggregated allocation freeness for virtual methods.
@@ -31,7 +30,7 @@ import org.opalj.br.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithA
  */
 class VirtualMethodAllocationFreenessAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
@@ -99,9 +98,9 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
 
 }
 
-trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
+trait VirtualMethodAllocationFreenessAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
 
@@ -111,7 +110,7 @@ trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisSched
 
 object EagerVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -127,7 +126,7 @@ object EagerVirtualMethodAllocationFreenessAnalysis
 
 object LazyVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

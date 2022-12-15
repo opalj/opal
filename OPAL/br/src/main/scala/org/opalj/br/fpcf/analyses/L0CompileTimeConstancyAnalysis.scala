@@ -15,8 +15,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
 import org.opalj.br.fpcf.properties.CompileTimeVaryingField
@@ -24,6 +23,7 @@ import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.FinalField
 import org.opalj.br.fpcf.properties.LazyInitializedField
 import org.opalj.br.fpcf.properties.NonFinalField
+import org.opalj.si.FPCFAnalysis
 
 /**
  * A simple analysis that identifies constant (effectively) final static fields that are
@@ -33,7 +33,7 @@ import org.opalj.br.fpcf.properties.NonFinalField
  * @author Dominik Helm
  */
 class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: SomeProject)
-    extends FPCFAnalysis {
+    extends ProjectBasedAnalysis {
 
     /**
      * Determines the compile-time constancy of the field.
@@ -89,9 +89,9 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
     }
 }
 
-trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L0CompileTimeConstancyAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq.empty
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldMutability)
 
@@ -101,7 +101,7 @@ trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -116,7 +116,7 @@ object EagerL0CompileTimeConstancyAnalysis
 
 object LazyL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

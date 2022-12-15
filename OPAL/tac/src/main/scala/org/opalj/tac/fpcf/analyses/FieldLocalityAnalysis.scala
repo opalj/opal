@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -33,19 +32,11 @@ import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, FieldAccessInformationKey, JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.cfg.BasicBlock
@@ -55,6 +46,7 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.PCs
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.fpcf.{JavaBasicFPCFEagerAnalysisScheduler, JavaBasicFPCFLazyAnalysisScheduler, JavaFPCFAnalysisScheduler}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
@@ -72,7 +64,7 @@ import org.opalj.tac.fpcf.properties.cg.Callers
  */
 class FieldLocalityAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     type V = DUVar[ValueInformation]
 
@@ -694,9 +686,9 @@ class FieldLocalityAnalysis private[analyses] (
     }
 }
 
-sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait FieldLocalityAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq(
         FieldAccessInformationKey,
         DeclaredMethodsKey,
         DefinitionSitesKey,
@@ -720,9 +712,9 @@ sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val allFields = p.allFields
         val analysis = new FieldLocalityAnalysis(p)
         ps.scheduleEagerComputationsForEntities(allFields)(analysis.step1)
@@ -736,9 +728,9 @@ object EagerFieldLocalityAnalysis
 
 object LazyFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
-    final override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    final override def register(p: SomeProject, ps: PropertyStore, unused: Null): ProjectBasedAnalysis = {
         val analysis = new FieldLocalityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldLocality.key, analysis.step1

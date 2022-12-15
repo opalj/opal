@@ -10,7 +10,7 @@ import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -68,7 +68,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.si.FPCFAnalysis
 
 /**
  * Analysis of thrown exceptions; computes the [[org.opalj.br.fpcf.properties.ThrownExceptions]]
@@ -78,7 +78,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
  */
 class L1ThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     private[analyses] def lazilyDetermineThrownExceptions(
         e: Entity
@@ -389,9 +389,9 @@ class L1ThrownExceptionsAnalysis private[analyses] (
     }
 }
 
-abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
+abstract class ThrownExceptionsAnalysisScheduler extends JavaFPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq.empty
 
     final override def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))
@@ -409,7 +409,7 @@ abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
  */
 object EagerL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with JavaBasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -435,7 +435,7 @@ object EagerL1ThrownExceptionsAnalysis
  */
 object LazyL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with JavaBasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

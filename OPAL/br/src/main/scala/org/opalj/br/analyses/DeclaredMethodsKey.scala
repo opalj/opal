@@ -25,7 +25,7 @@ import scala.jdk.CollectionConverters._
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing] {
+object DeclaredMethodsKey extends JavaProjectInformationKey[DeclaredMethods, Nothing] {
 
     // The following lists were created using the Java 10 specification
     private val methodHandleSignaturePolymorphicMethods = List(
@@ -72,7 +72,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     // TODO [Java9+] Needs to be updated for Java9+ projects which use Modules.
     /**

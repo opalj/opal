@@ -3,13 +3,13 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.JavaProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.JavaFPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
 
 /**
- * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
+ * A [[JavaProjectInformationKey]] to compute a [[CallGraph]] based on
  * the points-to analysis.
  *
  * @see [[CallGraphKey]] for further details.
@@ -18,13 +18,13 @@ import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
  */
 object CFA_1_1_CallGraphKey extends CallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
+    override def requirements(project: SomeProject): JavaProjectInformationKeys = {
         AllocationSiteBasedPointsToCallGraphKey.requirements(project)
     }
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
+    ): Iterable[JavaFPCFAnalysisScheduler] = {
         AllocationSiteBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
     override def getTypeIterator(project: SomeProject) =

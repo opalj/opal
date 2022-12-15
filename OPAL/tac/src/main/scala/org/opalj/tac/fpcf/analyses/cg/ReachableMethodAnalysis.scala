@@ -15,7 +15,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.ProjectBasedAnalysis
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.DeclaredMethod
@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
+trait ReachableMethodAnalysis extends ProjectBasedAnalysis with TypeConsumerAnalysis {
 
     protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 

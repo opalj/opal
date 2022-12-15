@@ -6,8 +6,7 @@ package properties
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKey, SomeProject}
 import org.opalj.ai.common.DomainRegistry
 
 /**
@@ -37,14 +36,14 @@ class ProjectSpecificAIExecutor(
  * @author Michael Eichberg
  */
 object AIDomainFactoryKey
-    extends ProjectInformationKey[ProjectSpecificAIExecutor, Set[Class[_ <: AnyRef]]] {
+    extends JavaProjectInformationKey[ProjectSpecificAIExecutor, Set[Class[_ <: AnyRef]]] {
 
     /**
      * This key has no special prerequisites.
      *
      * @note The configuration is done using '''ProjectInformationKeyInitializationData'''.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which performs and caches the result of the abstract interpretation of a

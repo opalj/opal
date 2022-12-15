@@ -12,14 +12,14 @@ import org.opalj.concurrent.defaultIsInterrupted
  *
  * @author Michael Eichberg
  */
-object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation, Nothing] {
+object FieldAccessInformationKey extends JavaProjectInformationKey[FieldAccessInformation, Nothing] {
 
     /**
      * The [[FieldAccessInformationAnalysis]] has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the field access information.

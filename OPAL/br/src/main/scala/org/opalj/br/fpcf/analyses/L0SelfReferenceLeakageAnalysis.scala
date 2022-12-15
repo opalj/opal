@@ -20,8 +20,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{JavaProjectInformationKeys, ProjectBasedAnalysis, SomeProject}
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
 import org.opalj.br.fpcf.properties.LeaksSelfReference
 import org.opalj.br.fpcf.properties.SelfReferenceLeakage
@@ -36,6 +35,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.si.FPCFAnalysis
 
 /**
  * A shallow analysis that computes the self reference leakage property.
@@ -45,7 +45,7 @@ import org.opalj.br.instructions.PUTSTATIC
 class L0SelfReferenceLeakageAnalysis(
         val project: SomeProject,
         val debug:   Boolean
-) extends FPCFAnalysis {
+) extends ProjectBasedAnalysis {
 
     val SelfReferenceLeakageKey = SelfReferenceLeakage.Key
 
@@ -213,9 +213,9 @@ class L0SelfReferenceLeakageAnalysis(
     }
 }
 
-object L0SelfReferenceLeakageAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object L0SelfReferenceLeakageAnalysis extends JavaBasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: JavaProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = Set.empty
 

@@ -9,17 +9,16 @@ package analyses
  * @example
  *      To get the index use the [[Project]]'s `get` method and pass in
  *      `this` object.
- *
  * @author Michael Eichberg
  */
-object ProjectIndexKey extends ProjectInformationKey[ProjectIndex, Nothing] {
+object ProjectIndexKey extends JavaProjectInformationKey[ProjectIndex, Nothing] {
 
     /**
      * The [[ProjectIndex]] has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[JavaProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the [[ProjectIndex]] for the given project.

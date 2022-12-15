@@ -11,7 +11,7 @@ import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.LocalField
 import org.opalj.br.fpcf.properties.LocalFieldWithGetter
 import org.opalj.br.fpcf.properties.NoLocalField
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.scheduling.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
