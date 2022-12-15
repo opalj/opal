@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.taint_xlang;
 import org.opalj.fpcf.properties.taint_xlang.XlangBackwardFlowPath;
 
 /**
- * Add VM argument to run this test: -Djava.library.path=DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint
+ * Add VM argument to run main: -Djava.library.path=DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint
  */
 public class TaintTest {
         private native int sum (int a, int b);
