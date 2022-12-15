@@ -155,21 +155,19 @@ define dso_local i32 @zero(i32 noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local void @Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted(ptr noundef %0, ptr noundef %1, i32 noundef %2) #0 {
+define dso_local void @Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted(ptr noundef %0, ptr noundef %1) #0 {
+  %3 = alloca ptr, align 8
   %4 = alloca ptr, align 8
-  %5 = alloca ptr, align 8
-  %6 = alloca i32, align 4
-  %7 = alloca [2 x i32], align 4
-  store ptr %0, ptr %4, align 8
-  store ptr %1, ptr %5, align 8
-  store i32 %2, ptr %6, align 4
-  call void @llvm.memset.p0.i64(ptr align 4 %7, i8 0, i64 8, i1 false)
-  %8 = load i32, ptr %6, align 4
-  %9 = getelementptr inbounds [2 x i32], ptr %7, i64 0, i64 1
-  store i32 %8, ptr %9, align 4
-  %10 = getelementptr inbounds [2 x i32], ptr %7, i64 0, i64 1
-  %11 = load i32, ptr %10, align 4
-  call void @sink(i32 noundef %11)
+  %5 = alloca [2 x i32], align 4
+  store ptr %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  call void @llvm.memset.p0.i64(ptr align 4 %5, i8 0, i64 8, i1 false)
+  %6 = call i32 @source()
+  %7 = getelementptr inbounds [2 x i32], ptr %5, i64 0, i64 1
+  store i32 %6, ptr %7, align 4
+  %8 = getelementptr inbounds [2 x i32], ptr %5, i64 0, i64 1
+  %9 = load i32, ptr %8, align 4
+  call void @sink(i32 noundef %9)
   ret void
 }
 
@@ -177,21 +175,19 @@ define dso_local void @Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_nativ
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local void @Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1untainted(ptr noundef %0, ptr noundef %1, i32 noundef %2) #0 {
+define dso_local void @Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1untainted(ptr noundef %0, ptr noundef %1) #0 {
+  %3 = alloca ptr, align 8
   %4 = alloca ptr, align 8
-  %5 = alloca ptr, align 8
-  %6 = alloca i32, align 4
-  %7 = alloca [2 x i32], align 4
-  store ptr %0, ptr %4, align 8
-  store ptr %1, ptr %5, align 8
-  store i32 %2, ptr %6, align 4
-  call void @llvm.memset.p0.i64(ptr align 4 %7, i8 0, i64 8, i1 false)
-  %8 = load i32, ptr %6, align 4
-  %9 = getelementptr inbounds [2 x i32], ptr %7, i64 0, i64 0
-  store i32 %8, ptr %9, align 4
-  %10 = getelementptr inbounds [2 x i32], ptr %7, i64 0, i64 1
-  %11 = load i32, ptr %10, align 4
-  call void @sink(i32 noundef %11)
+  %5 = alloca [2 x i32], align 4
+  store ptr %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  call void @llvm.memset.p0.i64(ptr align 4 %5, i8 0, i64 8, i1 false)
+  %6 = call i32 @source()
+  %7 = getelementptr inbounds [2 x i32], ptr %5, i64 0, i64 0
+  store i32 %6, ptr %7, align 4
+  %8 = getelementptr inbounds [2 x i32], ptr %5, i64 0, i64 1
+  %9 = load i32, ptr %8, align 4
+  call void @sink(i32 noundef %9)
   ret void
 }
 
@@ -323,4 +319,4 @@ attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 7, !"uwtable", i32 2}
 !2 = !{i32 7, !"frame-pointer", i32 2}
-!3 = !{!"clang version 15.0.4 (Fedora 15.0.4-1.fc37)"}
+!3 = !{!"clang version 15.0.6 (Fedora 15.0.6-1.fc37)"}

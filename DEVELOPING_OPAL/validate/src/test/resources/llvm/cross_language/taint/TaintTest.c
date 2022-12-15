@@ -43,16 +43,16 @@ Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_propagate_1zero_1to_1sink(JN
 }
 
 JNIEXPORT void JNICALL
-Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted(JNIEnv *env, jobject obj, jint a) {
+Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted(JNIEnv *env, jobject obj) {
     int array[2] = {0, 0};
-    array[1] = a;
+    array[1] = source();
     sink(array[1]);
 }
 
 JNIEXPORT void JNICALL
-Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1untainted(JNIEnv *env, jobject obj, jint a) {
+Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1untainted(JNIEnv *env, jobject obj) {
     int array[2] = {0, 0};
-    array[0] = a;
+    array[0] = source();
     sink(array[1]);
 }
 
