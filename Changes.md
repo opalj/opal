@@ -1,7 +1,7 @@
 # Changes
 
 ## 5.0.0 - Release date tba (expected December 2022)
-
+- *we are now using sbt 1.6.2*
 - *we are now using Scala 2.13*
   - Scala 2.13 changes:
     - Replace unicode arrows (⇒,->,<-) by ascii arrows (=>,->,<-)
@@ -15,6 +15,7 @@
       - Replace RefAppendChain by scala.collection.mutable.ArrayDeque
       - Replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
  - full support for Java 17 up to 19
+ - support for Java 17 Sealed Classes 
  - improved call graph analyses
  - introduced immutability analyses:
       - Field-Assignability Analysis
