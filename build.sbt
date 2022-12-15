@@ -7,8 +7,9 @@ import sbtunidoc.ScalaUnidocPlugin
 
 name := "OPAL Library"
 
-// SNAPSHOT
-ThisBuild / version := "4.0.1-SNAPSHOT"
+// RELEASED
+ThisBuild / version := "5.0.0" // December 22th, 2022
+// SNAPSHOT version in ThisBuild / version := "4.0.1-SNAPSHOT" // available since //TODO
 // RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
 // SNAPSHOT version in ThisBuild := "3.0.0-SNAPSHOT" // available since June 7th, 2019
 // RELEASED version in ThisBuild := "2.0.1" // October 10th, 2018
