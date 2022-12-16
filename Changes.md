@@ -17,6 +17,9 @@
  - full support for Java 17 up to 19
  - support for Java 17 Sealed Classes 
  - improved call graph analyses
+   - unified call graph algorithms
+   - unified feature support
+   - unified type resolving
  - introduced immutability analyses:
       - Field-Assignability Analysis
         - new immutability properties:
