@@ -4,51 +4,34 @@
 - *we are now using sbt 1.6.2*
 - *we are now using Scala 2.13*
   - Scala 2.13 changes:
-    - Replace unicode arrows (⇒,->,<-) by ascii arrows (=>,->,<-)
-    - Replace Traversable by scala.collection.Iterable
-    - Replace TraversableOnce by scala.collection.IterableOnce
-    - Changes to OPAL's custom data structures:
-      - Replace RefIterator by scala.collection.iterator
-      - Replace Chain by scala.collection.immutable.List
-      - Replace RefArray and IntArray by scala.collection.immutable.ArraySeq
-      - Replace RefArrayStack by scala.collection.immutable.Stack
-      - Replace RefAppendChain by scala.collection.mutable.ArrayDeque
-      - Replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+    - replace Unicode arrows (⇒,→,←) by ASCII arrows (=>,->,<-)
+    - replace Traversable by scala.collection.Iterable
+    - replace TraversableOnce by scala.collection.IterableOnce
+    - changes to OPAL's custom data structures:
+      - replace RefIterator by scala.collection.iterator
+      - replace Chain by scala.collection.immutable.List
+      - replace RefArray and IntArray by scala.collection.immutable.ArraySeq
+      - replace RefArrayStack by scala.collection.immutable.Stack
+      - replace RefAppendChain by scala.collection.mutable.ArrayDeque
+      - replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
  - full support for Java 17 up to 19
- - support for Java 17 Sealed Classes 
- - improved call graph analyses
-   - Unified different call graph algorithms to a single base algorithm that uses different TypeProviders to resolve the possible receivers of virtual    calls. This enables all call graph modules to fully utilize the precision of the different TypeProviders, including information on allocation sites where     available (the reflection module does not use allocation site information in all places possible to avoid excessive complexity, but it uses it in the most  important cases).
-   - Preparations to allow for future context-sensitive call graphs by stringing context information along where necessary
-   - Fully established the new architecture for call graphs based on a TypeProvider to supply type information from respective analyses
-   - Library support for CFA
- - introduced immutability analyses:
-      - Field-Assignability Analysis
-        - new immutability properties:
-          - unsafe lazy initialization
-          - lazy initialization
-      - Fieldimmutability Analysis
-        - new immutability properties:
-            - dependent immutability
-            - non-transitive immutability
-            - transitive immutability
-      - Classimmutability Analysis
-        - new immutability properties:
-            - dependent immutability
-            - non-transitive immutability
-            - transitive immutability
-      - Typeimmutability Analyis
-         - new immutability properties:
-            - dependent immutability
-            - non-transitive immutability
-            - transitive immutability
-- Android-Entrypoints-Finder
-      
-- removed obsolete JVM option AggressiveOpts
-- Records can have FieldTypeSignatures
-- added isStrict attribute to classes
-- edited behavior of isStrict attribute flag in Method. The attribute is ignored if Java >= 17
-- fixed IFDS Taint analysis to use contexts instead of declared methods.
-- enabled flushing cached types when initializing multiple projects in a row
+   - support for Java 17 Sealed Classes
+   - added isStrict attribute to classes
+   - ignore isStrict attribute on classes and methods for Java >= 17
+ - completed framework for call graph analyses
+   - introduced TypeIterator to uniformly access type information
+   - using contexts instead of methods to enable context-sensitive analysis (0-1-CFA, 1-1-CFA)
+   - support library analysis with CFA
+ - introduced new immutability analyses
+      - replaced FieldMutabilityAnalysis with FieldAssignabilityAnalysis
+        - support for thread-safe and unsafe lazy initialization
+        - support for clone pattern
+      - introduced new FieldImmutabilityAnalysis to integrate field assignability with mutability of values
+        - support for transitive and non-transitive immutability
+        - support for immutability dependent on generic type parameters
+      - updated ClassImmutabilityAnalysis and TypeImmutabilityAnalysis to use new FieldImmutability properties
+- added EntrypointsFinder for Android apps
+- allow flushing caches for ObjectTypes/ArrayTypes to free memory when creating many projects in a row
 
 ## 4.0.0 - Released May 7th 2021
 
