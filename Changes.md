@@ -17,9 +17,10 @@
  - full support for Java 17 up to 19
  - support for Java 17 Sealed Classes 
  - improved call graph analyses
-   - unified call graph algorithms
-   - unified feature support
-   - unified type resolving
+   - Unified different call graph algorithms to a single base algorithm that uses different TypeProviders to resolve the possible receivers of virtual    calls. This enables all call graph modules to fully utilize the precision of the different TypeProviders, including information on allocation sites where     available (the reflection module does not use allocation site information in all places possible to avoid excessive complexity, but it uses it in the most  important cases).
+   - Preparations to allow for future context-sensitive call graphs by stringing context information along where necessary
+   - Fully established the new architecture for call graphs based on a TypeProvider to supply type information from respective analyses
+   - Library support for CFA
  - introduced immutability analyses:
       - Field-Assignability Analysis
         - new immutability properties:
@@ -40,7 +41,14 @@
             - dependent immutability
             - non-transitive immutability
             - transitive immutability
+- Android-Entrypoints-Finder
       
+- removed obsolete JVM option AggressiveOpts
+- Records can have FieldTypeSignatures
+- added isStrict attribute to classes
+- edited behavior of isStrict attribute flag in Method. The attribute is ignored if Java >= 17
+- fixed IFDS Taint analysis to use contexts instead of declared methods.
+- enabled flushing cached types when initializing multiple projects in a row
 
 ## 4.0.0 - Released May 7th 2021
 
