@@ -162,7 +162,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        def addFieldMutabilityDependee(
+        def addFieldAssingabilityDependee(
             f:     Field,
             eop:   EOptionP[Field, FieldAssignability],
             owner: Option[Expr[V]]
@@ -235,7 +235,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         def removeFieldLocalityDependee(f: Field): Unit = fieldLocalityDependees -= f
-        def removeFieldMutabilityDependee(f: Field): Unit = fieldAssignabilityDependees -= f
+        def removeFieldAssignabilityDependee(f: Field): Unit = fieldAssignabilityDependees -= f
         def removeClassImmutabilityDependee(t: ObjectType): Unit = classImmutabilityDependees -= t
         def removeTypeImmutabilityDependee(t: ObjectType): Unit = typeImmutabilityDependees -= t
         def removePurityDependee(context: Context): Unit = purityDependees -= context
@@ -591,7 +591,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
-        state.addFieldMutabilityDependee(ep.e, ep, objRef)
+        state.addFieldAssingabilityDependee(ep.e, ep, objRef)
     }
 
     /**
@@ -746,7 +746,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case FieldAssignability.key =>
                 val e = eps.e.asInstanceOf[Field]
                 val dependees = state.fieldAssignabilityDependees(e)
-                state.removeFieldMutabilityDependee(e)
+                state.removeFieldAssignabilityDependee(e)
                 dependees._2.foreach { e =>
                     checkFieldAssignability(eps.asInstanceOf[EOptionP[Field, FieldAssignability]], e)
                 }

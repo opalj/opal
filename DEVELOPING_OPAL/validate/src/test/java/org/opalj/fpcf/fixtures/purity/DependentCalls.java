@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 final class DependentCalls { // This class is immutable
 
     private static int myValue =
-            -1; /* the FieldMutabilityAnalysis is required to determine that this field is effectivelyFinal  */
+            -1; /* the FieldAssignabilityAnalysis is required to determine that this field is effectivelyFinal  */
 
     @CompileTimePure("nothing done here")
     @Pure(value = "nothing done here",

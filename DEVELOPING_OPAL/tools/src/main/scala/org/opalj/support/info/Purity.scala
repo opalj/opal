@@ -91,7 +91,7 @@ object Purity {
             "[-projectDir <directory with project class files relative to cp>]\n"+
             "[-libDir <directory with library class files relative to cp>]\n"+
             "[-analysis <L0|L1|L2> (Default: L2, the most precise analysis configuration)]\n"+
-            "[-fieldMutability <none|L0|L1|L2> (Default: Depends on analysis level)]\n"+
+            "[-fieldAssignability <none|L0|L1|L2> (Default: Depends on analysis level)]\n"+
             "[-escape <none|L0|L1> (Default: L1, the most precise configuration)]\n"+
             "[-domain <class name of the abstract interpretation domain>]\n"+
             "[-rater <class name of the rater for domain-specific actions>]\n"+
@@ -479,7 +479,7 @@ object Purity {
                 case "-projectDir"         => projectDir = Some(readNextArg())
                 case "-libDir"             => libDir = Some(readNextArg())
                 case "-analysis"           => analysisName = Some(readNextArg())
-                case "-fieldMutability"    => fieldAssignabilityAnalysisName = Some(readNextArg())
+                case "-fieldAssignability" => fieldAssignabilityAnalysisName = Some(readNextArg())
                 case "-escape"             => escapeAnalysisName = Some(readNextArg())
                 case "-domain"             => domainName = Some(readNextArg())
                 case "-rater"              => raterName = Some(readNextArg())
