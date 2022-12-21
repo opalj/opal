@@ -112,7 +112,7 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
 
             val fieldInfo =
                 effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
-                    "\nMutability of private static non-final fields:\n",
+                    "\nImmutability of private static non-final fields:\n",
                     "\n",
                     s"\nTotal: ${effectivelyFinalFields.size}\n"
                 )

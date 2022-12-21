@@ -178,7 +178,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                 determineClassImmutability(
                                     superClassType,
                                     epk,
-                                    superClassMutabilityIsFinal = false,
+                                    superClassImmutabilityIsFinal = false,
                                     lazyComputation = true
                                 )(cf)
                         }
@@ -195,16 +195,16 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * Determines the immutability of instances of the given class type `t`.
      *
      * @param superClassType The direct super class of the given object type `t`.
-     *      Can be `null` if `superClassMutability` is `ImmutableObject`.
+     *      Can be `null` if `superClassImmutability` is `TransitivelyImmutable`.
      * @param superClassInformation The mutability of the given super class. The mutability
      *      must not be "MutableObject"; this case has to be handled explicitly. Hence,
      *      the mutability is either unknown, immutable or (at least) conditionally immutable.
      */
     def determineClassImmutability(
-        superClassType:              ObjectType,
-        superClassInformation:       EOptionP[Entity, Property],
-        superClassMutabilityIsFinal: Boolean,
-        lazyComputation:             Boolean
+        superClassType:                ObjectType,
+        superClassInformation:         EOptionP[Entity, Property],
+        superClassImmutabilityIsFinal: Boolean,
+        lazyComputation:               Boolean
     )(
         cf: ClassFile
     ): ProperPropertyComputationResult = {
@@ -212,7 +212,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
 
-        if (!superClassMutabilityIsFinal) {
+        if (!superClassImmutabilityIsFinal) {
             dependees += (SuperClassKey -> superClassInformation)
         }
 
@@ -374,24 +374,6 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
        */
 
             if (dependees.isEmpty || minLocalImmutability == maxLocalImmutability) {
-                /*[DEBUG]
-                    assert(
-                        maxLocalImmutability == ConditionallyImmutableObject ||
-                            maxLocalImmutability == ImmutableObject
-                    )
-                    assert(
-                        (
-                            currentSuperClassMutability == AtLeastConditionallyImmutableObject &&
-                            maxLocalImmutability == ConditionallyImmutableObject
-                        ) ||
-                            currentSuperClassMutability == ConditionallyImmutableObject ||
-                            currentSuperClassMutability == ImmutableObject,
-                        s"$e: $p resulted in no dependees with unexpected "+
-                            s"currentSuperClassMutability=$currentSuperClassMutability/"+
-                            s"maxLocalImmutability=$maxLocalImmutability - "+
-                            s"(old dependees: ${oldDependees.mkString(",")}"
-                    )
-         */
                 Result(t, maxLocalImmutability)
             } else {
                 InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values.toSet, c)
@@ -519,7 +501,7 @@ object EagerClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler
             analysis.determineClassImmutability(
                 superClassType = null,
                 FinalEP(ObjectType.Object, TransitivelyImmutableClass),
-                superClassMutabilityIsFinal = true,
+                superClassImmutabilityIsFinal = true,
                 lazyComputation = false
             )
         )
