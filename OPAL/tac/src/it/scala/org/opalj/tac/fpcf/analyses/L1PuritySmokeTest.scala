@@ -17,15 +17,15 @@ import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
-
 /**
  * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not
  * cause any exceptions.
@@ -44,7 +44,8 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
     )
 
     val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
-        EagerL1FieldMutabilityAnalysis,
+        EagerL1FieldAssignabilityAnalysis,
+        EagerFieldImmutabilityAnalysis,
         EagerClassImmutabilityAnalysis,
         EagerTypeImmutabilityAnalysis
     )

@@ -10,13 +10,13 @@ import org.opalj.util.Seconds
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -41,13 +41,14 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
         // reactive async approach developed by P. Haller and Simon Gries.
         var t = Seconds.None
         val ps = time {
+
             val ps = get(PropertyStoreKey)
             val derivedPKs = Set.empty ++
-                EagerL0FieldMutabilityAnalysis.derives.map(_.pk) ++
+                EagerL0FieldAssignabilityAnalysis.derives.map(_.pk) ++
                 EagerClassImmutabilityAnalysis.derives.map(_.pk) ++
                 EagerTypeImmutabilityAnalysis.derives.map(_.pk)
             ps.setupPhase(derivedPKs)
-            EagerL0FieldMutabilityAnalysis.start(project, ps, null)
+            EagerL0FieldAssignabilityAnalysis.start(project, ps, null)
             EagerClassImmutabilityAnalysis.start(project, ps, null)
             EagerTypeImmutabilityAnalysis.start(project, ps, null)
             ps.waitOnPhaseCompletion()
