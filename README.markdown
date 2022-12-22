@@ -72,6 +72,5 @@ Start the sbt console. (In OPAL's root folder call `sbt` on the command line.)
 Change the project to Demos using the command `project Demos` and type `run` to run one of the demos.
 
 # Further Information
-* [The OPAL Gitter chatroom](https://gitter.im/OPAL-Project)
 * [Questions regarding how to write analyses (Stackoverflow)](http://stackoverflow.com/questions/tagged/opal-framework?sort=newest)
 * [OPAL Project](http://www.opal-project.de)
