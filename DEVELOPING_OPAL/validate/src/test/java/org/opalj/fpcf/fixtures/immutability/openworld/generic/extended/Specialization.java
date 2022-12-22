@@ -6,9 +6,8 @@ import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 
 /**
- * This class represents the case when a generic class is extended and the generic type parameter concretized.
+ * This file represents the case when a generic class is extended and the generic type parameter concretized.
  */
-public class Specialization<T> {
 
     @DependentlyImmutableClass(value = "The field type is generic", parameter = {"A"})
     class G<A>{
@@ -27,4 +26,3 @@ public class Specialization<T> {
             super(finalClassWithNoFields);
         }
     }
-}

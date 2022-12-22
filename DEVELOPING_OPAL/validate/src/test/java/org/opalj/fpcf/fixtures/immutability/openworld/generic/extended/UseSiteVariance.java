@@ -26,8 +26,7 @@ class UseSiteVariance<T extends ClassWithMutableFields> {
     @NonAssignableField("field is final")
     private final Generic<? super EmptyClass> nonTransitivelyImmutableField;
 
-    @TransitivelyImmutableField(value = "Type ? can only be FinalEmptyClass and, thus, transitively immutable", analyses = {})
-    @NonTransitivelyImmutableField("The analysis is not able to recognize use site variance")
+    @TransitivelyImmutableField(value = "Type ? can only be FinalEmptyClass and, thus, transitively immutable")
     @NonAssignableField("field is final")
     private final Generic<? extends FinalEmptyClass> transitivelyImmutableField;
 
@@ -37,12 +36,13 @@ class UseSiteVariance<T extends ClassWithMutableFields> {
         this.nonTransitivelyImmutableField = nonTransitivelyImmutableField;
         this.transitivelyImmutableField = transitivelyImmutableField;
     }
-
-    @MutableType("Class is not final")
-    @TransitivelyImmutableClass("Class with no fields")
-    class EmptyClass {}
-
-    @TransitivelyImmutableType("Class is final, has no fields and extends a transitively immutable class")
-    @TransitivelyImmutableClass("empty")
-    final class FinalEmptyClass extends EmptyClass {}
 }
+
+@MutableType("Class is not final")
+@TransitivelyImmutableClass("Class with no fields")
+class EmptyClass {}
+
+@TransitivelyImmutableType("Class is final, has no fields and extends a transitively immutable class")
+@TransitivelyImmutableClass("empty")
+final class FinalEmptyClass extends EmptyClass {}
+
