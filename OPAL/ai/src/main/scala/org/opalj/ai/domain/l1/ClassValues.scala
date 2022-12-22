@@ -169,7 +169,7 @@ trait ClassValues
         import org.opalj.ai.domain.l1.ClassValues._
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
-            //TODO handle missing methods
+            //TODO handle missing methods (c.f. https://github.com/opalj/opal/issues/87)
             operands.last match {
                 case sv: StringValue =>
                     val value = sv.value
