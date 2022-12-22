@@ -169,13 +169,15 @@ trait ClassValues
         import org.opalj.ai.domain.l1.ClassValues._
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
-
+            //TODO handle missing methods
             operands.last match {
                 case sv: StringValue =>
                     val value = sv.value
                     methodDescriptor match {
-                        case `forName_String`                     => simpleClassForNameCall(pc, value)
-                        case `forName_String_boolean_ClassLoader` => simpleClassForNameCall(pc, value)
+                        case `forName_String`                            => simpleClassForNameCall(pc, value)
+                        case `forName_String_boolean_ClassLoader`        => simpleClassForNameCall(pc, value)
+                        case `forName_String_Caller`                     => simpleClassForNameCall(pc, value)
+                        case `forName_String_boolean_ClassLoader_Caller` => simpleClassForNameCall(pc, value)
                         case _ =>
                             throw new DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
@@ -246,9 +248,23 @@ private object ClassValues {
 
     final val forName_String = MethodDescriptor(ObjectType.String, ObjectType.Class)
 
+    final val forName_String_Caller = {
+        MethodDescriptor(
+            ArraySeq(ObjectType.String, ObjectType.Class),
+            ObjectType.Class
+        )
+    }
+
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
             ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+            ObjectType.Class
+        )
+    }
+
+    final val forName_String_boolean_ClassLoader_Caller = {
+        MethodDescriptor(
+            ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader"), ObjectType.Class),
             ObjectType.Class
         )
     }
