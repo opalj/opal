@@ -176,8 +176,8 @@ trait ClassValues
                     methodDescriptor match {
                         case `forName_String`                            => simpleClassForNameCall(pc, value)
                         case `forName_String_boolean_ClassLoader`        => simpleClassForNameCall(pc, value)
-                        case `forName_String_Caller`                     => simpleClassForNameCall(pc, value)
-                        case forName_String_boolean_ClassLoader_Class => simpleClassForNameCall(pc, value)
+                        case `forName_String_Class`                     => simpleClassForNameCall(pc, value)
+                        case `forName_String_boolean_ClassLoader_Caller` => simpleClassForNameCall(pc, value)
                         case _ =>
                             throw new DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
@@ -248,7 +248,7 @@ private object ClassValues {
 
     final val forName_String = MethodDescriptor(ObjectType.String, ObjectType.Class)
 
-    final val forName_String_Caller = {
+    final val forName_String_Class = {
         MethodDescriptor(
             ArraySeq(ObjectType.String, ObjectType.Class),
             ObjectType.Class
@@ -262,7 +262,7 @@ private object ClassValues {
         )
     }
 
-    final val forName_String_boolean_ClassLoader_Class = {
+    final val forName_String_boolean_ClassLoader_Caller = {
         MethodDescriptor(
             ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader"), ObjectType.Class),
             ObjectType.Class
