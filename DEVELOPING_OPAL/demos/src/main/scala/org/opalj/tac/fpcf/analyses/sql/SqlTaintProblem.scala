@@ -6,7 +6,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
-import org.opalj.tac.{Expr, GetField, GetStatic, PutField, PutStatic, Stmt, StringConst, VirtualFunctionCall}
+import org.opalj.tac.{ArrayLoad, ArrayStore, Expr, GetField, GetStatic, PutField, PutStatic, Stmt, StringConst, VirtualFunctionCall}
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
 import org.opalj.tac.fpcf.properties._
 
@@ -201,18 +201,6 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     override def returnFlow(exit: JavaStatement, in: TaintFact, call: JavaStatement,
                             callFact: TaintFact, successor: JavaStatement): Set[TaintFact] = {
 
-        /*
-        println(call.method)
-        println(exit.method)
-        println(callFact)
-        println(in)
-        println(call.method)
-        println(exit.method)
-
-
-
-         */
-
         in match {
             case sqlTaintFact: SqlTaintFact => Set(sqlTaintFact) ++  super.returnFlow(exit, in, call, callFact, successor)
             case _=>     super.returnFlow(exit, in, call, callFact, successor)
@@ -280,6 +268,13 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
                 }
                 flow
 
+            case "intValue" =>
+                val leftSideVar = callStmt.receiverOption.get.asVar
+                in match {
+                    case Variable(index) if leftSideVar.definedBy.contains(index) => flow += Variable(call.index)
+                    case _ =>
+                }
+                flow
 
             case "append" =>
                 val rightSideVar = callStmt.params.head.asVar
@@ -300,20 +295,24 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
                 flow
 
             case "executeUpdate" =>
-                val (possibleParamStrings,taintStatus) = getPossibleStringsAndTaintStatus(callStmt.params(0),call.code,in)
-                if(taintStatus) possibleParamStrings.foreach(input =>
-                    if (SqlStringTaintAnalyzer.checkSQLStringSyntax(input) &&  SqlStringTaintAnalyzer.doAnalyze(input, new SqlTaintMemory(Set("TAINTED_VALUE","'TAINTED_VALUE'"))) ) {
-                        flow += SqlTaintFact(SqlStringTaintAnalyzer.taintMemory)
-
-                    })
+                if(callStmt.params.size >0){
+                    val possibleParamStrings = getPossibleStrings2(callStmt.params(0),call.code,in)
+                    possibleParamStrings.foreach(input =>
+                        if (
+                            input.contains("TAINTED_VALUE") &&
+                              SqlStringTaintAnalyzer.checkSQLStringSyntax3(input)
+                              &&  SqlStringTaintAnalyzer.doAnalyze(input, new SqlTaintMemory(Set("TAINTED_VALUE","'TAINTED_VALUE'"))) ) {
+                            flow += SqlTaintFact(SqlStringTaintAnalyzer.taintMemory)
+                        })
+                }
                 flow
 
             case "executeQuery" =>
                 in match {
                     case sqlTaintFact: SqlTaintFact =>
-                        val (possibleParamStrings,_)  =  getPossibleStringsAndTaintStatus(callStmt.params(0),call.code,in)
+                        val possibleParamStrings  =  getPossibleStrings2(callStmt.params(0),call.code,in)
                         possibleParamStrings.foreach(string => {
-                            if(SqlStringTaintAnalyzer.checkSQLStringSyntax(string)
+                            if(SqlStringTaintAnalyzer.checkSQLStringSyntax3(string)
                               && SqlStringTaintAnalyzer.doAnalyze(string,sqlTaintFact.sqlTaintMemory)
                               && call.stmt.isAssignment){
                                 flow += Variable(call.index)
@@ -323,12 +322,28 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
                 }
                 flow
 
+            case "source" =>
+                in match {
+                    case TaintNullFact => flow += Variable(call.index)
+                    case _ =>
+                }
+                flow
+
+            case "sink" =>
+                in match {
+                    case Variable(index) if callStmt.params.find(parm => parm.asVar.definedBy.contains(index)).nonEmpty =>
+                        flow += FlowFact(Seq(JavaMethod(call.method)))
+                    case _=>
+                }
+                flow
+
+
+
             case _ =>
                 icfg.getCalleesIfCallStatement(call) match {
                     case Some(callee) if callee.isEmpty => flow
                     case _ => super.callToReturnFlow(call, in, successor)
                 }
-
 
 
             //TODO sink case ?
@@ -479,6 +494,8 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
                             result = (result._1 ++ tmp._1, result._2 || tmp._2 )
 
                         case VirtualFunctionCall(_, _, _, name, _, receiver, params) if name == "append" =>
+
+
                             val leftSideString = getPossibleStringsAndTaintStatus(receiver.asVar, stmts, in)
                             val rightSideString = getPossibleStringsAndTaintStatus(params.head.asVar, stmts, in)
                             var possibleString: Set[String] = Set()
@@ -502,13 +519,91 @@ class SqlTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
                         result = (result._1 ++ Set("TAINTED_VALUE"), true)
                     case InstanceField(index: Int, _, _) if(index == defSiteIndex)=>
                         result = (result._1 ++ Set("TAINTED_VALUE"), true)
-                    case _ =>
+                    case _ =>   result = (result._1 ++ Set("PARAM_VALUE"), false)
                 }
             }
         }
+
         result
     }
 
+    def getPossibleStrings2(param:Expr[V], stmts:  Array[Stmt[V]], in:TaintFact):Set[String] = {
+        // Initialize the set of possible strings and taint status
+        var possibleStrings: Set[String] = Set()
+        val defSites = param.asVar.definedBy
+
+        // Durche alle Defsites durchgehen um weitere möglichen Strings zu ermitteln
+        for (defSiteIndex <- defSites) {
+            var currentSetOfString: Set[String] = Set()
+
+            in match {
+                // Wenn der ausdruck für den Intext getaintet ist, ersetzen wir in durch den TAINTIDENTIFIER
+                case Variable(index) if index == defSiteIndex =>
+                    currentSetOfString = Set("TAINTED_VALUE")
+                case ArrayElement(index: Int,_) if index == defSiteIndex =>
+                    currentSetOfString = Set("TAINTED_VALUE")
+                case InstanceField(index: Int, _, _) if index == defSiteIndex=>
+                    currentSetOfString = Set("TAINTED_VALUE")
+                case _ if defSiteIndex >= 0 =>{
+                    val expr = stmts(defSiteIndex).asAssignment.expr
+
+                    //Weitere Untersuchung im Ausdruck
+                    expr match {
+                        // Den Wert aus der String Konstante nehmen
+                        case StringConst(_, value) => currentSetOfString = Set(value)
+
+                        case GetField(_,_,_,_,_) =>
+                            // Um ein Wert zu kriegen suchen wir nach dem letzten PutField
+                            val lastPut = stmts.lastIndexWhere(stmt => stmt.astID == PutField.ASTID)
+                            if(lastPut >0){
+                                val putFieldExpression = stmts(lastPut).asPutField.value
+                                 currentSetOfString = getPossibleStrings2(putFieldExpression,stmts, in)
+                            }
+
+                        case gstc:GetStatic =>
+                            val lastPut = stmts.lastIndexWhere(stmt => stmt.astID == PutStatic.ASTID)
+                            if(lastPut > 0){
+                                val putExpression = stmts(lastPut).asPutStatic.value
+                                currentSetOfString = getPossibleStrings2(putExpression,stmts, in)
+                            }
+
+                        case ArrayLoad(pc,index,arrayRef) =>
+                            val elementIndex = index.asVar.value
+                            val lastArrayStoreIndex = stmts.lastIndexWhere(stmt => stmt.astID == ArrayStore.ASTID &&
+                              stmt.asArrayStore.index.asVar.value == elementIndex)
+                            if(lastArrayStoreIndex > 0){
+                                val arrayElementExpression = stmts(lastArrayStoreIndex).asArrayStore.value
+                                currentSetOfString = getPossibleStrings2(arrayElementExpression,stmts,in)
+                            }
+
+                        case VirtualFunctionCall(_, _, _, name, _, receiver, _) if name == "toString" =>
+                             currentSetOfString = getPossibleStrings2(receiver.asVar, stmts, in)
+
+                        case VirtualFunctionCall(_, _, _, name, _, receiver, params) if name == "append" =>
+
+                            //Alle möglichen Strings die aus dem receiver gewonnen der funktion append werden können
+                            val leftSideString = getPossibleStrings2(receiver.asVar, stmts, in)
+
+                            //Alle möglichen Strings die aus dem parameter gewonnen der funktion append werden können
+                            val rightSideString = getPossibleStrings2(params.head.asVar, stmts, in)
+
+                            //Alle Strings die auf der linken seite entstehen können mit allen auf der rechten kombinieren
+                            for {
+                                leftString <- leftSideString
+                                rightString <- rightSideString
+                            } {
+                                currentSetOfString += leftString + rightString
+                            }
+                        case _ => currentSetOfString = Set("")
+                    }
+                }
+                case _ =>  currentSetOfString = Set("PARAM_VALUE")
+
+            }
+            possibleStrings = possibleStrings ++ currentSetOfString
+        }
+        possibleStrings
+    }
 
     //TODO
     // AppendMethode

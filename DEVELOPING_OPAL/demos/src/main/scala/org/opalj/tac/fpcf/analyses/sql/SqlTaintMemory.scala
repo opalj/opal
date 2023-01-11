@@ -30,12 +30,11 @@ class SqlTaintMemory(dummyTaintRecognitionWords:Set[String]) {
   def columnsAreTainted(tableName: String, columns: Set[String]) = {
     val empty: Set[String] = Set()
 
-    if (taintedTableAndColumns.contains(tableName)) {
-      taintedTableAndColumns.get(tableName) match {
-        case Some(x) => ((x & columns).size > 0, (x & columns))
-        case None => (false, empty)
-      }
-    } else (false, empty)
+    taintedTableAndColumns.find { case (key, _) => key.trim == tableName.trim } match {
+      case Some((_, x)) => ((x & columns).size > 0, (x & columns))
+      case None => (false, empty)
+    }
   }
+
 
 }
