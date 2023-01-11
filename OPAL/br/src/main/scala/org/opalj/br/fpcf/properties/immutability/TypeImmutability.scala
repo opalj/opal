@@ -5,6 +5,8 @@ package fpcf
 package properties
 package immutability
 
+import scala.collection.immutable.SortedSet
+
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
@@ -64,7 +66,7 @@ case object TransitivelyImmutableType extends TypeImmutability {
     def meet(that: TypeImmutability): TypeImmutability = that
 }
 
-case class DependentlyImmutableType(parameter: Set[String]) extends TypeImmutability {
+case class DependentlyImmutableType(parameter: SortedSet[String]) extends TypeImmutability {
     override def isTransitivelyImmutable: Boolean = false
     override def isNonTransitivelyImmutable: Boolean = false
     override def isMutable: Boolean = false

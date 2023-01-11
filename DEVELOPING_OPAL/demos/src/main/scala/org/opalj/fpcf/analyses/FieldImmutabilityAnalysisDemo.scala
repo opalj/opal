@@ -5,6 +5,8 @@ package analyses
 
 import java.net.URL
 
+import scala.collection.immutable.SortedSet
+
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -96,7 +98,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val nonTransitivelyImmutableFields =
             groupedResults.getOrElse(NonTransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
         val dependentImmutableFields =
-            groupedResults.getOrElse(DependentlyImmutableField(Set.empty), Seq.empty).toSeq.sortWith(order)
+            groupedResults.getOrElse(DependentlyImmutableField(SortedSet.empty[String]), Seq.empty).toSeq.sortWith(order)
         val transitivelyImmutableFields =
             groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 

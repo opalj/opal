@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.analyses.immutability
+package org.opalj
+package br
+package fpcf
+package analyses
+package immutability
+
+import scala.collection.immutable.SortedSet
 
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassSignature
@@ -224,7 +230,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }.toList
         var hasNonTransitivelyImmutableFields = false
         var hasDependentlyImmutableFields = false
-        var genericTypeParameters: Set[String] = Set.empty
+        var genericTypeParameters: SortedSet[String] = SortedSet.empty
 
         val fieldsPropertyStoreInformation = propertyStore(instanceFields, FieldImmutability)
 

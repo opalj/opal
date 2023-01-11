@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.immutability.types
+package org.opalj
+package fpcf
+package properties
+package immutability
+package types
+
+import scala.collection.immutable.SortedSet
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
@@ -48,7 +54,7 @@ class TypeImmutabilityMatcher(
 class TransitiveImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType)
 class DependentlyImmutableTypeMatcher
-    extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(Set.empty)) {
+    extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(SortedSet.empty)) {
     override def validateProperty(
         project:    Project[_],
         as:         Set[ObjectType],
@@ -64,7 +70,7 @@ class DependentlyImmutableTypeMatcher
                         val annotationParameters =
                             getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values
                                 .map(x => x.asStringValue.value)
-                        annotationParameters.toSet.equals(latticeParameters)
+                        annotationParameters.toSet.equals(latticeParameters.toSet)
                     case _ => p == property
                 }
         )) {

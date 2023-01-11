@@ -3,6 +3,7 @@ package org.opalj
 package support
 package info
 
+import scala.collection.immutable.SortedSet
 import java.nio.file.Path
 import java.io.IOException
 import java.io.File
@@ -330,7 +331,7 @@ object Immutability {
             .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
-                    case DependentlyImmutableField(_) => DependentlyImmutableField(Set.empty)
+                    case DependentlyImmutableField(_) => DependentlyImmutableField(SortedSet.empty)
                     case default                      => default
                 }
             }
@@ -348,7 +349,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val dependentlyImmutableFields = fieldGroupedResults //.collect { case (DependentlyImmutableField(_), rhs) => rhs }
-            .getOrElse(DependentlyImmutableField(Set.empty), Iterator.empty)
+            .getOrElse(DependentlyImmutableField(SortedSet.empty), Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
             .sortWith(_ < _)
@@ -388,7 +389,7 @@ object Immutability {
             .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
-                    case DependentlyImmutableClass(_) => DependentlyImmutableClass(Set.empty)
+                    case DependentlyImmutableClass(_) => DependentlyImmutableClass(SortedSet.empty)
                     case default                      => default
                 }
             }
@@ -415,7 +416,7 @@ object Immutability {
 
         val dependentlyImmutableClasses =
             classGroupedResults
-                .getOrElse(DependentlyImmutableClass(Set.empty), Iterator.empty)
+                .getOrElse(DependentlyImmutableClass(SortedSet.empty), Iterator.empty)
                 .toSeq
                 .map(unpackClass)
                 .sortWith(_ < _)
@@ -472,7 +473,7 @@ object Immutability {
             .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
-                    case DependentlyImmutableType(_) => DependentlyImmutableType(Set.empty)
+                    case DependentlyImmutableType(_) => DependentlyImmutableType(SortedSet.empty)
                     case default                     => default
                 }
             }
@@ -491,7 +492,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val dependentlyImmutableTypes = typeGroupedResults
-            .getOrElse(DependentlyImmutableType(Set.empty), Iterator.empty)
+            .getOrElse(DependentlyImmutableType(SortedSet.empty), Iterator.empty)
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
