@@ -62,7 +62,6 @@ case object TransitivelyImmutableClass extends ClassImmutability {
 
 case class DependentlyImmutableClass(parameter: SortedSet[String]) extends ClassImmutability {
 
-    override def toString: String = super.toString
     override def correspondingTypeImmutability: TypeImmutability = DependentlyImmutableType(parameter)
 
     override def isDependentlyImmutable: Boolean = true
