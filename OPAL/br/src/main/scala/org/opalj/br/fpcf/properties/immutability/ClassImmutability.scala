@@ -60,9 +60,9 @@ case object TransitivelyImmutableClass extends ClassImmutability {
     def meet(that: ClassImmutability): ClassImmutability = that
 }
 
-case class DependentlyImmutableClass(parameter: SortedSet[String]) extends ClassImmutability {
+case class DependentlyImmutableClass(parameters: SortedSet[String]) extends ClassImmutability {
 
-    override def correspondingTypeImmutability: TypeImmutability = DependentlyImmutableType(parameter)
+    override def correspondingTypeImmutability: TypeImmutability = DependentlyImmutableType(parameters)
 
     override def isDependentlyImmutable: Boolean = true
     def meet(that: ClassImmutability): ClassImmutability =

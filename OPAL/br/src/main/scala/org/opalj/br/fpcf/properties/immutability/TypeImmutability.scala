@@ -66,7 +66,7 @@ case object TransitivelyImmutableType extends TypeImmutability {
     def meet(that: TypeImmutability): TypeImmutability = that
 }
 
-case class DependentlyImmutableType(parameter: SortedSet[String]) extends TypeImmutability {
+case class DependentlyImmutableType(parameters: SortedSet[String]) extends TypeImmutability {
     override def isTransitivelyImmutable: Boolean = false
     override def isNonTransitivelyImmutable: Boolean = false
     override def isMutable: Boolean = false

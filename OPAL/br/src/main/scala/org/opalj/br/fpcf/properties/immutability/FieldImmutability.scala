@@ -54,18 +54,19 @@ case object TransitivelyImmutableField extends FieldImmutability {
     def meet(that: FieldImmutability): FieldImmutability = that
 }
 
-case class DependentlyImmutableField(parameter: SortedSet[String]) extends FieldImmutability {
+case class DependentlyImmutableField(parameters: SortedSet[String]) extends FieldImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == TransitivelyImmutableField) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
+            throw new IllegalArgumentException(s"$e"+
+                s": impossible refinement: $other => $this");
         }
     }
 
     def meet(that: FieldImmutability): FieldImmutability = that match {
         case MutableField | NonTransitivelyImmutableField => that
-        case DependentlyImmutableField(_) =>
-            DependentlyImmutableField(parameter ++ that.asInstanceOf[DependentlyImmutableField].parameter)
+        case DependentlyImmutableField(thatParameters) =>
+            DependentlyImmutableField(parameters ++ thatParameters)
         case _ => this
     }
 }
