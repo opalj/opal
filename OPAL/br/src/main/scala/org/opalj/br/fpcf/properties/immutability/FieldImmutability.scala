@@ -65,9 +65,9 @@ case class DependentlyImmutableField(parameter: SortedSet[String]) extends Field
     def meet(that: FieldImmutability): FieldImmutability = that match {
         case MutableField | NonTransitivelyImmutableField => that
         case DependentlyImmutableField(_) =>
-          DependentlyImmutableField(parameter ++ that.asInstanceOf[DependentlyImmutableField].parameter)
+            DependentlyImmutableField(parameter ++ that.asInstanceOf[DependentlyImmutableField].parameter)
         case _ => this
-      }
+    }
 }
 
 case object NonTransitivelyImmutableField extends FieldImmutability {
