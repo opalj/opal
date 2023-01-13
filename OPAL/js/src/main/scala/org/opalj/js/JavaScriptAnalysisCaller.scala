@@ -172,7 +172,7 @@ class JavaScriptAnalysisCaller(p: SomeProject) {
                |\n""".stripMargin
         val funcCall = s"var opal_tainted_return = $fName(${generateFunctionArgs(fNode.get.getParamCount, in.element)});"
         val afterCode = s"""
-                 |var opal_fill_arg = 42;
+                 |var opal_fill_arg = "42";
                  |var opal_tainted_arg = opal_source();
                  |$funcCall
                  |opal_last_stmt(${nameSet.mkString(", ")});\n""".stripMargin

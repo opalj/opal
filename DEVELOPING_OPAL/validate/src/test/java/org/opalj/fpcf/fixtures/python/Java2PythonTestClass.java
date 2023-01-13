@@ -7,18 +7,18 @@ import javax.script.*;
 public class Java2PythonTestClass {
     /* Test flows through Python. */
 
-//    @ForwardFlowPath({"flowThroughPython"})
-//    public static void flowThroughPython() throws ScriptException
-//    {
-//        ScriptEngineManager sem = new ScriptEngineManager();
-//        ScriptEngine se = sem.getEngineByName("python");
-//        String pw = source();
-//
-//        se.put("secret", pw);
-//        se.eval("x = 42");
-//        String fromPy = (String) se.get("secret");
-//        sink(fromPy);
-//    }
+    @ForwardFlowPath({"flowThroughPython"})
+    public static void flowThroughPython() throws ScriptException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+        String pw = source();
+
+        se.put("secret", pw);
+        se.eval("x = 42");
+        String fromPy = (String) se.get("secret");
+        sink(fromPy);
+    }
 
     @ForwardFlowPath({})
     public static void pythonOverwritesBinding() throws ScriptException
@@ -33,32 +33,32 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
-//    @ForwardFlowPath({"flowInsidePY"})
-//    public static void flowInsidePY() throws ScriptException
-//    {
-//        ScriptEngineManager sem = new ScriptEngineManager();
-//        ScriptEngine se = sem.getEngineByName("python");
-//        String pw = source();
-//
-//        se.put("secret", pw);
-//        se.eval("xxx = secret");
-//        String fromPy = (String) se.get("xxx");
-//        sink(fromPy);
-//    }
+    @ForwardFlowPath({"flowInsidePY"})
+    public static void flowInsidePY() throws ScriptException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+        String pw = source();
 
-//    @ForwardFlowPath({"flowInsidePY2"})
-//    public static void flowInsidePY2() throws ScriptException
-//    {
-//        ScriptEngineManager sem = new ScriptEngineManager();
-//        ScriptEngine se = sem.getEngineByName("python");
-//        String pw = source();
-//
-//        se.put("secret", pw);
-//        se.eval("xxx = secret\n" +
-//                "yyy = xxx");
-//        String fromPy = (String) se.get("yyy");
-//        sink(fromPy);
-//    }
+        se.put("secret", pw);
+        se.eval("xxx = secret");
+        String fromPy = (String) se.get("xxx");
+        sink(fromPy);
+    }
+
+    @ForwardFlowPath({"flowInsidePY2"})
+    public static void flowInsidePY2() throws ScriptException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+        String pw = source();
+
+        se.put("secret", pw);
+        se.eval("xxx = secret \n" +
+                "yyy = xxx");
+        String fromPy = (String) se.get("yyy");
+        sink(fromPy);
+    }
 
     @ForwardFlowPath({})
     public static void flowInsidePyLateOverwrite() throws ScriptException
@@ -68,23 +68,23 @@ public class Java2PythonTestClass {
         String pw = source();
 
         se.put("secret", pw);
-        se.eval("xxx = secret" +
+        se.eval("xxx = secret \n" +
                 "xxx = 42");
         String fromPy = (String) se.get("yyy");
         sink(fromPy);
     }
 
-//    @ForwardFlowPath({"pyInvokeIdentity"})
-//    public static void pyInvokeIdentity() throws ScriptException, NoSuchMethodException
-//    {
-//        ScriptEngineManager sem = new ScriptEngineManager();
-//        ScriptEngine se = sem.getEngineByName("python");
-//        String pw = source();
-//
-//        se.eval("def id(x): return x");
-//        String fromPy = (String) ((Invocable) se).invokeFunction("id", pw);
-//        sink(fromPy);
-//    }
+    @ForwardFlowPath({"pyInvokeIdentity"})
+    public static void pyInvokeIdentity() throws ScriptException, NoSuchMethodException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+        String pw = source();
+
+        se.eval("def id(x): return x");
+        String fromPy = (String) ((Invocable) se).invokeFunction("id", pw);
+        sink(fromPy);
+    }
 
     @ForwardFlowPath({})
     public static void pyInvokeOverwrite() throws ScriptException, NoSuchMethodException
@@ -98,19 +98,19 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
-//    @ForwardFlowPath({"pyInvokeWithComputation"})
-//    public static void pyInvokeWithComputation() throws ScriptException, NoSuchMethodException
-//    {
-//        ScriptEngineManager sem = new ScriptEngineManager();
-//        ScriptEngine se = sem.getEngineByName("python");
-//        se.eval("def check(str): return str == \"1337\"");
-//
-//        String pw = source();
-//
-//        Invocable inv = (Invocable) se;
-//        Boolean state = (Boolean) inv.invokeFunction("check", pw);
-//        sink(state);
-//    }
+    @ForwardFlowPath({"pyInvokeWithComputation"})
+    public static void pyInvokeWithComputation() throws ScriptException, NoSuchMethodException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+        se.eval("def check(str): return str == \"1337\"");
+
+        String pw = source();
+
+        Invocable inv = (Invocable) se;
+        Boolean state = (Boolean) inv.invokeFunction("check", pw);
+        sink(state);
+    }
 
     @ForwardFlowPath({})
     public static void pyUnusedTaintedParameter() throws ScriptException, NoSuchMethodException
@@ -142,20 +142,20 @@ public class Java2PythonTestClass {
 //        sink(state);
 //    }
 
-//    @ForwardFlowPath({"pyFunctionFlow"})
-//    public static void pyFunctionFlow() throws ScriptException, NoSuchMethodException
-//    {
-//        ScriptEngineManager sem = new ScriptEngineManager();
-//        ScriptEngine se = sem.getEngineByName("python");
-//
-//        se.eval("def myfun(x):\n" +
-//                " xxx = x\n" +
-//                " return xxx");
-//        String pw = source();
-//        Invocable inv = (Invocable) se;
-//        String value = (String) inv.invokeFunction("myfun", pw);
-//        sink(value);
-//    }
+    @ForwardFlowPath({"pyFunctionFlow"})
+    public static void pyFunctionFlow() throws ScriptException, NoSuchMethodException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+
+        se.eval("def myfun(x): \n" +
+                "   xxx = x\n" +
+                "   return xxx");
+        String pw = source();
+        Invocable inv = (Invocable) se;
+        String value = (String) inv.invokeFunction("myfun", pw);
+        sink(value);
+    }
 
     /* Test flows through ScriptEngine objects. */
 
