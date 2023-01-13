@@ -5,6 +5,8 @@ package fpcf
 package properties
 package immutability
 
+import scala.collection.immutable.SortedSet
+
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
@@ -52,22 +54,20 @@ case object TransitivelyImmutableField extends FieldImmutability {
     def meet(that: FieldImmutability): FieldImmutability = that
 }
 
-case class DependentlyImmutableField(parameter: Set[String]) extends FieldImmutability {
+case class DependentlyImmutableField(parameters: SortedSet[String]) extends FieldImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == TransitivelyImmutableField) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
+            throw new IllegalArgumentException(s"$e"+
+                s": impossible refinement: $other => $this");
         }
     }
 
-    def meet(that: FieldImmutability): FieldImmutability = {
-        if (that == MutableField || that == NonTransitivelyImmutableField)
-            that
-        else {
-            if (that.isInstanceOf[DependentlyImmutableField])
-                DependentlyImmutableField(parameter.union(that.asInstanceOf[DependentlyImmutableField].parameter))
-            else this
-        }
+    def meet(that: FieldImmutability): FieldImmutability = that match {
+        case MutableField | NonTransitivelyImmutableField => that
+        case DependentlyImmutableField(thatParameters) =>
+            DependentlyImmutableField(parameters ++ thatParameters)
+        case _ => this
     }
 }
 

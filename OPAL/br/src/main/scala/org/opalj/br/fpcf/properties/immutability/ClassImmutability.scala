@@ -1,11 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.properties.immutability
+package org.opalj
+package br
+package fpcf
+package properties
+package immutability
+
+import scala.collection.immutable.SortedSet
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
-
 sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = ClassImmutability
 }
@@ -55,9 +60,9 @@ case object TransitivelyImmutableClass extends ClassImmutability {
     def meet(that: ClassImmutability): ClassImmutability = that
 }
 
-case class DependentlyImmutableClass(parameter: Set[String]) extends ClassImmutability {
+case class DependentlyImmutableClass(parameters: SortedSet[String]) extends ClassImmutability {
 
-    override def correspondingTypeImmutability: TypeImmutability = DependentlyImmutableType(parameter)
+    override def correspondingTypeImmutability: TypeImmutability = DependentlyImmutableType(parameters)
 
     override def isDependentlyImmutable: Boolean = true
     def meet(that: ClassImmutability): ClassImmutability =

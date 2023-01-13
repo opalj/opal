@@ -4,6 +4,8 @@ package tac
 package fpcf
 package analyses
 
+import scala.collection.immutable.SortedSet
+
 import org.opalj.br.ArrayTypeSignature
 import org.opalj.br.ClassTypeSignature
 import org.opalj.br.ConstantDouble
@@ -83,7 +85,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             field:                          Field,
             var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
             var fieldIsNotAssignable:       Option[Boolean]                 = None,
-            var genericTypeParameters:      Set[String]                     = Set.empty,
+            var genericTypeParameters:      SortedSet[String]               = SortedSet.empty,
             var innerType:                  Option[ObjectType]              = None,
             var upperBound:                 FieldImmutability               = TransitivelyImmutableField
     ) extends BaseAnalysisState with TypeIteratorState {

@@ -5,6 +5,8 @@ package properties
 package immutability
 package fields
 
+import scala.collection.immutable.SortedSet
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -59,7 +61,7 @@ class MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.im
 
 class NonTransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.NonTransitivelyImmutableField)
 
-class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(Set.empty)) {
+class DependentlyImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(SortedSet.empty)) {
     override def validateProperty(
         project:    SomeProject,
         as:         Set[ObjectType],

@@ -5,13 +5,14 @@ package properties
 package immutability
 package classes
 
+import scala.collection.immutable.SortedSet
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
-
 class ClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject
@@ -50,7 +51,7 @@ class TransitivelyImmutableClassMatcher
     extends ClassImmutabilityMatcher(properties.immutability.TransitivelyImmutableClass)
 
 class DependentlyImmutableClassMatcher
-    extends ClassImmutabilityMatcher(properties.immutability.DependentlyImmutableClass(Set.empty)) {
+    extends ClassImmutabilityMatcher(properties.immutability.DependentlyImmutableClass(SortedSet.empty)) {
     override def validateProperty(
         project:    Project[_],
         as:         Set[ObjectType],
@@ -64,7 +65,7 @@ class DependentlyImmutableClassMatcher
                 val annotationParameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
                         asArrayValue.values.map(x => x.asStringValue.value)
-                annotationParameters.toSet.equals(latticeParameters)
+                annotationParameters.toSet.equals(latticeParameters.toSet)
             case _ => p == property
         })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
