@@ -35,7 +35,6 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.SomeInterimEP
 import org.opalj.tac.Stmt
 import org.opalj.fpcf.InterimResult
@@ -90,7 +89,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit final val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
-    def doDetermineFieldAssignability(entity: Entity): PropertyComputationResult = {
+    def doDetermineFieldAssignability(entity: Entity): ProperPropertyComputationResult = {
         entity match {
             case field: Field =>
                 determineFieldAssignability(field)
