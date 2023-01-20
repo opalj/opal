@@ -947,7 +947,7 @@ object LazyL2FieldAssignabilityAnalysis
         val analysis = new L2FieldAssignabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldAssignability.key,
-            analysis.determineFieldAssignability
+            analysis.doDetermineFieldAssignability
         )
         analysis
     }
