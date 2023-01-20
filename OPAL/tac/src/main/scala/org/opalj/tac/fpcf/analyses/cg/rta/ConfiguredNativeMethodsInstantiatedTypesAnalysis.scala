@@ -16,7 +16,10 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
+import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -57,8 +60,18 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         }
     }
 
-    def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
+    private[this] def canBeInstantiated(rt: ReferenceType): Boolean = rt match {
+        case _: ArrayType => true
+        case ot: ObjectType =>
+            val cfOption = project.classFile(ot)
+            cfOption.isDefined && {
+                val cf = cfOption.get
+                !cf.isInterfaceDeclaration && !cf.isAbstract
+            }
+    }
+
+    def analyze(dm: DeclaredMethod): PropertyComputationResult = {
+        (propertyStore(dm, Callers.key): @unchecked) match {
             case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -72,17 +85,27 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             // the method is reachable, so we analyze it!
         }
 
-        if (!nativeMethodData.contains(declaredMethod))
+        val instantiatedTypes = if (nativeMethodData.contains(dm)) {
+            val dataO = nativeMethodData(dm)
+            if (dataO.isEmpty)
+                return NoResult;
+            dataO.get.collect {
+                case PointsToRelation(_, as: AllocationSiteDescription) =>
+                    as.arrayComponentTypes.map(ReferenceType(_)) :+
+                        FieldType(as.instantiatedType).asReferenceType
+            }.flatten
+        } else if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isEmpty &&
+            dm.descriptor.returnType.isReferenceType) {
+            val m = dm.definedMethod
+            val returnType = m.returnType.asReferenceType
+            // TODO We should probably handle ArrayTypes as well
+            val types =
+                if (m.returnType.isArrayType && m.returnType.asArrayType.elementType.isObjectType)
+                    Array(returnType, m.returnType.asArrayType.elementType.asObjectType)
+                else Array(returnType)
+            types.filter(canBeInstantiated)
+        } else
             return NoResult;
-
-        val dataO = nativeMethodData(declaredMethod)
-        if (dataO.isEmpty)
-            return NoResult;
-
-        val instantiatedTypes = dataO.get.collect {
-            case PointsToRelation(_, as: AllocationSiteDescription) =>
-                as.arrayComponentTypes.map(ReferenceType(_)) :+ ReferenceType(as.instantiatedType)
-        }.flatten
 
         val instantiatedTypesUB =
             getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
