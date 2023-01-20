@@ -91,7 +91,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 val desc = m.descriptor.toJVMDescriptor
                 val tpe = m.returnType.asReferenceType.toJVMTypeName
                 val arrayTypes = // TODO We should probably handle ArrayTypes as well
-                    if (m.returnType.isArrayType && m.returnType.asArrayType.isObjectType)
+                    if (m.returnType.isArrayType &&
+                        m.returnType.asArrayType.elementType.isObjectType)
                         Seq(m.returnType.asArrayType.elementType.asObjectType.fqn)
                     else Seq.empty
                 handleCallers(callers, null, Array(PointsToRelation(
@@ -148,6 +149,14 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         getDefSite(defSite)
     }
 
+    private[this] def canBeInstantiated(ot: ObjectType): Boolean = {
+        val cfOption = project.classFile(ot)
+        cfOption.isDefined && {
+            val cf = cfOption.get
+            !cf.isInterfaceDeclaration && !cf.isAbstract
+        }
+    }
+
     private[this] def handleGet(
         rhs: EntityDescription, pc: Int, nextPC: Int
     )(implicit state: State): Int = {
@@ -200,31 +209,33 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                         var arrayPTS: PointsToSet = emptyPointsToSet
                         asd.arrayComponentTypes.foreach { componentTypeString =>
                             val componentType = ObjectType(componentTypeString)
-                            arrayPTS = arrayPTS.included(
-                                createPointsToSet(
-                                    pc,
-                                    allocationContext,
-                                    componentType,
-                                    isConstant = false
+                            if (canBeInstantiated(componentType))
+                                arrayPTS = arrayPTS.included(
+                                    createPointsToSet(
+                                        pc,
+                                        allocationContext,
+                                        componentType,
+                                        isConstant = false
+                                    )
                                 )
-                            )
                         }
                         state.includeSharedPointsToSet(
                             arrayEntity, arrayPTS, PointsToSetLike.noFilter
                         )
                     }
                 } else {
-                    val theInstantiatedType = ObjectType(asd.instantiatedType)
-                    state.includeSharedPointsToSet(
-                        defSiteObject,
-                        createPointsToSet(
-                            pc,
-                            allocationContext,
-                            theInstantiatedType,
-                            isConstant = false
-                        ),
-                        PointsToSetLike.noFilter
-                    )
+                    val theInstantiatedType = FieldType(asd.instantiatedType).asObjectType
+                    if (canBeInstantiated(theInstantiatedType))
+                        state.includeSharedPointsToSet(
+                            defSiteObject,
+                            createPointsToSet(
+                                pc,
+                                allocationContext,
+                                theInstantiatedType,
+                                isConstant = false
+                            ),
+                            PointsToSetLike.noFilter
+                        )
                 }
 
             case ArrayDescription(array, arrayType) =>
