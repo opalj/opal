@@ -179,7 +179,6 @@ class PythonAnalysisCaller(p: SomeProject) {
                |        variable = globals()[a]
                |        if hasattr(variable, '_taint'):
                |            tainted_arguments.append(a)
-               |    print(tainted_arguments)
                |\n""".stripMargin
         val funcCall = s"opal_tainted_return = $fName(${generateFunctionArgs(parameters.size, in.element)})"
         val afterCode =
@@ -241,7 +240,6 @@ class PythonAnalysisCaller(p: SomeProject) {
                |        variable = globals()[a]
                |        if hasattr(variable, '_taint'):
                |            tainted_arguments.append(a)
-               |    print(tainted_arguments)
                |
                |\n
                |$taintedVar""".stripMargin
