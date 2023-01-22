@@ -7,6 +7,9 @@ import javax.script.*;
 public class Java2PythonTestClass {
     /* Test flows through Python. */
 
+    /**
+     * Overwriting another variable should not influence the tainted variable
+     */
     @ForwardFlowPath({"flowThroughPython"})
     public static void flowThroughPython() throws ScriptException
     {
@@ -20,6 +23,9 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
+    /**
+     * Assigning different value to tainted variable should not keep it being tainted
+     */
     @ForwardFlowPath({})
     public static void pythonOverwritesBinding() throws ScriptException
     {
@@ -33,6 +39,9 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
+    /**
+     * Assigning variable to tainted value should taint this variable
+     */
     @ForwardFlowPath({"flowInsidePY"})
     public static void flowInsidePY() throws ScriptException
     {
@@ -46,6 +55,9 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
+    /**
+     * Assigning tainted value multiple times should keep it tainted
+     */
     @ForwardFlowPath({"flowInsidePY2"})
     public static void flowInsidePY2() throws ScriptException
     {
@@ -60,6 +72,9 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
+    /**
+     * Operations on another variables should not make other variable tainted
+     */
     @ForwardFlowPath({})
     public static void flowInsidePyLateOverwrite() throws ScriptException
     {
@@ -74,6 +89,9 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
+    /**
+     * Return value equal to tainted argument should also be tainted
+     */
     @ForwardFlowPath({"pyInvokeIdentity"})
     public static void pyInvokeIdentity() throws ScriptException, NoSuchMethodException
     {
@@ -86,6 +104,9 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
+    /**
+     * Return value not dependent on tainted argument should not be tainted
+     */
     @ForwardFlowPath({})
     public static void pyInvokeOverwrite() throws ScriptException, NoSuchMethodException
     {
@@ -98,6 +119,9 @@ public class Java2PythonTestClass {
         sink(fromPy);
     }
 
+    /**
+     * Result of a condition with tainted argument should also be tainted
+     */
     @ForwardFlowPath({"pyInvokeWithComputation"})
     public static void pyInvokeWithComputation() throws ScriptException, NoSuchMethodException
     {
@@ -112,6 +136,9 @@ public class Java2PythonTestClass {
         sink(state);
     }
 
+    /**
+     * Return value of function with unused tainted parameter should not be tainted
+     */
     @ForwardFlowPath({})
     public static void pyUnusedTaintedParameter() throws ScriptException, NoSuchMethodException
     {
@@ -127,6 +154,10 @@ public class Java2PythonTestClass {
 
     /* More advanced flows. */
 
+    /**
+     * Addition to tainted variable should keep it tainted
+     * Test throws an error, because current analysis supports only Strings
+     */
 //    @ForwardFlowPath({"pyInterproceduralFlow"})
 //    public static void pyInterproceduralFlow() throws ScriptException, NoSuchMethodException
 //    {
@@ -142,6 +173,9 @@ public class Java2PythonTestClass {
 //        sink(state);
 //    }
 
+    /**
+     * Return value assigned from tainted variable should also be tainted
+     */
     @ForwardFlowPath({"pyFunctionFlow"})
     public static void pyFunctionFlow() throws ScriptException, NoSuchMethodException
     {
@@ -159,6 +193,9 @@ public class Java2PythonTestClass {
 
     /* Test flows through ScriptEngine objects. */
 
+    /**
+     * Tainted value put and got from ScriptEngine should be tainted
+     */
     @ForwardFlowPath({"simplePutGet"})
     public static void simplePutGet() throws ScriptException
     {
@@ -171,6 +208,9 @@ public class Java2PythonTestClass {
         sink(out);
     }
 
+    /**
+     * Put with inconstant key
+     */
     @ForwardFlowPath({"overapproxPutGet"})
     public static void overapproxPutGet() throws ScriptException
     {
@@ -186,6 +226,9 @@ public class Java2PythonTestClass {
         sink(out);
     }
 
+    /**
+     * Put with overwritten inconstant key
+     */
     @ForwardFlowPath({})
     public static void overwritePutGet() throws ScriptException
     {
@@ -200,6 +243,9 @@ public class Java2PythonTestClass {
         sink(out);
     }
 
+    /**
+     * Tainted value send by put and retrieved by get should be still tainted
+     */
     @ForwardFlowPath({"bindingsSimplePutGet"})
     public static void bindingsSimplePutGet() throws ScriptException
     {
@@ -208,11 +254,14 @@ public class Java2PythonTestClass {
         Bindings b = se.createBindings();
 
         String pw = source();
-        se.put("secret", pw);
-        Object out = se.get("secret");
+        b.put("secret", pw);
+        Object out = b.get("secret");
         sink(out);
     }
 
+    /**
+     * Put with inconstant key using bindings
+     */
     @ForwardFlowPath({"bindingsOverapproxPutGet"})
     public static void bindingsOverapproxPutGet() throws ScriptException
     {
@@ -222,13 +271,16 @@ public class Java2PythonTestClass {
 
         String pw = source();
         // String is no constant
-        se.put(Integer.toString(1337), pw);
+        b.put(Integer.toString(1337), pw);
         // Because the .put had no constant string, we do not know the key here
         // and taint the return as an over-approximation.
-        Object out = se.get("secret");
+        Object out = b.get("secret");
         sink(out);
     }
 
+    /**
+     * Put with overwritten inconstant key using bindings
+     */
     @ForwardFlowPath({})
     public static void BindingsOverwritePutGet() throws ScriptException
     {
@@ -237,12 +289,15 @@ public class Java2PythonTestClass {
         Bindings b = se.createBindings();
 
         String pw = source();
-        se.put("secret", pw);
-        se.put("secret", "Const");
-        Object out = se.get("secret");
+        b.put("secret", pw);
+        b.put("secret", "Const");
+        Object out = b.get("secret");
         sink(out);
     }
 
+    /**
+     * Remove tainted value using bindings should not keep its key tainted
+     */
     @ForwardFlowPath({})
     public static void bindingsPutRemoveGet() throws ScriptException
     {
@@ -257,6 +312,9 @@ public class Java2PythonTestClass {
         sink(out);
     }
 
+    /**
+     * Remove tainted value should not keep its key tainted
+     */
     @ForwardFlowPath({})
     public static void overwritePutRemoveGet() throws ScriptException
     {
@@ -271,6 +329,9 @@ public class Java2PythonTestClass {
         sink(out);
     }
 
+    /**
+     * Puting tainted value using putAll should keep it tainted
+     */
     @ForwardFlowPath({"bindingsPutAll"})
     public static void bindingsPutAll() throws ScriptException
     {
@@ -286,6 +347,9 @@ public class Java2PythonTestClass {
         sink(out);
     }
 
+    /**
+     * Calling other function in the middle should not affect the taint result
+     */
     @ForwardFlowPath({"interproceduralPutGet"})
     public static void interproceduralPutGet() throws ScriptException
     {
@@ -299,6 +363,9 @@ public class Java2PythonTestClass {
         sink(out);
     }
 
+    /**
+     * Overwriting tainted value from another function should not keep it tainted
+     */
     @ForwardFlowPath({})
     public static void interproceduralOverwrite() throws ScriptException
     {
