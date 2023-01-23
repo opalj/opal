@@ -1,6 +1,6 @@
 # Changes
 
-## 5.0.0
+## 5.0.0 - Released January 23rd 2023
 - *we are now using sbt 1.6.2*
 - *we are now using Scala 2.13*
   - Scala 2.13 changes:
