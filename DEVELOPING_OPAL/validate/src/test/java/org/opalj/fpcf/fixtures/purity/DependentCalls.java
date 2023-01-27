@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 final class DependentCalls { // This class is immutable
 
     private static int myValue =
-            -1; /* the FieldMutabilityAnalysis is required to determine that this field is effectivelyFinal  */
+            -1; /* the FieldAssignabilityAnalysis is required to determine that this field is effectivelyFinal  */
 
     @CompileTimePure("nothing done here")
     @Pure(value = "nothing done here",
@@ -42,24 +42,24 @@ final class DependentCalls { // This class is immutable
     }
 
     @CompileTimePure(value = "object returned is immutable",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "ImmutableObject"))
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"))
     @Pure(value = "object returned is immutable",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "ImmutableObject"),
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-    @Impure(value = "object returend not recognized as immutable",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "ImmutableObject"),
+    @Impure(value = "object returned not recognized as immutable",
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "TransitivelyImmutableClass"),
             negate = true, analyses = L1PurityAnalysis.class)
     public DependentCalls pureIdentity() {
         return this;
     }
 
     @Pure(value = "field used is effectively final",
-            eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldMutability",
-                    p = "EffectivelyFinalField"))
+            eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldImmutability",
+                    p = "TransitivelyImmutableField"))
     @Impure(value = "field used not recognized as effectively final",
-            eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldMutability",
-                    p = "EffectivelyFinalField"),
-            negate = true, analyses = L0PurityAnalysis.class)
+            eps = @EP(cf = DependentCalls.class, field = "myValue", pk = "FieldImmutability",
+                    p = "TransitivelyImmutableField"),
+            negate=true, analyses = L0PurityAnalysis.class)
     public static int pureUsesEffectivelyFinalField(int i, int j) {
         return i * j * myValue;
     }

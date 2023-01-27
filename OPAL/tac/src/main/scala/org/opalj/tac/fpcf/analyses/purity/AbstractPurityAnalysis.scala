@@ -25,17 +25,11 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBPS
 import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.CompileTimePure
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.ImmutableObject
-import org.opalj.br.fpcf.properties.ImmutableType
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -53,6 +47,14 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -352,10 +354,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         if (state.ubPurity.isDeterministic) {
             fieldRef.asFieldRead.resolveField match {
                 case Some(field) if field.isStatic =>
-                    checkFieldMutability(propertyStore(field, FieldMutability.key), None)
+                    checkFieldAssignability(propertyStore(field, FieldAssignability.key), None)
                 case Some(field) =>
-                    checkFieldMutability(
-                        propertyStore(field, FieldMutability.key), Some(fieldRef.asGetField.objRef)
+                    checkFieldAssignability(
+                        propertyStore(field, FieldAssignability.key), Some(fieldRef.asGetField.objRef)
                     )
                 case _ => // Unknown field
                     if (fieldRef.isGetField) isLocal(fieldRef.asGetField.objRef, SideEffectFree)
@@ -367,12 +369,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /**
      * Examines the influence that a given field mutability has on the method's purity.
      */
-    def checkFieldMutability(
-        ep:     EOptionP[Field, FieldMutability],
+    def checkFieldAssignability(
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case LBP(_: FinalField) => // Final fields don't impede purity
-        case _: FinalEP[Field, FieldMutability] => // Mutable field
+        case LBP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) =>
+        // not assignable fields don't impede purity
+        case _: FinalEP[Field, FieldAssignability] => // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
                     isLocal(objRef.get, SideEffectFree)
@@ -380,15 +383,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case _ =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
-                handleUnknownFieldMutability(ep, objRef)
+                handleUnknownFieldAssignability(ep, objRef)
     }
 
     /**
      * Handles what to do when the mutability of a field is not yet known.
      * Analyses must implement this method with the behavior they need, e.g. registering dependees.
      */
-    def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldMutability],
+    def handleUnknownFieldAssignability(
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit
 
@@ -433,7 +436,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     returnType,
                     ClassImmutability.key
                 ).asInstanceOf[EOptionP[ObjectType, ClassImmutability]]
-            checkTypeMutability(classImmutability, returnValue)
+            checkTypeImmutability(classImmutability, returnValue)
 
         } else { // Precise class unknown, use TypeImmutability
             // IMPROVE Use ObjectType once we attach the respective information to ObjectTypes
@@ -445,7 +448,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                         returnType,
                         TypeImmutability.key
                     ).asInstanceOf[EOptionP[ObjectType, TypeImmutability]]
-                checkTypeMutability(typeImmutability, returnValue)
+                checkTypeImmutability(typeImmutability, returnValue)
             }
         }
     }
@@ -454,12 +457,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Examines the effect that the mutability of a returned value's type has on the method's
      * purity.
      */
-    def checkTypeMutability(
+    def checkTypeImmutability(
         ep:          EOptionP[ObjectType, Property],
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case LBP(ImmutableType | ImmutableObject) => true
+        case LBP(TransitivelyImmutableType | TransitivelyImmutableClass) => true
         case _: FinalEP[ObjectType, Property] =>
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
@@ -468,7 +471,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case _ =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
-                handleUnknownTypeMutability(ep, returnValue)
+                handleUnknownTypeImmutability(ep, returnValue)
             true
     }
 
@@ -476,7 +479,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Handles what to do when the mutability of a type is not yet known.
      * Analyses must implement this method with the behavior they need, e.g. registering dependees.
      */
-    def handleUnknownTypeMutability(
+    def handleUnknownTypeImmutability(
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: StateType): Unit
@@ -639,6 +642,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     def resolveDomainSpecificRater(fqn: String): DomainSpecificRater = {
         import scala.reflect.runtime.universe.runtimeMirror
+
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
             val module = mirror.staticModule(fqn)

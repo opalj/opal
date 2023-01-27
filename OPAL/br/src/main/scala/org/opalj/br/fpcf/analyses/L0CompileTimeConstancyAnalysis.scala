@@ -20,10 +20,13 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
 import org.opalj.br.fpcf.properties.CompileTimeVaryingField
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.LazyInitializedField
-import org.opalj.br.fpcf.properties.NonFinalField
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
+import org.opalj.fpcf.LBP
+import org.opalj.fpcf.UBP
 
 /**
  * A simple analysis that identifies constant (effectively) final static fields that are
@@ -48,11 +51,10 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             return Result(field, CompileTimeConstantField);
 
         var dependee: EOptionP[Entity, Property] = {
-            propertyStore(field, FieldMutability.key) match {
-                case FinalP(LazyInitializedField) => return Result(field, CompileTimeVaryingField);
-                case FinalP(_: FinalField)        => return Result(field, CompileTimeConstantField);
-                case FinalP(_: NonFinalField)     => return Result(field, CompileTimeVaryingField);
-                case ep                           => ep
+            propertyStore(field, FieldAssignability.key) match {
+                case LBP(NonAssignable | EffectivelyNonAssignable)      => return Result(field, CompileTimeConstantField);
+                case UBP(UnsafelyLazilyInitialized | LazilyInitialized) => return Result(field, CompileTimeVaryingField);
+                case ep                                                 => ep
             }
         }
 
@@ -70,9 +72,10 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
                         c
                     )
 
-                case FinalP(LazyInitializedField) => Result(field, CompileTimeVaryingField)
-                case FinalP(_: FinalField)        => Result(field, CompileTimeConstantField)
-                case FinalP(_: NonFinalField)     => Result(field, CompileTimeVaryingField)
+                case FinalP(NonAssignable) => Result(field, CompileTimeConstantField);
+                case FinalP(EffectivelyNonAssignable |
+                    UnsafelyLazilyInitialized |
+                    LazilyInitialized) => Result(field, CompileTimeVaryingField);
             }
         }
 
@@ -93,7 +96,7 @@ trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldMutability)
+    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldAssignability)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
 

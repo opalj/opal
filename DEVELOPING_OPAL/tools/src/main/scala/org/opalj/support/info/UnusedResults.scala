@@ -25,8 +25,8 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity.VPure
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
@@ -42,7 +42,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.immutable.ArraySeq
@@ -80,7 +80,7 @@ object UnusedResults extends ProjectAnalysisApplication {
             LazyInterProceduralEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
-            LazyL1FieldMutabilityAnalysis,
+            LazyL1FieldAssignabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis,
             EagerL2PurityAnalysis

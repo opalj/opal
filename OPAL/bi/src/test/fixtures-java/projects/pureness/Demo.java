@@ -10,7 +10,7 @@ package pureness;
  */
 class Demo { // This class is immutable; hence, instance methods _can be_ pure!
 
-    private static int myValue = -1; /* the FieldMutabilityAnalysis is required to determine that this field is effectivelyFinal  */
+    private static int myValue = -1; /* the FieldAssignabilityAnalysis is required to determine that this field is effectivelyFinal  */
 
     private Demo() {
         /* empty */

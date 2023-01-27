@@ -32,15 +32,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.ClassifiedImpure
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.ImmutableObject
-import org.opalj.br.fpcf.properties.ImmutableType
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Purity
@@ -55,6 +49,14 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.NoCallers
@@ -86,6 +88,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
     /**
      * Holds the state of this analysis.
+     *
      * @param dependees The set of entities/properties the purity depends on
      * @param method The currently analyzed method
      * @param context The corresponding Context we report results for
@@ -203,8 +206,8 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * If the given objRef is not local, adds the dependee necessary if the field mutability is not
      * known yet.
      */
-    override def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldMutability],
+    override def handleUnknownFieldAssignability(
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
         if (objRef.isEmpty || !isLocal(objRef.get, Pure)) state.dependees += ep
@@ -214,7 +217,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * If the given expression is not local, adds the dependee necessary if the type mutability is
      * not known yet.
      */
-    override def handleUnknownTypeMutability(
+    override def handleUnknownTypeImmutability(
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
@@ -260,6 +263,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - classes files for class types returned (for their mutability)
      */
     def continuation(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
+
         state.dependees = state.dependees.filter(_.e ne eps.e)
         val oldPurity = state.ubPurity
 
@@ -278,12 +282,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.context, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalP(_: FinalField)                   => // Reading eff. final fields
-            case FinalP(ImmutableType | ImmutableObject) => // Returning immutable reference
+            case FinalP(NonAssignable | EffectivelyNonAssignable |
+                LazilyInitialized) => // Reading not assignable fields
+            case FinalP(TransitivelyImmutableType |
+                TransitivelyImmutableClass) => // Returning not assignable field
 
             // Cases resulting in side-effect freeness
-            case FinalP(_: FieldMutability | // Reading non-final field
-                _: TypeImmutability | _: ClassImmutability) => // Returning mutable reference
+            case FinalP(_: FieldAssignability | // Reading assignable field
+                _: TypeImmutability | _: ClassImmutability) => // Returning assignable field
                 atMost(SideEffectFree)
 
             case _: SomeInterimEP => state.dependees += eps
@@ -434,10 +440,11 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         Seq(DeclaredMethodsKey, SimpleContextsKey, ConfiguredPurityKey)
 
     override def uses: Set[PropertyBounds] = {
+
         Set(
             PropertyBounds.ub(TACAI),
             PropertyBounds.ub(Callees),
-            PropertyBounds.lub(FieldMutability),
+            PropertyBounds.lub(FieldAssignability),
             PropertyBounds.lub(ClassImmutability),
             PropertyBounds.lub(TypeImmutability),
             PropertyBounds.lub(Purity)
@@ -469,7 +476,8 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
-            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
+            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
+                !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
                 c
         }
 
