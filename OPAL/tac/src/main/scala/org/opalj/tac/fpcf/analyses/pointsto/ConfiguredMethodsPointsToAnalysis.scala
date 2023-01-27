@@ -98,7 +98,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 handleCallers(callers, null, Array(PointsToRelation(
                     MethodDescription(cf, name, desc),
                     AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
-                )))
+                )), true)
             } else
                 NoResult
         } else
@@ -106,21 +106,27 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 
     private[this] def handleCallers(
-        newCallers: EOptionP[DeclaredMethod, Callers],
-        oldCallers: Callers,
-        data:       Array[PointsToRelation]
+        newCallers:                 EOptionP[DeclaredMethod, Callers],
+        oldCallers:                 Callers,
+        data:                       Array[PointsToRelation],
+        filterNonInstantiableTypes: Boolean                           = false
     ): ProperPropertyComputationResult = {
         val dm = newCallers.e
         var results: Iterator[ProperPropertyComputationResult] = Iterator.empty
         newCallers.ub.forNewCalleeContexts(oldCallers, dm) { callContext =>
-            results ++= handleNativeMethod(callContext.asInstanceOf[ContextType], data)
+            results ++= handleNativeMethod(
+                callContext.asInstanceOf[ContextType], data, filterNonInstantiableTypes
+            )
         }
         if (newCallers.isRefinable) {
             results ++= Iterator(InterimPartialResult(
                 Set(newCallers),
                 (update: SomeEPS) => {
                     handleCallers(
-                        update.asInstanceOf[EPS[DeclaredMethod, Callers]], newCallers.ub, data
+                        update.asInstanceOf[EPS[DeclaredMethod, Callers]],
+                        newCallers.ub,
+                        data,
+                        filterNonInstantiableTypes
                     )
                 }
             ))
@@ -129,8 +135,9 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 
     private[this] def handleNativeMethod(
-        callContext: ContextType,
-        data:        Array[PointsToRelation]
+        callContext:                ContextType,
+        data:                       Array[PointsToRelation],
+        filterNonInstantiableTypes: Boolean
     ): Iterator[ProperPropertyComputationResult] = {
         implicit val state: State =
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
@@ -138,7 +145,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
         for (PointsToRelation(lhs, rhs) <- data) {
-            val nextPC = handleGet(rhs, pc, pc - 1)
+            val nextPC = handleGet(rhs, pc, pc - 1, filterNonInstantiableTypes)
             pc = handlePut(lhs, pc, nextPC)
         }
 
@@ -158,7 +165,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 
     private[this] def handleGet(
-        rhs: EntityDescription, pc: Int, nextPC: Int
+        rhs: EntityDescription, pc: Int, nextPC: Int, filterNonInstantiableTypes: Boolean
     )(implicit state: State): Int = {
         val defSiteObject = getDefSite(pc)
         rhs match {
@@ -209,7 +216,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                         var arrayPTS: PointsToSet = emptyPointsToSet
                         asd.arrayComponentTypes.foreach { componentTypeString =>
                             val componentType = ObjectType(componentTypeString)
-                            if (canBeInstantiated(componentType))
+                            if (!filterNonInstantiableTypes || canBeInstantiated(componentType))
                                 arrayPTS = arrayPTS.included(
                                     createPointsToSet(
                                         pc,
@@ -225,7 +232,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     }
                 } else {
                     val theInstantiatedType = FieldType(asd.instantiatedType).asObjectType
-                    if (canBeInstantiated(theInstantiatedType))
+                    if (!filterNonInstantiableTypes || canBeInstantiated(theInstantiatedType))
                         state.includeSharedPointsToSet(
                             defSiteObject,
                             createPointsToSet(
@@ -240,7 +247,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
             case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
-                val theNextPC = handleGet(array, arrayPC, nextPC) - 1
+                val theNextPC = handleGet(array, arrayPC, nextPC, filterNonInstantiableTypes) - 1
                 handleArrayLoad(
                     ArrayType(ObjectType(arrayType)), pc, IntTrieSet(arrayPC), checkForCast = false
                 )
@@ -295,7 +302,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
             case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
-                val theNextPC = handleGet(array, arrayPC, nextPC) - 1
+                val theNextPC = handleGet(array, arrayPC, nextPC, false) - 1
                 handleArrayStore(
                     ArrayType(ObjectType(arrayType)), IntTrieSet(arrayPC), IntTrieSet(pc)
                 )
