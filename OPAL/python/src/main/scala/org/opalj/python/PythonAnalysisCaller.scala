@@ -146,12 +146,17 @@ class PythonAnalysisCaller(p: SomeProject) {
         val nameSet: Set[String] = getTopLevelVariableNames(sourceFile.asString)+"opal_tainted_return"
         val beforeCode =
             s"""
-               |import functools
-               |class tstr:
+               |class tainted_string:
                |    def __init__(self, value):
                |        self.value = value
+               |
                |    def __radd__(self, other):
-               |        t = tstr(str.__add__(other, self.value))
+               |        t = tainted_string(str.__add__(other, self.value))
+               |        t._taint = self._taint
+               |        return t
+               |
+               |    def __add__(self, other):
+               |        t = tainted_string(str.__add__(self.value, other))
                |        t._taint = self._taint
                |        return t
                |
@@ -168,7 +173,7 @@ class PythonAnalysisCaller(p: SomeProject) {
                |
                |
                |def opal_source():
-               |    s = tstr("secret")
+               |    s = tainted_string("secret")
                |    s.taint()
                |    return s
                |
@@ -206,13 +211,17 @@ class PythonAnalysisCaller(p: SomeProject) {
 
         val beforeCode =
             s"""
-               |import functools
-               |
-               |class tstr:
+               |class tainted_string:
                |    def __init__(self, value):
                |        self.value = value
+               |
                |    def __radd__(self, other):
-               |        t = tstr(str.__add__(other, self.value))
+               |        t = tainted_string(str.__add__(other, self.value))
+               |        t._taint = self._taint
+               |        return t
+               |
+               |    def __add__(self, other):
+               |        t = tainted_string(str.__add__(self.value, other))
                |        t._taint = self._taint
                |        return t
                |
@@ -229,7 +238,7 @@ class PythonAnalysisCaller(p: SomeProject) {
                |
                |
                |def opal_source():
-               |    s = tstr("secret")
+               |    s = tainted_string("secret")
                |    s.taint()
                |    return s
                |

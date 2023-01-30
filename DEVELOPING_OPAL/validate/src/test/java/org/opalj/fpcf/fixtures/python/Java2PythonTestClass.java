@@ -26,7 +26,7 @@ public class Java2PythonTestClass {
     /**
      * Assigning different value to tainted variable should not keep it being tainted
      */
-    @ForwardFlowPath({})
+    @ForwardFlowPath({}) /** empty contents of ForwardFlowPath mean, that we expect no variable tainted at the end of analysis*/
     public static void pythonOverwritesBinding() throws ScriptException
     {
         ScriptEngineManager sem = new ScriptEngineManager();
@@ -85,7 +85,7 @@ public class Java2PythonTestClass {
         se.put("secret", pw);
         se.eval("xxx = secret \n" +
                 "xxx = 42");
-        String fromPy = (String) se.get("yyy");
+        String fromPy = (String) se.get("xxx");
         sink(fromPy);
     }
 
@@ -121,6 +121,7 @@ public class Java2PythonTestClass {
 
     /**
      * Result of a condition with tainted argument should also be tainted
+     * This test fails, because we currently do not support analysis of conditions
      */
     @ForwardFlowPath({"pyInvokeWithComputation"})
     public static void pyInvokeWithComputation() throws ScriptException, NoSuchMethodException
@@ -144,34 +145,33 @@ public class Java2PythonTestClass {
     {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("python");
-        se.eval("def check(str, unused): return str == \"1337\"");
+        se.eval("def check(str, unused): return str");
 
         String pw = source();
         Invocable inv = (Invocable) se;
-        Boolean state = (Boolean) inv.invokeFunction("check", "1337", pw);
-        sink(state);
+        String output = (String) inv.invokeFunction("check", "1337", pw);
+        sink(output);
     }
 
     /* More advanced flows. */
 
     /**
      * Addition to tainted variable should keep it tainted
-     * Test throws an error, because current analysis supports only Strings
      */
-//    @ForwardFlowPath({"pyInterproceduralFlow"})
-//    public static void pyInterproceduralFlow() throws ScriptException, NoSuchMethodException
-//    {
-//        ScriptEngineManager sem = new ScriptEngineManager();
-//        ScriptEngine se = sem.getEngineByName("python");
-//
-//        se.eval("def add42(x): return int(x) + 42 \n" +
-//                "def id(x): return x \n" +
-//                "def check(str): return id(add42(str)) == id(\"1337\")");
-//        String pw = source();
-//        Invocable inv = (Invocable) se;
-//        Boolean state = (Boolean) inv.invokeFunction("check", pw);
-//        sink(state);
-//    }
+    @ForwardFlowPath({"pyInterproceduralFlow"})
+    public static void pyInterproceduralFlow() throws ScriptException, NoSuchMethodException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+
+        se.eval("def add42(x): return x + \"42\" \n" +
+                "def id(x): return x \n" +
+                "def check(str): return id(add42(str)) + id(\"1337\")");
+        String pw = source();
+        Invocable inv = (Invocable) se;
+        String output = (String) inv.invokeFunction("check", pw);
+        sink(output);
+    }
 
     /**
      * Return value assigned from tainted variable should also be tainted
@@ -239,6 +239,23 @@ public class Java2PythonTestClass {
         // String is no constant
         se.put("secret", pw);
         se.put("secret", "Const");
+        Object out = se.get("secret");
+        sink(out);
+    }
+
+    /**
+     * Put with overwritten inconstant key
+     */
+    @ForwardFlowPath({"overwriteConstantPutGet"})
+    public static void overwriteConstantPutGet() throws ScriptException
+    {
+        ScriptEngineManager sem = new ScriptEngineManager();
+        ScriptEngine se = sem.getEngineByName("python");
+
+        String pw = source();
+        // String is no constant
+        se.put("secret", "Const");
+        se.put("secret", pw);
         Object out = se.get("secret");
         sink(out);
     }
@@ -325,7 +342,7 @@ public class Java2PythonTestClass {
         String pw = source();
         b.put("secret", pw);
         b.remove("secret");
-        Object out = b.get("secret");
+        Object out = b.get("secret"); //returned value will be null here
         sink(out);
     }
 

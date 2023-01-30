@@ -53,26 +53,6 @@ se.put(variable, "some value");
 Whenever the analysis does not know the constant string value of the first argument to `put`,
 it does derive a wildcard fact. The analysis considers a wildcard fact as if all variables inside the environment are tainted.
 
-#### Killing taints
-```java
-            String variable;
-                   |
-         se.put("v1", secret);
-                   |
-               if (cond)
-               /       \
-  variable = "v1";     variable = "v2";
-               \       /
-             se.remove(var);
-```
-In the example above, `v1` is tainted inside the environment. Later on, `variable` is removed from the environment,
-but the constant string depends on the control-flow so `variable` is either `"v1"` or `"v2"`. Here two analysis could do two things:
-
-1. Kill the `BindingFact(_, "v1")`, because `"v1"` might have been removed.
-2. Leave `BindingFact(_, "v1")` alive, because `"v2"` might have been removed.
-
-The analysis implements the second way. Having to decide in this case is just a limitation of our analysis not being path-sensitive.
-
 ## 3. Gluing two analyses together
 The semantics of `eval` and `invokeFunction` can be modelled by transforming the Python source code. For this,
 we introduce two functions: `opal_source()` and `opal_last_stmt(...)`.
@@ -84,6 +64,10 @@ Thus, we do perform the transformation on the source code directly.
 
 We do look for Top-Level parameters of the Python code and for parameters of the function, using Abstract Syntax Trees.
 We are calling Python function with the analysed code as a parameter in order to get the parameter names of the analysed function.
+The code for analysis was based on a solution provided by Ph.D. Rathul Gopinath, the Lecturer at the University of Sydney.
+Original code can be found here: https://github.com/vrthra/taints.py. Unfortunately extending the string object and overriding default methods
+did not work in Jython. As a result, approach without extending string was used.
+
 
 ```Python
 import ast
@@ -132,16 +116,20 @@ We assume that it is the case, there is no check for this.
 
 ```Python
 // Begin of OPAL generated code
-import functools
-
-class tstr:
+class tainted_string:
     def __init__(self, value):
         self.value = value
+        
     def __radd__(self, other):
-        t = tstr(str.__add__(other, self.value))
+        t = tainted_string(str.__add__(other, self.value))
         t._taint = self._taint
         return t
-
+        
+    def __add__(self, other):
+        t = tainted_string(str.__add__(self.value, other))
+        t._taint = self._taint
+        return t
+        
     def __repr__(self):
         return self.__class__.__name__ + str.__repr__(self.value) + " " + str(self.tainted())
 
@@ -155,7 +143,7 @@ class tstr:
 
 
 def opal_source():
-    s = tstr("secret")
+    s = tainted_string("secret")
     s.taint()
     return s
 
@@ -184,15 +172,20 @@ Then the array of tainted_arguments is returned to Java and converted back to a 
 
 ```Python
 // Begin of OPAL generated code
-import functools
-class tstr:
+class tainted_string:
     def __init__(self, value):
         self.value = value
+        
     def __radd__(self, other):
-        t = tstr(str.__add__(other, self.value))
+        t = tainted_string(str.__add__(other, self.value))
         t._taint = self._taint
         return t
-
+        
+    def __add__(self, other):
+        t = tainted_string(str.__add__(self.value, other))
+        t._taint = self._taint
+        return t
+        
     def __repr__(self):
         return self.__class__.__name__ + str.__repr__(self.value) + " " + str(self.tainted())
 
@@ -206,7 +199,7 @@ class tstr:
 
 
 def opal_source():
-    s = tstr("secret")
+    s = tainted_string("secret")
     s.taint()
     return s
 
