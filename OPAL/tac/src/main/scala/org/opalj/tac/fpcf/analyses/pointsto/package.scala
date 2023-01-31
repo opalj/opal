@@ -22,10 +22,10 @@ package object pointsto {
         implicit
         typeIterator: TypeIterator
     ): (Context, PC, Int) /* method, pc, typeid */ = {
-        val contextID = encodedAllocationSite.toInt & 0x7FFFFFF
+        val contextID = encodedAllocationSite.toInt & 0x3FFFFFF
         (
-            typeIterator.contextFromId(if (contextID == 0x7FFFFFF) -1 else contextID),
-            (encodedAllocationSite >> 27).toInt & 0xFFFF,
+            typeIterator.contextFromId(if (contextID == 0x3FFFFFF) -1 else contextID),
+            (encodedAllocationSite >> 26).toInt & 0x1FFFF,
             (encodedAllocationSite >> 44).toInt
         )
     }
