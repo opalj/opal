@@ -71,9 +71,13 @@ object MethodHandlesUtil {
             if (descriptorOpt.isDefined) {
                 descriptorOpt.map { md =>
                     // for instance methods, we need to peel off the receiver type
-                    if (!isStatic && !isConstructor)
-                        Set(MethodDescriptor(md.parameterTypes.tail, md.returnType))
-                    else
+                    if (!isStatic && !isConstructor) {
+                        // but the method handle might not match the expected descriptor
+                        if(md.parameterTypes.isEmpty)
+                            Set.empty[MethodDescriptor]
+                        else
+                            Set(MethodDescriptor(md.parameterTypes.tail, md.returnType))
+                    } else
                         Set(md)
                 }
             } else
