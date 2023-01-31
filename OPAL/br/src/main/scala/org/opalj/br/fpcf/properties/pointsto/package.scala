@@ -21,7 +21,7 @@ package object pointsto {
         assert(pc >= -0x10000 && pc <= 0xFFFF)
         assert(contextId >= 0 && contextId <= 0x3FFFFFF)
         assert(typeId >= -0x80000 && typeId <= 0x7FFFF)
-        contextId.toLong | ((pc.toLong << 26) & 0x1FFFF) | (emptyArray << 43) | (typeId.toLong << 44)
+        contextId.toLong | ((pc.toLong & 0x1FFFF) << 26) | (emptyArray << 43) | (typeId.toLong << 44)
     }
 
     @inline def allocationSiteLongToTypeId(encodedAllocationSite: AllocationSite): Int = {
