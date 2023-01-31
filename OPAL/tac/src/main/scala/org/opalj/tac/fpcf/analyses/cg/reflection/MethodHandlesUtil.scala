@@ -73,7 +73,7 @@ object MethodHandlesUtil {
                     // for instance methods, we need to peel off the receiver type
                     if (!isStatic && !isConstructor) {
                         // but the method handle might not match the expected descriptor
-                        if(md.parameterTypes.isEmpty)
+                        if (md.parameterTypes.isEmpty)
                             Set.empty[MethodDescriptor]
                         else
                             Set(MethodDescriptor(md.parameterTypes.tail, md.returnType))
