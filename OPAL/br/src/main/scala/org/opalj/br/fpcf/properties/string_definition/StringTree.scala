@@ -29,7 +29,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
         val replaceElement = reduced.find(_.constancyType == StringConstancyType.REPLACE)
         val appendElements = reduced.filter { _.constancyType == StringConstancyType.APPEND }
         val appendSci = if (appendElements.nonEmpty) {
-            Some(appendElements.reduceLeft((o, n) ⇒ StringConstancyInformation(
+            Some(appendElements.reduceLeft((o, n) => StringConstancyInformation(
                 StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
                 StringConstancyType.APPEND,
                 s"${o.possibleStrings}|${n.possibleStrings}"
@@ -73,14 +73,14 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
         // Stores whether we deal with a flat structure or with a nested structure (in the latter
         // case maxNestingLevel >= 2)
         val maxNestingLevel = reducedLists.foldLeft(0) {
-            (max: Int, next: List[StringConstancyInformation]) ⇒ Math.max(max, next.size)
+            (max: Int, next: List[StringConstancyInformation]) => Math.max(max, next.size)
         }
         val scis = ListBuffer[StringConstancyInformation]()
         // Stores whether the last processed element was of type RESET
         var wasReset = false
 
-        reducedLists.foreach { nextSciList ⇒
-            nextSciList.foreach { nextSci ⇒
+        reducedLists.foreach { nextSciList =>
+            nextSciList.foreach { nextSci =>
                 // Add the first element only if not a reset (otherwise no new information)
                 if (scis.isEmpty && nextSci.constancyType != StringConstancyType.RESET) {
                     scis.append(nextSci)
@@ -106,7 +106,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                     } // Otherwise, collapse / combine with previous elements
                     else {
                         scis.zipWithIndex.foreach {
-                            case (innerSci, index) ⇒
+                            case (innerSci, index) =>
                                 val collapsed = StringConstancyInformation(
                                     StringConstancyLevel.determineForConcat(
                                         innerSci.constancyLevel, nextSci.constancyLevel
@@ -137,7 +137,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      */
     private def reduceAcc(subtree: StringTreeElement): List[StringConstancyInformation] = {
         subtree match {
-            case StringTreeRepetition(c, lowerBound, upperBound) ⇒
+            case StringTreeRepetition(c, lowerBound, upperBound) =>
                 val times = if (lowerBound.isDefined && upperBound.isDefined)
                     (upperBound.get - lowerBound.get).toString else InfiniteRepetitionSymbol
                 val reducedAcc = reduceAcc(c)
@@ -148,10 +148,10 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                     reduced.constancyType,
                     s"(${reduced.possibleStrings})$times"
                 ))
-            case StringTreeConcat(cs) ⇒ processReduceConcat(cs.toList)
-            case StringTreeOr(cs)     ⇒ processReduceCondOrReduceOr(cs.toList)
-            case StringTreeCond(cs)   ⇒ processReduceCondOrReduceOr(cs.toList, processOr = false)
-            case StringTreeConst(sci) ⇒ List(sci)
+            case StringTreeConcat(cs) => processReduceConcat(cs.toList)
+            case StringTreeOr(cs)     => processReduceCondOrReduceOr(cs.toList)
+            case StringTreeCond(cs)   => processReduceCondOrReduceOr(cs.toList, processOr = false)
+            case StringTreeConst(sci) => List(sci)
         }
     }
 
@@ -168,15 +168,15 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
         val seen = mutable.Map[StringConstancyInformation, Boolean]()
         val unique = ListBuffer[StringTreeElement]()
         children.foreach {
-            case next @ StringTreeConst(sci) ⇒
+            case next @ StringTreeConst(sci) =>
                 if (!seen.contains(sci)) {
-                    seen += (sci → true)
+                    seen += (sci -> true)
                     unique.append(next)
                 }
-            case loop: StringTreeRepetition ⇒ unique.append(loop)
-            case concat: StringTreeConcat   ⇒ unique.append(concat)
-            case or: StringTreeOr           ⇒ unique.append(or)
-            case cond: StringTreeCond       ⇒ unique.append(cond)
+            case loop: StringTreeRepetition => unique.append(loop)
+            case concat: StringTreeConcat   => unique.append(concat)
+            case or: StringTreeOr           => unique.append(or)
+            case cond: StringTreeCond       => unique.append(cond)
         }
         unique
     }
@@ -186,23 +186,23 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      */
     private def simplifyAcc(subtree: StringTree): StringTree = {
         subtree match {
-            case StringTreeOr(cs) ⇒
+            case StringTreeOr(cs) =>
                 cs.foreach {
-                    case nextC @ StringTreeOr(subChildren) ⇒
+                    case nextC @ StringTreeOr(subChildren) =>
                         simplifyAcc(nextC)
                         var insertIndex = subtree.children.indexOf(nextC)
-                        subChildren.foreach { next ⇒
+                        subChildren.foreach { next =>
                             subtree.children.insert(insertIndex, next)
                             insertIndex += 1
                         }
                         subtree.children.-=(nextC)
-                    case _ ⇒
+                    case _ =>
                 }
                 val unique = removeDuplicateTreeValues(cs)
                 subtree.children.clear()
                 subtree.children.appendAll(unique)
                 subtree
-            case stc: StringTreeCond ⇒
+            case stc: StringTreeCond =>
                 // If the child of a StringTreeCond is a StringTreeRepetition, replace the
                 // StringTreeCond by the StringTreeRepetition element (otherwise, regular
                 // expressions like ((s)*)+ will follow which is equivalent to (s)*).
@@ -212,9 +212,9 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                     stc
                 }
             // Remaining cases are trivial
-            case str: StringTreeRepetition ⇒ StringTreeRepetition(simplifyAcc(str.child))
-            case stc: StringTreeConcat     ⇒ StringTreeConcat(stc.children.map(simplifyAcc))
-            case stc: StringTreeConst      ⇒ stc
+            case str: StringTreeRepetition => StringTreeRepetition(simplifyAcc(str.child))
+            case stc: StringTreeConcat     => StringTreeConcat(stc.children.map(simplifyAcc))
+            case stc: StringTreeConst      => stc
         }
     }
 
@@ -240,7 +240,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
             if (repetitionElements.length <= 1) {
                 // In case there is only one (new) repetition element, replace the children
                 subtree.children.clear()
-                subtree.children.append(newChildren: _*)
+                subtree.children.appendAll(newChildren)
                 subtree
             } else {
                 val childrenOfReps = repetitionElements.map(
@@ -263,13 +263,13 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
         }
 
         subtree match {
-            case sto: StringTreeOr     ⇒ processConcatOrOrCase(sto)
-            case stc: StringTreeConcat ⇒ processConcatOrOrCase(stc)
-            case StringTreeCond(cs) ⇒
+            case sto: StringTreeOr     => processConcatOrOrCase(sto)
+            case stc: StringTreeConcat => processConcatOrOrCase(stc)
+            case StringTreeCond(cs) =>
                 StringTreeCond(cs.map(groupRepetitionElementsAcc))
-            case StringTreeRepetition(child, _, _) ⇒
+            case StringTreeRepetition(child, _, _) =>
                 StringTreeRepetition(groupRepetitionElementsAcc(child))
-            case stc: StringTreeConst ⇒ stc
+            case stc: StringTreeConst => stc
         }
     }
 

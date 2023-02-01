@@ -87,7 +87,7 @@ case class Path(elements: List[SubPath]) {
         obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]
     ): List[Int] = {
         val defAndUses = ListBuffer[Int]()
-        val stack = mutable.Stack[Int](obj.definedBy.toArray: _*)
+        val stack = mutable.Stack[Int](obj.definedBy.toList: _*)
 
         while (stack.nonEmpty) {
             val popped = stack.pop()
@@ -95,14 +95,14 @@ case class Path(elements: List[SubPath]) {
                 defAndUses.append(popped)
 
                 stmts(popped) match {
-                    case a: Assignment[V] if a.expr.isInstanceOf[VirtualFunctionCall[V]] ⇒
+                    case a: Assignment[V] if a.expr.isInstanceOf[VirtualFunctionCall[V]] =>
                         val receiver = a.expr.asVirtualFunctionCall.receiver.asVar
                         stack.pushAll(receiver.asVar.definedBy.filter(_ >= 0).toArray)
                         // TODO: Does the following line add too much (in some cases)???
                         stack.pushAll(a.targetVar.asVar.usedBy.toArray)
-                    case a: Assignment[V] if a.expr.isInstanceOf[New] ⇒
+                    case a: Assignment[V] if a.expr.isInstanceOf[New] =>
                         stack.pushAll(a.targetVar.usedBy.toArray)
-                    case _ ⇒
+                    case _ =>
                 }
             }
         }
@@ -116,12 +116,12 @@ case class Path(elements: List[SubPath]) {
      * [[NestedPathElement]]s.
      */
     private def containsPathElement(subpath: NestedPathElement, element: Int): Boolean = {
-        subpath.element.foldLeft(false) { (old: Boolean, nextSubpath: SubPath) ⇒
+        subpath.element.foldLeft(false) { (old: Boolean, nextSubpath: SubPath) =>
             old || (nextSubpath match {
-                case fpe: FlatPathElement   ⇒ fpe.element == element
-                case npe: NestedPathElement ⇒ containsPathElement(npe, element)
+                case fpe: FlatPathElement   => fpe.element == element
+                case npe: NestedPathElement => containsPathElement(npe, element)
                 // For the SubPath type (should never be the case, but the compiler wants it)
-                case _                      ⇒ false
+                case _                      => false
             })
         }
     }
@@ -133,11 +133,11 @@ case class Path(elements: List[SubPath]) {
     private def removeOuterBranching(npe: NestedPathElement): ListBuffer[SubPath] = {
         if (npe.element.tail.isEmpty) {
             npe.element.head match {
-                case innerNpe: NestedPathElement ⇒ removeOuterBranching(innerNpe)
-                case fpe: SubPath                ⇒ ListBuffer[SubPath](fpe)
+                case innerNpe: NestedPathElement => removeOuterBranching(innerNpe)
+                case fpe: SubPath                => ListBuffer[SubPath](fpe)
             }
         } else {
-            ListBuffer[SubPath](npe.element: _*)
+            npe.element
         }
     }
 
@@ -152,7 +152,7 @@ case class Path(elements: List[SubPath]) {
         npe: NestedPathElement, endSite: Int
     ): NestedPathElement = {
         npe.element.foreach {
-            case innerNpe: NestedPathElement ⇒
+            case innerNpe: NestedPathElement =>
                 if (innerNpe.elementType.isEmpty) {
                     if (!containsPathElement(innerNpe, endSite)) {
                         innerNpe.element.clear()
@@ -160,7 +160,7 @@ case class Path(elements: List[SubPath]) {
                 } else {
                     stripUnnecessaryBranches(innerNpe, endSite)
                 }
-            case _ ⇒
+            case _ =>
         }
         npe
     }
@@ -189,9 +189,9 @@ case class Path(elements: List[SubPath]) {
      */
     private def makeLeanPathAcc(
         toProcess:           NestedPathElement,
-        siteMap:             Map[Int, Unit.type],
+        siteMap:             Map[Int, Unit],
         endSite:             Int,
-        includeAlternatives: Boolean             = false
+        includeAlternatives: Boolean           = false
     ): (Option[NestedPathElement], Boolean) = {
         val elements = ListBuffer[SubPath]()
         var stop = false
@@ -199,12 +199,12 @@ case class Path(elements: List[SubPath]) {
         val isTryCatch = includeAlternatives || (toProcess.elementType.isDefined &&
             toProcess.elementType.get == NestedPathType.TryCatchFinally)
 
-        toProcess.element.foreach { next ⇒
+        toProcess.element.foreach { next =>
             // The stop flag is used to make sure that within a sub-path only the elements up to the
             // endSite are gathered (if endSite is within this sub-path)
             if (!stop) {
                 next match {
-                    case fpe: FlatPathElement if !hasTargetBeenSeen ⇒
+                    case fpe: FlatPathElement if !hasTargetBeenSeen =>
                         if (siteMap.contains(fpe.element) && !hasTargetBeenSeen) {
                             elements.append(fpe.copy())
                         }
@@ -212,14 +212,14 @@ case class Path(elements: List[SubPath]) {
                             hasTargetBeenSeen = true
                             stop = true
                         }
-                    case npe: NestedPathElement if isTryCatch ⇒
+                    case npe: NestedPathElement if isTryCatch =>
                         val (leanedSubPath, _) = makeLeanPathAcc(
                             npe, siteMap, endSite, includeAlternatives = true
                         )
                         if (leanedSubPath.isDefined) {
                             elements.append(leanedSubPath.get)
                         }
-                    case npe: NestedPathElement ⇒
+                    case npe: NestedPathElement =>
                         if (!hasTargetBeenSeen) {
                             val (leanedSubPath, wasTargetSeen) = makeLeanPathAcc(
                                 npe, siteMap, endSite
@@ -231,7 +231,7 @@ case class Path(elements: List[SubPath]) {
                                 hasTargetBeenSeen = true
                             }
                         }
-                    case _ ⇒
+                    case _ =>
                 }
             }
         }
@@ -264,30 +264,30 @@ case class Path(elements: List[SubPath]) {
     def makeLeanPath(obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]): Path = {
         val newOfObj = InterpretationHandler.findNewOfVar(obj, stmts)
         // Transform the list of relevant sites into a map to have a constant access time
-        val siteMap = getAllDefAndUseSites(obj, stmts).filter { nextSite ⇒
+        val siteMap = getAllDefAndUseSites(obj, stmts).filter { nextSite =>
             stmts(nextSite) match {
-                case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
+                case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                     val news = InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
                     newOfObj == news || news.exists(newOfObj.contains)
-                case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
+                case ExprStmt(_, expr: VirtualFunctionCall[V]) =>
                     val news = InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
                     newOfObj == news || news.exists(newOfObj.contains)
-                case _ ⇒ true
+                case _ => true
             }
-        }.map { s ⇒ (s, Unit) }.toMap
+        }.map { s => (s, ()) }.toMap
         var leanPath = ListBuffer[SubPath]()
         val endSite = obj.definedBy.toArray.max
         var reachedEndSite = false
 
-        elements.foreach { next ⇒
+        elements.foreach { next =>
             if (!reachedEndSite) {
                 next match {
-                    case fpe: FlatPathElement if siteMap.contains(fpe.element) ⇒
+                    case fpe: FlatPathElement if siteMap.contains(fpe.element) =>
                         leanPath.append(fpe)
                         if (fpe.element == endSite) {
                             reachedEndSite = true
                         }
-                    case npe: NestedPathElement ⇒
+                    case npe: NestedPathElement =>
                         val (leanedPath, wasTargetSeen) = makeLeanPathAcc(npe, siteMap, endSite)
                         if (npe.elementType.isDefined &&
                             npe.elementType.get != NestedPathType.TryCatchFinally) {
@@ -296,7 +296,7 @@ case class Path(elements: List[SubPath]) {
                         if (leanedPath.isDefined) {
                             leanPath.append(leanedPath.get)
                         }
-                    case _ ⇒
+                    case _ =>
                 }
             }
         }
@@ -307,20 +307,20 @@ case class Path(elements: List[SubPath]) {
         if (leanPath.tail.isEmpty) {
             leanPath.head match {
                 case npe: NestedPathElement if npe.elementType.get == NestedPathType.Repetition ||
-                    npe.element.tail.isEmpty ⇒
+                    npe.element.tail.isEmpty =>
                     leanPath = removeOuterBranching(npe)
-                case _ ⇒
+                case _ =>
             }
         } else {
             // If the last element is a conditional, keep only the relevant branch (the other is not
             // necessary and stripping it simplifies further steps; explicitly exclude try-catch)
             leanPath.last match {
                 case npe: NestedPathElement if npe.elementType.isDefined &&
-                    (npe.elementType.get != NestedPathType.TryCatchFinally) ⇒
+                    (npe.elementType.get != NestedPathType.TryCatchFinally) =>
                     val newLast = stripUnnecessaryBranches(npe, endSite)
                     leanPath.remove(leanPath.size - 1)
                     leanPath.append(newLast)
-                case _ ⇒
+                case _ =>
             }
         }
 
@@ -336,14 +336,14 @@ object Path {
      */
     def getLastElementInNPE(npe: NestedPathElement): FlatPathElement = {
         npe.element.last match {
-            case fpe: FlatPathElement ⇒ fpe
-            case npe: NestedPathElement ⇒
+            case fpe: FlatPathElement => fpe
+            case npe: NestedPathElement =>
                 npe.element.last match {
-                    case fpe: FlatPathElement        ⇒ fpe
-                    case innerNpe: NestedPathElement ⇒ getLastElementInNPE(innerNpe)
-                    case _                           ⇒ FlatPathElement(-1)
+                    case fpe: FlatPathElement        => fpe
+                    case innerNpe: NestedPathElement => getLastElementInNPE(innerNpe)
+                    case _                           => FlatPathElement(-1)
                 }
-            case _ ⇒ FlatPathElement(-1)
+            case _ => FlatPathElement(-1)
         }
     }
 

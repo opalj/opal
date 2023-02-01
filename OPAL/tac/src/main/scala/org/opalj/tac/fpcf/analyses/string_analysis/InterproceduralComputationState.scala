@@ -3,15 +3,14 @@ package org.opalj.tac.fpcf.analyses.string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.{DeclaredMethod, Method}
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
@@ -29,7 +28,7 @@ import org.opalj.tac.VirtualFunctionCall
  * @param fieldWriteThreshold See the documentation of
  *                            [[InterproceduralStringAnalysis#fieldWriteThreshold]].
  */
-case class InterproceduralComputationState(entity: P, fieldWriteThreshold: Int = 100) {
+case class InterproceduralComputationState(dm: DeclaredMethod, entity: P, fieldWriteThreshold: Int = 100) {
     /**
      * The Three-Address Code of the entity's method
      */

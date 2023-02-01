@@ -136,15 +136,15 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * relevant method that is to be processed by `doAnalyze`.
      */
     private def instructionsContainRelevantMethod(instructions: Array[Instruction]): Boolean = {
-        instructions.filter(_ != null).foldLeft(false) { (previous, nextInstr) ⇒
+        instructions.filter(_ != null).foldLeft(false) { (previous, nextInstr) =>
             previous || ((nextInstr.opcode: @switch) match {
-                case INVOKESTATIC.opcode ⇒
+                case INVOKESTATIC.opcode =>
                     val INVOKESTATIC(declClass, _, methodName, _) = nextInstr
                     isRelevantCall(declClass, methodName)
-                case INVOKEVIRTUAL.opcode ⇒
+                case INVOKEVIRTUAL.opcode =>
                     val INVOKEVIRTUAL(declClass, methodName, _) = nextInstr
                     isRelevantCall(declClass, methodName)
-                case _ ⇒ false
+                case _ => false
             })
         }
     }
@@ -166,7 +166,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                     )
                     // Loop through all parameters and start the analysis for those that take a string
                     call.descriptor.parameterTypes.zipWithIndex.foreach {
-                        case (ft, index) ⇒
+                        case (ft, index) =>
                             if (ft.toJava == "java.lang.String") {
                                 val duvar = call.params(index).asVar
                                 val e = (duvar, method)
@@ -188,13 +188,13 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      */
     private def resultMapToReport(resultMap: ResultMapType): BasicReport = {
         val report = ListBuffer[String]("Results of the Reflection Analysis:")
-        for ((reflectiveCall, entries) ← resultMap) {
+        for ((reflectiveCall, entries) <- resultMap) {
             var constantCount, partConstantCount, dynamicCount = 0
             entries.foreach {
                 _.constancyLevel match {
-                    case StringConstancyLevel.CONSTANT           ⇒ constantCount += 1
-                    case StringConstancyLevel.PARTIALLY_CONSTANT ⇒ partConstantCount += 1
-                    case StringConstancyLevel.DYNAMIC            ⇒ dynamicCount += 1
+                    case StringConstancyLevel.CONSTANT           => constantCount += 1
+                    case StringConstancyLevel.PARTIALLY_CONSTANT => partConstantCount += 1
+                    case StringConstancyLevel.DYNAMIC            => dynamicCount += 1
                 }
             }
 
@@ -212,24 +212,24 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         m:         Method,
         resultMap: ResultMapType
     ): Unit = {
-        stmts.foreach { stmt ⇒
+        stmts.foreach { stmt =>
             // Using the following switch speeds up the whole process
             (stmt.astID: @switch) match {
-                case Assignment.ASTID ⇒ stmt match {
-                    case Assignment(_, _, c: StaticFunctionCall[V]) ⇒
+                case Assignment.ASTID => stmt match {
+                    case Assignment(_, _, c: StaticFunctionCall[V]) =>
                         processFunctionCall(ps, m, c, resultMap)
-                    case Assignment(_, _, c: VirtualFunctionCall[V]) ⇒
+                    case Assignment(_, _, c: VirtualFunctionCall[V]) =>
                         processFunctionCall(ps, m, c, resultMap)
-                    case _ ⇒
+                    case _ =>
                 }
-                case ExprStmt.ASTID ⇒ stmt match {
-                    case ExprStmt(_, c: StaticFunctionCall[V]) ⇒
+                case ExprStmt.ASTID => stmt match {
+                    case ExprStmt(_, c: StaticFunctionCall[V]) =>
                         processFunctionCall(ps, m, c, resultMap)
-                    case ExprStmt(_, c: VirtualFunctionCall[V]) ⇒
+                    case ExprStmt(_, c: VirtualFunctionCall[V]) =>
                         processFunctionCall(ps, m, c, resultMap)
-                    case _ ⇒
+                    case _ =>
                 }
-                case _ ⇒
+                case _ =>
             }
         }
     }
@@ -238,19 +238,19 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         ps: PropertyStore, m: Method, resultMap: ResultMapType
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case FinalP(tac: TACAI) ⇒
+            case FinalP(tac: TACAI) =>
                 processStatements(ps, tac.tac.get.stmts, m, resultMap)
                 Result(m, tac)
-            case InterimLUBP(lb, ub) ⇒
+            case InterimLUBP(lb, ub) =>
                 InterimResult(
-                    m, lb, ub, List(eps), continuation(ps, m, resultMap)
+                    m, lb, ub, Set(eps), continuation(ps, m, resultMap)
                 )
-            case _ ⇒ throw new IllegalStateException("should never happen!")
+            case _ => throw new IllegalStateException("should never happen!")
         }
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
+        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
         val manager = project.get(FPCFAnalysesManagerKey)
         project.get(RTACallGraphKey)
@@ -263,7 +263,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         val resultMap: ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]()
         relevantMethodNames.foreach { resultMap(_) = ListBuffer() }
 
-        project.allMethodsWithBody.foreach { m ⇒
+        project.allMethodsWithBody.foreach { m =>
             // To dramatically reduce work, quickly check if a method is relevant at all
             if (instructionsContainRelevantMethod(m.body.get.instructions)) {
                 var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
@@ -281,7 +281,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                         m,
                         StringConstancyProperty.ub,
                         StringConstancyProperty.lb,
-                        List(tacaiEOptP),
+                        Set(tacaiEOptP),
                         continuation(propertyStore, m, resultMap)
                     )
                 }
@@ -291,13 +291,13 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         val t0 = System.currentTimeMillis()
         propertyStore.waitOnPhaseCompletion()
         entityContext.foreach {
-            case (e, callName) ⇒
+            case (e, callName) =>
                 propertyStore.properties(e).toIndexedSeq.foreach {
-                    case FinalP(p: StringConstancyProperty) ⇒
+                    case FinalP(p: StringConstancyProperty) =>
                         resultMap(callName).append(p.stringConstancyInformation)
-                    case InterimELUBP(_, _, ub: StringConstancyProperty) ⇒
+                    case InterimELUBP(_, _, ub: StringConstancyProperty) =>
                         resultMap(callName).append(ub.stringConstancyInformation)
-                    case _ ⇒
+                    case _ =>
                         println(s"Neither a final nor an interim result for $e in $callName; "+
                             "this should never be the case!")
                 }

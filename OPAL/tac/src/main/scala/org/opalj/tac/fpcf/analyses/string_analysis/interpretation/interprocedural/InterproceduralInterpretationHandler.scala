@@ -11,7 +11,7 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -50,6 +50,7 @@ import org.opalj.tac.SimpleValueConst
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.StaticFunctionCallFinalizer
 import org.opalj.tac.FieldRead
 import org.opalj.tac.NewArray
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NewArrayFinalizer
 
 /**
@@ -68,7 +69,8 @@ class InterproceduralInterpretationHandler(
         ps:                     PropertyStore,
         declaredMethods:        DeclaredMethods,
         fieldAccessInformation: FieldAccessInformation,
-        state:                  InterproceduralComputationState
+        state:                  InterproceduralComputationState,
+        typeIterator:           TypeIterator
 ) extends InterpretationHandler(tac) {
 
     /**
@@ -98,35 +100,35 @@ class InterproceduralInterpretationHandler(
             return FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
         // Note that def sites referring to constant expressions will be deleted further down
-        processedDefSites(defSite) = Unit
+        processedDefSites(defSite) = ()
 
         val callees = state.callees
         stmts(defSite) match {
-            case Assignment(_, _, expr: StringConst) ⇒ processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: IntConst)    ⇒ processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: FloatConst)  ⇒ processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: DoubleConst) ⇒ processConstExpr(expr, defSite)
-            case Assignment(_, _, expr: ArrayLoad[V]) ⇒
+            case Assignment(_, _, expr: StringConst) => processConstExpr(expr, defSite)
+            case Assignment(_, _, expr: IntConst)    => processConstExpr(expr, defSite)
+            case Assignment(_, _, expr: FloatConst)  => processConstExpr(expr, defSite)
+            case Assignment(_, _, expr: DoubleConst) => processConstExpr(expr, defSite)
+            case Assignment(_, _, expr: ArrayLoad[V]) =>
                 processArrayLoad(expr, defSite, params)
-            case Assignment(_, _, expr: NewArray[V]) ⇒
+            case Assignment(_, _, expr: NewArray[V]) =>
                 processNewArray(expr, defSite, params)
-            case Assignment(_, _, expr: New)                    ⇒ processNew(expr, defSite)
-            case Assignment(_, _, expr: GetStatic)              ⇒ processGetField(expr, defSite)
-            case ExprStmt(_, expr: GetStatic)                   ⇒ processGetField(expr, defSite)
-            case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒ processVFC(expr, defSite, params)
-            case ExprStmt(_, expr: VirtualFunctionCall[V])      ⇒ processVFC(expr, defSite, params)
-            case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
+            case Assignment(_, _, expr: New)                    => processNew(expr, defSite)
+            case Assignment(_, _, expr: GetStatic)              => processGetField(expr, defSite)
+            case ExprStmt(_, expr: GetStatic)                   => processGetField(expr, defSite)
+            case Assignment(_, _, expr: VirtualFunctionCall[V]) => processVFC(expr, defSite, params)
+            case ExprStmt(_, expr: VirtualFunctionCall[V])      => processVFC(expr, defSite, params)
+            case Assignment(_, _, expr: StaticFunctionCall[V]) =>
                 processStaticFunctionCall(expr, defSite, params)
-            case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
+            case ExprStmt(_, expr: StaticFunctionCall[V]) =>
                 processStaticFunctionCall(expr, defSite, params)
-            case Assignment(_, _, expr: BinaryExpr[V]) ⇒ processBinaryExpr(expr, defSite)
-            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
+            case Assignment(_, _, expr: BinaryExpr[V]) => processBinaryExpr(expr, defSite)
+            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
                 processNonVirtualFunctionCall(expr, defSite)
-            case Assignment(_, _, expr: GetField[V]) ⇒ processGetField(expr, defSite)
-            case vmc: VirtualMethodCall[V] ⇒
+            case Assignment(_, _, expr: GetField[V]) => processGetField(expr, defSite)
+            case vmc: VirtualMethodCall[V] =>
                 processVirtualMethodCall(vmc, defSite, callees)
-            case nvmc: NonVirtualMethodCall[V] ⇒ processNonVirtualMethodCall(nvmc, defSite)
-            case _ ⇒
+            case nvmc: NonVirtualMethodCall[V] => processNonVirtualMethodCall(nvmc, defSite)
+            case _ =>
                 state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
                 FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
@@ -140,10 +142,10 @@ class InterproceduralInterpretationHandler(
         constExpr: SimpleValueConst, defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val finalEP = constExpr match {
-            case ic: IntConst    ⇒ new IntegerValueInterpreter(cfg, this).interpret(ic, defSite)
-            case fc: FloatConst  ⇒ new FloatValueInterpreter(cfg, this).interpret(fc, defSite)
-            case dc: DoubleConst ⇒ new DoubleValueInterpreter(cfg, this).interpret(dc, defSite)
-            case sc ⇒ new StringConstInterpreter(cfg, this).interpret(
+            case ic: IntConst    => new IntegerValueInterpreter(cfg, this).interpret(ic, defSite)
+            case fc: FloatConst  => new FloatValueInterpreter(cfg, this).interpret(fc, defSite)
+            case dc: DoubleConst => new DoubleValueInterpreter(cfg, this).interpret(dc, defSite)
+            case sc => new StringConstInterpreter(cfg, this).interpret(
                 sc.asInstanceOf[StringConst], defSite
             )
         }
@@ -214,7 +216,7 @@ class InterproceduralInterpretationHandler(
         params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new VirtualFunctionCallPreparationInterpreter(
-            cfg, this, ps, state, declaredMethods, params
+            cfg, this, ps, state, declaredMethods, params, typeIterator
         ).interpret(expr, defSite)
         // Set whether the virtual function call is fully prepared. This is the case if 1) the
         // call was not fully prepared before (no final result available) or 2) the preparation is
@@ -253,7 +255,7 @@ class InterproceduralInterpretationHandler(
         expr: StaticFunctionCall[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralStaticFunctionCallInterpreter(
-            cfg, this, ps, state, params, declaredMethods
+            cfg, this, ps, state, params, declaredMethods, typeIterator
         ).interpret(expr, defSite)
         if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -301,7 +303,7 @@ class InterproceduralInterpretationHandler(
         expr: NonVirtualFunctionCall[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualFunctionCallInterpreter(
-            cfg, this, ps, state, declaredMethods
+            cfg, this, ps, state, declaredMethods, typeIterator
         ).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -333,10 +335,10 @@ class InterproceduralInterpretationHandler(
             cfg, this, ps, state, declaredMethods
         ).interpret(nvmc, defSite)
         r match {
-            case FinalEP(_, p: StringConstancyProperty) ⇒
+            case FinalEP(_, p: StringConstancyProperty) =>
                 state.appendToInterimFpe2Sci(defSite, p.stringConstancyInformation)
                 state.appendToFpe2Sci(defSite, p.stringConstancyInformation)
-            case _ ⇒
+            case _ =>
                 state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.lb)
                 processedDefSites.remove(defSite)
         }
@@ -382,28 +384,28 @@ class InterproceduralInterpretationHandler(
         defSite: Int, state: InterproceduralComputationState
     ): Unit = {
         if (defSite < 0) {
-            state.appendToFpe2Sci(defSite, getParam(state.params, defSite), reset = true)
+            state.appendToFpe2Sci(defSite, getParam(state.params.toSeq.map(_.toSeq), defSite), reset = true)
         } else {
             stmts(defSite) match {
-                case nvmc: NonVirtualMethodCall[V] ⇒
+                case nvmc: NonVirtualMethodCall[V] =>
                     NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
-                case Assignment(_, _, al: ArrayLoad[V]) ⇒
+                case Assignment(_, _, al: ArrayLoad[V]) =>
                     ArrayLoadFinalizer(state, cfg).finalizeInterpretation(al, defSite)
-                case Assignment(_, _, na: NewArray[V]) ⇒
+                case Assignment(_, _, na: NewArray[V]) =>
                     NewArrayFinalizer(state, cfg).finalizeInterpretation(na, defSite)
-                case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
+                case Assignment(_, _, vfc: VirtualFunctionCall[V]) =>
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
-                case ExprStmt(_, vfc: VirtualFunctionCall[V]) ⇒
+                case ExprStmt(_, vfc: VirtualFunctionCall[V]) =>
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
-                case Assignment(_, _, fr: FieldRead[V]) ⇒
+                case Assignment(_, _, fr: FieldRead[V]) =>
                     GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
-                case ExprStmt(_, fr: FieldRead[V]) ⇒
+                case ExprStmt(_, fr: FieldRead[V]) =>
                     GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
-                case Assignment(_, _, sfc: StaticFunctionCall[V]) ⇒
+                case Assignment(_, _, sfc: StaticFunctionCall[V]) =>
                     StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
-                case ExprStmt(_, sfc: StaticFunctionCall[V]) ⇒
+                case ExprStmt(_, sfc: StaticFunctionCall[V]) =>
                     StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
-                case _ ⇒ state.appendToFpe2Sci(
+                case _ => state.appendToFpe2Sci(
                     defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
                 )
             }
@@ -422,9 +424,10 @@ object InterproceduralInterpretationHandler {
         ps:                     PropertyStore,
         declaredMethods:        DeclaredMethods,
         fieldAccessInformation: FieldAccessInformation,
-        state:                  InterproceduralComputationState
+        state:                  InterproceduralComputationState,
+        typeIterator:           TypeIterator
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
-        tac, ps, declaredMethods, fieldAccessInformation, state
+        tac, ps, declaredMethods, fieldAccessInformation, state, typeIterator
     )
 
 }

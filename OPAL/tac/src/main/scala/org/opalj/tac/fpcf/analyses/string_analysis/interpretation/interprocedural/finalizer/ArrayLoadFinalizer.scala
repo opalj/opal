@@ -31,14 +31,14 @@ class ArrayLoadFinalizer(
             instr, state.tac.stmts
         )
 
-        allDefSites.foreach { ds ⇒
+        allDefSites.foreach { ds =>
             if (!state.fpe2sci.contains(ds)) {
                 state.iHandler.finalizeDefSite(ds, state)
             }
         }
 
         state.fpe2sci(defSite) = ListBuffer(StringConstancyInformation.reduceMultiple(
-            allDefSites.filter(state.fpe2sci.contains).sorted.flatMap { ds ⇒
+            allDefSites.filter(state.fpe2sci.contains).sorted.flatMap { ds =>
                 state.fpe2sci(ds)
             }
         ))

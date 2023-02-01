@@ -23,7 +23,7 @@ class NonVirtualMethodCallFinalizer(
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         val toAppend = if (instr.params.nonEmpty) {
-            instr.params.head.asVar.definedBy.toArray.foreach { ds ⇒
+            instr.params.head.asVar.definedBy.toArray.foreach { ds =>
                 if (!state.fpe2sci.contains(ds)) {
                     state.iHandler.finalizeDefSite(ds, state)
                 }

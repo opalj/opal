@@ -49,9 +49,9 @@ class BinaryExprInterpreter(
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val sci = instr.cTpe match {
-            case ComputationalTypeInt   ⇒ InterpretationHandler.getConstancyInfoForDynamicInt
-            case ComputationalTypeFloat ⇒ InterpretationHandler.getConstancyInfoForDynamicFloat
-            case _                      ⇒ StringConstancyInformation.getNeutralElement
+            case ComputationalTypeInt   => InterpretationHandler.getConstancyInfoForDynamicInt
+            case ComputationalTypeFloat => InterpretationHandler.getConstancyInfoForDynamicFloat
+            case _                      => StringConstancyInformation.getNeutralElement
         }
         FinalEP(instr, StringConstancyProperty(sci))
     }

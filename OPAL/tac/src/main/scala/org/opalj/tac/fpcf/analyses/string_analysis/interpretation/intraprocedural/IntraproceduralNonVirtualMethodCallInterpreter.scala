@@ -52,8 +52,8 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
         instr: NonVirtualMethodCall[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val prop = instr.name match {
-            case "<init>" ⇒ interpretInit(instr)
-            case _        ⇒ StringConstancyProperty.getNeutralElement
+            case "<init>" => interpretInit(instr)
+            case _        => StringConstancyProperty.getNeutralElement
         }
         FinalEP(instr, prop)
     }
@@ -67,10 +67,10 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      */
     private def interpretInit(init: NonVirtualMethodCall[V]): StringConstancyProperty = {
         init.params.size match {
-            case 0 ⇒ StringConstancyProperty.getNeutralElement
-            case _ ⇒
+            case 0 => StringConstancyProperty.getNeutralElement
+            case _ =>
                 val scis = ListBuffer[StringConstancyInformation]()
-                init.params.head.asVar.definedBy.foreach { ds ⇒
+                init.params.head.asVar.definedBy.foreach { ds =>
                     val r = exprHandler.processDefSite(ds).asFinal
                     scis.append(
                         r.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation

@@ -58,8 +58,8 @@ class ArrayLoadPreparer(
             instr, state.tac.stmts
         )
 
-        allDefSites.map { ds ⇒ (ds, exprHandler.processDefSite(ds)) }.foreach {
-            case (ds, ep) ⇒
+        allDefSites.map { ds => (ds, exprHandler.processDefSite(ds)) }.foreach {
+            case (ds, ep) =>
                 if (ep.isFinal) {
                     val p = ep.asFinal.p.asInstanceOf[StringConstancyProperty]
                     state.appendToFpe2Sci(ds, p.stringConstancyInformation)
@@ -68,7 +68,7 @@ class ArrayLoadPreparer(
         }
 
         // Add information of parameters
-        defSites.filter(_ < 0).foreach { ds ⇒
+        defSites.filter(_ < 0).foreach { ds =>
             val paramPos = Math.abs(ds + 2)
             // lb is the fallback value
             val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
@@ -120,22 +120,22 @@ object ArrayLoadPreparer {
         val allDefSites = ListBuffer[Int]()
         val defSites = instr.arrayRef.asVar.definedBy.toArray
 
-        defSites.filter(_ >= 0).sorted.foreach { next ⇒
+        defSites.filter(_ >= 0).sorted.foreach { next =>
             val arrDecl = stmts(next)
             val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
             // For ArrayStores
             sortedArrDeclUses.filter {
                 stmts(_).isInstanceOf[ArrayStore[V]]
-            } foreach { f: Int ⇒
+            } foreach { f: Int =>
                 allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray)
             }
             // For ArrayLoads
             sortedArrDeclUses.filter {
                 stmts(_) match {
-                    case Assignment(_, _, _: ArrayLoad[V]) ⇒ true
-                    case _                                 ⇒ false
+                    case Assignment(_, _, _: ArrayLoad[V]) => true
+                    case _                                 => false
                 }
-            } foreach { f: Int ⇒
+            } foreach { f: Int =>
                 val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
                 allDefSites.appendAll(defs.toArray)
             }

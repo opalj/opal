@@ -15,6 +15,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
@@ -31,7 +32,8 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
-        declaredMethods: DeclaredMethods
+        declaredMethods: DeclaredMethods,
+        typeIterator:    TypeIterator
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualFunctionCall[V]
@@ -48,7 +50,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
-        val methods = getMethodsForPC(instr.pc, ps, state.callees, declaredMethods)
+        val methods = getMethodsForPC(instr.pc, ps, state.callees, typeIterator)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
             return FinalEP(instr, StringConstancyProperty.lb)
@@ -65,7 +67,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
                 // is approximated with the lower bound
                 FinalEP(instr, StringConstancyProperty.lb)
             } else {
-                val results = returns.map { ret ⇒
+                val results = returns.map { ret =>
                     val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
                     val entity = (uvar, m)
 

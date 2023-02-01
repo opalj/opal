@@ -29,9 +29,9 @@ class VirtualFunctionCallFinalizer(
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         instr.name match {
-            case "append"   ⇒ finalizeAppend(instr, defSite)
-            case "toString" ⇒ finalizeToString(instr, defSite)
-            case _ ⇒ state.appendToFpe2Sci(
+            case "append"   => finalizeAppend(instr, defSite)
+            case "toString" => finalizeToString(instr, defSite)
+            case _ => state.appendToFpe2Sci(
                 defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
             )
         }
@@ -44,13 +44,13 @@ class VirtualFunctionCallFinalizer(
      */
     private def finalizeAppend(instr: T, defSite: Int): Unit = {
         val receiverDefSites = instr.receiver.asVar.definedBy.toArray.sorted
-        receiverDefSites.foreach { ds ⇒
+        receiverDefSites.foreach { ds =>
             if (!state.fpe2sci.contains(ds)) {
                 state.iHandler.finalizeDefSite(ds, state)
             }
         }
         val receiverSci = StringConstancyInformation.reduceMultiple(
-            receiverDefSites.flatMap { s ⇒
+            receiverDefSites.flatMap { s =>
                 // As the receiver value is used already here, we do not want it to be used a
                 // second time (during the final traversing of the path); thus, reset it to have it
                 // only once in the result, i.e., final tree
@@ -61,7 +61,7 @@ class VirtualFunctionCallFinalizer(
         )
 
         val paramDefSites = instr.params.head.asVar.definedBy.toArray.sorted
-        paramDefSites.foreach { ds ⇒
+        paramDefSites.foreach { ds =>
             if (!state.fpe2sci.contains(ds)) {
                 state.iHandler.finalizeDefSite(ds, state)
             }
@@ -93,13 +93,13 @@ class VirtualFunctionCallFinalizer(
 
     private def finalizeToString(instr: T, defSite: Int): Unit = {
         val dependeeSites = instr.receiver.asVar.definedBy
-        dependeeSites.foreach { nextDependeeSite ⇒
+        dependeeSites.foreach { nextDependeeSite =>
             if (!state.fpe2sci.contains(nextDependeeSite)) {
                 state.iHandler.finalizeDefSite(nextDependeeSite, state)
             }
         }
         val finalSci = StringConstancyInformation.reduceMultiple(
-            dependeeSites.toArray.flatMap { ds ⇒ state.fpe2sci(ds) }
+            dependeeSites.toArray.flatMap { ds => state.fpe2sci(ds) }
         )
         // Remove the dependees, such as calls to "toString"; the reason being is that we do not
         // duplications (arising from an "append" and a "toString" call)

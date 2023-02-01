@@ -2,7 +2,6 @@
 package org.opalj.br.cfg
 
 import java.net.URL
-
 import org.junit.runner.RunWith
 import org.opalj.br.analyses.Project
 import org.opalj.br.ClassHierarchy
@@ -13,7 +12,7 @@ import org.opalj.br.instructions.IFNE
 import org.opalj.br.Code
 import org.opalj.br.instructions.IFEQ
 import org.opalj.br.instructions.ILOAD
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Computes the dominator tree of CFGs of a couple of methods and checks their sanity.
@@ -31,7 +30,7 @@ class DominatorTreeTest extends AbstractCFGTest {
     private def getNextNonNullInstr(index: Int, code: Code): Int = {
         var foundIndex = index
         var found = false
-        for (i ← (index + 1).to(code.instructions.length)) {
+        for (i <- (index + 1).to(code.instructions.length)) {
             if (!found && code.instructions(i) != null) {
                 foundIndex = i
                 found = true
@@ -56,7 +55,7 @@ class DominatorTreeTest extends AbstractCFGTest {
 
             printCFGOnFailure(m, code, cfg, Some(domTree)) {
                 domTree.immediateDominators.zipWithIndex.foreach {
-                    case (idom, index) ⇒
+                    case (idom, index) =>
                         if (index == 0) {
                             idom should be(0)
                         } else {
@@ -76,12 +75,12 @@ class DominatorTreeTest extends AbstractCFGTest {
 
             printCFGOnFailure(m, code, cfg, Some(domTree)) {
                 var index = 0
-                code.foreachInstruction { next ⇒
+                code.foreachInstruction { next =>
                     next match {
-                        case _: IFNE | _: IF_ICMPNE ⇒
+                        case _: IFNE | _: IF_ICMPNE =>
                             val next = getNextNonNullInstr(index, code)
                             domTree.immediateDominators(next) should be(index)
-                        case _ ⇒
+                        case _ =>
                     }
                     index += 1
                 }
@@ -102,7 +101,7 @@ class DominatorTreeTest extends AbstractCFGTest {
                 val loadOfReturn = loadOfReturnOption.get
                 val indexOfLoadOfReturn = code.instructions.indexOf(loadOfReturn)
                 val ifOfLoadOfReturn = code.instructions.reverse.zipWithIndex.find {
-                    case (instr, i) ⇒
+                    case (instr, i) =>
                         i < indexOfLoadOfReturn && instr.isInstanceOf[IFEQ]
                 }
                 ifOfLoadOfReturn should not be ifOfLoadOfReturn.isEmpty

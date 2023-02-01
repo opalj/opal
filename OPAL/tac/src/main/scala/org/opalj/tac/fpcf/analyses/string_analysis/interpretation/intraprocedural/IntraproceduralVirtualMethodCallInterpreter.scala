@@ -51,10 +51,10 @@ class IntraproceduralVirtualMethodCallInterpreter(
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val sci = instr.name match {
-            case "setLength" ⇒ StringConstancyInformation(
+            case "setLength" => StringConstancyInformation(
                 StringConstancyLevel.CONSTANT, StringConstancyType.RESET
             )
-            case _ ⇒ StringConstancyInformation.getNeutralElement
+            case _ => StringConstancyInformation.getNeutralElement
         }
         FinalEP(instr, StringConstancyProperty(sci))
     }

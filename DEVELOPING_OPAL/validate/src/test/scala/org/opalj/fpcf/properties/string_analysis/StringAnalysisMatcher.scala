@@ -26,8 +26,8 @@ class StringAnalysisMatcher extends AbstractPropertyMatcher {
      */
     private def getConstancyLevel(a: AnnotationLike): String = {
         a.elementValuePairs.find(_.name == "expectedLevel") match {
-            case Some(el) ⇒ el.value.asEnumValue.constName
-            case None ⇒ throw new IllegalArgumentException(
+            case Some(el) => el.value.asEnumValue.constName
+            case None => throw new IllegalArgumentException(
                 "Can only extract the constancy level from a StringDefinitions annotation"
             )
         }
@@ -43,8 +43,8 @@ class StringAnalysisMatcher extends AbstractPropertyMatcher {
      */
     private def getExpectedStrings(a: AnnotationLike): String = {
         a.elementValuePairs.find(_.name == "expectedStrings") match {
-            case Some(el) ⇒ el.value.asStringValue.value
-            case None ⇒ throw new IllegalArgumentException(
+            case Some(el) => el.value.asStringValue.value
+            case None => throw new IllegalArgumentException(
                 "Can only extract the possible strings from a StringDefinitions annotation"
             )
         }
@@ -58,16 +58,16 @@ class StringAnalysisMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         var actLevel = ""
         var actString = ""
         properties.head match {
-            case prop: StringConstancyProperty ⇒
+            case prop: StringConstancyProperty =>
                 val sci = prop.stringConstancyInformation
                 actLevel = sci.constancyLevel.toString.toLowerCase
                 actString = sci.possibleStrings
-            case _ ⇒
+            case _ =>
         }
 
         val expLevel = getConstancyLevel(a).toLowerCase

@@ -55,8 +55,8 @@ class InterproceduralNonVirtualMethodCallInterpreter(
     ): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
         instr.name match {
-            case "<init>" ⇒ interpretInit(instr, e)
-            case _        ⇒ FinalEP(e, StringConstancyProperty.getNeutralElement)
+            case "<init>" => interpretInit(instr, e)
+            case _        => FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
     }
 
@@ -71,14 +71,14 @@ class InterproceduralNonVirtualMethodCallInterpreter(
         init: NonVirtualMethodCall[V], defSite: Integer
     ): EOptionP[Entity, StringConstancyProperty] = {
         init.params.size match {
-            case 0 ⇒ FinalEP(defSite, StringConstancyProperty.getNeutralElement)
-            case _ ⇒
-                val results = init.params.head.asVar.definedBy.map { ds: Int ⇒
+            case 0 => FinalEP(defSite, StringConstancyProperty.getNeutralElement)
+            case _ =>
+                val results = init.params.head.asVar.definedBy.map { ds: Int =>
                     (ds, exprHandler.processDefSite(ds, List()))
                 }
                 if (results.forall(_._2.isFinal)) {
                     // Final result is available
-                    val reduced = StringConstancyInformation.reduceMultiple(results.map { r ⇒
+                    val reduced = StringConstancyInformation.reduceMultiple(results.map { r =>
                         val prop = r._2.asFinal.p.asInstanceOf[StringConstancyProperty]
                         prop.stringConstancyInformation
                     })
@@ -86,16 +86,16 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                 } else {
                     // Some intermediate results => register necessary information from final
                     // results and return an intermediate result
-                    val returnIR = results.find(r ⇒ !r._2.isFinal).get._2
+                    val returnIR = results.find(r => !r._2.isFinal).get._2
                     results.foreach {
-                        case (ds, r) ⇒
+                        case (ds, r) =>
                             if (r.isFinal) {
                                 val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
                                 state.appendToFpe2Sci(
                                     ds, p.stringConstancyInformation, reset = true
                                 )
                             }
-                        case _ ⇒
+                        case _ =>
                     }
                     returnIR
                 }

@@ -7,7 +7,6 @@ import java.net.URL
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
 import org.opalj.br.Method
@@ -48,7 +47,7 @@ sealed class StringAnalysisTestRunner(
         val basePath = System.getProperty("user.dir")+
             "/DEVELOPING_OPAL/validate/target/scala-2.12/test-classes/org/opalj/fpcf/"
 
-        necessaryFiles.map { filePath ⇒ new File(basePath + filePath) }
+        necessaryFiles.map { filePath => new File(basePath + filePath) }
     }
 
     /**
@@ -71,14 +70,14 @@ sealed class StringAnalysisTestRunner(
         val tacProvider = project.get(EagerDetachedTACAIKey)
         project.allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)(
-                (exists, a) ⇒ exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
+                (exists, a) => exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
             )
-        } foreach { m ⇒
+        } foreach { m =>
             StringAnalysisTestRunner.extractUVars(
                 tacProvider(m).cfg, fqTestMethodsClass, nameTestMethod
-            ).foreach { uvar ⇒
-                entitiesToAnalyze.append((uvar, m))
-            }
+            ).foreach { uvar =>
+                    entitiesToAnalyze.append((uvar, m))
+                }
         }
         entitiesToAnalyze
     }
@@ -86,16 +85,16 @@ sealed class StringAnalysisTestRunner(
     def determineEAS(
         entities: Iterable[(V, Method)],
         project:  Project[URL]
-    ): Traversable[((V, Method), String ⇒ String, List[Annotation])] = {
-        val m2e = entities.groupBy(_._2).iterator.map(e ⇒ e._1 → e._2.map(k ⇒ k._1)).toMap
+    ): Iterable[((V, Method), String => String, List[Annotation])] = {
+        val m2e = entities.groupBy(_._2).iterator.map(e => e._1 -> e._2.map(k => k._1)).toMap
         // As entity, we need not the method but a tuple (DUVar, Method), thus this transformation
 
-        val eas = methodsWithAnnotations(project).filter(am ⇒ m2e.contains(am._1)).flatMap { am ⇒
+        val eas = methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
             m2e(am._1).zipWithIndex.map {
-                case (duvar, index) ⇒
+                case (duvar, index) =>
                     Tuple3(
                         (duvar, am._1),
-                        { s: String ⇒ s"${am._2(s)} (#$index)" },
+                        { s: String => s"${am._2(s)} (#$index)" },
                         List(getStringDefinitionsFromCollection(am._3, index))
                     )
             }
@@ -135,9 +134,9 @@ object StringAnalysisTestRunner {
         nameTestMethod:     String
     ): List[V] = {
         cfg.code.instructions.filter {
-            case VirtualMethodCall(_, declClass, _, name, _, _, _) ⇒
+            case VirtualMethodCall(_, declClass, _, name, _, _, _) =>
                 declClass.toJavaClass.getName == fqTestMethodsClass && name == nameTestMethod
-            case _ ⇒ false
+            case _ => false
         }.map(_.asVirtualMethodCall.params.head.asVar).toList
     }
 
@@ -164,7 +163,7 @@ class IntraproceduralStringAnalysisTest extends PropertiesTest {
         val entities = runner.determineEntitiesToAnalyze(p)
         val (_, analyses) = manager.runAll(
             List(LazyIntraproceduralStringAnalysis),
-            { _: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+            { _: List[ComputationSpecification[FPCFAnalysis]] =>
                 entities.foreach(ps.force(_, StringConstancyProperty.key))
             }
         )
@@ -219,7 +218,7 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
 
         val (_, analyses) = manager.runAll(
             analysesToRun,
-            { _: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+            { _: List[ComputationSpecification[FPCFAnalysis]] =>
                 entities.foreach(ps.force(_, StringConstancyProperty.key))
             }
         )

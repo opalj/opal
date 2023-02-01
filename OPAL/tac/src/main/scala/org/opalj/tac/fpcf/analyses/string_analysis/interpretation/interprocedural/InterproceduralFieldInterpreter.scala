@@ -69,7 +69,7 @@ class InterproceduralFieldInterpreter(
         var hasInit = false
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
         writeAccesses.foreach {
-            case (m, pcs) ⇒ pcs.foreach { pc ⇒
+            case (m, pcs) => pcs.foreach { pc =>
                 if (m.name == "<init>" || m.name == "<clinit>") {
                     hasInit = true
                 }
@@ -78,7 +78,7 @@ class InterproceduralFieldInterpreter(
                     EPK(state.entity, StringConstancyProperty.key)
                 } else {
                     tac match {
-                        case Some(methodTac) ⇒
+                        case Some(methodTac) =>
                             val stmt = methodTac.stmts(methodTac.pcToIndex(pc))
                             val entity = (extractUVarFromPut(stmt), m)
                             val eps = ps(entity, StringConstancyProperty.key)
@@ -92,7 +92,7 @@ class InterproceduralFieldInterpreter(
                                 state.appendToVar2IndexMapping(entity._1, -1)
                             }
                             eps
-                        case _ ⇒
+                        case _ =>
                             // No TAC available
                             FinalEP(defSitEntity, StringConstancyProperty.lb)
                     }
@@ -140,9 +140,9 @@ class InterproceduralFieldInterpreter(
      * [[PutStatic]] or [[PutField]].
      */
     private def extractUVarFromPut(field: Stmt[V]): V = field match {
-        case PutStatic(_, _, _, _, value)   ⇒ value.asVar
-        case PutField(_, _, _, _, _, value) ⇒ value.asVar
-        case _                              ⇒ throw new IllegalArgumentException(s"Type of $field is currently not supported!")
+        case PutStatic(_, _, _, _, value)   => value.asVar
+        case PutField(_, _, _, _, _, value) => value.asVar
+        case _                              => throw new IllegalArgumentException(s"Type of $field is currently not supported!")
     }
 
 }

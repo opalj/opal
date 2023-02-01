@@ -75,10 +75,10 @@ object StringConstancyInformation {
             // The list may be empty, e.g., if the UVar passed to the analysis, refers to a
             // VirtualFunctionCall (they are not interpreted => an empty list is returned) => return
             // the neutral element
-            case 0 ⇒ StringConstancyInformation.getNeutralElement
-            case 1 ⇒ relScis.head
-            case _ ⇒ // Reduce
-                val reduced = relScis.reduceLeft((o, n) ⇒
+            case 0 => StringConstancyInformation.getNeutralElement
+            case 1 => relScis.head
+            case _ => // Reduce
+                val reduced = relScis.reduceLeft((o, n) =>
                     StringConstancyInformation(
                         StringConstancyLevel.determineMoreGeneral(
                             o.constancyLevel, n.constancyLevel

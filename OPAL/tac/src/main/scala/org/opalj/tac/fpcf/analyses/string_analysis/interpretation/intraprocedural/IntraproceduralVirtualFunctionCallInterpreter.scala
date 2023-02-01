@@ -67,20 +67,20 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val property = instr.name match {
-            case "append"   ⇒ interpretAppendCall(instr)
-            case "toString" ⇒ interpretToStringCall(instr)
-            case "replace"  ⇒ interpretReplaceCall(instr)
-            case _ ⇒
+            case "append"   => interpretAppendCall(instr)
+            case "toString" => interpretToStringCall(instr)
+            case "replace"  => interpretReplaceCall(instr)
+            case _ =>
                 instr.descriptor.returnType match {
-                    case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
+                    case obj: ObjectType if obj.fqn == "java/lang/String" =>
                         StringConstancyProperty.lb
-                    case FloatType | DoubleType ⇒
+                    case FloatType | DoubleType =>
                         StringConstancyProperty(StringConstancyInformation(
                             StringConstancyLevel.DYNAMIC,
                             StringConstancyType.APPEND,
                             StringConstancyInformation.FloatValue
                         ))
-                    case _ ⇒ StringConstancyProperty.getNeutralElement
+                    case _ => StringConstancyProperty.getNeutralElement
                 }
         }
 
@@ -133,10 +133,10 @@ class IntraproceduralVirtualFunctionCallInterpreter(
     ): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
-        val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds ⇒
+        val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds =>
             val r = exprHandler.processDefSite(ds)
             r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-        }.filter { sci ⇒ !sci.isTheNeutralElement }
+        }.filter { sci => !sci.isTheNeutralElement }
         val sci = if (scis.isEmpty) StringConstancyInformation.getNeutralElement else
             scis.head
         StringConstancyProperty(sci)
@@ -166,7 +166,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
         val sci = value.stringConstancyInformation
         val finalSci = param.value.computationalType match {
             // For some types, we know the (dynamic) values
-            case ComputationalTypeInt ⇒
+            case ComputationalTypeInt =>
                 // The value was already computed above; however, we need to check whether the
                 // append takes an int value or a char (if it is a constant char, convert it)
                 if (call.descriptor.parameterType(0).isCharType &&
@@ -177,14 +177,14 @@ class IntraproceduralVirtualFunctionCallInterpreter(
                 } else {
                     sci
                 }
-            case ComputationalTypeFloat | ComputationalTypeDouble ⇒
+            case ComputationalTypeFloat | ComputationalTypeDouble =>
                 if (sci.constancyLevel == StringConstancyLevel.CONSTANT) {
                     sci
                 } else {
                     InterpretationHandler.getConstancyInfoForDynamicFloat
                 }
             // Otherwise, try to compute
-            case _ ⇒
+            case _ =>
                 sci
         }
 

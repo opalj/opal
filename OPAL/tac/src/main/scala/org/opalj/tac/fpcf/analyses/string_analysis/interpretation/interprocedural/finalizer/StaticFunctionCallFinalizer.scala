@@ -29,7 +29,7 @@ class StaticFunctionCallFinalizer(
             // computed by InterproceduralStaticFunctionCallInterpreter (which is why this method
             // will not be called for char parameters)
             val defSites = instr.params.head.asVar.definedBy.toArray.sorted
-            defSites.foreach { ds ⇒
+            defSites.foreach { ds =>
                 if (!state.fpe2sci.contains(ds)) {
                     state.iHandler.finalizeDefSite(ds, state)
                 }

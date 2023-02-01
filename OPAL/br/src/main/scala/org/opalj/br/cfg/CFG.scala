@@ -9,7 +9,7 @@ import java.util.Arrays
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
 
-import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.{Set => SomeSet}
 import scala.collection.AbstractIterator
 
 import org.opalj.log.LogContext
@@ -760,7 +760,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             // Execute a depth-first-search to find all back-edges
             val start = startBlock.startPC
             val seenNodes = ListBuffer[Int](start)
-            val toVisitStack = mutable.Stack[Int](successors(start).toArray: _*)
+            val toVisitStack = mutable.Stack[Int](successors(start).toList: _*)
             // backedges stores all back-edges in the form (from, to) (where to dominates from)
             val backedges = ListBuffer[(Int, Int)]()
             while (toVisitStack.nonEmpty) {
@@ -768,11 +768,11 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 val to = successors(from).toArray
                 // Check for back-edges (exclude catch nodes here as this would detect loops where
                 // no actually are
-                to.filter { next ⇒
+                to.filter { next =>
                     val index = seenNodes.indexOf(next)
                     val isCatchNode = catchNodes.exists(_.handlerPC == next)
                     index > -1 && !isCatchNode && domTree.doesDominate(seenNodes(index), from)
-                }.foreach { destIndex ⇒
+                }.foreach { destIndex =>
                     // There are loops that have more than one edge leaving the loop; let x denote
                     // the loop header and y1, y2 two edges that leave the loop with y1 happens
                     // before y2; this method only saves one loop per loop header, thus y1 is
@@ -781,8 +781,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                     val hasDest = backedges.exists(_._2 == destIndex)
                     var removedBackedge = false
                     backedges.filter {
-                        case (oldTo: Int, oldFrom: Int) ⇒ oldFrom == destIndex && oldTo < from
-                    }.foreach { toRemove ⇒ removedBackedge = true; backedges -= toRemove }
+                        case (oldTo: Int, oldFrom: Int) => oldFrom == destIndex && oldTo < from
+                    }.foreach { toRemove => removedBackedge = true; backedges -= toRemove }
                     if (!hasDest || removedBackedge) {
                         backedges.append((from, destIndex))
                     }
@@ -793,7 +793,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             }
 
             // Finally, assemble the lists of loop elements
-            naturalLoops = Some(backedges.map { case (dest, root) ⇒ root.to(dest).toList }.toList)
+            naturalLoops = Some(backedges.map { case (dest, root) => root.to(dest).toList }.toList)
         }
 
         naturalLoops.get
@@ -805,19 +805,19 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * @see [[PostDominatorTree.apply]]
      */
     def postDominatorTree: PostDominatorTree = {
-        val exitNodes = basicBlocks.zipWithIndex.filter { next ⇒
+        val exitNodes = basicBlocks.zipWithIndex.filter { next =>
             next._1.successors.size == 1 && next._1.successors.head.isInstanceOf[ExitNode]
         }.map(_._2)
         PostDominatorTree(
             if (exitNodes.length == 1) Some(exitNodes.head) else None,
-            i ⇒ exitNodes.contains(i),
+            i => exitNodes.contains(i),
             // TODO: Pass an IntTrieSet if exitNodes contains more than one element
             EmptyIntTrieSet,
             // TODO: Correct function (just copied it from one of the tests)?
-            (f: Int ⇒ Unit) ⇒ exitNodes.foreach(e ⇒ f(e)),
+            (f: Int => Unit) => exitNodes.foreach(e => f(e)),
             foreachSuccessor,
             foreachPredecessor,
-            basicBlocks.foldLeft(0) { (prevMaxNode: Int, next: BasicBlock) ⇒
+            basicBlocks.foldLeft(0) { (prevMaxNode: Int, next: BasicBlock) =>
                 math.max(prevMaxNode, next.endPC)
             }
         )

@@ -1,20 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.string_definition
 
-import org.scalatest.FunSuite
-
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.CONSTANT
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.PARTIALLY_CONSTANT
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Tests for [[StringConstancyLevel]] methods.
  *
  * @author Patrick Mell
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class StringConstancyLevelTests extends FunSuite {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class StringConstancyLevelTests extends AnyFunSuite {
 
     test("tests that the more general string constancy level is computed correctly") {
         // Trivial cases

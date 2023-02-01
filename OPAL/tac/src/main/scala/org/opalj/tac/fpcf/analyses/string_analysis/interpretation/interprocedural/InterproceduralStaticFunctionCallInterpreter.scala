@@ -2,7 +2,6 @@
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
 import scala.util.Try
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -10,7 +9,7 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.{NoContext, StringConstancyProperty}
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
@@ -20,6 +19,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractString
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * The `InterproceduralStaticFunctionCallInterpreter` is responsible for processing
@@ -37,7 +37,8 @@ class InterproceduralStaticFunctionCallInterpreter(
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
         params:          List[Seq[StringConstancyInformation]],
-        declaredMethods: DeclaredMethods
+        declaredMethods: DeclaredMethods,
+        typeIterator:    TypeIterator
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StaticFunctionCall[V]
@@ -71,7 +72,7 @@ class InterproceduralStaticFunctionCallInterpreter(
     private def processStringValueOf(
         call: StaticFunctionCall[V]
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val results = call.params.head.asVar.definedBy.toArray.sorted.map { ds ⇒
+        val results = call.params.head.asVar.definedBy.toArray.sorted.map { ds =>
             exprHandler.processDefSite(ds, params)
         }
         val interim = results.find(_.isRefinable)
@@ -79,11 +80,11 @@ class InterproceduralStaticFunctionCallInterpreter(
             interim.get
         } else {
             // For char values, we need to do a conversion (as the returned results are integers)
-            val scis = results.map { r ⇒
+            val scis = results.map { r =>
                 r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
             }
             val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
-                scis.map { sci ⇒
+                scis.map { sci =>
                     if (Try(sci.possibleStrings.toInt).isSuccess) {
                         sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
                     } else {
@@ -105,7 +106,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         instr: StaticFunctionCall[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val methods, _ = getMethodsForPC(
-            instr.pc, ps, state.callees, declaredMethods
+            instr.pc, ps, state.callees, typeIterator
         )
 
         // Static methods cannot be overwritten, thus 1) we do not need the second return value of
@@ -118,11 +119,11 @@ class InterproceduralStaticFunctionCallInterpreter(
         val m = methods._1.head
         val (_, tac) = getTACAI(ps, m, state)
 
-        val directCallSites = state.callees.directCallSites()(ps, declaredMethods)
+        val directCallSites = state.callees.directCallSites(NoContext)(ps, typeIterator)
         val relevantPCs = directCallSites.filter {
-            case (_, calledMethods) ⇒
-                calledMethods.exists(m ⇒
-                    m.name == instr.name && m.declaringClassType == instr.declaringClass)
+            case (_, calledMethods) =>
+                calledMethods.exists(m =>
+                    m.method.name == instr.name && m.method.declaringClassType == instr.declaringClass)
         }.keys
 
         // Collect all parameters; either from the state if the interpretation of instr was started
@@ -140,11 +141,11 @@ class InterproceduralStaticFunctionCallInterpreter(
             )
         }
         // Continue only when all parameter information are available
-        val nonFinalResults = getNonFinalParameters(params)
+        val nonFinalResults = getNonFinalParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
         if (nonFinalResults.nonEmpty) {
             if (tac.isDefined) {
                 val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
-                returns.foreach { ret ⇒
+                returns.foreach { ret =>
                     val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, m)
                     val eps = ps(entity, StringConstancyProperty.key)
                     state.dependees = eps :: state.dependees
@@ -158,7 +159,7 @@ class InterproceduralStaticFunctionCallInterpreter(
 
         state.nonFinalFunctionArgs.remove(instr)
         state.nonFinalFunctionArgsPos.remove(instr)
-        val evaluatedParams = convertEvaluatedParameters(params)
+        val evaluatedParams = convertEvaluatedParameters(params.toSeq.map(t => t.toSeq.map(_.toSeq)))
         if (tac.isDefined) {
             state.removeFromMethodPrep2defSite(m, defSite)
             // TAC available => Get return UVar and start the string analysis
@@ -168,7 +169,7 @@ class InterproceduralStaticFunctionCallInterpreter(
                 // is approximated with the lower bound
                 FinalEP(instr, StringConstancyProperty.lb)
             } else {
-                val results = returns.map { ret ⇒
+                val results = returns.map { ret =>
                     val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, m)
                     InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
 

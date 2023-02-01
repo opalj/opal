@@ -90,11 +90,11 @@ object InterpretationHandler {
      */
     def isStringBuilderBufferToStringCall(expr: Expr[V]): Boolean =
         expr match {
-            case VirtualFunctionCall(_, clazz, _, name, _, _, _) ⇒
+            case VirtualFunctionCall(_, clazz, _, name, _, _, _) =>
                 val className = clazz.mostPreciseObjectType.fqn
                 (className == "java/lang/StringBuilder" || className == "java/lang/StringBuffer") &&
                     name == "toString"
-            case _ ⇒ false
+            case _ => false
         }
 
     /**
@@ -136,11 +136,11 @@ object InterpretationHandler {
      */
     def isStringBuilderBufferAppendCall(expr: Expr[V]): Boolean = {
         expr match {
-            case VirtualFunctionCall(_, clazz, _, name, _, _, _) ⇒
+            case VirtualFunctionCall(_, clazz, _, name, _, _, _) =>
                 val className = clazz.toJavaClass.getName
                 (className == "java.lang.StringBuilder" || className == "java.lang.StringBuffer") &&
                     name == "append"
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -156,16 +156,16 @@ object InterpretationHandler {
         }
 
         val defSites = ListBuffer[Int]()
-        val stack = mutable.Stack[Int](toString.receiver.asVar.definedBy.filter(_ >= 0).toArray: _*)
+        val stack = mutable.Stack[Int](toString.receiver.asVar.definedBy.filter(_ >= 0).toList: _*)
         val seenElements: mutable.Map[Int, Unit] = mutable.Map()
         while (stack.nonEmpty) {
             val next = stack.pop()
             stmts(next) match {
-                case a: Assignment[V] ⇒
+                case a: Assignment[V] =>
                     a.expr match {
-                        case _: New ⇒
+                        case _: New =>
                             defSites.append(next)
-                        case vfc: VirtualFunctionCall[V] ⇒
+                        case vfc: VirtualFunctionCall[V] =>
                             val recDefSites = vfc.receiver.asVar.definedBy.filter(_ >= 0).toArray
                             // recDefSites.isEmpty => Definition site is a parameter => Use the
                             // current function call as a def site
@@ -174,13 +174,13 @@ object InterpretationHandler {
                             } else {
                                 defSites.append(next)
                             }
-                        case _: GetField[V] ⇒
+                        case _: GetField[V] =>
                             defSites.append(next)
-                        case _ ⇒ // E.g., NullExpr
+                        case _ => // E.g., NullExpr
                     }
-                case _ ⇒
+                case _ =>
             }
-            seenElements(next) = Unit
+            seenElements(next) = ()
         }
 
         defSites.sorted.toList
@@ -196,11 +196,11 @@ object InterpretationHandler {
      */
     def findDefSiteOfInit(duvar: V, stmts: Array[Stmt[V]]): List[Int] = {
         val defSites = ListBuffer[Int]()
-        duvar.definedBy.foreach { ds ⇒
+        duvar.definedBy.foreach { ds =>
             defSites.appendAll(stmts(ds).asAssignment.expr match {
-                case vfc: VirtualFunctionCall[V] ⇒ findDefSiteOfInitAcc(vfc, stmts)
+                case vfc: VirtualFunctionCall[V] => findDefSiteOfInitAcc(vfc, stmts)
                 // The following case is, e.g., for {NonVirtual, Static}FunctionCalls
-                case _                           ⇒ List(ds)
+                case _                           => List(ds)
             })
         }
         // If no init sites could be determined, use the definition sites of the UVar
@@ -222,26 +222,26 @@ object InterpretationHandler {
         val news = ListBuffer[New]()
 
         // HINT: It might be that the search has to be extended to further cases
-        duvar.definedBy.filter(_ >= 0).foreach { ds ⇒
+        duvar.definedBy.filter(_ >= 0).foreach { ds =>
             stmts(ds) match {
                 // E.g., a call to `toString` or `append`
-                case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
-                    vfc.receiver.asVar.definedBy.filter(_ >= 0).foreach { innerDs ⇒
+                case Assignment(_, _, vfc: VirtualFunctionCall[V]) =>
+                    vfc.receiver.asVar.definedBy.filter(_ >= 0).foreach { innerDs =>
                         stmts(innerDs) match {
-                            case Assignment(_, _, expr: New) ⇒
+                            case Assignment(_, _, expr: New) =>
                                 news.append(expr)
-                            case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
+                            case Assignment(_, _, expr: VirtualFunctionCall[V]) =>
                                 val exprReceiverVar = expr.receiver.asVar
                                 // The "if" is to avoid endless recursion
                                 if (duvar.definedBy != exprReceiverVar.definedBy) {
                                     news.appendAll(findNewOfVar(exprReceiverVar, stmts))
                                 }
-                            case _ ⇒
+                            case _ =>
                         }
                     }
-                case Assignment(_, _, newExpr: New) ⇒
+                case Assignment(_, _, newExpr: New) =>
                     news.append(newExpr)
-                case _ ⇒
+                case _ =>
             }
         }
 

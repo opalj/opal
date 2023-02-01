@@ -37,9 +37,9 @@ class StringConstancyProperty(
     override def hashCode(): Int = stringConstancyInformation.hashCode()
 
     override def equals(o: Any): Boolean = o match {
-        case scp: StringConstancyProperty ⇒
+        case scp: StringConstancyProperty =>
             stringConstancyInformation.equals(scp.stringConstancyInformation)
-        case _ ⇒ false
+        case _ => false
     }
 }
 
@@ -50,7 +50,7 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     final val key: PropertyKey[StringConstancyProperty] = {
         PropertyKey.create(
             PropertyKeyName,
-            (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ {
+            (_: PropertyStore, _: FallbackReason, _: Entity) => {
                 // TODO: Using simple heuristics, return a better value for some easy cases
                 lb
             }

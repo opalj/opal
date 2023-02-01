@@ -3,7 +3,6 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
@@ -11,10 +10,9 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DefinedMethod
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.{NoContext, StringConstancyProperty}
+import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -27,6 +25,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.FunctionCall
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.NonFinalFunctionArgs
@@ -86,13 +85,14 @@ abstract class AbstractStringInterpreter(
      */
     protected def getMethodsForPC(
         implicit
-        pc: Int, ps: PropertyStore, callees: Callees, declaredMethods: DeclaredMethods
+        pc: Int, ps: PropertyStore, callees: Callees, typeIt: TypeIterator
     ): (List[Method], Boolean) = {
         var hasMethodWithUnknownBody = false
         val methods = ListBuffer[Method]()
-        callees.callees(pc).foreach {
-            case definedMethod: DefinedMethod ⇒ methods.append(definedMethod.definedMethod)
-            case _                            ⇒ hasMethodWithUnknownBody = true
+
+        callees.callees(NoContext, pc)(ps, typeIt).map(_.method).foreach {
+            case definedMethod: DefinedMethod => methods.append(definedMethod.definedMethod)
+            case _                            => hasMethodWithUnknownBody = true
         }
 
         (methods.sortBy(_.classFile.fqn).toList, hasMethodWithUnknownBody)
@@ -108,11 +108,11 @@ abstract class AbstractStringInterpreter(
         tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): List[Seq[Expr[V]]] = {
         val paramLists = ListBuffer[Seq[Expr[V]]]()
-        pcs.map(tac.pcToIndex).foreach { stmtIndex ⇒
+        pcs.map(tac.pcToIndex).foreach { stmtIndex =>
             val params = tac.stmts(stmtIndex) match {
-                case ExprStmt(_, vfc: FunctionCall[V])     ⇒ vfc.params
-                case Assignment(_, _, fc: FunctionCall[V]) ⇒ fc.params
-                case _                                     ⇒ Seq()
+                case ExprStmt(_, vfc: FunctionCall[V])     => vfc.params
+                case Assignment(_, _, fc: FunctionCall[V]) => fc.params
+                case _                                     => Seq()
             }
             if (params.nonEmpty) {
                 paramLists.append(params)
@@ -139,12 +139,12 @@ abstract class AbstractStringInterpreter(
         funCall:         FunctionCall[V],
         functionArgsPos: NonFinalFunctionArgsPos,
         entity2function: mutable.Map[P, ListBuffer[FunctionCall[V]]]
-    ): NonFinalFunctionArgs = params.zipWithIndex.map {
-        case (nextParamList, outerIndex) ⇒
-            nextParamList.zipWithIndex.map {
-                case (nextParam, middleIndex) ⇒
-                    nextParam.asVar.definedBy.toArray.sorted.zipWithIndex.map {
-                        case (ds, innerIndex) ⇒
+    ): NonFinalFunctionArgs = ListBuffer.from(params.zipWithIndex.map {
+        case (nextParamList, outerIndex) =>
+            ListBuffer.from(nextParamList.zipWithIndex.map {
+                case (nextParam, middleIndex) =>
+                    ListBuffer.from(nextParam.asVar.definedBy.toArray.sorted.zipWithIndex.map {
+                        case (ds, innerIndex) =>
                             val ep = iHandler.processDefSite(ds)
                             if (ep.isRefinable) {
                                 if (!functionArgsPos.contains(funCall)) {
@@ -158,9 +158,9 @@ abstract class AbstractStringInterpreter(
                                 entity2function(e).append(funCall)
                             }
                             ep
-                    }.to[ListBuffer]
-            }.to[ListBuffer]
-    }.to[ListBuffer]
+                    })
+            })
+    })
 
     /**
      * This function checks whether the interpretation of parameters, as, e.g., produced by
@@ -180,15 +180,15 @@ abstract class AbstractStringInterpreter(
      */
     protected def convertEvaluatedParameters(
         evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, Property]]]]
-    ): ListBuffer[ListBuffer[StringConstancyInformation]] = evaluatedParameters.map { paramList ⇒
-        paramList.map { param ⇒
+    ): ListBuffer[ListBuffer[StringConstancyInformation]] = ListBuffer.from(evaluatedParameters.map { paramList =>
+        ListBuffer.from(paramList.map { param =>
             StringConstancyInformation.reduceMultiple(
                 param.map {
                     _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 }
             )
-        }.to[ListBuffer]
-    }.to[ListBuffer]
+        })
+    })
 
     /**
      *

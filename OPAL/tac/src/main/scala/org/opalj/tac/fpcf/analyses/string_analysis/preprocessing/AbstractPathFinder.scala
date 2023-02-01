@@ -3,7 +3,6 @@ package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
@@ -65,23 +64,23 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         whole conditional as described above.
      */
     private def getStartAndEndIndexOfCondWithAlternative(
-        branchingSite: Int, processedIfs: mutable.Map[Int, Unit.type]
+        branchingSite: Int, processedIfs: mutable.Map[Int, Unit]
     ): (Int, Int) = {
-        processedIfs(branchingSite) = Unit
+        processedIfs(branchingSite) = ()
 
         var endSite = -1
         val stack = mutable.Stack[Int](branchingSite)
         while (stack.nonEmpty) {
             val popped = stack.pop()
             val nextBlock = cfg.bb(popped).successors.map {
-                case bb: BasicBlock ⇒ bb.startPC
+                case bb: BasicBlock => bb.startPC
                 // Handle Catch Nodes?
-                case _              ⇒ -1
+                case _              => -1
             }.max
             var containsIf = false
-            for (i ← cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
+            for (i <- cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
                 if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
-                    processedIfs(i) = Unit
+                    processedIfs(i) = ()
                     containsIf = true
                 }
             }
@@ -94,19 +93,19 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 // surrounding loop
                 var isRelevantGoto = false
                 val relevantGoTo: Option[Goto] = cfg.code.instructions(nextBlock - 1) match {
-                    case goto: Goto ⇒
+                    case goto: Goto =>
                         // A goto is not relevant if it points at a loop that is within the
                         // conditional (this does not help / provides no further information)
                         val gotoSite = goto.targetStmt
-                        isRelevantGoto = !cfg.findNaturalLoops().exists { l ⇒
+                        isRelevantGoto = !cfg.findNaturalLoops().exists { l =>
                             l.head == gotoSite
                         }
                         Some(goto)
-                    case _ ⇒ None
+                    case _ => None
                 }
 
                 relevantGoTo match {
-                    case Some(goto) ⇒
+                    case Some(goto) =>
                         if (isRelevantGoto) {
                             // Find the goto that points after the "else" part (the assumption is
                             // that this goto is the very last element of the current branch
@@ -122,28 +121,28 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                             // If the conditional is encloses in a try-catch block, consider this
                             // bounds and otherwise the bounds of the surrounding element
                             cfg.bb(nextBlock).successors.find(_.isInstanceOf[CatchNode]) match {
-                                case Some(cs: CatchNode) ⇒
+                                case Some(cs: CatchNode) =>
                                     endSite = cs.endPC
                                     if (endSite == -1) {
                                         endSite = nextBlock
                                     }
-                                case _ ⇒
+                                case _ =>
                                     endSite = if (nextBlock > branchingSite) nextBlock - 1 else
                                         cfg.findNaturalLoops().find {
                                             _.head == goto.targetStmt
                                         }.get.last
                             }
                         }
-                    case _ ⇒
+                    case _ =>
                         // No goto available => Jump after next block
                         var nextIf: Option[If[V]] = None
                         var i = nextBlock
                         while (i < cfg.code.instructions.length && nextIf.isEmpty) {
                             cfg.code.instructions(i) match {
-                                case iff: If[V] ⇒
+                                case iff: If[V] =>
                                     nextIf = Some(iff)
-                                    processedIfs(i) = Unit
-                                case _ ⇒
+                                    processedIfs(i) = ()
+                                case _ =>
                             }
                             i += 1
                         }
@@ -178,19 +177,19 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         whole conditional as described above.
      */
     private def getStartAndEndIndexOfCondWithoutAlternative(
-        branchingSite: Int, processedIfs: mutable.Map[Int, Unit.type]
+        branchingSite: Int, processedIfs: mutable.Map[Int, Unit]
     ): (Int, Int) = {
         // Find the index of very last element in the if block (here: The goto element; is it always
         // present?)
         val nextPossibleIfBlock = cfg.bb(branchingSite).successors.map {
-            case bb: BasicBlock ⇒ bb.startPC
+            case bb: BasicBlock => bb.startPC
             // Handle Catch Nodes?
-            case _              ⇒ -1
+            case _              => -1
         }.max
 
         var nextIfIndex = -1
         val ifTarget = cfg.code.instructions(branchingSite).asInstanceOf[If[V]].targetStmt
-        for (i ← cfg.bb(nextPossibleIfBlock).startPC.to(cfg.bb(nextPossibleIfBlock).endPC)) {
+        for (i <- cfg.bb(nextPossibleIfBlock).startPC.to(cfg.bb(nextPossibleIfBlock).endPC)) {
             // The second condition is necessary to detect two consecutive "if"s (not in an else-if
             // relation)
             if (cfg.code.instructions(i).isInstanceOf[If[V]] && ifTarget != i) {
@@ -200,7 +199,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         var endIndex = nextPossibleIfBlock - 1
         if (nextIfIndex > -1 && !isHeadOfLoop(nextIfIndex, cfg.findNaturalLoops(), cfg)) {
-            processedIfs(nextIfIndex) = Unit
+            processedIfs(nextIfIndex) = ()
             val (_, newEndIndex) = getStartAndEndIndexOfCondWithoutAlternative(
                 nextIfIndex, processedIfs
             )
@@ -215,7 +214,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             val toVisit = mutable.Stack[Int](branchingSite)
             while (toVisit.nonEmpty) {
                 val popped = toVisit.pop()
-                seenElements(popped) = Unit
+                seenElements(popped) = ()
                 val relevantSuccessors = cfg.bb(popped).successors.filter {
                     _.isInstanceOf[BasicBlock]
                 }.map(_.asBasicBlock)
@@ -223,7 +222,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     endIndex = cfg.bb(popped).endPC
                     toVisit.clear()
                 } else {
-                    toVisit.pushAll(relevantSuccessors.filter { s ⇒
+                    toVisit.pushAll(relevantSuccessors.filter { s =>
                         s.nodeId != ifTarget && !seenElements.contains(s.nodeId)
                     }.map(_.startPC))
                 }
@@ -232,7 +231,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         // It might be that this conditional is within a try block. In that case, endIndex will
         // point after all catch clauses which is to much => narrow down to try block
-        val inTryBlocks = cfg.catchNodes.filter { cn ⇒
+        val inTryBlocks = cfg.catchNodes.filter { cn =>
             branchingSite >= cn.startPC && branchingSite <= cn.endPC
         }
         if (inTryBlocks.nonEmpty) {
@@ -245,14 +244,14 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // It is now necessary to collect all ifs that belong to the whole if condition (in the
         // high-level construct)
         cfg.bb(ifTarget).predecessors.foreach {
-            case pred: BasicBlock ⇒
-                for (i ← pred.startPC.to(pred.endPC)) {
+            case pred: BasicBlock =>
+                for (i <- pred.startPC.to(pred.endPC)) {
                     if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
-                        processedIfs(i) = Unit
+                        processedIfs(i) = ()
                     }
                 }
             // How about CatchNodes?
-            case _ ⇒
+            case _ =>
         }
 
         (branchingSite, endIndex)
@@ -297,7 +296,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // present); a map is used for faster accesses
         val tryInfo = mutable.Map[Int, Int]()
 
-        cfg.catchNodes.foreach { cn ⇒
+        cfg.catchNodes.foreach { cn =>
             if (!tryInfo.contains(cn.startPC)) {
                 val cnSameStartPC = cfg.catchNodes.filter(_.startPC == cn.startPC)
                 val hasCatchFinally = cnSameStartPC.exists(_.catchType.isEmpty)
@@ -318,8 +317,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     else if (cnSameStartPC.tail.isEmpty && !isThrowable) {
                         if (cn.endPC > -1) {
                             var end = cfg.bb(cn.endPC).successors.map {
-                                case bb: BasicBlock ⇒ bb.startPC - 1
-                                case _              ⇒ -1
+                                case bb: BasicBlock => bb.startPC - 1
+                                case _              => -1
                             }.max
                             if (end == -1) {
                                 end = findNextReturn(cn.handlerPC)
@@ -341,8 +340,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                                 // If the finally does not terminate a method, it has a goto to jump
                                 // after the finally block; if not, the end of the finally is marked
                                 // by the end of the method
-                                case Goto(_, target) ⇒ target
-                                case _               ⇒ cfg.code.instructions.length - 1
+                                case Goto(_, target) => target
+                                case _               => cfg.code.instructions.length - 1
                             }
                             val numElementsFinally = endFinally - startFinally - 1
                             val endOfFinally = cnSameStartPC.map(_.handlerPC).max
@@ -351,8 +350,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                             val blockIndex = if (cnSameStartPC.head.endPC < 0)
                                 cfg.code.instructions.length - 1 else cnSameStartPC.head.endPC
                             tryInfo(cn.startPC) = cfg.bb(blockIndex).successors.map {
-                                case bb: BasicBlock ⇒ bb.startPC
-                                case _              ⇒ blockIndex
+                                case bb: BasicBlock => bb.startPC
+                                case _              => blockIndex
                             }.max - 1
                         }
                     }
@@ -361,7 +360,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
         tryInfo.map {
-            case (key, value) ⇒ (key, value, NestedPathType.TryCatchFinally)
+            case (key, value) => (key, value, NestedPathType.TryCatchFinally)
         }.toList
     }
 
@@ -402,7 +401,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): (Path, List[(Int, Int)]) = {
         val path = ListBuffer[SubPath]()
         if (fill) {
-            start.to(end).foreach(i ⇒ path.append(FlatPathElement(i)))
+            start.to(end).foreach(i => path.append(FlatPathElement(i)))
         }
         (Path(List(NestedPathElement(path, Some(NestedPathType.Repetition)))), List((start, end)))
     }
@@ -436,9 +435,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             val popped = stack.pop()
             if (popped <= end) {
                 var nextBlock = cfg.bb(popped).successors.map {
-                    case bb: BasicBlock ⇒ bb.startPC
+                    case bb: BasicBlock => bb.startPC
                     // Handle Catch Nodes?
-                    case _              ⇒ -1
+                    case _              => -1
                 }.max
 
                 if (pathType == NestedPathType.CondWithAlternative && nextBlock > end) {
@@ -450,7 +449,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 }
 
                 var containsIf = false
-                for (i ← cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
+                for (i <- cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
                     if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
                         containsIf = true
                     }
@@ -482,7 +481,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         val subPaths = ListBuffer[SubPath]()
         startEndPairs.foreach {
-            case (startSubpath, endSubpath) ⇒
+            case (startSubpath, endSubpath) =>
                 val subpathElements = ListBuffer[SubPath]()
                 if (fill) {
                     subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement))
@@ -516,7 +515,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             NestedPathType.CondWithoutAlternative
 
         var previousStart = caseStmts.head
-        caseStmts.tail.foreach { nextStart ⇒
+        caseStmts.tail.foreach { nextStart =>
             val currentEnd = nextStart - 1
             if (currentEnd >= previousStart) {
                 startEndPairs.append((previousStart, currentEnd))
@@ -529,7 +528,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         val subPaths = ListBuffer[SubPath]()
         startEndPairs.foreach {
-            case (startSubpath, endSubpath) ⇒
+            case (startSubpath, endSubpath) =>
                 val subpathElements = ListBuffer[SubPath]()
                 subPaths.append(NestedPathElement(subpathElements, None))
                 if (fill) {
@@ -561,7 +560,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         var hasFinallyBlock = false
         var throwableElement: Option[CatchNode] = None
         cfg.bb(start).successors.foreach {
-            case cn: CatchNode ⇒
+            case cn: CatchNode =>
                 // Add once for the try block
                 if (startEndPairs.isEmpty) {
                     val endPC = if (cn.endPC >= 0) cn.endPC else cn.handlerPC
@@ -575,7 +574,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         hasFinallyBlock = true
                     }
                 }
-            case _ ⇒
+            case _ =>
         }
 
         if (throwableElement.isDefined) {
@@ -593,23 +592,23 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     // If the finally does not terminate a method, it has a goto to jump
                     // after the finally block; if not, the end of the finally is marked
                     // by the end of the method
-                    case Goto(_, target) ⇒ target
-                    case _               ⇒ cfg.code.instructions.length - 1
+                    case Goto(_, target) => target
+                    case _               => cfg.code.instructions.length - 1
                 }
                 // -1 for unified processing further down below (because in
                 // catchBlockStartPCs.foreach, 1 is subtracted)
                 numElementsFinally = endFinally - startFinally - 1
             } else {
                 val endOfAfterLastCatch = cfg.bb(startEndPairs.head._2).successors.map {
-                    case bb: BasicBlock ⇒ bb.startPC
-                    case _              ⇒ -1
+                    case bb: BasicBlock => bb.startPC
+                    case _              => -1
                 }.max
                 catchBlockStartPCs.append(endOfAfterLastCatch)
             }
 
             catchBlockStartPCs = catchBlockStartPCs.sorted
             catchBlockStartPCs.zipWithIndex.foreach {
-                case (nextStart, i) ⇒
+                case (nextStart, i) =>
                     if (i + 1 < catchBlockStartPCs.length) {
                         startEndPairs.append(
                             (nextStart, catchBlockStartPCs(i + 1) - 1 - numElementsFinally)
@@ -622,7 +621,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             val cn = cfg.catchNodes.filter(_.startPC == start).head
             startEndPairs.append((cn.startPC, cn.endPC - 1))
             val endOfCatch = cfg.code.instructions(cn.handlerPC - 1) match {
-                case goto: Goto ⇒
+                case goto: Goto =>
                     // The first statement after the catches; it might be less than cn.startPC in
                     // case it refers to a loop. If so, use the "if" to find the end
                     var indexFirstAfterCatch = goto.targetStmt
@@ -631,22 +630,22 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         var i = indexFirstAfterCatch
                         while (iff.isEmpty) {
                             cfg.code.instructions(i) match {
-                                case foundIf: If[V] ⇒ iff = Some(foundIf)
-                                case _              ⇒
+                                case foundIf: If[V] => iff = Some(foundIf)
+                                case _              =>
                             }
                             i += 1
                         }
                         indexFirstAfterCatch = iff.get.targetStmt
                     }
                     indexFirstAfterCatch
-                case _ ⇒ findNextReturn(cn.handlerPC)
+                case _ => findNextReturn(cn.handlerPC)
             }
             startEndPairs.append((cn.endPC, endOfCatch))
         }
 
         val subPaths = ListBuffer[SubPath]()
         startEndPairs.foreach {
-            case (startSubpath, endSubpath) ⇒
+            case (startSubpath, endSubpath) =>
                 val subpathElements = ListBuffer[SubPath]()
                 subPaths.append(NestedPathElement(subpathElements, None))
                 if (fill) {
@@ -657,7 +656,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // If there is a finally part, append everything after the end of the try block up to the
         // very first catch block
         if (hasFinallyBlock && fill) {
-            subPaths.appendAll((startEndPairs.head._2 + 1).until(startEndPairs(1)._1).map { i ⇒
+            subPaths.appendAll((startEndPairs.head._2 + 1).until(startEndPairs(1)._1).map { i =>
                 FlatPathElement(i)
             })
         }
@@ -676,7 +675,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         elementType:      NestedPathType.Value
     ): NestedPathElement = {
         val outerNested = NestedPathElement(ListBuffer(), Some(elementType))
-        for (_ ← 0.until(numInnerElements)) {
+        for (_ <- 0.until(numInnerElements)) {
             outerNested.element.append(NestedPathElement(ListBuffer(), None))
         }
         outerNested
@@ -698,7 +697,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         // First, check the trivial case: Is the given site the first statement in a loop (covers,
         // e.g., the above-mentioned while-true cases)
-        loops.foreach { loop ⇒
+        loops.foreach { loop =>
             if (!belongsToLoopHeader) {
                 if (loop.head == site) {
                     belongsToLoopHeader = true
@@ -710,7 +709,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // whether the given site is between the first site of a loop and the site of the very first
         // 'if' (again, respect structures as produces by while-true loops)
         if (!belongsToLoopHeader) {
-            loops.foreach { nextLoop ⇒
+            loops.foreach { nextLoop =>
                 if (!belongsToLoopHeader) {
                     val start = nextLoop.head
                     var end = start
@@ -732,7 +731,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      * of the inner lists.
      */
     protected def isEndOfLoop(site: Int, loops: List[List[Int]]): Boolean =
-        loops.foldLeft(false)((old: Boolean, nextLoop: List[Int]) ⇒ old || nextLoop.last == site)
+        loops.foldLeft(false)((old: Boolean, nextLoop: List[Int]) => old || nextLoop.last == site)
 
     /**
      * Checks whether a given [[BasicBlock]] has one (or several) successors which have at least n
@@ -747,7 +746,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     protected def hasSuccessorWithAtLeastNPredecessors(bb: BasicBlock, n: Int = 2): Boolean =
         bb.successors.filter(
             _.isInstanceOf[BasicBlock]
-        ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
+        ).foldLeft(false)((prev: Boolean, next: CFGNode) => {
                 prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
             })
 
@@ -766,12 +765,12 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     protected def isCondWithoutElse(
         branchingSite: Int,
         cfg:           CFG[Stmt[V], TACStmts[V]],
-        processedIfs:  mutable.Map[Int, Unit.type]
+        processedIfs:  mutable.Map[Int, Unit]
     ): Boolean = {
         val successorBlocks = cfg.bb(branchingSite).successors
         // CatchNode exists => Regard it as conditional without alternative
         if (successorBlocks.exists(_.isInstanceOf[CatchNode])) {
-            processedIfs(branchingSite) = Unit
+            processedIfs(branchingSite) = ()
             return false
         }
 
@@ -795,7 +794,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
         val indexIf = cfg.bb(lastEle) match {
-            case bb: BasicBlock ⇒
+            case bb: BasicBlock =>
                 val ifPos = bb.startPC.to(bb.endPC).filter(
                     cfg.code.instructions(_).isInstanceOf[If[V]]
                 )
@@ -804,7 +803,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 } else {
                     -1
                 }
-            case _ ⇒ -1
+            case _ => -1
         }
 
         if (indexIf != -1) {
@@ -815,9 +814,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             // very last element is a successor. If so, this represents a path past the if (or
             // if-elseif).
             var reachableCount = successors.count(_ == lastEle)
-            successors.foreach { next ⇒
+            successors.foreach { next =>
                 val seenNodes = ListBuffer[CFGNode](cfg.bb(branchingSite), cfg.bb(next))
-                val toVisitStack = mutable.Stack[CFGNode](cfg.bb(next).successors.toArray: _*)
+                val toVisitStack = mutable.Stack[CFGNode](cfg.bb(next).successors.toList: _*)
                 while (toVisitStack.nonEmpty) {
                     val from = toVisitStack.pop()
                     val to = from.successors
@@ -832,7 +831,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             if (reachableCount > 1) {
                 true
             } else {
-                processedIfs(branchingSite) = Unit
+                processedIfs(branchingSite) = ()
                 false
             }
         }
@@ -853,22 +852,22 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
-        alreadySeen.foreach(seenNodes(_)= Unit)
-        seenNodes(from) = Unit
+        alreadySeen.foreach(seenNodes(_)= ())
+        seenNodes(from) = ()
 
         while (stack.nonEmpty) {
             val popped = stack.pop()
-            cfg.bb(popped).successors.foreach { nextBlock ⇒
+            cfg.bb(popped).successors.foreach { nextBlock =>
                 // -1 is okay, as this value will not be processed (due to the flag processBlock)
                 var startPC = -1
                 var endPC = -1
                 var processBlock = true
                 nextBlock match {
-                    case bb: BasicBlock ⇒
+                    case bb: BasicBlock =>
                         startPC = bb.startPC; endPC = bb.endPC
-                    case cn: CatchNode ⇒
+                    case cn: CatchNode =>
                         startPC = cn.startPC; endPC = cn.endPC
-                    case _ ⇒ processBlock = false
+                    case _ => processBlock = false
                 }
 
                 if (processBlock) {
@@ -877,7 +876,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         return true
                     } else if (!seenNodes.contains(startPC)) {
                         stack.push(startPC)
-                        seenNodes(startPC) = Unit
+                        seenNodes(startPC) = ()
                     }
                 }
             }
@@ -898,7 +897,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     private def getStartAndEndIndexOfLoop(index: Int): (Int, Int) = {
         var startIndex = -1
         var endIndex = -1
-        val relevantLoop = cfg.findNaturalLoops().filter(nextLoop ⇒
+        val relevantLoop = cfg.findNaturalLoops().filter(nextLoop =>
             // The given index might belong either to the start or to the end of a loop
             isHeadOfLoop(index, List(nextLoop), cfg) || isEndOfLoop(index, List(nextLoop)))
         if (relevantLoop.nonEmpty) {
@@ -923,18 +922,18 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *       [[getStartAndEndIndexOfCondWithoutAlternative]], and [[determineTryCatchBounds]].
      */
     protected def processIf(
-        stmt: Int, processedIfs: mutable.Map[Int, Unit.type]
+        stmt: Int, processedIfs: mutable.Map[Int, Unit]
     ): CSInfo = {
         val csType = determineTypeOfIf(stmt, processedIfs)
         val (startIndex, endIndex) = csType match {
-            case NestedPathType.Repetition ⇒
-                processedIfs(stmt) = Unit
+            case NestedPathType.Repetition =>
+                processedIfs(stmt) = ()
                 getStartAndEndIndexOfLoop(stmt)
-            case NestedPathType.CondWithoutAlternative ⇒
+            case NestedPathType.CondWithoutAlternative =>
                 getStartAndEndIndexOfCondWithoutAlternative(stmt, processedIfs)
             // _ covers CondWithAlternative and TryCatchFinally, however, the latter one should
             // never be present as the element referring to stmts is / should be an If
-            case _ ⇒
+            case _ =>
                 getStartAndEndIndexOfCondWithAlternative(stmt, processedIfs)
         }
         (startIndex, endIndex, csType)
@@ -954,7 +953,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val switch = cfg.code.instructions(stmt).asSwitch
         val caseStmts = switch.caseStmts.sorted
         // From the last to the first one, find the first case that points after the switch
-        val caseGotoOption = caseStmts.reverse.find { caseIndex ⇒
+        val caseGotoOption = caseStmts.reverse.find { caseIndex =>
             cfg.code.instructions(caseIndex - 1).isInstanceOf[Goto]
         }
         // If no such case is present, find the next goto after the default case
@@ -987,7 +986,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         statement).
      */
     protected def determineTypeOfIf(
-        stmtIndex: Int, processedIfs: mutable.Map[Int, Unit.type]
+        stmtIndex: Int, processedIfs: mutable.Map[Int, Unit]
     ): NestedPathType.Value = {
         // Is the first condition enough to identify loops?
         val loops = cfg.findNaturalLoops()
@@ -1016,39 +1015,39 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // foundCS stores all found control structures as a triple in the form (start, end, type)
         var foundCS = ListBuffer[CSInfo]()
         // For a fast loop-up which if statements have already been processed
-        val processedIfs = mutable.Map[Int, Unit.type]()
-        val processedSwitches = mutable.Map[Int, Unit.type]()
+        val processedIfs = mutable.Map[Int, Unit]()
+        val processedSwitches = mutable.Map[Int, Unit]()
         val stack = mutable.Stack[CFGNode]()
-        val seenCFGNodes = mutable.Map[CFGNode, Unit.type]()
+        val seenCFGNodes = mutable.Map[CFGNode, Unit]()
 
-        startSites.reverse.foreach { site ⇒
+        startSites.reverse.foreach { site =>
             stack.push(cfg.bb(site))
-            seenCFGNodes(cfg.bb(site)) = Unit
+            seenCFGNodes(cfg.bb(site)) = ()
         }
 
         while (stack.nonEmpty) {
             val next = stack.pop()
-            seenCFGNodes(next) = Unit
+            seenCFGNodes(next) = ()
 
             next match {
-                case bb: BasicBlock ⇒
-                    for (i ← bb.startPC.to(bb.endPC)) {
+                case bb: BasicBlock =>
+                    for (i <- bb.startPC.to(bb.endPC)) {
                         cfg.code.instructions(i) match {
-                            case _: If[V] if !processedIfs.contains(i) ⇒
+                            case _: If[V] if !processedIfs.contains(i) =>
                                 foundCS.append(processIf(i, processedIfs))
-                                processedIfs(i) = Unit
-                            case _: Switch[V] if !processedSwitches.contains(i) ⇒
+                                processedIfs(i) = ()
+                            case _: Switch[V] if !processedSwitches.contains(i) =>
                                 foundCS.append(processSwitch(i))
-                                processedSwitches(i) = Unit
-                            case _ ⇒
+                                processedSwitches(i) = ()
+                            case _ =>
                         }
                     }
-                case _ ⇒
+                case _ =>
             }
 
             if (next.nodeId == endSite) {
                 val doesPathExist = stack.filter(_.nodeId >= 0).foldLeft(false) {
-                    (doesExist: Boolean, next: CFGNode) ⇒
+                    (doesExist: Boolean, next: CFGNode) =>
                         doesExist || doesPathExistTo(next.nodeId, endSite)
                 }
                 // In case no more path exists, clear the stack which (=> no more iterations)
@@ -1064,7 +1063,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // It might be that some control structures can be removed as they are not in the relevant
         // range
         foundCS = foundCS.filterNot {
-            case (start, end, _) ⇒
+            case (start, end, _) =>
                 (startSites.forall(start > _) && endSite < start) ||
                     (startSites.forall(_ < start) && startSites.forall(_ > end))
         }
@@ -1074,21 +1073,21 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         var relevantTryCatchBlocks = determineTryCatchBounds()
         // Filter out all blocks that completely surround the given start and end sites
         relevantTryCatchBlocks = relevantTryCatchBlocks.filter {
-            case (tryStart, tryEnd, _) ⇒
+            case (tryStart, tryEnd, _) =>
                 val tryCatchParts = buildTryCatchPath(tryStart, tryEnd, fill = false)
                 !tryCatchParts._2.exists {
-                    case (nextInnerStart, nextInnerEnd) ⇒
+                    case (nextInnerStart, nextInnerEnd) =>
                         startSites.forall(_ >= nextInnerStart) && endSite <= nextInnerEnd
                 }
         }
         // Keep the try-catch blocks that are (partially) within the start and end sites
         relevantTryCatchBlocks = relevantTryCatchBlocks.filter {
-            case (tryStart, _, _) ⇒
+            case (tryStart, _, _) =>
                 startSites.exists(tryStart >= _) && tryStart <= endSite
         }
 
         foundCS.appendAll(relevantTryCatchBlocks)
-        foundCS.sortBy { case (start, _, _) ⇒ start }.toList
+        foundCS.sortBy { case (start, _, _) => start }.toList
     }
 
     /**
@@ -1107,13 +1106,13 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             buildPathForSwitch(start, end, fill)
         } else {
             element._3 match {
-                case NestedPathType.Repetition ⇒
+                case NestedPathType.Repetition =>
                     buildRepetitionPath(start, end, fill)
-                case NestedPathType.CondWithAlternative ⇒
+                case NestedPathType.CondWithAlternative =>
                     buildCondPath(start, end, NestedPathType.CondWithAlternative, fill)
-                case NestedPathType.CondWithoutAlternative ⇒
+                case NestedPathType.CondWithoutAlternative =>
                     buildCondPath(start, end, NestedPathType.CondWithoutAlternative, fill)
-                case NestedPathType.TryCatchFinally ⇒
+                case NestedPathType.TryCatchFinally =>
                     buildTryCatchPath(start, end, fill)
             }
         }
@@ -1141,7 +1140,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // parentOf, e does not have a parent
         val parentOf = mutable.Map[CSInfo, CSInfo]()
         // Find the direct parent of each element (if it exists at all)
-        cs.tail.foreach { nextCS ⇒
+        cs.tail.foreach { nextCS =>
             var nextPossibleParentIndex = 0
             var parent: Option[Int] = None
             // Use a while instead of a foreach loop in order to stop when the parent was found
@@ -1163,7 +1162,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         // Convert to a map for faster accesses in the following part
         val mapChildrenOf = mutable.Map[CSInfo, ListBuffer[CSInfo]]()
-        childrenOf.foreach { nextCS ⇒ mapChildrenOf(nextCS._1) = nextCS._2 }
+        childrenOf.foreach { nextCS => mapChildrenOf(nextCS._1) = nextCS._2 }
 
         HierarchicalCSOrder(List((
             None, cs.filter(!parentOf.contains(_)).map(buildHierarchy(_, mapChildrenOf))
@@ -1194,10 +1193,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         var indexLastCSEnd = startIndex
 
         // Recursively transform the hierarchies to paths
-        topElements.foreach { nextTopEle ⇒
+        topElements.foreach { nextTopEle =>
             // Build path up to the next control structure
             val nextCSStart = nextTopEle.hierarchy.head._1.get._1
-            indexLastCSEnd.until(nextCSStart).foreach { i ⇒
+            indexLastCSEnd.until(nextCSStart).foreach { i =>
                 finalPath.append(FlatPathElement(i))
             }
 
@@ -1220,7 +1219,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 val isRepElement = npe.elementType.getOrElse(NestedPathType.TryCatchFinally) ==
                     NestedPathType.Repetition
                 var lastInsertedIndex = 0
-                childrenPath.elements.foreach { nextEle ⇒
+                childrenPath.elements.foreach { nextEle =>
                     if (isRepElement) {
                         npe.element.append(nextEle)
                     } else {
@@ -1232,10 +1231,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     }
 
                     lastInsertedIndex = nextEle match {
-                        case fpe: FlatPathElement     ⇒ fpe.element
-                        case inner: NestedPathElement ⇒ Path.getLastElementInNPE(inner).element
+                        case fpe: FlatPathElement     => fpe.element
+                        case inner: NestedPathElement => Path.getLastElementInNPE(inner).element
                         // Compiler wants it but should never be the case!
-                        case _                        ⇒ -1
+                        case _                        => -1
                     }
                     if (insertIndex < startEndPairs.length &&
                         lastInsertedIndex >= startEndPairs(insertIndex)._2) {
@@ -1255,7 +1254,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         insertPos.element.appendAll(currentToInsert)
                         insertIndex += 1
                         // Fill the rest NPEs if necessary
-                        insertIndex.until(startEndPairs.length).foreach { i ⇒
+                        insertIndex.until(startEndPairs.length).foreach { i =>
                             insertPos = npe.element(i).asInstanceOf[NestedPathElement]
                             insertPos.element.appendAll(
                                 startEndPairs(i)._1.to(startEndPairs(i)._2).map(FlatPathElement)
@@ -1267,8 +1266,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 val subPathNpe = subpath.elements.head.asInstanceOf[NestedPathElement]
                 val subPathToAdd = NestedPathElement(
                     subPathNpe.element.filter {
-                        case npe: NestedPathElement ⇒ npe.element.nonEmpty
-                        case _                      ⇒ true
+                        case npe: NestedPathElement => npe.element.nonEmpty
+                        case _                      => true
                     }, subPathNpe.elementType
                 )
                 finalPath.append(subPathToAdd)

@@ -42,17 +42,17 @@ class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinde
             var nextStmt = startSites.min
             while (nextStmt >= 0 && startSite.isEmpty) {
                 cfg.code.instructions(nextStmt) match {
-                    case iff: If[V] if startSites.contains(iff.targetStmt) ⇒
+                    case iff: If[V] if startSites.contains(iff.targetStmt) =>
                         startSite = Some(nextStmt)
-                    case _: Switch[V] ⇒
+                    case _: Switch[V] =>
                         val (startSwitch, endSwitch, _) = processSwitch(nextStmt)
                         val isParentSwitch = startSites.forall {
-                            nextStartSite ⇒ nextStartSite >= startSwitch && nextStartSite <= endSwitch
+                            nextStartSite => nextStartSite >= startSwitch && nextStartSite <= endSwitch
                         }
                         if (isParentSwitch) {
                             startSite = Some(nextStmt)
                         }
-                    case _ ⇒
+                    case _ =>
                 }
                 nextStmt -= 1
             }

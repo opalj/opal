@@ -2,14 +2,10 @@
 package org.opalj.support.info
 
 import scala.annotation.switch
-
 import java.net.URL
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -47,7 +43,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      * The fully-qualified name of the class that is to be analyzed in a Java format, i.e., dots as
      * package / class separators.
      */
-    private var className = "java.lang.StringBuilder"
+    private val className = "java.lang.StringBuilder"
 
     /**
      * The analysis can run in two modes: Fine-grained or coarse-grained. Fine-grained means that
@@ -57,7 +53,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      * base object as well as the method name are equal, i.e., overloaded methods are not
      * distinguished.
      */
-    private var isFineGrainedAnalysis = false
+    private val isFineGrainedAnalysis = false
 
     /**
      * Takes a [[Call]] and assembles the method descriptor for this call. The granularity is
@@ -83,9 +79,11 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     private def processFunctionCall(call: Call[V], map: mutable.Map[String, Int]): Unit = {
         val declaringClassName = call.declaringClass.toJava
         if (declaringClassName == className) {
-            val methodDescriptor = assembleMethodDescriptor(call, isFineGrainedAnalysis)
-            if (map.putIfAbsent(methodDescriptor, new AtomicInteger(1)) != null) {
-                map.get(methodDescriptor).addAndGet(1)
+            val methodDescriptor = assembleMethodDescriptor(call)
+            if (map.contains(methodDescriptor)) {
+                map.put(methodDescriptor, 1)
+            } else {
+                map.update(methodDescriptor, map(methodDescriptor) + 1)
             }
         }
     }
@@ -155,20 +153,20 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
         val resultMap = mutable.Map[String, Int]()
         val tacProvider = project.get(EagerDetachedTACAIKey)
 
-        project.allMethodsWithBody.foreach { m ⇒
-            tacProvider(m).stmts.foreach { stmt ⇒
+        project.allMethodsWithBody.foreach { m =>
+            tacProvider(m).stmts.foreach { stmt =>
                 (stmt.astID: @switch) match {
-                    case Assignment.ASTID ⇒ stmt match {
-                        case Assignment(_, _, c: VirtualFunctionCall[V]) ⇒
+                    case Assignment.ASTID => stmt match {
+                        case Assignment(_, _, c: VirtualFunctionCall[V]) =>
                             processFunctionCall(c, resultMap)
-                        case _ ⇒
+                        case _ =>
                     }
-                    case ExprStmt.ASTID ⇒ stmt match {
-                        case ExprStmt(_, c: VirtualFunctionCall[V]) ⇒
+                    case ExprStmt.ASTID => stmt match {
+                        case ExprStmt(_, c: VirtualFunctionCall[V]) =>
                             processFunctionCall(c, resultMap)
-                        case _ ⇒
+                        case _ =>
                     }
-                    case _ ⇒
+                    case _ =>
                 }
             }
         }
@@ -176,7 +174,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
         val report = ListBuffer[String]("Results")
         // Transform to a list, sort in ascending order of occurrences and format the information
         report.appendAll(resultMap.toList.sortWith(_._2 < _._2).map {
-            case (descriptor: String, count: Int) ⇒ s"$descriptor: $count"
+            case (descriptor: String, count: Int) => s"$descriptor: $count"
         })
         BasicReport(report)
     }

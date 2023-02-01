@@ -56,10 +56,10 @@ class NewArrayPreparer(
         val arrValuesDefSites =
             state.tac.stmts(defSite).asAssignment.targetVar.asVar.usedBy.toArray.toList.sorted
         var allResults = arrValuesDefSites.filter {
-            ds ⇒ ds >= 0 && state.tac.stmts(ds).isInstanceOf[ArrayStore[V]]
-        }.flatMap { ds ⇒
+            ds => ds >= 0 && state.tac.stmts(ds).isInstanceOf[ArrayStore[V]]
+        }.flatMap { ds =>
             // ds holds a site an of array stores; these need to be evaluated for the actual values
-            state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d ⇒
+            state.tac.stmts(ds).asArrayStore.value.asVar.definedBy.toArray.toList.sorted.map { d =>
                 val r = exprHandler.processDefSite(d, params)
                 if (r.isFinal) {
                     state.appendToFpe2Sci(d, r.asFinal.p.stringConstancyInformation)
@@ -69,7 +69,7 @@ class NewArrayPreparer(
         }
 
         // Add information of parameters
-        arrValuesDefSites.filter(_ < 0).foreach { ds ⇒
+        arrValuesDefSites.filter(_ < 0).foreach { ds =>
             val paramPos = Math.abs(ds + 2)
             // lb is the fallback value
             val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
