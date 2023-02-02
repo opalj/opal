@@ -67,6 +67,7 @@ We are calling Python function with the analysed code as a parameter in order to
 The code for analysis was based on a solution provided by Ph.D. Rathul Gopinath, the Lecturer at the University of Sydney.
 Original code can be found here: https://github.com/vrthra/taints.py. Unfortunately extending the string object and overriding default methods
 did not work in Jython. As a result, approach without extending string was used.
+We also had to overwrite function for left addition (__ add __), because it is not provided in the original solution.
 
 
 ```Python
