@@ -66,7 +66,7 @@ object AllocationsUtil {
         failure:           () => Unit
     )(process: (ContextType, Int, Array[Stmt[V]]) => Unit): Unit = {
         val tacO = tacEOptP.ub.tac
-        if (tacO.isDefined) {
+        if (tacO.isDefined && allocationPC >= 0) {
             val tac = tacO.get
             process(allocationContext, tac.properStmtIndexForPC(allocationPC), tac.stmts)
         } else {
