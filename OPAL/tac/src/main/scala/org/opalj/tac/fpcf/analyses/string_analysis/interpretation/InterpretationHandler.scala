@@ -90,10 +90,9 @@ object InterpretationHandler {
      */
     def isStringBuilderBufferToStringCall(expr: Expr[V]): Boolean =
         expr match {
-            case VirtualFunctionCall(_, clazz, _, name, _, _, _) =>
+            case VirtualFunctionCall(_, clazz, _, "toString", _, _, _) =>
                 val className = clazz.mostPreciseObjectType.fqn
-                (className == "java/lang/StringBuilder" || className == "java/lang/StringBuffer") &&
-                    name == "toString"
+                (className == "java/lang/StringBuilder" || className == "java/lang/StringBuffer")
             case _ => false
         }
 

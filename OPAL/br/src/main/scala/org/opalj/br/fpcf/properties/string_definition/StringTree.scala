@@ -228,14 +228,10 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
          * instance of these classes are passed. Otherwise, an exception will be thrown!
          */
         def processConcatOrOrCase(subtree: StringTree): StringTree = {
-            if (!subtree.isInstanceOf[StringTreeOr] && !subtree.isInstanceOf[StringTreeConcat]) {
-                throw new IllegalArgumentException(
-                    "can only process instances of StringTreeOr and StringTreeConcat"
-                )
-            }
-
             var newChildren = subtree.children.map(groupRepetitionElementsAcc)
-            val repetitionElements = newChildren.filter(_.isInstanceOf[StringTreeRepetition])
+
+            val repetitionElements = newChildren.collect { case str: StringTreeRepetition => str }
+
             // Nothing to do when less than two repetition elements
             if (repetitionElements.length <= 1) {
                 // In case there is only one (new) repetition element, replace the children
@@ -243,20 +239,22 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                 subtree.children.appendAll(newChildren)
                 subtree
             } else {
-                val childrenOfReps = repetitionElements.map(
-                    _.asInstanceOf[StringTreeRepetition].child
-                )
+                val childrenOfReps = repetitionElements.map(_.child)
                 val newRepElement = StringTreeRepetition(StringTreeOr(childrenOfReps))
                 val indexFirstChild = newChildren.indexOf(repetitionElements.head)
-                newChildren = newChildren.filterNot(_.isInstanceOf[StringTreeRepetition])
+
+                newChildren = newChildren.filter {
+                    case _: StringTreeRepetition => false
+                    case _                       => true
+                }
+
                 newChildren.insert(indexFirstChild, newRepElement)
                 if (newChildren.length == 1) {
                     newChildren.head
                 } else {
-                    if (subtree.isInstanceOf[StringTreeOr]) {
-                        StringTreeOr(newChildren)
-                    } else {
-                        StringTreeConcat(newChildren)
+                    subtree match {
+                        case _: StringTreeOr => StringTreeOr(newChildren)
+                        case _               => StringTreeConcat(newChildren)
                     }
                 }
             }
