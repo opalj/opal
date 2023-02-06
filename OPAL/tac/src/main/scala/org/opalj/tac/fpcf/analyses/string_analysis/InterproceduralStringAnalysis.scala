@@ -45,7 +45,7 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.ArrayLoad
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayLoadPreparer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
 import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
 import org.opalj.tac.fpcf.analyses.cg.{RTATypeIterator, TypeIterator}
@@ -169,11 +169,12 @@ class InterproceduralStringAnalysis(
     ): ProperPropertyComputationResult = {
         val uvar = state.entity._1
         val defSites = uvar.definedBy.toArray.sorted
-        val stmts = state.tac.stmts
 
         if (state.tac == null || state.callees == null) {
             return getInterimResult(state)
         }
+
+        val stmts = state.tac.stmts
 
         if (state.computedLeanPath == null) {
             state.computedLeanPath = computeLeanPath(uvar, state.tac)
@@ -332,112 +333,96 @@ class InterproceduralStringAnalysis(
         state: InterproceduralComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         state.dependees = state.dependees.filter(_.e != eps.e)
-        eps.pk match {
-            case TACAI.key => eps match {
-                case FinalP(tac: TACAI) =>
-                    // Set the TAC only once (the TAC might be requested for other methods, so this
-                    // makes sure we do not overwrite the state's TAC)
-                    if (state.tac == null) {
-                        state.tac = tac.tac.get
-                    }
-                    determinePossibleStrings(state)
-                case _ =>
-                    state.dependees = eps :: state.dependees
-                    getInterimResult(state)
-            }
-            case Callees.key => eps match {
-                case FinalP(callees: Callees) =>
-                    state.callees = callees
-                    if (state.dependees.isEmpty) {
-                        determinePossibleStrings(state)
-                    } else {
-                        getInterimResult(state)
-                    }
-                case _ =>
-                    state.dependees = eps :: state.dependees
-                    getInterimResult(state)
-            }
-            case Callers.key => eps match {
-                case FinalP(callers: Callers) =>
-                    state.callers = callers
-                    if (state.dependees.isEmpty) {
-                        registerParams(state)
-                        determinePossibleStrings(state)
-                    } else {
-                        getInterimResult(state)
-                    }
-                case _ =>
-                    state.dependees = eps :: state.dependees
-                    getInterimResult(state)
-            }
-            case StringConstancyProperty.key =>
-                eps match {
-                    case FinalEP(entity, p: StringConstancyProperty) =>
-                        val e = entity.asInstanceOf[P]
-                        // For updating the interim state
-                        state.var2IndexMapping(eps.e.asInstanceOf[P]._1).foreach { i =>
-                            state.appendToInterimFpe2Sci(i, p.stringConstancyInformation)
-                        }
-                        // If necessary, update the parameter information with which the
-                        // surrounding function / method of the entity was called with
-                        if (state.paramResultPositions.contains(e)) {
-                            val pos = state.paramResultPositions(e)
-                            state.params(pos._1)(pos._2) = p.stringConstancyInformation
-                            state.paramResultPositions.remove(e)
-                            state.parameterDependeesCount -= 1
-                        }
 
-                        // If necessary, update parameter information of function calls
-                        if (state.entity2Function.contains(e)) {
-                            state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(
-                                _, p.stringConstancyInformation
-                            ))
-                            // Update the state
-                            state.entity2Function(e).foreach { f =>
-                                val pos = state.nonFinalFunctionArgsPos(f)(e)
-                                val finalEp = FinalEP(e, p)
-                                state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = finalEp
-                                // Housekeeping
-                                val index = state.entity2Function(e).indexOf(f)
-                                state.entity2Function(e).remove(index)
-                                if (state.entity2Function(e).isEmpty) {
-                                    state.entity2Function.remove(e)
-                                }
-                            }
-                            // Continue only after all necessary function parameters are evaluated
-                            if (state.entity2Function.nonEmpty) {
-                                return getInterimResult(state)
-                            } else {
-                                // We could try to determine a final result before all function
-                                // parameter information are available, however, this will
-                                // definitely result in finding some intermediate result. Thus,
-                                // defer this computations when we know that all necessary
-                                // information are available
-                                state.entity2Function.clear()
-                                if (!computeResultsForPath(state.computedLeanPath, state)) {
-                                    return determinePossibleStrings(state)
-                                }
-                            }
-                        }
+        eps match {
+          case FinalP(tac: TACAI) if eps.pk.equals(TACAI.key) =>
+            // Set the TAC only once (the TAC might be requested for other methods, so this
+            // makes sure we do not overwrite the state's TAC)
+            if (state.tac == null) {
+              state.tac = tac.tac.get
+            }
+            determinePossibleStrings(state)
+          case FinalP(callees: Callees) if eps.pk.equals(Callees.key) =>
+            state.callees = callees
+            if (state.dependees.isEmpty) {
+              determinePossibleStrings(state)
+            } else {
+              getInterimResult(state)
+            }
+          case FinalP(callers: Callers) if eps.pk.equals(Callers.key) =>
+            state.callers = callers
+            if (state.dependees.isEmpty) {
+              registerParams(state)
+              determinePossibleStrings(state)
+            } else {
+              getInterimResult(state)
+            }
+          case FinalEP(entity, p: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
+            val e = entity.asInstanceOf[P]
+            // For updating the interim state
+            state.var2IndexMapping(eps.e.asInstanceOf[P]._1).foreach { i =>
+              state.appendToInterimFpe2Sci(i, p.stringConstancyInformation)
+            }
+            // If necessary, update the parameter information with which the
+            // surrounding function / method of the entity was called with
+            if (state.paramResultPositions.contains(e)) {
+              val pos = state.paramResultPositions(e)
+              state.params(pos._1)(pos._2) = p.stringConstancyInformation
+              state.paramResultPositions.remove(e)
+              state.parameterDependeesCount -= 1
+            }
 
-                        if (state.isSetupCompleted && state.parameterDependeesCount == 0) {
-                            processFinalP(state, eps.e, p)
-                        } else {
-                            determinePossibleStrings(state)
-                        }
-                    case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty) =>
-                        state.dependees = eps :: state.dependees
-                        val uvar = eps.e.asInstanceOf[P]._1
-                        state.var2IndexMapping(uvar).foreach { i =>
-                            state.appendToInterimFpe2Sci(
-                                i, ub.stringConstancyInformation, Some(uvar)
-                            )
-                        }
-                        getInterimResult(state)
-                    case _ =>
-                        state.dependees = eps :: state.dependees
-                        getInterimResult(state)
+            // If necessary, update parameter information of function calls
+            if (state.entity2Function.contains(e)) {
+              state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(
+                _, p.stringConstancyInformation
+              ))
+              // Update the state
+              state.entity2Function(e).foreach { f =>
+                val pos = state.nonFinalFunctionArgsPos(f)(e)
+                val finalEp = FinalEP(e, p)
+                state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = finalEp
+                // Housekeeping
+                val index = state.entity2Function(e).indexOf(f)
+                state.entity2Function(e).remove(index)
+                if (state.entity2Function(e).isEmpty) {
+                  state.entity2Function.remove(e)
                 }
+              }
+              // Continue only after all necessary function parameters are evaluated
+              if (state.entity2Function.nonEmpty) {
+                return getInterimResult(state)
+              } else {
+                // We could try to determine a final result before all function
+                // parameter information are available, however, this will
+                // definitely result in finding some intermediate result. Thus,
+                // defer this computations when we know that all necessary
+                // information are available
+                state.entity2Function.clear()
+                if (!computeResultsForPath(state.computedLeanPath, state)) {
+                  return determinePossibleStrings(state)
+                }
+              }
+            }
+
+            if (state.isSetupCompleted && state.parameterDependeesCount == 0) {
+              processFinalP(state, eps.e, p)
+            } else {
+              determinePossibleStrings(state)
+            }
+          case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty) if eps.pk.equals(StringConstancyProperty.key) =>
+            state.dependees = eps :: state.dependees
+            val uvar = eps.e.asInstanceOf[P]._1
+            state.var2IndexMapping(uvar).foreach { i =>
+              state.appendToInterimFpe2Sci(
+                i, ub.stringConstancyInformation, Some(uvar)
+              )
+            }
+            getInterimResult(state)
+          case _ =>
+            state.dependees = eps :: state.dependees
+            getInterimResult(state)
+
         }
     }
 
@@ -675,7 +660,7 @@ class InterproceduralStringAnalysis(
     private def hasParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
         def hasExprParamUsage(expr: Expr[V]): Boolean = expr match {
             case al: ArrayLoad[V] =>
-                ArrayLoadPreparer.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
+                ArrayPreparationInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
             case duvar: V            => duvar.definedBy.exists(_ < 0)
             case fc: FunctionCall[V] => fc.params.exists(hasExprParamUsage)
             case mc: MethodCall[V]   => mc.params.exists(hasExprParamUsage)

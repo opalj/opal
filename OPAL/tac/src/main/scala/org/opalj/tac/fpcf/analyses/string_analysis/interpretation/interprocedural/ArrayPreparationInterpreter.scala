@@ -31,7 +31,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationSta
  *
  * @author Patrick Mell
  */
-class ArrayLoadPreparer(
+class ArrayPreparationInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
         exprHandler: InterproceduralInterpretationHandler,
         state:       InterproceduralComputationState,
@@ -54,7 +54,7 @@ class ArrayLoadPreparer(
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
 
         val defSites = instr.arrayRef.asVar.definedBy.toArray
-        val allDefSites = ArrayLoadPreparer.getStoreAndLoadDefSites(
+        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
             instr, state.tac.stmts
         )
 
@@ -103,7 +103,7 @@ class ArrayLoadPreparer(
 
 }
 
-object ArrayLoadPreparer {
+object ArrayPreparationInterpreter {
 
     type T = ArrayLoad[V]
 

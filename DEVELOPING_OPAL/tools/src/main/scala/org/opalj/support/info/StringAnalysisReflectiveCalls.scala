@@ -2,12 +2,9 @@
 package org.opalj.support.info
 
 import scala.annotation.switch
-
 import java.net.URL
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimELUBP
 import org.opalj.fpcf.InterimLUBP
@@ -16,7 +13,6 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
@@ -35,15 +31,10 @@ import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.string_analysis.P
-import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.analyses.string_analysis.{LazyInterproceduralStringAnalysis, LazyIntraproceduralStringAnalysis, P, V}
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.DUVar
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 
 /**
  * Analyzes a project for calls provided by the Java Reflection API and tries to determine which
@@ -65,32 +56,41 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
     private type ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]
 
+    private val relevantCryptoMethodNames = List(
+      "javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
+      "javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
+      "javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
+      "javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
+      "javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
+      "javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
+      "javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
+    )
+
+    private val relevantReflectionMethodNames = List(
+      "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
+      "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
+      "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
+    )
+
+    private var includeCrypto = false
+
+    /**
+     * Retrieves all relevant method names, i.e., those methods from the Reflection API that have at least one string
+     * argument and shall be considered by this analysis. The string are supposed to have the format as produced
+     * by [[buildFQMethodName]]. If the 'crypto' parameter is set, relevant methods of the javax.crypto API are
+     * included, too.
+     */
+    private def relevantMethodNames = if(includeCrypto)
+      relevantReflectionMethodNames ++ relevantCryptoMethodNames
+    else
+      relevantReflectionMethodNames
+
     /**
      * Stores a list of pairs where the first element corresponds to the entities passed to the
      * analysis and the second element corresponds to the method name in which the entity occurred,
      * i.e., a value in [[relevantMethodNames]].
      */
     private val entityContext = ListBuffer[(P, String)]()
-
-    /**
-     * Stores all relevant method names of the Java Reflection API, i.e., those methods from the
-     * Reflection API that have at least one string argument and shall be considered by this
-     * analysis. The string are supposed to have the format as produced by [[buildFQMethodName]].
-     */
-    private val relevantMethodNames = List(
-        // The following is for the javax.crypto API
-        //"javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
-        //"javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
-        //"javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
-        //"javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
-        //"javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
-        //"javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
-        //"javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
-        // The following is for the Java Reflection API
-        "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
-        "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
-        "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
-    )
 
     /**
      * A list of fully-qualified method names that are to be skipped, e.g., because they make an
@@ -158,7 +158,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         ps: PropertyStore, method: Method, call: Call[V], resultMap: ResultMapType
     ): Unit = {
         if (isRelevantCall(call.declaringClass, call.name)) {
-            val fqnMethodName = s"${method.classFile.thisType.fqn}#${method.name}"
+            val fqnMethodName = buildFQMethodName(method.classFile.thisType, method.name)
             if (!ignoreMethods.contains(fqnMethodName)) {
                 if (executionCounter >= executeFrom && executionCounter <= executeTo) {
                     println(
@@ -249,31 +249,47 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         }
     }
 
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
+
+      parameters.flatMap{ p => p.toLowerCase match {
+        case "-includecryptoapi" => Nil
+        case "-intraprocedural" => Nil
+        case _ => List(s"Unknown parameter: $p")
+      }}
+
+    }
+
     override def doAnalyze(
         project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
+
+        // Check whether string-consuming methods of the javax.crypto API should be considered. Default is false.
+        includeCrypto = parameters.exists( p => p.equalsIgnoreCase("-includeCryptoApi"))
+        // Check whether intraprocedural analysis should be run. By default, interprocedural is selected.
+        val runIntraproceduralAnalysis = parameters.exists(p => p.equalsIgnoreCase("-intraprocedural"))
+
+
         val manager = project.get(FPCFAnalysesManagerKey)
         project.get(RTACallGraphKey)
+
         implicit val (propertyStore, analyses) = manager.runAll(
-            LazyInterproceduralStringAnalysis
-        // LazyIntraproceduralStringAnalysis
+          if(runIntraproceduralAnalysis) LazyIntraproceduralStringAnalysis else LazyInterproceduralStringAnalysis
         )
 
         // Stores the obtained results for each supported reflective operation
-        val resultMap: ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]()
+        val resultMap = mutable.Map[String, ListBuffer[StringConstancyInformation]]()
         relevantMethodNames.foreach { resultMap(_) = ListBuffer() }
 
         project.allMethodsWithBody.foreach { m =>
             // To dramatically reduce work, quickly check if a method is relevant at all
             if (instructionsContainRelevantMethod(m.body.get.instructions)) {
-                var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
                 val tacaiEOptP = propertyStore(m, TACAI.key)
                 if (tacaiEOptP.hasUBP) {
                     if (tacaiEOptP.ub.tac.isEmpty) {
                         // No TAC available, e.g., because the method has no body
                         println(s"No body for method: ${m.classFile.fqn}#${m.name}")
                     } else {
-                        tac = tacaiEOptP.ub.tac.get
+                        val tac = tacaiEOptP.ub.tac.get
                         processStatements(propertyStore, tac.stmts, m, resultMap)
                     }
                 } else {

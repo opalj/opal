@@ -9,7 +9,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayLoadPreparer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
@@ -27,7 +27,7 @@ class ArrayLoadFinalizer(
      * @inheritdoc
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
-        val allDefSites = ArrayLoadPreparer.getStoreAndLoadDefSites(
+        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
             instr, state.tac.stmts
         )
 

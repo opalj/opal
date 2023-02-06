@@ -162,7 +162,7 @@ class InterproceduralInterpretationHandler(
     private def processArrayLoad(
         expr: ArrayLoad[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val r = new ArrayLoadPreparer(
+        val r = new ArrayPreparationInterpreter(
             cfg, this, state, params
         ).interpret(expr, defSite)
         val sci = if (r.isFinal) {

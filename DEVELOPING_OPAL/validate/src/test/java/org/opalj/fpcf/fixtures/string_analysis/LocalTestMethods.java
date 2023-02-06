@@ -981,25 +981,6 @@ public class LocalTestMethods {
         analyzeString(sb.toString());
     }
 
-    //    @StringDefinitions(
-    //            value = "a case with a switch with missing breaks",
-    //            expectedLevel = StringConstancyLevel.CONSTANT},
-    //            expectedStrings ={ "a(bc|c)?" }
-    //    )
-    //    public void switchWithMissingBreak(int value) {
-    //        StringBuilder sb = new StringBuilder("a");
-    //        switch (value) {
-    //        case 0:
-    //            sb.append("b");
-    //        case 1:
-    //            sb.append("c");
-    //            break;
-    //        case 2:
-    //            break;
-    //        }
-    //        analyzeString(sb.toString());
-    //    }
-
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }

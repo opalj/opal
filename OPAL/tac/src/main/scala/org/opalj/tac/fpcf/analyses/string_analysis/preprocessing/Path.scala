@@ -32,7 +32,7 @@ case class FlatPathElement(element: Int) extends SubPath
 /**
  * Identifies the nature of a nested path element.
  */
-object NestedPathType extends Enumeration {
+case object NestedPathType extends Enumeration {
 
     /**
      * Used to mark any sort of loops.
