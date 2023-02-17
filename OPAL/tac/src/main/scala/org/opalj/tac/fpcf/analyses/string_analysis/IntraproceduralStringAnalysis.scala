@@ -87,20 +87,17 @@ class IntraproceduralStringAnalysis(
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
 
-        val tacProvider = p.get(EagerDetachedTACAIKey)
-        val tac = tacProvider(data._2)
-
-        // Uncomment the following code to get the TAC from the property store
-        //        val tacaiEOptP = ps(data._2, TACAI.key)
-        //        var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
-        //        if (tacaiEOptP.hasUBP) {
-        //            if (tacaiEOptP.ub.tac.isEmpty) {
-        //                // No TAC available, e.g., because the method has no body
-        //                return Result(data, StringConstancyProperty.lb)
-        //            } else {
-        //                tac = tacaiEOptP.ub.tac.get
-        //            }
-        //        }
+        // Retrieve TAC from property store
+        val tacaiEOptP = ps(data._2, TACAI.key)
+        var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
+        if (tacaiEOptP.hasUBP) {
+            if (tacaiEOptP.ub.tac.isEmpty) {
+                // No TAC available, e.g., because the method has no body
+                return Result(data, StringConstancyProperty.lb)
+            } else {
+                tac = tacaiEOptP.ub.tac.get
+            }
+        }
         val cfg = tac.cfg
         val stmts = tac.stmts
 

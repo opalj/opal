@@ -118,7 +118,8 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * fully-qualified method name, in the format [fully-qualified class name]#[method name]
      * where the separator for the fq class names is a dot, e.g., "java.lang.Class#forName".
      */
-    private def buildFQMethodName(declaringClass: ReferenceType, methodName: String): String =
+    @inline
+    private final def buildFQMethodName(declaringClass: ReferenceType, methodName: String): String =
         s"${declaringClass.toJava}#$methodName"
 
     /**
@@ -128,7 +129,8 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * @note Internally, this method makes use of [[relevantMethodNames]]. A method can only be
      *       relevant if it occurs in [[relevantMethodNames]].
      */
-    private def isRelevantCall(declaringClass: ReferenceType, methodName: String): Boolean =
+    @inline
+    private final def isRelevantCall(declaringClass: ReferenceType, methodName: String): Boolean =
         relevantMethodNames.contains(buildFQMethodName(declaringClass, methodName))
 
     /**
@@ -136,17 +138,21 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * relevant method that is to be processed by `doAnalyze`.
      */
     private def instructionsContainRelevantMethod(instructions: Array[Instruction]): Boolean = {
-        instructions.filter(_ != null).foldLeft(false) { (previous, nextInstr) =>
-            previous || ((nextInstr.opcode: @switch) match {
-                case INVOKESTATIC.opcode =>
-                    val INVOKESTATIC(declClass, _, methodName, _) = nextInstr
-                    isRelevantCall(declClass, methodName)
-                case INVOKEVIRTUAL.opcode =>
-                    val INVOKEVIRTUAL(declClass, methodName, _) = nextInstr
-                    isRelevantCall(declClass, methodName)
-                case _ => false
-            })
+
+      instructions
+        .filter(_ != null)
+        .foreach{ instr =>
+          (instr.opcode: @switch) match {
+            case INVOKESTATIC.opcode =>
+              val INVOKESTATIC(declClass, _, methodName, _) = instr
+              if (isRelevantCall(declClass, methodName)) return true
+            case INVOKEVIRTUAL.opcode =>
+              val INVOKEVIRTUAL(declClass, methodName, _) = instr
+              if (isRelevantCall(declClass, methodName)) return true
+          }
         }
+
+      false
     }
 
     /**
