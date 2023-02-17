@@ -124,10 +124,10 @@ class ForwardICFG(implicit project: SomeProject)
             .flatMap(
                 declaredMethod =>
                     if (declaredMethod.hasSingleDefinedMethod ||
-                      declaredMethod.hasMultipleDefinedMethods)
-                      declaredMethod.definedMethods
+                        declaredMethod.hasMultipleDefinedMethods)
+                        declaredMethod.definedMethods
                     else
-                      Seq.empty
+                        Seq.empty
             ).toSet
     }
 }

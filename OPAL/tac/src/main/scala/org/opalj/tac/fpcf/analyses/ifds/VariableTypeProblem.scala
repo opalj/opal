@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package ifds
 
-
 import org.opalj.br.ArrayType
 import org.opalj.br.FieldType
 import org.opalj.br.Method

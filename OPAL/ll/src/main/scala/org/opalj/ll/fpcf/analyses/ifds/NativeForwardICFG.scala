@@ -63,10 +63,10 @@ class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMS
 
     private def resolveCallee(call: Call): Set[_ <: NativeFunction] =
         call.calledValue match {
-          case function: Function => Set(LLVMFunction(function))
-          case _ =>
-            if (JNICallUtil.isJNICall(call))
-              JNICallUtil.resolve(call)
-            else Set()
+            case function: Function => Set(LLVMFunction(function))
+            case _ =>
+                if (JNICallUtil.isJNICall(call))
+                    JNICallUtil.resolve(call)
+                else Set()
         }
 }

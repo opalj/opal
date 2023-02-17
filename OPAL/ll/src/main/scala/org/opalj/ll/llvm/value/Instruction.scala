@@ -90,8 +90,6 @@ import org.opalj.ll.llvm.FunctionType
 import org.opalj.ll.llvm.Type
 import org.opalj.ll.llvm.value.constant.ConstantIntValue
 
-
-
 object OptionalInstruction {
     def apply(ref: LLVMValueRef): Option[Instruction] = {
         if (ref.isNull) return None
