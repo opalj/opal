@@ -4,15 +4,14 @@ package org.opalj.br.fpcf.properties.string_definition
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.br.fpcf.properties.properties.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation.InfiniteRepetitionSymbol
 
 /**
- * Super type for modeling nodes and leafs of [[org.opalj.br.fpcf.properties.properties.StringTree]]s.
+ * Super type for modeling nodes and leafs of [[org.opalj.br.fpcf.properties.string_definition.StringTree]]s.
  *
  * @author Patrick Mell
  */
-sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeElement]) {
+sealed abstract class StringTree(val children: ListBuffer[StringTree]) {
 
     /**
      * This is a helper function which processes the `reduce` operation for [[StringTreeOr]] and
@@ -22,7 +21,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      * is passed).
      */
     private def processReduceCondOrReduceOr(
-        children: List[StringTreeElement], processOr: Boolean = true
+                                             children: List[StringTree], processOr: Boolean = true
     ): List[StringConstancyInformation] = {
         val reduced = children.flatMap(reduceAcc)
         val resetElement = reduced.find(_.constancyType == StringConstancyType.RESET)
@@ -67,7 +66,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      * elements.
      */
     private def processReduceConcat(
-        children: List[StringTreeElement]
+        children: List[StringTree]
     ): List[StringConstancyInformation] = {
         val reducedLists = children.map(reduceAcc)
         // Stores whether we deal with a flat structure or with a nested structure (in the latter
@@ -135,7 +134,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      *         example, a [[StringConstancyType.RESET]] marks the beginning of a new string
      *         alternative which results in a new list element.
      */
-    private def reduceAcc(subtree: StringTreeElement): List[StringConstancyInformation] = {
+    private def reduceAcc(subtree: StringTree): List[StringConstancyInformation] = {
         subtree match {
             case StringTreeRepetition(c, lowerBound, upperBound) =>
                 val times = if (lowerBound.isDefined && upperBound.isDefined)
@@ -160,13 +159,13 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      * context, two elements are equal if their [[StringTreeConst.sci]] information are equal.
      *
      * @param children The children from which to remove duplicates.
-     * @return Returns a list of [[StringTreeElement]] with unique elements.
+     * @return Returns a list of [[StringTree]] with unique elements.
      */
     private def removeDuplicateTreeValues(
-        children: ListBuffer[StringTreeElement]
-    ): ListBuffer[StringTreeElement] = {
+        children: ListBuffer[StringTree]
+    ): ListBuffer[StringTree] = {
         val seen = mutable.Map[StringConstancyInformation, Boolean]()
-        val unique = ListBuffer[StringTreeElement]()
+        val unique = ListBuffer[StringTree]()
         children.foreach {
             case next @ StringTreeConst(sci) =>
                 if (!seen.contains(sci)) {
@@ -331,10 +330,10 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
  * Otherwise, the number of repetitions is computed by `upperBound - lowerBound`.
  */
 case class StringTreeRepetition(
-        var child:  StringTreeElement,
-        lowerBound: Option[Int]       = None,
-        upperBound: Option[Int]       = None
-) extends StringTreeElement(ListBuffer(child))
+                                 var child:  StringTree,
+                                 lowerBound: Option[Int]       = None,
+                                 upperBound: Option[Int]       = None
+) extends StringTree(ListBuffer(child))
 
 /**
  * [[StringTreeConcat]] models the concatenation of multiple strings. For example, if it is known
@@ -343,8 +342,8 @@ case class StringTreeRepetition(
  * represents ''s_1'' and the last child / last element ''s_n''.
  */
 case class StringTreeConcat(
-        override val children: ListBuffer[StringTreeElement]
-) extends StringTreeElement(children)
+        override val children: ListBuffer[StringTree]
+) extends StringTree(children)
 
 /**
  * [[StringTreeOr]] models that a string (or part of a string) has one out of several possible
@@ -356,8 +355,8 @@ case class StringTreeConcat(
  * a (sub) string.
  */
 case class StringTreeOr(
-        override val children: ListBuffer[StringTreeElement]
-) extends StringTreeElement(children)
+        override val children: ListBuffer[StringTree]
+) extends StringTree(children)
 
 /**
  * [[StringTreeCond]] is used to model that a string (or part of a string) is optional / may
@@ -368,8 +367,8 @@ case class StringTreeOr(
  * string may have (contain) a particular but not necessarily.
  */
 case class StringTreeCond(
-        override val children: ListBuffer[StringTreeElement]
-) extends StringTreeElement(children)
+        override val children: ListBuffer[StringTree]
+) extends StringTree(children)
 
 /**
  * [[StringTreeConst]]s are the only elements which are supposed to act as leafs within a
@@ -380,4 +379,4 @@ case class StringTreeCond(
  */
 case class StringTreeConst(
         sci: StringConstancyInformation
-) extends StringTreeElement(ListBuffer())
+) extends StringTree(ListBuffer())

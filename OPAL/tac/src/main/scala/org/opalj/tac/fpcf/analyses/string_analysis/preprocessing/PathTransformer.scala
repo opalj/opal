@@ -4,8 +4,8 @@ package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
 
-import org.opalj.br.fpcf.properties.properties.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
 import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
@@ -16,7 +16,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 
 /**
  * [[PathTransformer]] is responsible for transforming a [[Path]] into another representation, such
- * as [[org.opalj.br.fpcf.properties.properties.StringTree]]s for example.
+ * as [[org.opalj.br.fpcf.properties.string_definition.StringTree]]s for example.
  * An instance can handle several consecutive transformations of different paths as long as they
  * refer to the underlying control flow graph. If this is no longer the case, create a new instance
  * of this class with the corresponding (new) `cfg?`.
@@ -135,7 +135,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
      *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler.reset]].
      *
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
-     *         [[org.opalj.br.fpcf.properties.properties.StringTree]] will be returned. Note that
+     *         [[org.opalj.br.fpcf.properties.string_definition.StringTree]] will be returned. Note that
      *         all elements of the tree will be defined, i.e., if `path` contains sites that could
      *         not be processed (successfully), they will not occur in the tree.
      */
