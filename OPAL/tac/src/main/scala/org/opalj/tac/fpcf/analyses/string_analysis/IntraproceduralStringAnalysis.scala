@@ -43,7 +43,7 @@ import org.opalj.tac.TACode
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
  * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
  * <p>
- * This analysis takes into account only the enclosing function as a context, i.e., it
+ * This analysis takes into account only the enclosing function as a context, i.e., it is
  * intraprocedural. Values coming from other functions are regarded as dynamic values even if the
  * function returns a constant string value.
  * <p>
