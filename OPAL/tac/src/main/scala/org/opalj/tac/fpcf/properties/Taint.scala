@@ -1,8 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.properties
+package org.opalj
+package tac
+package fpcf
+package properties
 
 import org.opalj.fpcf.PropertyKey
-import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.IFDSProperty
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 

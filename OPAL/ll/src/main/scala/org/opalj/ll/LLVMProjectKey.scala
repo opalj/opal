@@ -2,7 +2,8 @@
 package org.opalj
 package ll
 
-import org.opalj.br.analyses.{ProjectInformationKey, SomeProject}
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 
 object LLVMProjectKey extends ProjectInformationKey[LLVMProject, Iterable[String]] {
     override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil

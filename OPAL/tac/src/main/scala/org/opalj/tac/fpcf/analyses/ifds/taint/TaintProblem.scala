@@ -1,10 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds.taint
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.ObjectType
-import org.opalj.ifds.{AbstractIFDSFact, AbstractIFDSNullFact, Callable}
-import org.opalj.tac.{Assignment, Expr, Stmt}
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.AbstractIFDSNullFact
+import org.opalj.ifds.Callable
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.Assignment
+import org.opalj.tac.Expr
+import org.opalj.tac.Stmt
 
 trait TaintFact extends AbstractIFDSFact
 

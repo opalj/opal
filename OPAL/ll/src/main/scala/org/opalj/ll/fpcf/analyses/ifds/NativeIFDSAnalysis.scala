@@ -1,9 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
 
-import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.ifds.{AbstractIFDSFact, IFDSAnalysis, IFDSAnalysisScheduler, IFDSProblem, IFDSPropertyMetaInformation}
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSProblem
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.LLVMProjectKey
 
 /**
@@ -12,7 +21,7 @@ import org.opalj.ll.LLVMProjectKey
  * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
  * @tparam IFDSFact
  */
-class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
+abstract class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
         project:     SomeProject,
         ifdsProblem: IFDSProblem[IFDSFact, NativeFunction, LLVMStatement],
         propertyKey: IFDSPropertyMetaInformation[LLVMStatement, IFDSFact]

@@ -1,15 +1,36 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
 
-import org.opalj.br.{DeclaredMethod, Method}
-import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, SomeProject}
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.{FinalEP, PropertyStore}
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.ICFG
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.{Assignment, DUVar, Expr, ExprStmt, LazyDetachedTACAIKey, NonVirtualFunctionCall, NonVirtualMethodCall, StaticFunctionCall, StaticMethodCall, Stmt, TACMethodParameter, TACode, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.Assignment
+import org.opalj.tac.DUVar
+import org.opalj.tac.Expr
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.LazyDetachedTACAIKey
+import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
 
 class ForwardICFG(implicit project: SomeProject)
@@ -49,7 +70,7 @@ class ForwardICFG(implicit project: SomeProject)
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    override def getCalleesIfCallStatement(statement: JavaStatement): Option[collection.Set[Method]] =
+    override def getCalleesIfCallStatement(statement: JavaStatement): Option[Set[Method]] =
         statement.stmt.astID match {
             case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID =>
                 Some(getCallees(statement))
@@ -74,7 +95,7 @@ class ForwardICFG(implicit project: SomeProject)
         case _                => throw new UnknownError("Unexpected statement")
     }
 
-    private def getCallees(statement: JavaStatement): collection.Set[Method] = {
+    private def getCallees(statement: JavaStatement): Set[Method] = {
         val pc = statement.stmt.pc
         val caller = declaredMethods(statement.callable)
         val ep = propertyStore(caller, Callees.key)
@@ -98,19 +119,15 @@ class ForwardICFG(implicit project: SomeProject)
      * @param declaredMethods Some declared methods.
      * @return All defined methods of `declaredMethods`.
      */
-    private def definedMethods(declaredMethods: Iterator[DeclaredMethod]): collection.Set[Method] = {
-        val result = scala.collection.mutable.Set.empty[Method]
+    private def definedMethods(declaredMethods: Iterator[DeclaredMethod]): Set[Method] = {
         declaredMethods
-            .filter(
+            .flatMap(
                 declaredMethod =>
-                    declaredMethod.hasSingleDefinedMethod ||
-                        declaredMethod.hasMultipleDefinedMethods
-            )
-            .foreach(
-                declaredMethod =>
-                    declaredMethod
-                        .foreachDefinedMethod(defineMethod => result.add(defineMethod))
-            )
-        result
+                    if (declaredMethod.hasSingleDefinedMethod ||
+                      declaredMethod.hasMultipleDefinedMethods)
+                      declaredMethod.definedMethods
+                    else
+                      Seq.empty
+            ).toSet
     }
 }

@@ -1,14 +1,24 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm.value
+package org.opalj
+package ll
+package llvm
+package value
 
-import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM._
+import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef
+import org.bytedeco.llvm.LLVM.LLVMValueRef
+import org.bytedeco.llvm.global.LLVM.LLVMBasicBlockAsValue
+import org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockName
+import org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockParent
+import org.bytedeco.llvm.global.LLVM.LLVMGetBasicBlockTerminator
+import org.bytedeco.llvm.global.LLVM.LLVMGetFirstInstruction
+import org.bytedeco.llvm.global.LLVM.LLVMGetLastInstruction
+import org.bytedeco.llvm.global.LLVM.LLVMGetNextInstruction
 import org.opalj.graphs.Node
 
 case class BasicBlock(block_ref: LLVMBasicBlockRef)
     extends Value(LLVMBasicBlockAsValue(block_ref))
     with Node {
-    def parent = Function(LLVMGetBasicBlockParent(block_ref))
+    def parent: Function = Function(LLVMGetBasicBlockParent(block_ref))
     def instructions: InstructionIterator = new InstructionIterator(LLVMGetFirstInstruction(block_ref))
     def firstInstruction: Instruction = Instruction(LLVMGetFirstInstruction(block_ref))
     def lastInstruction: Instruction = Instruction(LLVMGetLastInstruction(block_ref))

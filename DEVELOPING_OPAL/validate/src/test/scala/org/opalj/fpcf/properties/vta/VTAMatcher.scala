@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.vta
+package org.opalj
+package fpcf
+package properties
+package vta
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalP

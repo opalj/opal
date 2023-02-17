@@ -1,9 +1,46 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj
+package ll
+package llvm
 
 import org.bytedeco.javacpp.PointerPointer
 import org.bytedeco.llvm.LLVM.LLVMTypeRef
-import org.bytedeco.llvm.global.LLVM._
+import org.bytedeco.llvm.global.LLVM.LLVMCountParamTypes
+import org.bytedeco.llvm.global.LLVM.LLVMCountStructElementTypes
+import org.bytedeco.llvm.global.LLVM.LLVMDisposeMessage
+import org.bytedeco.llvm.global.LLVM.LLVMGetArrayLength
+import org.bytedeco.llvm.global.LLVM.LLVMGetElementType
+import org.bytedeco.llvm.global.LLVM.LLVMGetParamTypes
+import org.bytedeco.llvm.global.LLVM.LLVMGetReturnType
+import org.bytedeco.llvm.global.LLVM.LLVMGetStructName
+import org.bytedeco.llvm.global.LLVM.LLVMGetTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMGetVectorSize
+import org.bytedeco.llvm.global.LLVM.LLVMIsFunctionVarArg
+import org.bytedeco.llvm.global.LLVM.LLVMIsLiteralStruct
+import org.bytedeco.llvm.global.LLVM.LLVMIsOpaqueStruct
+import org.bytedeco.llvm.global.LLVM.LLVMIsPackedStruct
+import org.bytedeco.llvm.global.LLVM.LLVMPrintTypeToString
+import org.bytedeco.llvm.global.LLVM.LLVMStructGetTypeAtIndex
+import org.bytedeco.llvm.global.LLVM.LLVMTypeIsSized
+import org.bytedeco.llvm.global.LLVM.LLVMFloatTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMVoidTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMHalfTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMDoubleTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMX86_FP80TypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMFP128TypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMPPC_FP128TypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMLabelTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMIntegerTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMFunctionTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMStructTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMArrayTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMPointerTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMVectorTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMMetadataTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMX86_MMXTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMTokenTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMScalableVectorTypeKind
+import org.bytedeco.llvm.global.LLVM.LLVMBFloatTypeKind
 
 object Type {
     def apply(ref: LLVMTypeRef): Type = {
@@ -84,12 +121,12 @@ case class FunctionType(ref: LLVMTypeRef) extends Type(ref) {
 /** Structures */
 case class StructType(ref: LLVMTypeRef) extends Type(ref) {
     def name: String = LLVMGetStructName(ref).getString
-    def elementCount: Int = LLVMCountStructElementTypes(ref)
-    def elementAtIndex(i: Int) = {
+    private def elementCount: Int = LLVMCountStructElementTypes(ref)
+    private def elementAtIndex(i: Int) = {
         assert(i < elementCount)
         Type(LLVMStructGetTypeAtIndex(ref, i))
     }
-    def elements: Iterable[Type] = (0 until elementCount).map(elementAtIndex(_))
+    def elements: Iterable[Type] = (0 until elementCount).map(elementAtIndex)
     def isPacked: Boolean = intToBool(LLVMIsPackedStruct(ref))
     def isOpaque: Boolean = intToBool(LLVMIsOpaqueStruct(ref))
     def isLiteral: Boolean = intToBool(LLVMIsLiteralStruct(ref))

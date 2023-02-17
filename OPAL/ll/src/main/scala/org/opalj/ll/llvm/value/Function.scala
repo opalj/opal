@@ -1,8 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm.value
+package org.opalj
+package ll
+package llvm
+package value
 
-import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM._
+import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef
+import org.bytedeco.llvm.LLVM.LLVMValueRef
+import org.bytedeco.llvm.global.LLVM.LLVMCountBasicBlocks
+import org.bytedeco.llvm.global.LLVM.LLVMCountParams
+import org.bytedeco.llvm.global.LLVM.LLVMGetEntryBasicBlock
+import org.bytedeco.llvm.global.LLVM.LLVMGetFirstBasicBlock
+import org.bytedeco.llvm.global.LLVM.LLVMGetFirstParam
+import org.bytedeco.llvm.global.LLVM.LLVMGetNextBasicBlock
+import org.bytedeco.llvm.global.LLVM.LLVMGetNextParam
+import org.bytedeco.llvm.global.LLVM.LLVMGetParam
+import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFG
+import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFGOnly
+import org.bytedeco.llvm.global.LLVM.LLVMFunctionValueKind
 import org.opalj.io.writeAndOpen
 
 case class Function(ref: LLVMValueRef) extends Value(ref) {

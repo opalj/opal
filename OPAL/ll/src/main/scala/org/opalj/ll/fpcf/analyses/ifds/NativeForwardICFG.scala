@@ -1,9 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
 
-import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.ICFG
-import org.opalj.ll.llvm.value.{Call, Function, Instruction, Ret, Terminator}
+import org.opalj.ll.llvm.value.Call
+import org.opalj.ll.llvm.value.Function
+import org.opalj.ll.llvm.value.Instruction
+import org.opalj.ll.llvm.value.Ret
+import org.opalj.ll.llvm.value.Terminator
 
 class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMStatement] {
     implicit val declaredMethods = project.get(DeclaredMethodsKey)
@@ -23,14 +32,14 @@ class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMS
     }
 
     /**
-     * Determines the statement, that will be analyzed after some other `statement`.
+     * Determines the statement that will be analyzed after some other `statement`.
      *
      * @param statement The source statement.
      * @return The successor statements
      */
     override def nextStatements(statement: LLVMStatement): Set[LLVMStatement] = {
         if (!statement.instruction.isTerminator) return Set(LLVMStatement(statement.instruction.next.get))
-        statement.instruction.asInstanceOf[Instruction with Terminator].successors.map(LLVMStatement(_)).toSet
+        statement.instruction.asInstanceOf[Instruction with Terminator].successors.map(LLVMStatement).toSet
     }
 
     /**
@@ -40,7 +49,7 @@ class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMS
      * @return All callables possibly called at the statement or None, if the statement does not
      *         contain a call.
      */
-    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[collection.Set[_ <: NativeFunction]] = {
+    override def getCalleesIfCallStatement(statement: LLVMStatement): Option[Set[_ <: NativeFunction]] = {
         statement.instruction match {
             case call: Call => Some(resolveCallee(call))
             case _          => None
@@ -53,9 +62,11 @@ class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMS
     }
 
     private def resolveCallee(call: Call): Set[_ <: NativeFunction] =
-        if (call.calledValue.isInstanceOf[Function])
-            Set(LLVMFunction(call.calledValue.asInstanceOf[Function]))
-        else if (JNICallUtil.isJNICall(call))
-            JNICallUtil.resolve(call)
-        else Set()
+        call.calledValue match {
+          case function: Function => Set(LLVMFunction(function))
+          case _ =>
+            if (JNICallUtil.isJNICall(call))
+              JNICallUtil.resolve(call)
+            else Set()
+        }
 }

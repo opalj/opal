@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll
+package org.opalj
+package ll
 
 package object llvm {
     def intToBool(i: Int): Boolean = i match {

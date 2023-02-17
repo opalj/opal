@@ -1,8 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm.value
+package org.opalj
+package ll
+package llvm
+package value
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
-import org.bytedeco.llvm.global.LLVM.{LLVMGetParamParent, LLVMGetValueKind, LLVMArgumentValueKind}
+import org.bytedeco.llvm.global.LLVM.LLVMArgumentValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMGetParamParent
+import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
 import org.opalj.ll.llvm.value
 
 case class Argument(ref: LLVMValueRef, index: Int) extends Value(ref) {

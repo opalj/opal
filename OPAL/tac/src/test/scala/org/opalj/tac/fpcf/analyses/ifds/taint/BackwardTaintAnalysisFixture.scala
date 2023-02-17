@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds.taint.old
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
+package taint
+package old
 /*  TODO Fix as soon as backwards analysis is implemented
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{DeclaredMethod, Method}

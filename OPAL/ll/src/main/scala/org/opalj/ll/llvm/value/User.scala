@@ -1,9 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj
+package ll
+package llvm
 package value
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
-import org.bytedeco.llvm.global.LLVM._
+import org.bytedeco.llvm.global.LLVM.LLVMGetNumOperands
+import org.bytedeco.llvm.global.LLVM.LLVMGetOperand
+import org.bytedeco.llvm.global.LLVM.LLVMGetOperandUse
 
 class User(ref: LLVMValueRef) extends Value(ref) {
     def numOperands: Int = LLVMGetNumOperands(ref)

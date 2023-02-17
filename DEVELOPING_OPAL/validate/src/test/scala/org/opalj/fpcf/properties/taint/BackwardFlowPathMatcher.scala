@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.taint
+package org.opalj
+package fpcf
+package properties
+package taint
 
 /*  TODO Fix as soon as backwards analysis is implemented
 import org.opalj.br._

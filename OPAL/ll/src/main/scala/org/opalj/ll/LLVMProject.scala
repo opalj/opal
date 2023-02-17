@@ -1,7 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll
+package org.opalj
+package ll
 
-import org.opalj.ll.llvm.{Module, Reader, value}
+import org.opalj.ll.llvm.Module
+import org.opalj.ll.llvm.Reader
+import org.opalj.ll.llvm.value
 
 class LLVMProject(val modules: Iterable[Module]) {
     def functions: Iterable[value.Function] =

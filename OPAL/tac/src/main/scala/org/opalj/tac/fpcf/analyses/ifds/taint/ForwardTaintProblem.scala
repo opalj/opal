@@ -1,12 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds.taint
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{DeclaredMethodsKey, SomeProject}
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 abstract class ForwardTaintProblem(project: SomeProject)
     extends JavaIFDSProblem[TaintFact](project)

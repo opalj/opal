@@ -1,19 +1,43 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds.taint
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.fpcf._
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSProperty
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMFunction, LLVMStatement}
+import org.opalj.ll.fpcf.analyses.ifds.LLVMFunction
+import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Ret
 import org.opalj.tac.Assignment
-import org.opalj.tac.fpcf.analyses.ifds.taint._
-import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem, JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.properties.{TACAI, Taint}
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
+import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
+import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.Taint
 
 class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     val llvmProject = p.get(LLVMProjectKey)

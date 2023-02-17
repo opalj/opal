@@ -1,12 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.{EOptionP, FinalEP, InterimEUBP, Property, PropertyKey, PropertyStore}
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{AbstractIFDSFact, IFDSProblem, IFDSProperty}
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.IFDSProblem
+import org.opalj.ifds.IFDSProperty
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
@@ -55,7 +66,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
      * @param callee The called method, for which the data flow shall be computed.
      * @param in The fact which holds before the execution of the `call`.
      * @param source The entity, which is analyzed.
-     * @return The facts, which hold after the execution of `statement` under the assumption that
+     * @return The facts which hold after the execution of `statement` under the assumption that
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
     protected def javaCallFlow(

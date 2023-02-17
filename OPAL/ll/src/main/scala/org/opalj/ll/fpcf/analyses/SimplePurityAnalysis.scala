@@ -1,11 +1,26 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses
+package org.opalj
+package ll
+package fpcf
+package analyses
 
-import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
-import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis, FPCFAnalysisScheduler}
-import org.opalj.fpcf._
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.ll.llvm.value.{Function, GlobalVariable, Store}
+import org.opalj.ll.llvm.value.Function
+import org.opalj.ll.llvm.value.GlobalVariable
+import org.opalj.ll.llvm.value.Store
 
 sealed trait SimplePurityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = SimplePurity

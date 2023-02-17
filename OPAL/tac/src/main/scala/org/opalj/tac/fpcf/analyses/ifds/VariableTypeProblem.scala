@@ -1,19 +1,25 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
 
-import org.opalj.br._
+
+import org.opalj.br.ArrayType
+import org.opalj.br.FieldType
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.ifds.AbstractIFDSFact
-
 import org.opalj.tac.fpcf.analyses.ifds.{JavaIFDSProblem => NewJavaIFDSProblem}
-import org.opalj.tac._
 import org.opalj.value.ValueInformation
-import scala.annotation.tailrec
 
+import scala.annotation.tailrec
 import org.opalj.ifds.AbstractIFDSNullFact
 import org.opalj.ifds.Dependees.Getter
-
 import org.opalj.fpcf.FinalEP
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.PropertyStoreKey

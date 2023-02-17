@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll
+package org.opalj
+package ll
 
 import com.typesafe.config.ConfigValueFactory
 
@@ -58,7 +59,7 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
                 }
             } else if (method.name.contains("flow")) {
                 it(s"${method.name} has some flow") {
-                    assert(!flowFacts.isEmpty)
+                    assert(flowFacts.nonEmpty)
                 }
             }
         }

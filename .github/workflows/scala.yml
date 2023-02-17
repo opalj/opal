@@ -23,7 +23,7 @@ jobs:
         run: git diff --exit-code
         
       - name: Run tests
-        run: sbt -J-Xmx20G test
+        run: sbt -J-Xmx20G test; project ll; test
 
   it-test:
     runs-on: self-hosted

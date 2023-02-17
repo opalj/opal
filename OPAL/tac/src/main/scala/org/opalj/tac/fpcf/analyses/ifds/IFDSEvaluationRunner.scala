@@ -1,32 +1,36 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
+
+import com.typesafe.config.ConfigValueFactory
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
+import org.opalj.ai.domain.l2
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.bytecode
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.Statistics
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.util.Milliseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 import java.io.File
 import java.io.PrintWriter
 import scala.language.existentials
-import com.typesafe.config.ConfigValueFactory
-import org.opalj.bytecode
-import org.opalj.ifds.Statistics
-import org.opalj.ifds.IFDSAnalysis
-import org.opalj.ifds.IFDSAnalysisScheduler
 
-import org.opalj.util.Milliseconds
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.ai.domain.l2
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.properties.cg.Callers
-
-abstract class EvaluationRunner {
+abstract class IFDSEvaluationRunner {
 
     protected def analysisClass: IFDSAnalysisScheduler[_, _, _]
 
@@ -95,7 +99,7 @@ abstract class EvaluationRunner {
 
         if (evalSchedulingStrategies) {
             val results = for {
-                i <- 1 to EvaluationRunner.NUM_EXECUTIONS_EVAL_SCHEDULING_STRATEGIES
+                i <- 1 to IFDSEvaluationRunner.NUM_EXECUTIONS_EVAL_SCHEDULING_STRATEGIES
                 strategy <- PKESequentialPropertyStore.Strategies
             } yield {
                 println(s"Round: $i - $strategy")
@@ -129,7 +133,7 @@ abstract class EvaluationRunner {
             var statistics = Seq.empty[Statistics]
             var additionalEvaluationResults = Seq.empty[Object]
             for {
-                _ <- 1 to EvaluationRunner.NUM_EXECUTIONS
+                _ <- 1 to IFDSEvaluationRunner.NUM_EXECUTIONS
             } {
                 val evaluationResult = evalProject(Project.recreate(p))
                 val additionalEvaluationResult = evaluationResult._3
@@ -186,7 +190,7 @@ abstract class EvaluationRunner {
     }
 }
 
-object EvaluationRunner {
+object IFDSEvaluationRunner {
     var NUM_EXECUTIONS = 10
     var NUM_EXECUTIONS_EVAL_SCHEDULING_STRATEGIES = 2
 }

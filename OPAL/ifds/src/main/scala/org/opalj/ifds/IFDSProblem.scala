@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ifds
+package org.opalj
+package ifds
 
 import org.opalj.ifds.Dependees.Getter
 

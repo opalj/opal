@@ -1,9 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj
+package ll
+package llvm
 
-import org.bytedeco.llvm.LLVM.{LLVMModuleRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM.{LLVMDisposeMessage, LLVMGetFirstFunction, LLVMGetNamedFunction, LLVMGetNextFunction, LLVMPrintModuleToString}
-import org.opalj.ll.llvm.value.{Value, Function}
+import org.bytedeco.llvm.LLVM.LLVMModuleRef
+import org.bytedeco.llvm.LLVM.LLVMValueRef
+import org.bytedeco.llvm.global.LLVM.LLVMDisposeMessage
+import org.bytedeco.llvm.global.LLVM.LLVMGetFirstFunction
+import org.bytedeco.llvm.global.LLVM.LLVMGetNamedFunction
+import org.bytedeco.llvm.global.LLVM.LLVMGetNextFunction
+import org.bytedeco.llvm.global.LLVM.LLVMPrintModuleToString
+import org.opalj.ll.llvm.value.Function
+import org.opalj.ll.llvm.value.Value
 
 case class Module(ref: LLVMModuleRef) {
     def functions: FunctionIterator = {

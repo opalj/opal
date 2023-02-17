@@ -1,16 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll
+package org.opalj
+package ll
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.ll.fpcf.analyses.{EagerSimplePurityAnalysis, Impure, Pure}
+import org.opalj.ll.fpcf.analyses.EagerSimplePurityAnalysis
+import org.opalj.ll.fpcf.analyses.Impure
+import org.opalj.ll.fpcf.analyses.Pure
 import org.opalj.ll.llvm.value.Function
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.collection.immutable.List
-
-class SimplePurityTests extends AnyFunSpec with Matchers {
+class SimpleLLVMPurityTests extends AnyFunSpec with Matchers {
     describe("SimplePurityAnalysis") {
         it("executes") {
             val project = Project(Iterable.empty)

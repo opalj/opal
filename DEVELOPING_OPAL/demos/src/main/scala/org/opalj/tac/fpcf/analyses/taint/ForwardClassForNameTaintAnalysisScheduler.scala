@@ -1,22 +1,43 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.taint
+package org.opalj
+package tac
+package fpcf
+package analyses
+package taint
 
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.{DeclaredMethod, Method, ObjectType}
-import org.opalj.fpcf.{FinalEP, PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSProperty, IFDSPropertyMetaInformation}
-import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{FlowFact, ForwardTaintProblem, TaintFact, TaintProblem, Variable}
-import org.opalj.tac.fpcf.analyses.ifds._
-import org.opalj.tac.fpcf.properties.{TACAI, Taint}
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSProperty
+import org.opalj.ifds.IFDSPropertyMetaInformation
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.Taint
 
 import java.io.File
 
 /**
- * A forward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,
- * which are callable from outside the library, to calls of Class.forName.
+ * A forward IFDS taint analysis which tracks the String parameters of all methods of the rt.jar
+ * which are callable from outside the library to calls of Class.forName.
  *
  * @author Dominik Helm
  * @author Mario Trageser
@@ -29,21 +50,21 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     extends ForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {
     private val propertyStore = project.get(PropertyStoreKey)
     /**
-     * Returns all methods, that can be called from outside the library.
-     * The call graph must be computed, before this method may be invoked.
+     * Returns all methods that can be called from outside the library.
+     * The call graph must be computed before this method may be invoked.
      *
-     * @return All methods, that can be called from outside the library.
+     * @return All methods that can be called from outside the library.
      */
     protected def methodsCallableFromOutside: Set[DeclaredMethod] = {
         declaredMethods.declaredMethods.filter(canBeCalledFromOutside).toSet
     }
 
     /**
-     * Checks, if some `method` can be called from outside the library.
-     * The call graph must be computed, before this method may be invoked.
+     * Checks if some `method` can be called from outside the library.
+     * The call graph must be computed before this method may be invoked.
      *
-     * @param method The method, which may be callable from outside.
-     * @return True, if `method` can be called from outside the library.
+     * @param method The method which may be callable from outside.
+     * @return True if `method` can be called from outside the library.
      */
     protected def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
         val FinalEP(_, callers) = propertyStore(method, Callers.key)
@@ -78,7 +99,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         Set.empty
 
     /**
-     * Create a FlowFact, if Class.forName is called with a tainted variable for the first parameter.
+     * Create a FlowFact if Class.forName is called with a tainted variable for the first parameter.
      */
     override protected def createFlowFact(callee: Method, call: JavaStatement,
                                           in: TaintFact): Option[FlowFact] = {
@@ -88,10 +109,10 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     }
 
     /**
-     * Checks, if a `method` is Class.forName.
+     * Checks if a `method` is Class.forName.
      *
      * @param method The method.
-     * @return True, if the method is Class.forName.
+     * @return True if the method is Class.forName.
      */
     private def isClassForName(method: DeclaredMethod): Boolean =
         method.declaringClassType == ObjectType.Class && method.name == "forName"
@@ -108,7 +129,7 @@ object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[T
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
 }
 
-class ForwardClassForNameAnalysisRunner extends EvaluationRunner {
+class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
 
     override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type = ForwardClassForNameTaintAnalysisScheduler
 
@@ -125,7 +146,7 @@ class ForwardClassForNameAnalysisRunner extends EvaluationRunner {
         }
 }
 
-object ForwardClassForNameAnalysisRunner {
+object ForwardClassForNameAnalysisRunnerIFDS {
     def main(args: Array[String]): Unit = {
         if (args.contains("--help")) {
             println("Potential parameters:")
@@ -137,7 +158,7 @@ object ForwardClassForNameAnalysisRunner {
             println(" -f <file> (Stores the average runtime to this file)")
         } else {
             val fileIndex = args.indexOf("-f")
-            new ForwardClassForNameAnalysisRunner().run(
+            new ForwardClassForNameAnalysisRunnerIFDS().run(
                 args.contains("-debug"),
                 args.contains("-l2"),
                 args.contains("-delay"),

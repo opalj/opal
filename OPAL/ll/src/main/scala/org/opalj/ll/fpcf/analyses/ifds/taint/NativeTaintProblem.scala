@@ -1,8 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds.taint
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.ObjectType
-import org.opalj.ifds.{AbstractIFDSNullFact, Callable, AbstractIFDSFact}
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.AbstractIFDSNullFact
+import org.opalj.ifds.Callable
 import org.opalj.ll.llvm.value.Value
 
 trait NativeTaintFact extends AbstractIFDSFact

@@ -1,5 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
+
 import org.opalj.br.Method
 import org.opalj.ifds.Callable
 import org.opalj.ll.llvm.value.Function

@@ -1,9 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm.value
+package org.opalj
+package ll
+package llvm
+package value
 package constant
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
-import org.bytedeco.llvm.global.LLVM._
+import org.bytedeco.llvm.global.LLVM.LLVMGetConstOpcode
+import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMConstantExprValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMGetElementPtr
 import org.opalj.ll.llvm.value.User
 
 object ConstantExpression {

@@ -1,11 +1,32 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.llvm
+package org.opalj
+package ll
+package llvm
 package value
 
-import org.bytedeco.llvm.LLVM.{LLVMUseRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM._
-import org.opalj.ll.llvm.value.constant.{ConstantDataArray, ConstantDataVector, ConstantExpression, ConstantIntValue}
-
+import org.bytedeco.llvm.LLVM.LLVMUseRef
+import org.bytedeco.llvm.LLVM.LLVMValueRef
+import org.bytedeco.llvm.global.LLVM.LLVMArgumentValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMBasicBlockValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMConstantDataArrayValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMConstantDataVectorValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMConstantExprValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMConstantIntValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMDisposeMessage
+import org.bytedeco.llvm.global.LLVM.LLVMFunctionValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMGetFirstUse
+import org.bytedeco.llvm.global.LLVM.LLVMGetNextUse
+import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMGetValueName
+import org.bytedeco.llvm.global.LLVM.LLVMGlobalVariableValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMInstructionValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMPrintValueToString
+import org.bytedeco.llvm.global.LLVM.LLVMTypeOf
+import org.bytedeco.llvm.global.LLVM.LLVMValueAsBasicBlock
+import org.opalj.ll.llvm.value.constant.ConstantDataArray
+import org.opalj.ll.llvm.value.constant.ConstantDataVector
+import org.opalj.ll.llvm.value.constant.ConstantExpression
+import org.opalj.ll.llvm.value.constant.ConstantIntValue
 class Value(ref: LLVMValueRef) {
     def repr: String = {
         val bytePointer = LLVMPrintValueToString(ref)

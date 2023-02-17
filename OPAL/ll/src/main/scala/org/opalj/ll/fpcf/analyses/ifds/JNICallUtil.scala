@@ -1,16 +1,28 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
 
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.ll.llvm.value.constant.{ConstantDataArray, GetElementPtrConst}
-import org.opalj.ll.llvm.value.{Argument, Call, GetElementPtr, GlobalVariable, Load, Store, Value}
-import org.opalj.ll.llvm.{PointerType, StructType}
+import org.opalj.ll.llvm.value.constant.ConstantDataArray
+import org.opalj.ll.llvm.value.constant.GetElementPtrConst
+import org.opalj.ll.llvm.value.Argument
+import org.opalj.ll.llvm.value.Call
+import org.opalj.ll.llvm.value.GetElementPtr
+import org.opalj.ll.llvm.value.GlobalVariable
+import org.opalj.ll.llvm.value.Load
+import org.opalj.ll.llvm.value.Store
+import org.opalj.ll.llvm.value.Value
+import org.opalj.ll.llvm.PointerType
+import org.opalj.ll.llvm.StructType
 
 object JNICallUtil {
 
     /**
      * Checks whether the call is a call to the JNI interface.
-     * This is done by the assumption that every such calls first parameter is a struct of type "struct.JNINativeInterface_"
+     * This is done by the assumption that the first parameter of such a call is a struct of type "struct.JNINativeInterface_"
      */
     def isJNICall(call: Call): Boolean = call.calledFunctionType.params.headOption match {
         case Some(firstParam) =>
@@ -95,6 +107,6 @@ object JNICallUtil {
             (classType.simpleName == className &&
                 declaredMethod.name == name &&
                 declaredMethod.descriptor.toJVMDescriptor == signature)
-        }).map(_.definedMethod).map(JNIMethod(_)).toSet
+        }).map(_.definedMethod).map(JNIMethod).toSet
     }
 }

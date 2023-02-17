@@ -113,6 +113,9 @@ lazy val buildSettings =
     Seq(
       IntegrationTest / unmanagedSourceDirectories := (Test / javaSource).value :: (IntegrationTest / scalaSource).value :: Nil
     ) ++
+    Seq (
+      javaCppVersion := Dependencies.javaCppVersion
+    ) ++
     Seq(Compile / console / scalacOptions := Seq("-deprecation")) ++
     // We don't want the build to be aborted by inter-project links that are reported by
     // scaladoc as errors using the standard compiler setting. (This case is only true, when
@@ -147,7 +150,6 @@ lazy val `OPAL` = (project in file("."))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    javaCppVersion := Dependencies.javaCppVersion,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
       validate,
@@ -186,7 +188,6 @@ lazy val `Common` = (project in file("OPAL/common"))
   .settings(buildSettings: _*)
   .settings(
     name := "Common",
-    javaCppVersion := Dependencies.javaCppVersion,
     Compile / doc / scalacOptions := Opts.doc.title("OPAL-Common"),
     libraryDependencies ++= Dependencies.common(scalaVersion.value)
   )
@@ -358,7 +359,6 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
     javaCppPresetLibs ++= Dependencies.javaCppPresetLibs,
-    javaCppVersion := Dependencies.javaCppVersion
 )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)

@@ -1,10 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds.taint
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.IFDSPropertyMetaInformation
-import org.opalj.ll.fpcf.analyses.ifds.{LLVMStatement, NativeFunction, NativeIFDSAnalysis, NativeIFDSAnalysisScheduler}
+import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
+import org.opalj.ll.fpcf.analyses.ifds.NativeFunction
+import org.opalj.ll.fpcf.analyses.ifds.NativeIFDSAnalysis
+import org.opalj.ll.fpcf.analyses.ifds.NativeIFDSAnalysisScheduler
 import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Function
 import org.opalj.tac.fpcf.properties.Taint

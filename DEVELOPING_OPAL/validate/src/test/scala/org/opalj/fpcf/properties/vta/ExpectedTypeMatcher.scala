@@ -1,16 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.vta
+package org.opalj
+package fpcf
+package properties
+package vta
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.{VTAResult, VariableType}
+import org.opalj.tac.fpcf.analyses.ifds.VTAResult
+import org.opalj.tac.fpcf.analyses.ifds.VariableType
+import org.opalj.value.ValueInformation
 
 class ExpectedTypeMatcher extends VTAMatcher {
 

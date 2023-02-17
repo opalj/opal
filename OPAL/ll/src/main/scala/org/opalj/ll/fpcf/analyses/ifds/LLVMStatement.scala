@@ -1,8 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
 
 import org.opalj.ifds.Statement
-import org.opalj.ll.llvm.value.{BasicBlock, Instruction}
+import org.opalj.ll.llvm.value.BasicBlock
+import org.opalj.ll.llvm.value.Instruction
 
 /**
  * A statement that is passed to the concrete analysis.

@@ -1,12 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 
-package org.opalj.ll.llvm
+package org.opalj
+package ll
+package llvm
 package value
 package constant
 
+import org.bytedeco.javacpp.SizeTPointer
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM.LLVMGetAsString
-import org.bytedeco.javacpp.SizeTPointer
 
 abstract class ConstantDataSequential(ref: LLVMValueRef) extends User(ref) {
     def asString: String = LLVMGetAsString(ref, new SizeTPointer(1)).getString

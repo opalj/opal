@@ -1,13 +1,24 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds.taint
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.{PropertyBounds, PropertyStore}
-import org.opalj.ifds.{IFDSAnalysis, IFDSAnalysisScheduler, IFDSPropertyMetaInformation}
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.ifds.{JavaMethod, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.properties.Taint
 
 /**

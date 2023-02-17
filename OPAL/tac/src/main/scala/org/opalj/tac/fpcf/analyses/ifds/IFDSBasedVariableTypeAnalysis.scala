@@ -1,23 +1,29 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
-
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.{PropertyBounds, PropertyKey, PropertyStore}
-import org.opalj.ifds.{IFDSProperty, IFDSPropertyMetaInformation}
-
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.cg.Callers
-import java.io.{File, PrintWriter}
-
-import org.opalj.ifds.IFDSAnalysis
-import org.opalj.ifds.IFDSAnalysisScheduler
-import org.opalj.ifds.Statistics
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.Statistics
+import org.opalj.ifds.IFDSProperty
+import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.cg.Callers
+
+import java.io.File
+import java.io.PrintWriter
 
 /**
  * A variable type analysis implemented as an IFDS analysis.
@@ -59,7 +65,7 @@ object VTAResult extends IFDSPropertyMetaInformation[JavaStatement, VTAFact] {
     val key: PropertyKey[VTAResult] = PropertyKey.create("VTAnew", new VTAResult(Map.empty))
 }
 
-class IFDSBasedVariableTypeAnalysisRunner(subsumeFacts: Boolean = false) extends EvaluationRunner {
+class IFDSBasedVariableTypeAnalysisRunnerIFDS(subsumeFacts: Boolean = false) extends IFDSEvaluationRunner {
 
     override def analysisClass: IFDSBasedVariableTypeAnalysisScheduler = new IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts)
 
@@ -81,7 +87,7 @@ class IFDSBasedVariableTypeAnalysisRunner(subsumeFacts: Boolean = false) extends
     }
 }
 
-object IFDSBasedVariableTypeAnalysisRunner {
+object IFDSBasedVariableTypeAnalysisRunnerIFDS {
     def main(args: Array[String]): Unit = {
         if (args.contains("--help")) {
             println("Potential parameters:")
@@ -94,7 +100,7 @@ object IFDSBasedVariableTypeAnalysisRunner {
             println(" -f <file> (Stores the average runtime to this file)")
         } else {
             val fileIndex = args.indexOf("-f")
-            new IFDSBasedVariableTypeAnalysisRunner(args.contains("-subsumeFacts")).run(
+            new IFDSBasedVariableTypeAnalysisRunnerIFDS(args.contains("-subsumeFacts")).run(
                 args.contains("-debug"),
                 args.contains("-l2"),
                 args.contains("-delay"),
