@@ -36,5 +36,4 @@ class SqlTaintMemory(dummyTaintRecognitionWords:Set[String]) {
     }
   }
 
-
 }

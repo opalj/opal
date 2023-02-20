@@ -1,7 +1,7 @@
 
 package org.opalj.tac.fpcf.analyses.sql
 
-object SqlStringTaintAnalyzer {
+object SqlStringAnalyzer {
 
   //Regex Pattern:{
 
@@ -20,16 +20,16 @@ object SqlStringTaintAnalyzer {
 }
    */
 
-  val INSERT_PATTERN = "^\\s*(?i)INSERT\\s+(IGNORE\\s+)?(?i)INTO\\s+([^\\s(]+)\\s*\\(([^\\)]+)\\)\\s*(?i)VALUES\\s*(?:\\(([^\\)]+)\\)\\s*,\\s*)*\\(([^\\)]+)\\)\\s*$".r
-  val SELECT_PATTERN = "^\\s*(?i)SELECT\\s+(.+)\\s+(?i)FROM\\s+([^\\s]+)(?:\\s+(?i)WHERE\\s+(.+))?\\s*$".r
+  val INSERT_PATTERN = "^\\s*(?i)INSERT\\s*(?:IGNORE\\s+)?INTO\\s*(\\w+)\\s*\\((.*?)\\)\\s*VALUES\\s*(.*);?".r
+  val SELECT_PATTERN = "^\\s*(?i)SELECT\\s+(.*)\\s+(?i)FROM\\s+([^\\s]+)(?:\\s+(?i)WHERE\\s+(.+))?\\s*;?".r
   val UPDATE_PATTERN = "^\\s*(?i)UPDATE\\s+([^\\s]+)\\s+(?i)SET\\s+(.+)\\s+(?i)WHERE\\s+(.+)\\s*$".r
 
 
-  var taintMemory = new SqlTaintMemory(Set("TAINTED_VALUE","'TAINTED_VALUE'"))
+  var taintMemory = new SqlTaintMemory(Set("TAINTED_VALUE", "'TAINTED_VALUE'"))
 
   val debugMode = true
 
-  def doAnalyze(string:String, taintMemorySQL: SqlTaintMemory): Boolean ={
+  def doAnalyze(string: String, taintMemorySQL: SqlTaintMemory): Boolean = {
     taintMemory = taintMemorySQL;
     doAnalyze(string)
   }
@@ -37,10 +37,10 @@ object SqlStringTaintAnalyzer {
   def doAnalyze(string: String) = {
 
 
-    if(string.isBlank) println("yes blank")
-    if(debugMode)println("String to analyze: " + string)
+    if (string.isBlank) println("yes blank")
+    if (debugMode) println("String to analyze: " + string)
 
-    val normalizedString = if(!string.isBlank) preprozesing(string) else ""
+    val normalizedString = if (!string.isBlank) preprozesing(string) else ""
 
     normalizedString match {
       case i@INSERT_PATTERN(_*) =>
@@ -53,7 +53,7 @@ object SqlStringTaintAnalyzer {
         analyzeSelectStatment(s)
 
       case _ =>
-        if(debugMode) println("Result of SqlAnalyzer: SqlAnalyzer does not support: "+ string)
+        if (debugMode) println("Result of SqlAnalyzer: SqlAnalyzer does not support: " + string)
         false
     }
   }
@@ -61,7 +61,7 @@ object SqlStringTaintAnalyzer {
   def preprozesing(string: String) = {
     val hasCorrectSyntax = checkSQLStringSyntax3(string)
     val normalizedString = if (hasCorrectSyntax) normalizeSQLString(string) else ""
-    if(debugMode && !hasCorrectSyntax ){
+    if (debugMode && !hasCorrectSyntax) {
       println("Wrong Syntax :" + string)
     }
     normalizedString
@@ -92,9 +92,9 @@ object SqlStringTaintAnalyzer {
     sb.replace(0, sb.length(), sb.toString().replaceAll(pattern2, replacement2))
 
     // Groß-/Kleinschreibung normalisieren und führenden/folgnde leerzeichen entfernen
-    val normalizedStrig =  sb.toString().toUpperCase().trim
+    val normalizedStrig = sb.toString().toUpperCase().trim
 
-    if(debugMode) println("String normalized to: " + normalizedStrig)
+    if (debugMode) println("String normalized to: " + normalizedStrig)
     normalizedStrig
   }
 
@@ -105,8 +105,9 @@ object SqlStringTaintAnalyzer {
     var extractedTableName = ""
     var extractedColumnNames: Seq[String] = Seq()
     var extractedValueGroups: Seq[Seq[String]] = Seq()
+    val pre = query.replace(";", "")
 
-    query match {
+    pre match {
       case insertPattern(tableName, columns, values) =>
         extractedTableName = tableName
         extractedColumnNames = columns.split(",").map(_.trim).toSeq
@@ -123,21 +124,22 @@ object SqlStringTaintAnalyzer {
     val (table, columns, valueGroups) = extractInformationOfInsert4(normalizedString)
     var taintedColumns: Set[String] = columns.filter(column => taintMemory.isTainted(column)).toSet
 
-    valueGroups.foreach(valueGroup  => {
+    valueGroups.foreach(valueGroup => {
       for (i <- valueGroup.indices) {
-        if (taintMemory.isTainted(valueGroup (i))) taintedColumns += columns(i).trim
+        if (taintMemory.isTainted(valueGroup(i))) taintedColumns += columns(i).trim
       }
     })
 
     if (taintMemory.isTainted(table)) taintedColumns ++= columns.map(str => str.trim)
     if (taintedColumns.nonEmpty) taintMemory.taintTableAndColums(table.trim, taintedColumns)
-    if(debugMode) println("Result of analyzeInsertStatement:  \n"
-      + "  analyzed String: " + normalizedString + " \n  "
-      + taintedColumns.mkString("(", ",", ")") + " of table " + table + " will be tainted \n")
 
     taintedColumns.nonEmpty
 
-  }
+
+  if (debugMode) println("Result of analyzeInsertStatement:  \n"
+    + "  analyzed String: " + normalizedString + " \n  "
+    + taintedColumns.mkString("(", ",", ")") + " of table " + table + " will be tainted \n")
+}
 
   def extractInformationOfSelect(normalizedString: String): (String, Seq[String]) ={
 
