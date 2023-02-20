@@ -1,39 +1,66 @@
 
 package org.opalj.tac.fpcf.analyses.sql
 
-class SqlTaintMemory(dummyTaintRecognitionWords:Set[String]) {
+class SqlTaintMemory(defaultTaintIdentifiers:Set[String]) {
 
-  var tainted: Set[String] = dummyTaintRecognitionWords
-  var taintedTableAndColumns = scala.collection.mutable.Map[String, Set[String]]()
+  private var taintIdentifiers: Set[String] = defaultTaintIdentifiers
+  private val taintedTableAndColumns = scala.collection.mutable.Map[String, Set[String]]()
 
-  def taint(toTaintedElement: String): Unit = {
-    tainted += toTaintedElement
+
+  /**
+   * Adds a new identifier to the set of taint identifiers.
+   *
+   * @param identifier the identifier to add.
+   */
+  def addTaintIdentifier(identifier: String): Unit = {
+    taintIdentifiers += identifier
   }
 
-  def isTainted(toInspectElement: String): Boolean = {
-    tainted.contains(toInspectElement)
+  /**
+   * checks if the string represent a tainted part or not
+   *
+   * @param str the String to check.
+   * @return true, if the string is a taint identifier
+   */
+  def isTainted(str: String): Boolean = {
+    taintIdentifiers.contains(str)
   }
 
-  def clearMemory(): Unit = {
-    tainted = Set.empty[String]
+  /**
+   * Adds a set of tainted columns to a table.
+   *
+   * @param tableName the name of the table.
+   * @param columns the set of column names to add.
+   */
+  def taintTableAndColumns(tableName: String, columns: Set[String]): Unit = {
+    val prev = taintedTableAndColumns.getOrElseUpdate(tableName, Set())
+    taintedTableAndColumns.update(tableName, prev ++ columns)
   }
 
-  def taintTableAndColums(tableName: String, columns: Set[String]): Unit = {
-    val prev = taintedTableAndColumns.get(tableName)
-
-    prev match {
-      case Some(x) => taintedTableAndColumns.put(tableName, x ++ columns)
-      case None => taintedTableAndColumns.put(tableName, columns)
+  /**
+   * Checks if any of the given columns in the specified table are tainted.
+   *
+   * @param tableName the name of the table to check.
+   * @param columns the set of column names to check.
+   * @return the set of given columns that have been tainted for the given table.
+   */
+  def getTaintedColumns(tableName: String, columns: Set[String]): Set[String] = {
+    taintedTableAndColumns.get(tableName.trim) match {
+      case Some(taintedColumns) => columns.intersect(taintedColumns)
+      case None => Set()
     }
   }
 
-  def columnsAreTainted(tableName: String, columns: Set[String]) = {
-    val empty: Set[String] = Set()
-
-    taintedTableAndColumns.find { case (key, _) => key.trim == tableName.trim } match {
-      case Some((_, x)) => ((x & columns).size > 0, (x & columns))
-      case None => (false, empty)
-    }
+  /**
+   * retrieves a Set of all columns in the specified table that have been tainted.
+   *
+   * @param tableName the name of the table to retrieve tainted columns from.
+   * @return option value containing a Set of tainted column names associated with the specified tableName. or None if no columns in the table are tainted.
+   */
+  def getTaintedTableAndColumns(tableName: String): Option[Set[String]] = {
+    taintedTableAndColumns.get(tableName)
   }
+
+
 
 }
