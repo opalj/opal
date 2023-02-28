@@ -42,14 +42,16 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
         for (entryFact <- entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[JavaStatement, Set[JavaFact]] =
-                dependeesGetter(e, javaPropertyKey) match {
-                    case ep: FinalEP[_, IFDSProperty[JavaStatement, JavaFact]] =>
-                        ep.p.flows
-                    case ep: InterimEUBP[_, IFDSProperty[JavaStatement, JavaFact]] =>
-                        ep.ub.flows
-                    case _ =>
-                        Map.empty
-                }
+                dependeesGetter(e, javaPropertyKey)
+                    .asInstanceOf[EOptionP[(JavaStatement, JavaFact), IFDSProperty[JavaStatement, JavaFact]]] match {
+                        // cast masks type erasure warning/error, match does not ...
+                        case ep: FinalEP[_, IFDSProperty[JavaStatement, JavaFact]] =>
+                            ep.p.flows
+                        case ep: InterimEUBP[_, IFDSProperty[JavaStatement, JavaFact]] =>
+                            ep.ub.flows
+                        case _ =>
+                            Map.empty
+                    }
             for {
                 (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
                 exitStatementFact <- exitStatementFacts // ifds line 15.3
@@ -66,7 +68,6 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
      * @param call The analyzed call statement.
      * @param callee The called method, for which the data flow shall be computed.
      * @param in The fact which holds before the execution of the `call`.
-     * @param source The entity, which is analyzed.
      * @return The facts which hold after the execution of `statement` under the assumption that
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
