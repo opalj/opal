@@ -55,7 +55,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
      *
      * @return All methods that can be called from outside the library.
      */
-    protected def methodsCallableFromOutside: Set[DeclaredMethod] = {
+    private def methodsCallableFromOutside: Set[DeclaredMethod] = {
         declaredMethods.declaredMethods.filter(canBeCalledFromOutside).toSet
     }
 
@@ -66,7 +66,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
      * @param method The method which may be callable from outside.
      * @return True if `method` can be called from outside the library.
      */
-    protected def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
+    private def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
         val FinalEP(_, callers) = propertyStore(method, Callers.key)
         callers.hasCallersWithUnknownContext
     }

@@ -12,8 +12,8 @@ import org.opalj.br.ObjectType
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
-import org.opalj.ifds.IFDSProperty
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.properties.Taint
 
 /**
  * @author Mario Trageser
@@ -29,21 +29,23 @@ class ForwardFlowPathMatcher extends AbstractPropertyMatcher {
     ): Option[String] = {
         val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) =>
             evp.value.asArrayValue.values.map((value: ElementValue) =>
-                value.asStringValue.value)).head.toIndexedSeq
-        val flows = properties.filter(_.isInstanceOf[IFDSProperty[_, _]]).head
-            .asInstanceOf[IFDSProperty[_, _]]
-            .flows
-            .values
-            .fold(Set.empty)((acc, facts) => acc ++ facts)
-            .collect {
+                value.asStringValue.value)).head
+        val flows = properties.flatMap {
+            case Taint(flows, _) => flows.values.flatten.collect {
                 case FlowFact(methods) => methods.map(_.name).toIndexedSeq
             }
+            case _ => IndexedSeq.empty
+        }.toSet
         if (expectedFlow.isEmpty) {
-            if (flows.nonEmpty) return Some(s"There should be no flow for $entity")
-            None
+            if (flows.nonEmpty)
+                Some(s"There should be no flow for $entity")
+            else
+                None
         } else {
-            if (flows.contains(expectedFlow)) None
-            else Some(expectedFlow.mkString(", "))
+            if (flows.contains(expectedFlow))
+                None
+            else
+                Some(expectedFlow.mkString(", "))
         }
     }
 }
