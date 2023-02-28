@@ -204,21 +204,21 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
             // Taint actual parameter if formal parameter is tainted
             case JavaVariable(index) if index < 0 && index > -100 && JavaIFDSProblem.isRefTypeParam(nativeCallee, index) =>
                 val param = allParams(
-                    JavaIFDSProblem.switchParamAndVariableIndex(index, nativeCallee.isStatic)
+                    JavaIFDSProblem.remapParamAndVariableIndex(index, nativeCallee.isStatic)
                 )
                 flows ++= param.asVar.definedBy.iterator.map(Variable)
 
             // Taint element of actual parameter if element of formal parameter is tainted
             case JavaArrayElement(index, taintedIndex) if index < 0 && index > -100 =>
                 val param = allParams(
-                    JavaIFDSProblem.switchParamAndVariableIndex(index, nativeCallee.isStatic)
+                    JavaIFDSProblem.remapParamAndVariableIndex(index, nativeCallee.isStatic)
                 )
                 flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
 
             case JavaInstanceField(index, declClass, taintedField) if index < 0 && index > -10 =>
                 // Taint field of actual parameter if field of formal parameter is tainted
                 val param =
-                    allParams(JavaIFDSProblem.switchParamAndVariableIndex(index, nativeCallee.isStatic))
+                    allParams(JavaIFDSProblem.remapParamAndVariableIndex(index, nativeCallee.isStatic))
                 param.asVar.definedBy.foreach { defSite =>
                     flows += InstanceField(defSite, declClass, taintedField)
                 }

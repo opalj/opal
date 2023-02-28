@@ -21,9 +21,10 @@ import org.opalj.ifds.IFDSProperty
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
-abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject) extends IFDSProblem[Fact, NativeFunction, LLVMStatement](new NativeForwardICFG(project)) {
+abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
+    extends IFDSProblem[Fact, NativeFunction, LLVMStatement](new NativeForwardICFG(project)) {
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    val llvmProject = project.get(LLVMProjectKey)
+    val llvmProject: LLVMProject = project.get(LLVMProjectKey)
     val javaPropertyKey: PropertyKey[Property]
 
     override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, LLVMStatement, Fact, Getter) => Set[Fact]] = callee match {
@@ -41,7 +42,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
         for (entryFact <- entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[JavaStatement, Set[JavaFact]] =
-                dependeesGetter(e, javaPropertyKey).asInstanceOf[EOptionP[(JavaStatement, JavaFact), IFDSProperty[JavaStatement, JavaFact]]] match {
+                dependeesGetter(e, javaPropertyKey) match {
                     case ep: FinalEP[_, IFDSProperty[JavaStatement, JavaFact]] =>
                         ep.p.flows
                     case ep: InterimEUBP[_, IFDSProperty[JavaStatement, JavaFact]] =>

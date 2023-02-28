@@ -7,11 +7,14 @@ import org.opalj.ll.llvm.Reader
 import org.opalj.ll.llvm.value
 
 class LLVMProject(val modules: Iterable[Module]) {
+
+    private lazy val named_functions = modules.flatMap(module => module.functions).map(f => (f.name, f)).toMap
+
     def functions: Iterable[value.Function] =
-        modules.flatMap(module => module.functions)
+        named_functions.values
 
     def function(name: String): Option[value.Function] =
-        functions.find(_.name == name)
+        named_functions.get(name)
 }
 
 object LLVMProject {

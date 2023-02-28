@@ -164,7 +164,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
         in match {
             // Taint formal parameter if actual parameter is tainted
             case NativeVariable(value) => call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
-                case Some(index) => Set(Variable(JavaIFDSProblem.switchParamAndVariableIndex(
+                case Some(index) => Set(Variable(JavaIFDSProblem.remapParamAndVariableIndex(
                     index - 2,
                     callee.isStatic
                 )))

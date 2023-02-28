@@ -98,7 +98,7 @@ object JavaIFDSProblem {
      * @return A tac index if a parameter index was passed or a parameter index if a tac index was
      *         passed.
      */
-    def switchParamAndVariableIndex(index: Int, isStaticMethod: Boolean): Int =
+    def remapParamAndVariableIndex(index: Int, isStaticMethod: Boolean): Int =
         (if (isStaticMethod) -2 else -1) - index
 
     /**
@@ -121,7 +121,7 @@ object JavaIFDSProblem {
         else {
             val parameterOffset = if (callee.isStatic) 0 else 1
             callee.descriptor.parameterType(
-                switchParamAndVariableIndex(index, callee.isStatic)
+                remapParamAndVariableIndex(index, callee.isStatic)
                     - parameterOffset
             ).isReferenceType
         }

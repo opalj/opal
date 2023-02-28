@@ -42,10 +42,11 @@ object JNICallUtil {
         case _ => false
     }
 
-    def resolve(call: Call)(implicit declaredMethods: DeclaredMethods): Set[_ <: NativeFunction] = resolveJNIFunction(call) match {
-        case Symbol("CallTypeMethod") => resolveMethodId(call.operand(2)) // methodID is the third parameter
-        case _                        => Set()
-    }
+    def resolve(call: Call)(implicit declaredMethods: DeclaredMethods): Set[_ <: NativeFunction] =
+        resolveJNIFunction(call) match {
+            case Symbol("CallTypeMethod") => resolveMethodId(call.operand(2)) // methodID is the third parameter
+            case _                        => Set()
+        }
 
     private def resolveJNIFunction(call: Call): Symbol = call.calledValue match {
         case load: Load =>
@@ -63,21 +64,24 @@ object JNICallUtil {
     }
 
     private def resolveMethodId(methodId: Value)(implicit declaredMethods: DeclaredMethods): Set[JNIMethod] = {
-        val sources = methodId.asInstanceOf[Load].src.users.toSeq.filter(_.isInstanceOf[Store]).map(_.asInstanceOf[Store].src)
-        sources.filter(_.isInstanceOf[Call]).map(_.asInstanceOf[Call]).map(call => {
-            if (resolveJNIFunction(call) != Symbol("GetMethodId")) throw new IllegalArgumentException("unexpected call")
-            if (!resolveClassIsThis(call.operand(1))) // class is the second parameter
-                throw new IllegalArgumentException("unexpected class argument")
+        val sources = methodId.asInstanceOf[Load].src.users.collect { case store: Store => store.src }
+        sources.flatMap {
+            case call: Call => {
+                if (resolveJNIFunction(call) != Symbol("GetMethodId")) throw new IllegalArgumentException("unexpected call")
+                if (!resolveClassIsThis(call.operand(1))) // class is the second parameter
+                    throw new IllegalArgumentException("unexpected class argument")
 
-            val functionName = call.function.name
-            if (!functionName.startsWith("Java_")) {
-                throw new IllegalArgumentException("unexpected function name")
+                val functionName = call.function.name
+                if (!functionName.startsWith("Java_")) {
+                    throw new IllegalArgumentException("unexpected function name")
+                }
+                val className = call.function.name.substring(5).split("_").head
+                val name = resolveString(call.operand(2)) // name is the third parameter
+                val signature = resolveString(call.operand(3)) // signature is the third parameter
+                findJavaMethods(className, name, signature)
             }
-            val className = call.function.name.substring(5).split("_").head
-            val name = resolveString(call.operand(2)) // name is the third parameter
-            val signature = resolveString(call.operand(3)) // signature is the third parameter
-            findJavaMethods(className, name, signature)
-        }).flatten.toSet
+            case _ => Set.empty
+        }.toSet
     }
 
     private def resolveString(name: Value): String = name match {
@@ -89,16 +93,22 @@ object JNICallUtil {
     }
 
     private def resolveClassIsThis(clazz: Value): Boolean = {
-        val sources = clazz.asInstanceOf[Load].src.users.toSeq.filter(_.isInstanceOf[Store]).map(_.asInstanceOf[Store].src)
-        sources.filter(_.isInstanceOf[Call]).map(_.asInstanceOf[Call]).forall(call => {
-            if (resolveJNIFunction(call) != Symbol("GetObjectClass")) throw new IllegalArgumentException("unexpected call")
-            resolveObjectIsThis(call.operand(1)) // object is the second parameter
-        })
+        val sources = clazz.asInstanceOf[Load].src.users.collect { case store: Store => store.src }
+        sources.forall {
+            case call: Call =>
+                if (resolveJNIFunction(call) != Symbol("GetObjectClass"))
+                    throw new IllegalArgumentException("unexpected call")
+                resolveObjectIsThis(call.operand(1)) // object is the second parameter
+            case _ => false
+        }
     }
 
     private def resolveObjectIsThis(obj: Value): Boolean = {
-        val sources = obj.asInstanceOf[Load].src.users.toSeq.filter(_.isInstanceOf[Store]).map(_.asInstanceOf[Store].src)
-        sources.forall(_.isInstanceOf[Argument]) && sources.forall(_.asInstanceOf[Argument].index == 1)
+        val sources = obj.asInstanceOf[Load].src.users.collect { case store: Store => store.src }
+        sources.forall {
+            case argument: Argument => argument.index == 1
+            case _                  => false
+        }
     }
 
     private def findJavaMethods(className: String, name: String, signature: String)(implicit declaredMethods: DeclaredMethods): Set[JNIMethod] = {
