@@ -147,7 +147,7 @@ def getScalariformPreferences(dir: File) = {
 lazy val opal = `OPAL`
 lazy val `OPAL` = (project in file("."))
 //  .configure(_.copy(id = "OPAL"))
-  .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
+  .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
@@ -155,7 +155,8 @@ lazy val `OPAL` = (project in file("."))
       validate,
       demos,
       tools
-    )
+    ),
+    javaCppVersion := "1.5.8"
   )
   .aggregate(
     common,
@@ -358,7 +359,7 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     name := "LLVM",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
-    javaCppPresetLibs ++= Dependencies.javaCppPresetLibs,
+    javaCppPresetLibs ++= Dependencies.javaCppPresetLibs
 )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
