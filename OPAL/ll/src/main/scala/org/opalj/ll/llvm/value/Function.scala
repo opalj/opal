@@ -8,16 +8,20 @@ import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef
 import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM.LLVMCountBasicBlocks
 import org.bytedeco.llvm.global.LLVM.LLVMCountParams
+import org.bytedeco.llvm.global.LLVM.LLVMDisposeMessage
+import org.bytedeco.llvm.global.LLVM.LLVMFunctionValueKind
 import org.bytedeco.llvm.global.LLVM.LLVMGetEntryBasicBlock
 import org.bytedeco.llvm.global.LLVM.LLVMGetFirstBasicBlock
 import org.bytedeco.llvm.global.LLVM.LLVMGetFirstParam
 import org.bytedeco.llvm.global.LLVM.LLVMGetNextBasicBlock
 import org.bytedeco.llvm.global.LLVM.LLVMGetNextParam
 import org.bytedeco.llvm.global.LLVM.LLVMGetParam
+import org.bytedeco.llvm.global.LLVM.LLVMGetReturnType
 import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
+import org.bytedeco.llvm.global.LLVM.LLVMPrintTypeToString
+import org.bytedeco.llvm.global.LLVM.LLVMTypeOf
 import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFG
 import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFGOnly
-import org.bytedeco.llvm.global.LLVM.LLVMFunctionValueKind
 import org.opalj.io.writeAndOpen
 
 case class Function(ref: LLVMValueRef) extends Value(ref) {
@@ -37,6 +41,12 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
         Argument(LLVMGetParam(ref, index), index)
     }
 
+    lazy val returnType: String = {
+        val t = LLVMPrintTypeToString(LLVMGetReturnType(LLVMTypeOf(ref)))
+        val s = t.toString
+        LLVMDisposeMessage(t)
+        s
+    }
     def entryBlock: BasicBlock = {
         if (basicBlockCount == 0) throw new IllegalStateException("this function does not contain any basic block and may not be defined")
         BasicBlock(LLVMGetEntryBasicBlock(ref))
@@ -55,8 +65,12 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
         }
     }
 
+    def getSignature: String = {
+        s"$returnType $name(${arguments.map(_.tpe.repr).mkString(", ")})"
+    }
+
     override def toString: String = {
-        s"Function(${name}(${arguments.map(_.typ.repr).mkString(", ")}))"
+        s"Function(${name}(${arguments.map(_.tpe.repr).mkString(", ")}))"
     }
 }
 

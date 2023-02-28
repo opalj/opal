@@ -59,6 +59,7 @@ class NativeForwardICFG(project: SomeProject) extends ICFG[NativeFunction, LLVMS
     override def isExitStatement(statement: LLVMStatement): Boolean = statement.instruction match {
         case Ret(_) => true
         case _      => false
+        // TODO: Add setjmp/longjmp handling
     }
 
     private def resolveCallee(call: Call): Set[_ <: NativeFunction] =

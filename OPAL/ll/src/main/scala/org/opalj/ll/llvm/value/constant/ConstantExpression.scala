@@ -91,7 +91,7 @@ object ConstantExpression {
 
 sealed abstract class ConstantExpression(ref: LLVMValueRef) extends User(ref)
 
-// // case class RetConst(ref: LLVMValueRef) extends ConstantExpression(ref)
+// case class RetConst(ref: LLVMValueRef) extends ConstantExpression(ref)
 // case class BrConst(ref: LLVMValueRef) extends ConstantExpression(ref)
 // case class SwitchConst(ref: LLVMValueRef) extends ConstantExpression(ref)
 // case class IndirectBrConst(ref: LLVMValueRef) extends ConstantExpression(ref)

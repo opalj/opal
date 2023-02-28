@@ -15,7 +15,7 @@ abstract class NativeFunction extends Callable {
 
 case class LLVMFunction(function: Function) extends NativeFunction {
     override def name: String = function.name
-    override def signature: String = function.name // TODO: add signature
+    override def signature: String = function.getSignature
 }
 
 case class JNIMethod(method: Method) extends NativeFunction {
