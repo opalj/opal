@@ -2,6 +2,7 @@
 package org.opalj
 package ll
 
+import org.opalj.bi.TestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ll.fpcf.analyses.EagerSimplePurityAnalysis
@@ -16,7 +17,7 @@ class SimpleLLVMPurityTests extends AnyFunSpec with Matchers {
         it("executes") {
             val project = Project(Iterable.empty)
             project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-                current => List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/purity.ll")
+                _ => List(TestResources.locateTestResources("/llvm/purity.ll", "ll").getAbsolutePath)
             )
             val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(EagerSimplePurityAnalysis)
 

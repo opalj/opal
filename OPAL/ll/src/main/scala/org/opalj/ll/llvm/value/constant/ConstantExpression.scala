@@ -14,7 +14,7 @@ import org.opalj.ll.llvm.value.User
 
 object ConstantExpression {
     def apply(ref: LLVMValueRef): ConstantExpression = {
-        assert(ref != null && !ref.isNull(), "ref may not be null")
+        assert(ref != null && !ref.isNull, "ref may not be null")
         assert(LLVMGetValueKind(ref) == LLVMConstantExprValueKind, "ref has to be an instruction")
         LLVMGetConstOpcode(ref) match {
             // case LLVMRet            => RetConst(ref)
@@ -122,9 +122,9 @@ sealed abstract class ConstantExpression(ref: LLVMValueRef) extends User(ref)
 // case class StoreConst(ref: LLVMValueRef) extends ConstantExpression(ref)
 case class GetElementPtrConst(ref: LLVMValueRef) extends ConstantExpression(ref) {
     def base: Value = operand(0)
-    def isConstant = (1 until numOperands).forall(operand(_).isInstanceOf[ConstantIntValue])
-    def constants = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
-    def isZero = isConstant && constants.forall(_ == 0)
+    def isConstant: Boolean = (1 until numOperands).forall(operand(_).isInstanceOf[ConstantIntValue])
+    def constants: Seq[Long] = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+    def isZero: Boolean = isConstant && constants.forall(_ == 0)
 }
 // case class TruncConst(ref: LLVMValueRef) extends ConstantExpression(ref)
 // case class ZExtConst(ref: LLVMValueRef) extends ConstantExpression(ref)
