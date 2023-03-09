@@ -23,6 +23,9 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.value.ValueInformation
+import org.opalj.xl.analyses.javaAnalysis.adaptor.CrossLanguageCall
+import org.opalj.xl.analyses.javaAnalysis.adaptor.JavaJavaScriptAdaptorLattice
+import org.opalj.xl.analyses.javaAnalysis.adaptor.NoCrossLanguageCall
 
 import scala.collection.immutable
 import scala.collection.mutable

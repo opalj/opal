@@ -16,8 +16,8 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.xl.axa.bridge.javajavascript.JavaJavaScriptAdaptorLattice
-import org.opalj.xl.trash.analysis.TIPTainted
+import org.opalj.xl.analyses.javaAnalysis.adaptor.JavaJavaScriptAdaptorLattice
+import org.opalj.xl.analyses.javaAnalysis.adaptor.NoCrossLanguageCall
 
 
 class JavaScriptTAJSProxy(val project: SomeProject) extends FPCFAnalysis {
@@ -31,7 +31,7 @@ class JavaScriptTAJSProxy(val project: SomeProject) extends FPCFAnalysis {
     val result =  propertyStore.entities(JavaJavaScriptAdaptorLattice.key)
 print(result)
 
-Result(code, TIPTainted)
+Result(new Entity, NoCrossLanguageCall)
     }
 
   /*
@@ -81,22 +81,3 @@ object LazyJavaScriptAnalysis extends JavaScriptAnalysisScheduler with BasicFPCF
     analysis
   }
 }
-/*
-object EagerJavaScriptAnalysis
-  extends JavaScriptAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
-  override def derivesEagerly: Set[PropertyBounds] = immutable.Set(derivedProperty)
-
-  override def derivesCollaboratively: immutable.Set[PropertyBounds] = immutable.Set.empty
-
-  override def start(
-                      project: SomeProject,
-                      propertyStore: PropertyStore,
-                      initData: InitializationData
-                    ): FPCFAnalysis = {
-    val analysis = new JavaScriptTAJSProxy(project)
-    propertyStore.scheduleEagerComputationsForEntities(project.allMethods)(analysis.lazilyAnalyzeJavaScript)
-    analysis
-  }
-}
-*/

@@ -21,9 +21,10 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
-import org.opalj.xl.analyses.java.adaptor.EagerJavaJavaScriptAdaptor
-import org.opalj.xl.analyses.java.analysis.JavaTainted
+import org.opalj.xl.analyses.javaAnalysis.adaptor.EagerJavaJavaScriptAdaptor
+import org.opalj.xl.analyses.javaAnalysis.analysis.JavaTainted
 import org.opalj.xl.analyses.javascript.analyses.LazyJavaScriptAnalysis
+import org.opalj.xl.axa.proxy.TriggeredFrameworkProxyScheduler
 
 import java.net.URL
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -81,7 +82,7 @@ object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, Repo
     analyses ++= registeredAnalyses(project)
       analyses ++= Iterable(AllocationSiteBasedPointsToAnalysisScheduler,
         EagerJavaJavaScriptAdaptor,
-      LazyJavaScriptAnalysis)
+      LazyJavaScriptAnalysis, TriggeredFrameworkProxyScheduler)
 
           val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
        analyses

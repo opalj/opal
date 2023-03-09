@@ -2,7 +2,7 @@
 package org.opalj
 package xl
 package analyses
-package java
+package javaAnalysis
 package adaptor
 
 

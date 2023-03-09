@@ -1,6 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.xl.axa.bridge.javajavascript
-
+package org.opalj
+package xl
+package axa
+package bridge
+package javajavascript
+/*
 import org.opalj.br.Method
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -48,3 +52,4 @@ case object NoCrossLanguageCall extends JavaJavaScriptAdaptorLattice
 
 case class CrossLanguageCall(language:String, code: String, assignments: mutable.Map[String,Set[DefinitionSite]])
   extends JavaJavaScriptAdaptorLattice
+*/

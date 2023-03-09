@@ -2,7 +2,7 @@
 package org.opalj
 package xl
 package analyses
-package java
+package javaAnalysis
 package adaptor
 
 import org.opalj.br.Method
@@ -51,4 +51,4 @@ object JavaJavaScriptAdaptorLattice extends JavaJavaScriptAdaptorPropertyMetaInf
 case object NoCrossLanguageCall extends JavaJavaScriptAdaptorLattice
 
 case class CrossLanguageCall(language:String, code: String, assignments: mutable.Map[String,Set[DefinitionSite]])
-  extends JavaJavaScriptAdaptorLattice
+extends JavaJavaScriptAdaptorLattice
