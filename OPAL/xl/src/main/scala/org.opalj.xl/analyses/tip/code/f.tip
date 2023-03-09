@@ -1,5 +1,0 @@
-f(a,b) {
-    var c;
-    var c = a + b;
-    return c;
-}

@@ -429,6 +429,7 @@ lazy val `XLanguage` = (project in file("OPAL/xl"))
   .settings(
     name := "XLanguage",
     publishArtifact := false,
+    libraryDependencies += "dk.brics.tajs" % "tajs" % "1.0" from "https://www.brics.dk/TAJS/dist/tajs-all.jar",
     Compile / doc / scalacOptions ++= Opts.doc.title("Crosslanguage"),
     Compile / unmanagedSourceDirectories := (Compile / javaSource).value :: (Compile / scalaSource).value :: Nil,
     run / fork := true
