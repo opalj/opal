@@ -35,9 +35,6 @@ object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, Repo
 
     final override val analysis = this
 
-    //override project = setupProject(List(new File("/Users/tobiasroth/Documents/Projects/opal/OPAL/xl/target/scala-2.13/classes/org/opalj/xl/analyses/java/code/Main.class")),
-    //  List.empty, false, ConfigFactory.load())
-
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
 
     var analyses: List[FPCFAnalysisScheduler] =
@@ -93,8 +90,6 @@ object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, Repo
 
 
 val javaTaintedVariables = propertyStore.finalEntities(JavaTainted)
-//val tipTaintedVariables = propertyStore.finalEntities(A1Tainted)
-//val a2TaintedVariables = propertyStore.finalEntities(A2Tainted)
 
 BasicReport(
  " \n"+
