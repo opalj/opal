@@ -6,7 +6,7 @@
 # the beginning and end are trimmed and "#" and "//" mark comment lines.
 
 -encoding UTF8
--target:jvm-1.8
+-release:8
 -deprecation
 -feature
 -unchecked

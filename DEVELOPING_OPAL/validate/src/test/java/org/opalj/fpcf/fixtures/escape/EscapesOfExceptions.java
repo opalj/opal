@@ -2,11 +2,11 @@
 package org.opalj.fpcf.fixtures.escape;
 
 import org.opalj.fpcf.properties.escape.*;
-import org.opalj.fpcf.properties.field_mutability.NonFinal;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
 
 public class EscapesOfExceptions {
 
-    @NonFinal("the field is global and public and gets modified")
+    @MutableField("the field is global and public and gets modified")
     public static Exception global;
 
     public static void directThrowException() {

@@ -1185,6 +1185,8 @@ object ObjectType {
      *         comparison is explicitly supported.
      */
     def apply(fqn: String): ObjectType = {
+        assert(!fqn.endsWith(";")) // Catch errors where we accidentally use a JVMTypeName instead
+
         val readLock = cacheRWLock.readLock()
         readLock.lock()
         try {

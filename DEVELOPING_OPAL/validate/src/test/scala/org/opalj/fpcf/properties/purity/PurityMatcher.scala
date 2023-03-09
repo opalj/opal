@@ -12,14 +12,16 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldLocality
-import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
+import org.opalj.br.fpcf.properties.immutability.ClassImmutability
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
@@ -71,8 +73,10 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         val pk = getValue(project, annotationType, ep.elementValuePairs, "pk").asStringValue.value match {
             case "Purity"               => Purity.key
-            case "FieldMutability"      => FieldMutability.key
             case "ClassImmutability"    => ClassImmutability.key
+            case "TypeImmutability"     => TypeImmutability.key
+            case "FieldAssignability"   => FieldAssignability.key
+            case "FieldImmutability"    => FieldImmutability.key
             case "ReturnValueFreshness" => ReturnValueFreshness.key
             case "FieldLocality"        => FieldLocality.key
         }
@@ -156,10 +160,10 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet =>
 
         val expected = propertyConstructor(modifiedParams)
 
-        if (!properties.exists(_ match {
+        if (!properties.exists {
             case `expected` => true
             case _          => false
-        })) {
+        }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {

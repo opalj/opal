@@ -16,9 +16,9 @@ import org.opalj.br.Field
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
-import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.
@@ -88,7 +88,7 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
         } { r => setupTime = r }
 
         time {
-            LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null)
+            LazyL0FieldAssignabilityAnalysis.register(project, propertyStore, null)
             EagerL0PurityAnalysis.start(project, propertyStore, null)
             propertyStore.waitOnPhaseCompletion()
         } { r => analysisTime = r }
@@ -96,8 +96,8 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
         println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
 
         () => {
-            val effectivelyFinalEntities: Iterator[EPS[Entity, FieldMutability]] =
-                propertyStore.entities(FieldMutability.key)
+            val effectivelyFinalEntities: Iterator[EPS[Entity, FieldAssignability]] =
+                propertyStore.entities(FieldAssignability.key)
 
             val effectivelyFinalFields: Iterator[(Field, Property)] =
                 effectivelyFinalEntities.map(ep => (ep.e.asInstanceOf[Field], ep.ub))
@@ -112,7 +112,7 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
 
             val fieldInfo =
                 effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
-                    "\nMutability of private static non-final fields:\n",
+                    "\nImmutability of private static non-final fields:\n",
                     "\n",
                     s"\nTotal: ${effectivelyFinalFields.size}\n"
                 )

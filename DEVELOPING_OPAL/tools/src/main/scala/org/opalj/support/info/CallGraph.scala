@@ -66,7 +66,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  * The default algorithm is RTA.
  *
  * Please also specify whether the target (-cp=) is an application or a library using
- * "-projectConfig=". Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf`
+ * "-projectConfig=". Predefined configurations `CommandLineProject.conf` or `LibraryProject.conf`
  * can be used here.
  *
  * Furthermore, it can be used to print the callees or callers of specific methods.
