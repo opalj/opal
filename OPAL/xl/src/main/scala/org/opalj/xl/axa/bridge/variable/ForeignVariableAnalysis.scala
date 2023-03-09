@@ -24,7 +24,7 @@ class ForeignVariableAnalysis(val project: SomeProject) extends FPCFAnalysis {
         languageName match {
             case "Java" => Result(fv, ForeignVariableProperty(JavaVariable(variableName)))
             case "TIP"  => Result(fv, ForeignVariableProperty(TIPVariable(variableName)))
-            case "L1"   => Result(fv, ForeignVariableProperty(L1Variable(variableName)))
+            case "JavaScript"   => Result(fv, ForeignVariableProperty(L1Variable(variableName)))
         }
     }
 
