@@ -25,6 +25,9 @@ jobs:
       - name: Run tests
         run: sbt -J-Xmx20G test
 
+      - name: Run LLVM tests
+        run: sbt -J-Xmx20G "project LLVM;test"
+
   it-test:
     runs-on: self-hosted
     needs: build

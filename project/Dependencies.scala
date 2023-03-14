@@ -26,6 +26,9 @@ object Dependencies {
     val fastutil = "8.5.4"
 
     val openjfx = "16"
+
+    val javacpp = "1.5.8"
+    val javacpp_llvm = "15.0.3"
   }
 
   object library {
@@ -52,6 +55,8 @@ object Dependencies {
     val fastutil = "it.unimi.dsi"                           % "fastutil"                    % version.fastutil withSources () withJavadoc ()
     val javafxBase = "org.openjfx" % "javafx-base" % version.openjfx classifier osName
 
+    val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
+    val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
     // --- test related dependencies
 
     val junit =          "junit"              % "junit"           % version.junit          % "test,it"
@@ -73,7 +78,5 @@ object Dependencies {
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
 
-  val javaCppVersion = "1.5.8"
-  val javaCppPresetLibs = Seq("llvm" -> "15.0.3")
-
+  val llvm = Seq(javacpp, javacpp_llvm)
 }

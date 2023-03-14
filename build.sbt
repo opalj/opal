@@ -113,9 +113,6 @@ lazy val buildSettings =
     Seq(
       IntegrationTest / unmanagedSourceDirectories := (Test / javaSource).value :: (IntegrationTest / scalaSource).value :: Nil
     ) ++
-    Seq (
-      javaCppVersion := Dependencies.javaCppVersion
-    ) ++
     Seq(Compile / console / scalacOptions := Seq("-deprecation")) ++
     // We don't want the build to be aborted by inter-project links that are reported by
     // scaladoc as errors using the standard compiler setting. (This case is only true, when
@@ -155,9 +152,7 @@ lazy val `OPAL` = (project in file("."))
       validate,
       demos,
       tools
-    ),
-    javaCppVersion := "1.5.8"
-  )
+    ))
   .aggregate(
     common,
     si,
@@ -170,7 +165,7 @@ lazy val `OPAL` = (project in file("."))
     tac,
     de,
     av,
-    ll,
+    // ll,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -359,8 +354,8 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     name := "LLVM",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
     fork := true,
-    javaCppPresetLibs ++= Dependencies.javaCppPresetLibs
-)
+    libraryDependencies ++= Dependencies.llvm
+  )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
@@ -376,7 +371,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     ba  % "it->it;it->test;test->test;compile->compile",
     av  % "it->it;it->test;test->test;compile->compile",
     tac % "it->it;it->test;test->test;compile->compile",
-    ll  % "it->it;it->test;test->test;compile->compile"
+   // ll  % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 

@@ -20,6 +20,3 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates"          % "0.5.2")
 // For the deployment to maven central:
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.7")
 addSbtPlugin("com.github.sbt" % "sbt-pgp"      % "2.1.2")
-
-// llvm
-addSbtPlugin("org.bytedeco" % "sbt-javacpp" % "1.17")
