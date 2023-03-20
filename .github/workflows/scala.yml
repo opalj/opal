@@ -38,3 +38,5 @@ jobs:
     - uses: actions/checkout@v1
     - name: Run Integration Tests
       run: sbt -J-Xmx40G cleanBuild it:test
+    - name: Run LLVM Integration Tests
+      run: sbt -J-Xmx20G "project LLVM;it:test"

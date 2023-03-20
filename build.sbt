@@ -94,6 +94,11 @@ addCommandAlias(
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
+addCommandAlias("cleanBuildCross", "; project OPAL ; cleanAll ; buildAll ; " +
+                        "project LLVM ; cleanAll; buildAll;" +
+                        // Add other crosslanguage projects here
+                        " project OPAL ;")
+
 lazy val IntegrationTest = config("it") extend Test
 
 // Default settings without scoverage
@@ -165,7 +170,6 @@ lazy val `OPAL` = (project in file("."))
     tac,
     de,
     av,
-    // ll,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -350,6 +354,7 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
 lazy val ll = `LLVM`
 lazy val `LLVM` = (project in file("OPAL/ll"))
   .settings(buildSettings: _*)
+  .enablePlugins(ScalaUnidocPlugin)
   .settings(
     name := "LLVM",
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
@@ -370,8 +375,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
   .dependsOn(
     ba  % "it->it;it->test;test->test;compile->compile",
     av  % "it->it;it->test;test->test;compile->compile",
-    tac % "it->it;it->test;test->test;compile->compile",
-   // ll  % "it->it;it->test;test->test;compile->compile"
+    tac % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
