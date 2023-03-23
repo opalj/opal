@@ -7,8 +7,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.vta.{ExpectedCallee, ExpectedType}
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.ifds.VTANullFact
 import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.ifds.problems.VTANullFact
 
 import java.net.URL
 

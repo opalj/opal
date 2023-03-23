@@ -19,6 +19,8 @@ import org.opalj.ifds.Statistics
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ifds.problems.VTAFact
+import org.opalj.tac.fpcf.analyses.ifds.problems.VariableTypeProblem
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callers
 

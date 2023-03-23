@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
 package fpcf
-package analyses
 package ifds
-package taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -19,7 +16,14 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 import org.opalj.tac.fpcf.properties.Taint
+
+import scala.collection.mutable
 
 /**
  * An analysis that checks, if the return value of the method `source` can flow to the parameter of
@@ -34,11 +38,16 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, TaintFact)] = p.allProjectClassFiles.filter(classFile =>
-        classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
-        .flatMap(classFile => classFile.methods)
-        .filter(method => method.isPublic && outsideAnalysisContext(method).isEmpty)
-        .map(method => method -> TaintNullFact)
+    override val entryPoints: Seq[(Method, TaintFact)] = {
+        var temp: mutable.Seq[(Method, TaintFact)] = mutable.Seq.empty
+        for {
+            cf <- p.allProjectClassFiles if cf.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass"
+            m <- cf.methods if m.isPublic && outsideAnalysisContext(m).isEmpty
+        } {
+            temp :+= (m -> TaintNullFact)
+        }
+        temp.toSeq
+    }
 
     /**
      * The sanitize method is a sanitizer.
