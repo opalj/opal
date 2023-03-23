@@ -186,10 +186,10 @@ trait Terminator {
 }
 
 sealed abstract class Instruction(ref: LLVMValueRef) extends User(ref) {
-    def isTerminator: Boolean = LLVMIsATerminatorInst(ref) != null
-    def parent: BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
-    def function: Function = parent.parent
-    def next: Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
+    lazy val isTerminator: Boolean = LLVMIsATerminatorInst(ref) != null
+    lazy val parent: BasicBlock = BasicBlock(LLVMGetInstructionParent(ref))
+    lazy val function: Function = parent.parent
+    lazy val next: Option[Instruction] = OptionalInstruction(LLVMGetNextInstruction(ref))
 
     override def toString: String = {
         s"${this.getClass.getSimpleName}(${repr})"
