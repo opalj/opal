@@ -18,6 +18,10 @@ case class LLVMFunction(function: Function) extends NativeFunction {
     override def signature: String = function.getSignature
 }
 
+/**
+ * The method that represent the native function on the java side.
+ * @param method the method object.
+ */
 case class JNIMethod(method: Method) extends NativeFunction {
     override def name: String = method.name
     override def signature: String = method.toString
