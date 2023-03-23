@@ -10,7 +10,7 @@ import org.opalj.ifds
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ll.fpcf.analyses.ifds.LLVMFunction
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
-import org.opalj.ll.fpcf.analyses.ifds.taint.SimpleJavaForwardTaintAnalysis
+import org.opalj.ll.fpcf.analyses.ifds.taint.JavaForwardTaintAnalysis
 import org.opalj.ll.fpcf.analyses.ifds.taint.JavaForwardTaintAnalysisScheduler
 import org.opalj.ll.fpcf.analyses.ifds.taint.NativeForwardTaintAnalysisScheduler
 import org.opalj.ll.fpcf.analyses.ifds.taint.NativeTaintFact
@@ -41,7 +41,7 @@ class CrossLanguageForwardIFDSTaintAnalysisTests extends AnyFunSpec with Matcher
         project.get(RTACallGraphKey)
         val manager = project.get(FPCFAnalysesManagerKey)
         val (ps, analyses) = manager.runAll(JavaForwardTaintAnalysisScheduler, NativeForwardTaintAnalysisScheduler)
-        for ((method, fact) <- analyses.head._2.asInstanceOf[SimpleJavaForwardTaintAnalysis].ifdsProblem.entryPoints) {
+        for ((method, fact) <- analyses.head._2.asInstanceOf[JavaForwardTaintAnalysis].ifdsProblem.entryPoints) {
             val flows =
                 ps((method, fact), JavaForwardTaintAnalysisScheduler.property.key)
             println("---METHOD: "+method.toJava+"  ---")

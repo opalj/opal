@@ -39,7 +39,7 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
 
-class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
+class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     val llvmProject = p.get(LLVMProjectKey)
 
     /**
@@ -240,9 +240,9 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
                         flows += Variable(call.index)
                     // TODO
                     /*case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) =>
-            flows += ArrayElement(call.index, taintedIndex)
-          case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) =>
-            flows += InstanceField(call.index, declClass, taintedField)*/
+                    flows += ArrayElement(call.index, taintedIndex)
+                  case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) =>
+                    flows += InstanceField(call.index, declClass, taintedField)*/
                     case NativeTaintNullFact =>
                         val taints = createTaints(nativeCallee, call)
                         if (taints.nonEmpty) flows ++= taints
@@ -259,11 +259,11 @@ class SimpleJavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(
     }
 }
 
-class SimpleJavaForwardTaintAnalysis(project: SomeProject)
-    extends IFDSAnalysis()(project, new SimpleJavaForwardTaintProblem(project), Taint)
+class JavaForwardTaintAnalysis(project: SomeProject)
+    extends IFDSAnalysis()(project, new JavaForwardTaintProblem(project), Taint)
 
 object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
-    override def init(p: SomeProject, ps: PropertyStore) = new SimpleJavaForwardTaintAnalysis(p)
+    override def init(p: SomeProject, ps: PropertyStore) = new JavaForwardTaintAnalysis(p)
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
     override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.ub(NativeTaint))
