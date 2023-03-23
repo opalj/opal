@@ -483,6 +483,19 @@ compile := {
   r
 }
 
+lazy val runProjectDependencyGeneration =  ThisBuild / taskKey[Unit] ("Regenerates the Project Dependencies Graphics")
+
+runProjectDependencyGeneration := {
+  import scala.sys.process._
+  val s: TaskStreams = streams.value
+  val uid = "id -u".!!.stripSuffix("\n")
+  val gid = "id -g".!!.stripSuffix("\n")
+  val baseCommand = s"docker run --rm -u $uid:$gid -v ${baseDirectory.value.getAbsolutePath}/OPAL/:/data minlag/mermaid-cli -i ProjectDepdendencies.mmd -c mmd.json"
+  s.log.info("Regenerating ProjectDependencies.svg")
+  baseCommand + " -o ProjectDependencies.svg" ! s.log
+  s.log.info("Regenerating ProjectDependencies.pdf")
+  baseCommand + "  -o ProjectDependencies.pdf" ! s.log
+}
 //
 //
 // SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL
