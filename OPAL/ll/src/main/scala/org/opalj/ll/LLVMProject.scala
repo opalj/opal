@@ -8,13 +8,13 @@ import org.opalj.ll.llvm.value
 
 class LLVMProject(val modules: Iterable[Module]) {
 
-    private lazy val named_functions = modules.flatMap(module => module.functions).map(f => (f.name, f)).toMap
+    private lazy val namedFunctions = modules.flatMap(module => module.functions).map(f => (f.name, f)).toMap
 
     def functions: Iterable[value.Function] =
-        named_functions.values
+        namedFunctions.values
 
     def function(name: String): Option[value.Function] =
-        named_functions.get(name)
+        namedFunctions.get(name)
 }
 
 object LLVMProject {

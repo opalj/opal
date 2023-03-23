@@ -10,11 +10,17 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 
-case class Taint(flows: Map[JavaStatement, Set[TaintFact]], debugData: Map[JavaStatement, Set[TaintFact]] = Map.empty) extends IFDSProperty[JavaStatement, TaintFact] {
+case class Taint(
+        flows:     Map[JavaStatement, Set[TaintFact]],
+        debugData: Map[JavaStatement, Set[TaintFact]] = Map.empty
+) extends IFDSProperty[JavaStatement, TaintFact] {
 
     override type Self = Taint
-    override def create(result: Map[JavaStatement, Set[TaintFact]]): IFDSProperty[JavaStatement, TaintFact] = new Taint(result)
-    override def create(result: Map[JavaStatement, Set[TaintFact]], debugData: Map[JavaStatement, Set[TaintFact]]): IFDSProperty[JavaStatement, TaintFact] = new Taint(result, debugData)
+    override def create(result: Map[JavaStatement, Set[TaintFact]]): IFDSProperty[JavaStatement, TaintFact] = Taint(result)
+    override def create(
+        result:    Map[JavaStatement, Set[TaintFact]],
+        debugData: Map[JavaStatement, Set[TaintFact]]
+    ): IFDSProperty[JavaStatement, TaintFact] = Taint(result, debugData)
 
     override def key: PropertyKey[Taint] = Taint.key
 }
@@ -22,8 +28,11 @@ case class Taint(flows: Map[JavaStatement, Set[TaintFact]], debugData: Map[JavaS
 object Taint extends IFDSPropertyMetaInformation[JavaStatement, TaintFact] {
 
     override type Self = Taint
-    override def create(result: Map[JavaStatement, Set[TaintFact]]): IFDSProperty[JavaStatement, TaintFact] = new Taint(result)
-    override def create(result: Map[JavaStatement, Set[TaintFact]], debugData: Map[JavaStatement, Set[TaintFact]]): IFDSProperty[JavaStatement, TaintFact] = new Taint(result, debugData)
+    override def create(result: Map[JavaStatement, Set[TaintFact]]): IFDSProperty[JavaStatement, TaintFact] = Taint(result)
+    override def create(
+        result:    Map[JavaStatement, Set[TaintFact]],
+        debugData: Map[JavaStatement, Set[TaintFact]]
+    ): IFDSProperty[JavaStatement, TaintFact] = Taint(result, debugData)
 
-    val key: PropertyKey[Taint] = PropertyKey.create("Taint", new Taint(Map.empty))
+    val key: PropertyKey[Taint] = PropertyKey.create("Taint", Taint(Map.empty))
 }

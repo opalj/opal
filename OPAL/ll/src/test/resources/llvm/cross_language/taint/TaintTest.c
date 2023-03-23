@@ -1,7 +1,9 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 #include <jni.h>
 #include <stdio.h>
 #include <string.h>
 #include "TaintTest.h"
+
 JNIEXPORT int JNICALL
 Java_TaintTest_sum(JNIEnv *env, jobject obj, jint a, jint b) {
     return a + b;
