@@ -102,7 +102,7 @@ object JNICallUtil {
                     resolveObjectIsThis(call.operand(1)) // object is the second parameter
                 case _ => false
             }
-            case _ => false
+            case _ => true // We do not care if clazz is not a Store
         }
     }
 
@@ -112,7 +112,7 @@ object JNICallUtil {
                 case argument: Argument => argument.index == 1
                 case _                  => false
             }
-            case _ => false
+            case _ => true // We do not care if obj is not a Store
         }
     }
 
