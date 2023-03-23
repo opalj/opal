@@ -62,4 +62,9 @@ case class NativeFlowFact(flow: Seq[Callable]) extends NativeTaintFact {
         flow.foreach(f => r = (r + f.hashCode()) * 31)
         r
     }
+
+    override def equals(obj: Any): Boolean = obj match {
+        case NativeFlowFact(flow2) => flow.equals(flow2)
+        case _                     => false
+    }
 }
