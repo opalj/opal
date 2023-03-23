@@ -93,25 +93,34 @@ object JNICallUtil {
     }
 
     private def resolveClassIsThis(clazz: Value): Boolean = {
-        val sources = clazz.asInstanceOf[Load].src.users.collect { case store: Store => store.src }
-        sources.forall {
-            case call: Call =>
-                if (resolveJNIFunction(call) != Symbol("GetObjectClass"))
-                    throw new IllegalArgumentException("unexpected call")
-                resolveObjectIsThis(call.operand(1)) // object is the second parameter
+        clazz.asInstanceOf[Load].src.users.forall {
+            case store: Store => store.src match {
+                case call: Call =>
+                    if (resolveJNIFunction(call) != Symbol("GetObjectClass")) {
+                        throw new IllegalArgumentException("unexpected call")
+                    }
+                    resolveObjectIsThis(call.operand(1)) // object is the second parameter
+                case _ => false
+            }
             case _ => false
         }
     }
 
     private def resolveObjectIsThis(obj: Value): Boolean = {
-        val sources = obj.asInstanceOf[Load].src.users.collect { case store: Store => store.src }
-        sources.forall {
-            case argument: Argument => argument.index == 1
-            case _                  => false
+        obj.asInstanceOf[Load].src.users.forall {
+            case store: Store => store.src match {
+                case argument: Argument => argument.index == 1
+                case _                  => false
+            }
+            case _ => false
         }
     }
 
-    private def findJavaMethods(className: String, name: String, signature: String)(implicit declaredMethods: DeclaredMethods): Set[JNIMethod] = {
+    private def findJavaMethods(
+        className: String,
+        name:      String,
+        signature: String
+    )(implicit declaredMethods: DeclaredMethods): Set[JNIMethod] = {
         declaredMethods.declaredMethods.filter(declaredMethod => {
             val classType = declaredMethod.declaringClassType
             (classType.simpleName == className &&
