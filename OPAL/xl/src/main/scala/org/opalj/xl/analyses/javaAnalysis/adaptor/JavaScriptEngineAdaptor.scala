@@ -31,9 +31,14 @@ import org.opalj.xl.axa.common.AdaptorLattice
 import org.opalj.xl.axa.common.CrossLanguageCall
 import org.opalj.xl.axa.common.Language
 import org.opalj.xl.axa.common.NoCrossLanguageCall
-
 import scala.collection.immutable
 import scala.collection.mutable
+
+import org.opalj.xl.analyses.javaAnalysis.adaptor.ScriptEngineAdaptor.jsEngineNames
+import org.opalj.xl.analyses.javaAnalysis.adaptor.ScriptEngineAdaptor.jsExtensions
+import org.opalj.xl.analyses.javaAnalysis.adaptor.ScriptEngineAdaptor.jsMimetypes
+
+import org.opalj.tac.AssignmentLikeStmt
 
 class ScriptEngineAdaptor(val project: SomeProject) extends FPCFAnalysis {
 
@@ -48,28 +53,38 @@ class ScriptEngineAdaptor(val project: SomeProject) extends FPCFAnalysis {
 
     var sourceCode = ""
     var language = Language.Unknown
-    stmts.foreach(stmt=>
-    stmt match {
+    stmts.foreach {
 
-      case Assignment(_, _,
-      VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngineManager"), _,
-      "getEngineByName", _, _, params)) =>
-        val lowerLanguageString = getString(params.head.asVar.definedBy.head).toLowerCase
-        if (lowerLanguageString=="javascript" || lowerLanguageString=="nashorn")
+      case AssignmentLikeStmt(_, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngineManager"), _, "getEngineByName", _, _, params)) =>
+        val name = getString(params.head.asVar.definedBy.head).toLowerCase
+        if (jsEngineNames.contains(name))
           language = Language.JavaScript
 
-      case ExprStmt(_, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "eval", _, _, params)) =>
+      case AssignmentLikeStmt(_, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngineManager"), _, "getEngineByExtension", _, _, params)) =>
+        val extension = getString(params.head.asVar.definedBy.head)
+        if (jsExtensions.contains(extension))
+          language = Language.JavaScript
+
+      case AssignmentLikeStmt(_, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngineManager"), _, "getEngineByMimeType", _, _, params)) =>
+        val mimetype = getString(params.head.asVar.definedBy.head)
+        if (jsMimetypes.contains(mimetype))
+          language = Language.JavaScript
+
+      case AssignmentLikeStmt(_, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "eval", _, _, params)) =>
         sourceCode += getString(params.head.asVar.definedBy.head) + "\n"
 
-      case VirtualMethodCall(_, ObjectType("javax/script/ScriptEngine"),_,"put",_, _, params) =>
-        val defSites:Set[DefinitionSite] =
-          params.tail.head.asVar.definedBy.map(id=> {
+      // TODO Handle Invocable.invokeFunction? It can be called on the ScriptEngine after an eval that defined top-level functions
+
+      case VirtualMethodCall(_, ObjectType("javax/script/ScriptEngine"), _, "put", _, _, params) =>
+        val defSites: Set[DefinitionSite] =
+          params.tail.head.asVar.definedBy.map(id => {
             val pc = stmts(id).asAssignment.pc
-            DefinitionSite(method, pc)})
-      assignments += getString(params.head.asVar.definedBy.head) -> defSites
+            DefinitionSite(method, pc)
+          })
+        assignments += getString(params.head.asVar.definedBy.head) -> defSites
 
       case _ =>
-    })
+    }
 
     if(sourceCode!="" && language != Language.Unknown)
       Result(method, CrossLanguageCall(language, sourceCode , assignments))
@@ -80,33 +95,38 @@ class ScriptEngineAdaptor(val project: SomeProject) extends FPCFAnalysis {
   def lazilyAdaptJavaJavaScript(entity: Entity): ProperPropertyComputationResult = {
     entity match {
       case method: Method => analyzeMethod(method)
-      case _              => throw new IllegalArgumentException("can only process functions")
+      case _              => throw new IllegalArgumentException("can only process methods")
     }
   }
 
 }
 
+object ScriptEngineAdaptor {
+  val jsEngineNames = Set("nashorn", "rhino", "js", "javascript", "ecmascript")
+  val jsExtensions = Set("js")
+  val jsMimetypes = Set("application/javascript, application/ecmascript, text/javascript, text/ecmascript")
+}
+
 trait JavaJavaScriptAdaptorScheduler extends FPCFAnalysisScheduler {
+
   def derivedProperty: PropertyBounds = PropertyBounds.ub(AdaptorLattice)
 
   override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-  override def uses: immutable.Set[PropertyBounds] =
-    immutable.Set(
-      PropertyBounds.ub(AdaptorLattice)
-    )
-}
-object EagerJavaJavaScriptAdaptor
-    extends JavaJavaScriptAdaptorScheduler
-    with BasicFPCFEagerAnalysisScheduler {
-  override def derivesEagerly: immutable.Set[PropertyBounds] = immutable.Set(derivedProperty)
+  override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(AdaptorLattice))
 
-  override def derivesCollaboratively: immutable.Set[PropertyBounds] = immutable.Set.empty
+}
+object EagerJavaJavaScriptAdaptor extends JavaJavaScriptAdaptorScheduler
+    with BasicFPCFEagerAnalysisScheduler {
+
+  override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+  override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
   override def start(
       project: SomeProject,
       propertyStore: PropertyStore,
-      initData: InitializationData
+      unused: Null
   ): FPCFAnalysis = {
     val analysis = new ScriptEngineAdaptor(project)
     propertyStore.scheduleEagerComputationsForEntities(project.allMethods)(analysis.analyzeMethod)
@@ -114,14 +134,15 @@ object EagerJavaJavaScriptAdaptor
   }
 }
 
+object LazyJavaJavaScriptAdaptor extends JavaJavaScriptAdaptorScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
-object LazyJavaJavaScriptAdaptor extends JavaJavaScriptAdaptorScheduler with BasicFPCFLazyAnalysisScheduler {
   override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
   override def register(
       project: SomeProject,
       propertyStore: PropertyStore,
-      initData: InitializationData
+      unused: Null
   ): FPCFAnalysis = {
     val analysis = new ScriptEngineAdaptor(project)
     propertyStore.registerLazyPropertyComputation(
