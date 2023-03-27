@@ -5,7 +5,6 @@ package analyses
 package javaAnalysis
 package adaptor
 
-
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -28,13 +27,15 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.value.ValueInformation
+import org.opalj.xl.axa.common.AdaptorLattice
+import org.opalj.xl.axa.common.CrossLanguageCall
+import org.opalj.xl.axa.common.Language
+import org.opalj.xl.axa.common.NoCrossLanguageCall
 
 import scala.collection.immutable
 import scala.collection.mutable
 
-class JavaJavaScriptAdaptor(val project: SomeProject) extends FPCFAnalysis {
-
-
+class ScriptEngineAdaptor(val project: SomeProject) extends FPCFAnalysis {
 
   def analyzeMethod(method: Method): ProperPropertyComputationResult = {
 
@@ -46,29 +47,34 @@ class JavaJavaScriptAdaptor(val project: SomeProject) extends FPCFAnalysis {
       stmts(id).asAssignment.expr.asStringConst.value
 
     var sourceCode = ""
-    var language = ""
+    var language = Language.Unknown
     stmts.foreach(stmt=>
     stmt match {
-      case Assignment(pc, _, VirtualFunctionCall(pc2, ObjectType("javax/script/ScriptEngineManager"), isInterface, "getEngineByName", descriptor, receiver, params)) =>
-        language = getString(params.head.asVar.definedBy.head)
-      case ExprStmt(pc, VirtualFunctionCall(pc2, ObjectType("javax/script/ScriptEngine"), isInterface, "eval", descriptor, receiver, params)) =>
-        sourceCode += getString(params.head.asVar.definedBy.head) + "\n"
-      case VirtualMethodCall(_, ObjectType("javax/script/ScriptEngine"),_,"put",_, _, params) =>
-        println(params)
 
+      case Assignment(_, _,
+      VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngineManager"), _,
+      "getEngineByName", _, _, params)) =>
+        val lowerLanguageString = getString(params.head.asVar.definedBy.head).toLowerCase
+        if (lowerLanguageString=="javascript" || lowerLanguageString=="nashorn")
+          language = Language.JavaScript
+
+      case ExprStmt(_, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "eval", _, _, params)) =>
+        sourceCode += getString(params.head.asVar.definedBy.head) + "\n"
+
+      case VirtualMethodCall(_, ObjectType("javax/script/ScriptEngine"),_,"put",_, _, params) =>
         val defSites:Set[DefinitionSite] =
           params.tail.head.asVar.definedBy.map(id=> {
             val pc = stmts(id).asAssignment.pc
             DefinitionSite(method, pc)})
       assignments += getString(params.head.asVar.definedBy.head) -> defSites
+
       case _ =>
-    }
-    )
-    if(sourceCode!="" && language!="")
+    })
+
+    if(sourceCode!="" && language != Language.Unknown)
       Result(method, CrossLanguageCall(language, sourceCode , assignments))
     else
       Result(method, NoCrossLanguageCall)
-
   }
 
   def lazilyAdaptJavaJavaScript(entity: Entity): ProperPropertyComputationResult = {
@@ -81,13 +87,13 @@ class JavaJavaScriptAdaptor(val project: SomeProject) extends FPCFAnalysis {
 }
 
 trait JavaJavaScriptAdaptorScheduler extends FPCFAnalysisScheduler {
-  def derivedProperty: PropertyBounds = PropertyBounds.ub(JavaJavaScriptAdaptorLattice)
+  def derivedProperty: PropertyBounds = PropertyBounds.ub(AdaptorLattice)
 
   override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
   override def uses: immutable.Set[PropertyBounds] =
     immutable.Set(
-      PropertyBounds.ub(JavaJavaScriptAdaptorLattice)
+      PropertyBounds.ub(AdaptorLattice)
     )
 }
 object EagerJavaJavaScriptAdaptor
@@ -102,7 +108,7 @@ object EagerJavaJavaScriptAdaptor
       propertyStore: PropertyStore,
       initData: InitializationData
   ): FPCFAnalysis = {
-    val analysis = new JavaJavaScriptAdaptor(project)
+    val analysis = new ScriptEngineAdaptor(project)
     propertyStore.scheduleEagerComputationsForEntities(project.allMethods)(analysis.analyzeMethod)
     analysis
   }
@@ -117,9 +123,9 @@ object LazyJavaJavaScriptAdaptor extends JavaJavaScriptAdaptorScheduler with Bas
       propertyStore: PropertyStore,
       initData: InitializationData
   ): FPCFAnalysis = {
-    val analysis = new JavaJavaScriptAdaptor(project)
+    val analysis = new ScriptEngineAdaptor(project)
     propertyStore.registerLazyPropertyComputation(
-      JavaJavaScriptAdaptorLattice.key,
+      AdaptorLattice.key,
       analysis.lazilyAdaptJavaJavaScript
     )
     analysis
