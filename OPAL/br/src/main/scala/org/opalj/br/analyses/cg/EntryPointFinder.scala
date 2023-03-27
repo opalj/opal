@@ -66,7 +66,8 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         super.collectEntryPoints(project).filterNot { ep =>
             packagesToExclude.exists { prefix =>
-                ep.declaringClassFile.thisType.packageName.startsWith(prefix)
+                ep.declaringClassFile.thisType.packageName.startsWith(prefix) &&
+                    ep.name == "main"
             }
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
