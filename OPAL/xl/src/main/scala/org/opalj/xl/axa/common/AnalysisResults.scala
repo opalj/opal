@@ -1,8 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package xl
-package axa
-package proxy
+package org.opalj.xl.axa.common
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -18,9 +15,7 @@ sealed trait AnalysisResultsPropertyMetaInformation extends PropertyMetaInformat
 sealed trait AnalysisResultsLattice extends AnalysisResultsPropertyMetaInformation with OrderedProperty {
     def meet(other: AnalysisResultsLattice): AnalysisResultsLattice = {
         (this, other) match {
-            case (_, _)                 => InterimAnalysisResult
-         /*   case (_, TIPUntainted)                 => this
-            case (TIPTainted, _) | (_, TIPTainted) => TIPTainted */
+            case (_, _)                 => InterimAnalysisResult(null)
         }
     }
 
@@ -38,7 +33,7 @@ object AnalysisResultsLattice extends AnalysisResultsPropertyMetaInformation {
         "AnalysisResultsLattice",
         (_: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
-                case e: Entity => InterimAnalysisResult
+                case e: Entity => InterimAnalysisResult(null)
                 case x =>
                     throw new IllegalArgumentException(s"$x is not a Field")
             }
@@ -46,6 +41,8 @@ object AnalysisResultsLattice extends AnalysisResultsPropertyMetaInformation {
     )
 }
 
-case object FinalAnalysisResult extends AnalysisResultsLattice
+case class FinalAnalysisResult(o:Object) extends AnalysisResultsLattice
 
-case object InterimAnalysisResult extends AnalysisResultsLattice
+case object NoAnalysisResult extends AnalysisResultsLattice
+
+case class InterimAnalysisResult(o:Object) extends AnalysisResultsLattice

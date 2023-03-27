@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
+/*package org.opalj
 package xl
 package analyses
 package javascript
@@ -75,9 +75,16 @@ trait JavaScriptAnalysisScheduler extends FPCFAnalysisScheduler {
 object LazyJavaScriptAnalysis extends JavaScriptAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
   override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-  override def register(project: SomeProject, propertyStore: PropertyStore, initData: InitializationData): FPCFAnalysis = {
+  override def register(
+      project: SomeProject,
+      propertyStore: PropertyStore,
+      initData: InitializationData
+  ): FPCFAnalysis = {
     val analysis = new JavaScriptTAJSProxy(project)
-    propertyStore.registerLazyPropertyComputation(TIPTaintLattice.key, analysis.lazilyAnalyzeJavaScript)
+    propertyStore.registerLazyPropertyComputation(
+      TIPTaintLattice.key,
+      analysis.lazilyAnalyzeJavaScript
+    )
     analysis
   }
-}
+}*/

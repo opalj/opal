@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.xl.axa.bridge.javajavascript
+/*package org.opalj.xl.axa.bridge.javajavascript
 
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -123,4 +123,4 @@ object LazyJavaJavaScriptBridge extends JavaJavaScriptBridgeScheduler with Basic
     )
     analysis
   }
-}
+}*/

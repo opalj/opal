@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
+/*package org.opalj
 package xl
 package analyses
 package javascript
@@ -50,3 +50,4 @@ object TIPTaintLattice extends JavaScriptPointsToLatticePropertyMetaInformation 
 case class PointsTo(pointsTo:Set[Any]) extends JavaScriptPointsToLattice
 
 case object NoPointsTo extends JavaScriptPointsToLattice
+*/

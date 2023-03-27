@@ -22,15 +22,14 @@ import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.xl.analyses.javaAnalysis.adaptor.EagerJavaJavaScriptAdaptor
-import org.opalj.xl.analyses.javaAnalysis.analysis.JavaTainted
-import org.opalj.xl.analyses.javascript.analyses.LazyJavaScriptAnalysis
-import org.opalj.xl.axa.proxy.TriggeredFrameworkProxyScheduler
+import org.opalj.xl.axa.bridge.TriggeredJavaScriptBridgeScheduler
+import org.opalj.xl.axa.frameworkconnector.TriggeredFrameworkProxyScheduler
 
 import java.net.URL
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.runtime.universe.runtimeMirror
 
-object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, ReportableAnalysisResult] { //},[URL] ReportableAnalysisResult] {
+object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, ReportableAnalysisResult] {
 
     implicit val logContext: LogContext = GlobalLogContext
 
@@ -38,10 +37,7 @@ object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, Repo
 
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
 
-    var analyses: List[FPCFAnalysisScheduler] =
-      List(
-        LazyTACAIProvider
-      )
+    var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
 
     def resolveAnalysisRunner(
         className: String
@@ -71,8 +67,6 @@ object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, Repo
         ).asScala.flatMap(resolveAnalysisRunner(_)).toSeq
       }
 
-
-
     project.updateProjectInformationKeyInitializationData(TypeIteratorKey) { case _ =>
       () => new RTATypeIterator(project)
     }
@@ -80,26 +74,17 @@ object AnalysesRunner extends AnalysisApplication with OneStepAnalysis[URL, Repo
     analyses ::= CallGraphAnalysisScheduler
     analyses ++= RTACallGraphKey.callGraphSchedulers(project)
     analyses ++= registeredAnalyses(project)
-      analyses ++= Iterable(AllocationSiteBasedPointsToAnalysisScheduler,
+      analyses ++= Iterable(
+        AllocationSiteBasedPointsToAnalysisScheduler,
         EagerJavaJavaScriptAdaptor,
-      LazyJavaScriptAnalysis, TriggeredFrameworkProxyScheduler)
+      TriggeredFrameworkProxyScheduler,
+        TriggeredJavaScriptBridgeScheduler)
 
-          val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
-       analyses
-          )
-
+      val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(analyses)
 
 
-val javaTaintedVariables = propertyStore.finalEntities(JavaTainted)
+println("finished")
 
-BasicReport(
- " \n"+
-     s"""
-    | Results of Java Taint Analysis:
-    |Tainted variables: ${javaTaintedVariables.mkString("\n")}
-    |
-    |
-    |""".stripMargin //
-)
+BasicReport("")
 }
 }

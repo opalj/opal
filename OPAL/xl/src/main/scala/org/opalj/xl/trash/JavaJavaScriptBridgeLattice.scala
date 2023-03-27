@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
+/*package org.opalj
 package xl
-package analyses
-package javaAnalysis
-package adaptor
+package axa
+package bridge
+package javajavascript
 
 import org.opalj.br.Method
 import org.opalj.fpcf.Entity
@@ -51,4 +51,5 @@ object JavaJavaScriptAdaptorLattice extends JavaJavaScriptAdaptorPropertyMetaInf
 case object NoCrossLanguageCall extends JavaJavaScriptAdaptorLattice
 
 case class CrossLanguageCall(language:String, code: String, assignments: mutable.Map[String,Set[DefinitionSite]])
-extends JavaJavaScriptAdaptorLattice
+  extends JavaJavaScriptAdaptorLattice
+*/

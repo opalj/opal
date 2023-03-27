@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
+/*package org.opalj
 package xl
-package axa
-package bridge
-package javajavascript
-/*
+package analyses
+package javaAnalysis
+package adaptor
+
 import org.opalj.br.Method
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -13,6 +13,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.xl.axa.util.Language.Language
 
 import scala.collection.mutable
 
@@ -41,8 +42,7 @@ object JavaJavaScriptAdaptorLattice extends JavaJavaScriptAdaptorPropertyMetaInf
         (_: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
                 case Method => NoCrossLanguageCall
-                case x =>
-                    throw new IllegalArgumentException(s"$x is not a Method")
+                case x => throw new IllegalArgumentException(s"$x is not a method")
             }
         }
     )
@@ -50,6 +50,9 @@ object JavaJavaScriptAdaptorLattice extends JavaJavaScriptAdaptorPropertyMetaInf
 
 case object NoCrossLanguageCall extends JavaJavaScriptAdaptorLattice
 
-case class CrossLanguageCall(language:String, code: String, assignments: mutable.Map[String,Set[DefinitionSite]])
-  extends JavaJavaScriptAdaptorLattice
+case class CrossLanguageCall(language: Language, code: String, assignments: mutable.Map[String,Set[DefinitionSite]])
+extends JavaJavaScriptAdaptorLattice
 */
+
+
+
