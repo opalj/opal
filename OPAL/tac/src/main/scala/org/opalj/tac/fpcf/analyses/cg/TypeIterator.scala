@@ -156,6 +156,7 @@ abstract class TypeIterator(val project: SomeProject) {
                     case Assignment(pc, _, New(_, tpe))         => Some((tpe, pc))
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
                     case Assignment(pc, _, c: Const)            => Some((c.tpe.asObjectType, pc))
+                    case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.declaringClass, pc))
                     case _ =>
                         hasUnknownAllocation = true
                         None
