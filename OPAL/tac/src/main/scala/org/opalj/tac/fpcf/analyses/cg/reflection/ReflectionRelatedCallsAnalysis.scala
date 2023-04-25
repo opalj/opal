@@ -1439,6 +1439,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 classNameIndex = 1
             ),
 
+            // TODO Support ClassLoader.loadClass, etc.?
+
             /*
              * Class.newInstance
              */

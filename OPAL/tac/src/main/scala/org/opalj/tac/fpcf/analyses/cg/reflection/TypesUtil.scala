@@ -268,6 +268,9 @@ object TypesUtil {
                 }
         } else if (isBaseTypeLoad(expr) && !onlyObjectTypes) {
             possibleTypes += getBaseType(expr)
+        } else {
+            // TODO Support ClassLoader.loadClass, etc.?
+            failure()
         }
 
         possibleTypes
