@@ -110,14 +110,18 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                 fieldAccess._1,
                 FieldAccessInformation.key,
                 (current: EOptionP[Field, FieldAccessInformation]) => current match {
-                    case InterimUBP(ub: FieldAccessInformation) =>
-                        if (readAccesses.subsetOf(ub.readAccesses) && writeAccesses.subsetOf(ub.writeAccesses))
+                    case InterimUBP(ub: FieldAccessInformation) => {
+                        val mergedReadAccesses = ub.readAccesses ++ readAccesses
+                        val mergedWriteAccesses = ub.writeAccesses ++ writeAccesses
+
+                        if (mergedReadAccesses == ub.readAccesses && mergedWriteAccesses == ub.writeAccesses)
                             None
                         else
                             Some(InterimEUBP(
                                 fieldAccess._1,
-                                FieldAccessInformation(readAccesses ++ ub.readAccesses, writeAccesses ++ ub.writeAccesses)
+                                FieldAccessInformation(mergedReadAccesses, mergedWriteAccesses)
                             ))
+                    }
 
                     case _: EPK[_, _] =>
                         Some(InterimEUBP(fieldAccess._1, FieldAccessInformation(readAccesses, writeAccesses)))
