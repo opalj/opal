@@ -5,6 +5,11 @@ import org.opalj.fpcf.properties.vta.ExpectedCalleeMatcher;
 
 import java.lang.annotation.*;
 
+/**
+ * Denotes the expected callee class.
+ * Can be used several times using @List{[...]}
+ *
+ */
 public @interface ExpectedCallee {
 
     String PROPERTY_VALIDATOR_KEY = "ExpectedCallee";

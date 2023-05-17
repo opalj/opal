@@ -61,6 +61,7 @@ class ForwardICFG(implicit project: SomeProject)
         statement.cfg
             .successors(statement.index)
             .map { index => JavaStatement(statement, index) }
+      //TODO improve performance
     }
 
     /**

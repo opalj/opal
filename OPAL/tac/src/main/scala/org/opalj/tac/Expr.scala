@@ -786,6 +786,7 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
     final override def isVar: Boolean = false
     final override def isFunctionCall: Boolean = true
     final override def asFunctionCall: this.type = this
+    final override def isStaticCall: Boolean = isStaticFunctionCall
 }
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {

@@ -84,13 +84,13 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
     override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
         def handleNativeMethod(call: JavaStatement, successor: JavaStatement, in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
             // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
-            val calleeName = callee.name.map(c => c match {
-                case c if isAlphaNumeric(c) => c
-                case '_'                    => "_1"
-                case ';'                    => "_2"
-                case '['                    => "_3"
-                case c                      => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
-            }).mkString
+            val calleeName = callee.name.map {
+              case c if isAlphaNumeric(c) => c
+              case '_' => "_1"
+              case ';' => "_2"
+              case '[' => "_3"
+              case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
+            }.mkString
             val nativeFunctionName = "Java_"+callee.classFile.fqn+"_"+calleeName
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
@@ -142,13 +142,15 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
         val callObject = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callObject.allParams
         val allParamsWithIndices = allParams.zipWithIndex
-        in match {
+
+      val offset = if (callObject.isStaticCall) 2 else 1 // offset JNIEnv + Class reference for static functions
+      // this is included in allParams
+      in match {
             // Taint formal parameter if actual parameter is tainted
             case Variable(index) =>
                 allParamsWithIndices.flatMap {
                     case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
-                        // TODO: this is passed
-                        Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
+                        Some(NativeVariable(callee.function.argument(paramIndex + offset)))
                     case _ => None // Nothing to do
                 }.toSet
 
@@ -156,7 +158,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
             case ArrayElement(index, taintedIndex) =>
                 allParamsWithIndices.flatMap {
                     case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
-                        Some(NativeVariable(callee.function.argument(paramIndex + 1))) // offset JNIEnv
+                        Some(NativeVariable(callee.function.argument(paramIndex + offset)))
                     case _ => None // Nothing to do
                 }.toSet
 
@@ -165,7 +167,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
                 // Only if the formal parameter is of a type that may have that field!
                 allParamsWithIndices.flatMap {
                     case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
-                        Some(JavaInstanceField(paramIndex + 1, declaredClass, taintedField)) // TODO subtype check
+                        Some(JavaInstanceField(paramIndex + offset, declaredClass, taintedField)) // TODO subtype check
                     case _ => None // Nothing to do
                 }.toSet
 

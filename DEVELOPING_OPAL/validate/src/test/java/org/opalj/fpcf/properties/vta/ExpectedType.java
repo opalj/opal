@@ -5,6 +5,11 @@ import org.opalj.fpcf.properties.vta.ExpectedTypeMatcher;
 
 import java.lang.annotation.*;
 
+/**
+ * Denotes the expected type class
+ * Can be used several times using @List{[...]}
+ *
+ */
 public @interface ExpectedType {
 
     String PROPERTY_VALIDATOR_KEY = "ExpectedType";

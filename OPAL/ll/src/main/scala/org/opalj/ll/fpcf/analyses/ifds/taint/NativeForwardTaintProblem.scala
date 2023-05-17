@@ -163,7 +163,7 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
     ): Set[TaintFact] =
         in match {
             // Taint formal parameter if actual parameter is tainted
-            case NativeVariable(value) => call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
+          case NativeVariable(value) => call.instruction.asInstanceOf[Call].indexOfArgument(value) match {
                 case Some(index) => Set(Variable(JavaIFDSProblem.remapParamAndVariableIndex(
                     index - 2,
                     callee.isStatic
@@ -171,8 +171,8 @@ abstract class NativeForwardTaintProblem(project: SomeProject) extends NativeIFD
                 case None => Set()
             }
             // TODO pass other java taints
-            case NativeTaintNullFact => Set(TaintNullFact)
-            case _                   => Set() // Nothing to do
+          case NativeTaintNullFact => Set(TaintNullFact)
+          case _ => Set() // Nothing to do
         }
 
     /**
