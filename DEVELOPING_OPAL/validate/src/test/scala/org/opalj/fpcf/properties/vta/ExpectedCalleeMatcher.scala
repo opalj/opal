@@ -23,13 +23,13 @@ import org.opalj.value.ValueInformation
 class ExpectedCalleeMatcher extends VTAMatcher {
 
     def validateSingleAnnotation(
-                                  project: SomeProject,
-                                  entity: Entity,
-                                 taCode: TACode[TACMethodParameter, DUVar[ValueInformation]],
-                                 method: Method,
-                                  annotation: AnnotationLike,
-                                 properties: Iterable[Property]
-                                ): Option[String] = {
+        project:    SomeProject,
+        entity:     Entity,
+        taCode:     TACode[TACMethodParameter, DUVar[ValueInformation]],
+        method:     Method,
+        annotation: AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String] = {
         val elementValuePairs = annotation.elementValuePairs
         val expected = (
             elementValuePairs.head.value.asIntValue.value,

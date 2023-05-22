@@ -14,9 +14,11 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.LLVMProjectKey
@@ -30,8 +32,8 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
+import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
@@ -39,15 +41,15 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
 
-class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
-    val llvmProject = p.get(LLVMProjectKey)
+class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintProblem(p) {
+    val llvmProject: LLVMProject = p.get(LLVMProjectKey)
 
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, TaintFact)] = for {
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = for {
         m <- p.allMethodsWithBody
-    } yield m -> TaintNullFact
+    } yield m -> new IFDSFact(TaintNullFact)
 
     /**
      * The sanitize method is a sanitizer.
@@ -80,25 +82,19 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
             Some(FlowFact(Seq(JavaMethod(call.method), JavaMethod(callee))))
         else None
 
+    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] = None
+
     // Multilingual additions here
-    override def outsideAnalysisContext(callee: Method): Option[OutsideAnalysisContextHandler] = {
-        def handleNativeMethod(call: JavaStatement, successor: JavaStatement, in: TaintFact, dependeesGetter: Getter): Set[TaintFact] = {
-            // https://docs.oracle.com/en/java/javase/13/docs/specs/jni/design.html#resolving-native-method-names
-            val calleeName = callee.name.map {
-              case c if isAlphaNumeric(c) => c
-              case '_' => "_1"
-              case ';' => "_2"
-              case '[' => "_3"
-              case c => s"_${c.toInt.toHexString.reverse.padTo(4, '0').reverse}"
-            }.mkString
-            val nativeFunctionName = "Java_"+callee.classFile.fqn+"_"+calleeName
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
+        def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[TaintFact] = {
+            val nativeFunctionName = JNICallUtil.resolveNativeFunctionName(callee)
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
-            val entryFacts = nativeCallFlow(call, function, in, callee)
+            val entryFacts = nativeCallFlow(call, function, in, callee).map(new IFDSFact(_))
             for (entryFact <- entryFacts) { // ifds line 14
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
-                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, NativeTaintFact), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
+                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
                         case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
@@ -119,7 +115,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
         if (callee.isNative) {
             Some(handleNativeMethod _)
         } else {
-            super.outsideAnalysisContext(callee)
+            super.outsideAnalysisContextCall(callee)
         }
     }
 
@@ -143,9 +139,9 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
         val allParams = callObject.allParams
         val allParamsWithIndices = allParams.zipWithIndex
 
-      val offset = if (callObject.isStaticCall) 2 else 1 // offset JNIEnv + Class reference for static functions
-      // this is included in allParams
-      in match {
+        val offset = if (callObject.isStaticCall) 2 else 1 // offset JNIEnv + Class reference for static functions
+        // this is included in allParams
+        in match {
             // Taint formal parameter if actual parameter is tainted
             case Variable(index) =>
                 allParamsWithIndices.flatMap {
@@ -196,7 +192,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
         call:         JavaStatement,
         callFact:     TaintFact,
         nativeCallee: Method,
-        successor:    JavaStatement
+        successor:    Option[JavaStatement]
     ): Set[TaintFact] = {
         if (sanitizesReturnValue(nativeCallee)) return Set.empty
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
@@ -254,10 +250,6 @@ class JavaForwardTaintProblem(p: SomeProject) extends ForwardTaintProblem(p) {
             case _ =>
         }
         flows
-    }
-
-    private def isAlphaNumeric(char: Char): Boolean = {
-        char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' || char >= '0' && char <= '9'
     }
 }
 

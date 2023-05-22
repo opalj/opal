@@ -301,30 +301,6 @@ public class TaintAnalysisTestClass {
         sink(wrapper.field + 1);
     }
 
-    //TODO Tests für statische Felder über Methodengrenzen
-
-    //Does not work, because we do not know which exceptions cannot be thrown.
-    /*@ForwardFlowPath({})
-    public void onlyThrowableExceptionsAreConsidered() {
-        int i = 0;
-        try {
-            divide(1, i);
-        } catch(IllegalArgumentException e) {
-            i = source();
-        }
-        sink(i);
-    }*/
-
-    //Does not work, because the analysis does not know that there is only one iteration.
-    /*@ForwardFlowPath({})
-    public void iterationCountIsConsidered() {
-        int[] arr = new int[2];
-        for(int i = 0; i < 1; i++) {
-            sink(arr[0]);
-            arr[i] = source();
-        }
-    }*/
-
     public int callSourcePublic() {
         return source();
     }

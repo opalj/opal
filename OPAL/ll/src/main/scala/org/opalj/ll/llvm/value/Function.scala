@@ -52,6 +52,14 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
         BasicBlock(LLVMGetEntryBasicBlock(ref))
     }
 
+    def exitBlocks: Iterator[BasicBlock] = {
+        if (basicBlockCount == 0) throw new IllegalStateException("this function does not contain any basic block and may not be defined")
+        basicBlocks.filter(bb => bb.lastInstruction match {
+            case Ret(_) => true
+            case _      => false
+        })
+    }
+
     def viewCFG(): Unit = {
         val cfg_dot = org.opalj.graphs.toDot(Set(entryBlock))
         writeAndOpen(cfg_dot, name+"-CFG", ".gv")

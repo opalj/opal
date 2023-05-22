@@ -10,14 +10,16 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.Callable
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSPropertyMetaInformation
+import org.opalj.ll.fpcf.analyses.ifds.taint.JavaForwardTaintProblem
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
@@ -31,20 +33,20 @@ import scala.collection.mutable
  *
  * @author Mario Trageser
  */
-class ForwardTaintAnalysisFixture(project: SomeProject)
+class ForwardTaintAnalysisFixture(implicit project: SomeProject)
     extends IFDSAnalysis()(project, new ForwardTaintProblemFixture(project), Taint)
 
-class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) {
+class ForwardTaintProblemFixture(p: SomeProject) extends JavaForwardTaintProblem(p) {
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(Method, TaintFact)] = {
-        var temp: mutable.Seq[(Method, TaintFact)] = mutable.Seq.empty
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = {
+        var temp: mutable.Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = mutable.Seq.empty
         for {
             cf <- p.allProjectClassFiles if cf.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass"
-            m <- cf.methods if m.isPublic && outsideAnalysisContext(m).isEmpty
+            m <- cf.methods if m.isPublic && outsideAnalysisContextCall(m).isEmpty
         } {
-            temp :+= (m -> TaintNullFact)
+            temp :+= (m -> new IFDSFact(TaintNullFact))
         }
         temp.toSeq
     }
@@ -74,6 +76,12 @@ class ForwardTaintProblemFixture(p: SomeProject) extends ForwardTaintProblem(p) 
                                           in: TaintFact): Option[FlowFact] =
         if (callee.name == "sink" && in == Variable(-2)) Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
+
+    override def createFlowFactAtExit(
+        callee:       Method,
+        in:           TaintFact,
+        unbCallChain: Seq[Callable]
+    ): Option[TaintFact] = None
 }
 
 object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {

@@ -6,6 +6,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.vta.{ExpectedCallee, ExpectedType}
+import org.opalj.ifds.IFDSFact
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ifds.problems.VTANullFact
@@ -32,7 +33,7 @@ class VTATest extends PropertiesTest {
         //        val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
             case (method, entityString, annotations) =>
-                ((method, VTANullFact), entityString, annotations)
+                ((method, new IFDSFact(VTANullFact)), entityString, annotations)
         }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(ExpectedType.PROPERTY_VALIDATOR_KEY))

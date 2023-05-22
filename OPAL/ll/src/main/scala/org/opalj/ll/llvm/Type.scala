@@ -136,7 +136,7 @@ case class ArrayType(ref: LLVMTypeRef) extends Type(ref) with SequentialType {
     def length: Int = LLVMGetArrayLength(ref)
 }
 /** Pointers */
-case class PointerType(ref: LLVMTypeRef) extends Type(ref) with SequentialType
+case class PointerType(ref: LLVMTypeRef) extends Type(ref)
 /** Fixed width SIMD vector type */
 case class VectorType(ref: LLVMTypeRef) extends Type(ref) with SequentialType {
     def size: Int = LLVMGetVectorSize(ref)

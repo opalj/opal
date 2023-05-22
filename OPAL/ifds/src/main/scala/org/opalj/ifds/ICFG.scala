@@ -22,7 +22,7 @@ abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
     def nextStatements(statement: S): Set[S]
 
     /**
-     * Gets the set of all methods possibly called at some statement.
+     * Gets the set of all callables possibly called at some statement.
      *
      * @param statement The statement.
      * @return All callables possibly called at the statement or None, if the statement does not
@@ -37,4 +37,12 @@ abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
      * @return Whether the statement flow may exit its callable (function/method)
      */
     def isExitStatement(statement: S): Boolean
+
+    /**
+     * Get all instances where a function is called.
+     *
+     * @param callee the function whose callers should be found.
+     * @return a seq of statements where the callee is called.
+     */
+    def getCallers(callee: C): Set[S]
 }

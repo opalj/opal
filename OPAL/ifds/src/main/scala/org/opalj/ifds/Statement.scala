@@ -3,6 +3,6 @@ package org.opalj
 package ifds
 
 abstract class Statement[C, Node] {
-    def node: Node
+    def basicBlock: Node
     def callable: C
 }

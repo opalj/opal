@@ -16,7 +16,7 @@ import org.opalj.ll.llvm.value.Instruction
  */
 case class LLVMStatement(instruction: Instruction) extends Statement[LLVMFunction, BasicBlock] {
     lazy val function: LLVMFunction = LLVMFunction(instruction.function)
-    override def node: BasicBlock = instruction.parent
+    override def basicBlock: BasicBlock = instruction.parent
     override def callable: LLVMFunction = function
     override def toString: String = s"${function.name}\n\t${instruction}\n\t${function}"
 }

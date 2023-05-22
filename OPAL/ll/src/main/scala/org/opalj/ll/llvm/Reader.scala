@@ -26,7 +26,7 @@ object Reader {
         val context: LLVMContextRef = LLVMContextCreate()
         val module: LLVMModuleRef = new LLVMModuleRef()
         if (LLVMParseIRInContext(context, file_buffer, module, out_message) != 0) {
-            println("Failed to parse file: "+out_message)
+            println("Failed to parse file: "+out_message.getString)
             LLVMDisposeMessage(out_message)
             return None
         }

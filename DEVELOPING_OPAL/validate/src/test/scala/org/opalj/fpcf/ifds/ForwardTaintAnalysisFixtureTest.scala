@@ -6,6 +6,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.ForwardFlowPath
+import org.opalj.ifds.IFDSFact
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 
@@ -33,7 +34,7 @@ class ForwardTaintAnalysisFixtureTest extends PropertiesTest {
         val project = testContext.project
         val eas = methodsWithAnnotations(project).map {
             case (method, entityString, annotations) =>
-                ((method, TaintNullFact), entityString, annotations)
+                ((method, new IFDSFact(TaintNullFact)), entityString, annotations)
         }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(ForwardFlowPath.PROPERTY_VALIDATOR_KEY))

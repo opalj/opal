@@ -16,29 +16,44 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.Callable
+import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSProblem
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
+import org.opalj.tac.fpcf.analyses.ifds.{JavaICFG, JavaStatement}
+import org.opalj.value.ValueInformation
 
-abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
-    extends IFDSProblem[Fact, NativeFunction, LLVMStatement](new NativeForwardICFG(project)) {
+abstract class NativeForwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
+    extends NativeIFDSProblem[Fact, JavaFact](project, new NativeForwardICFG(project))
+
+abstract class NativeBackwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
+    extends NativeIFDSProblem[Fact, JavaFact](project, new NativeBackwardICFG(project))
+
+abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject, override val icfg: NativeICFG)
+    extends IFDSProblem[Fact, NativeFunction, LLVMStatement](icfg) {
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val llvmProject: LLVMProject = project.get(LLVMProjectKey)
     val javaPropertyKey: PropertyKey[Property]
+    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
+    val javaICFG: JavaICFG
 
-    override def outsideAnalysisContext(callee: NativeFunction): Option[(LLVMStatement, LLVMStatement, Fact, Getter) => Set[Fact]] = callee match {
+    override def createCallable(callable: NativeFunction): Callable = callable
+
+    override def outsideAnalysisContextCall(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Seq[Callable], Getter) => Set[Fact]] = callee match {
         case LLVMFunction(function) =>
             function.basicBlockCount match {
-                case 0 => Some((_: LLVMStatement, _: LLVMStatement, in: Fact, _: Getter) => Set(in))
+                case 0 => Some((_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Seq[Callable], _: Getter) => Set(in))
                 case _ => None
             }
         case JNIMethod(method) => Some(handleJavaMethod(method))
     }
 
-    private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: LLVMStatement, in: Fact, dependeesGetter: Getter): Set[Fact] = {
+    private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: Option[LLVMStatement], in: Fact,
+                                                 unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[Fact] = {
         var result = Set.empty[Fact]
-        val entryFacts = javaCallFlow(call, callee, in)
+        val entryFacts = javaICFG.startStatements(callee).flatMap(javaCallFlow(_, call, callee, in)).map(new IFDSFact(_))
         for (entryFact <- entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[JavaStatement, Set[JavaFact]] =
@@ -56,7 +71,7 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
                 (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
                 exitStatementFact <- exitStatementFacts // ifds line 15.3
             } {
-                result ++= javaReturnFlow(exitStatement, exitStatementFact, call, in, successor)
+                result ++= javaReturnFlow(exitStatement, exitStatementFact, call, in, unbCallChain, successor)
             }
         }
         result
@@ -72,16 +87,18 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
      *         the facts in `in` held before `statement` and `statement` calls `callee`.
      */
     protected def javaCallFlow(
+        start:  JavaStatement,
         call:   LLVMStatement,
         callee: Method,
         in:     Fact
     ): Set[JavaFact]
 
     protected def javaReturnFlow(
-        exit:      JavaStatement,
-        in:        JavaFact,
-        call:      LLVMStatement,
-        callFact:  Fact,
-        successor: LLVMStatement
+        exit:         JavaStatement,
+        in:           JavaFact,
+        call:         LLVMStatement,
+        callFact:     Fact,
+        unbCallChain: Seq[Callable],
+        successor:    Option[LLVMStatement]
     ): Set[Fact]
 }

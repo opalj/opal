@@ -170,6 +170,7 @@ lazy val `OPAL` = (project in file("."))
     tac,
     de,
     av,
+    apk,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -362,6 +363,20 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     libraryDependencies ++= Dependencies.llvm
   )
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
+lazy val apk = `APK`
+lazy val `APK` = (project in file("OPAL/apk"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "APK",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - APK"),
+    libraryDependencies ++= Dependencies.apk,
+  )
+  .dependsOn(
+    br % "it->it;it->test;test->test;compile->compile",
+    ll % "it->it;it->test;test->test;compile->compile"
+  )
   .configs(IntegrationTest)
 
 lazy val framework = `Framework`

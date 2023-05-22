@@ -12,11 +12,12 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.Callable
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
@@ -24,8 +25,8 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
-import org.opalj.tac.fpcf.analyses.ifds.taint.ForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
@@ -47,39 +48,18 @@ class ForwardClassForNameTaintAnalysis(project: SomeProject)
     extends IFDSAnalysis()(project, new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
-    extends ForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {
-    private val propertyStore = project.get(PropertyStoreKey)
-    /**
-     * Returns all methods that can be called from outside the library.
-     * The call graph must be computed before this method may be invoked.
-     *
-     * @return All methods that can be called from outside the library.
-     */
-    private def methodsCallableFromOutside: Set[DeclaredMethod] = {
-        declaredMethods.declaredMethods.filter(canBeCalledFromOutside).toSet
-    }
+    extends AbstractJavaForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {
 
-    /**
-     * Checks if some `method` can be called from outside the library.
-     * The call graph must be computed before this method may be invoked.
-     *
-     * @param method The method which may be callable from outside.
-     * @return True if `method` can be called from outside the library.
-     */
-    private def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
-        val FinalEP(_, callers) = propertyStore(method, Callers.key)
-        callers.hasCallersWithUnknownContext
-    }
     /**
      * The string parameters of all public methods are entry points.
      */
-    override def entryPoints: Seq[(Method, TaintFact)] = for {
-        m <- methodsCallableFromOutside.toSeq
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = for {
+        m <- icfg.methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index <- m.descriptor.parameterTypes.zipWithIndex.collect {
             case (pType, index) if pType == ObjectType.String => index
         }
-    } yield (m.definedMethod, Variable(-2 - index))
+    } yield (m.definedMethod, new IFDSFact(Variable(-2 - index)))
 
     /**
      * There is no sanitizing in this analysis.
@@ -107,6 +87,8 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
             Some(FlowFact(Seq(JavaMethod(call.method))))
         else None
     }
+
+    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] = None
 
     /**
      * Checks if a `method` is Class.forName.

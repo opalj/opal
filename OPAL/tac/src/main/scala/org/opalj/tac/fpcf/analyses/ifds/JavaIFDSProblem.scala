@@ -11,6 +11,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.Callable
 import org.opalj.ifds.IFDSProblem
 import org.opalj.ifds.Statement
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
@@ -18,8 +19,6 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.Return
-import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.value.ValueInformation
@@ -48,7 +47,7 @@ case class JavaStatement(
 
     override def toString: String = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
     override def callable: Method = method
-    override def node: CFGNode = cfg.bb(index)
+    override def basicBlock: CFGNode = cfg.bb(index)
     def stmt: Stmt[V] = code(index)
 }
 
@@ -57,30 +56,24 @@ object JavaStatement {
         JavaStatement(referenceStatement.method, newIndex, referenceStatement.code, referenceStatement.cfg)
 }
 
-abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
-    extends IFDSProblem[Fact, Method, JavaStatement](new ForwardICFG()(project)) {
+abstract class JavaForwardIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
+    extends JavaIFDSProblem[Fact](new JavaForwardICFG(project))
+
+abstract class JavaBackwardIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
+    extends JavaIFDSProblem[Fact](new JavaBackwardICFG(project))
+
+abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](override val icfg: JavaICFG)
+    extends IFDSProblem[Fact, Method, JavaStatement](icfg) {
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 
-    /**
-     * Checks if the return flow is actually possible from the given exit statement to the given successor.
-     * This is used to filter flows of exceptions into normal code without being caught
-     *
-     * @param exit the exit statement of the returning method
-     * @param successor the successor statement of the call within the callee function
-     * @return whether successor might actually be the next statement after the exit statement
-     */
-    protected def isPossibleReturnFlow(exit: JavaStatement, successor: JavaStatement): Boolean = {
-        (successor.node.isBasicBlock || successor.node.isNormalReturnExitNode) &&
-            (exit.stmt.astID == Return.ASTID || exit.stmt.astID == ReturnValue.ASTID) ||
-            (successor.node.isCatchNode || successor.node.isAbnormalReturnExitNode) &&
-            (exit.stmt.astID != Return.ASTID && exit.stmt.astID != ReturnValue.ASTID)
-    }
+    override def createCallable(callable: Method): Callable = JavaMethod(callable)
 
-    override def outsideAnalysisContext(callee: Method): Option[(JavaStatement, JavaStatement, Fact, Getter) => Set[Fact]] = callee.body.isDefined match {
-        case true  => None
-        case false => Some((_: JavaStatement, _: JavaStatement, in: Fact, _: Getter) => Set(in))
-    }
+    override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
+        if (callee.body.isDefined) None
+        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Callable], _: Getter) => Set(in))
+
+    override def outsideAnalysisContextUnbReturn(callee: Method): Option[OutsideAnalysisContextUnbReturnHandler] = None
 }
 
 object JavaIFDSProblem {
@@ -125,5 +118,4 @@ object JavaIFDSProblem {
                     - parameterOffset
             ).isReferenceType
         }
-
 }

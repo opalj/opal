@@ -28,6 +28,7 @@ abstract class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
 )
     extends IFDSAnalysis[IFDSFact, NativeFunction, LLVMStatement]()(project, ifdsProblem, propertyKey)
 
-abstract class NativeIFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact] extends IFDSAnalysisScheduler[IFDSFact, NativeFunction, LLVMStatement] {
+abstract class NativeIFDSAnalysisScheduler[IFDSFact <: AbstractIFDSFact]
+    extends IFDSAnalysisScheduler[IFDSFact, NativeFunction, LLVMStatement] {
     override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
 }

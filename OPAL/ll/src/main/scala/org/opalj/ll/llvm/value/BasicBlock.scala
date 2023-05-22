@@ -22,6 +22,13 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
     def instructions: InstructionIterator = new InstructionIterator(LLVMGetFirstInstruction(block_ref))
     def firstInstruction: Instruction = Instruction(LLVMGetFirstInstruction(block_ref))
     def lastInstruction: Instruction = Instruction(LLVMGetLastInstruction(block_ref))
+    def predecessors: Set[BasicBlock] = {
+        parent.basicBlocks
+            .filter(_.lastInstruction.isTerminator)
+            .toSet
+            .filter(_.terminator.get.successors
+                .exists(_.parent.nodeId.equals(nodeId)))
+    }
 
     def terminator: Option[Instruction with Terminator] = {
         OptionalInstruction(LLVMGetBasicBlockTerminator(block_ref)) match {

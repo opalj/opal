@@ -10,6 +10,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.Callable
+import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.analyses.ifds.NativeFunction
@@ -23,7 +25,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
-    override val entryPoints: Seq[(NativeFunction, NativeTaintFact)] = Seq.empty
+    override val entryPoints: Seq[(NativeFunction, IFDSFact[NativeTaintFact, LLVMStatement])] = Seq.empty
     override val javaPropertyKey: PropertyKey[Taint] = Taint.key
 
     /**
@@ -38,6 +40,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     override protected def sanitizesParameter(call: LLVMStatement, in: NativeTaintFact): Boolean = false
 
     /**
+     * TODO: DEAD CODE - remove?
      * Creates a new variable fact for the callee, if the source was called.
      */
     protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeTaintFact] =
@@ -45,6 +48,7 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
         else Set.empty
 
     /**
+     * TODO: DEAD CODE - remove?
      * Create a FlowFact, if sink is called with a tainted variable.
      * Note, that sink does not accept array parameters. No need to handle them.
      */
@@ -55,6 +59,9 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
     ): Option[NativeFlowFact] =
         if (callee.name == "sink" && in.contains(JavaVariable(-2))) Some(NativeFlowFact(Seq(call.function)))
         else None
+
+    override def createFlowFactAtExit(callee: NativeFunction, in: NativeTaintFact,
+                                      unbCallChain: Seq[Callable]): Option[NativeTaintFact] = None
 }
 
 class SimpleNativeForwardTaintAnalysis(project: SomeProject)
