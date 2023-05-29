@@ -5,6 +5,7 @@ import org.opalj.apk.parser.ApkParser
 import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.Ignore
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.net.URL
@@ -15,6 +16,7 @@ import java.net.URL
  * @author Nicolas Gross
  */
 @org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+@Ignore // TODO Does not run @github since docker is missing
 class ApkParserTest extends AnyFunSuite with BeforeAndAfterAll {
 
     var project: Project[URL] = _
