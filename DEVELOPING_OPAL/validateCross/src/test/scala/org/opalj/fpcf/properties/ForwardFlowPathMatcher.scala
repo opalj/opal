@@ -1,15 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package properties
-package taint
+package org.opalj.fpcf.properties
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.ObjectType
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact

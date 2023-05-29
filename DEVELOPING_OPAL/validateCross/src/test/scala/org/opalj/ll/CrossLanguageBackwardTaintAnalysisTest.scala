@@ -3,10 +3,11 @@ package org.opalj.ll;
 
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertiesTest
-import org.opalj.fpcf.properties.taint_xlang.XlangBackwardFlowPath
+import org.opalj.fpcf.properties.taint.XlangBackwardFlowPath
 import org.opalj.ifds.IFDSFact
 import org.opalj.ll.fpcf.analyses.cg.SimpleNativeCallGraphKey
-import org.opalj.ll.fpcf.analyses.ifds.taint.{JavaBackwardTaintAnalysisScheduler, NativeBackwardTaintAnalysisScheduler}
+import org.opalj.ll.fpcf.analyses.ifds.taint.JavaBackwardTaintAnalysisScheduler
+import org.opalj.ll.fpcf.analyses.ifds.taint.NativeBackwardTaintAnalysisScheduler
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 
@@ -15,7 +16,7 @@ import java.net.URL
 class CrossLanguageBackwardTaintAnalysisTest extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-            current => List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint/TaintTest.ll")
+            current => List("./DEVELOPING_OPAL/validateCross/src/test/resources/llvm/cross_language/taint/TaintTest.ll")
         )
         val llvmProject = p.get(LLVMProjectKey)
 

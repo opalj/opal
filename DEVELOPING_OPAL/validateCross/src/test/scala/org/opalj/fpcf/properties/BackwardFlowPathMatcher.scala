@@ -1,17 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package properties
-package taint
+package org.opalj.fpcf.properties
 
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.fpcf.{EPS, Entity, FinalEP, Property, PropertyKey}
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.ifds.BackwardTaintAnalysisFixtureScheduler
 import org.opalj.ifds.IFDSFact
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.taint.{BackwardTaintAnalysisFixtureScheduler, FlowFact, TaintFact}
+import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.properties.Taint
 
 class BackwardFlowPathMatcher extends AbstractBackwardFlowPathMatcher(BackwardTaintAnalysisFixtureScheduler.property.key)

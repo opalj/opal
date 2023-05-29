@@ -30,13 +30,16 @@ class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
         implicit val config = BaseConfig.withValue(ifds.ConfigKeyPrefix+"debug", ConfigValueFactory.fromAnyRef(true))
         val project =
             Project(
-                TestResources.locateTestResources("/llvm/cross_language/taint/", "ll"),
+                TestResources.locateTestResources(
+                    "/llvm/cross_language/taint/",
+                    "DEVELOPING_OPAL/validateCross"
+                ),
                 GlobalLogContext,
                 config
             )
 
         project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-            _ => List(TestResources.locateTestResources("/llvm/cross_language/taint/TaintTest.ll", "ll").toString)
+            _ => List(TestResources.locateTestResources("/llvm/cross_language/taint/TaintTest.ll", "DEVELOPING_OPAL/validateCross").toString)
         )
         project.get(LLVMProjectKey)
         project.get(RTACallGraphKey)

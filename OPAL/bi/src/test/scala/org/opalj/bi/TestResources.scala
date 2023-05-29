@@ -32,6 +32,8 @@ object TestResources {
         // if we are in a "developing opal" sub-project's root folder
         resourceFile => { Some("../../OPAL/"+resourceFile) },
         // if the current path is set to "target/scala-.../classes"
+        resourceFile => { Some("./"+resourceFile) },
+        // Allow resources in Subprojects of DEVELOPING_OPAL by specifying their full path
         resourceFile => {
             val userDir = System.getProperty("user.dir")
             if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {

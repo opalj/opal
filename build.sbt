@@ -459,6 +459,22 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
   )
   .configs(IntegrationTest)
 
+lazy val validateCross = `ValidateCross`
+lazy val `ValidateCross` = (project in file("DEVELOPING_OPAL/validateCross"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "Validate Cross",
+    publishArtifact := false,
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Validate"),
+    Test / compileOrder := CompileOrder.Mixed
+  )
+  .dependsOn(
+      ll % "it->it;it->test;test->test;compile->compile",
+      validate % "it->it;it->test;test->test;compile->compile"
+  )
+  .configs(IntegrationTest)
+
+
 lazy val demos = `Demos`
 lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
   .settings(buildSettings: _*)

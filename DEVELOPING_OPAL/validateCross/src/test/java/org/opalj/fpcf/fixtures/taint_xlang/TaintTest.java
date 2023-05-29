@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.taint_xlang;
 
-import org.opalj.fpcf.properties.taint_xlang.XlangBackwardFlowPath;
+import org.opalj.fpcf.properties.taint.XlangBackwardFlowPath;
 
 /**
  * Add VM argument to run main: -Djava.library.path=DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint

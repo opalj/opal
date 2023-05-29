@@ -15,10 +15,10 @@ import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSPropertyMetaInformation
-import org.opalj.ll.fpcf.analyses.ifds.taint.JavaForwardTaintProblem
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
@@ -36,7 +36,7 @@ import scala.collection.mutable
 class ForwardTaintAnalysisFixture(implicit project: SomeProject)
     extends IFDSAnalysis()(project, new ForwardTaintProblemFixture(project), Taint)
 
-class ForwardTaintProblemFixture(p: SomeProject) extends JavaForwardTaintProblem(p) {
+class ForwardTaintProblemFixture(p: SomeProject) extends AbstractJavaForwardTaintProblem(p) {
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
@@ -85,7 +85,7 @@ class ForwardTaintProblemFixture(p: SomeProject) extends JavaForwardTaintProblem
 }
 
 object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
-    override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture(p)
+    override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture()(p)
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey, DeclaredMethodsKey, PropertyStoreKey)

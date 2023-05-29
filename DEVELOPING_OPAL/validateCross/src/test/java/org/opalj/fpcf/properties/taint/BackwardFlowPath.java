@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.taint;
 
+import org.opalj.fpcf.properties.BackwardFlowPathMatcher;
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
