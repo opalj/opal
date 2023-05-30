@@ -55,8 +55,8 @@ import org.opalj.tac.common.DefinitionSitesKey
  */
 abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
-    protected def testFilePath: String = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
-    protected def propertyPaths: List[String] = List(
+    final private[this] val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
+    final private[this] val propertyPaths = List(
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties",
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/br/analyses/properties"
     )
