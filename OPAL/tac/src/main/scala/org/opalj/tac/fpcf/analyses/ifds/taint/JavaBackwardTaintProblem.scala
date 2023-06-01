@@ -1,14 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ifds.taint
 
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{Method, ObjectType}
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac._
+import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.{JavaBackwardIFDSProblem, JavaIFDSProblem, JavaStatement}
-
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 /**
  * Implementation of a backward taint analysis for Java code.
  *

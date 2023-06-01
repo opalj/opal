@@ -1,16 +1,38 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.taint
+package org.opalj
+package tac
+package fpcf
+package analyses
+package taint
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{DeclaredMethodsKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.{EPS, FinalEP, PropertyBounds, PropertyStore}
-import org.opalj.ifds.{Callable, IFDSAnalysis, IFDSAnalysisScheduler, IFDSFact, IFDSPropertyMetaInformation}
-import org.opalj.tac.cg.{RTACallGraphKey, TypeIteratorKey}
-import org.opalj.tac.fpcf.analyses.ifds.taint._
-import org.opalj.tac.fpcf.analyses.ifds.{IFDSEvaluationRunner, JavaMethod, JavaStatement}
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
+import org.opalj.ifds.Callable
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSFact
+import org.opalj.ifds.IFDSPropertyMetaInformation
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.JavaBackwardTaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
+import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
+import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
 import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.{TACAI, Taint}
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.Taint
 
 import java.io.File
 
@@ -29,8 +51,8 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * The string parameters of all public methods are entry points.
      */
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
-        p.allProjectClassFiles.filter(classFile =>
-            classFile.thisType.fqn == "java/lang/Class")
+        p.allProjectClassFiles
+            .filter(classFile => classFile.thisType.fqn == "java/lang/Class")
             .flatMap(classFile => classFile.methods)
             .filter(_.name == "forName")
             .map(method => method -> new IFDSFact(Variable(-2)))
@@ -48,7 +70,9 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * Do not perform unbalanced return for methods, which can be called from outside the library.
      */
-    override def shouldPerformUnbalancedReturn(source: (Method, IFDSFact[TaintFact, JavaStatement])): Boolean = {
+    override def shouldPerformUnbalancedReturn(
+        source: (Method, IFDSFact[TaintFact, JavaStatement])
+    ): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
             (!icfg.canBeCalledFromOutside(source._1) ||
                 // The source is callable from outside, but should create unbalanced return facts.
@@ -59,8 +83,11 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * This analysis does not create FlowFacts at calls.
      * Instead, FlowFacts are created at the start node of methods.
      */
-    override protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact,
-                                                unbCallChain: Seq[Callable]): Option[FlowFact] = None
+    override protected def createFlowFactAtCall(
+        call:         JavaStatement,
+        in:           TaintFact,
+        unbCallChain: Seq[Callable]
+    ): Option[FlowFact] = None
 
     /**
      * This analysis does not create FlowFacts at returns.
@@ -77,8 +104,11 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * If we analyzed a transitive caller of the sink, which is callable from outside the library,
      * and a formal parameter is tainted, we create a FlowFact.
      */
-    override def createFlowFactAtExit(callee: Method, in: TaintFact,
-                                      unbCallChain: Seq[Callable]): Option[FlowFact] = {
+    override def createFlowFactAtExit(
+        callee:       Method,
+        in:           TaintFact,
+        unbCallChain: Seq[Callable]
+    ): Option[FlowFact] = {
         if (unbCallChain.nonEmpty && // source fact is unbalanced return fact
             icfg.canBeCalledFromOutside(callee) && (in match {
                 // index < 0 means, that it is a parameter.
@@ -92,43 +122,57 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     }
 }
 
-object BackwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+object BackwardClassForNameTaintAnalysisScheduler
+    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
 
-    override def init(p: SomeProject, ps: PropertyStore): BackwardClassForNameTaintAnalysisScheduler = {
+    override def init(
+        p:  SomeProject,
+        ps: PropertyStore
+    ): BackwardClassForNameTaintAnalysisScheduler = {
         p.get(RTACallGraphKey)
         new BackwardClassForNameTaintAnalysisScheduler()(p)
     }
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers)) // TODO check
+    override def uses: Set[PropertyBounds] =
+        Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers)) // TODO check
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey) // TODO check
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey) // TODO check
 }
 
 class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
 
-    override def analysisClass: BackwardClassForNameTaintAnalysisScheduler.type = BackwardClassForNameTaintAnalysisScheduler
+    override def analysisClass: BackwardClassForNameTaintAnalysisScheduler.type =
+        BackwardClassForNameTaintAnalysisScheduler
 
     override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit = {
         val propertyKey = BackwardClassForNameTaintAnalysisScheduler.property.key
-        val flowFactsAtSources = ps.entities(propertyKey).collect {
-            case EPS((m: Method, inputFact)) if analysis.ifdsProblem.asInstanceOf[BackwardClassForNameTaintProblem]
-                .icfg.canBeCalledFromOutside(m) => (m, inputFact)
-        }.flatMap(ps(_, propertyKey) match {
-            case FinalEP(_, Taint(result, _)) =>
-                result.values.fold(Set.empty)((acc, facts) => acc ++ facts).filter {
-                    case FlowFact(_) => true
-                    case _           => false
-                }
-            case _ => Seq.empty
-        })
+        val flowFactsAtSources = ps
+            .entities(propertyKey)
+            .collect {
+                case EPS((m: Method, inputFact)) if analysis.ifdsProblem
+                    .asInstanceOf[BackwardClassForNameTaintProblem]
+                    .icfg
+                    .canBeCalledFromOutside(m) =>
+                    (m, inputFact)
+            }
+            .flatMap(ps(_, propertyKey) match {
+                case FinalEP(_, Taint(result, _)) =>
+                    result.values.fold(Set.empty)((acc, facts) => acc ++ facts).filter {
+                        case FlowFact(_) => true
+                        case _           => false
+                    }
+                case _ => Seq.empty
+            })
         for {
             fact <- flowFactsAtSources
         } {
             fact match {
-                case FlowFact(flow) => println(s"flow: "+flow.asInstanceOf[Seq[Method]].map(_.toJava).mkString(", "))
-                case _              =>
+                case FlowFact(flow) =>
+                    println(s"flow: "+flow.asInstanceOf[Seq[Method]].map(_.toJava).mkString(", "))
+                case _ =>
             }
         }
     }

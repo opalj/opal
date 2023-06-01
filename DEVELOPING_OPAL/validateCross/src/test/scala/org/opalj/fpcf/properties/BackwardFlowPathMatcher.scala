@@ -1,7 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties
 
-import org.opalj.br._
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ElementValue
+import org.opalj.br.ElementValuePair
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.EPS

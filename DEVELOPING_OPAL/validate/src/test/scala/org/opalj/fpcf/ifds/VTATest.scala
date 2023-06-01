@@ -5,7 +5,8 @@ import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertiesTest
-import org.opalj.fpcf.properties.vta.{ExpectedCallee, ExpectedType}
+import org.opalj.fpcf.properties.vta.ExpectedCallee
+import org.opalj.fpcf.properties.vta.ExpectedType
 import org.opalj.ifds.IFDSFact
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
