@@ -12,7 +12,8 @@ import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.DUVar
+import org.opalj.value.ValueInformation
 import org.opalj.xl.axa.common.Language.Language
 
 import scala.collection.mutable
@@ -50,8 +51,9 @@ object DetectorLattice extends DetectorPropertyMetaInformation {
 
 case object NoCrossLanguageCall extends DetectorLattice
 
-case class CrossLanguageCall(language: Language, code: String,
-                             assignments: mutable.Map[String, Tuple2[FieldType, Set[DefinitionSite]]]
-)
-    extends DetectorLattice
+case class CrossLanguageExecution(language: Language, code: String, functionName: String,
+                             assignments: mutable.Map[String, Tuple2[FieldType, Set[AnyRef]]],
+                                  returnValues: mutable.Map[DUVar[ValueInformation], String]) extends DetectorLattice
+
+case class CrossLanguageFunctionCalls(language:Language, code:String, functions:List[String]) extends DetectorLattice
 
