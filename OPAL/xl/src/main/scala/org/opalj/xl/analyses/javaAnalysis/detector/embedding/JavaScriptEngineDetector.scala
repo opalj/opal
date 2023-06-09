@@ -47,172 +47,165 @@ import org.opalj.xl.axa.common.Language.Language
 import org.opalj.xl.axa.detector.CrossLanguageExecution
 import org.opalj.xl.axa.detector.DetectorLattice
 import org.opalj.xl.axa.detector.NoCrossLanguageCall
-
 import scala.collection.mutable
+
+import org.opalj.tac.Call
+import org.opalj.tac.VirtualFunctionCallStatement
 
 /**
  * Detects invocations of JavaScript code within Java
  *
  */
-class JavaScriptEngineDetector private[analyses] (final val project: SomeProject) extends FPCFAnalysis {
+class JavaScriptEngineDetector private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
 
-  private type V = DUVar[ValueInformation]
+    private type V = DUVar[ValueInformation]
 
-  val definitionSites = project.get(DefinitionSitesKey)
-  val virtualFormalParameters = project.get(VirtualFormalParametersKey)
-  val declaredMethods = project.get(DeclaredMethodsKey)
+    val definitionSites = project.get(DefinitionSitesKey)
+    val virtualFormalParameters = project.get(VirtualFormalParametersKey)
+    val declaredMethods = project.get(DeclaredMethodsKey)
 
-  case class JavaScriptEngineDetectorState(
-       method:Method,
-       assignments: mutable.Map[String, Tuple2[FieldType, Set[AnyRef]]] = mutable.Map.empty,
-       returnValues: mutable.Map[V, String] = mutable.Map.empty,
-       var sourceCode: String = "",
-       var functionName: String = "",
-       var functionParams: List[V] = List.empty,
-       var language: Language = Language.Unknown,
-       var tacDependees: Set[EOptionP[Entity, Property]] = Set.empty,
-  )
+    val scriptEngine = ObjectType("javax/script/ScriptEngine")
+    val engineManager = ObjectType("javax/script/ScriptEngineManager")
+    val graalContext = ObjectType("org/graalvm/polyglot/Context")
+
+    case class JavaScriptEngineDetectorState(
+            method:             Method,
+            assignments:        mutable.Map[String, Tuple2[FieldType, Set[AnyRef]]] = mutable.Map.empty,
+            returnValues:       mutable.Map[V, String]                              = mutable.Map.empty,
+            var sourceCode:     String                                              = "",
+            var functionName:   String                                              = "",
+            var functionParams: List[V]                                             = List.empty,
+            var language:       Language                                            = Language.Unknown,
+            var tacDependees:   Set[EOptionP[Entity, Property]]                     = Set.empty
+    )
 
     def analyzeMethod(method: Method): ProperPropertyComputationResult = {
-    def getTACAI(method: Method)(implicit state:JavaScriptEngineDetectorState) : Option[TACode[TACMethodParameter, V]] = {
-      val tacEOptP = propertyStore(method, TACAI.key)
-      if (tacEOptP.hasUBP)
-        tacEOptP.ub.tac
-      else {
-        state.tacDependees += tacEOptP
-        None
-      }
-    }
-
-    def getString(id: Int, stmts:Array[Stmt[V]]): String =
-      stmts(id).asAssignment.expr.asStringConst.value
-
-      def c(eps: SomeEPS)(implicit state:JavaScriptEngineDetectorState): ProperPropertyComputationResult = {
-        state.tacDependees = state.tacDependees.filter(_.e!=eps.e)
-        eps match {
-          case UBP(tacai:TheTACAI) =>
-            val stmts = tacai.tac.get.stmts
-            scanForEngine(stmts)
-          case ep =>
-            state.tacDependees += ep
+        def getTACAI(method: Method)(implicit state: JavaScriptEngineDetectorState): Option[TACode[TACMethodParameter, V]] = {
+            val tacEOptP = propertyStore(method, TACAI.key)
+            if (tacEOptP.hasUBP)
+                tacEOptP.ub.tac
+            else {
+                state.tacDependees += tacEOptP
+                None
+            }
         }
+
+        def getString(id: Int, stmts: Array[Stmt[V]]): String =
+            stmts(id).asAssignment.expr.asStringConst.value
+
+        def c(eps: SomeEPS)(implicit state: JavaScriptEngineDetectorState): ProperPropertyComputationResult = {
+            state.tacDependees = state.tacDependees.filter(_.e != eps.e)
+            eps match {
+                case UBP(tacai: TheTACAI) =>
+                    val stmts = tacai.tac.get.stmts
+                    scanForEngine(stmts)
+                case ep =>
+                    state.tacDependees += ep
+            }
+            createResults
+        }
+
+        def scanForEngine(stmts: Array[Stmt[V]])(implicit state: JavaScriptEngineDetectorState): Unit = {
+            stmts.foreach { stmt =>
+                stmt match {
+
+                    case VirtualFunctionCallStatement(c @ Call(this.engineManager, _, "getEngineByName", _)) =>
+                        // TODO These "definedBy.head" are incorrect, there can be several definition sites that need to be ckecked
+                        val name = getString(c.params.head.asVar.definedBy.head, stmts).toLowerCase
+                        if (jsEngineNames.contains(name.toLowerCase))
+                            state.language = Language.JavaScript
+
+                    case VirtualFunctionCallStatement(c @ Call(this.engineManager, _, "getEngineByExtension", _, )) =>
+                        val extension = getString(c.params.head.asVar.definedBy.head, stmts)
+                        if (jsExtensions.contains(extension.toLowerCase))
+                            state.language = Language.JavaScript
+
+                    case VirtualFunctionCallStatement(c @ Call(this.engineManager, _, "getEngineByMimeType", _)) =>
+                        val mimetype = getString(c.params.head.asVar.definedBy.head, stmts)
+                        if (jsMimetypes.contains(mimetype.toLowerCase))
+                            state.language = Language.JavaScript
+
+                    // TODO Why don't we map back the return value of the eval/invokeFunction invocations?
+                    case VirtualFunctionCallStatement(c @ Call(this.scriptEngine, _, "eval", _, )) =>
+                        // TODO Support eval variants that take a Reader?
+                        //state.sourceCode += scala.io.Source.fromURL(url).mkString
+                        state.sourceCode += getString(c.params.head.asVar.definedBy.head, stmts)+"\n"
+
+                    case VirtualFunctionCallStatement(c @ Call(this.graalContext, _, "eval", _)) =>
+                        if (c.params.size == 1) {
+                            // TODO Support graalvm Source class
+                        } else {
+                            val language = getString(c.params.head.asVar.definedBy.head, stmts)
+                            if (language == "js") {
+                                state.language = Language.JavaScript
+                                state.sourceCode += getString(c.params(1).asVar.definedBy.head, stmts)+"\n"
+                            }
+                        }
+
+                    // TODO Graalvm supports a similar concept, with an executable Value as the result of either Context.eval or Context.parse
+                    case VirtualFunctionCallStatement(c @ Call(this.scriptEngine, _, "invokeFunction", _)) =>
+                        // TODO This implementation seems wrong, invokeFunction must be called on an Invocable and we have to trace it back to a ScriptEngine.eval
+                        state.functionName = getString(c.params.head.asVar.definedBy.head, stmts)
+                        state.functionParams = c.params.tail.toList.map(_.asVar)
+
+                    // TODO Support Graalvm getBindings/getPolyglotBindings -> getMember?
+                    case Assignment(_, lhs, VirtualFunctionCall(_, this.scriptEngine, _, "get", _, _, params)) =>
+                        val jsValueName = getString(params.head.asVar.definedBy.head, stmts)
+                        state.returnValues += lhs -> jsValueName
+
+                    // TODO Beside put, should we support Binding and ScriptContext as ways to provide values to the script?
+                    // TODO Support Graalvm getBindings/getPolyglotBindings -> putMember?
+                    case VirtualMethodCall(_, this.scriptEngine, _, "put", _, _, params) =>
+                        val defSites: Set[AnyRef] =
+                            params(1).asVar.definedBy.map(id => {
+                                if (id < 0) {
+                                    virtualFormalParameters(declaredMethods(method))(-id - 1)
+                                } else {
+                                    val pc = stmts(id).asAssignment.pc
+                                    definitionSites(method, pc)
+                                }
+                            })
+
+                        val value = params(1).asVar.value
+                        val tpe =
+                            if (value.isPrimitiveValue)
+                                value.asPrimitiveValue.primitiveType.asFieldType
+                            else
+                                value.asReferenceValue.leastUpperType.get.asFieldType
+                        state.assignments += getString(params.head.asVar.definedBy.head, stmts) -> (tpe, defSites)
+
+                    case _ =>
+                }
+            }
+        }
+
+        def createResults(implicit state: JavaScriptEngineDetectorState): ProperPropertyComputationResult = {
+            if (state.tacDependees.isEmpty) {
+                if (state.sourceCode != "" && state.language != Language.Unknown) {
+                    Result(method, CrossLanguageExecution(state.language, state.sourceCode, state.functionName, state.assignments, state.returnValues))
+                } else {
+                    Result(method, NoCrossLanguageCall)
+                }
+            } else {
+                InterimResult(
+                    method,
+                    NoCrossLanguageCall,
+                    CrossLanguageExecution(state.language, state.sourceCode, state.functionName, state.assignments, state.returnValues),
+                    state.tacDependees,
+                    c
+                )
+            }
+        }
+
+        //start
+        implicit val state: JavaScriptEngineDetectorState = JavaScriptEngineDetectorState(method)
+        val optionTACAI = getTACAI(method)
+        if (optionTACAI.isEmpty && state.tacDependees.isEmpty) {
+            Result(method, NoCrossLanguageCall)
+        } else if (optionTACAI.isDefined)
+            scanForEngine(optionTACAI.get.stmts)
         createResults
-      }
-
-    def scanForEngine(stmts:Array[Stmt[V]])(implicit state:JavaScriptEngineDetectorState): Unit = {
-    stmts.foreach { stmt =>
-      stmt match {
-
-        case AssignmentLikeStmt(
-            _,
-            VirtualFunctionCall(
-              _,
-              ObjectType("javax/script/ScriptEngineManager"),
-              _,
-              "getEngineByName",
-              _,
-              _,
-              params
-            )
-            ) =>
-          val name = getString(params.head.asVar.definedBy.head, stmts).toLowerCase
-          if (jsEngineNames.contains(name))
-            state.language = Language.JavaScript
-
-        case AssignmentLikeStmt(_,
-        VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngineManager"), _, "getEngineByExtension", _, _, params
-            )
-            ) =>
-          val extension = getString(params.head.asVar.definedBy.head, stmts)
-          if (jsExtensions.contains(extension))
-            state.language = Language.JavaScript
-
-        case AssignmentLikeStmt(
-            _,
-            VirtualFunctionCall(
-              _,
-              ObjectType("javax/script/ScriptEngineManager"),
-              _,
-              "getEngineByMimeType",
-              _,
-              _,
-              params
-            )
-            ) =>
-          val mimetype = getString(params.head.asVar.definedBy.head, stmts)
-          if (jsMimetypes.contains(mimetype))
-            state.language = Language.JavaScript
-
-        case Assignment(
-        _, lhs, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "get", _, _, params)) =>
-            val jsValueName = getString(params.head.asVar.definedBy.head, stmts)
-            state.returnValues+=lhs->jsValueName
-
-        case AssignmentLikeStmt(
-        _, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "eval", _, _, params)) =>
-
-          //state.sourceCode += scala.io.Source.fromURL(url).mkString
-          state.sourceCode +=  getString(params.head.asVar.definedBy.head, stmts) + "\n"
-
-
-
-        case AssignmentLikeStmt(
-        _, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "invokeFunction", _, _, params)) =>
-          // TODO Handle Invocable.invokeFunction? It can be called on the ScriptEngine after an eval that defined top-level functions
-         state.functionName = getString(params.head.asVar.definedBy.head,stmts)
-          state.functionParams = params.tail.toList.map(_.asVar)
-
-        case VirtualMethodCall(_, ObjectType("javax/script/ScriptEngine"), _, "put", _, _, params) =>
-              val defSites: Set[AnyRef] =
-                params(1).asVar.definedBy.map(id => {
-                  if (id < 0) {
-                    virtualFormalParameters(declaredMethods(method))(-id - 1)
-                  } else {
-                    val pc = stmts(id).asAssignment.pc
-                    definitionSites(method, pc)
-                  }
-                })
-
-              val value = params.tail.head.asVar.value
-              val tpe =
-                if (value.isPrimitiveValue)
-                  value.asPrimitiveValue.primitiveType.asFieldType
-                else
-                  value.asReferenceValue.leastUpperType.get.asFieldType
-              state.assignments += getString(params.head.asVar.definedBy.head, stmts) -> (tpe, defSites)
-
-        case _ =>
-      }
     }
-      }
-
-    def createResults(implicit state: JavaScriptEngineDetectorState): ProperPropertyComputationResult = {
-      if (state.tacDependees.isEmpty) {
-        if (state.sourceCode != "" && state.language != Language.Unknown) {
-          Result(method, CrossLanguageExecution(state.language, state.sourceCode, state.functionName, state.assignments, state.returnValues))
-        } else{
-          Result(method, NoCrossLanguageCall)
-        }
-      } else{
-        InterimResult(
-          method,
-          NoCrossLanguageCall,
-          CrossLanguageExecution(state.language, state.sourceCode, state.functionName, state.assignments, state.returnValues),
-          state.tacDependees,
-          c
-        )
-      }
-    }
-
-      //start
-      implicit val state:JavaScriptEngineDetectorState = JavaScriptEngineDetectorState(method)
-      val optionTACAI = getTACAI(method)
-      if (optionTACAI.isEmpty && state.tacDependees.isEmpty){
-        Result(method, NoCrossLanguageCall)
-    } else if(optionTACAI.isDefined)
-          scanForEngine(optionTACAI.get.stmts)
-      createResults
-  }
 
     def lazilyDetectJavaScriptEngine(entity: Entity): ProperPropertyComputationResult = {
         entity match {
@@ -223,7 +216,7 @@ class JavaScriptEngineDetector private[analyses] (final val project: SomeProject
 }
 
 object JavaScriptEngineDetector {
-    val jsEngineNames = Set("nashorn", "rhino", "js", "javascript", "ecmascript")
+    val jsEngineNames = Set("nashorn", "rhino", "js", "javascript", "ecmascript", "graal.js")
     val jsExtensions = Set("js")
     val jsMimetypes = Set("application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript")
 }
@@ -268,7 +261,7 @@ object LazyJavaScriptEngineDetector extends JavaScriptEngineDetectorScheduler
         unused:        Null
     ): FPCFAnalysis = {
         val analysis = new JavaScriptEngineDetector(project)
-        propertyStore.registerLazyPropertyComputation(DetectorLattice.key,analysis.lazilyDetectJavaScriptEngine)
+        propertyStore.registerLazyPropertyComputation(DetectorLattice.key, analysis.lazilyDetectJavaScriptEngine)
         analysis
     }
 }
