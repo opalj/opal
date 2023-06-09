@@ -2,9 +2,8 @@
 package org.opalj.xl.axa.common
 
 object Language extends Enumeration {
-  type Language = Value
+    type Language = Value
 
-  val Unknown, JavaScript, Java, WebAssembly, TIP, C, CPP = Value
+    val Unknown, JavaScript, Java, WebAssembly, TIP, C, CPP = Value
 }
-
 

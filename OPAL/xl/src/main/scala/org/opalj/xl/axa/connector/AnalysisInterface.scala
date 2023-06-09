@@ -9,12 +9,12 @@ import dk.brics.tajs.analysis.axa.connector.IConnector
 import java.io.File
 
 trait AnalysisInterface[State, K, V] {
-    def analyze(file: File,
-                propertyChanges: scala.collection.mutable.Map[K, V],
-                connector: IConnector
-  ): State
+    def analyze(
+        file:            File,
+        propertyChanges: scala.collection.mutable.Map[K, V],
+        connector:       IConnector
+    ): State
 
     def resume(file: File, propertyChanges: scala.collection.mutable.Map[K, V]): State
-
 
 }

@@ -33,52 +33,52 @@ import org.opalj.xl.axa.translator.tajs.TajsInquiries
 
 class OpalTajsConnector(val project: SomeProject) extends FPCFAnalysis {
 
-  def analyzeMethod(method: Method): ProperPropertyComputationResult = {
+    def analyzeMethod(method: Method): ProperPropertyComputationResult = {
 
-    var dependees: Set[EOptionP[Entity, Property]] = Set.empty
+        var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
-    def c(eps: SomeEPS): ProperPropertyComputationResult = {
-      dependees -= eps
-      eps match {
-        case UBP(JavaScriptCall(file, propertyChanges)) =>
-          println("propertyChanges: ")
-          propertyChanges.foreach(println(_))
-          createResult(TAJS.analyze(file, propertyChanges, new TajsOpalConnector(project))) //TODO figure out whether "resume" suits better
-        case LBP(NoJavaScriptCall) => Result(method, NoAnalysisResult)
-        case ep =>
-          dependees += ep
-          createResult(null)
-      }
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
+            dependees -= eps
+            eps match {
+                case UBP(JavaScriptCall(file, propertyChanges)) =>
+                    println("propertyChanges: ")
+                    propertyChanges.foreach(println(_))
+                    createResult(TAJS.analyze(file, propertyChanges, new TajsOpalConnector(project))) //TODO figure out whether "resume" suits better
+                case LBP(NoJavaScriptCall) => Result(method, NoAnalysisResult)
+                case ep =>
+                    dependees += ep
+                    createResult(null)
+            }
+        }
+
+        def createResult(o: Object): ProperPropertyComputationResult = {
+            if (dependees.isEmpty) {
+                if (o == null)
+                    Result(method, NoAnalysisResult)
+                else
+                    Result(method, FinalAnalysisResult(o))
+            } else
+                InterimResult(
+                    method,
+                    NoAnalysisResult,
+                    InterimAnalysisResult(o),
+                    dependees,
+                    c
+                )
+        }
+
+        propertyStore(method, TajsInquiries.key) match {
+            case UBP(JavaScriptCall(file, propertyChanges)) =>
+                println("propertyChanges: ")
+                propertyChanges.foreach(println(_))
+                createResult(TAJS.analyze(file, propertyChanges, new TajsOpalConnector(project))) //TODO
+            case LBP(NoJavaScriptCall) =>
+                Result(method, NoAnalysisResult)
+            case ep =>
+                dependees += ep
+                createResult(null)
+        }
     }
-
-    def createResult(o: Object): ProperPropertyComputationResult = {
-      if (dependees.isEmpty) {
-        if (o == null)
-          Result(method, NoAnalysisResult)
-        else
-          Result(method, FinalAnalysisResult(o))
-      } else
-        InterimResult(
-          method,
-          NoAnalysisResult,
-          InterimAnalysisResult(o),
-          dependees,
-          c
-        )
-    }
-
-    propertyStore(method, TajsInquiries.key) match {
-      case UBP(JavaScriptCall(file, propertyChanges)) =>
-        println("propertyChanges: ")
-        propertyChanges.foreach(println(_))
-        createResult(TAJS.analyze(file, propertyChanges, new TajsOpalConnector(project))) //TODO
-      case LBP(NoJavaScriptCall) =>
-        Result(method, NoAnalysisResult)
-      case ep =>
-        dependees += ep
-        createResult(null)
-    }
-  }
 }
 /*class JavaScriptAnalysisConnector(val project: SomeProject) extends FPCFAnalysis {
 
@@ -132,21 +132,21 @@ class OpalTajsConnector(val project: SomeProject) extends FPCFAnalysis {
 
 object TriggeredOpalTajsConnectorScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
-  override def requiredProjectInformation: ProjectInformationKeys = Seq()
-  override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(TajsInquiries))
-  override def triggeredBy: PropertyKey[TajsInquiries] = TajsInquiries.key
+    override def requiredProjectInformation: ProjectInformationKeys = Seq()
+    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(TajsInquiries))
+    override def triggeredBy: PropertyKey[TajsInquiries] = TajsInquiries.key
 
-  override def register(
-      p: SomeProject,
-      ps: PropertyStore,
-      unused: Null
-  ): OpalTajsConnector = {
-    val analysis = new OpalTajsConnector(p)
-    ps.registerTriggeredComputation(triggeredBy, analysis.analyzeMethod)
-    analysis
-  }
+    override def register(
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
+    ): OpalTajsConnector = {
+        val analysis = new OpalTajsConnector(p)
+        ps.registerTriggeredComputation(triggeredBy, analysis.analyzeMethod)
+        analysis
+    }
 
-  override def derivesEagerly: Set[PropertyBounds] = Set.empty
-  override def derivesCollaboratively: Set[PropertyBounds] =
-    Set(PropertyBounds.ub(AnalysisResults))
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        Set(PropertyBounds.ub(AnalysisResults))
 }

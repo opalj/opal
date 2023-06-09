@@ -46,7 +46,6 @@ object CentralCoordinator extends AnalysisApplication with OneStepAnalysis[URL, 
 
     final override val analysis = this
 
-
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
 
         var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
@@ -88,10 +87,10 @@ object CentralCoordinator extends AnalysisApplication with OneStepAnalysis[URL, 
         analyses ++= RTACallGraphKey.callGraphSchedulers(project)
         analyses ++= registeredAnalyses(project)
         analyses ++= Iterable(
-          EagerJavaScriptEngineDetector,
-          TriggeredTajsTranslatorScheduler,
-          AllocationSiteBasedPointsToAnalysisScheduler,
-          TriggeredOpalTajsConnectorScheduler
+            EagerJavaScriptEngineDetector,
+            TriggeredTajsTranslatorScheduler,
+            AllocationSiteBasedPointsToAnalysisScheduler,
+            TriggeredOpalTajsConnectorScheduler
         )
 
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(analyses)
@@ -99,7 +98,7 @@ object CentralCoordinator extends AnalysisApplication with OneStepAnalysis[URL, 
         val defSites = project.get(DefinitionSitesKey).definitionSites.keySet()
 
         project.allProjectClassFiles.flatMap(_.methods).foreach(method => {
-           /* propertyStore(method, DetectorLattice.key) match {
+            /* propertyStore(method, DetectorLattice.key) match {
 
               case clc:CrossLanguageCall => println(clc)
               case x => println(x)
@@ -119,28 +118,29 @@ object CentralCoordinator extends AnalysisApplication with OneStepAnalysis[URL, 
                     val globalObject = ObjectLabel.make(ECMAScriptObjects.GLOBAL, ObjectLabel.Kind.OBJECT)
 
                     states.values().forEach(state =>
-                      state.getStore.get(globalObject).getModified.keySet().forEach(key => {println(key+": "+state.getStore.get(globalObject).getModified.get(key))}))
+                        state.getStore.get(globalObject).getModified.keySet().forEach(key => { println(key+": "+state.getStore.get(globalObject).getModified.get(key)) }))
                 case _ =>
             }
         })
 
-      defSites.forEach(defSite=>{
-        propertyStore(defSite, AllocationSitePointsToSet.key) match {
-        case FinalEP(DefinitionSite(method, pc), pointsToSet) =>
-          if(method.name.startsWith("main") && pointsToSet.elements.size>1)
-          println(s""" | ===================================
+        defSites.forEach(defSite => {
+            propertyStore(defSite, AllocationSitePointsToSet.key) match {
+                case FinalEP(DefinitionSite(method, pc), pointsToSet) =>
+                    if (method.name.startsWith("main") && pointsToSet.elements.size > 1)
+                        println(s""" | ===================================
                        | method ${defSite.method} pc ${defSite.pc}
-                       | ${pointsToSet.elements.iterator
-                       .map(long => ReferenceType.lookup(pointsto.allocationSiteLongToTypeId(long)))
-                       .mkString("\n")}
+                       | ${
+                            pointsToSet.elements.iterator
+                                .map(long => ReferenceType.lookup(pointsto.allocationSiteLongToTypeId(long)))
+                                .mkString("\n")
+                        }
                        | ===================================
                        |""".stripMargin)
-        case _ =>
-        }
-      }
-      )
+                case _ =>
+            }
+        })
 
-   //   javaResults.foreach(println(_))
+        //   javaResults.foreach(println(_))
         BasicReport("")
     }
 }

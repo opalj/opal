@@ -52,8 +52,8 @@ object DetectorLattice extends DetectorPropertyMetaInformation {
 case object NoCrossLanguageCall extends DetectorLattice
 
 case class CrossLanguageExecution(language: Language, code: String, functionName: String,
-                             assignments: mutable.Map[String, Tuple2[FieldType, Set[AnyRef]]],
+                                  assignments:  mutable.Map[String, Tuple2[FieldType, Set[AnyRef]]],
                                   returnValues: mutable.Map[DUVar[ValueInformation], String]) extends DetectorLattice
 
-case class CrossLanguageFunctionCalls(language:Language, code:String, functions:List[String]) extends DetectorLattice
+case class CrossLanguageFunctionCalls(language: Language, code: String, functions: List[String]) extends DetectorLattice
 
