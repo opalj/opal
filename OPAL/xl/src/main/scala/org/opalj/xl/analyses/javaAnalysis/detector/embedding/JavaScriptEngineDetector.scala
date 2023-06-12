@@ -151,15 +151,20 @@ class JavaScriptEngineDetector private[analyses] (final val project: SomeProject
         case AssignmentLikeStmt(
         _, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "eval", _, _, params)) =>
 
-          //state.sourceCode += scala.io.Source.fromURL(url).mkString
-          state.sourceCode +=  getString(params.head.asVar.definedBy.head, stmts) + "\n"
+          //state.sourceCode += scala.io.Source.fromURL("https://raw.githubusercontent.com/im-qq/webqq-core/master/src/main/resources/hash.js").mkString
+          //state.sourceCode +=  getString(params.head.asVar.definedBy.head, stmts) + "\n"
+          state.sourceCode = "sum = function(a,b) {return a.xml + b.xml;}"
 
+          state.sourceCode += "\nfunction identity(x) {return x;} \n var result = sum(jThis,jThis);" // identity(jThis);"
+          state.functionName = "identity"
+
+          //TODO state.assignments.addAll(params.map(x=>(x.asVar.name,(x.asVar)))
 
 
         case AssignmentLikeStmt(
         _, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "invokeFunction", _, _, params)) =>
           // TODO Handle Invocable.invokeFunction? It can be called on the ScriptEngine after an eval that defined top-level functions
-         state.functionName = getString(params.head.asVar.definedBy.head,stmts)
+         //TODO state.functionName = getString(params.head.asVar.definedBy.head,stmts)
           state.functionParams = params.tail.toList.map(_.asVar)
 
         case VirtualMethodCall(_, ObjectType("javax/script/ScriptEngine"), _, "put", _, _, params) =>
