@@ -11,6 +11,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DPure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.MethodDescriptor
 
 /**
@@ -184,7 +185,7 @@ trait LoggingRater extends DomainSpecificRater {
         code:    Array[Stmt[V]]
     ): Option[Purity] = {
         val GetStatic(_, declaringClass, _, _) = expr
-        if (logLevels.exists(declaringClass == _))
+        if (logLevels.contains(declaringClass))
             Some(DPure)
         else super.handleGetStatic(expr)
     }
@@ -202,7 +203,7 @@ trait ExceptionRater extends DomainSpecificRater {
         project: SomeProject,
         code:    Array[Stmt[V]]
     ): Option[Purity] = {
-        implicit val classHierarchy = project.classHierarchy
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         val declClass = call.declaringClass
         if (declClass.isObjectType && call.name == "<init>" &&
             declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
@@ -249,7 +250,7 @@ trait AssertionExceptionRater extends DomainSpecificRater {
         implicit
         project: SomeProject, code: Array[Stmt[V]]
     ): Option[Purity] = {
-        implicit val classHierarchy = project.classHierarchy;
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         if (call.declaringClass.isObjectType && call.name == "<init>" &&
             exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf))
             Some(DPure)

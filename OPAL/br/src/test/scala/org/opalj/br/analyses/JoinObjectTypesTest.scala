@@ -31,8 +31,8 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
         )(GlobalLogContext)
     }
 
-    implicit def stringToUIDSetObjectType(str: String) = UIDSet(ObjectType(str))
-    implicit def stringToObjectType(str: String) = ObjectType(str)
+    implicit def stringToUIDSetObjectType(str: String): UIDSet[ObjectType] = UIDSet(ObjectType(str))
+    implicit def stringToObjectType(str: String): ObjectType = ObjectType(str)
     implicit def setToUIDSet(s: Set[String]): UIDSet[ObjectType] = {
         UIDSet.empty[ObjectType] ++ s.map(ObjectType.apply)
     }

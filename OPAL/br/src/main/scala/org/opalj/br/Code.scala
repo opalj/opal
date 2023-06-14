@@ -402,7 +402,7 @@ final class Code private (
      * If the code contains jsr/ret instructions, the full blown CFG is computed.
      */
     def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, PCs) = {
-        implicit val code = this
+        implicit val code: Code = this
 
         val instructions = this.instructions
         val instructionsLength = instructions.length

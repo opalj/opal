@@ -263,9 +263,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             case md: MethodDescription =>
                 val method = md.method(declaredMethods)
                 val returnType = method.descriptor.returnType.asReferenceType
-                val filter = { t: ReferenceType =>
-                    classHierarchy.isSubtypeOf(t, returnType)
-                }
+                val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, returnType)
                 val entity = state.callContext
                 state.includeSharedPointsToSet(
                     entity,

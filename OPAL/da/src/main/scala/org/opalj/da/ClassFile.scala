@@ -69,7 +69,7 @@ case class ClassFile(
 
     def jdkVersion: String = org.opalj.bi.jdkVersion(major_version)
 
-    private[this] implicit val cp = constant_pool
+    private[this] implicit val cp: Constant_Pool = constant_pool
 
     /**
      * The fully qualified name of this class in Java notation (i.e., using dots

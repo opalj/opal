@@ -48,9 +48,8 @@ class Milliseconds(val timeSpan: Long) extends AnyVal with Serializable {
  */
 object Milliseconds {
 
-    implicit val millisecondsWrites = new Writes[Milliseconds] {
-        def writes(millisecond: Milliseconds) = JsNumber(millisecond.timeSpan)
-    }
+    implicit val millisecondsWrites: Writes[Milliseconds] =
+        (millisecond: Milliseconds) => JsNumber(millisecond.timeSpan)
 
     implicit val nanosecondsReads: Reads[Milliseconds] = JsPath.read[Long].map(Milliseconds.apply)
 
