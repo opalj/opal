@@ -28,7 +28,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.Assignment
-import org.opalj.tac.AssignmentLikeStmt
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
@@ -40,7 +39,6 @@ import org.opalj.tac.fpcf.properties.TheTACAI
 import JavaScriptEngineDetector.jsEngineNames
 import JavaScriptEngineDetector.jsExtensions
 import JavaScriptEngineDetector.jsMimetypes
-import org.opalj.tac.ExprStmt
 import org.opalj.tac.fpcf.analyses.cg.reflection.VarargsUtil
 import org.opalj.xl.common
 import org.opalj.xl.common.Language.Language
@@ -54,15 +52,22 @@ import org.opalj.xl.detector.NoJavaScriptCall
 
 import scala.collection.mutable
 
+import org.opalj.tac.Call
+import org.opalj.tac.VirtualFunctionCallStatement
+
 /**
  * Detects embodied JavaScript code via the Java ScriptEngine
  *
  */
-class JavaScriptEngineDetector private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class JavaScriptEngineDetector private[analyses](final val project: SomeProject) extends FPCFAnalysis {
 
     val definitionSites = project.get(DefinitionSitesKey)
     val virtualFormalParameters = project.get(VirtualFormalParametersKey)
     val declaredMethods = project.get(DeclaredMethodsKey)
+
+    val scriptEngine = ObjectType("javax/script/ScriptEngine")
+    val engineManager = ObjectType("javax/script/ScriptEngineManager")
+    val graalContext = ObjectType("org/graalvm/polyglot/Context")
 
     case class JavaScriptEngineDetectorState(
             method:                  Method,
@@ -105,55 +110,28 @@ class JavaScriptEngineDetector private[analyses] ( final val project: SomeProjec
             stmts.foreach { stmt =>
                 stmt match {
 
-                    case AssignmentLikeStmt(
-                        _,
-                        VirtualFunctionCall(
-                            _,
-                            ObjectType("javax/script/ScriptEngineManager"),
-                            _,
-                            "getEngineByName",
-                            _,
-                            _,
-                            params
-                            )
-                        ) =>
-                        val engineName = getString(params.head.asVar.definedBy.head, stmts).toLowerCase
-                        if (jsEngineNames.contains(engineName)) state.language = Language.JavaScript
-
-                    case AssignmentLikeStmt(_,
-                        VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngineManager"), _, "getEngineByExtension", _, _, params
-                            )
-                        ) =>
-                        val extension = getString(params.head.asVar.definedBy.head, stmts)
-                        if (jsExtensions.contains(extension))
+                    case VirtualFunctionCallStatement(c@Call(this.engineManager, _, "getEngineByName", _)) =>
+                        // TODO These "definedBy.head" are incorrect, there can be several definition sites that need to be ckecked
+                        val name = getString(c.params.head.asVar.definedBy.head, stmts).toLowerCase
+                        if (jsEngineNames.contains(name.toLowerCase))
                             state.language = Language.JavaScript
 
-                    case AssignmentLikeStmt(
-                        _,
-                        VirtualFunctionCall(
-                            _,
-                            ObjectType("javax/script/ScriptEngineManager"),
-                            _,
-                            "getEngineByMimeType",
-                            _,
-                            _,
-                            params
-                            )
-                        ) =>
-                        val mimetype = getString(params.head.asVar.definedBy.head, stmts)
-                        if (jsMimetypes.contains(mimetype)) state.language = Language.JavaScript
+                    case VirtualFunctionCallStatement(c@Call(this.engineManager, _, "getEngineByExtension", _,)) =>
+                        val extension = getString(c.params.head.asVar.definedBy.head, stmts)
+                        if (jsExtensions.contains(extension.toLowerCase))
+                            state.language = Language.JavaScript
 
-                    case Assignment(
-                        _, lhs, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "get", _, _, params)) =>
-                        val jsValueName = getString(params.head.asVar.definedBy.head, stmts)
-                        state.returnValues += lhs -> jsValueName
+                    case VirtualFunctionCallStatement(c@Call(this.engineManager, _, "getEngineByMimeType", _)) =>
+                        val mimetype = getString(c.params.head.asVar.definedBy.head, stmts)
+                        if (jsMimetypes.contains(mimetype.toLowerCase))
+                            state.language = Language.JavaScript
 
-                    case AssignmentLikeStmt(
-                        _, VirtualFunctionCall(_, ObjectType("javax/script/ScriptEngine"), _, "eval", _, _, params)) =>
-
-                        state.sourceCode += getString(params.head.asVar.definedBy.head, stmts)+"\n"
-
-                        val x = stmts(params(1).asVar.definedBy.head).asAssignment.targetVar.usedBy.map(stmts(_))
+                    // TODO Why don't we map back the return value of the eval/invokeFunction invocations?
+                    case VirtualFunctionCallStatement(c@Call(this.scriptEngine, _, "eval", _,)) =>
+                        // TODO Support eval variants that take a Reader?
+                        //state.sourceCode += scala.io.Source.fromURL(url).mkString
+                        state.sourceCode += getString(c.params.head.asVar.definedBy.head, stmts) + "\n"
+                        /*bingings...val x = stmts(params(1).asVar.definedBy.head).asAssignment.targetVar.usedBy.map(stmts(_))
 
                         x.foreach {
                             case ExprStmt(pc, VirtualFunctionCall(_, declaringClass, isInterface, "put", descriptor, receiver, params)) =>
@@ -161,20 +139,41 @@ class JavaScriptEngineDetector private[analyses] ( final val project: SomeProjec
                             case _ =>
                         }
 
-                        println(x)
-                    case Assignment(
-                        _, lhs, VirtualFunctionCall(_, tpe, _, "invokeFunction", _, _, params)) =>
-                        // TODO Handle Invocable.invokeFunction? It can be called on the ScriptEngine after an eval that defined top-level functions
+                        println(x)*/
 
+                    case VirtualFunctionCallStatement(c@Call(this.graalContext, _, "eval", _)) =>
+                        if (c.params.size == 1) {
+                            // TODO Support graalvm Source class
+                        } else {
+                            val language = getString(c.params.head.asVar.definedBy.head, stmts)
+                            if (language == "js") {
+                                state.language = Language.JavaScript
+                                state.sourceCode += getString(c.params(1).asVar.definedBy.head, stmts) + "\n"
+                            }
+                        }
+
+                    // TODO Graalvm supports a similar concept, with an executable Value as the result of either Context.eval or Context.parse
+                    case Assignment(
+                    _, lhs, VirtualFunctionCall(_, tpe, _, "invokeFunction", _, _, params)) =>
+                        // TODO This implementation seems wrong, invokeFunction must be called on an Invocable and we have to trace it back to a ScriptEngine.eval
                         val varargsParams = VarargsUtil.getParamsFromVararg(params(1), stmts)
                         state.foreignFunctionCall =
                             common.ForeignFunctionCall(
                                 getString(params.head.asVar.definedBy.head, stmts),
-                                varargsParams.get.toList.map(p => { (VarNames.genVName(), p.asVar) }),
+                                varargsParams.get.toList.map(p => {
+                                    (VarNames.genVName(), p.asVar)
+                                }),
                                 lhs.asVar
                             )
 
-                    case VirtualMethodCall(_, ObjectType("javax/script/ScriptEngine"), _, "put", _, _, params) =>
+                    // TODO Support Graalvm getBindings/getPolyglotBindings -> getMember?
+                    case Assignment(_, lhs, VirtualFunctionCall(_, this.scriptEngine, _, "get", _, _, params)) =>
+                        val jsValueName = getString(params.head.asVar.definedBy.head, stmts)
+                        state.returnValues += lhs -> jsValueName
+
+                    // TODO Beside put, should we support Binding and ScriptContext as ways to provide values to the script?
+                    // TODO Support Graalvm getBindings/getPolyglotBindings -> putMember?
+                    case VirtualMethodCall(_, this.scriptEngine, _, "put", _, _, params) =>
                         val defSites: Set[AnyRef] =
                             params(1).asVar.definedBy.map(id => {
                                 if (id < 0) {
@@ -185,7 +184,7 @@ class JavaScriptEngineDetector private[analyses] ( final val project: SomeProjec
                                 }
                             })
 
-                        val value = params.tail.head.asVar.value
+                        val value = params(1).asVar.value
                         val tpe =
                             if (value.isPrimitiveValue)
                                 value.asPrimitiveValue.primitiveType.asFieldType
@@ -235,7 +234,7 @@ class JavaScriptEngineDetector private[analyses] ( final val project: SomeProjec
 }
 
 object JavaScriptEngineDetector {
-    val jsEngineNames = Set("nashorn", "rhino", "js", "javascript", "ecmascript")
+    val jsEngineNames = Set("nashorn", "rhino", "js", "javascript", "ecmascript", "graal.js")
     val jsExtensions = Set("js")
     val jsMimetypes = Set("application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript")
 }
