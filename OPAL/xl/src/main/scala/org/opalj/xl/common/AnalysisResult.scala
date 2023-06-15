@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package xl
-package axa
 package common
 
 import org.opalj.fpcf.Entity
@@ -11,29 +10,29 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 
-sealed trait AnalysisResultsPropertyMetaInformation extends PropertyMetaInformation {
-    final type Self = AnalysisResults
+sealed trait AnalysisResultPropertyMetaInformation extends PropertyMetaInformation {
+    final type Self = AnalysisResult
 }
 
-sealed trait AnalysisResults extends AnalysisResultsPropertyMetaInformation with OrderedProperty {
-    def meet(other: AnalysisResults): AnalysisResults = {
+sealed trait AnalysisResult extends AnalysisResultPropertyMetaInformation with OrderedProperty {
+    def meet(other: AnalysisResult): AnalysisResult = {
         (this, other) match {
             case (_, _) => InterimAnalysisResult(null)
         }
     }
 
-    def checkIsEqualOrBetterThan(e: Entity, other: AnalysisResults): Unit = {
+    def checkIsEqualOrBetterThan(e: Entity, other: AnalysisResult): Unit = {
         if (meet(other) != other) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 
-    final def key: PropertyKey[AnalysisResults] = AnalysisResults.key
+    final def key: PropertyKey[AnalysisResult] = AnalysisResult.key
 }
 
-object AnalysisResults extends AnalysisResultsPropertyMetaInformation {
-    final val key: PropertyKey[AnalysisResults] = PropertyKey.create(
-        "AnalysisResultsLattice",
+object AnalysisResult extends AnalysisResultPropertyMetaInformation {
+    final val key: PropertyKey[AnalysisResult] = PropertyKey.create(
+        "AnalysisResultLattice",
         (_: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
                 case e: Entity => InterimAnalysisResult(null)
@@ -44,8 +43,8 @@ object AnalysisResults extends AnalysisResultsPropertyMetaInformation {
     )
 }
 
-case class FinalAnalysisResult(o: Object) extends AnalysisResults
+case class FinalAnalysisResult(o: Object) extends AnalysisResult
 
-case object NoAnalysisResult extends AnalysisResults
+case object NoAnalysisResult extends AnalysisResult
 
-case class InterimAnalysisResult(o: Object) extends AnalysisResults
+case class InterimAnalysisResult(o: Object) extends AnalysisResult

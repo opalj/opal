@@ -1,11 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package xl
-package axa
 package coordinator
 
-import dk.brics.tajs.analysis.nativeobjects.ECMAScriptObjects
-import dk.brics.tajs.lattice.ObjectLabel
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
@@ -22,6 +19,7 @@ import org.opalj.fpcf.FinalP
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
+import org.opalj.tac.DUVar
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
@@ -30,30 +28,29 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.RTATypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
-import org.opalj.xl.analyses.javaAnalysis.detector.EagerJavaScriptEngineDetector
-import org.opalj.xl.axa.common.AnalysisResults
-import org.opalj.xl.axa.common.FinalAnalysisResult
-import org.opalj.xl.axa.connector.tajs.TriggeredOpalTajsConnectorScheduler
-import org.opalj.xl.axa.translator.tajs.TriggeredTajsTranslatorScheduler
+import org.opalj.value.ValueInformation
+import org.opalj.xl.analyses.javaanalyses.detector.embodiment.EagerJavaScriptEngineDetector
+import org.opalj.xl.common.AnalysisResult
+import org.opalj.xl.common.FinalAnalysisResult
+import org.opalj.xl.connector.tajs.TriggeredOpalTajsConnectorScheduler
 
 import java.net.URL
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.runtime.universe.runtimeMirror
 
-object CentralCoordinator extends AnalysisApplication with OneStepAnalysis[URL, ReportableAnalysisResult] {
+object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, ReportableAnalysisResult] {
+
+    type V = DUVar[ValueInformation]
 
     implicit val logContext: LogContext = GlobalLogContext
 
     final override val analysis = this
 
-
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
 
         var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
 
-        def resolveAnalysisRunner(
-            className: String
-        )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
+        def resolveAnalysisRunner(className: String)(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
             val mirror = runtimeMirror(getClass.getClassLoader)
             try {
                 val module = mirror.staticModule(className)
@@ -72,26 +69,21 @@ object CentralCoordinator extends AnalysisApplication with OneStepAnalysis[URL, 
         def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
             implicit val logContext: LogContext = project.logContext
             val config = project.config
-
             // TODO use FPCFAnaylsesRegistry here
-            config.getStringList(
-                "org.opalj.tac.cg.CallGraphKey.modules"
-            ).asScala.flatMap(resolveAnalysisRunner(_)).toSeq
+            config.getStringList("org.opalj.tac.cg.CallGraphKey.modules").asScala.flatMap(resolveAnalysisRunner(_)).toSeq
         }
 
         project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
-            case _ =>
-                () => new RTATypeIterator(project)
+            case _ => () => new RTATypeIterator(project)
         }
 
         analyses ::= CallGraphAnalysisScheduler
         analyses ++= RTACallGraphKey.callGraphSchedulers(project)
         analyses ++= registeredAnalyses(project)
         analyses ++= Iterable(
-          EagerJavaScriptEngineDetector,
-          TriggeredTajsTranslatorScheduler,
-          AllocationSiteBasedPointsToAnalysisScheduler,
-          TriggeredOpalTajsConnectorScheduler
+            EagerJavaScriptEngineDetector,
+            AllocationSiteBasedPointsToAnalysisScheduler,
+            TriggeredOpalTajsConnectorScheduler
         )
 
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(analyses)
@@ -99,48 +91,30 @@ object CentralCoordinator extends AnalysisApplication with OneStepAnalysis[URL, 
         val defSites = project.get(DefinitionSitesKey).definitionSites.keySet()
 
         project.allProjectClassFiles.flatMap(_.methods).foreach(method => {
-           /* propertyStore(method, DetectorLattice.key) match {
-
-              case clc:CrossLanguageCall => println(clc)
-              case x => println(x)
-            }
-            propertyStore(method, TajsInquiries.key) match {
-              case jsc:JavaScriptCall => println(jsc)
-              case x => println(x)
-            } */
-
-            propertyStore(method, AnalysisResults.key) match {
+            propertyStore(method, AnalysisResult.key) match {
                 case FinalP(FinalAnalysisResult(s)) =>
-                    val solver = s.asInstanceOf[dk.brics.tajs.analysis.Solver]
-                    val mainFunction = solver.getFlowGraph.getMain
-                    val exitBB = mainFunction.getOrdinaryExit
-                    val states = solver.getAnalysisLatticeElement.getStates(exitBB)
-
-                    val globalObject = ObjectLabel.make(ECMAScriptObjects.GLOBAL, ObjectLabel.Kind.OBJECT)
-
-                    states.values().forEach(state =>
-                      state.getStore.get(globalObject).getModified.keySet().forEach(key => {println(key+": "+state.getStore.get(globalObject).getModified.get(key))}))
+                    println(s"TAJS result: $s")
                 case _ =>
             }
         })
 
-      defSites.forEach(defSite=>{
-        propertyStore(defSite, AllocationSitePointsToSet.key) match {
-        case FinalEP(DefinitionSite(method, pc), pointsToSet) =>
-          if(method.name.startsWith("main") && pointsToSet.elements.size>1)
-          println(s""" | ===================================
-                       | method ${defSite.method} pc ${defSite.pc}
-                       | ${pointsToSet.elements.iterator
-                       .map(long => ReferenceType.lookup(pointsto.allocationSiteLongToTypeId(long)))
-                       .mkString("\n")}
-                       | ===================================
-                       |""".stripMargin)
-        case _ =>
-        }
-      }
-      )
-
-   //   javaResults.foreach(println(_))
+        defSites.forEach(defSite => {
+            propertyStore(defSite, AllocationSitePointsToSet.key) match {
+                case FinalEP(DefinitionSite(method, pc), pointsToSet) =>
+                    if (method.name.startsWith("main") && pointsToSet.elements.size > 1)
+                        println(s"""
+                        | ===================================
+                        | method ${defSite.method} pc ${defSite.pc}
+                        | ${
+                            pointsToSet.elements.iterator
+                                .map(long => ReferenceType.lookup(pointsto.allocationSiteLongToTypeId(long)))
+                                .mkString("\n")
+                        }
+                        | ===================================
+                        |""".stripMargin)
+                case _ =>
+            }
+        })
         BasicReport("")
     }
 }
