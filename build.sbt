@@ -94,8 +94,15 @@ addCommandAlias(
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
+addCommandAlias("buildAllCross", "; compileAll ; unidoc ;  publishLocal ; " +
+                        "project LLVM ; compileAll ; unidoc ; publishLocal ;" +
+                        "project ValidateCross ; compileAll ; unidoc ; publishLocal ; " +
+                        // Add other crosslanguage projects here
+                        " project OPAL ;")
+
 addCommandAlias("cleanBuildCross", "; project OPAL ; cleanAll ; buildAll ; " +
-                        "project LLVM ; cleanAll; buildAll;" +
+                        "project LLVM ; cleanAll; buildAll ;" +
+                        "project ValidateCross ; cleanAll ; buildAll ;" +
                         // Add other crosslanguage projects here
                         " project OPAL ;")
 
