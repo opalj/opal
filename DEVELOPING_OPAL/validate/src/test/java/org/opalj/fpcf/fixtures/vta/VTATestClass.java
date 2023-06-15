@@ -3,6 +3,11 @@ package org.opalj.fpcf.fixtures.vta;
 import org.opalj.fpcf.properties.vta.ExpectedCallee;
 import org.opalj.fpcf.properties.vta.ExpectedType;
 
+ /**
+ * This is the test class for the IFDS based Variable Type Analysis. That analysis is only there to serve as an example
+ * of an IFDS Analysis.
+ *
+ */
 public class VTATestClass {
 
     @ExpectedType.List({ @ExpectedType(lineNumber = 10, value = "B", upperBound = false) })

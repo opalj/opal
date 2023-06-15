@@ -225,7 +225,7 @@ class SimpleJavaBackwardTaintProblem(p: SomeProject) extends JavaBackwardTaintPr
 }
 
 class SimpleJavaBackwardTaintAnalysis(project: SomeProject)
-    extends IFDSAnalysis()(project, new SimpleJavaBackwardTaintProblem(project), Taint)
+    extends IFDSAnalysis(project, new SimpleJavaBackwardTaintProblem(project), Taint)
 
 object JavaBackwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new SimpleJavaBackwardTaintAnalysis(p)

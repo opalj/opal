@@ -45,7 +45,7 @@ import java.io.File
  * @author Michael Eichberg
  */
 class ForwardClassForNameTaintAnalysis(project: SomeProject)
-    extends IFDSAnalysis()(project, new ForwardClassForNameTaintProblem(project), Taint)
+    extends IFDSAnalysis(project, new ForwardClassForNameTaintProblem(project), Taint)
 
 class ForwardClassForNameTaintProblem(project: SomeProject)
     extends AbstractJavaForwardTaintProblem(project) with TaintProblem[Method, JavaStatement, TaintFact] {

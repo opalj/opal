@@ -4,6 +4,12 @@ package ifds
 
 import scala.collection.{Set => SomeSet}
 
+/**
+ * The interface of the ICFG for the IFDS Analysis
+ *
+ * @tparam C The type of callables in this ICFG
+ * @tparam S the type of statements in this ICFG
+ */
 abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
     /**
      * Determines the statements at which the analysis starts.

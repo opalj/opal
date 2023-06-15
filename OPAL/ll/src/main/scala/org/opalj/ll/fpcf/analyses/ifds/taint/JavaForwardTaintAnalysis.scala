@@ -254,7 +254,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
 }
 
 class JavaForwardTaintAnalysis(project: SomeProject)
-    extends IFDSAnalysis()(project, new JavaForwardTaintProblem(project), Taint)
+    extends IFDSAnalysis(project, new JavaForwardTaintProblem(project), Taint)
 
 object JavaForwardTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new JavaForwardTaintAnalysis(p)

@@ -43,7 +43,7 @@ import java.io.File
  * @author Mario Trageser
  */
 class BackwardClassForNameTaintAnalysisScheduler private (implicit project: SomeProject)
-    extends IFDSAnalysis()(project, new BackwardClassForNameTaintProblem(project), Taint)
+    extends IFDSAnalysis(project, new BackwardClassForNameTaintProblem(project), Taint)
 
 class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaintProblem(p) {
 

@@ -64,17 +64,23 @@ class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
     }
 }
 
-case class Dependees[Work]() {
-    case class Dependee(eOptionP: SomeEOptionP, worklist: Set[Work] = Set.empty)
+/**
+ * This represents a map of entities to the worklist items that depend on the given entity
+ * @tparam WorklistItem The type of the work list item that depends on a given entity
+ */
+case class Dependees[WorklistItem]() {
+
+    case class Dependee(eOptionP: SomeEOptionP, worklist: Set[WorklistItem] = Set.empty)
+
     var dependees = Map.empty[SomeEPK, Dependee]
     def get(
         entity:      Entity,
         propertyKey: PropertyKey[Property]
-    )(implicit propertyStore: PropertyStore, work: Work): SomeEOptionP = {
+    )(implicit propertyStore: PropertyStore, worklistItem: WorklistItem): SomeEOptionP = {
         val epk = EPK(entity, propertyKey)
         val dependee = dependees.get(epk) match {
-            case Some(dependee) => Dependee(dependee.eOptionP, dependee.worklist + work)
-            case None           => Dependee(propertyStore(epk), Set(work))
+            case Some(dependee) => Dependee(dependee.eOptionP, dependee.worklist + worklistItem)
+            case None           => Dependee(propertyStore(epk), Set(worklistItem))
         }
         if (!dependee.eOptionP.isFinal) dependees += epk -> dependee
         dependee.eOptionP
@@ -83,13 +89,13 @@ case class Dependees[Work]() {
     def forResult: Set[SomeEOptionP] = {
         dependees.values.map(_.eOptionP).toSet
     }
-    def takeWork(epk: SomeEPK): Set[Work] = {
+    def takeWork(epk: SomeEPK): Set[WorklistItem] = {
         val dependee = dependees(epk)
         dependees -= epk
         dependee.worklist
     }
 
-    def getter()(implicit propertyStore: PropertyStore, work: Work): Getter =
+    def getter()(implicit propertyStore: PropertyStore, work: WorklistItem): Getter =
         (entity: Entity, propertyKey: PropertyKey[Property]) => get(entity, propertyKey)
 }
 
@@ -183,30 +189,28 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
  * @param source The callable and input fact for which the callable is analyzed.
  * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
-protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], Work](
+protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], WorklistItem](
         val source: (C, IFDSFact[Fact, S]),
         subsumes:   (Set[Fact], Fact) => Boolean
 ) {
-    val dependees: Dependees[Work] = Dependees()
+    val dependees: Dependees[WorklistItem] = Dependees()
     val pathEdges: PathEdges[Fact, S, C] = PathEdges(subsumes)
     var endSummaries: Set[(S, Fact)] = Set.empty
-    var selfDependees: Set[Work] = Set.empty
+    var selfDependees: Set[WorklistItem] = Set.empty
 }
 
 /**
- * Contains int variables, which count, how many times some method was called.
+ * Contains int variables, which count how many times some method was called.
  */
-class Statistics {
-    var normalFlow = 0
-    var callFlow = 0
-    var returnFlow = 0
-    var callToReturnFlow = 0
-    // TODO unbalanced return flow
-    var subsumeTries = 0
-    var subsumptions = 0
-}
-
-protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalysis
+case class Statistics(
+        var normalFlow:       Int = 0,
+        var callFlow:         Int = 0,
+        var returnFlow:       Int = 0,
+        var callToReturnFlow: Int = 0,
+        // TODO unbalanced return flow
+        var subsumeTries: Int = 0,
+        var subsumptions: Int = 0
+)
 
 /**
  *
@@ -215,17 +219,16 @@ protected class ProjectFPCFAnalysis(val project: SomeProject) extends FPCFAnalys
  * @tparam Fact
  */
 class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
-        implicit
-        project:         SomeProject,
+        val project:     SomeProject,
         val ifdsProblem: IFDSProblem[Fact, C, S],
         val propertyKey: IFDSPropertyMetaInformation[S, Fact]
-) extends ProjectFPCFAnalysis(project) {
-    type Work = (Option[S], IFDSFact[Fact, S], Option[S]) // statement, fact, predecessor
-    type Worklist = mutable.Queue[Work]
-    type State = IFDSState[Fact, C, S, Work]
+) extends FPCFAnalysis {
+    type WorklistItem = (Option[S], IFDSFact[Fact, S], Option[S]) // statement, fact, predecessor
+    type Worklist = mutable.Queue[WorklistItem]
+    type State = IFDSState[Fact, C, S, WorklistItem]
 
-    implicit var statistics = new Statistics
-    val icfg = ifdsProblem.icfg
+    implicit var statistics: Statistics = Statistics()
+    val icfg: ICFG[C, S] = ifdsProblem.icfg
 
     /**
      * Performs an IFDS analysis for a method-fact-pair.
@@ -239,9 +242,9 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         val (function, sourceFact) = entity
 
         // Start processing at the start of the icfg with the given source fact
-        implicit val state: State = new IFDSState[Fact, C, S, Work](entity, subsumes)
+        implicit val state: State = new IFDSState[Fact, C, S, WorklistItem](entity, subsumes)
         implicit val queue: Worklist = mutable.Queue
-            .empty[Work]
+            .empty[WorklistItem]
 
         // if method is analyzed for unbalanced return fact, start with next statements after call statement
         val startStatements: Set[(Option[S], Option[S])] = if (sourceFact.isUnbalancedReturn) {
@@ -312,7 +315,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     private def propertyUpdate(
         eps: SomeEPS
     )(implicit state: State): ProperPropertyComputationResult = {
-        implicit val queue: mutable.Queue[Work] = mutable.Queue()
+        implicit val queue: mutable.Queue[WorklistItem] = mutable.Queue()
         state.dependees.takeWork(eps.toEPK).foreach(queue.enqueue)
         process()
         createResult()
@@ -358,7 +361,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         implicit
         state:    State,
         worklist: Worklist,
-        work:     Work
+        work:     WorklistItem
     ): Unit = {
         val successors = icfg.nextStatements(call)
         val existingCallChain = state.source._2.callChain.getOrElse(Seq.empty)
@@ -428,7 +431,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     private def concreteCallFlow(call: S, callee: C, in: Fact, successor: Option[S])(
         implicit
         state: State,
-        work:  Work
+        work:  WorklistItem
     ): Set[Fact] = {
         var result = Set.empty[Fact]
         val unbCallChain = state.source._2.callChain.getOrElse(Seq.empty)
@@ -470,7 +473,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     private def handleExit(
         statement: S,
         in:        Fact
-    )(implicit state: State, worklist: Worklist, work: Work): Unit = {
+    )(implicit state: State, worklist: Worklist, work: WorklistItem): Unit = {
         // analysis might create new facts at exit
         val unbCallChain = state.source._2.callChain.getOrElse(Seq.empty)
         val createdFact = ifdsProblem.createFlowFactAtExit(statement.callable, in, unbCallChain)
@@ -512,7 +515,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         }
     }
 
-    private def handleUnbalancedReturn(exit: S, in: Fact)(implicit state: State, work: Work): Unit = {
+    private def handleUnbalancedReturn(exit: S, in: Fact)(implicit state: State, work: WorklistItem): Unit = {
         val callee = exit.callable
         val existingCallChain = state.source._2.callChain.getOrElse(Seq.empty)
         // avoid infinite loops

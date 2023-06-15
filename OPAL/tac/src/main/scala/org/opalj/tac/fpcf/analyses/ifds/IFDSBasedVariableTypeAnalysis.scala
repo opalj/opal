@@ -37,7 +37,7 @@ import java.io.PrintWriter
  * @author Mario Trageser
  */
 class IFDSBasedVariableTypeAnalysis(project: SomeProject, subsumeFacts: Boolean = false)
-    extends IFDSAnalysis()(project, new VariableTypeProblem(project, subsumeFacts), VTAResult)
+    extends IFDSAnalysis(project, new VariableTypeProblem(project, subsumeFacts), VTAResult)
 
 class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement] {
     override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)

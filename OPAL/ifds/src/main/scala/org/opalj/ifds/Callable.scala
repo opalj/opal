@@ -2,6 +2,9 @@
 package org.opalj
 package ifds
 
+/**
+ * Represents Callables in the ICFG for the IFDS Analysis.
+ */
 abstract class Callable {
     /**
      * The name of the Callable
