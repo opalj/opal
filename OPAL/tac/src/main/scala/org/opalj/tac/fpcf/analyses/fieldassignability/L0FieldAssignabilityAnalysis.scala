@@ -2,23 +2,30 @@
 package org.opalj.tac.fpcf.analyses.fieldassignability
 
 import org.opalj.br.Field
-import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 
 /**
  * Determines if a private, static, non-final field is always initialized at most once or
@@ -29,7 +36,15 @@ import org.opalj.fpcf.Result
  */
 class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final val fieldAccessInformation = project.get(FieldAccessInformationKey)
+    implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+
+    case class L0FieldAssignabilityAnalysisState(field: Field) {
+        var fieldAssignability: FieldAssignability = EffectivelyNonAssignable // Assume this as the optimistic default
+        var latestFieldAccessInformation: Option[EOptionP[Field, FieldAccessInformation]] = None
+        def hasDependees: Boolean = latestFieldAccessInformation.exists(_.isRefinable)
+        def dependees: Set[SomeEOptionP] = latestFieldAccessInformation.filter(_.isRefinable).toSet
+    }
+    type AnalysisState = L0FieldAssignabilityAnalysisState
 
     /**
      * Invoked for in the lazy computation case.
@@ -57,6 +72,7 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
      *                  non-abstract methods is available.
      */
     def determineFieldAssignability(field: Field): ProperPropertyComputationResult = {
+        implicit val state: L0FieldAssignabilityAnalysisState = L0FieldAssignabilityAnalysisState(field)
 
         if (field.isFinal)
             return Result(field, NonAssignable);
@@ -70,44 +86,87 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         if (field.classFile.methods.exists(_.isNative))
             return Result(field, Assignable);
 
-        val classFile = field.classFile
-        val thisType = classFile.thisType
+        val faiEP = propertyStore(field, FieldAccessInformation.key)
+        if (handleFieldAccessInformation(faiEP))
+            return Result(field, Assignable)
 
-        for {
-            (method, pcs) <- fieldAccessInformation.writeAccesses(field)
-            if !method.isStaticInitializer
-            pc <- pcs
-        } {
-            method.body.get.instructions(pc) match {
-                case PUTSTATIC(`thisType`, fieldName, fieldType) =>
-                    // We don't need to lookup the field in the class
-                    // hierarchy since we are only concerned about private
-                    // fields so far... so we don't have to do a full
-                    // resolution of the field reference.
-                    val field = classFile.findField(fieldName, fieldType)
-                    if (field.isDefined) {
-                        return Result(field.get, Assignable);
-                    }
+        createResult()
+    }
 
-                case _ =>
+    /**
+     * Processes the given field access information to evaluate if the given field is written statically in the method at
+     * the given PCs. Updates the state to account for the new value.
+     */
+    def handleFieldAccessInformation(
+        faiEP: EOptionP[Field, FieldAccessInformation]
+    )(implicit state: AnalysisState): Boolean = {
+        val assignable = if (faiEP.hasUBP) {
+            val seenWriteAccesses = state.latestFieldAccessInformation match {
+                case Some(UBP(fai)) => fai.numWriteAccesses
+                case _              => 0
             }
-        }
 
-        Result(field, EffectivelyNonAssignable)
+            faiEP.ub.getNewestNWriteAccesses(faiEP.ub.numWriteAccesses - seenWriteAccesses) exists { wa =>
+                val method = wa._1.definedMethod
+
+                val classFile = state.field.classFile
+                val thisType = classFile.thisType
+                if (method.isStaticInitializer) {
+                    method.body.get.instructions(wa._2) match {
+                        case PUTSTATIC(`thisType`, fieldName, fieldType) =>
+                            // We don't need to lookup the field in the class
+                            // hierarchy since we are only concerned about private
+                            // fields so far... so we don't have to do a full
+                            // resolution of the field reference.
+                            val exists = classFile.findField(fieldName, fieldType).isDefined
+                            if (!exists)
+                                throw new IllegalStateException("Field that should exist does not exist!") // TODO remove
+
+                            exists
+                        case _ => false
+                    }
+                } else
+                    false
+            }
+        } else
+            false
+
+        state.latestFieldAccessInformation = Some(faiEP)
+        assignable
+    }
+
+    def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {
+        if (state.hasDependees && (state.fieldAssignability ne Assignable)) {
+            InterimResult(
+                state.field,
+                Assignable,
+                state.fieldAssignability,
+                state.dependees,
+                continuation
+            )
+        } else {
+            Result(state.field, state.fieldAssignability)
+        }
+    }
+
+    def continuation(eps: SomeEPS)(implicit state: AnalysisState): ProperPropertyComputationResult = {
+        if (handleFieldAccessInformation(eps.asInstanceOf[EOptionP[Field, FieldAccessInformation]]))
+            Result(state.field, Assignable)
+        else
+            createResult()
     }
 }
 
 trait L0FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    final override def uses: Set[PropertyBounds] = Set.empty
+    final override def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldAccessInformation)
 
     final def derivedProperty: PropertyBounds = {
         // currently, the analysis will derive the final result in a single step
         PropertyBounds.finalP(FieldAssignability)
     }
-
 }
 
 /**
@@ -143,7 +202,6 @@ object LazyL0FieldAssignabilityAnalysis
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-
         val analysis = new L0FieldAssignabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldAssignability.key,
@@ -151,5 +209,4 @@ object LazyL0FieldAssignabilityAnalysis
         )
         analysis
     }
-
 }

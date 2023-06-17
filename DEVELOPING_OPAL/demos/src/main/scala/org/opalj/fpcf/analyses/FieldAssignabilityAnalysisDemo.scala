@@ -8,7 +8,6 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -23,6 +22,7 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.Field
+import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
@@ -60,6 +60,7 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
         time {
             propertyStore = analysesManager
                 .runAll(
+                    EagerFieldAccessInformationAnalysis,
                     EagerL2FieldAssignabilityAnalysis,
                     LazyFieldImmutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
@@ -81,9 +82,9 @@ object FieldAssignabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
-        val groupedResults = propertyStore.entities(FieldAssignability.key).
-            filter(field => allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field]))
-            .iterator.to(Iterable).groupBy(_.toFinalEP.p)
+        val groupedResults = propertyStore.entities(FieldAssignability.key)
+            .filter(eps => allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
+            .iterator.to(Iterable).groupBy(_.toFinalEP.p).withDefaultValue(Seq.empty)
 
         val order = (eps1: EPS[Entity, FieldAssignability], eps2: EPS[Entity, FieldAssignability]) =>
             eps1.e.toString < eps2.e.toString
