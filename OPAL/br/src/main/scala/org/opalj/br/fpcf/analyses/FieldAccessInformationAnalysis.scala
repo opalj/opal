@@ -7,7 +7,7 @@ package analyses
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.FieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
@@ -40,8 +40,9 @@ import scala.collection.mutable
  */
 class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
+    private val declaredMethods = project.get(DeclaredMethodsKey)
+
     def analyzeMethod(method: Method): PropertyComputationResult = {
-        // TODO why doesnt "import project.logContext" work?
         implicit val logContext: LogContext = project.logContext
         import project.resolveFieldReference
 
@@ -63,6 +64,8 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                                 val message = s"cannot resolve field read access: $instruction"
                                 OPALLogger.warn("project configuration", message)
                             }
+                        // IMPROVE: In the old implementation, unresolvable field accesses were tracked. This can
+                        // also be done here but is not needed as of now.
                     }
 
                 case PUTFIELD.opcode | PUTSTATIC.opcode =>
@@ -70,35 +73,37 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                     resolveFieldReference(fieldWriteAccess) match {
                         case Some(field) =>
                             writeAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
-
                         case None =>
                             if (reportedFieldAccesses.add(instruction)) {
                                 val message = s"cannot resolve field write access: $instruction"
                                 OPALLogger.warn("project configuration", message)
                             }
+                        // IMPROVE: In the old implementation, unresolvable field accesses were tracked. This can
+                        // also be done here but is not needed as of now.
                     }
 
                 case _ => /*nothing to do*/
             }
         }
 
-        val fieldAccesses = mutable.AnyRefMap.empty[Field, (List[(Method, PCs)], List[(Method, PCs)])]
+        val definedMethod = declaredMethods(method)
+        val fieldAccesses = mutable.AnyRefMap.empty[Field, (List[(DefinedMethod, PCs)], List[(DefinedMethod, PCs)])]
         readAccesses foreach { readAccess =>
             val (field, pcs) = readAccess
             fieldAccesses.get(field) match {
                 case Some(currentAccesses) =>
-                    fieldAccesses.put(field, ((method, pcs.result()) :: currentAccesses._1, currentAccesses._2))
+                    fieldAccesses.put(field, ((definedMethod, pcs.result()) :: currentAccesses._1, currentAccesses._2))
                 case None =>
-                    fieldAccesses.put(field, ((method, pcs.result()) :: Nil, Nil))
+                    fieldAccesses.put(field, ((definedMethod, pcs.result()) :: Nil, Nil))
             }
         }
         writeAccesses foreach { writeAccess =>
             val (field, pcs) = writeAccess
             fieldAccesses.get(field) match {
                 case Some(currentAccesses) =>
-                    fieldAccesses.put(field, (currentAccesses._1, (method, pcs.result()) :: currentAccesses._2))
+                    fieldAccesses.put(field, (currentAccesses._1, (definedMethod, pcs.result()) :: currentAccesses._2))
                 case None =>
-                    fieldAccesses.put(field, (Nil, (method, pcs.result()) :: Nil))
+                    fieldAccesses.put(field, (Nil, (definedMethod, pcs.result()) :: Nil))
             }
         }
 
@@ -110,18 +115,13 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                 fieldAccess._1,
                 FieldAccessInformation.key,
                 (current: EOptionP[Field, FieldAccessInformation]) => current match {
-                    case InterimUBP(ub: FieldAccessInformation) => {
-                        val mergedReadAccesses = ub.readAccesses ++ readAccesses
-                        val mergedWriteAccesses = ub.writeAccesses ++ writeAccesses
+                    case InterimUBP(ub: FieldAccessInformation) =>
+                        val newFAI = FieldAccessInformation(readAccesses, writeAccesses)
 
-                        if (mergedReadAccesses == ub.readAccesses && mergedWriteAccesses == ub.writeAccesses)
+                        if (ub.equals(newFAI))
                             None
                         else
-                            Some(InterimEUBP(
-                                fieldAccess._1,
-                                FieldAccessInformation(mergedReadAccesses, mergedWriteAccesses)
-                            ))
-                    }
+                            Some(InterimEUBP(fieldAccess._1, ub.included(newFAI)))
 
                     case _: EPK[_, _] =>
                         Some(InterimEUBP(fieldAccess._1, FieldAccessInformation(readAccesses, writeAccesses)))
@@ -137,7 +137,7 @@ object EagerFieldAccessInformationAnalysis extends BasicFPCFEagerAnalysisSchedul
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    override def uses: Set[PropertyBounds] = Set.empty
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldAccessInformation)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
