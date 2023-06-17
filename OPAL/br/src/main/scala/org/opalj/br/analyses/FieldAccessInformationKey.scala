@@ -4,23 +4,19 @@ package br
 package analyses
 
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.properties.{FieldAccessInformation => IndividualFieldAccessInformation}
 import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
-import org.opalj.fpcf.FinalEP
-
-import scala.collection.mutable
 
 /**
- * The ''key'' object to get global field access information.
+ * The ''key'' object to get global field access information. Runs the [[EagerFieldAccessInformationAnalysis]].
  *
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
- * @author Michael Eichberg
+ * @author Maximilian Rüsch
  */
 object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation, Nothing] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys =
-      EagerFieldAccessInformationAnalysis.requiredProjectInformation
+        EagerFieldAccessInformationAnalysis.requiredProjectInformation
 
     /**
      * Computes the field access information.
@@ -30,16 +26,7 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
 
         propertyStore.waitOnPhaseCompletion()
 
-        val allReadAccesses = mutable.AnyRefMap.empty[Field, Seq[(Method, PCs)]]
-        val allWriteAccesses = mutable.AnyRefMap.empty[Field, Seq[(Method, PCs)]]
-        propertyStore.entities(IndividualFieldAccessInformation.key) foreach {
-          case FinalEP(e, p) =>
-            allReadAccesses.put(e.asInstanceOf[Field], p.readAccesses.toSeq)
-            allWriteAccesses.put(e.asInstanceOf[Field], p.writeAccesses.toSeq)
-          case _ =>
-        }
-
-       new FieldAccessInformation(project, allReadAccesses, allWriteAccesses, unresolved = Vector())
+        FieldAccessInformation(project)
     }
 }
 

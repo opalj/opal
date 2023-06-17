@@ -117,6 +117,6 @@ object FieldAccessInformationAnalysis {
         ra.repack()
         val wa = new AnyRefMap(allReadAccesses.size * 2) ++= allWriteAccesses.asScala
         wa.repack()
-        new FieldAccessInformation(project, ra, wa, allUnresolved.asScala.toVector)
+        FieldAccessInformation(project)
     }
 }
