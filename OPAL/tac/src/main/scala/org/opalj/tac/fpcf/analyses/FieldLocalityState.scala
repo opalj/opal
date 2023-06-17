@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
@@ -21,6 +20,7 @@ import org.opalj.br.fpcf.properties.LocalField
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
+import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
@@ -33,6 +33,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
     private[this] var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
     private[this] val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
+    private[this] var fieldAccessDependee: Option[EOptionP[Field, FieldAccessInformation]] = None
 
     var tacFieldAccessPCs: Map[Method, PCs] = Map.empty
     var potentialCloneCallers: Set[Method] = Set.empty
@@ -47,6 +48,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     def dependees: Set[SomeEOptionP] = {
         // TODO This really looks very imperformant...
         (declaredMethodsDependees.iterator ++
+            fieldAccessDependee.filter(_.isRefinable) ++
             definitionSitesDependees.valuesIterator.map(_._1) ++
             tacDependees.valuesIterator.filter(_.isRefinable) ++
             callerDependees.valuesIterator.filter(_.isRefinable) ++
@@ -54,7 +56,8 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     }
 
     def hasNoDependees: Boolean = {
-        tacDependees.valuesIterator.forall(_.isFinal) &&
+        fieldAccessDependee.forall(_.isRefinable) &&
+            tacDependees.valuesIterator.forall(_.isFinal) &&
             declaredMethodsDependees.isEmpty &&
             definitionSitesDependees.isEmpty &&
             callerDependees.valuesIterator.forall(_.isFinal) &&
@@ -113,29 +116,23 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
         tacDependees += ep.e -> ep
     }
 
-    def addTACDependee(ep: EOptionP[Method, TACAI], pcs: PCs): Unit = {
-        tacDependees += ep.e -> ep
-        tacFieldAccessPCs += ep.e -> (tacFieldAccessPCs.getOrElse(ep.e, IntTrieSet.empty) ++ pcs)
-    }
-
-    def getTACDependee(m: Method): EOptionP[Method, TACAI] = {
-        tacDependees(m)
+    def getTACDependee(m: Method): Option[EOptionP[Method, TACAI]] = {
+        tacDependees.get(m)
     }
 
     def addCallersDependee(ep: EOptionP[DeclaredMethod, Callers]): Unit = {
         callerDependees += ep.e -> ep
     }
 
-    def addCallersDependee(ep: EOptionP[DeclaredMethod, Callers], pcs: PCs): Unit = {
-        callerDependees += ep.e -> ep
-        tacFieldAccessPCs +=
-            ep.e.definedMethod ->
-            (tacFieldAccessPCs.getOrElse(ep.e.definedMethod, IntTrieSet.empty) ++ pcs)
+    def getCallersDependee(dm: DeclaredMethod): Option[EOptionP[DeclaredMethod, Callers]] = {
+        callerDependees.get(dm)
     }
 
-    def getCallersDependee(dm: DeclaredMethod): EOptionP[DeclaredMethod, Callers] = {
-        callerDependees(dm)
+    def setFieldAccessDependee(ep: EOptionP[Field, FieldAccessInformation]): Unit = {
+        fieldAccessDependee = Some(ep)
     }
+
+    def getFieldAccessDepdendee: Option[EOptionP[Field, FieldAccessInformation]] = fieldAccessDependee
 
     def addCallsite(
         caller: DeclaredMethod,
