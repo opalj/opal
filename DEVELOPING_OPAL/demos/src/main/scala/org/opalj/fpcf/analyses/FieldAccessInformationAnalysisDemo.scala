@@ -5,12 +5,14 @@ package analyses
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
-import org.opalj.br.fpcf.properties.FieldAccessInformation
-import org.opalj.br.fpcf.properties.NoFieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoFieldAccessInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -38,6 +40,8 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
+        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -73,12 +77,13 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
                             "both"
                 }
             })
+            .withDefaultValue(Seq.empty)
 
         val order = (eps1: EPS[Entity, FieldAccessInformation], eps2: EPS[Entity, FieldAccessInformation]) =>
             eps1.e.toString < eps2.e.toString
-        val readFields = groupedResults.getOrElse("readAccesses", Set()).toSeq.sortWith(order)
-        val writtenFields = groupedResults.getOrElse("writeAccesses", Set()).toSeq.sortWith(order)
-        val readAndWrittenFields = groupedResults.getOrElse("both", Set()).toSeq.sortWith(order)
+        val readFields = groupedResults("readAccesses").toSeq.sortWith(order)
+        val writtenFields = groupedResults("writeAccesses").toSeq.sortWith(order)
+        val readAndWrittenFields = groupedResults("both").toSeq.sortWith(order)
 
         s"""
            |
