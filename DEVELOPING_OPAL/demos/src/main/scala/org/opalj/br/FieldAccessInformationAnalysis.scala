@@ -3,12 +3,12 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.util.asMB
 import org.opalj.util.PerformanceEvaluation.memory
-
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
 
@@ -44,6 +44,7 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
         parameters:    Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
+        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey);
 
         var memoryUsage = ""
         val accessInformation = memory {

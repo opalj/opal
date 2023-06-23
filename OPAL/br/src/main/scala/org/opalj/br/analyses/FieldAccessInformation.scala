@@ -6,7 +6,6 @@ package analyses
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.fieldaccess
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeInterimEP
 
 import scala.collection.Map
@@ -26,7 +25,7 @@ case class FieldAccessInformation(project: SomeProject) {
             case FinalP(fai) => fai
             case _: SomeInterimEP =>
                 throw new IllegalStateException("FieldAccessInformationKey should not be called during an FPCF phase!")
-            case r: SomeEPK =>
+            case r =>
                 throw new IllegalStateException(s"Unexpected property found: $r")
         }
     }
