@@ -4,9 +4,7 @@ package fpcf
 package analyses
 
 import java.net.URL
-
 import scala.collection.immutable.SortedSet
-
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -27,6 +25,7 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.MutableField
@@ -76,7 +75,8 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyInterProceduralEscapeAnalysis,
                     LazyReturnValueFreshnessAnalysis,
-                    LazyFieldLocalityAnalysis
+                    LazyFieldLocalityAnalysis,
+                    EagerFieldAccessInformationAnalysis,
                 )
                 ._1
             propertyStore.waitOnPhaseCompletion();
