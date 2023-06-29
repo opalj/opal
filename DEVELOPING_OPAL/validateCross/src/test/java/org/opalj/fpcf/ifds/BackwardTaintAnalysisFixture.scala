@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.properties.Taint
  * @author Mario Trageser
  */
 class BackwardTaintAnalysisFixture(project: SomeProject)
-    extends IFDSAnalysis()(project, new BackwardTaintProblemFixture(project), Taint)
+    extends IFDSAnalysis(project, new BackwardTaintProblemFixture(project), Taint)
 
 class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProblem(p) {
 

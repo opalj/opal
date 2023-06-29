@@ -34,7 +34,7 @@ import scala.collection.mutable
  * @author Mario Trageser
  */
 class ForwardTaintAnalysisFixture(implicit project: SomeProject)
-    extends IFDSAnalysis()(project, new ForwardTaintProblemFixture(project), Taint)
+    extends IFDSAnalysis(project, new ForwardTaintProblemFixture(project), Taint)
 
 class ForwardTaintProblemFixture(p: SomeProject) extends AbstractJavaForwardTaintProblem(p) {
     /**
