@@ -5,14 +5,14 @@ package ll
 import org.opalj.bi.TestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.properties.ImpureByAnalysis
+import org.opalj.br.fpcf.properties.Pure
 import org.opalj.ll.fpcf.analyses.EagerSimplePurityAnalysis
-import org.opalj.ll.fpcf.analyses.Impure
-import org.opalj.ll.fpcf.analyses.Pure
 import org.opalj.ll.llvm.value.Function
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class SimpleLLVMPurityTests extends AnyFunSpec with Matchers {
+class LLVMPurityTests extends AnyFunSpec with Matchers {
     describe("SimplePurityAnalysis") {
         it("executes") {
             val project = Project(Iterable.empty)
@@ -22,7 +22,7 @@ class SimpleLLVMPurityTests extends AnyFunSpec with Matchers {
             val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(EagerSimplePurityAnalysis)
 
             val impureFunctionNames = propertyStore
-                .finalEntities(Impure)
+                .finalEntities(ImpureByAnalysis)
                 .asInstanceOf[Iterator[Function]]
                 .map(_.name)
                 .toList

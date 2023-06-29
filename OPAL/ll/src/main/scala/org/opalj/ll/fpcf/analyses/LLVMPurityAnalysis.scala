@@ -9,52 +9,20 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.OrderedProperty
+import org.opalj.br.fpcf.properties.Pure
+import org.opalj.br.fpcf.properties.ImpureByAnalysis
+import org.opalj.br.fpcf.properties.Purity
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.llvm.value.Function
 import org.opalj.ll.llvm.value.GlobalVariable
 import org.opalj.ll.llvm.value.Store
 
-sealed trait SimplePurityPropertyMetaInformation extends PropertyMetaInformation {
-    final type Self = SimplePurity
-}
 
-sealed trait SimplePurity extends SimplePurityPropertyMetaInformation with OrderedProperty {
-    def meet(other: SimplePurity): SimplePurity = {
-        (this, other) match {
-            case (Pure, Pure) => Pure
-            case (_, _)       => Impure
-        }
-    }
-
-    override def checkIsEqualOrBetterThan(e: Entity, other: SimplePurity): Unit = {
-        if (meet(other) != other) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
-    }
-
-    final def key: PropertyKey[SimplePurity] = SimplePurity.key
-}
-
-case object Pure extends SimplePurity
-
-case object Impure extends SimplePurity
-
-object SimplePurity extends SimplePurityPropertyMetaInformation {
-    final val key: PropertyKey[SimplePurity] = PropertyKey.create(
-        "SimplePurity",
-        Impure
-    )
-}
-
-class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class LLVMPurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def analyzeSimplePurity(function: Function): ProperPropertyComputationResult = {
         function
             .basicBlocks
@@ -63,7 +31,7 @@ class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 case instruction: Store =>
                     instruction.dst match {
                         case _: GlobalVariable =>
-                            return Result(function, Impure)
+                            return Result(function, ImpureByAnalysis)
                         case _ => ()
                     }
                 case _ => ()
@@ -73,7 +41,7 @@ class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 }
 
 trait SimplePurityAnalysisScheduler extends FPCFAnalysisScheduler {
-    def derivedProperty: PropertyBounds = PropertyBounds.ub(SimplePurity)
+    def derivedProperty: PropertyBounds = PropertyBounds.ub(Purity)
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
 
@@ -92,7 +60,7 @@ object EagerSimplePurityAnalysis
         propertyStore: PropertyStore,
         initData:      InitializationData
     ): FPCFAnalysis = {
-        val analysis = new SimplePurityAnalysis(project)
+        val analysis = new LLVMPurityAnalysis(project)
         val llvm_project = project.get(LLVMProjectKey)
         propertyStore.scheduleEagerComputationsForEntities(llvm_project.functions)(
             analysis.analyzeSimplePurity
