@@ -21,7 +21,6 @@ import org.opalj.ll.llvm.value.Function
 import org.opalj.ll.llvm.value.GlobalVariable
 import org.opalj.ll.llvm.value.Store
 
-
 class LLVMPurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def analyzeSimplePurity(function: Function): ProperPropertyComputationResult = {
         function
