@@ -17,7 +17,7 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Michael Reif
  */
-sealed trait EntryPointFinder {
+trait EntryPointFinder {
 
     /*
     * Returns the entry points with respect to a concrete scenario.
