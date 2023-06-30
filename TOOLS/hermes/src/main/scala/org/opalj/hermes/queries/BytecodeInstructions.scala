@@ -3,6 +3,7 @@ package org.opalj
 package hermes
 package queries
 
+import java.net.URI
 import java.net.URL
 
 import org.opalj.br.analyses.Project
