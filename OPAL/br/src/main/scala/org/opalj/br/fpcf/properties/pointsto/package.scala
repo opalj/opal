@@ -15,13 +15,13 @@ package object pointsto {
         tpe:          ReferenceType,
         isEmptyArray: Boolean       = false
     ): Long = {
-        val contextId = if (context eq NoContext) 0x7FFFFFF else context.id
+        val contextId = if (context eq NoContext) 0x3FFFFFF else context.id
         val typeId = tpe.id
         val emptyArray = if (isEmptyArray) 1L else 0L
-        assert(pc >= 0 && pc <= 0xFFFF)
-        assert(contextId >= 0 && contextId <= 0x7FFFFFF)
+        assert(pc >= -0x10000 && pc <= 0xFFFF)
+        assert(contextId >= 0 && contextId <= 0x3FFFFFF)
         assert(typeId >= -0x80000 && typeId <= 0x7FFFF)
-        contextId.toLong | (pc.toLong << 27) | (emptyArray << 43) | (typeId.toLong << 44)
+        contextId.toLong | ((pc.toLong & 0x1FFFF) << 26) | (emptyArray << 43) | (typeId.toLong << 44)
     }
 
     @inline def allocationSiteLongToTypeId(encodedAllocationSite: AllocationSite): Int = {

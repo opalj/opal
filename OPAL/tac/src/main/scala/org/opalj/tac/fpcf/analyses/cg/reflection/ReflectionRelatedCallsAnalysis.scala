@@ -1257,13 +1257,18 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     if (isVirtual) {
                         val receiverTypes =
                             if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
-                                val rcvr = actualParams.get.head.get.value.asReferenceValue
-                                Some(
-                                    if (rcvr.isNull.isYes) Set.empty[ObjectType]
-                                    else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
-                                    else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
-                                    else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, true)
-                                )
+                                val receiverValue = actualParams.get.head.get.value
+                                if (!receiverValue.isReferenceValue)
+                                    None
+                                else {
+                                    val rcvr = receiverValue.asReferenceValue
+                                    Some(
+                                        if (rcvr.isNull.isYes) Set.empty[ObjectType]
+                                        else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
+                                        else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
+                                        else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, true)
+                                    )
+                                }
                             } else None
                         if (receiverTypes.isDefined)
                             matchers += new ClassBasedMethodMatcher(

@@ -66,7 +66,7 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
         val seenArrayTypes = UIDSet.newBuilder[ArrayType]
 
         def createExternalAllocation(tpe: ReferenceType): PointsToSet = {
-            createPointsToSet(0xFFFF, NoContext.asInstanceOf[ContextType], tpe, false)
+            createPointsToSet(-1, NoContext.asInstanceOf[ContextType], tpe, false)
         }
 
         def initialize(param: Entity, types: UIDSet[ReferenceType]): Unit = {
