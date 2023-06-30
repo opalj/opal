@@ -1,4 +1,4 @@
-/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+ /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package hermes
 package queries
@@ -21,7 +21,7 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
     private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
 
     override val htmlDescription: Either[String, URL] = {
-        Right(URI.create("https://www.opal-project.de/bi/JVMInstructions.xml").toURL)    
+        Right(URI.create("https://www.opal-project.de/bi/JVMInstructions.xml").toURL)
     }
 
     override def featureIDs: IndexedSeq[String] = {
