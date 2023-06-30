@@ -4,11 +4,8 @@ package tac
 package cg
 package android
 
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.{ClassFile, ObjectType}
+import org.opalj.br.analyses.{ProjectInformationKey, ProjectInformationKeys, SomeProject}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -41,25 +38,27 @@ object AndroidManifestKey extends ProjectInformationKey[Option[(Map[String, List
         )
         val androidURI = "http://schemas.android.com/apk/res/android"
         val packageName = manifest.attribute("package").get.toString().replaceAll("\\.", "/")
-        val intentFilters = List("activity", "receiver", "service").flatMap { comp ⇒
+        val intentFilters = List("activity", "receiver", "service").flatMap { comp =>
             val components = manifest \\ comp
-            components.map { c ⇒
+            components.map { c =>
                 var ot = c.attribute(androidURI, "name").head.toString().replaceAll("\\.", "/")
-                if (ot.startsWith("/")) { ot = packageName + ot }
+                if (ot.startsWith("/")) {
+                    ot = packageName + ot
+                }
                 val rec = project.classFile(ObjectType(ot))
                 if (rec.isDefined) {
                     if (comp == "activity" || comp == "service") componentMap(comp) += rec.get
                     val filters = c \ "intent-filter"
                     if (filters.nonEmpty) {
-                        filters.map { filter ⇒
+                        filters.map { filter =>
                             val intentFilter = new IntentFilter(rec.get, comp)
                             intentFilter.actions = (filter \ "action").map(_.attribute(androidURI, "name").
-                                get.head.toString()).to[ListBuffer]
+                                get.head.toString()).to(ListBuffer)
                             intentFilter.categories = (filter \ "category").map(_.attribute(androidURI, "name").
-                                get.head.toString()).to[ListBuffer]
+                                get.head.toString()).to(ListBuffer)
                             val data = filter \ "data"
                             if (data.nonEmpty) {
-                                data.foreach { d ⇒
+                                data.foreach { d =>
                                     val t = d.attribute(androidURI, "mimeType")
                                     if (t.isDefined) {
                                         intentFilter.dataTypes += t.get.head.toString()
