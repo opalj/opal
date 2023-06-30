@@ -376,7 +376,7 @@ object ConstantsBuffer {
 
         // 1. let's add the referenced CONSTANT_UTF8 entries required by LoadClass instructions
         var nextIndexAfterLDCRelatedEntries = 1 + ldcs.size
-        implicit val constantsBuffer = new ConstantsBuffer(nextIndexAfterLDCRelatedEntries, buffer)
+        implicit val constantsBuffer: ConstantsBuffer = new ConstantsBuffer(nextIndexAfterLDCRelatedEntries, buffer)
         import constantsBuffer._
         ldClasses foreach { ldc => CPEUtf8OfCPEClass(ldc.asInstanceOf[LoadClass].value) }
         nextIndexAfterLDCRelatedEntries = constantsBuffer.nextIndex

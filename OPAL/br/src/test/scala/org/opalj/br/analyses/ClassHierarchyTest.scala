@@ -3,6 +3,8 @@ package org.opalj
 package br
 package analyses
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
@@ -589,7 +591,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "isASubtypeOf method w.r.t. concrete generics"
 
     it should "return YES iff the type arguments do match considering variance indicators and wildcards" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(baseContainer, baseContainer) should be(Yes)
         isASubtypeOf(baseContainer, wildCardContainer) should be(Yes)
@@ -604,7 +606,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return NO if the type arguments doesn't match considering variance indicators and wildcards" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(baseContainer, extBaseContainer) should be(No)
         isASubtypeOf(concreteSubGeneric, altContainer) should be(No)
@@ -621,7 +623,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "isASubtypeOf method w.r.t. generics with interface types"
 
     it should "return YES iff the subtype directly implements the interface with matching type arguments" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(concreteInterfaceWithBase, iContainerWithBase) should be(Yes)
         isASubtypeOf(IBaseContainerWithBase, iContainerWithBase) should be(Yes)
@@ -629,7 +631,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return NO if the subtype doesn't directly implement the interface with matching type arguments" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(IBaseContainerWithAltBase, iContainerWithBase) should be(No)
         isASubtypeOf(concreteInterfaceWithAltBase, IBaseContainerWithBase) should be(No)
@@ -637,7 +639,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return YES iff the subtype implements the given interface with matching type arguments through some supertype" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(subClassWithInterface, iContainerWithAltBase) should be(Yes)
         isASubtypeOf(subClassWithInterface, concreteSubGeneric) should be(Yes)
@@ -645,13 +647,13 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return NO if the subtype doesn't implement the given interface with matching type arguments through some supertype" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(subClassWithInterface, iContainerWithBase) should be(No)
     }
 
     it should "return UNKNOWN if one of the arguments is an unknown type" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(unknownContainer, baseContainer) should be(Unknown)
     }
@@ -659,7 +661,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "isASubtypeOf method w.r.t. generics with nested types"
 
     it should "return YES iff if nested type arguments of the supertype and the subtype do match" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(nestedInnerCovariantContainer, nestedInnerCovariantContainer) should be(Yes)
         isASubtypeOf(nestedExtBase, nestedInnerCovariantContainer) should be(Yes)
@@ -669,7 +671,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return NO if nested type arguments of the subtype and the supertype doesn't match" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(nestedBase, nestedAltBase) should be(No)
         isASubtypeOf(nestedAltBase, nestedInnerCovariantContainer) should be(No)
@@ -680,7 +682,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "isASubtypeOf method w.r.t. generics with class suffix (e.g. by inner classes)"
 
     it should "return YES iff the class suffixes of a ClassTypeSignature of inner classes also match when considering generic type arguments" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
 
         isASubtypeOf(genericWithSuffix_Suffix1_7, baseCTS) should be(Yes)
@@ -695,7 +697,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return NO if the class suffixes of a ClassTypeSignature of inner classes doesn't match when considering generic type arguments " in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(genericWithSuffix_publicSuffix1_1, genericWithSuffix_publicSuffix1_1_altBase) should be(No)
         isASubtypeOf(genericWithSuffix_altBase_publicSuffix1_1, genericWithSuffix_publicSuffix1_1) should be(No)
@@ -715,7 +717,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "isASubtypeOf method w.r.t. generics specified by formal type parameters"
 
     it should "return YES iff the subtype extends the class and implements all declared interfaces of the FormalTypeParameter" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(extBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Yes)
         isASubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase))) should be(Yes)
@@ -724,7 +726,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return NO if the subtype doesn't extends the class and implements all declared interfaces of the FormalTypeParameter" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(altBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(No)
         isASubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase, altInterfaceCTS))) should be(No)
@@ -732,7 +734,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return UNKNOWN if an unknown type is encountered" in {
-        implicit val genericProject = ClassHierarchyTest.genericProject
+        implicit val genericProject: Project[URL] = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isASubtypeOf
         isASubtypeOf(unknownContainer, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Unknown)
     }
