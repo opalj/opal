@@ -21,6 +21,7 @@ sealed trait SystemPropertiesPropertyMetaInformation extends PropertyMetaInforma
     type Self = SystemProperties
 }
 
+// TODO Should probably use a data structure that allows retrieving only the latest entries (for use in continuations)
 class SystemProperties(val properties: Map[String, Set[String]])
     extends Property with SystemPropertiesPropertyMetaInformation {
     final def key: PropertyKey[SystemProperties] = SystemProperties.key

@@ -6,11 +6,13 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.FieldType
 
 object MethodHandlesUtil {
@@ -66,6 +68,11 @@ object MethodHandlesUtil {
         isConstructor: Boolean,
         stmts:         Array[Stmt[V]],
         project:       SomeProject
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): MethodMatcher = {
         val descriptorsOpt =
             if (descriptorOpt.isDefined) {
@@ -109,6 +116,11 @@ object MethodHandlesUtil {
         value:   Expr[V],
         stmts:   Array[Stmt[V]],
         project: SomeProject
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Option[Iterator[MethodDescriptor]] = {
 
         def isMethodType(expr: Expr[V]): Boolean = {
@@ -158,6 +170,11 @@ object MethodHandlesUtil {
         descriptor: MethodDescriptor,
         stmts:      Array[Stmt[V]],
         project:    SomeProject
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Option[Iterator[MethodDescriptor]] = {
         val returnTypesOpt = TypesUtil.getPossibleClasses(params.head, stmts, project)
 

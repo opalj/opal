@@ -16,6 +16,7 @@ import org.opalj.br.Type
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.ClassHierarchy
 
 object TypesUtil {
 
@@ -27,6 +28,11 @@ object TypesUtil {
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
         onlyObjectTypes: Boolean
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Option[Set[ObjectType]] = {
         StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls =>
             try {
@@ -59,9 +65,10 @@ object TypesUtil {
         onlyObjectTypes: Boolean
     )(
         implicit
-        typeIterator: TypeIterator,
-        state:        TypeIteratorState,
-        ps:           PropertyStore
+        typeIterator:   TypeIterator,
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Set[ObjectType] = {
         StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls =>
             try {
@@ -84,6 +91,11 @@ object TypesUtil {
         stmts:            Array[Stmt[V]],
         project:          SomeProject,
         onlyObjectTypes:  Boolean
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Option[ObjectType] = {
         StringUtil.getString(classNameDefSite, stmts).flatMap { cls =>
             try {
@@ -108,6 +120,11 @@ object TypesUtil {
         stmts:           Array[Stmt[V]],
         project:         SomeProject,
         onlyObjectTypes: Boolean        = false
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Option[Iterator[Type]] = {
 
         def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
@@ -194,9 +211,10 @@ object TypesUtil {
         onlyObjectTypes: Boolean
     )(
         implicit
-        typeIterator: TypeIterator,
-        state:        TypeIteratorState,
-        ps:           PropertyStore
+        typeIterator:   TypeIterator,
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Set[Type] = {
         var possibleTypes: Set[Type] = Set.empty
 
@@ -231,9 +249,10 @@ object TypesUtil {
         onlyObjectTypes: Boolean
     )(
         implicit
-        typeIterator: TypeIterator,
-        state:        TypeIteratorState,
-        ps:           PropertyStore
+        typeIterator:   TypeIterator,
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Set[Type] = {
         var possibleTypes: Set[Type] = Set.empty
 

@@ -7,9 +7,14 @@ package cg
 package reflection
 
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.UBP
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.SystemProperties
 
 object StringUtil {
 
@@ -20,16 +25,17 @@ object StringUtil {
     def getPossibleStrings[ContextType <: Context](
         value: Expr[V],
         stmts: Array[Stmt[V]]
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Option[Set[String]] = {
         Some(value.asVar.definedBy.map[Set[String]] { index =>
-            if (index >= 0) {
-                getString(index, stmts) match {
-                    case Some(v) => Set(v)
-                    case _ =>
-                        return None;
-                }
-            } else {
-                return None;
+            getString(index, stmts) match {
+                case Some(v) => Set(v)
+                case _ =>
+                    return None;
             }
         }.flatten)
     }
@@ -48,9 +54,10 @@ object StringUtil {
         failure:  () => Unit
     )(
         implicit
-        typeIterator: TypeIterator,
-        state:        TypeIteratorState,
-        ps:           PropertyStore
+        typeIterator:   TypeIterator,
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
     ): Set[String] = {
         var strings = Set.empty[String]
 
@@ -68,11 +75,61 @@ object StringUtil {
         strings
     }
 
-    private[reflection] def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
-        val expr = stmts(stringDefSite).asAssignment.expr
-        expr match {
-            case StringConst(_, v) => Some(v)
-            case _                 => None
+    private[reflection] def getString(
+        stringDefSite: Int,
+        stmts:         Array[Stmt[V]]
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
+    ): Option[String] = {
+        if (stringDefSite >= 0) {
+            val expr = stmts(stringDefSite).asAssignment.expr
+            expr match {
+                case StringConst(_, v) => Some(v)
+                // TODO These don't return anything for now as the necessary dependency handling must be implemented first!
+                case VirtualFunctionCall(_, declaringClass, _, name, _, _, params) if (name == "getProperty" || name == "get") && classHierarchy.isSubtypeOf(declaringClass, ObjectType("java/util/Properties")) =>
+                    getPossiblePropertyValues(params, stmts); None
+                case StaticFunctionCall(_, ObjectType.System, _, "getProperty", _, params) =>
+                    getPossiblePropertyValues(params, stmts); None
+                case _ => None
+            }
+        } else {
+            None
         }
+    }
+
+    private[this] def getPossiblePropertyValues(
+        params: Seq[Expr[V]],
+        stmts:  Array[Stmt[V]]
+    )(
+        implicit
+        state:          TypeIteratorState,
+        ps:             PropertyStore,
+        classHierarchy: ClassHierarchy
+    ): Option[Set[String]] = {
+        val possibleKeys = getPossibleStrings(params.head, stmts) // TODO Use points-to based method
+
+        if (possibleKeys.isDefined) {
+            val defaultValue = if (params.size == 2)
+                getPossibleStrings(params(1), stmts).getOrElse(Set.empty) // TODO Use points-to based method
+            else
+                Set.empty
+
+            val properties: EOptionP[SomeProject, SystemProperties] =
+                ps(ps.context(classOf[SomeProject]), SystemProperties.key)
+
+            if (properties.isRefinable)
+                state.addDependency(null /*TODO*/ , properties)
+
+            val propertyValues = properties match {
+                case UBP(ub) => possibleKeys.get.flatMap(key => ub.properties(key))
+                case _       => Set.empty
+            }
+
+            Some(propertyValues ++ defaultValue)
+        } else
+            None
     }
 }
