@@ -1,18 +1,70 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll.fpcf.analyses.ifds.taint
+package org.opalj
+package ll
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.{Callable, IFDSFact}
-import org.opalj.ll.fpcf.analyses.ifds.{JNICallUtil, JNIMethod, LLVMFunction, LLVMStatement, NativeBackwardIFDSProblem, NativeFunction}
+import org.opalj.ifds.Callable
+import org.opalj.ifds.IFDSFact
+import org.opalj.ll.fpcf.analyses.ifds.JNICallUtil
+import org.opalj.ll.fpcf.analyses.ifds.JNIMethod
+import org.opalj.ll.fpcf.analyses.ifds.LLVMFunction
+import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
+import org.opalj.ll.fpcf.analyses.ifds.NativeBackwardIFDSProblem
+import org.opalj.ll.fpcf.analyses.ifds.NativeFunction
 import org.opalj.ll.llvm.PointerType
-import org.opalj.ll.llvm.value._
+import org.opalj.ll.llvm.value.BinaryOperation
+import org.opalj.ll.llvm.value.Call
+import org.opalj.ll.llvm.value.Store
+import org.opalj.ll.llvm.value.Alloca
+import org.opalj.ll.llvm.value.GetElementPtr
+import org.opalj.ll.llvm.value.Load
+import org.opalj.ll.llvm.value.FNeg
+import org.opalj.ll.llvm.value.ConversionOperation
+import org.opalj.ll.llvm.value.ExtractElement
+import org.opalj.ll.llvm.value.InsertElement
+import org.opalj.ll.llvm.value.ShuffleVector
+import org.opalj.ll.llvm.value.ExtractValue
+import org.opalj.ll.llvm.value.InsertValue
+import org.opalj.ll.llvm.value.Ret
+import org.opalj.ll.llvm.value.Value
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.{ArrayLength, ArrayLoad, BinaryExpr, Compare, Expr, GetField, GetStatic, NewArray, PrefixExpr, PrimitiveTypecastExpr, ReturnValue, Var}
-import org.opalj.tac.fpcf.analyses.ifds.{JavaBackwardICFG, JavaICFG, JavaIFDSProblem, JavaMethod, JavaStatement}
-import org.opalj.tac.fpcf.analyses.ifds.taint.{ArrayElement, FlowFact, InstanceField, StaticField, TaintFact, TaintNullFact, TaintProblem, Variable}
+import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
+import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
+import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
+import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
+import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
+import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardICFG
+import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
+import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
+import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.ArrayLength
+import org.opalj.tac.ArrayLoad
+import org.opalj.tac.BinaryExpr
+import org.opalj.tac.Compare
+import org.opalj.tac.Expr
+import org.opalj.tac.GetField
+import org.opalj.tac.GetStatic
+import org.opalj.tac.NewArray
+import org.opalj.tac.PrefixExpr
+import org.opalj.tac.PrimitiveTypecastExpr
+import org.opalj.tac.ReturnValue
+import org.opalj.tac.Var
 
+/**
+ * Class to solve a native backward taint problem.
+ *
+ * @author Nicolas Gross
+ */
 abstract class NativeBackwardTaintProblem(project: SomeProject)
     extends NativeBackwardIFDSProblem[NativeTaintFact, TaintFact](project)
     with TaintProblem[NativeFunction, LLVMStatement, NativeTaintFact] {
@@ -24,61 +76,76 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
     override def needsPredecessor(statement: LLVMStatement): Boolean = false
 
-    override def normalFlow(statement: LLVMStatement, in: NativeTaintFact,
-                            predecessor: Option[LLVMStatement]): Set[NativeTaintFact] = statement.instruction match {
-        case store: Store => in match {
-            // do not propagate in if in == store.dst, tainted value is overwritten
-            case NativeVariable(value) if value == store.dst => Set(NativeVariable(store.src))
-            case NativeArrayElement(base, indices) => store.dst match { // dst is pointer type
-                // value is array and is stored to tainted alloca
-                case dst: Alloca if dst == base => Set(NativeArrayElement(store.src, indices))
-                // value is stored into tainted array element
-                case gep: GetElementPtr if gep.base == base =>
-                    // if indices are not constant, assume the tainted element is written
-                    if ((gep.isConstant && gep.constants == indices) || !gep.isConstant)
-                        Set(NativeVariable(store.src))
-                    else Set(in)
+    override def normalFlow(
+        statement:   LLVMStatement,
+        in:          NativeTaintFact,
+        predecessor: Option[LLVMStatement]
+    ): Set[NativeTaintFact] = statement.instruction match {
+        case store: Store =>
+            in match {
+                // do not propagate in if in == store.dst, tainted value is overwritten
+                case NativeVariable(value) if value == store.dst => Set(NativeVariable(store.src))
+                case NativeArrayElement(base, indices) =>
+                    store.dst match { // dst is pointer type
+                        // value is array and is stored to tainted alloca
+                        case dst: Alloca if dst == base => Set(NativeArrayElement(store.src, indices))
+                        // value is stored into tainted array element
+                        case gep: GetElementPtr if gep.base == base =>
+                            // if indices are not constant, assume the tainted element is written
+                            if ((gep.isConstant && gep.constants == indices) || !gep.isConstant)
+                                Set(NativeVariable(store.src))
+                            else Set(in)
+                        case _ => Set(in)
+                    }
                 case _ => Set(in)
             }
-            case _ => Set(in)
-        }
-        case load: Load => in match {
-            case NativeVariable(value) if value == load => Set(in, NativeVariable(load.src))
-            case NativeArrayElement(base, indices) if base == load => load.src match { // src is pointer type
-                // array loaded from alloca
-                case src: Alloca => Set(in, NativeArrayElement(src, indices))
-                // array loaded from array element -> nested arrays
-                case gep: GetElementPtr =>
+        case load: Load =>
+            in match {
+                case NativeVariable(value) if value == load => Set(in, NativeVariable(load.src))
+                case NativeArrayElement(base, indices) if base == load =>
+                    load.src match { // src is pointer type
+                        // array loaded from alloca
+                        case src: Alloca => Set(in, NativeArrayElement(src, indices))
+                        // array loaded from array element -> nested arrays
+                        case gep: GetElementPtr =>
+                            if (gep.isConstant) Set(in, NativeArrayElement(gep.base, gep.constants))
+                            else
+                                Set(in, NativeVariable(gep.base)) // taint whole array if indices are not constant
+                        case _ => Set(in)
+                    }
+                case _ => Set(in)
+            }
+        case gep: GetElementPtr =>
+            in match {
+                case NativeVariable(base) if base == gep =>
                     if (gep.isConstant) Set(in, NativeArrayElement(gep.base, gep.constants))
-                    else Set(in, NativeVariable(gep.base)) // taint whole array if indices are not constant
+                    else Set(in, NativeVariable(gep.base))
+                case NativeArrayElement(base, indices) if base == gep =>
+                    if (gep.isConstant)
+                        Set(in, NativeArrayElement(gep.base, gep.constants)) // not nested array taints, taint whole subarray
+                    else Set(in, NativeVariable(gep.base))
                 case _ => Set(in)
             }
-            case _ => Set(in)
-        }
-        case gep: GetElementPtr => in match {
-            case NativeVariable(base) if base == gep =>
-                if (gep.isConstant) Set(in, NativeArrayElement(gep.base, gep.constants))
-                else Set(in, NativeVariable(gep.base))
-            case NativeArrayElement(base, indices) if base == gep =>
-                if (gep.isConstant) Set(in, NativeArrayElement(gep.base, gep.constants)) // not nested array taints, taint whole subarray
-                else Set(in, NativeVariable(gep.base))
-            case _ => Set(in)
-        }
-        case fneg: FNeg => in match {
-            case NativeVariable(value) if value == fneg => Set(in, NativeVariable(fneg.operand(0)))
-            case _                                      => Set(in)
-        }
-        case binOp: BinaryOperation => in match {
-            case NativeVariable(value) if value == binOp => Set(in, NativeVariable(binOp.op1), NativeVariable(binOp.op2))
-            case _                                       => Set(in)
-        }
-        case convOp: ConversionOperation => in match {
-            case NativeVariable(value) if value == convOp => Set(in, NativeVariable(convOp.value))
-            case _                                        => Set(in)
-        }
+        case fneg: FNeg =>
+            in match {
+                case NativeVariable(value) if value == fneg => Set(in, NativeVariable(fneg.operand(0)))
+                case _                                      => Set(in)
+            }
+        case binOp: BinaryOperation =>
+            in match {
+                case NativeVariable(value) if value == binOp =>
+                    Set(in, NativeVariable(binOp.op1), NativeVariable(binOp.op2))
+                case _ => Set(in)
+            }
+        case convOp: ConversionOperation =>
+            in match {
+                case NativeVariable(value) if value == convOp => Set(in, NativeVariable(convOp.value))
+                case _                                        => Set(in)
+            }
         case extrElem: ExtractElement =>
             def taintExtElemVec: Set[NativeTaintFact] = {
-                if (extrElem.isConstant) Set(in, NativeArrayElement(extrElem.vec, Seq(0, extrElem.constant)))
+                if (extrElem.isConstant)
+                    Set(in, NativeArrayElement(extrElem.vec, Seq(0, extrElem.constant)))
                 else Set(in, NativeVariable(extrElem.vec)) // taint whole array if index not constant
             }
             in match {
@@ -86,76 +153,96 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                 case NativeArrayElement(base, _) if base == extrElem => taintExtElemVec
                 case _                                               => Set(in)
             }
-        case insElem: InsertElement => in match {
-            case NativeVariable(value) if insElem.vec == value => Set(in, NativeVariable(insElem.value)) // whole vector tainted
-            case NativeArrayElement(base, indices) if insElem.vec == base => // specific vector element tainted
-                // check if tainted element is written. if index is not constant, assume tainted element is written.
-                if ((insElem.isConstant && indices == Seq(0, insElem.constant)) || !insElem.isConstant)
-                    Set(in, NativeVariable(insElem.value))
-                else Set(in)
-            case _ => Set(in)
-        }
-        case shuffleVec: ShuffleVector => in match {
-            // simplification: taint both input arrays as a whole
-            case NativeVariable(value) if value == shuffleVec =>
-                Set(in, NativeVariable(shuffleVec.vec1), NativeVariable(shuffleVec.vec2))
-            case NativeArrayElement(base, _) if base == shuffleVec =>
-                Set(in, NativeVariable(shuffleVec.vec1), NativeVariable(shuffleVec.vec2))
-            case _ => Set(in)
-        }
-        case extrValue: ExtractValue => in match {
-            case NativeVariable(value) if extrValue == value =>
-                extrValue.constants.map(c => NativeArrayElement(extrValue.aggregVal, Seq(0, c))).toSet ++ Set(in)
-            case NativeArrayElement(base, _) if base == extrValue =>
-                // array loaded from array element -> nested arrays
-                extrValue.constants.map(c => NativeArrayElement(extrValue.aggregVal, Seq(0, c))).toSet ++ Set(in)
-            case _ => Set(in)
-        }
-        case insValue: InsertValue => in match {
-            case NativeVariable(value) if insValue.aggregVal == value => Set(in, NativeVariable(insValue.value))
-            // check if tainted element is written
-            case NativeArrayElement(base, indices) if insValue.aggregVal == base && indices.head == 0 &&
-                insValue.constants.contains(indices.toSeq(1)) => Set(in, NativeVariable(insValue.value))
-            case _ => Set(in)
-        }
+        case insElem: InsertElement =>
+            in match {
+                case NativeVariable(value) if insElem.vec == value =>
+                    Set(in, NativeVariable(insElem.value)) // whole vector tainted
+                case NativeArrayElement(base, indices) if insElem.vec == base => // specific vector element tainted
+                    // check if tainted element is written. if index is not constant, assume tainted element is written.
+                    if ((insElem.isConstant && indices == Seq(0, insElem.constant)) || !insElem.isConstant)
+                        Set(in, NativeVariable(insElem.value))
+                    else Set(in)
+                case _ => Set(in)
+            }
+        case shuffleVec: ShuffleVector =>
+            in match {
+                // simplification: taint both input arrays as a whole
+                case NativeVariable(value) if value == shuffleVec =>
+                    Set(in, NativeVariable(shuffleVec.vec1), NativeVariable(shuffleVec.vec2))
+                case NativeArrayElement(base, _) if base == shuffleVec =>
+                    Set(in, NativeVariable(shuffleVec.vec1), NativeVariable(shuffleVec.vec2))
+                case _ => Set(in)
+            }
+        case extrValue: ExtractValue =>
+            in match {
+                case NativeVariable(value) if extrValue == value =>
+                    extrValue.constants
+                        .map(c => NativeArrayElement(extrValue.aggregVal, Seq(0, c)))
+                        .toSet ++ Set(in)
+                case NativeArrayElement(base, _) if base == extrValue =>
+                    // array loaded from array element -> nested arrays
+                    extrValue.constants
+                        .map(c => NativeArrayElement(extrValue.aggregVal, Seq(0, c)))
+                        .toSet ++ Set(in)
+                case _ => Set(in)
+            }
+        case insValue: InsertValue =>
+            in match {
+                case NativeVariable(value) if insValue.aggregVal == value =>
+                    Set(in, NativeVariable(insValue.value))
+                // check if tainted element is written
+                case NativeArrayElement(base, indices) if insValue.aggregVal == base && indices.head == 0 &&
+                    insValue.constants.contains(indices.toSeq(1)) =>
+                    Set(in, NativeVariable(insValue.value))
+                case _ => Set(in)
+            }
         case _ => Set(in)
     }
 
-    override def callFlow(start: LLVMStatement, in: NativeTaintFact, call: LLVMStatement,
-                          callee: NativeFunction): Set[NativeTaintFact] = {
+    override def callFlow(
+        start:  LLVMStatement,
+        in:     NativeTaintFact,
+        call:   LLVMStatement,
+        callee: NativeFunction
+    ): Set[NativeTaintFact] = {
         val callInstr = call.instruction.asInstanceOf[Call]
-        val flow = collection.mutable.Set.empty[NativeTaintFact]
+        val flow = scala.collection.mutable.Set.empty[NativeTaintFact]
         callee match {
             case LLVMFunction(callee) =>
                 // taint return value in callee, if tainted in caller
                 start.instruction match {
-                    case ret: Ret if ret.value.isDefined => in match {
-                        case NativeVariable(value) if value == call.instruction =>
-                            flow += NativeVariable(ret.value.get)
-                        case NativeArrayElement(base, indices) if base == call.instruction =>
-                            flow += NativeArrayElement(ret.value.get, indices)
-                        case _ =>
-                    }
+                    case ret: Ret if ret.value.isDefined =>
+                        in match {
+                            case NativeVariable(value) if value == call.instruction =>
+                                flow += NativeVariable(ret.value.get)
+                            case NativeArrayElement(base, indices) if base == call.instruction =>
+                                flow += NativeArrayElement(ret.value.get, indices)
+                            case _ =>
+                        }
                     case _ =>
                 }
 
                 // check for tainted pass-by-reference parameters (pointer)
                 // TODO handle `byval` attribute or not? nested objects?
                 in match {
-                    case NativeVariable(value) => callInstr.indexOfArgument(value) match {
-                        case Some(index) => callInstr.argument(index).get.tpe match {
-                            case PointerType(_) => flow += NativeVariable(callee.argument(index))
-                            case _              =>
+                    case NativeVariable(value) =>
+                        callInstr.indexOfArgument(value) match {
+                            case Some(index) =>
+                                callInstr.argument(index).get.tpe match {
+                                    case PointerType(_) => flow += NativeVariable(callee.argument(index))
+                                    case _              =>
+                                }
+                            case None =>
                         }
-                        case None =>
-                    }
-                    case NativeArrayElement(base, indices) => callInstr.indexOfArgument(base) match {
-                        case Some(index) => callInstr.argument(index).get.tpe match {
-                            case PointerType(_) => flow += NativeArrayElement(callee.argument(index), indices)
-                            case _              =>
+                    case NativeArrayElement(base, indices) =>
+                        callInstr.indexOfArgument(base) match {
+                            case Some(index) =>
+                                callInstr.argument(index).get.tpe match {
+                                    case PointerType(_) => flow += NativeArrayElement(callee.argument(index), indices)
+                                    case _              =>
+                                }
+                            case None =>
                         }
-                        case None =>
-                    }
                     case NativeTaintNullFact => flow += in
                     case _                   =>
                 }
@@ -164,22 +251,29 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         flow.toSet
     }
 
-    override def returnFlow(exit: LLVMStatement, in: NativeTaintFact, call: LLVMStatement,
-                            successor: Option[LLVMStatement], unbCallChain: Seq[Callable]): Set[NativeTaintFact] = {
+    override def returnFlow(
+        exit:         LLVMStatement,
+        in:           NativeTaintFact,
+        call:         LLVMStatement,
+        successor:    Option[LLVMStatement],
+        unbCallChain: Seq[Callable]
+    ): Set[NativeTaintFact] = {
         val callee = exit.callable;
         if (sanitizesReturnValue(callee)) return Set.empty
 
         val callInstr = call.instruction.asInstanceOf[Call]
         // taint parameters in caller context if they were tainted in the callee context
         in match {
-            case NativeVariable(value) => callee.function.arguments.find(_.address == value.address) match {
-                case Some(arg) => Set(NativeVariable(callInstr.argument(arg.index).get))
-                case None      => Set.empty
-            }
-            case NativeArrayElement(base, indices) => callee.function.arguments.find(_.address == base.address) match {
-                case Some(arg) => Set(NativeArrayElement(callInstr.argument(arg.index).get, indices))
-                case None      => Set.empty
-            }
+            case NativeVariable(value) =>
+                callee.function.arguments.find(_.address == value.address) match {
+                    case Some(arg) => Set(NativeVariable(callInstr.argument(arg.index).get))
+                    case None      => Set.empty
+                }
+            case NativeArrayElement(base, indices) =>
+                callee.function.arguments.find(_.address == base.address) match {
+                    case Some(arg) => Set(NativeArrayElement(callInstr.argument(arg.index).get, indices))
+                    case None      => Set.empty
+                }
             case NativeTaintNullFact => Set(in)
             case NativeFlowFact(flow) if !flow.contains(call.function) =>
                 Set(NativeFlowFact(call.function +: flow))
@@ -194,21 +288,34 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
      * @param in   The fact, which holds before the call.
      * @return Some fact, if necessary. Otherwise None.
      */
-    protected def createFlowFactAtCall(call: LLVMStatement, in: NativeTaintFact,
-                                       unbCallChain: Seq[Callable]): Option[NativeTaintFact] = None
+    protected def createFlowFactAtCall(
+        call:         LLVMStatement,
+        in:           NativeTaintFact,
+        unbCallChain: Seq[Callable]
+    ): Option[NativeTaintFact] = None
 
-    override def callToReturnFlow(call: LLVMStatement, in: NativeTaintFact, successor: Option[LLVMStatement],
-                                  unbCallChain: Seq[Callable]): Set[NativeTaintFact] = {
+    override def callToReturnFlow(
+        call:         LLVMStatement,
+        in:           NativeTaintFact,
+        successor:    Option[LLVMStatement],
+        unbCallChain: Seq[Callable]
+    ): Set[NativeTaintFact] = {
         val flowFact = createFlowFactAtCall(call, in, unbCallChain)
-        val result = collection.mutable.Set.empty[NativeTaintFact]
+        val result = scala.collection.mutable.Set.empty[NativeTaintFact]
         if (!sanitizesParameter(call, in)) result.add(in)
         if (flowFact.isDefined) result.add(flowFact.get)
         result.toSet
     }
 
-    override def outsideAnalysisContextUnbReturn(callee: NativeFunction): Option[OutsideAnalysisContextUnbReturnHandler] = {
-        def handleJavaUnbalancedReturn(callee: NativeFunction, in: NativeTaintFact, callChain: Seq[Callable],
-                                       dependeesGetter: Getter): Unit = {
+    override def outsideAnalysisContextUnbReturn(
+        callee: NativeFunction
+    ): Option[OutsideAnalysisContextUnbReturnHandler] = {
+        def handleJavaUnbalancedReturn(
+            callee:          NativeFunction,
+            in:              NativeTaintFact,
+            callChain:       Seq[Callable],
+            dependeesGetter: Getter
+        ): Unit = {
             // find calls of native function in java code
             val llvmCallee = callee.asInstanceOf[LLVMFunction]
             val (fqn, javaMethodName) = JNICallUtil.resolveNativeMethodName(llvmCallee).get
@@ -237,7 +344,12 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         }
     }
 
-    private def javaUnbalancedReturnFlow(callee: LLVMFunction, javaCallee: Method, call: JavaStatement, in: NativeTaintFact): Set[TaintFact] = {
+    private def javaUnbalancedReturnFlow(
+        callee:     LLVMFunction,
+        javaCallee: Method,
+        call:       JavaStatement,
+        in:         NativeTaintFact
+    ): Set[TaintFact] = {
         if (sanitizesReturnValue(callee)) return Set.empty
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
 
@@ -265,9 +377,13 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         }
     }
 
-    override protected def javaCallFlow(start: JavaStatement, call: LLVMStatement, callee: Method,
-                                        in: NativeTaintFact): Set[TaintFact] = {
-        val flow = collection.mutable.Set.empty[TaintFact]
+    override protected def javaCallFlow(
+        start:  JavaStatement,
+        call:   LLVMStatement,
+        callee: Method,
+        in:     NativeTaintFact
+    ): Set[TaintFact] = {
+        val flow = scala.collection.mutable.Set.empty[TaintFact]
         val callInstr = call.instruction.asInstanceOf[Call]
 
         def createNewTaints(expression: Expr[V], statement: JavaStatement): Set[TaintFact] = {
@@ -290,7 +406,7 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
              arr = nested_ret_array()            {arr[2]}
              sink(arr[2])
              ============================================================
-             */
+       */
             expression.astID match {
                 case Var.ASTID => expression.asVar.definedBy.map(Variable)
                 case ArrayLoad.ASTID =>
@@ -299,10 +415,11 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
                     val arrayDefinedBy = arrayLoad.arrayRef.asVar.definedBy
                     if (arrayIndex.isDefined) arrayDefinedBy.map(ArrayElement(_, arrayIndex.get))
                     else arrayDefinedBy.map(Variable)
-                case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID |
-                    PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID =>
-                    (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) =>
-                        acc ++ createNewTaints(expression.subExpr(subExpr), statement))
+                case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID |
+                    NewArray.ASTID | ArrayLength.ASTID =>
+                    (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])(
+                        (acc, subExpr) => acc ++ createNewTaints(expression.subExpr(subExpr), statement)
+                    )
                 case GetField.ASTID =>
                     val getField = expression.asGetField
                     getField.objRef.asVar.definedBy
@@ -316,20 +433,24 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
 
         // taint return value in callee, if tainted in caller
         if (start.stmt.astID == ReturnValue.ASTID) in match {
-            case NativeVariable(value) if value == callInstr      => flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
-            case NativeArrayElement(base, _) if base == callInstr => flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
-            case _                                                =>
+            case NativeVariable(value) if value == callInstr =>
+                flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
+            case NativeArrayElement(base, _) if base == callInstr =>
+                flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
+            case _ =>
         }
 
-        def taintRefParam(callInstr: Call, in: Value): Set[TaintFact] = callInstr.indexOfArgument(in) match {
-            case Some(index) => callInstr.argument(index).get.tpe match {
-                case PointerType(_) =>
-                    val tacIndex = JavaIFDSProblem.remapParamAndVariableIndex(index - 1, callee.isStatic) // -1 offset JNIEnv
-                    Set(Variable(tacIndex))
-                case _ => Set.empty
+        def taintRefParam(callInstr: Call, in: Value): Set[TaintFact] =
+            callInstr.indexOfArgument(in) match {
+                case Some(index) =>
+                    callInstr.argument(index).get.tpe match {
+                        case PointerType(_) =>
+                            val tacIndex = JavaIFDSProblem.remapParamAndVariableIndex(index - 1, callee.isStatic) // -1 offset JNIEnv
+                            Set(Variable(tacIndex))
+                        case _ => Set.empty
+                    }
+                case None => Set.empty
             }
-            case None => Set.empty
-        }
 
         // check for tainted pass-by-reference parameters (pointer)
         in match {
@@ -342,8 +463,14 @@ abstract class NativeBackwardTaintProblem(project: SomeProject)
         flow.toSet
     }
 
-    override protected def javaReturnFlow(exit: JavaStatement, in: TaintFact, call: LLVMStatement, callFact: NativeTaintFact,
-                                          unbCallChain: Seq[Callable], successor: Option[LLVMStatement]): Set[NativeTaintFact] = {
+    override protected def javaReturnFlow(
+        exit:         JavaStatement,
+        in:           TaintFact,
+        call:         LLVMStatement,
+        callFact:     NativeTaintFact,
+        unbCallChain: Seq[Callable],
+        successor:    Option[LLVMStatement]
+    ): Set[NativeTaintFact] = {
         val callee = exit.callable
         if (sanitizesReturnValue(JNIMethod(callee))) return Set.empty
         val callInstr = call.instruction.asInstanceOf[Call]

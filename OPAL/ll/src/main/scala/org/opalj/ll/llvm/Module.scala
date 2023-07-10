@@ -13,6 +13,13 @@ import org.bytedeco.llvm.global.LLVM.LLVMPrintModuleToString
 import org.opalj.ll.llvm.value.Function
 import org.opalj.ll.llvm.value.Value
 
+/**
+ * Wrapper representing a LLVM module
+ *
+ * @param ref the reference to the module
+ *
+ * @author Marc Clement
+ */
 case class Module(ref: LLVMModuleRef) {
     def functions: FunctionIterator = {
         new FunctionIterator(LLVMGetFirstFunction(ref))
@@ -30,10 +37,17 @@ case class Module(ref: LLVMModuleRef) {
             case None =>
                 throw new IllegalArgumentException("Unknown function '"+name+"'")
             case Some(function: Function) => function
-            case Some(_)                  => throw new IllegalStateException("Expected LLVMGetNamedFunction to return a Function ref")
+            case Some(_) => throw new IllegalStateException(
+                "Expected LLVMGetNamedFunction to return a Function ref"
+            )
         }
 }
 
+/**
+ * Iterates over all functions in a value
+ *
+ * @author Marc Clement
+ */
 class FunctionIterator(var ref: LLVMValueRef) extends Iterator[Function] {
     override def hasNext: Boolean = ref != null
 

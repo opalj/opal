@@ -24,18 +24,28 @@ import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFG
 import org.bytedeco.llvm.global.LLVM.LLVMViewFunctionCFGOnly
 import org.opalj.io.writeAndOpen
 
+/**
+ * This represents a LLVM function
+ *
+ * @param ref reference to a LLVM function.
+ *
+ * @author Marc Clement
+ */
 case class Function(ref: LLVMValueRef) extends Value(ref) {
     assert(LLVMGetValueKind(ref) == LLVMFunctionValueKind, "ref has to be a function")
 
     def basicBlocks: BasicBlockIterator = {
         new BasicBlockIterator(LLVMGetFirstBasicBlock(ref))
     }
+
     def basicBlockCount: Int = LLVMCountBasicBlocks(ref)
 
     def arguments: ArgumentIterator = {
         new ArgumentIterator(LLVMGetFirstParam(ref))
     }
+
     def argumentCount: Int = LLVMCountParams(ref)
+
     def argument(index: Int): Argument = {
         assert(index < argumentCount)
         Argument(LLVMGetParam(ref, index), index)
@@ -47,13 +57,18 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
         LLVMDisposeMessage(t)
         s
     }
+
     def entryBlock: BasicBlock = {
-        if (basicBlockCount == 0) throw new IllegalStateException("this function does not contain any basic block and may not be defined")
+        if (basicBlockCount == 0) throw new IllegalStateException(
+            "this function does not contain any basic block and may not be defined"
+        )
         BasicBlock(LLVMGetEntryBasicBlock(ref))
     }
 
     def exitBlocks: Iterator[BasicBlock] = {
-        if (basicBlockCount == 0) throw new IllegalStateException("this function does not contain any basic block and may not be defined")
+        if (basicBlockCount == 0) throw new IllegalStateException(
+            "this function does not contain any basic block and may not be defined"
+        )
         basicBlocks.filter(bb => bb.lastInstruction match {
             case Ret(_) => true
             case _      => false
@@ -78,11 +93,12 @@ case class Function(ref: LLVMValueRef) extends Value(ref) {
     }
 
     override def toString: String = {
-        s"Function(${name}(${arguments.map(_.tpe.repr).mkString(", ")}))"
+        s"Function($name(${arguments.map(_.tpe.repr).mkString(", ")}))"
     }
 }
 
 class BasicBlockIterator(var ref: LLVMBasicBlockRef) extends Iterator[BasicBlock] {
+
     override def hasNext: Boolean = ref != null
 
     override def next(): BasicBlock = {

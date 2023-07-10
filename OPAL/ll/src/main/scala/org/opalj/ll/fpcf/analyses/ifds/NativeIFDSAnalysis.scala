@@ -16,10 +16,14 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.LLVMProjectKey
 
 /**
+ * Marker class for LLVM - Java cross language IFDS analyses, that sets the corresponding types
  *
- * @param ifdsProblem
- * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
- * @tparam IFDSFact
+ * @param ifdsProblem the actual IFDS Problem that represents the analysis calculation
+ * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and
+ *                    the lower bound for the IFDSProperty.
+ * @tparam IFDSFact The facts that are computed by the analysis
+ *
+ * @author Marc Clement
  */
 abstract class NativeIFDSAnalysis[IFDSFact <: AbstractIFDSFact](
         project:     SomeProject,

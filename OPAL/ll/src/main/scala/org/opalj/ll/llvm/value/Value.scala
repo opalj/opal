@@ -27,7 +27,10 @@ import org.opalj.ll.llvm.value.constant.ConstantDataArray
 import org.opalj.ll.llvm.value.constant.ConstantDataVector
 import org.opalj.ll.llvm.value.constant.ConstantExpression
 import org.opalj.ll.llvm.value.constant.ConstantIntValue
+
 class Value(ref: LLVMValueRef) {
+    val address: Long = ref.address
+
     def repr: String = {
         val bytePointer = LLVMPrintValueToString(ref)
         val string = bytePointer.getString
@@ -41,7 +44,6 @@ class Value(ref: LLVMValueRef) {
 
     def tpe: Type = Type(LLVMTypeOf(ref)) // because type is a keyword
 
-    val address = ref.address
     override def equals(other: Any): Boolean =
         other.isInstanceOf[Value] && address == other.asInstanceOf[Value].address
 
@@ -53,6 +55,12 @@ class Value(ref: LLVMValueRef) {
     def users: Iterator[Value] = uses.map(_.user)
 }
 
+/**
+ * This returns the corresponding sub type of a value.
+ * This will throw an IllegalArgumentException if we do not handle the value kind at the moment.
+ *
+ * @author Marc Clement
+ */
 object Value {
     def apply(ref: LLVMValueRef): Option[Value] = {
         if (ref == null) return None

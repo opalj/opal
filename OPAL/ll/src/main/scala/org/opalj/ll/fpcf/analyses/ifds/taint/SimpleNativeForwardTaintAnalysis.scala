@@ -18,9 +18,13 @@ import org.opalj.ll.fpcf.analyses.ifds.NativeFunction
 import org.opalj.ll.fpcf.analyses.ifds.NativeIFDSAnalysis
 import org.opalj.ll.fpcf.analyses.ifds.NativeIFDSAnalysisScheduler
 import org.opalj.ll.fpcf.properties.NativeTaint
-import org.opalj.ll.llvm.value.Function
 import org.opalj.tac.fpcf.properties.Taint
 
+/**
+ * Class to solve a native forward taint problem.
+ *
+ * @author Marc Clement
+ */
 class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaintProblem(p) {
     /**
      * The analysis starts with all public methods in TaintAnalysisTestClass.
@@ -38,27 +42,6 @@ class SimpleNativeForwardTaintProblem(p: SomeProject) extends NativeForwardTaint
      * We do not sanitize parameters.
      */
     override protected def sanitizesParameter(call: LLVMStatement, in: NativeTaintFact): Boolean = false
-
-    /**
-     * TODO: DEAD CODE - remove?
-     * Creates a new variable fact for the callee, if the source was called.
-     */
-    protected def createTaints(callee: Function, call: LLVMStatement): Set[NativeTaintFact] =
-        if (callee.name == "source") Set(NativeVariable(call.instruction))
-        else Set.empty
-
-    /**
-     * TODO: DEAD CODE - remove?
-     * Create a FlowFact, if sink is called with a tainted variable.
-     * Note, that sink does not accept array parameters. No need to handle them.
-     */
-    protected def createFlowFact(
-        callee: Function,
-        call:   LLVMStatement,
-        in:     Set[NativeTaintFact]
-    ): Option[NativeFlowFact] =
-        if (callee.name == "sink" && in.contains(JavaVariable(-2))) Some(NativeFlowFact(Seq(call.function)))
-        else None
 
     override def createFlowFactAtExit(callee: NativeFunction, in: NativeTaintFact,
                                       unbCallChain: Seq[Callable]): Option[NativeTaintFact] = None

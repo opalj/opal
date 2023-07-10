@@ -10,10 +10,9 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.UBP
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSAnalysis
@@ -94,14 +93,11 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
             for (entryFact <- entryFacts) { // ifds line 14
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
-                    dependeesGetter(e, NativeTaint.key).asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match {
-                        case ep: FinalEP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
-                            ep.p.flows
-                        case ep: InterimEUBP[_, IFDSProperty[LLVMStatement, NativeTaintFact]] =>
-                            ep.ub.flows
-                        case _ =>
-                            Map.empty
-                    }
+                    dependeesGetter(e, NativeTaint.key)
+                        .asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match { // this cast is necessary
+                            case UBP(prop) => prop.flows
+                            case _         => Map.empty
+                        }
                 for {
                     (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
                     exitStatementFact <- exitStatementFacts // ifds line 15.3

@@ -10,6 +10,14 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.analyses.ifds.taint.NativeTaintFact
 
+/**
+ * IFDS property representing a native taint in the taint analysis.
+ *
+ * @param flows
+ * @param debugData
+ *
+ * @author Marc Clement
+ */
 case class NativeTaint(
         flows:     Map[LLVMStatement, Set[NativeTaintFact]],
         debugData: Map[LLVMStatement, Set[NativeTaintFact]] = Map.empty

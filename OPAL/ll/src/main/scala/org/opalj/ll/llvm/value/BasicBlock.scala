@@ -15,6 +15,13 @@ import org.bytedeco.llvm.global.LLVM.LLVMGetLastInstruction
 import org.bytedeco.llvm.global.LLVM.LLVMGetNextInstruction
 import org.opalj.graphs.Node
 
+/**
+ * Represents a basic block
+ *
+ * @param block_ref reference to a basic block
+ *
+ * @author Marc Clement
+ */
 case class BasicBlock(block_ref: LLVMBasicBlockRef)
     extends Value(LLVMBasicBlockAsValue(block_ref))
     with Node {
@@ -22,15 +29,18 @@ case class BasicBlock(block_ref: LLVMBasicBlockRef)
     def instructions: InstructionIterator = new InstructionIterator(LLVMGetFirstInstruction(block_ref))
     def firstInstruction: Instruction = Instruction(LLVMGetFirstInstruction(block_ref))
     def lastInstruction: Instruction = Instruction(LLVMGetLastInstruction(block_ref))
-    def predecessors: Set[BasicBlock] = {
+
+    lazy val predecessors: Set[BasicBlock] = {
         parent.basicBlocks
-            .filter(_.lastInstruction.isTerminator)
+            .filter { bb =>
+                bb.lastInstruction.isTerminator &&
+                    bb.terminator.get.successors
+                    .exists(_.parent.nodeId.equals(nodeId))
+            }
             .toSet
-            .filter(_.terminator.get.successors
-                .exists(_.parent.nodeId.equals(nodeId)))
     }
 
-    def terminator: Option[Instruction with Terminator] = {
+    private def terminator: Option[Instruction with Terminator] = {
         OptionalInstruction(LLVMGetBasicBlockTerminator(block_ref)) match {
             case Some(terminator) => {
                 assert(terminator.isTerminator)

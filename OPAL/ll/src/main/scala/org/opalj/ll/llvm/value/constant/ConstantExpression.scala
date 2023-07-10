@@ -12,9 +12,15 @@ import org.bytedeco.llvm.global.LLVM.LLVMConstantExprValueKind
 import org.bytedeco.llvm.global.LLVM.LLVMGetElementPtr
 import org.opalj.ll.llvm.value.User
 
+/**
+ * Gets the corresponding constant expression for a LLVM value.
+ * This will throw an IllegalArgumentException if we do not handle the value kind at the moment.
+ *
+ * @author Marc Clement
+ */
 object ConstantExpression {
     def apply(ref: LLVMValueRef): ConstantExpression = {
-        assert(ref != null && !ref.isNull, "ref may not be null")
+        assert((ref ne null) && !ref.isNull, "ref may not be null")
         assert(LLVMGetValueKind(ref) == LLVMConstantExprValueKind, "ref has to be an instruction")
         LLVMGetConstOpcode(ref) match {
             // case LLVMRet            => RetConst(ref)

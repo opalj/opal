@@ -6,6 +6,11 @@ import org.opalj.ll.llvm.Module
 import org.opalj.ll.llvm.Reader
 import org.opalj.ll.llvm.value
 
+/**
+ * This is a collection of LLVM Modules that are to be analyzed together as a single analysis project
+ *
+ * @author Marc Clement
+ */
 class LLVMProject(val modules: Iterable[Module]) {
 
     private lazy val namedFunctions = modules.flatMap(module => module.functions).map(f => (f.name, f)).toMap

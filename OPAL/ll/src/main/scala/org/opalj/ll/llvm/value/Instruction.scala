@@ -5,89 +5,7 @@ package llvm
 package value
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef
-import org.bytedeco.llvm.global.LLVM.LLVMAShr
-import org.bytedeco.llvm.global.LLVM.LLVMAdd
-import org.bytedeco.llvm.global.LLVM.LLVMAddrSpaceCast
-import org.bytedeco.llvm.global.LLVM.LLVMAlloca
-import org.bytedeco.llvm.global.LLVM.LLVMAnd
-import org.bytedeco.llvm.global.LLVM.LLVMAtomicCmpXchg
-import org.bytedeco.llvm.global.LLVM.LLVMAtomicRMW
-import org.bytedeco.llvm.global.LLVM.LLVMBitCast
-import org.bytedeco.llvm.global.LLVM.LLVMBr
-import org.bytedeco.llvm.global.LLVM.LLVMCall
-import org.bytedeco.llvm.global.LLVM.LLVMCallBr
-import org.bytedeco.llvm.global.LLVM.LLVMCatchPad
-import org.bytedeco.llvm.global.LLVM.LLVMCatchRet
-import org.bytedeco.llvm.global.LLVM.LLVMCatchSwitch
-import org.bytedeco.llvm.global.LLVM.LLVMCleanupPad
-import org.bytedeco.llvm.global.LLVM.LLVMCleanupRet
-import org.bytedeco.llvm.global.LLVM.LLVMExtractElement
-import org.bytedeco.llvm.global.LLVM.LLVMExtractValue
-import org.bytedeco.llvm.global.LLVM.LLVMFAdd
-import org.bytedeco.llvm.global.LLVM.LLVMFCmp
-import org.bytedeco.llvm.global.LLVM.LLVMFDiv
-import org.bytedeco.llvm.global.LLVM.LLVMFMul
-import org.bytedeco.llvm.global.LLVM.LLVMFNeg
-import org.bytedeco.llvm.global.LLVM.LLVMFPExt
-import org.bytedeco.llvm.global.LLVM.LLVMFPToSI
-import org.bytedeco.llvm.global.LLVM.LLVMFPToUI
-import org.bytedeco.llvm.global.LLVM.LLVMFPTrunc
-import org.bytedeco.llvm.global.LLVM.LLVMFRem
-import org.bytedeco.llvm.global.LLVM.LLVMFSub
-import org.bytedeco.llvm.global.LLVM.LLVMFence
-import org.bytedeco.llvm.global.LLVM.LLVMFreeze
-import org.bytedeco.llvm.global.LLVM.LLVMGetAllocatedType
-import org.bytedeco.llvm.global.LLVM.LLVMGetCalledFunctionType
-import org.bytedeco.llvm.global.LLVM.LLVMGetCalledValue
-import org.bytedeco.llvm.global.LLVM.LLVMGetElementPtr
-import org.bytedeco.llvm.global.LLVM.LLVMGetGEPSourceElementType
-import org.bytedeco.llvm.global.LLVM.LLVMGetIndices
-import org.bytedeco.llvm.global.LLVM.LLVMGetInstructionOpcode
-import org.bytedeco.llvm.global.LLVM.LLVMGetInstructionParent
-import org.bytedeco.llvm.global.LLVM.LLVMGetNextInstruction
-import org.bytedeco.llvm.global.LLVM.LLVMGetNumArgOperands
-import org.bytedeco.llvm.global.LLVM.LLVMGetNumIndices
-import org.bytedeco.llvm.global.LLVM.LLVMGetNumSuccessors
-import org.bytedeco.llvm.global.LLVM.LLVMGetPreviousInstruction
-import org.bytedeco.llvm.global.LLVM.LLVMGetSuccessor
-import org.bytedeco.llvm.global.LLVM.LLVMGetValueKind
-import org.bytedeco.llvm.global.LLVM.LLVMICmp
-import org.bytedeco.llvm.global.LLVM.LLVMIndirectBr
-import org.bytedeco.llvm.global.LLVM.LLVMInsertElement
-import org.bytedeco.llvm.global.LLVM.LLVMInsertValue
-import org.bytedeco.llvm.global.LLVM.LLVMInstructionValueKind
-import org.bytedeco.llvm.global.LLVM.LLVMIntToPtr
-import org.bytedeco.llvm.global.LLVM.LLVMInvoke
-import org.bytedeco.llvm.global.LLVM.LLVMIsATerminatorInst
-import org.bytedeco.llvm.global.LLVM.LLVMLShr
-import org.bytedeco.llvm.global.LLVM.LLVMLandingPad
-import org.bytedeco.llvm.global.LLVM.LLVMLoad
-import org.bytedeco.llvm.global.LLVM.LLVMMul
-import org.bytedeco.llvm.global.LLVM.LLVMOr
-import org.bytedeco.llvm.global.LLVM.LLVMPHI
-import org.bytedeco.llvm.global.LLVM.LLVMPtrToInt
-import org.bytedeco.llvm.global.LLVM.LLVMResume
-import org.bytedeco.llvm.global.LLVM.LLVMRet
-import org.bytedeco.llvm.global.LLVM.LLVMSDiv
-import org.bytedeco.llvm.global.LLVM.LLVMSExt
-import org.bytedeco.llvm.global.LLVM.LLVMSIToFP
-import org.bytedeco.llvm.global.LLVM.LLVMSRem
-import org.bytedeco.llvm.global.LLVM.LLVMSelect
-import org.bytedeco.llvm.global.LLVM.LLVMShl
-import org.bytedeco.llvm.global.LLVM.LLVMShuffleVector
-import org.bytedeco.llvm.global.LLVM.LLVMStore
-import org.bytedeco.llvm.global.LLVM.LLVMSub
-import org.bytedeco.llvm.global.LLVM.LLVMSwitch
-import org.bytedeco.llvm.global.LLVM.LLVMTrunc
-import org.bytedeco.llvm.global.LLVM.LLVMUDiv
-import org.bytedeco.llvm.global.LLVM.LLVMUIToFP
-import org.bytedeco.llvm.global.LLVM.LLVMURem
-import org.bytedeco.llvm.global.LLVM.LLVMUnreachable
-import org.bytedeco.llvm.global.LLVM.LLVMUserOp1
-import org.bytedeco.llvm.global.LLVM.LLVMUserOp2
-import org.bytedeco.llvm.global.LLVM.LLVMVAArg
-import org.bytedeco.llvm.global.LLVM.LLVMXor
-import org.bytedeco.llvm.global.LLVM.LLVMZExt
+import org.bytedeco.llvm.global.LLVM._
 import org.opalj.ll.llvm.FunctionType
 import org.opalj.ll.llvm.Type
 import org.opalj.ll.llvm.value.constant.ConstantIntValue
@@ -99,10 +17,14 @@ object OptionalInstruction {
     }
 }
 
+/**
+ * This object returns the correct instruction type for a given instruction reference
+ *
+ * @author Marc Clement
+ */
 object Instruction {
     def apply(ref: LLVMValueRef): Instruction = {
-        assert(ref != null, "ref may not be null")
-        assert(!ref.isNull, "ref may not be null")
+        assert((ref ne null) && !ref.isNull, "ref may not be null")
         assert(LLVMGetValueKind(ref) == LLVMInstructionValueKind, "ref has to be an instruction")
         LLVMGetInstructionOpcode(ref) match {
             case LLVMRet            => Ret(ref)
@@ -178,12 +100,18 @@ object Instruction {
 }
 
 trait Terminator {
+
     val ref: LLVMValueRef
+
     def numSuccessors: Int = LLVMGetNumSuccessors(ref)
+
     def hasSuccessors: Boolean = numSuccessors > 0
-    def getSuccessor(i: Int) = BasicBlock(LLVMGetSuccessor(ref, i))
+
+    def getSuccessor(i: Int): BasicBlock = BasicBlock(LLVMGetSuccessor(ref, i))
+
     def foreachSuccessor(f: BasicBlock => Unit): Unit =
         (0 until numSuccessors).foreach(i => f(getSuccessor(i)))
+
     def successors: Seq[Instruction] =
         (0 until numSuccessors).map(i => getSuccessor(i).firstInstruction)
 }
@@ -196,7 +124,7 @@ sealed abstract class Instruction(ref: LLVMValueRef) extends User(ref) {
     lazy val previous: Option[Instruction] = OptionalInstruction(LLVMGetPreviousInstruction(ref))
 
     override def toString: String = {
-        s"${this.getClass.getSimpleName}(${repr})"
+        s"${this.getClass.getSimpleName}($repr)"
     }
 }
 
@@ -249,14 +177,25 @@ case class Store(ref: LLVMValueRef) extends Instruction(ref) {
     def dst: Value = operand(1)
 }
 case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref) {
+
     def base: Value = operand(0)
-    def isConstant = (1 until numOperands).forall(operand(_).isInstanceOf[ConstantIntValue])
-    def constants = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
-    def isZero = isConstant && constants.forall(_ == 0)
+
+    def isConstant: Boolean = (1 until numOperands).forall(operand(_).isInstanceOf[ConstantIntValue])
+
+    /**
+     * This will throw an exception if isConstant returns false.
+     *
+     */
+    def constants: Seq[Long] = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+
+    def isZero: Boolean = isConstant && constants.forall(_ == 0)
 
     def numIndices: Int = LLVMGetNumIndices(ref)
+
     def indices: Iterable[Int] = LLVMGetIndices(ref).asBuffer().array()
+
     def sourceElementType: Type = Type(LLVMGetGEPSourceElementType(ref))
+
 }
 case class Trunc(ref: LLVMValueRef) extends ConversionOperation(ref)
 case class ZExt(ref: LLVMValueRef) extends ConversionOperation(ref)
@@ -293,34 +232,52 @@ case class UserOp1(ref: LLVMValueRef) extends Instruction(ref)
 case class UserOp2(ref: LLVMValueRef) extends Instruction(ref)
 case class VAArg(ref: LLVMValueRef) extends Instruction(ref)
 case class ExtractElement(ref: LLVMValueRef) extends Instruction(ref) {
+
     def vec: Value = operand(0)
+
     def index: Value = operand(1)
-    def isConstant = index.isInstanceOf[ConstantIntValue]
-    def constant = index.asInstanceOf[ConstantIntValue].zeroExtendedValue
+
+    def isConstant: Boolean = index.isInstanceOf[ConstantIntValue]
+
+    def constant: Long = index.asInstanceOf[ConstantIntValue].zeroExtendedValue
+
 }
 case class InsertElement(ref: LLVMValueRef) extends Instruction(ref) {
+
     def vec: Value = operand(0)
+
     def value: Value = operand(1)
+
     def index: Value = operand(2)
-    def isConstant = index.isInstanceOf[ConstantIntValue]
-    def constant = index.asInstanceOf[ConstantIntValue].zeroExtendedValue
+
+    def isConstant: Boolean = index.isInstanceOf[ConstantIntValue]
+
+    def constant: Long = index.asInstanceOf[ConstantIntValue].zeroExtendedValue
+
 }
 case class ShuffleVector(ref: LLVMValueRef) extends Instruction(ref) {
+
     def vec1: Value = operand(0)
+
     def vec2: Value = operand(1)
+
 }
 case class ExtractValue(ref: LLVMValueRef) extends Instruction(ref) {
+
     def aggregVal: Value = operand(0)
 
     // always constant values
-    def constants = (1 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+    def constants: Seq[Long] = (1 until numOperands)
+        .map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+
 }
 case class InsertValue(ref: LLVMValueRef) extends Instruction(ref) {
     def aggregVal: Value = operand(0)
     def value: Value = operand(1)
 
     // always constant values
-    def constants = (2 until numOperands).map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
+    def constants: Seq[Long] = (2 until numOperands)
+        .map(operand(_).asInstanceOf[ConstantIntValue].signExtendedValue)
 }
 case class Freeze(ref: LLVMValueRef) extends Instruction(ref)
 case class Fence(ref: LLVMValueRef) extends Instruction(ref)

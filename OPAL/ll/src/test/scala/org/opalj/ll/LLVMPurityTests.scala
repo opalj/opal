@@ -12,6 +12,11 @@ import org.opalj.ll.llvm.value.Function
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+/**
+ * Test the simple native purity analysis
+ *
+ * @author Marc Clement
+ */
 class LLVMPurityTests extends AnyFunSpec with Matchers {
     describe("SimplePurityAnalysis") {
         it("executes") {

@@ -42,6 +42,11 @@ import org.bytedeco.llvm.global.LLVM.LLVMTokenTypeKind
 import org.bytedeco.llvm.global.LLVM.LLVMScalableVectorTypeKind
 import org.bytedeco.llvm.global.LLVM.LLVMBFloatTypeKind
 
+/**
+ * This object returns the correct type for the given type ref on apply.
+ *
+ * @author Marc Clement
+ */
 object Type {
     def apply(ref: LLVMTypeRef): Type = {
         LLVMGetTypeKind(ref) match {
