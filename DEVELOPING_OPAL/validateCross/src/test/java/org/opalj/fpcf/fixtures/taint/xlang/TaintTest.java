@@ -1,10 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.taint_xlang;
+package org.opalj.fpcf.fixtures.taint.xlang;
 
 import org.opalj.fpcf.properties.taint.XlangBackwardFlowPath;
 
 /**
+ * Test class that is analyzed as part of the IFDS based taint analysis
+ *
  * Add VM argument to run main: -Djava.library.path=DEVELOPING_OPAL/validate/src/test/resources/llvm/cross_language/taint
+ *
+ * @author Marc Clement
  */
 public class TaintTest {
         private native int sum (int a, int b);
