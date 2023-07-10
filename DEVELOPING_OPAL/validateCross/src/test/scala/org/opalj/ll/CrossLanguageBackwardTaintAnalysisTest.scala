@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll;
+package org.opalj;
+package ll;
 
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.XlangBackwardFlowPath
@@ -13,17 +15,22 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 
 import java.net.URL
 
+/**
+ * Tests the cross language backwards IFDS based taint analysis
+ *
+ * @author Nicolas Gross
+ */
 class CrossLanguageBackwardTaintAnalysisTest extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-            current => List("./DEVELOPING_OPAL/validateCross/src/test/resources/llvm/cross_language/taint/TaintTest.ll")
+            _ => List("./DEVELOPING_OPAL/validateCross/src/test/resources/llvm/cross_language/taint/TaintTest.ll")
         )
         val llvmProject = p.get(LLVMProjectKey)
 
         // use all java native functions as entry points for native call graph analysis
         val cgEntryPoints = llvmProject.functions.filter(_.name.startsWith("Java_"))
         p.updateProjectInformationKeyInitializationData(SimpleNativeCallGraphKey)(
-            current => cgEntryPoints.toSet
+            _ => cgEntryPoints.toSet
         )
 
         p.get(RTACallGraphKey)
@@ -33,7 +40,7 @@ class CrossLanguageBackwardTaintAnalysisTest extends PropertiesTest {
         val testContext = executeAnalyses(JavaBackwardTaintAnalysisScheduler, NativeBackwardTaintAnalysisScheduler)
         val project = testContext.project
         val eas = methodsWithAnnotations(project)
-            .filter(_._1.classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint_xlang/TaintTest")
+            .filter(_._1.classFile.thisType == ObjectType("org/opalj/fpcf/fixtures/taint_xlang/TaintTest"))
             .map {
                 case (method, entityString, annotations) =>
                     ((method, new IFDSFact(TaintNullFact)), entityString, annotations)

@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties
+package org.opalj
+package fpcf
+package properties
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ElementValue
@@ -15,14 +17,20 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.ifds.BackwardTaintAnalysisFixtureScheduler
 import org.opalj.ifds.IFDSFact
+import org.opalj.ll.fpcf.analyses.ifds.taint.JavaBackwardTaintAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.properties.Taint
 
-class BackwardFlowPathMatcher extends AbstractBackwardFlowPathMatcher(BackwardTaintAnalysisFixtureScheduler.property.key)
-
 /**
+ * Markers classes for different kinds of taint analyses
+ */
+class BackwardFlowPathMatcher extends AbstractBackwardFlowPathMatcher(BackwardTaintAnalysisFixtureScheduler.property.key)
+class XlangBackwardFlowPathMatcher extends AbstractBackwardFlowPathMatcher(JavaBackwardTaintAnalysisScheduler.property.key)
+/**
+ * Matcher for backward taint analysis flows, as given as annotations in the test classes.
+ *
  * @author Mario Trageser
  */
 abstract class AbstractBackwardFlowPathMatcher(pk: PropertyKey[_ <: Property]) extends AbstractPropertyMatcher {

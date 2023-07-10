@@ -2,6 +2,7 @@
 package org.opalj
 package ll
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.bi.TestResources
 import org.opalj.br.analyses.Project
@@ -25,9 +26,17 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+/**
+ * Tests the cross language forward IFDS based taint analysis
+ *
+ * @author Marc Clement
+ */
 class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
     describe("CrossLanguageForwardTaintAnalysis") {
-        implicit val config = BaseConfig.withValue(ifds.ConfigKeyPrefix+"debug", ConfigValueFactory.fromAnyRef(true))
+        implicit val config: Config = BaseConfig.withValue(
+            ifds.ConfigKeyPrefix+"debug",
+            ConfigValueFactory.fromAnyRef(true)
+        )
         val project =
             Project(
                 TestResources.locateTestResources(
@@ -39,7 +48,10 @@ class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
             )
 
         project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
-            _ => List(TestResources.locateTestResources("/llvm/cross_language/taint/TaintTest.ll", "DEVELOPING_OPAL/validateCross").toString)
+            _ => List(TestResources.locateTestResources(
+                "/llvm/cross_language/taint/TaintTest.ll",
+                "DEVELOPING_OPAL/validateCross"
+            ).toString)
         )
         project.get(LLVMProjectKey)
         project.get(RTACallGraphKey)
@@ -72,7 +84,7 @@ class CrossLanguageForwardTaintAnalysisTest extends AnyFunSpec with Matchers {
             }
         }
 
-        val function: Function = project.get(LLVMProjectKey).function("Java_org_opalj_fpcf_fixtures_taint_1xlang_TaintTest_native_1array_1tainted").get
+        val function: Function = project.get(LLVMProjectKey).function("Java_org_opalj_fpcf_fixtures_taint_xlang_TaintTest_native_1array_1tainted").get
         val debugData = ps((LLVMFunction(function), new IFDSFact(NativeTaintNullFact)), NativeForwardTaintAnalysisScheduler.property.key).ub.asInstanceOf[IFDSProperty[LLVMStatement, NativeTaintFact]].debugData
         for {
             bb <- function.basicBlocks

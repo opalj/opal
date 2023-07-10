@@ -16,6 +16,11 @@ import org.opalj.tac.fpcf.analyses.ifds.VTAResult
 import org.opalj.tac.fpcf.analyses.ifds.problems.VariableType
 import org.opalj.value.ValueInformation
 
+/**
+ * Validates expected type annotation for the IFDS based VTA
+ *
+ * @author Marc Clement
+ */
 class ExpectedTypeMatcher extends VTAMatcher {
 
     def validateSingleAnnotation(project: SomeProject, entity: Entity,
@@ -38,6 +43,7 @@ class ExpectedTypeMatcher extends VTAMatcher {
                     (taCode.lineNumber(method.body.get, definedBy).get, referenceTypeToString(t),
                         upperBound)
             }
+        println(result)
         if (result.contains(expected)) None
         else Some(expected.toString)
     }

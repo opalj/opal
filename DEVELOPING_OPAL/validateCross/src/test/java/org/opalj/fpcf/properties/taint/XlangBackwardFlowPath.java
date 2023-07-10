@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.XlangBackwardFlowPathMatcher;
 
 import java.lang.annotation.*;
 
+/**
+ * Array of called methods in a cross language taint flow, excluding the source but including the sink.
+ *
+ * @author Nicolas Gross
+ */
 @PropertyValidator(key = XlangBackwardFlowPath.PROPERTY_VALIDATOR_KEY, validator = XlangBackwardFlowPathMatcher.class)
 @Target(ElementType.METHOD)
 @Documented

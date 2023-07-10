@@ -23,6 +23,11 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.ifds.problems.VTAFact
 
+/**
+ * Super class for validation of the IFDS based VTA result annotations
+ *
+ * @author Marc Clement
+ */
 abstract class VTAMatcher extends AbstractPropertyMatcher {
 
     def validateProperty(

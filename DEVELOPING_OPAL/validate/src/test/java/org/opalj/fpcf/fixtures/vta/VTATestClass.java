@@ -7,6 +7,7 @@ import org.opalj.fpcf.properties.vta.ExpectedType;
  * This is the test class for the IFDS based Variable Type Analysis. That analysis is only there to serve as an example
  * of an IFDS Analysis.
  *
+ * @author Marc Clement
  */
 public class VTATestClass {
 

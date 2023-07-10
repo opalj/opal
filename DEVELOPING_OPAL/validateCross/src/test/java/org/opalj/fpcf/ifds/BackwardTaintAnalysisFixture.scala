@@ -1,7 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ifds
+package org.opalj
+package fpcf
+package ifds
 
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -37,13 +40,16 @@ class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProbl
     override def enableUnbalancedReturns: Boolean = true
 
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
-        p.allProjectClassFiles.filter(classFile =>
-            classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
-            .flatMap(_.methods)
-            .filter(_.name == "sink")
-            .map(method => method -> new IFDSFact(
-                Variable(JavaIFDSProblem.remapParamAndVariableIndex(0, isStaticMethod = true))
-            ))
+        p.allProjectClassFiles.flatMap {
+            case cf if cf.thisType == ObjectType("org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass") =>
+                cf.methods.collect {
+                    case m if m.name == "sink" =>
+                        m -> new IFDSFact(
+                            Variable(JavaIFDSProblem.remapParamAndVariableIndex(0, isStaticMethod = true))
+                        )
+                }
+            case _ => None
+        }
 
     /**
      * The sanitize method is the sanitizer.
@@ -61,8 +67,11 @@ class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProbl
      * terminates.
      * In this case, callFlow would never be called and no FlowFact would be created.
      */
-    override protected def createFlowFactAtCall(call: JavaStatement, in: TaintFact,
-                                                unbCallChain: Seq[Callable]): Option[FlowFact] = {
+    override protected def createFlowFactAtCall(
+        call:         JavaStatement,
+        in:           TaintFact,
+        unbCallChain: Seq[Callable]
+    ): Option[FlowFact] = {
         if ((in match {
             case Variable(index) => index == call.index
             case _               => false
@@ -77,16 +86,23 @@ class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProbl
     /**
      * When a callee calls the source, we create a FlowFact with the caller's call chain.
      */
-    override protected def applyFlowFactFromCallee(calleeFact: FlowFact, caller: Method, in: TaintFact,
-                                                   unbCallChain: Seq[Callable]): Option[FlowFact] =
-        Some(FlowFact(unbCallChain.prepended(JavaMethod(caller))))
+    override protected def applyFlowFactFromCallee(
+        calleeFact:          FlowFact,
+        caller:              Method,
+        in:                  TaintFact,
+        unbalancedCallChain: Seq[Callable]
+    ): Option[FlowFact] =
+        Some(FlowFact(unbalancedCallChain.prepended(JavaMethod(caller))))
 
     /**
      * This analysis does not create FlowFacts at the beginning of a method.
      * Instead, FlowFacts are created, when the return value of source is tainted.
      */
-    override def createFlowFactAtExit(callee: Method, in: TaintFact,
-                                      unbCallChain: Seq[Callable]): Option[FlowFact] = None
+    override def createFlowFactAtExit(
+        callee:              Method,
+        in:                  TaintFact,
+        unbalancedCallChain: Seq[Callable]
+    ): Option[FlowFact] = None
 }
 
 object BackwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {

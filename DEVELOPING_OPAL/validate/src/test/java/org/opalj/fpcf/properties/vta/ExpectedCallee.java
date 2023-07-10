@@ -9,6 +9,7 @@ import java.lang.annotation.*;
  * Denotes the expected callee class.
  * Can be used several times using @List{[...]}
  *
+ * @author Marc Clement
  */
 public @interface ExpectedCallee {
 
@@ -25,7 +26,6 @@ public @interface ExpectedCallee {
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @interface List {
-
         ExpectedCallee[] value();
     }
 }

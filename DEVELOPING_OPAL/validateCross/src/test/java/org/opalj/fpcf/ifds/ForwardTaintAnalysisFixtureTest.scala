@@ -13,6 +13,8 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
 import java.net.URL
 
 /**
+ * Tests the IFDS based taint analysis for forward flows, using the annotations in the test class.
+ *
  * @author Mario Trageser
  */
 class ForwardTaintAnalysisFixtureTest extends PropertiesTest {

@@ -5,6 +5,8 @@ import org.opalj.fpcf.properties.taint.BackwardFlowPath;
 import org.opalj.fpcf.properties.taint.ForwardFlowPath;
 
 /**
+ * This class is the analysis target for the IFDS based taint analysis for both the forward and backward flows.
+ *
  * @author Mario Trageser
  */
 public class TaintAnalysisTestClass {

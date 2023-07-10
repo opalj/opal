@@ -9,6 +9,7 @@ import java.lang.annotation.*;
  * Denotes the expected type class
  * Can be used several times using @List{[...]}
  *
+ * @author Marc Clement
  */
 public @interface ExpectedType {
 
@@ -25,7 +26,6 @@ public @interface ExpectedType {
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @interface List {
-
         ExpectedType[] value();
     }
 }

@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties
+package org.opalj
+package fpcf
+package properties
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ElementValue
@@ -12,6 +14,8 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.properties.Taint
 
 /**
+ * Matcher for forward taint analysis flows, as given as annotations in the test classes.
+ *
  * @author Mario Trageser
  */
 class ForwardFlowPathMatcher extends AbstractPropertyMatcher {

@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ifds
+package org.opalj
+package fpcf
+package ifds
 
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -14,6 +16,11 @@ import org.opalj.tac.fpcf.analyses.ifds.problems.VTANullFact
 
 import java.net.URL
 
+/**
+ * Tests the IFDS based variable type analysis
+ *
+ * @author Marc Clement
+ */
 class VTATest extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
@@ -28,10 +35,9 @@ class VTATest extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    describe("Test the ExpectedType annotations") {
+    describe("Executes the VTA and checks the resulting types and callees") {
         val testContext = executeAnalyses(new IFDSBasedVariableTypeAnalysisScheduler)
         val project = testContext.project
-        //        val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
             case (method, entityString, annotations) =>
                 ((method, new IFDSFact(VTANullFact)), entityString, annotations)

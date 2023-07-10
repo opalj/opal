@@ -6,8 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
+
 /**
- * Array of called methods in a Taint flow, excluding the source and the sink
+ * Array of called methods in a Taint flow, excluding the source and the sink.
  *
  * @author Mario Trageser
  */

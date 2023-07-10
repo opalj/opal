@@ -20,6 +20,11 @@ import org.opalj.tac.fpcf.analyses.ifds.VTAResult
 import org.opalj.tac.fpcf.analyses.ifds.problems.CalleeType
 import org.opalj.value.ValueInformation
 
+/**
+ * Validates expected callee annotation for the IFDS based VTA
+ *
+ * @author Marc Clement
+ */
 class ExpectedCalleeMatcher extends VTAMatcher {
 
     def validateSingleAnnotation(

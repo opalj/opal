@@ -6,6 +6,7 @@ package analyses
 package taint
 
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -38,7 +39,7 @@ import java.io.File
 
 /**
  * A backward IFDS taint analysis, which tracks the String parameters of all methods of the rt.jar,
- * * which are callable from outside the library, to calls of Class.forName.
+ * which are callable from outside the library, to calls of Class.forName.
  *
  * @author Mario Trageser
  */
@@ -51,11 +52,12 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * The string parameters of all public methods are entry points.
      */
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
-        p.allProjectClassFiles
-            .filter(classFile => classFile.thisType.fqn == "java/lang/Class")
-            .flatMap(classFile => classFile.methods)
-            .filter(_.name == "forName")
-            .map(method => method -> new IFDSFact(Variable(-2)))
+        p.allProjectClassFiles.flatMap {
+            case cf if cf.thisType == ObjectType.Class =>
+                cf.methods.collect {
+                    case m if m.name == "forName" => (m, new IFDSFact(Variable(-2)))
+                }
+        }
 
     /**
      * There is no sanitizing in this analysis.
@@ -68,7 +70,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     override protected def sanitizesParameter(call: JavaStatement, in: TaintFact): Boolean = false
 
     /**
-     * Do not perform unbalanced return for methods, which can be called from outside the library.
+     * Do not perform unbalanced return for methods tha can be called from outside the library.
      */
     override def shouldPerformUnbalancedReturn(
         source: (Method, IFDSFact[TaintFact, JavaStatement])
@@ -84,9 +86,9 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * Instead, FlowFacts are created at the start node of methods.
      */
     override protected def createFlowFactAtCall(
-        call:         JavaStatement,
-        in:           TaintFact,
-        unbCallChain: Seq[Callable]
+        call:                JavaStatement,
+        in:                  TaintFact,
+        unbalancedCallChain: Seq[Callable]
     ): Option[FlowFact] = None
 
     /**
@@ -111,8 +113,8 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     ): Option[FlowFact] = {
         if (unbCallChain.nonEmpty && // source fact is unbalanced return fact
             icfg.canBeCalledFromOutside(callee) && (in match {
-                // index < 0 means, that it is a parameter.
-                case Variable(index) if index < 0            => true
+                // index < 0 means that it is a parameter.
+                case Variable(index)                         => index < 0
                 case ArrayElement(index, _) if index < 0     => true
                 case InstanceField(index, _, _) if index < 0 => true
                 case _                                       => false
@@ -129,17 +131,16 @@ object BackwardClassForNameTaintAnalysisScheduler
         p:  SomeProject,
         ps: PropertyStore
     ): BackwardClassForNameTaintAnalysisScheduler = {
-        p.get(RTACallGraphKey)
         new BackwardClassForNameTaintAnalysisScheduler()(p)
     }
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
     override def uses: Set[PropertyBounds] =
-        Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers)) // TODO check
+        Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey) // TODO check
+        Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 }
 
 class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
@@ -149,8 +150,7 @@ class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
 
     override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit = {
         val propertyKey = BackwardClassForNameTaintAnalysisScheduler.property.key
-        val flowFactsAtSources = ps
-            .entities(propertyKey)
+        ps.entities(propertyKey)
             .collect {
                 case EPS((m: Method, inputFact)) if analysis.ifdsProblem
                     .asInstanceOf[BackwardClassForNameTaintProblem]
@@ -165,16 +165,12 @@ class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
                         case _           => false
                     }
                 case _ => Seq.empty
-            })
-        for {
-            fact <- flowFactsAtSources
-        } {
-            fact match {
+            }).foreach {
                 case FlowFact(flow) =>
                     println(s"flow: "+flow.asInstanceOf[Seq[Method]].map(_.toJava).mkString(", "))
                 case _ =>
             }
-        }
+
     }
 }
 
