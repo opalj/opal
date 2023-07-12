@@ -43,7 +43,6 @@ class ExpectedTypeMatcher extends VTAMatcher {
                     (taCode.lineNumber(method.body.get, definedBy).get, referenceTypeToString(t),
                         upperBound)
             }
-        println(result)
         if (result.contains(expected)) None
         else Some(expected.toString)
     }
