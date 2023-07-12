@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.apk
+package org.opalj
+package apk
 
 /**
  * Represents the four types of APK components.

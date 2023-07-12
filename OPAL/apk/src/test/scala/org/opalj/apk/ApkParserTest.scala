@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.apk
+package org.opalj
+package apk
 
 import org.opalj.apk.parser.ApkParser
 import org.opalj.br.analyses.Project
@@ -16,7 +17,7 @@ import java.net.URL
  * @author Nicolas Gross
  */
 @org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
-@Ignore // TODO Does not run @github since docker is missing
+@Ignore// TODO Does not run @github since docker is missing
 class ApkParserTest extends AnyFunSuite with BeforeAndAfterAll {
 
     var project: Project[URL] = _

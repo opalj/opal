@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.apk
+package org.opalj
+package apk
 
+import com.typesafe.config.Config
 import org.opalj.UShort
 import org.opalj.br.Method
 
@@ -21,5 +23,5 @@ class ApkContextRegisteredReceiver(
         intentCategories: Seq[String],
         val method:       Method,
         val callPc:       UShort
-)
+)(implicit config: Config)
     extends ApkComponent(ApkComponentType.BroadcastReceiver, clazz, intentActions, intentCategories)

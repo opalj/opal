@@ -1,25 +1,35 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.apk.parser
+package org.opalj
+package apk
+package parser
 
 import com.typesafe.config.Config
 import net.dongliu.apk.parser.ApkFile
+import org.opalj.apk.ApkComponent
+import org.opalj.apk.ApkComponentType
 import org.opalj.apk.ApkComponentType.ApkComponentType
+import org.opalj.apk.ApkComponentsKey
 import org.opalj.apk.parser.DexParser.DexParser
-import org.opalj.apk.{ApkComponent, ApkComponentType, ApkComponentsKey}
 import org.opalj.br.analyses.Project
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.log.{GlobalLogContext, LogContext, OPALLogger}
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 
-import java.io.{File, StringWriter}
+import java.io.File
+import java.io.StringWriter
 import java.net.URL
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.zip.ZipFile
 import scala.collection.mutable.ListBuffer
-import scala.jdk.CollectionConverters._
-import scala.sys.process._
-import scala.xml.{Node, XML}
-
+import scala.jdk.CollectionConverters.EnumerationHasAsScala
+import scala.sys.process.ProcessLogger
+import scala.sys.process.stringToProcess
+import scala.xml.Node
+import scala.xml.XML
 /**
  * Parses an APK file and generates a [[Project]] for it.
  *
@@ -33,9 +43,9 @@ import scala.xml.{Node, XML}
  *
  * @author Nicolas Gross
  */
-class ApkParser(val apkPath: String) {
+class ApkParser(val apkPath: String)(implicit config: Config) {
 
-    private implicit val LogContext: LogContext = GlobalLogContext
+    implicit private val LogContext: LogContext = GlobalLogContext
     private val LogCategory = "APK parser"
 
     private var tmpDir: Option[File] = None
@@ -67,9 +77,13 @@ class ApkParser(val apkPath: String) {
         val services = manifestXml \ "application" \ "service"
         services.foreach(s => entryPoints.append(nodeToEntryPoint(ApkComponentType.Service, s)))
         val receivers = manifestXml \ "application" \ "receiver"
-        receivers.foreach(r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r)))
+        receivers.foreach(
+            r => entryPoints.append(nodeToEntryPoint(ApkComponentType.BroadcastReceiver, r))
+        )
         val providers = manifestXml \ "application" \ "provider"
-        providers.foreach(p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p)))
+        providers.foreach(
+            p => entryPoints.append(nodeToEntryPoint(ApkComponentType.ContentProvider, p))
+        )
 
         entryPoints.toSeq
     }
@@ -115,12 +129,14 @@ class ApkParser(val apkPath: String) {
                     jarFiles.append(Paths.get(s"$jarsDir/${ApkParser.getFileBaseName(dex.toString)}.jar"))
                     val (retval, _, _) = ApkParser.runCmd(getCmd(dex))
                     if (retval != 0) {
-                        throw ApkParserException("could not convert .dex files to .jar files, check if docker container was built")
+                        throw ApkParserException(
+                            "could not convert .dex files to .jar files, check if docker container was built"
+                        )
                     }
                     OPALLogger.info(LogCategory, s"${i + 1} of ${dexFiles.length} dex code files parsed")
             }
-        } {
-            t => OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
+        } { t =>
+            OPALLogger.info(LogCategory, s"dex code parsing finished, took ${t.toSeconds}")
         }
         (jarsDir, jarFiles.toSeq)
     }
@@ -156,32 +172,42 @@ class ApkParser(val apkPath: String) {
 
             // prefer arm64, then arm, then anything else that comes first
             val selectedArchSoFiles = soFilesPerArch.find(t => t._1.getName.startsWith("arm64")) match {
-                case None => soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
-                    case None    => soFilesPerArch.head
-                    case Some(t) => t
-                }
+                case None =>
+                    soFilesPerArch.find(t => t._1.getName.startsWith("arm")) match {
+                        case None    => soFilesPerArch.head
+                        case Some(t) => t
+                    }
                 case Some(t) => t
             }
 
             // generate .bc files from .so files, this can take some time ...
             llvmDir = Files.createDirectory(Paths.get(tmpDir.get.toString+"/llvm"))
-            val getCmd = (soBaseName: String) => s"docker run --rm "+
-                s"-v ${selectedArchSoFiles._1}:/so "+
-                s"-v $llvmDir:/llvm "+
-                s"opal-apk-parser "+
-                s"retdec-decompiler -o /llvm/$soBaseName.c /so/$soBaseName.so"
-            selectedArchSoFiles._2.map(so => ApkParser.getFileBaseName(so.toString)).zipWithIndex.foreach {
-                case (soBaseName, i) =>
-                    llvmFiles.append(Paths.get(s"$llvmDir/$soBaseName.bc"))
-                    val (retval, _, _) = ApkParser.runCmd(getCmd(soBaseName))
-                    if (retval != 0) {
-                        throw ApkParserException("could not convert .so files to .bc files, check if docker container was built")
-                    }
-                    OPALLogger.info(LogCategory, s"${i + 1} of ${selectedArchSoFiles._2.length} native code files parsed")
-            }
+            val getCmd = (soBaseName: String) =>
+                s"docker run --rm "+
+                    s"-v ${selectedArchSoFiles._1}:/so "+
+                    s"-v $llvmDir:/llvm "+
+                    s"opal-apk-parser "+
+                    s"retdec-decompiler -o /llvm/$soBaseName.c /so/$soBaseName.so"
+            selectedArchSoFiles._2
+                .map(so => ApkParser.getFileBaseName(so.toString))
+                .zipWithIndex
+                .foreach {
+                    case (soBaseName, i) =>
+                        llvmFiles.append(Paths.get(s"$llvmDir/$soBaseName.bc"))
+                        val (retval, _, _) = ApkParser.runCmd(getCmd(soBaseName))
+                        if (retval != 0) {
+                            throw ApkParserException(
+                                "could not convert .so files to .bc files, check if docker container was built"
+                            )
+                        }
+                        OPALLogger.info(
+                            LogCategory,
+                            s"${i + 1} of ${selectedArchSoFiles._2.length} native code files parsed"
+                        )
+                }
 
-        } {
-            t => OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
+        } { t =>
+            OPALLogger.info(LogCategory, s"native code parsing finished, took ${t.toSeconds}")
         }
         Some((llvmDir, llvmFiles.toSeq))
     }
@@ -193,30 +219,27 @@ class ApkParser(val apkPath: String) {
      * You should call this when you are done to not clutter up tmpfs.
      */
     def cleanUp(): Unit = tmpDir match {
-        case Some(tmpDirPath) => {
+        case Some(tmpDirPath) =>
             ApkParser.runCmd("rm -r "+tmpDirPath)
             tmpDir = None
             OPALLogger.info(LogCategory, s"temporary unzip directory cleaned")
-
-        }
         case None =>
     }
 
     private[this] def unzipApk(): Unit = tmpDir match {
         case Some(_) =>
-        case None => {
+        case None =>
             val fileName = Paths.get(apkPath).getFileName
             tmpDir = Some(Files.createTempDirectory("opal_apk_"+fileName).toFile)
             val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkUnzippedDir))
             ApkParser.unzip(Paths.get(apkPath), unzipDir)
             OPALLogger.info(LogCategory, s"APK successfully unzipped")
-        }
     }
 }
 
 object ApkParser {
 
-    private implicit val logContext: LogContext = GlobalLogContext
+    implicit private val logContext: LogContext = GlobalLogContext
 
     /**
      * Set this to true if you want stdout and stderr of commands (retdec, enjarify, dex2jar) being logged.
@@ -233,8 +256,12 @@ object ApkParser {
      * @param dexParser: used dex file parser, defaults to Enjarify.
      * @return the newly created [[Project]] containing the APK's contents (dex code, native code and entry points).
      */
-    def createProject(apkPath: String, projectConfig: Config, dexParser: DexParser = DexParser.Enjarify): Project[URL] = {
-        val apkParser = new ApkParser(apkPath)
+    def createProject(
+        apkPath:       String,
+        projectConfig: Config,
+        dexParser:     DexParser = DexParser.Enjarify
+    ): Project[URL] = {
+        val apkParser = new ApkParser(apkPath)(BaseConfig)
 
         val jarDir = apkParser.parseDexCode(dexParser)._1
 
@@ -251,12 +278,11 @@ object ApkParser {
         project.get(ApkComponentsKey)
 
         apkParser.parseNativeCode match {
-            case Some((_, llvmModules)) => {
+            case Some((_, llvmModules)) =>
                 project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
                     _ => llvmModules.map(f => f.toString)
                 )
                 project.get(LLVMProjectKey)
-            }
             case None =>
         }
 
@@ -271,7 +297,10 @@ object ApkParser {
      * @param cmd the command that is executed.
      * @return a tuple consisting of the return code, stdout and stderr.
      */
-    private def runCmd(cmd: String, logOutput: Boolean = logOutput): (Int, StringWriter, StringWriter) = {
+    private def runCmd(
+        cmd:       String,
+        logOutput: Boolean = logOutput
+    ): (Int, StringWriter, StringWriter) = {
         val logCategory = "APK parser - command"
         OPALLogger.info(logCategory, s"run:  $cmd")
         val cmd_stdout = new StringWriter()
@@ -285,12 +314,12 @@ object ApkParser {
                 e => {
                     OPALLogger.info(s"$logCategory stderr", e)
                     cmd_stderr.write(e + System.lineSeparator())
-                },
+                }
             )
         } else {
             ProcessLogger(
                 o => cmd_stdout.write(o + System.lineSeparator()),
-                e => cmd_stderr.write(e + System.lineSeparator()),
+                e => cmd_stderr.write(e + System.lineSeparator())
             )
         }
         val cmd_result = cmd ! logger
@@ -300,11 +329,15 @@ object ApkParser {
     private def unzip(zipPath: Path, outputPath: Path): Unit = {
         val zipFile = new ZipFile(zipPath.toFile)
         for (entry <- zipFile.entries.asScala) {
-            val path = outputPath.resolve(entry.getName)
+            var path = outputPath.resolve(entry.getName)
             if (entry.isDirectory) {
                 Files.createDirectories(path)
             } else {
                 Files.createDirectories(path.getParent)
+                while (Files.exists(path)) { // prepend _ since we can get clashes on case-insensitive filesystems
+                    path = path.resolveSibling("_"+path.getFileName.toString)
+                    OPALLogger.info("APK", s"Renamed $entry to ${path.getFileName}")
+                }
                 Files.copy(zipFile.getInputStream(entry), path)
             }
         }
@@ -313,4 +346,14 @@ object ApkParser {
     private def getFileBaseName(fileName: String): String = {
         fileName.substring(fileName.lastIndexOf('/') + 1, fileName.lastIndexOf('.'))
     }
+}
+
+case class ApkParserException(
+        message: String,
+        cause:   Throwable = null
+) extends Exception(message, cause)
+
+object DexParser extends Enumeration {
+    type DexParser = Value
+    val Enjarify, Dex2Jar = Value
 }

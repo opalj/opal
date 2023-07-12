@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.apk
+package org.opalj
+package apk
 
 import org.opalj.apk.parser.ApkParser
 import org.opalj.br.analyses.ProjectInformationKey
@@ -33,6 +34,10 @@ object ApkComponentsKey extends ProjectInformationKey[Seq[ApkComponent], ApkPars
      * @return a Seq of [[ApkComponent]].
      */
     override def compute(project: SomeProject): Seq[ApkComponent] = {
-        project.getOrCreateProjectInformationKeyInitializationData(this, new ApkParser("")).parseComponents
+        project.getOrCreateProjectInformationKeyInitializationData(
+            this,
+            new ApkParser("")(project.config)
+        )
+            .parseComponents
     }
 }
