@@ -115,7 +115,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         field: Field
     ): ProperPropertyComputationResult = {
 
-        implicit val state = createState(field)
+        implicit val state: AnalysisState = createState(field)
 
         if (field.isFinal)
             return Result(field, NonAssignable);

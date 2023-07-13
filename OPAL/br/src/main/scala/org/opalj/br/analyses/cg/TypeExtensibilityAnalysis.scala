@@ -88,7 +88,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType =>
     }
 
     private[this] val typeExtensibility: ArrayMap[Answer] = {
-        implicit val isClassExtensible = project.get(ClassExtensibilityKey)
+        implicit val isClassExtensible: ClassExtensibility = project.get(ClassExtensibilityKey)
 
         val leafTypes = classHierarchy.leafTypes
         val objectTypesCount = ObjectType.objectTypesCount

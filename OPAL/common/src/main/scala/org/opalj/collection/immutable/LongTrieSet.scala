@@ -458,7 +458,9 @@ private[immutable] final class LongTrieSetN(
     override def iterator: LongIterator = new LongIterator {
         private[this] var leafNode: LongTrieSetLeaf = null
         private[this] var index = 0
-        private[this] val nodes = new scala.collection.mutable.Stack(initialSize = Math.min(16, size / 2)) += root
+        private[this] val nodes =
+            new scala.collection.mutable.Stack(initialSize = Math.min(16, LongTrieSetN.this.size / 2)) += root
+
         @tailrec private[this] def moveToNextLeafNode(): Unit = {
             if (nodes.isEmpty) {
                 leafNode = null

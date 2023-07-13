@@ -14,7 +14,7 @@ import scala.collection.immutable.ArraySeq
 package object analyses {
 
     /**
-     * Type alias for Project's with an arbitrary sources.
+     * Type alias for Projects with arbitrary sources.
      */
     type SomeProject = Project[_]
 

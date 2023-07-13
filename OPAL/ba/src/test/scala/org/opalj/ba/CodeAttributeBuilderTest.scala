@@ -33,7 +33,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     behavior of "CodeAttributeBuilder when the code is invalid"
 
     "the CodeAttributeBuilder" should "warn about a too small max_locals/max_stack values" in {
-        implicit val ch = br.ClassHierarchy.PreInitializedClassHierarchy
+        implicit val classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
         val md = MethodDescriptor("(II)I")
         val code = (CODE(ILOAD_2, IRETURN) MAXSTACK 0 MAXLOCALS 0)
         val (_, (_, warnings)) = code(bi.Java5Version, FakeObjectType, ACC_PUBLIC.mask, "test", md)

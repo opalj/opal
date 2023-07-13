@@ -1105,7 +1105,7 @@ object Project {
      */
     private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
 
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val disclaimer = "(this inconsistency may lead to useless/wrong results)"
 
@@ -1545,7 +1545,7 @@ object Project {
         theLogContext: LogContext
     ): Map[Method, immutable.Set[Method]] = time {
 
-        implicit val classFileRepository = new ClassFileRepository {
+        implicit val classFileRepository: ClassFileRepository = new ClassFileRepository {
             override implicit def logContext: LogContext = theLogContext
             override def classFile(objectType: ObjectType): Option[ClassFile] = {
                 objectTypeToClassFile.get(objectType)
@@ -1868,7 +1868,7 @@ object Project {
         config:        Config     = BaseConfig,
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
-        implicit val logContext = new StandardLogContext()
+        implicit val logContext: LogContext = new StandardLogContext()
         OPALLogger.register(logContext, projectLogger)
         this(
             projectClassFilesWithSources,
@@ -1890,8 +1890,8 @@ object Project {
         config:                             Config,
         logContext:                         LogContext
     ): Project[Source] = time {
-        implicit val projectConfig = config
-        implicit val projectLogContext = logContext
+        implicit val projectConfig: Config = config
+        implicit val projectLogContext: LogContext = logContext
 
         try {
             import scala.collection.mutable.Set
