@@ -5,6 +5,8 @@ package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
 
+import java.net.URL
+
 import scala.jdk.CollectionConverters._
 
 import org.opalj.log.LogContext
@@ -21,6 +23,8 @@ import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -48,6 +52,10 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            _ => Set(classOf[DefaultDomainWithCFGAndDefUse[URL]])
+        }
+
         project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
             case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator =>
                 implicit val logContext: LogContext = project.logContext
@@ -99,11 +107,11 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     }
 
     override def compute(project: SomeProject): CallGraph = {
-        if (CallGraphKey.cg.isDefined) {
+        if (CallGraphKey.cg.isDefined && project.availableProjectInformation.contains(CallGraphKey.cg.get)) {
             implicit val logContext: LogContext = project.logContext
             OPALLogger.error(
                 "analysis configuration",
-                s"must not compute multiple call graphs"
+                s"call graphs was already computed, computing new call graph"
             )
             throw new IllegalArgumentException()
         }
@@ -159,12 +167,15 @@ object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def compute(project: SomeProject): CallGraph = {
-        cg.getOrElse {
+        if (cg.isDefined && project.availableProjectInformation.contains(cg.get)) {
+            cg.get
+        } else {
             implicit val logContext: LogContext = project.logContext
             OPALLogger.error(
                 "analysis configuration",
                 s"must compute specific call graph first"
             )
+            cg = None
             throw new IllegalArgumentException()
         }
     }
