@@ -105,7 +105,6 @@ object IFDSBasedVariableTypeAnalysisRunnerIFDS {
             new IFDSBasedVariableTypeAnalysisRunnerIFDS(args.contains("-subsumeFacts")).run(
                 args.contains("-debug"),
                 args.contains("-l2"),
-                args.contains("-delay"),
                 args.contains("-evalSchedulingStrategies"),
                 if (fileIndex >= 0) Some(new File(args(fileIndex + 1))) else None
             )

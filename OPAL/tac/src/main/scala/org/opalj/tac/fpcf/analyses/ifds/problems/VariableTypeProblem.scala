@@ -1,5 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds.problems
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
+package problems
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassFile
@@ -45,6 +50,8 @@ case object VTANullFact extends VTAFact with AbstractIFDSNullFact
  * @param definedBy The variable's definition site.
  * @param t The variable's type.
  * @param upperBound True, if the variable's type could also be every subtype of `t`.
+ *
+ * @author Marc Clement
  */
 case class VariableType(definedBy: Int, t: ReferenceType, upperBound: Boolean) extends VTAFact {
 
@@ -53,8 +60,8 @@ case class VariableType(definedBy: Int, t: ReferenceType, upperBound: Boolean) e
      */
     override def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean = {
         if (upperBound) other match {
-            case VariableType(definedByOther, tOther, _) if definedBy == definedByOther && t.isObjectType && tOther.isObjectType =>
-                project.classHierarchy.isSubtypeOf(tOther.asObjectType, t.asObjectType)
+            case VariableType(definedByOther, tOther, _) if definedBy == definedByOther =>
+                project.classHierarchy.isSubtypeOf(tOther, t)
             case _ => false
         }
         else false
@@ -75,23 +82,29 @@ case class CalleeType(line: Int, t: ReferenceType, upperBound: Boolean) extends 
      */
     override def subsumes(other: AbstractIFDSFact, project: SomeProject): Boolean = {
         if (upperBound) other match {
-            case CalleeType(lineOther, tOther, _) if line == lineOther && t.isObjectType && tOther.isObjectType =>
-                tOther.asObjectType.isSubtypeOf(t.asObjectType)(project.classHierarchy)
+            case CalleeType(lineOther, tOther, _) if line == lineOther =>
+                project.classHierarchy.isSubtypeOf(tOther, t)
             case _ => false
         }
         else false
     }
 }
 
-class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boolean = false) extends JavaForwardIFDSProblem[VTAFact](project) {
+/**
+ * IFDS Problem that performs a Variable Type Analysis
+ *
+ * @param project the analyzed project
+ * @param subsumeFacts Whether to try to subsume new facts under existing facts and save graph edges
+ *
+ * @author Marc Clement
+ */
+class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boolean = false)
+    extends JavaForwardIFDSProblem[VTAFact](project) {
     val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     override def nullFact: VTAFact = VTANullFact
 
-    /**
-     * The analysis starts with all public methods in java.lang or org.opalj.
-     */
     override def entryPoints: Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = {
         project.allProjectClassFiles.flatMap(cf =>
             if (classInsideAnalysisContext(cf)) {

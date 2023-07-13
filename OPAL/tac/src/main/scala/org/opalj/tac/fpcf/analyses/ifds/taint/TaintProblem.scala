@@ -65,6 +65,16 @@ case class FlowFact(flow: Seq[Callable]) extends TaintFact {
     }
 }
 
+/**
+ * This trait represents IFDS based taint problems.
+ * It decides where sanitization of taints happens.
+ *
+ * @tparam C the kind of callee in the problem
+ * @tparam Statement the type of statements that are analyzed
+ * @tparam IFDSFact the kind of generated facts
+ *
+ * @author Marc Clement
+ */
 trait TaintProblem[C, Statement, IFDSFact] {
 
     /**

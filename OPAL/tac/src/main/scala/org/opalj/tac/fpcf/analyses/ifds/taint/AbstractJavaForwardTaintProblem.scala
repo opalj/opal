@@ -17,6 +17,15 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
+/**
+ * IFDS Problem that performs a forward Taint Analysis on Java
+ *
+ *
+ * @param project the analyzed project
+ *
+ * @author Marc Clement
+ * @author Nicolas Gross
+ */
 abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
     extends JavaForwardIFDSProblem[TaintFact](project)
     with TaintProblem[Method, JavaStatement, TaintFact] {
@@ -28,7 +37,11 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
     /**
      * If a variable gets assigned a tainted value, the variable will be tainted.
      */
-    override def normalFlow(statement: JavaStatement, in: TaintFact, predecessor: Option[JavaStatement]): Set[TaintFact] = {
+    override def normalFlow(
+        statement:   JavaStatement,
+        in:          TaintFact,
+        predecessor: Option[JavaStatement]
+    ): Set[TaintFact] = {
         statement.stmt.astID match {
             case Assignment.ASTID =>
                 Set(in) ++ createNewTaints(statement.stmt.asAssignment.expr, statement, in)
@@ -42,8 +55,9 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                         Set(in) ++ definedBy.map { ArrayElement(_, arrayIndex.get) }
                     } else
                         // Taint the whole array if the index is unknown
-                        Set(in) ++ definedBy.map { Variable(_) }
-                } else if (arrayIndex.isDefined && definedBy.size == 1 && in == ArrayElement(definedBy.head, arrayIndex.get)) {
+                        Set(in) ++ definedBy.map { Variable }
+                } else if (arrayIndex.isDefined && definedBy.size == 1 &&
+                    in == ArrayElement(definedBy.head, arrayIndex.get)) {
                     // untaint
                     Set()
                 } else Set(in)

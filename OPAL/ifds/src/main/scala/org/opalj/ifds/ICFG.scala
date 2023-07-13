@@ -9,6 +9,8 @@ import scala.collection.{Set => SomeSet}
  *
  * @tparam C The type of callables in this ICFG
  * @tparam S the type of statements in this ICFG
+ *
+ * @author Marc Clement
  */
 abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
     /**

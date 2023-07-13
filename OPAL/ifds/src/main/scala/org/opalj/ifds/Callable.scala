@@ -4,6 +4,8 @@ package ifds
 
 /**
  * Represents Callables in the ICFG for the IFDS Analysis.
+ *
+ * @author Marc Clement
  */
 abstract class Callable {
     /**

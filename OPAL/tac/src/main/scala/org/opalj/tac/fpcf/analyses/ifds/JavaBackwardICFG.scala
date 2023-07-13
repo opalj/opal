@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject

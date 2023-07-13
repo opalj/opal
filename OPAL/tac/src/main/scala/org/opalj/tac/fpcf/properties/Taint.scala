@@ -10,6 +10,14 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 
+/**
+ * Represents taint properties
+ *
+ * @param flows the data flow that leaks a taint
+ * @param debugData optional data to debug the analysis
+ *
+ * @author Marc Clement
+ */
 case class Taint(
         flows:     Map[JavaStatement, Set[TaintFact]],
         debugData: Map[JavaStatement, Set[TaintFact]] = Map.empty

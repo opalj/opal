@@ -33,6 +33,8 @@ import scala.collection.{Set => SomeSet}
  * @param fact the actual flow fact.
  * @param isUnbalancedReturn whether this fact was created by an unbalanced return.
  * @param callChain if unbalanced return, the current call chain.
+ *
+ * @author Marc Clement
  */
 class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
         val fact:               Fact,
@@ -82,7 +84,7 @@ case class Dependees[WorklistItem]() {
             case Some(dependee) => Dependee(dependee.eOptionP, dependee.worklist + worklistItem)
             case None           => Dependee(propertyStore(epk), Set(worklistItem))
         }
-        if (!dependee.eOptionP.isFinal) dependees += epk -> dependee
+        if (dependee.eOptionP.isRefinable) dependees += epk -> dependee
         dependee.eOptionP
     }
 
@@ -112,6 +114,10 @@ object Dependees {
 case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: AnyRef](
         subsumes: (Set[Fact], Fact) => Boolean
 ) {
+    /**
+     * Left denotes a single relevant predecessor
+     * Right denotes several relevant predecessors
+     */
     var edges = Map.empty[S, Either[Set[Fact], Map[S, Set[Fact]]]]
 
     /**
@@ -134,17 +140,17 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
                 true
             case Some(Left(existingFacts)) =>
                 if (predecessor.isDefined)
-                    throw new IllegalArgumentException(s"${statement} does not accept a predecessor")
+                    throw new IllegalArgumentException(s"$statement does not accept a predecessor")
                 if (isNew(existingFacts, fact)) {
                     edges = edges.updated(statement, Left(existingFacts + fact))
                     true
                 } else false
             case Some(Right(existingFacts)) =>
                 predecessor match {
-                    case None => throw new IllegalArgumentException(s"${statement} requires a predecessor")
+                    case None => throw new IllegalArgumentException(s"$statement requires a predecessor")
                     case Some(predecessor) =>
                         existingFacts.get(statement) match {
-                            case Some(existingPredecessorFacts) => {
+                            case Some(existingPredecessorFacts) =>
                                 if (isNew(existingPredecessorFacts, fact)) {
                                     edges = edges.updated(
                                         statement,
@@ -152,12 +158,10 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
                                     )
                                     true
                                 } else false
-                            }
-                            case None => {
+                            case None =>
                                 edges =
                                     edges.updated(statement, Right(existingFacts.updated(predecessor, Set(fact))))
                                 true
-                            }
                         }
                 }
         }
@@ -169,7 +173,8 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
 
     /**
      * @param statement
-     * @return The edges reaching statement if any. In case the statement minds about predecessors it is a map with an entry for each predecessor
+     * @return The edges reaching statement if any. In case the statement minds about predecessors it is a map with an
+     *         entry for each predecessor
      */
     def get(statement: S): Option[Either[Set[Fact], Map[S, Set[Fact]]]] = edges.get(statement)
 
@@ -217,14 +222,16 @@ case class Statistics(
  * @param ifdsProblem
  * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
  * @tparam Fact
+ *
+ * @author Marc Clement
  */
 class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
         val project:     SomeProject,
         val ifdsProblem: IFDSProblem[Fact, C, S],
         val propertyKey: IFDSPropertyMetaInformation[S, Fact]
 ) extends FPCFAnalysis {
-    type WorklistItem = (Option[S], IFDSFact[Fact, S], Option[S]) // statement, fact, predecessor
-    type Worklist = mutable.Queue[WorklistItem]
+    private type WorklistItem = (Option[S], IFDSFact[Fact, S], Option[S]) // statement, fact, predecessor
+    private type Worklist = mutable.Queue[WorklistItem]
     type State = IFDSState[Fact, C, S, WorklistItem]
 
     implicit var statistics: Statistics = Statistics()
@@ -328,7 +335,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
      */
     private def process()(implicit state: State, worklist: Worklist): Unit = {
         while (worklist.nonEmpty) { // ifds line 10
-            implicit val work = worklist.dequeue() // ifds line 11
+            implicit val work: (Option[S], IFDSFact[Fact, S], Option[S]) = worklist.dequeue() // ifds line 11
             val (statement, in, predecessor) = work
             statement match {
                 case Some(stmt) =>
@@ -363,68 +370,40 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         worklist: Worklist,
         work:     WorklistItem
     ): Unit = {
-        val successors = icfg.nextStatements(call)
-        val existingCallChain = state.source._2.callChain.getOrElse(Seq.empty)
-        for (callee <- callees) {
-            ifdsProblem.outsideAnalysisContextCall(callee) match {
-                case Some(outsideAnalysisHandler) =>
-                    // Let the concrete analysis decide what to do.
-                    if (successors.isEmpty) {
-                        for {
-                            out <- outsideAnalysisHandler(
-                                call,
-                                None,
-                                in,
-                                existingCallChain,
-                                state.dependees.getter()
-                            ) // ifds line 17 (only summary edges)
-                        } {
-                            propagate(None, out, call) // ifds line 18
-                        }
-                    } else {
-                        for {
-                            successor <- successors
-                            out <- outsideAnalysisHandler(
-                                call,
-                                Some(successor),
-                                in,
-                                existingCallChain,
-                                state.dependees.getter()
-                            ) // ifds line 17 (only summary edges)
-                        } {
-                            propagate(Some(successor), out, call) // ifds line 18
-                        }
-                    }
-                case None =>
-                    if (successors.isEmpty) {
-                        for {
-                            out <- concreteCallFlow(call, callee, in, None) // ifds line 17 (only summary edges)
-                        } {
-                            propagate(None, out, call) // ifds line 18
-                        }
-                    } else {
-                        for {
-                            successor <- successors
-                            out <- concreteCallFlow(call, callee, in, Some(successor)) // ifds line 17 (only summary edges)
-                        } {
-                            propagate(Some(successor), out, call) // ifds line 18
-                        }
-                    }
+        val successors = {
+            val successors = icfg.nextStatements(call).map(Some(_))
+            if (successors.isEmpty) {
+                Set(None)
+            } else {
+                successors
             }
         }
-        if (successors.isEmpty) {
-            for {
-                out <- callToReturnFlow(call, in, None, existingCallChain) // ifds line 17 (without summary edge propagation)
-            } {
-                propagate(None, out, call) // ifds line 18
+        val existingCallChain = state.source._2.callChain.getOrElse(Seq.empty)
+        for (callee <- callees) {
+            val callFlowHandler = ifdsProblem.outsideAnalysisContextCall(callee) match {
+                case Some(outsideAnalysisHandler) =>
+                    outsideAnalysisHandler
+                case None => (call: S, successor: Option[S], in: Fact, _: Seq[Callable], _: Getter) =>
+                    concreteCallFlow(call, callee, in, successor)
             }
-        } else {
             for {
                 successor <- successors
-                out <- callToReturnFlow(call, in, Some(successor), existingCallChain) // ifds line 17 (without summary edge propagation)
+                out <- callFlowHandler(
+                    call,
+                    successor,
+                    in,
+                    existingCallChain,
+                    state.dependees.getter()
+                ) // ifds line 17 (only summary edges)
             } {
-                propagate(Some(successor), out, call) // ifds line 18
+                propagate(successor, out, call) // ifds line 18
             }
+        }
+        for {
+            successor <- successors
+            out <- callToReturnFlow(call, in, successor, existingCallChain) // ifds line 17 (without summary edge propagation)
+        } {
+            propagate(successor, out, call) // ifds line 18
         }
     }
 
@@ -486,9 +465,8 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
                 state.endSummaries += ((statement, in)) // ifds line 21.1
                 state.selfDependees.foreach(selfDependee => worklist.enqueue(selfDependee))
 
-                if (ifdsProblem.enableUnbalancedReturns && ifdsProblem.shouldPerformUnbalancedReturn(
-                    state.source
-                )) {
+                if (ifdsProblem.enableUnbalancedReturns &&
+                    ifdsProblem.shouldPerformUnbalancedReturn(state.source)) {
                     handleUnbalancedReturn(statement, in)
                 }
             }
@@ -652,10 +630,6 @@ abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <:
     final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    /**
-     * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
-     */
     override def register(
         p:        SomeProject,
         ps:       PropertyStore,

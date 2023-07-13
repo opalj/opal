@@ -1,12 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds.taint
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ifds
+package taint
 
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
-import org.opalj.tac._
 import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
@@ -14,6 +18,7 @@ import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 /**
  * Implementation of a backward taint analysis for Java code.
  *
+ * @author Nicolas Gross
  */
 abstract class JavaBackwardTaintProblem(project: SomeProject)
     extends JavaBackwardIFDSProblem[TaintFact](project)
@@ -83,7 +88,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
     override def callFlow(start: JavaStatement, in: TaintFact, call: JavaStatement, callee: Method): Set[TaintFact] = {
         // taint expression of return value in callee if return value in caller is tainted
         val callObject = JavaIFDSProblem.asCall(call.stmt)
-        val flow = collection.mutable.Set.empty[TaintFact]
+        val flow = scala.collection.mutable.Set.empty[TaintFact]
         if (call.stmt.astID == Assignment.ASTID && start.stmt.astID == ReturnValue.ASTID) {
             in match {
                 case Variable(index) if index == call.index =>
@@ -139,7 +144,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         val thisOffset = if (staticCall) 0 else 1
         val formalParameterIndices = (0 until callStatement.descriptor.parametersCount)
             .map(index => JavaIFDSProblem.remapParamAndVariableIndex(index + thisOffset, staticCall))
-        val facts = collection.mutable.Set.empty[TaintFact]
+        val facts = scala.collection.mutable.Set.empty[TaintFact]
         in match {
             case Variable(index) if formalParameterIndices.contains(index) =>
                 facts.addAll(createNewTaints(
@@ -172,7 +177,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
     override def callToReturnFlow(call: JavaStatement, in: TaintFact, successor: Option[JavaStatement],
                                   unbCallChain: Seq[Callable]): Set[TaintFact] = {
         val flowFact = createFlowFactAtCall(call, in, unbCallChain)
-        val result = collection.mutable.Set.empty[TaintFact]
+        val result = scala.collection.mutable.Set.empty[TaintFact]
         if (!sanitizesParameter(call, in)) result.add(in)
         if (flowFact.isDefined) result.add(flowFact.get)
         result.toSet

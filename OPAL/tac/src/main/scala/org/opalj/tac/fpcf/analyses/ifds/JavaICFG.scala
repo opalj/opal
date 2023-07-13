@@ -34,6 +34,11 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.value.ValueInformation
 
+/**
+ * Interprocedural control flow graph for Java projects used in IFDS Analysis
+ *
+ * @author Marc Clement
+ */
 abstract class JavaICFG(project: SomeProject)
     extends ICFG[Method, JavaStatement] {
 

@@ -30,6 +30,11 @@ import java.io.File
 import java.io.PrintWriter
 import scala.language.existentials
 
+/**
+ * Setup to run different Evaluations of IFDS Analyses
+ *
+ * @author Marc Clement
+ */
 abstract class IFDSEvaluationRunner {
 
     protected def analysisClass: IFDSAnalysisScheduler[_, _, _]
@@ -39,7 +44,6 @@ abstract class IFDSEvaluationRunner {
     protected def run(
         debug:                    Boolean,
         useL2:                    Boolean,
-        delay:                    Boolean,
         evalSchedulingStrategies: Boolean,
         evaluationFile:           Option[File]
     ): Unit = {
@@ -91,11 +95,6 @@ abstract class IFDSEvaluationRunner {
         }
 
         val p = Project(bytecode.RTJar)
-
-        if (delay) {
-            println("Sleeping for three seconds.")
-            Thread.sleep(3000)
-        }
 
         if (evalSchedulingStrategies) {
             val results = for {

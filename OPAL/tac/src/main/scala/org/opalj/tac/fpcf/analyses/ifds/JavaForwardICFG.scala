@@ -1,10 +1,22 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ifds
+package org
+package opalj
+package tac
+package fpcf
+package analyses
+package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.TACode
 
+/**
+ * An ICFG for a Java IFDS forward analysis.
+ *
+ * @param project the project to which the ICFG belongs.
+ *
+ * @author Nicolas Gross
+ */
 class JavaForwardICFG(project: SomeProject)
     extends JavaICFG(project) {
 

@@ -30,6 +30,8 @@ import org.opalj.value.ValueInformation
  * @param index The index of the Statement in the code.
  * @param code The method's TAC code.
  * @param cfg The method's CFG.
+ *
+ * @author Marc Clement
  */
 case class JavaStatement(
         method: Method,

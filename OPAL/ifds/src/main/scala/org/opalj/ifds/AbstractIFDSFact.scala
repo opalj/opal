@@ -6,6 +6,8 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * The supertype of all IFDS facts, may implement "subsumes" to enable subsumption.
+ *
+ * @author Marc Clement
  */
 trait AbstractIFDSFact {
     /**

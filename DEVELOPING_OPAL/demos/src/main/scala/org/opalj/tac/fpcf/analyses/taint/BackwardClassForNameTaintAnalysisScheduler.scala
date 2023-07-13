@@ -180,7 +180,6 @@ object BackwardClassForNameTaintAnalysisRunner {
             println("Potential parameters:")
             println(" -seq (to use the SequentialPropertyStore)")
             println(" -l2 (to use the l2 domain instead of the default l1 domain)")
-            println(" -delay (for a three seconds delay before the taint flow analysis is started)")
             println(" -debug (for debugging mode in the property store)")
             println(" -evalSchedulingStrategies (evaluates all available scheduling strategies)")
             println(" -f <file> (Stores the average runtime to this file)")
@@ -189,7 +188,6 @@ object BackwardClassForNameTaintAnalysisRunner {
             new BackwardClassForNameTaintAnalysisRunner().run(
                 args.contains("-debug"),
                 args.contains("-l2"),
-                args.contains("-delay"),
                 args.contains("-evalSchedulingStrategies"),
                 if (fileIndex >= 0) Some(new File(args(fileIndex + 1))) else None
             )
