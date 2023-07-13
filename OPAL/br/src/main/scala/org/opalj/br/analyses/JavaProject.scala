@@ -8,6 +8,7 @@ import scala.jdk.CollectionConverters._
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
 
@@ -26,7 +27,7 @@ class JavaProject( final val project: Project[java.net.URL]) {
      */
     def this(classPath: java.util.List[java.io.File]) =
         this({
-            implicit val logCtx = new StandardLogContext()
+            implicit val logCtx: LogContext = new StandardLogContext()
             OPALLogger.register(logCtx, JavaProject.Logger)
             val cp = classPath.asScala
             Project(

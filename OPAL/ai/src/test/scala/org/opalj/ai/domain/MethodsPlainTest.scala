@@ -1035,7 +1035,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to return the correct type of an object if an object that is passed in is directly returned" in {
-        implicit val domain = new RecordingDomain;
+        implicit val domain: RecordingDomain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "asIs").get
         val t = ObjectType("some/Foo")

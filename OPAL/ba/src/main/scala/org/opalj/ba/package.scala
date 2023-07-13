@@ -189,7 +189,7 @@ package object ba { ba =>
         implicit
         toDAConfig: ToDAConfig = ToDAConfig.RetainAllAttributes
     ): da.ClassFile = {
-        implicit val constantsBuffer = ConstantsBuffer(ConstantsBuffer.collectLDCs(classFile))
+        implicit val constantsBuffer: ConstantsBuffer = ConstantsBuffer(ConstantsBuffer.collectLDCs(classFile))
         val thisTypeCPRef = constantsBuffer.CPEClass(classFile.thisType, false)
         val superClassCPRef = classFile.superclassType match {
             case Some(superclassType) => constantsBuffer.CPEClass(superclassType, false)
@@ -602,7 +602,7 @@ package object ba { ba =>
 
             case br.ArrayValue.KindId =>
                 val br.ArrayValue(values) = elementValue
-                val daElementValues = values.map { ev: br.ElementValue => toDA(ev) }
+                val daElementValues = values.map { (ev: br.ElementValue) => toDA(ev) }
                 da.ArrayValue(daElementValues)
 
             case br.AnnotationValue.KindId =>

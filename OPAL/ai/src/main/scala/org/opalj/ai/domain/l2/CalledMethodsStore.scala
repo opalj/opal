@@ -49,7 +49,7 @@ trait CalledMethodsStore { rootStore =>
             val domain: rootStore.domain.type = rootStore.domain
             val frequentEvaluationWarningLevel = rootStore.frequentEvaluationWarningLevel
             val calledMethods = rootStore.calledMethods.updated(method, operands)
-            implicit val logContext = rootStore.logContext
+            implicit val logContext: LogContext = rootStore.logContext
         }
     }
 
@@ -121,7 +121,7 @@ object CalledMethodsStore {
             val domain: theDomain.type = theDomain
             val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel
             val calledMethods = Map.empty[Method, List[Array[theDomain.DomainValue]]]
-            implicit val logContext = theLogContext
+            implicit val logContext: LogContext = theLogContext
         }
     }
 
@@ -139,7 +139,7 @@ object CalledMethodsStore {
             val domain: theDomain.type = theDomain
             val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel
             val calledMethods = Map[Method, List[Array[theDomain.DomainValue]]]((method, List(operands)))
-            implicit val logContext = theLogContext
+            implicit val logContext: LogContext = theLogContext
         }
     }
 }

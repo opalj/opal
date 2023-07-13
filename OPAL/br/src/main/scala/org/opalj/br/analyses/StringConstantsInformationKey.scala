@@ -45,7 +45,7 @@ object StringConstantsInformationKey
         project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo =>
             val method = methodInfo.method
 
-            method.body.get foreach { i: PCAndInstruction =>
+            method.body.get foreach { (i: PCAndInstruction) =>
                 val pc = i.pc
                 val instruction = i.instruction
                 if (instruction.opcode == LDC.opcode || instruction.opcode == LDC_W.opcode) {

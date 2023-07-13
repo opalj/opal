@@ -592,8 +592,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
         val instructions = code.instructions
         lazy val belongsToSubroutine = code.belongsToSubroutine()
         // println(belongsToSubroutine.zipWithIndex.map(_.swap).mkString("Subroutine association:\n\t", "\n\t", "\n"))
-        implicit val operandsArray = aiResult.operandsArray
-        implicit val localsArray = aiResult.localsArray
+        implicit val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
+        implicit val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
         implicit val subroutinePCs: IntArraySet = aiResult.subroutinePCs
         implicit val cfJoins: IntTrieSet = aiResult.cfJoins
 

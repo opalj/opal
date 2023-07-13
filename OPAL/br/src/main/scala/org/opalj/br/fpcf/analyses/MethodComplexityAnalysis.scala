@@ -18,10 +18,10 @@ import org.opalj.br.instructions._
 class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
 
     def apply(method: Method): MethodComplexity = {
-        implicit val code = method.body.get
+        implicit val code: Code = method.body.get
         val instructions = code.instructions
 
-        var complexity = instructions.size;
+        var complexity = instructions.length;
         var hasLoop = false;
         var evaluatedPCs: Set[PC] = Set.empty
         var nextPCs: Set[PC] = Set(0);
