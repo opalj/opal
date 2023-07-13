@@ -27,7 +27,6 @@ import org.opalj.ll.fpcf.analyses.ifds.JNIMethod
 import org.opalj.ll.fpcf.analyses.ifds.LLVMFunction
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.analyses.ifds.NativeBackwardICFG
-import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Call
 import org.opalj.ll.llvm.value.Ret
 import org.opalj.ll.llvm.value.Value

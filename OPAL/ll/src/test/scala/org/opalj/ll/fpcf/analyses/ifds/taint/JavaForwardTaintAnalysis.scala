@@ -23,7 +23,6 @@ import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ll.LLVMProjectKey
 import org.opalj.ll.fpcf.analyses.ifds.LLVMFunction
 import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
-import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Ret
 import org.opalj.tac.Assignment
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
@@ -232,7 +231,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
                 in match {
                     case NativeVariable(value) if ret.value.contains(value) && call.stmt.astID == Assignment.ASTID =>
                         flows += Variable(call.index)
-                    // TODO
+                    // TODO handle Array elements and fields correctly
                     /*case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) =>
                     flows += ArrayElement(call.index, taintedIndex)
                   case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) =>

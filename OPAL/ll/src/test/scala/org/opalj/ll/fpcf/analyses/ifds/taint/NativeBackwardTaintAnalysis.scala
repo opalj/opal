@@ -20,7 +20,6 @@ import org.opalj.ll.fpcf.analyses.ifds.LLVMStatement
 import org.opalj.ll.fpcf.analyses.ifds.NativeFunction
 import org.opalj.ll.fpcf.analyses.ifds.NativeIFDSAnalysis
 import org.opalj.ll.fpcf.analyses.ifds.NativeIFDSAnalysisScheduler
-import org.opalj.ll.fpcf.properties.NativeTaint
 import org.opalj.ll.llvm.value.Call
 import org.opalj.tac.fpcf.properties.Taint
 
