@@ -172,7 +172,6 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
     }
 
     /**
-     * @param statement
      * @return The edges reaching statement if any. In case the statement minds about predecessors it is a map with an
      *         entry for each predecessor
      */
@@ -218,10 +217,12 @@ case class Statistics(
 )
 
 /**
+ * The IFDS analysis framework
  *
- * @param ifdsProblem
- * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and the lower bound for the IFDSProperty.
- * @tparam Fact
+ * @param ifdsProblem the problem class that handles the actual solving of the problem
+ * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and
+ *                    the lower bound for the IFDSProperty.
+ * @tparam Fact the generated facts
  *
  * @author Marc Clement
  */
@@ -331,7 +332,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     /**
      * Analyzes a queue of BasicBlocks.
      *
-     * @param worklist
+     * @param worklist the current worklist that needs to be processed
      */
     private def process()(implicit state: State, worklist: Worklist): Unit = {
         while (worklist.nonEmpty) { // ifds line 10
@@ -545,10 +546,11 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 
     /**
-     * ifds flow function
-     * @param statement n
-     * @param in d2
-     * @param predecessor pi
+     * ifds normal flow function
+     * @param statement the current statement (n in the original paper)
+     * @param in the processed fact (d2 in the original paper)
+     * @param predecessor an optional predecessor statement (pi in the original paper)
+     * @return the generated facts
      */
     private def normalFlow(statement: S, in: Fact, predecessor: Option[S]): Set[Fact] = {
         statistics.normalFlow += 1
@@ -557,24 +559,27 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 
     /**
      * ifds passArgs function
-     * @param call n
-     * @param callee
-     * @param in d2
-     * @param entry
-     * @return
+     *
+     * @param call the calling statement (n in the original paper)
+     * @param callee the called function
+     * @param in the processed fact (d2 in the original paper)
+     * @param entry the first statement in the called function
+     * @return the generated facts
      */
-    private def callFlow(entry: S, in: Fact, call: S, callee: C) = {
+    private def callFlow(entry: S, in: Fact, call: S, callee: C): Set[Fact] = {
         statistics.callFlow += 1
         addNullFactIfConfigured(in, ifdsProblem.callFlow(entry, in, call, callee))
     }
 
     /**
-     * ifds returnVal function
-     * @param exit n
-     * @param in d2
-     * @param call c
-     * @param callFact d4
-     * @return
+     * maps the facts back to the calling contexts
+     * @param exit the returning statement n
+     * @param in the processed fact (d2 in the original paper)
+     * @param call the calling statement
+     * @param callFact the fact holding before the call
+     * @param successor an optional successor statement
+     * @param unbCallChain the callchain up to here
+     * @return the generated facts
      */
     private def returnFlow(
         exit:         S,
@@ -589,10 +594,12 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 
     /**
-     * ifds callFlow function
-     * @param call n
-     * @param in d2
-     * @return
+     * Processes the facts around a call
+     * @param call the calling statement
+     * @param in the processed fact (d2 in the original paper)
+     * @param successor an optional successor statement
+     * @param unbCallChain the callchain up to here
+     * @return the generated facts
      */
     private def callToReturnFlow(
         call:         S,

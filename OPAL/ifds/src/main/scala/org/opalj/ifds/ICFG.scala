@@ -54,3 +54,31 @@ abstract class ICFG[C <: AnyRef, S <: Statement[_ <: C, _]] {
      */
     def getCallers(callee: C): Set[S]
 }
+
+/**
+ * The representation of statements in the icfg
+ *
+ * @tparam C type of callables
+ * @tparam Node type of Basic Blocks
+ */
+abstract class Statement[C, Node] {
+    def basicBlock: Node
+    def callable: C
+}
+
+/**
+ * Represents Callables in the ICFG for the IFDS Analysis.
+ *
+ * @author Marc Clement
+ */
+abstract class Callable {
+    /**
+     * The name of the Callable
+     */
+    def name: String
+
+    /**
+     * The full name of the Callable including its signature
+     */
+    def signature: String
+}

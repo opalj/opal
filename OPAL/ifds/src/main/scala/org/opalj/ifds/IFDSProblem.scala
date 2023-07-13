@@ -13,7 +13,6 @@ import org.opalj.ifds.Dependees.Getter
  * @author Marc Clement
  */
 abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](val icfg: ICFG[C, S]) {
-    type Work = (S, Fact, Option[S])
 
     /**
      * The null fact of this analysis.
@@ -118,10 +117,10 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      *
      * @param callee    The callee.
      * @param in        The newly found facts.
-     * @param callChain the current call chain.
+     * @param unbalancedCallChain the current call chain.
      * @return Some FlowFact, if necessary. Otherwise None.
      */
-    def createFlowFactAtExit(callee: C, in: Fact, unbCallChain: Seq[Callable]): Option[Fact]
+    def createFlowFactAtExit(callee: C, in: Fact, unbalancedCallChain: Seq[Callable]): Option[Fact]
 
     def needsPredecessor(statement: S): Boolean
 
@@ -169,3 +168,4 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement
      */
     def outsideAnalysisContextUnbReturn(callee: C): Option[OutsideAnalysisContextUnbReturnHandler]
 }
+
