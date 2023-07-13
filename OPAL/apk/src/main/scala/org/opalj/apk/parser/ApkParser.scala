@@ -50,7 +50,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 
     private var tmpDir: Option[File] = None
     private val ApkUnzippedDir = "/apk_unzipped"
-    private val logOutput = config.getBoolean(ConfigKeyPrefix + "logOutput")
+    private val logOutput = config.getBoolean(ConfigKeyPrefix+"logOutput")
     /**
      * Parses the components / static entry points of the APK from AndroidManifest.xml.
      *

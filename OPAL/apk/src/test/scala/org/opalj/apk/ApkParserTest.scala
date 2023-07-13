@@ -17,13 +17,12 @@ import java.net.URL
  * @author Nicolas Gross
  */
 @org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
-@Ignore// TODO Does not run @github since docker is missing
+@Ignore // TODO Does not run @github since docker is missing
 class ApkParserTest extends AnyFunSuite with BeforeAndAfterAll {
 
     var project: Project[URL] = _
 
     override def beforeAll(): Unit = {
-        ApkParser.logOutput = true
         project = ApkParser.createProject(
             "./OPAL/apk/src/test/resources/context-registered-receivers-and-native.apk",
             BaseConfig,
