@@ -111,7 +111,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             implicit val logContext: LogContext = project.logContext
             OPALLogger.error(
                 "analysis configuration",
-                s"call graphs was already computed, computing new call graph"
+                s"call graph was already computed, computing new call graph"
             )
             throw new IllegalArgumentException()
         }
