@@ -71,9 +71,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             FPCFAnalysesManagerKey
         ) ++
             requiresCallBySignatureKey(project) ++
-            CallGraphAnalysisScheduler.requiredProjectInformation ++
-            callGraphSchedulers(project).flatMap(_.requiredProjectInformation) ++
-            registeredAnalyses(project).flatMap(_.requiredProjectInformation)
+            allCallGraphAnalyses(project).flatMap(_.requiredProjectInformation)
     }
 
     protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
@@ -86,12 +84,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         ).asScala.flatMap(resolveAnalysisRunner(_))
     }
 
-    override def compute(project: SomeProject): CallGraph = {
-        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
-        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
-
-        val manager = project.get(FPCFAnalysesManagerKey)
-
+    private[this] def allCallGraphAnalyses(project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
         // TODO make TACAI analysis configurable
         var analyses: List[FPCFAnalysisScheduler] =
             List(
@@ -102,20 +95,29 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         analyses ++= callGraphSchedulers(project)
         analyses ++= registeredAnalyses(project)
 
-        manager.runAll(analyses)
+        analyses
+    }
+
+    override def compute(project: SomeProject): CallGraph = {
+        if (CallGraphKey.cg.isDefined) {
+            implicit val logContext: LogContext = project.logContext
+            OPALLogger.error(
+                "analysis configuration",
+                s"must not compute multiple call graphs"
+            )
+            throw new IllegalArgumentException()
+        }
+
+        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
+
+        val manager = project.get(FPCFAnalysesManagerKey)
+
+        manager.runAll(allCallGraphAnalyses(project))
 
         val cg = new CallGraph()
 
-        project.updateProjectInformationKeyInitializationData(CallGraphKey) {
-            case Some(_) =>
-                implicit val logContext: LogContext = project.logContext
-                OPALLogger.error(
-                    "analysis configuration",
-                    s"must not compute multiple call graphs"
-                )
-                throw new IllegalArgumentException()
-            case None => cg
-        }
+        CallGraphKey.cg = Some(cg)
 
         cg
     }
@@ -152,20 +154,18 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
 object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
 
+    private var cg: Option[CallGraph] = None
+
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeIteratorKey)
 
     override def compute(project: SomeProject): CallGraph = {
-
-        project.getProjectInformationKeyInitializationData(this) match {
-            case Some(cg) =>
-                cg
-            case None =>
-                implicit val logContext: LogContext = project.logContext
-                OPALLogger.error(
-                    "analysis configuration",
-                    s"must compute specific call graph first"
-                )
-                throw new IllegalArgumentException()
+        cg.getOrElse {
+            implicit val logContext: LogContext = project.logContext
+            OPALLogger.error(
+                "analysis configuration",
+                s"must compute specific call graph first"
+            )
+            throw new IllegalArgumentException()
         }
     }
 }
