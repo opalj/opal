@@ -50,7 +50,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 
     private var tmpDir: Option[File] = None
     private val ApkUnzippedDir = "/apk_unzipped"
-
+    private val logOutput = config.getBoolean(ConfigKeyPrefix + "logOutput")
     /**
      * Parses the components / static entry points of the APK from AndroidManifest.xml.
      *
@@ -127,7 +127,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
             dexFiles.zipWithIndex.foreach {
                 case (dex, i) =>
                     jarFiles.append(Paths.get(s"$jarsDir/${ApkParser.getFileBaseName(dex.toString)}.jar"))
-                    val (retval, _, _) = ApkParser.runCmd(getCmd(dex))
+                    val (retval, _, _) = ApkParser.runCmd(getCmd(dex), logOutput)
                     if (retval != 0) {
                         throw ApkParserException(
                             "could not convert .dex files to .jar files, check if docker container was built"
@@ -194,7 +194,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
                 .foreach {
                     case (soBaseName, i) =>
                         llvmFiles.append(Paths.get(s"$llvmDir/$soBaseName.bc"))
-                        val (retval, _, _) = ApkParser.runCmd(getCmd(soBaseName))
+                        val (retval, _, _) = ApkParser.runCmd(getCmd(soBaseName), logOutput)
                         if (retval != 0) {
                             throw ApkParserException(
                                 "could not convert .so files to .bc files, check if docker container was built"
@@ -220,7 +220,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
      */
     def cleanUp(): Unit = tmpDir match {
         case Some(tmpDirPath) =>
-            ApkParser.runCmd("rm -r "+tmpDirPath)
+            ApkParser.runCmd("rm -r "+tmpDirPath, logOutput)
             tmpDir = None
             OPALLogger.info(LogCategory, s"temporary unzip directory cleaned")
         case None =>
@@ -240,11 +240,6 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 object ApkParser {
 
     implicit private val logContext: LogContext = GlobalLogContext
-
-    /**
-     * Set this to true if you want stdout and stderr of commands (retdec, enjarify, dex2jar) being logged.
-     */
-    var logOutput = false
 
     /**
      * Creates a new [[Project]] from an APK file.
@@ -299,7 +294,7 @@ object ApkParser {
      */
     private def runCmd(
         cmd:       String,
-        logOutput: Boolean = logOutput
+        logOutput: Boolean
     ): (Int, StringWriter, StringWriter) = {
         val logCategory = "APK parser - command"
         OPALLogger.info(logCategory, s"run:  $cmd")
