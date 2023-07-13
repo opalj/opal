@@ -190,7 +190,7 @@ object Immutability {
         time {
             analysesManager.runAll(
                 dependencies, {
-                css: List[ComputationSpecification[FPCFAnalysis]] =>
+                (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                     analysis match {
                         case Assignability =>
                             if (css.contains(LazyL2FieldAssignabilityAnalysis))

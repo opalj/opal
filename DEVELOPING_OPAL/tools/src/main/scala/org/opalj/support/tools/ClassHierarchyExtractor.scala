@@ -63,7 +63,7 @@ object ClassHierarchyExtractor {
         val classFiles = args.foldLeft(Nil: List[ClassFile]) { (classFiles, filename) =>
             classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
         }
-        implicit val classHierarchy =
+        implicit val classHierarchy: ClassHierarchy =
             if (classFiles.forall(cf => cf.thisType != ObjectType.Object)) {
                 println("the class files do not contain java.lang.Object; adding default type hierarchy")
                 // load pre-configured class hierarchy...

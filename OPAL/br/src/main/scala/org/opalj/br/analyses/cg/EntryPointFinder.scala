@@ -5,8 +5,11 @@ package analyses
 package cg
 
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.log.LogContext
 
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
@@ -66,7 +69,8 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         super.collectEntryPoints(project).filterNot { ep =>
             packagesToExclude.exists { prefix =>
-                ep.declaringClassFile.thisType.packageName.startsWith(prefix)
+                ep.declaringClassFile.thisType.packageName.startsWith(prefix) &&
+                    ep.name == "main"
             }
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
@@ -176,7 +180,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
         var entryPoints = Set.empty[Method]
 
         if (!project.config.hasPath(additionalEPConfigKey)) {

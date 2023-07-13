@@ -148,7 +148,7 @@ class CodePropertiesTest extends AnyFunSuite {
     }
 
     def doAnalyzeStackMapTablePCs(project: SomeProject): Int = {
-        implicit val ch = project.classHierarchy
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         val analyzedMethodsCount = new AtomicInteger(0)
         project.parForeachMethodWithBody(() => false) { mi =>
             if (mi.classFile.version.major > 49) {

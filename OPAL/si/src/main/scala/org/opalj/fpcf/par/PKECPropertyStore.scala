@@ -92,9 +92,10 @@ class PKECPropertyStore(
         if (printProperties) {
             val properties = for (pkId <- 0 to PropertyKey.maxId) yield {
                 var entities: List[String] = List.empty
-                ps(pkId).forEachValue(Long.MaxValue, { state: EPKState =>
-                    entities ::= state.eOptP.toString.replace("\n", "\n\t")
-                })
+                ps(pkId).forEachValue(
+                    Long.MaxValue,
+                    (state: EPKState) => entities ::= state.eOptP.toString.replace("\n", "\n\t")
+                )
                 entities.sorted.mkString(s"Entities for property key $pkId:\n\t", "\n\t", "\n")
             }
             properties.mkString("PropertyStore(\n\t", "\n\t", "\n)")
@@ -106,17 +107,18 @@ class PKECPropertyStore(
     override def entities(propertyFilter: SomeEPS => Boolean): Iterator[Entity] = {
         ps.iterator.flatMap { propertiesPerKind =>
             val result: ListBuffer[Entity] = ListBuffer.empty
-            propertiesPerKind.forEachValue(Long.MaxValue, {
-                state: EPKState => if (propertyFilter(state.eOptP.asEPS)) result.append(state.eOptP.e)
-            })
+            propertiesPerKind.forEachValue(
+                Long.MaxValue,
+                (state: EPKState) => if (propertyFilter(state.eOptP.asEPS)) result.append(state.eOptP.e)
+            )
             result
         }
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
         val result: ListBuffer[EPS[Entity, P]] = ListBuffer.empty
-        ps(pk.id).forEachValue(Long.MaxValue, {
-            state: EPKState => result.append(state.eOptP.asInstanceOf[EPS[Entity, P]])
+        ps(pk.id).forEachValue(Long.MaxValue, { (state: EPKState) =>
+            result.append(state.eOptP.asInstanceOf[EPS[Entity, P]])
         })
         result.iterator
     }
@@ -322,7 +324,7 @@ class PKECPropertyStore(
                 val epk = EPK(e, AnalysisKey)
 
                 val epkState = EPKState(epk, null, dependees)
-                epkState.c = { dependee: SomeEPS =>
+                epkState.c = { (dependee: SomeEPS) =>
                     val result = c(dependee)
 
                     val state = ps(AnalysisKeyId).remove(e)
@@ -623,7 +625,7 @@ class PKECPropertyStore(
             var pkId = 0
             while (pkId <= PropertyKey.maxId) {
                 if (propertyKindsComputedInThisPhase(pkId) && (lazyComputations(pkId) eq null)) {
-                    ps(pkId).forEachValue(Long.MaxValue, { epkState: EPKState =>
+                    ps(pkId).forEachValue(Long.MaxValue, { (epkState: EPKState) =>
                         if (epkState.eOptP.isEPK && ((epkState.dependees eq null) || epkState.dependees.isEmpty)) {
                             val e = epkState.eOptP.e
                             if (getResponsibleTId(e) == ownTId) {
@@ -648,7 +650,7 @@ class PKECPropertyStore(
             var pkId = 0
             while (pkId <= PropertyKey.maxId) {
                 if (propertyKindsComputedInThisPhase(pkId)) {
-                    ps(pkId).forEachValue(Long.MaxValue, { epkState: EPKState =>
+                    ps(pkId).forEachValue(Long.MaxValue, { (epkState: EPKState) =>
                         val eOptP = epkState.eOptP
                         if (eOptP.isRefinable && getResponsibleTId(eOptP.e) == ownTId) {
                             localInterimStates.append(epkState)
@@ -679,7 +681,7 @@ class PKECPropertyStore(
 
             pksToFinalize foreach { pk =>
                 val pkId = pk.id
-                ps(pkId).forEachValue(Long.MaxValue, { epkState: EPKState =>
+                ps(pkId).forEachValue(Long.MaxValue, { (epkState: EPKState) =>
                     val eOptP = epkState.eOptP
                     if (getResponsibleTId(eOptP.e) == ownTId && eOptP.isRefinable && !eOptP.isEPK) //TODO Won't be required once subPhaseFinalizationOrder is reliably only the partial properties
                         handleFinalResult(eOptP.toFinalEP, pksToFinalize)

@@ -39,7 +39,7 @@ package object tac {
         stmts: Array[Stmt[V]],
         cfg:   CFG[Stmt[V], TACStmts[V]]
     ): Iterable[Node] = {
-        val (_, allNodes) = cfg.toDot { bb: BasicBlock =>
+        val (_, allNodes) = cfg.toDot { (bb: BasicBlock) =>
             val pcRange = bb.startPC to bb.endPC
             val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1).zip(pcRange)
             val txtStmts = bbStmts.map { stmtPC =>

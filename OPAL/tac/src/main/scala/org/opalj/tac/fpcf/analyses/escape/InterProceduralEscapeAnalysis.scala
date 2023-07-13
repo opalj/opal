@@ -39,14 +39,13 @@ import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.NoCallers
-import org.opalj.ai.ValueOrigin
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  (Context, Entity),
-        val defSitePC:               ValueOrigin,
         val targetMethod:            Method,
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
@@ -128,8 +127,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
             case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType =>
                 Result(fp, AtMost(NoEscape))
 
-            case VirtualFormalParameter(dm: DefinedMethod, i) =>
-                val ctx = createContext(fp, i, dm.definedMethod)
+            case VirtualFormalParameter(dm: DefinedMethod, _) =>
+                val ctx = createContext(fp, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
 
             case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
@@ -139,11 +138,9 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
     override def createContext(
         entity:       (Context, Entity),
-        defSitePC:    ValueOrigin,
         targetMethod: Method
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
-        defSitePC,
         targetMethod,
         declaredMethods,
         virtualFormalParameters,
@@ -183,7 +180,7 @@ object EagerInterProceduralEscapeAnalysis
         val analysis = new InterProceduralEscapeAnalysis(p)
 
         val declaredMethods = p.get(DeclaredMethodsKey)
-        implicit val typeIterator = p.get(TypeIteratorKey)
+        implicit val typeIterator: TypeIterator = p.get(TypeIteratorKey)
 
         val methods = declaredMethods.declaredMethods
         val callersProperties = ps(methods.to(Iterable), Callers)
