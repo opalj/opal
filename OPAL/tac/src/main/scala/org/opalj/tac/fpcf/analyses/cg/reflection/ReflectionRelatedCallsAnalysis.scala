@@ -56,6 +56,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.log.Warn
 import org.opalj.fpcf.InterimResult
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.cg.LoadedClasses
@@ -66,8 +67,20 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
         val activated = try {
             val key = project.config.getString(ReflectionRelatedCallsAnalysis.ConfigKey)
             if (key == "all") {
-                Set("class,method")
-            } else key.split(',').toSet
+                Set("class", "method")
+            } else {
+                val options = key.split(',').toSet
+
+                val unrecognizedOptions = options -- Set("class", "method")
+                if(unrecognizedOptions.nonEmpty){
+                    logOnce(Warn(
+                        "analysis configuration - reflection analysis",
+                        s"unknown soundness options $unrecognizedOptions in ${ReflectionRelatedCallsAnalysis.ConfigKey}"
+                    ))
+                }
+
+                options
+            }
         } catch {
             case t: Throwable =>
                 logOnce(Error(
@@ -341,7 +354,6 @@ class ClassNewInstanceAnalysis private[analyses] (
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         implicit val _state: CGState[ContextType] = state
-        implicit val highSoundness = HighSoundnessMode("class")
 
         val epk = eps.toEPK
 
@@ -349,12 +361,11 @@ class ClassNewInstanceAnalysis private[analyses] (
             val matchers = Set(
                 MatcherUtil.constructorMatcher,
                 new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
-                retrieveSuitableMatcher[Set[ObjectType]](
-                    Some(eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
+                new ClassBasedMethodMatcher(
+                    eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
                         case ot: ObjectType => ot
-                    }),
-                    callPC,
-                    v => new ClassBasedMethodMatcher(v, true)
+                    },
+                    true
                 )
             )
             addCalls(state.callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
@@ -371,11 +382,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                     val matchers = Set(
                         MatcherUtil.constructorMatcher,
                         new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
-                        retrieveSuitableMatcher[Set[ObjectType]](
-                            Some(classes.asInstanceOf[Set[ObjectType]]),
-                            callPC,
-                            v => new ClassBasedMethodMatcher(v, true)
-                        )
+                        new ClassBasedMethodMatcher(classes.asInstanceOf[Set[ObjectType]], true)
                     )
 
                     addCalls(state.callContext, callPC, constructorReceiver(callPC), Seq.empty, matchers)
@@ -493,7 +500,6 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     def c(constructor: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         implicit val _state: CGState[ContextType] = state
-        implicit val highSoundness = HighSoundnessMode("class")
 
         val epk = eps.toEPK
 
@@ -505,12 +511,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 case ot: ObjectType => ot
             }
 
-            val allMatchers = matchers +
-                retrieveSuitableMatcher[Set[ObjectType]](
-                    Some(classes),
-                    callPC,
-                    v => new ClassBasedMethodMatcher(v, true)
-                )
+            val allMatchers = matchers + new ClassBasedMethodMatcher(classes, true)
 
             addCalls(state.callContext, callPC, constructorReceiver(callPC), params, allMatchers)
         } else {
@@ -538,11 +539,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                     )
 
                     val matchers = data._3 +
-                        retrieveSuitableMatcher[Set[ObjectType]](
-                            Some(classes.asInstanceOf[Set[ObjectType]]),
-                            data._1,
-                            v => new ClassBasedMethodMatcher(v, true)
-                        )
+                        new ClassBasedMethodMatcher(classes.asInstanceOf[Set[ObjectType]], true)
 
                     addCalls(
                         state.callContext, data._1,
@@ -744,18 +741,14 @@ class MethodInvokeAnalysis private[analyses] (
         val epk = eps.toEPK
 
         if (epk.pk == ForNameClasses.key) {
-            implicit val highSoundness = HighSoundnessMode("class")
             val (callPC, receiver, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
             val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.map { tpe =>
                 if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
             }
 
-            val allMatchers = matchers + retrieveSuitableMatcher[Set[ObjectType]](
-                Some(classes),
-                callPC,
-                v => new ClassBasedMethodMatcher(v, !matchers.contains(PublicMethodMatcher))
-            )
+            val allMatchers = matchers +
+                new ClassBasedMethodMatcher(classes, !matchers.contains(PublicMethodMatcher))
 
             addCalls(state.callContext, callPC, _ => receiver, params, allMatchers)
         } else {
@@ -803,12 +796,11 @@ class MethodInvokeAnalysis private[analyses] (
                     )
 
                     val matchers = data._4 +
-                        retrieveSuitableMatcher[Set[ObjectType]](
-                            Some(classes.map {
+                        new ClassBasedMethodMatcher(
+                            classes.map {
                                 tpe => if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
-                            }),
-                            data._1,
-                            v => new ClassBasedMethodMatcher(v, !data._4.contains(PublicMethodMatcher))
+                            },
+                            !data._4.contains(PublicMethodMatcher)
                         )
 
                     addCalls(state.callContext, data._1, _ => data._2, data._3, matchers)
@@ -1041,8 +1033,6 @@ class MethodHandleInvokeAnalysis private[analyses] (
         val epk = eps.toEPK
 
         if (epk.pk == ForNameClasses.key) {
-            implicit val highSoundness = HighSoundnessMode("class")
-
             val (callPC, isVirtual, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
             val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.flatMap {
@@ -1051,9 +1041,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 case _: ArrayType                => Set(ObjectType.Object)
             }
 
-            val allMatchers = matchers + retrieveSuitableMatcher[Set[ObjectType]](
-                Some(classes), callPC, v => new ClassBasedMethodMatcher(v, false)
-            )
+            val allMatchers = matchers + new ClassBasedMethodMatcher(classes, false)
 
             addCalls(state.callContext, callPC, allMatchers, params)
         } else {
@@ -1105,12 +1093,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                         else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
                     }
 
-                    val matchers = data._4 +
-                        retrieveSuitableMatcher[Set[ObjectType]](
-                            Some(classes),
-                            data._1,
-                            v => new ClassBasedMethodMatcher(v, false)
-                        )
+                    val matchers = data._4 + new ClassBasedMethodMatcher(classes, false)
 
                     addCalls(state.callContext, data._1, matchers, data._3)
                 }
