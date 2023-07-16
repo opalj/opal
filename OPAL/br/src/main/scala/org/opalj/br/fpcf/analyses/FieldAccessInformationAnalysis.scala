@@ -118,7 +118,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                     case InterimUBP(ub: FieldAccessInformation) =>
                         val newFAI = FieldAccessInformation(readAccesses, writeAccesses)
 
-                        if (ub.equals(newFAI))
+                        if (ub == newFAI)
                             None
                         else
                             Some(InterimEUBP(fieldAccess._1, ub.included(newFAI)))

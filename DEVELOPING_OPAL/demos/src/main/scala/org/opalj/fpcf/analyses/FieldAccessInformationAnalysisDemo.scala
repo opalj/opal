@@ -63,7 +63,6 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         val groupedResults = propertyStore
             .entities(FieldAccessInformation.key)
             .filter(ep => allFieldsInProjectClassFiles.contains(ep.e.asInstanceOf[Field]))
-            .iterator
             .to(Iterable)
             .groupBy(property => {
                 property.asFinal.p match {
