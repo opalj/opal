@@ -36,6 +36,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
@@ -51,6 +52,8 @@ import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
 class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
     private[this] val analysisConfigurations = getConfig
+
+    PropertyStore.updateDebug(true)
 
     allBIProjects(
         jreReader = None,
@@ -83,11 +86,11 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
                             p = p.recreate { id =>
                                 id != PropertyStoreKey.uniqueId &&
                                     id != FPCFAnalysesManagerKey.uniqueId &&
-                                    id != CHACallGraphKey.uniqueId
+                                    id != CHACallGraphKey.uniqueId &&
+                                    id != CallGraphKey.uniqueId
                             }
                         }
 
-                        PropertyStore.updateDebug(true)
                         ps = p.get(PropertyStoreKey)
 
                         time {
