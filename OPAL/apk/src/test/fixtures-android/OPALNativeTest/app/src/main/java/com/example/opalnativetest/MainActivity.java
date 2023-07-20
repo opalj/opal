@@ -11,6 +11,11 @@ import android.widget.TextView;
 
 import com.example.opalnativetest.databinding.ActivityMainBinding;
 
+/**
+ * Mainactivity of example Android application to test the import into OPAL
+ *
+ * @author Nicolas Gross
+ */
 public class MainActivity extends AppCompatActivity {
 
     // Used to load the 'opalnativetest' library on application startup.
