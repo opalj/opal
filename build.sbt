@@ -528,11 +528,11 @@ runProjectDependencyGeneration := {
   val s: TaskStreams = streams.value
   val uid = "id -u".!!.stripSuffix("\n")
   val gid = "id -g".!!.stripSuffix("\n")
-  val baseCommand = s"docker run --rm -u $uid:$gid -v ${baseDirectory.value.getAbsolutePath}/OPAL/:/data minlag/mermaid-cli -i ProjectDepdendencies.mmd -c mmd.json"
+  val baseCommand = s"docker run --userns=host --rm -u $uid:$gid -v ${baseDirectory.value.getAbsolutePath}/:/data minlag/mermaid-cli -i OPAL/ProjectDependencies.mmd -c mmd.json"
   s.log.info("Regenerating ProjectDependencies.svg")
-  baseCommand + " -o ProjectDependencies.svg" ! s.log
+  baseCommand + " -o OPAL/ProjectDependencies.svg" ! s.log
   s.log.info("Regenerating ProjectDependencies.pdf")
-  baseCommand + "  -o ProjectDependencies.pdf" ! s.log
+  baseCommand + "  -o OPAL/ProjectDependencies.pdf" ! s.log
 }
 //
 //
