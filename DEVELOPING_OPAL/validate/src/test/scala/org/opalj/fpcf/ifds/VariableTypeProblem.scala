@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
 package fpcf
-package analyses
 package ifds
-package problems
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassFile

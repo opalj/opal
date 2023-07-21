@@ -16,12 +16,12 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
+import org.opalj.fpcf.ifds.VTAFact
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.problems.VTAFact
 
 /**
  * Super class for validation of the IFDS based VTA result annotations

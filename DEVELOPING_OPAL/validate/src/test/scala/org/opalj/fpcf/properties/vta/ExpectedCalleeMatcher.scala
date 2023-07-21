@@ -12,12 +12,12 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.ifds.IFDSBasedVariableTypeAnalysisScheduler
+import org.opalj.fpcf.ifds.VTAResult
+import org.opalj.fpcf.ifds.CalleeType
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.ifds.IFDSBasedVariableTypeAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.ifds.VTAResult
-import org.opalj.tac.fpcf.analyses.ifds.problems.CalleeType
 import org.opalj.value.ValueInformation
 
 /**
