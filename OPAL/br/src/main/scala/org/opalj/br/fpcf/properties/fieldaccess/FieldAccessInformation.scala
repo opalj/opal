@@ -44,9 +44,6 @@ case class FieldAccessInformation(
 
     final def key: PropertyKey[FieldAccessInformation] = FieldAccessInformation.key
 
-    def equals(other: FieldAccessInformation): Boolean =
-        encodedReadAccesses == other.encodedReadAccesses && encodedWriteAccesses == other.encodedWriteAccesses
-
     def readAccesses(implicit declaredMethods: DeclaredMethods): Iterator[(DefinedMethod, PC)] =
         encodedReadAccesses.iterator.map(decodeFieldAccess(_))
 
@@ -60,9 +57,11 @@ case class FieldAccessInformation(
         encodedWriteAccesses.iterator.take(n).map(decodeFieldAccess(_))
 
     def numReadAccesses: Int = encodedReadAccesses.size
+
     def numWriteAccesses: Int = encodedWriteAccesses.size
 
     def included(other: FieldAccessInformation): FieldAccessInformation = included(other, 0, 0)
+
     def included(
         other:             FieldAccessInformation,
         seenReadAccesses:  Int,
@@ -100,14 +99,16 @@ object FieldAccessInformation extends FieldAccessInformationPropertyMetaInformat
         readAccesses:  Set[(DefinedMethod, PCs)],
         writeAccesses: Set[(DefinedMethod, PCs)]
     ): FieldAccessInformation = {
-        def getEncodedAccessSet(accesses: Set[(DefinedMethod, PCs)]): Set[FieldAccess] =
-            accesses.flatMap(methodPCs =>
-                methodPCs._2.foldLeft(Set.empty[FieldAccess])(_ + encodeFieldAccess(methodPCs._1, _)))
+        def getEncodedAccessSet(accesses: Set[(DefinedMethod, PCs)]): LongLinkedTrieSet = {
+            var result = LongLinkedTrieSet.empty
+            for {
+                (definedMethod, pcs) <- accesses
+                pc <- pcs
+            } result += encodeFieldAccess(definedMethod, pc)
+            result
+        }
 
-        val encodedReadAccesses = getEncodedAccessSet(readAccesses).foldLeft(LongLinkedTrieSet.empty)(_ + _)
-        val encodedWriteAccesses = getEncodedAccessSet(writeAccesses).foldLeft(LongLinkedTrieSet.empty)(_ + _)
-
-        FieldAccessInformation(encodedReadAccesses, encodedWriteAccesses)
+        FieldAccessInformation(getEncodedAccessSet(readAccesses), getEncodedAccessSet(writeAccesses))
     }
 }
 
