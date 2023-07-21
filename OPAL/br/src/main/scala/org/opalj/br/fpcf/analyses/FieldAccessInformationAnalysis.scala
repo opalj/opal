@@ -46,8 +46,8 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
         implicit val logContext: LogContext = project.logContext
         import project.resolveFieldReference
 
-        val readAccesses = mutable.AnyRefMap.empty[Field, IntTrieSetBuilder]
-        val writeAccesses = mutable.AnyRefMap.empty[Field, IntTrieSetBuilder]
+        val readAccessesByField = mutable.AnyRefMap.empty[Field, IntTrieSetBuilder]
+        val writeAccessesByField = mutable.AnyRefMap.empty[Field, IntTrieSetBuilder]
 
         // we don't want to report unresolvable field references multiple times
         val reportedFieldAccesses = ConcurrentHashMap.newKeySet[Instruction]()
@@ -58,7 +58,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                     val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
                     resolveFieldReference(fieldReadAccess) match {
                         case Some(field) =>
-                            readAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
+                            readAccessesByField.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
                         case None =>
                             if (reportedFieldAccesses.add(instruction)) {
                                 val message = s"cannot resolve field read access: $instruction"
@@ -72,7 +72,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                     val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
                     resolveFieldReference(fieldWriteAccess) match {
                         case Some(field) =>
-                            writeAccesses.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
+                            writeAccessesByField.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
                         case None =>
                             if (reportedFieldAccesses.add(instruction)) {
                                 val message = s"cannot resolve field write access: $instruction"
@@ -87,44 +87,21 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
         }
 
         val definedMethod = declaredMethods(method)
-        val fieldAccesses = mutable.AnyRefMap.empty[Field, (List[(DefinedMethod, PCs)], List[(DefinedMethod, PCs)])]
-        readAccesses foreach { readAccess =>
-            val (field, pcs) = readAccess
-            fieldAccesses.get(field) match {
-                case Some(currentAccesses) =>
-                    fieldAccesses.put(field, ((definedMethod, pcs.result()) :: currentAccesses._1, currentAccesses._2))
-                case None =>
-                    fieldAccesses.put(field, ((definedMethod, pcs.result()) :: Nil, Nil))
-            }
-        }
-        writeAccesses foreach { writeAccess =>
-            val (field, pcs) = writeAccess
-            fieldAccesses.get(field) match {
-                case Some(currentAccesses) =>
-                    fieldAccesses.put(field, (currentAccesses._1, (definedMethod, pcs.result()) :: currentAccesses._2))
-                case None =>
-                    fieldAccesses.put(field, (Nil, (definedMethod, pcs.result()) :: Nil))
-            }
-        }
+        val fields = readAccessesByField.keysIterator ++ writeAccessesByField.keysIterator
 
-        Results(fieldAccesses map { fieldAccess =>
-            val readAccesses = fieldAccess._2._1.to(Set)
-            val writeAccesses = fieldAccess._2._2.to(Set)
+        Results(fields map { field =>
+            val readAccessPCs = readAccessesByField.getOrElse(field, new IntTrieSetBuilder()).result()
+            val writeAccessPCs = writeAccessesByField.getOrElse(field, new IntTrieSetBuilder()).result()
 
             new PartialResult(
-                fieldAccess._1,
+                field,
                 FieldAccessInformation.key,
                 (current: EOptionP[Field, FieldAccessInformation]) => current match {
                     case InterimUBP(ub: FieldAccessInformation) =>
-                        val newFAI = FieldAccessInformation(readAccesses, writeAccesses)
-
-                        if (ub == newFAI)
-                            None
-                        else
-                            Some(InterimEUBP(fieldAccess._1, ub.included(newFAI)))
+                        Some(InterimEUBP(field, ub.included(FieldAccessInformation(Set((definedMethod, readAccessPCs)), Set((definedMethod, writeAccessPCs))))))
 
                     case _: EPK[_, _] =>
-                        Some(InterimEUBP(fieldAccess._1, FieldAccessInformation(readAccesses, writeAccesses)))
+                        Some(InterimEUBP(field, FieldAccessInformation(Set((definedMethod, readAccessPCs)), Set((definedMethod, writeAccessPCs)))))
 
                     case r => throw new IllegalStateException(s"unexpected previous result $r")
                 }
