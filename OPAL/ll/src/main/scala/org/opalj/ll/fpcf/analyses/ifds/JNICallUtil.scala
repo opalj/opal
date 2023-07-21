@@ -17,6 +17,12 @@ import org.opalj.ll.llvm.value.Store
 import org.opalj.ll.llvm.value.Value
 import org.opalj.ll.llvm.StructType
 
+/**
+ * Collection of utility methods to handle JNI Methods
+ *
+ * @author Nicolas Gross
+ * @author Marc Clement
+ */
 object JNICallUtil {
 
     /**

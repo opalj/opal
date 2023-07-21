@@ -14,46 +14,77 @@ import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.Callable
+import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSProblem
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ll.LLVMProjectKey
-import org.opalj.tac.{DUVar, LazyDetachedTACAIKey, TACMethodParameter, TACode}
-import org.opalj.tac.fpcf.analyses.ifds.{JavaICFG, JavaStatement}
+import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.DUVar
+import org.opalj.tac.LazyDetachedTACAIKey
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 import org.opalj.value.ValueInformation
 
-abstract class NativeForwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
-    extends NativeIFDSProblem[Fact, JavaFact](project, new NativeForwardICFG(project))
+abstract class NativeForwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](
+        project: SomeProject
+) extends NativeIFDSProblem[Fact, JavaFact](project, new NativeForwardICFG(project))
 
-abstract class NativeBackwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject)
-    extends NativeIFDSProblem[Fact, JavaFact](project, new NativeBackwardICFG(project))
+abstract class NativeBackwardIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](
+        project: SomeProject
+) extends NativeIFDSProblem[Fact, JavaFact](project, new NativeBackwardICFG(project))
 
-abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](project: SomeProject, override val icfg: NativeICFG)
-    extends IFDSProblem[Fact, NativeFunction, LLVMStatement](icfg) {
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+/**
+ * Superclass for all IFDS Problems that analyze native code
+ * @tparam Fact The type of flow facts, which are tracked by the concrete analysis.
+ * @tparam JavaFact the type of facts generated in the java parts of the program
+ *
+ * @author Marc Clement
+ */
+abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractIFDSFact](
+        project:           SomeProject,
+        override val icfg: NativeICFG
+) extends IFDSProblem[Fact, NativeFunction, LLVMStatement](icfg) {
+    implicit final val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     val llvmProject: LLVMProject = project.get(LLVMProjectKey)
     val javaPropertyKey: PropertyKey[Property]
-    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
+    val tacai: Method => TACode[TACMethodParameter, DUVar[ValueInformation]] =
+        project.get(LazyDetachedTACAIKey)
     val javaICFG: JavaICFG
 
     override def createCallable(callable: NativeFunction): Callable = callable
 
-    override def outsideAnalysisContextCall(callee: NativeFunction): Option[(LLVMStatement, Option[LLVMStatement], Fact, Seq[Callable], Getter) => Set[Fact]] = callee match {
-        case LLVMFunction(function) =>
-            function.basicBlockCount match {
-                case 0 => Some((_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Seq[Callable], _: Getter) => Set(in))
-                case _ => None
-            }
-        case JNIMethod(method) => Some(handleJavaMethod(method))
-    }
+    override def outsideAnalysisContextCall(
+        callee: NativeFunction
+    ): Option[(LLVMStatement, Option[LLVMStatement], Fact, Seq[Callable], Getter) => Set[Fact]] =
+        callee match {
+            case LLVMFunction(function) =>
+                function.basicBlockCount match {
+                    case 0 =>
+                        Some(
+                            (_: LLVMStatement, _: Option[LLVMStatement], in: Fact, _: Seq[Callable], _: Getter) =>
+                                Set(in)
+                        )
+                    case _ => None
+                }
+            case JNIMethod(method) => Some(handleJavaMethod(method))
+        }
 
-    private def handleJavaMethod(callee: Method)(call: LLVMStatement, successor: Option[LLVMStatement], in: Fact,
-                                                 unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[Fact] = {
+    private def handleJavaMethod(callee: Method)(
+        call:            LLVMStatement,
+        successor:       Option[LLVMStatement],
+        in:              Fact,
+        unbCallChain:    Seq[Callable],
+        dependeesGetter: Getter
+    ): Set[Fact] = {
         var result = Set.empty[Fact]
-        val entryFacts = javaICFG.startStatements(callee).flatMap(javaCallFlow(_, call, callee, in)).map(new IFDSFact(_))
+        val entryFacts = javaICFG
+            .startStatements(callee)
+            .flatMap(javaCallFlow(_, call, callee, in))
+            .map(new IFDSFact(_))
         for (entryFact <- entryFacts) { // ifds line 14
             val e = (callee, entryFact)
             val exitFacts: Map[JavaStatement, Set[JavaFact]] =
@@ -71,7 +102,14 @@ abstract class NativeIFDSProblem[Fact <: AbstractIFDSFact, JavaFact <: AbstractI
                 (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
                 exitStatementFact <- exitStatementFacts // ifds line 15.3
             } {
-                result ++= javaReturnFlow(exitStatement, exitStatementFact, call, in, unbCallChain, successor)
+                result ++= javaReturnFlow(
+                    exitStatement,
+                    exitStatementFact,
+                    call,
+                    in,
+                    unbCallChain,
+                    successor
+                )
             }
         }
         result
