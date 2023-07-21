@@ -38,11 +38,19 @@ class VTATest extends PropertiesTest {
     describe("Executes the VTA and checks the resulting types and callees") {
         val testContext = executeAnalyses(new IFDSBasedVariableTypeAnalysisScheduler)
         val project = testContext.project
+        val ps = testContext.propertyStore
+        testContext.analyses.foreach {
+            case ifdsAnalysis: IFDSAnalysis[_, _, _] =>
+                for (e <- ifdsAnalysis.ifdsProblem.entryPoints) {
+                    ps.force(e, ifdsAnalysis.propertyKey.key)
+                }
+            case _ => None
+        }
         val eas = methodsWithAnnotations(project).map {
             case (method, entityString, annotations) =>
                 ((method, new IFDSFact(VTANullFact)), entityString, annotations)
         }
-        testContext.propertyStore.shutdown()
+        ps.shutdown()
         validateProperties(testContext, eas, Set(ExpectedType.PROPERTY_VALIDATOR_KEY))
         validateProperties(testContext, eas, Set(ExpectedCallee.PROPERTY_VALIDATOR_KEY))
     }

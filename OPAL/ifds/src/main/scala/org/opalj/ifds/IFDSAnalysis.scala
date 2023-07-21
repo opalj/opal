@@ -646,13 +646,6 @@ abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <:
         analysis
     }
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
-        val ifdsAnalysis = analysis.asInstanceOf[IFDSAnalysis[Fact, C, S]]
-        for (e <- ifdsAnalysis.ifdsProblem.entryPoints) {
-            ps.force(e, ifdsAnalysis.propertyKey.key)
-        }
-    }
-
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
