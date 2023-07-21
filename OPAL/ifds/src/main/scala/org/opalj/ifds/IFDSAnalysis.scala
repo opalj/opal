@@ -646,6 +646,8 @@ abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <:
         analysis
     }
 
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
