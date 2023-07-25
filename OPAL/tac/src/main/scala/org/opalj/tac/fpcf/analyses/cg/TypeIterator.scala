@@ -276,8 +276,7 @@ abstract class TypeIterator(val project: SomeProject) {
         // Do nothing
     }
 
-    private[cg]
-    def isPossibleType(use: V, tpe: ReferenceType): Boolean = {
+    private[cg] def isPossibleType(use: V, tpe: ReferenceType): Boolean = {
         val ch = project.classHierarchy
         val rv = use.value.asReferenceValue
         val lut = rv.leastUpperType
@@ -295,9 +294,9 @@ abstract class TypeIterator(val project: SomeProject) {
                             // consistency with CHA and bounds != Object
                             ((tub ne ObjectType.Object) || tpe.isArrayType ||
                                 project.classFile(tpe.asObjectType).isDefined) &&
-                            ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
+                                ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
                     }
-                    
+
                 case mv: IsMObjectValue =>
                     val typeBounds = mv.upperTypeBound
                     typeBounds.forall { supertype =>
