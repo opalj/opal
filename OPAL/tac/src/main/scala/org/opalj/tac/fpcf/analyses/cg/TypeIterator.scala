@@ -395,6 +395,7 @@ class CHATypeIterator(project: SomeProject)
         use: V, typesProperty: Null, additionalTypes: Set[ReferenceType]
     )(handleType: ReferenceType => Unit): Unit = {
         additionalTypes.foreach(handleType)
+        val ch = project.classHierarchy
         val rvs = use.value.asReferenceValue.allValues
         for (rv <- rvs) rv match {
             case sv: IsSReferenceValue[_] =>
@@ -402,14 +403,16 @@ class CHATypeIterator(project: SomeProject)
                     handleType(sv.theUpperTypeBound)
                 } else {
                     if (sv.theUpperTypeBound.isObjectType) {
-                        project.classHierarchy.allSubtypesForeachIterator(
+                        ch.allSubtypesForeachIterator(
                             sv.theUpperTypeBound.asObjectType, reflexive = true
                         ).filter { subtype =>
                                 val cfOption = project.classFile(subtype)
                                 cfOption.isDefined && {
                                     val cf = cfOption.get
                                     !cf.isInterfaceDeclaration && !cf.isAbstract
-                                }
+                                } && {
+                                    ch.isASubtypeOf(subtype, use.value.asReferenceValue.upperTypeBound)
+                                }.isNotNo
                             }.foreach(handleType)
                     } else handleType(ObjectType.Object)
                 }
@@ -418,7 +421,7 @@ class CHATypeIterator(project: SomeProject)
                 val typeBounds = mv.upperTypeBound
                 val remainingTypeBounds = typeBounds.tail
                 val firstTypeBound = typeBounds.head
-                val potentialTypes = project.classHierarchy.allSubtypesForeachIterator(
+                val potentialTypes = ch.allSubtypesForeachIterator(
                     firstTypeBound, reflexive = true
                 ).filter { subtype =>
                     val cfOption = project.classFile(subtype)
@@ -426,7 +429,7 @@ class CHATypeIterator(project: SomeProject)
                         val cf = cfOption.get
                         !cf.isInterfaceDeclaration && !cf.isAbstract &&
                             remainingTypeBounds.forall { supertype =>
-                                project.classHierarchy.isSubtypeOf(subtype, supertype)
+                                ch.isSubtypeOf(subtype, supertype)
                             }
                     }
                 }
