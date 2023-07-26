@@ -12,7 +12,16 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.fpcf._
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.ll.fpcf.analyses.ifds.JNICallUtil
 import org.opalj.ll.fpcf.analyses.ifds.LLVMFunction
 import org.opalj.ll.fpcf.analyses.ifds.NativeFunction
@@ -44,7 +53,7 @@ object SimpleNativeCallGraph extends SimpleCallGraphPropertyMetaInformation {
  * @author Nicolass Gross
  */
 class SimpleCallGraphAnalysis(val project: SomeProject) extends FPCFAnalysis {
-    type CallGraph = Map[NativeFunction, Set[Call]]
+    private type CallGraph = Map[NativeFunction, Set[Call]]
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def lazilyAnalyze(entity: Entity): ProperPropertyComputationResult = {

@@ -45,7 +45,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
 
 /**
- *
+ * Implementation of a backward taint analysis for Java code.
+ * This is a mostly a demo, especially since the source/sink/sanitize methods are not configurable.
  *
  * @author Nicolas Gross
  */

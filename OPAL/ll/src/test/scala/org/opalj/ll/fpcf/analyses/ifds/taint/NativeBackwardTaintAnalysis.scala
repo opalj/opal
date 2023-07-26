@@ -24,7 +24,8 @@ import org.opalj.ll.llvm.value.Call
 import org.opalj.tac.fpcf.properties.Taint
 
 /**
- * This is a simple IFDS based backward taint analysis
+ * This is a simple IFDS based backward taint analysis.
+ * This is a mostly a demo, especially since the source/sink/sanitize methods are not configurable.
  *
  * @author Nicolas Gross
  */

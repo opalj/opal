@@ -18,7 +18,7 @@ import org.opalj.graphs.Node
 /**
  * Represents a basic block
  *
- * @param block_ref reference to a basic block
+ * @param block_ref reference to a llvm basic block
  *
  * @author Marc Clement
  */

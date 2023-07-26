@@ -3,7 +3,8 @@ package org.opalj
 package apk
 
 import org.opalj.apk.analyses.ContextRegisteredReceiversAnalysis
-import org.opalj.br.analyses.{ProjectInformationKey, SomeProject}
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Key for a list of [[ApkContextRegisteredReceiver]] to link them to a [[org.opalj.br.analyses.Project]].

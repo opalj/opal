@@ -116,8 +116,7 @@ object ContextRegisteredReceiversAnalysis {
         if (intentDef.isAssignment && intentDef.asAssignment.expr.isNew &&
             intentDef.asAssignment.expr.asNew.tpe == IntentFilterClass) {
             intentDef.asAssignment.targetVar.usedBy
-                .map(tacMethod.stmts(_))
-                .foreach {
+                .foreach(tacMethod.stmts(_) match {
                     case VirtualFunctionCallStatement(call) if call.declaringClass.mostPreciseObjectType == IntentFilterClass =>
                         val actionOrCategory = call.params.head.asVar.value.asReferenceValue.toCanonicalForm
                             .asInstanceOf[TheStringValue]
@@ -127,7 +126,7 @@ object ContextRegisteredReceiversAnalysis {
                             case "addCategory"          => foundCategories.append(actionOrCategory)
                         }
                     case _ =>
-                }
+                })
         }
         (foundActions.toSeq, foundCategories.toSeq)
     }

@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * Empty content provider as  a test case
+ * Empty content provider as a test case
  *
  * @author Nicolas Gross
  */
