@@ -997,8 +997,8 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         // isValueASubtypeOf. Hence, at least one of the possible reference values
         // has to be non null and this value's upper type bound has to be non-empty.
 
-        // It may the case that the subtype relation of each individual value – 
-        // when compared with supertype - is Unknown, but that the type of the
+        // It may be the case that the subtype relation of each individual value –
+        // when compared with supertype – is Unknown, but that the type of the
         // value as a whole is still known to be a subtype
         val isASubtypeOf = classHierarchy.isASubtypeOf(this.upperTypeBound, supertype)
         if (isASubtypeOf eq Yes)
