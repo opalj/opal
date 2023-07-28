@@ -8,7 +8,7 @@ package org.opalj.fpcf
  * are generally only to be used if lower bounds cannot be computed or a very extensive and
  * are never of interest to any potential client. E.g., in case of an IFDS analysis,
  * computing the lower bound is not meaningful; in case of a call graph analysis, the lower
- * bound is usually either prohibitively expensive or is not usefull to any analysis.
+ * bound is usually either prohibitively expensive or is not useful to any analysis.
  */
 trait PropertyKind extends Any /* we now have a universal trait */ {
 
