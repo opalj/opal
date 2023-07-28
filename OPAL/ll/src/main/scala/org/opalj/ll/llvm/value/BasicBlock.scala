@@ -16,9 +16,9 @@ import org.bytedeco.llvm.global.LLVM.LLVMGetNextInstruction
 import org.opalj.graphs.Node
 
 /**
- * Represents a basic block
+ * Represents a LLVM basic block
  *
- * @param block_ref reference to a llvm basic block
+ * @param block_ref reference to a LLVM basic block
  *
  * @author Marc Clement
  */
