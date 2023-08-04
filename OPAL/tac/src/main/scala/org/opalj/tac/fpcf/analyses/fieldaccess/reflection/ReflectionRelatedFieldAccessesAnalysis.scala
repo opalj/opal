@@ -129,7 +129,7 @@ class FieldGetAnalysis private[analyses] (
     override def processNewCaller(
         calleeContext:   ContextType,
         callerContext:   ContextType,
-        callPC:          Int,
+        accessPC:        Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
         params:          Seq[Option[Expr[V]]],
@@ -142,9 +142,9 @@ class FieldGetAnalysis private[analyses] (
         )
 
         if (receiverOption.isDefined) {
-            handleFieldRead(callerContext, callPC, receiverOption.get.asVar, params.head, tac.stmts)
+            handleFieldRead(callerContext, accessPC, receiverOption.get.asVar, params.head, tac.stmts)
         } else {
-            failure(callPC, None, Set.empty)
+            failure(accessPC, None, Set.empty)
         }
 
         returnResult(receiverOption.map(_.asVar).orNull)
@@ -165,6 +165,13 @@ class FieldGetAnalysis private[analyses] (
     }
 
     private case class FieldDepender(pc: Int, receiver: Option[(ValueInformation, IntTrieSet)], matchers: Set[FieldMatcher])
+    private case class ArrayDepender(
+            pc:               Int,
+            receiver:         Option[(ValueInformation, IntTrieSet)],
+            matchers:         Set[FieldMatcher],
+            arrayVar:         V,
+            callerStatements: Array[Stmt[V]]
+    )
     private case class NameDepender(
             pc:               Int,
             receiver:         Option[(ValueInformation, IntTrieSet)],
@@ -244,7 +251,7 @@ class FieldGetAnalysis private[analyses] (
                             tpe => if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
                         }),
                         data.pc,
-                        v => new ClassBasedMethodMatcher(v, !data.matchers.contains(PublicFieldMatcher)) // TODO is public field matcher used to indicate "getField"?????
+                        v => new ClassBasedFieldMatcher(v, !data.matchers.contains(PublicFieldMatcher))
                     )
 
                 addFieldRead(state.callContext, data.pc, _ => data.receiver, matchers)
@@ -262,7 +269,7 @@ class FieldGetAnalysis private[analyses] (
                     retrieveSuitableMatcher[Set[ObjectType]](
                         classOpt.map(Set(_)),
                         data._1.pc,
-                        v => new ClassBasedMethodMatcher(v, !data._1.matchers.contains(PublicFieldMatcher)) // TODO is public field matcher used to indicate "getField"?????
+                        v => new ClassBasedFieldMatcher(v, !data._1.matchers.contains(PublicFieldMatcher))
                     )
 
                 addFieldRead(state.callContext, data._1.pc, _ => data._1.receiver, matchers)
@@ -276,7 +283,7 @@ class FieldGetAnalysis private[analyses] (
 
     private[this] def handleFieldRead(
         callContext:       ContextType,
-        callPC:            Int,
+        accessPC:          Int,
         fieldVar:          V,
         fieldGetParameter: Option[Expr[V]],
         stmts:             Array[Stmt[V]]
@@ -286,7 +293,7 @@ class FieldGetAnalysis private[analyses] (
         val baseMatchers = Set(
             MatcherUtil.retrieveSuitableMatcher[V](
                 fieldGetReceiver,
-                callPC,
+                accessPC,
                 v => new ActualReceiverBasedFieldMatcher(v.value.asReferenceValue)
             ),
             MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
@@ -296,19 +303,19 @@ class FieldGetAnalysis private[analyses] (
         )
 
         val persistentReceiver = fieldGetReceiver.flatMap(r => persistentUVar(r)(stmts))
-        val depender = FieldDepender(callPC, persistentReceiver, baseMatchers)
+        val depender = FieldDepender(accessPC, persistentReceiver, baseMatchers)
 
         AllocationsUtil.handleAllocations(
             fieldVar, callContext, depender, state.tac.stmts, _ eq ObjectType.Field,
-            () => failure(callPC, persistentReceiver, baseMatchers)
+            () => failure(accessPC, persistentReceiver, baseMatchers)
         ) { (allocationContext, allocationIndex, stmts) =>
                 val allMatchers = handleGetField(
-                    allocationContext, callPC, allocationIndex,
+                    allocationContext, accessPC, allocationIndex,
                     persistentReceiver,
                     baseMatchers, stmts
                 )
                 addFieldRead(
-                    callContext, callPC,
+                    callContext, accessPC,
                     _ => persistentReceiver,
                     allMatchers
                 )
@@ -317,56 +324,79 @@ class FieldGetAnalysis private[analyses] (
 
     private[this] def handleGetField(
         context:        ContextType,
-        callPC:         Int,
+        accessPC:       Int,
         fieldDefSite:   Int,
         actualReceiver: Option[(ValueInformation, IntTrieSet)],
         baseMatchers:   Set[FieldMatcher],
         stmts:          Array[Stmt[V]]
     )(implicit indirectFieldAccesses: IndirectFieldAccesses, state: ReflectionState[ContextType]): Set[FieldMatcher] = {
+        def constructClassBasedFieldMatcherForReceiver(
+            classVar:                 V,
+            currentMatchers:          Set[FieldMatcher],
+            onlyFieldsExactlyInClass: Boolean
+        ): FieldMatcher = {
+            // THIS MATCHER FAILS IF ANY POSSIBLE CLASS IS NOT FINAL TODO wtf
+            MatcherUtil.retrieveClassBasedFieldMatcher(
+                context,
+                classVar,
+                ClassDepender(accessPC, actualReceiver, currentMatchers, classVar, stmts),
+                accessPC,
+                stmts,
+                project,
+                () => failure(accessPC, actualReceiver, currentMatchers),
+                onlyFieldsExactlyInClass,
+            )
+        }
+
         var matchers = baseMatchers
         stmts(fieldDefSite).asAssignment.expr match {
             case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredField" | "getField", _, receiver, params) =>
-
                 val isGetField = call.name == "getField"
-                if (isGetField)
-                    matchers += PublicFieldMatcher
+                if (isGetField) matchers += PublicFieldMatcher
 
                 if (!matchers.contains(NoFieldsMatcher))
                     matchers += MatcherUtil.retrieveNameBasedFieldMatcher(
                         context,
                         params.head.asVar,
                         NameDepender(
-                            callPC, actualReceiver, matchers,
+                            accessPC, actualReceiver, matchers,
                             params.head.asVar, stmts, receiver.asVar,
                             context
                         ),
-                        callPC,
+                        accessPC,
                         stmts,
-                        () => failure(callPC, actualReceiver, matchers)
+                        () => failure(accessPC, actualReceiver, matchers)
                     )
 
-                if (!matchers.contains(NoFieldsMatcher)) {
-                    // THIS MATCHER FAILS IF ANY POSSIBLE CLASS IS NOT FINAL TODO wtf
-                    matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
-                        context,
-                        receiver.asVar,
-                        ClassDepender(callPC, actualReceiver, matchers, receiver.asVar, stmts),
-                        callPC,
-                        stmts,
-                        project,
-                        () => failure(callPC, actualReceiver, matchers),
-                        onlyFieldsExactlyInClass = !isGetField
-                    )
-                }
+                if (!matchers.contains(NoFieldsMatcher))
+                    matchers += constructClassBasedFieldMatcherForReceiver(receiver.asVar, matchers, !isGetField)
 
-            /*case ArrayLoad(_, _, arrayRef) =>*/
-            // TODO here we can handle getFields
+            case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredFields" | "getFields", _, receiver, _) =>
+                val isGetFields = call.name == "getFields"
+                if (isGetFields)
+                    matchers += PublicFieldMatcher
+                if (!matchers.contains(NoFieldsMatcher))
+                    matchers += constructClassBasedFieldMatcherForReceiver(receiver.asVar, matchers, !isGetFields)
+
+            case ArrayLoad(_, _, arrayRef) =>
+                val arrayDepender = ArrayDepender(accessPC, actualReceiver, matchers, arrayRef.asVar, stmts)
+
+                AllocationsUtil.handleAllocations(
+                    arrayRef.asVar, context, arrayDepender, stmts, _ eq ObjectType.Field,
+                    () => failure(accessPC, actualReceiver, baseMatchers)
+                ) { (allocationContext, allocationIndex, stmts) =>
+                        matchers ++= handleGetField(
+                            allocationContext, accessPC, allocationIndex,
+                            actualReceiver,
+                            baseMatchers, stmts
+                        )
+                    }
 
             case _ =>
                 if (HighSoundnessMode) {
                     matchers += AllFieldsMatcher
                 } else {
-                    indirectFieldAccesses.addIncompleteAccessSite(callPC)
+                    indirectFieldAccesses.addIncompleteAccessSite(accessPC)
                     matchers += NoFieldsMatcher
                 }
         }
@@ -409,7 +439,9 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
 
     def process(): PropertyComputationResult = {
         val analyses = List(
-            // Getters which act directly on the object, called on a given field
+            /*
+             * Field.get | Field.get[_ <: BaseType]
+             */
             new FieldGetAnalysis(project, "get"),
             new FieldGetAnalysis(project, "getBoolean", Some(BooleanType)),
             new FieldGetAnalysis(project, "getByte", Some(ByteType)),

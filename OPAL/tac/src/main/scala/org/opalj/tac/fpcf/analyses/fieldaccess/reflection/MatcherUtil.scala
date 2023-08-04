@@ -142,7 +142,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,
             pc,
-            v => new ClassBasedMethodMatcher(v, onlyFieldsExactlyInClass)
+            v => new ClassBasedFieldMatcher(v, onlyFieldsExactlyInClass)
         )
     }
 }

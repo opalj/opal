@@ -38,12 +38,12 @@ final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldM
     override def priority: Int = 2
 }
 
-class ClassBasedMethodMatcher(
+class ClassBasedFieldMatcher(
         val possibleClasses:           Set[ObjectType],
         val onlyMethodsExactlyInClass: Boolean
 ) extends FieldMatcher {
 
-    // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
+    // TODO use a ProjectInformationKey or WeakHashMap to cache fields per project
     // (for the contains check)
     private[this] def fields(implicit p: SomeProject): Set[Field] = possibleClasses.flatMap { c =>
         // todo what about "inherited" fields?
@@ -63,17 +63,9 @@ class BaseTypeBasedFieldMatcher(val baseType: BaseType) extends FieldMatcher {
 }
 
 class ActualReceiverBasedFieldMatcher(val receiver: IsReferenceValue) extends FieldMatcher {
-    override def initialFields(implicit p: SomeProject): Iterator[Field] = {
-        val isNull = receiver.isNull
-        p.allClassFiles.iterator.flatMap { cf =>
-            if (isNull.isNoOrUnknown && receiver.isValueASubtypeOf(cf.thisType)(p.classHierarchy).isYesOrUnknown)
-                cf.fields
-            else if (isNull.isYesOrUnknown)
-                cf.fields.filter(_.isStatic)
-            else
-                ArraySeq.empty[Field]
-        }
-    }
+
+    override def initialFields(implicit p: SomeProject): Iterator[Field] =
+        p.allClassFiles.iterator.flatMap { _.fields.filter(contains) }
 
     override def contains(f: Field)(implicit p: SomeProject): Boolean = {
         val isNull = receiver.isNull
