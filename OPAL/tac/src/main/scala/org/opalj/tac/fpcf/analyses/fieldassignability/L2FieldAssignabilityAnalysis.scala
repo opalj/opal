@@ -30,8 +30,10 @@ import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.br.Field
 import org.opalj.br.PC
-import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.NoFieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.tac.CaughtException
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
@@ -139,10 +141,10 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 // write the field as long as that new object did not yet escape.
                                 true
                             } else {
-                                val faiEP = propertyStore(state.field, FieldAccessInformation.key)
-                                val fieldAccessInformation = if (faiEP.hasUBP) faiEP.ub else NoFieldAccessInformation
+                                val fwaiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
+                                val fieldWriteAccessInformation = if (fwaiEP.hasUBP) fwaiEP.ub else NoFieldWriteAccessInformation
 
-                                val writes = fieldAccessInformation.writeAccesses
+                                val writes = fieldWriteAccessInformation.directAccesses
                                 val writesInMethod = writes.filter(_._1.definedMethod eq method).map(_._2)
 
                                 if (writesInMethod.size > 1)
@@ -167,8 +169,10 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 })
                                     return true;
 
-                                val fieldReadsInMethod = fieldAccessInformation
-                                    .readAccesses
+                                val fraiEP = propertyStore(state.field, FieldReadAccessInformation.key)
+                                val fieldReadAccessInformation = if (fraiEP.hasUBP) fraiEP.ub else NoFieldReadAccessInformation
+                                val fieldReadsInMethod = fieldReadAccessInformation
+                                    .directAccesses
                                     .filter(_._1.definedMethod eq method)
                                     .map(_._2)
                                 if (!fieldReadsInMethod.forall { pc =>
@@ -303,10 +307,10 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 return Assignable;
         }
 
-        val faiEP = propertyStore(state.field, FieldAccessInformation.key)
-        val fieldAccessInformation = if (faiEP.hasUBP) faiEP.ub else NoFieldAccessInformation
+        val fwaiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
+        val fieldWriteAccessInformation = if (fwaiEP.hasUBP) fwaiEP.ub else NoFieldWriteAccessInformation
 
-        val writes = fieldAccessInformation.writeAccesses
+        val writes = fieldWriteAccessInformation.directAccesses
 
         // prevents writes outside the method and the constructor
         if (writes.exists(methodAndPCs =>
@@ -317,7 +321,9 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (writes.distinctBy(_._1).size < writes.size)
             return Assignable; // More than one write per method was detected
 
-        val reads = fieldAccessInformation.readAccesses
+        val fraiEP = propertyStore(state.field, FieldReadAccessInformation.key)
+        val fieldReadAccessInformation = if (fraiEP.hasUBP) fraiEP.ub else NoFieldReadAccessInformation
+        val reads = fieldReadAccessInformation.directAccesses
 
         // prevents reads outside the method
         if (reads.exists(_._1.definedMethod ne method))
@@ -889,11 +895,19 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
 }
 
+trait AbstractL2FieldAssignabilityAnalysisScheduler extends AbstractFieldAssignabilityAnalysisScheduler {
+
+    override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
+        FieldReadAccessInformation,
+        FieldWriteAccessInformation
+    )
+}
+
 /**
  * Executor for the eager field assignability analysis.
  */
 object EagerL2FieldAssignabilityAnalysis
-    extends AbstractFieldAssignabilityAnalysisScheduler
+    extends AbstractL2FieldAssignabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)

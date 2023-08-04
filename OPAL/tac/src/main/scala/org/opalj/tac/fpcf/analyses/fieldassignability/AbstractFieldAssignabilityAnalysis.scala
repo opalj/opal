@@ -55,7 +55,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
@@ -72,17 +72,17 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         var fieldAssignability: FieldAssignability = NonAssignable
         var tacPCs: Map[DefinedMethod, PCs] = Map.empty
         var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
-        var latestFieldAccessInformation: Option[EOptionP[Field, FieldAccessInformation]] = None
+        var latestFieldWriteAccessInformation: Option[EOptionP[Field, FieldWriteAccessInformation]] = None
         var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
         var callerDependees: Map[DefinedMethod, EOptionP[DefinedMethod, Callers]] = Map.empty.withDefault { dm => propertyStore(dm, Callers.key) }
 
         def hasDependees: Boolean = {
-            escapeDependees.nonEmpty || latestFieldAccessInformation.exists(_.isRefinable) ||
+            escapeDependees.nonEmpty || latestFieldWriteAccessInformation.exists(_.isRefinable) ||
                 tacDependees.valuesIterator.exists(_.isRefinable) || callerDependees.valuesIterator.exists(_.isRefinable)
         }
 
         def dependees: Set[SomeEOptionP] = {
-            escapeDependees ++ latestFieldAccessInformation.filter(_.isRefinable) ++
+            escapeDependees ++ latestFieldWriteAccessInformation.filter(_.isRefinable) ++
                 callerDependees.valuesIterator.filter(_.isRefinable) ++ tacDependees.valuesIterator.filter(_.isRefinable)
         }
     }
@@ -151,9 +151,9 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             }
         }
 
-        val faiEP = propertyStore(field, FieldAccessInformation.key)
+        val faiEP = propertyStore(field, FieldWriteAccessInformation.key)
 
-        if (handleFieldAccessInformation(faiEP))
+        if (handleFieldWriteAccessInformation(faiEP))
             return Result(field, Assignable);
 
         createResult()
@@ -232,17 +232,17 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         }
     }
 
-    private def handleFieldAccessInformation(
-        newEP: EOptionP[Field, FieldAccessInformation]
+    private def handleFieldWriteAccessInformation(
+        newEP: EOptionP[Field, FieldWriteAccessInformation]
     )(implicit state: AnalysisState): Boolean = {
         val assignable = if (newEP.hasUBP) {
             val newFai = newEP.ub
-            val seenWriteAccesses = state.latestFieldAccessInformation match {
-                case Some(UBP(fai)) => fai.numWriteAccesses
+            val seenWriteAccesses = state.latestFieldWriteAccessInformation match { // TODO indirect?
+                case Some(UBP(fai)) => fai.numAccesses
                 case _              => 0
             }
 
-            newFai.getNewestNWriteAccesses(newFai.numWriteAccesses - seenWriteAccesses) exists { wa =>
+            newFai.getNewestNDirectAccesses(newFai.numAccesses - seenWriteAccesses) exists { wa =>
                 state.tacPCs += wa._1 -> (state.tacPCs.getOrElse(wa._1, NoPCs) + wa._2)
                 val method = wa._1
 
@@ -270,7 +270,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         } else
             false
 
-        state.latestFieldAccessInformation = Some(newEP)
+        state.latestFieldWriteAccessInformation = Some(newEP)
         assignable
     }
 
@@ -302,9 +302,9 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined && pcs.isDefined)
                     pcs.get.exists(methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, _))
                 else false
-            case FieldAccessInformation.key =>
-                val newEP = eps.asInstanceOf[EOptionP[Field, FieldAccessInformation]]
-                handleFieldAccessInformation(newEP)
+            case FieldWriteAccessInformation.key =>
+                val newEP = eps.asInstanceOf[EOptionP[Field, FieldWriteAccessInformation]]
+                handleFieldWriteAccessInformation(newEP)
         }
 
         if (isNonFinal)
@@ -352,7 +352,7 @@ trait AbstractFieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         TACAI,
         EscapeProperty,
-        FieldAccessInformation,
+        FieldWriteAccessInformation,
         Callers
     )
 

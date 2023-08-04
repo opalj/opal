@@ -54,7 +54,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.DefinedMethod
 import org.opalj.br.NoPCs
-import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
@@ -172,7 +172,7 @@ class FieldLocalityAnalysis private[analyses] (
      * `java.lang.Object.clone`.
      */
     private[this] def step3()(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
-        val faiEP = propertyStore(state.field, FieldAccessInformation.key)
+        val faiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
         if (handleFieldAccessInformation(faiEP))
             return Result(state.field, NoLocalField);
 
@@ -604,16 +604,16 @@ class FieldLocalityAnalysis private[analyses] (
     /**
      * Returns the TACode for a method if available, registering dependencies as necessary.
      */
-    def handleFieldAccessInformation(
-        faiEP: EOptionP[Field, FieldAccessInformation]
+    private def handleFieldAccessInformation(
+        faiEP: EOptionP[Field, FieldWriteAccessInformation]
     )(implicit state: FieldLocalityState): Boolean = {
         val isNonLocal = if (faiEP.hasUBP) {
-            val seenWriteAccesses = state.getFieldAccessDepdendee match {
-                case Some(UBP(fai)) => fai.numWriteAccesses
+            val seenWriteAccesses = state.getFieldWriteAccessDepdendee match { // TODO indirect?
+                case Some(UBP(fai)) => fai.numAccesses
                 case _              => 0
             }
 
-            faiEP.ub.getNewestNWriteAccesses(faiEP.ub.numWriteAccesses - seenWriteAccesses) exists { wa =>
+            faiEP.ub.getNewestNDirectAccesses(faiEP.ub.numAccesses - seenWriteAccesses) exists { wa =>
                 val definedMethod = wa._1
                 val method = definedMethod.definedMethod
                 val pc = wa._2
@@ -635,7 +635,7 @@ class FieldLocalityAnalysis private[analyses] (
         } else
             false
 
-        state.setFieldAccessDependee(faiEP)
+        state.setFieldWriteAccessDependee(faiEP)
         isNonLocal
     }
 
@@ -746,8 +746,8 @@ class FieldLocalityAnalysis private[analyses] (
                 state.updateCalleeDependee(newEP)
                 state.getCallsites(newEP.e).exists(pc => handleCallSite(newEP.e, pc))
 
-            case FieldAccessInformation.key =>
-                val newEP = someEPS.asInstanceOf[EOptionP[Field, FieldAccessInformation]]
+            case FieldWriteAccessInformation.key =>
+                val newEP = someEPS.asInstanceOf[EOptionP[Field, FieldWriteAccessInformation]]
                 handleFieldAccessInformation(newEP)
         }
         if (isNotLocal) {
@@ -782,7 +782,7 @@ sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
         EscapeProperty,
         ReturnValueFreshness,
         Callees,
-        FieldAccessInformation
+        FieldWriteAccessInformation
     )
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldLocality)
