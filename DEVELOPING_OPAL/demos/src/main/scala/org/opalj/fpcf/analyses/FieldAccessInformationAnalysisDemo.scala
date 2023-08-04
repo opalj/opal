@@ -4,16 +4,19 @@ package fpcf
 package analyses
 
 import org.opalj.br.Field
+import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
-import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.NoFieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -40,8 +43,6 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -49,7 +50,10 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         time {
             propertyStore = analysesManager
-                .runAll(EagerFieldAccessInformationAnalysis)
+                .runAll(
+                    EagerFieldAccessInformationAnalysis,
+                    ReflectionRelatedFieldAccessesAnalysisScheduler
+                )
                 ._1
             propertyStore.waitOnPhaseCompletion()
         } { t =>
@@ -60,36 +64,37 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             _.fields
         }.toSet
 
-        val groupedResults = propertyStore
-            .entities(FieldAccessInformation.key)
-            .filter(ep => allFieldsInProjectClassFiles.contains(ep.e.asInstanceOf[Field]))
-            .to(Iterable)
-            .groupBy(property => {
-                property.asFinal.p match {
-                    case NoFieldAccessInformation => "none"
-                    case info: FieldAccessInformation =>
-                        if (info.readAccesses.nonEmpty && info.writeAccesses.isEmpty)
-                            "readAccesses"
-                        else if (info.readAccesses.isEmpty && info.writeAccesses.nonEmpty)
-                            "writeAccesses"
-                        else
-                            "both"
-                }
-            })
-            .withDefaultValue(Seq.empty)
+        val readFields = propertyStore
+            .entities(FieldReadAccessInformation.key)
+            .filter(ep => allFieldsInProjectClassFiles.contains(ep.e.asInstanceOf[Field])
+                && ep.asFinal.p != NoFieldReadAccessInformation)
+            .map(_.e)
+            .toSet
+        val writtenFields = propertyStore
+            .entities(FieldWriteAccessInformation.key)
+            .filter(ep => allFieldsInProjectClassFiles.contains(ep.e.asInstanceOf[Field])
+                && ep.asFinal.p != NoFieldWriteAccessInformation)
+            .map(_.e)
+            .toSet
 
-        val order = (eps1: EPS[Entity, FieldAccessInformation], eps2: EPS[Entity, FieldAccessInformation]) =>
-            eps1.e.toString < eps2.e.toString
-        val readFields = groupedResults("readAccesses").toSeq.sortWith(order)
-        val writtenFields = groupedResults("writeAccesses").toSeq.sortWith(order)
-        val readAndWrittenFields = groupedResults("both").toSeq.sortWith(order)
+        val readAndWrittenFields = readFields intersect writtenFields
+        val purelyReadFields = readFields diff readAndWrittenFields
+        val purelyWrittenFields = writtenFields diff readAndWrittenFields
+
+        val totalIncompleteAccessSiteCount = propertyStore
+            .entities(MethodFieldReadAccessInformation.key)
+            .filter(ep => project.allMethodsWithBody.contains(ep.e.asInstanceOf[Method]))
+            .map(_.asFinal.p.numIncompleteAccessSites)
+            .sum
 
         s"""
            |
-           | Not Accessed Fields: ${project.projectFieldsCount - readFields.size - writtenFields.size - readAndWrittenFields.size}
-           | Purely Read Fields : ${readFields.size}
-           | Purely Written Fields: ${writtenFields.size}
+           | Not Accessed Fields: ${project.projectFieldsCount - purelyReadFields.size - purelyWrittenFields.size - readAndWrittenFields.size}
+           | Purely Read Fields : ${purelyReadFields.size}
+           | Purely Written Fields: ${purelyWrittenFields.size}
            | Read And Written Fields: ${readAndWrittenFields.size}
+           |
+           | Access Sites with missing information: $totalIncompleteAccessSiteCount
            |
            | total Fields: ${project.projectFieldsCount}
            | took : $analysisTime seconds

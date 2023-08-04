@@ -7,7 +7,12 @@ package analyses
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.fieldaccess.FieldAccessInformation
+import org.opalj.br.fpcf.properties.SimpleContext
+import org.opalj.br.fpcf.properties.fieldaccess.DirectFieldAccesses
+import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
@@ -15,12 +20,6 @@ import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.collection.immutable.IntTrieSetBuilder
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
@@ -29,10 +28,9 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.mutable
 
 /**
- * A simple analysis that identifies every read and write access to a [[org.opalj.br.Field]].
+ * A simple analysis that identifies every direct read and write access to a [[org.opalj.br.Field]].
  *
  * @note Fields which are not accessed at all are not further considered.
  *
@@ -41,13 +39,14 @@ import scala.collection.mutable
 class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     private val declaredMethods = project.get(DeclaredMethodsKey)
+    private val definedFields = project.get(DefinedFieldsKey)
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
         implicit val logContext: LogContext = project.logContext
         import project.resolveFieldReference
 
-        val readAccessesByField = mutable.AnyRefMap.empty[Field, IntTrieSetBuilder]
-        val writeAccessesByField = mutable.AnyRefMap.empty[Field, IntTrieSetBuilder]
+        val context = SimpleContext(declaredMethods(method)); // TODO simple or callstring?
+        val fieldAccesses = new DirectFieldAccesses()
 
         // we don't want to report unresolvable field references multiple times
         val reportedFieldAccesses = ConcurrentHashMap.newKeySet[Instruction]()
@@ -58,7 +57,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                     val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
                     resolveFieldReference(fieldReadAccess) match {
                         case Some(field) =>
-                            readAccessesByField.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
+                            fieldAccesses.addFieldRead(context, pc, definedFields(field))
                         case None =>
                             if (reportedFieldAccesses.add(instruction)) {
                                 val message = s"cannot resolve field read access: $instruction"
@@ -72,7 +71,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                     val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
                     resolveFieldReference(fieldWriteAccess) match {
                         case Some(field) =>
-                            writeAccessesByField.getOrElseUpdate(field, new IntTrieSetBuilder()) += pc
+                            fieldAccesses.addFieldWrite(context, pc, definedFields(field))
                         case None =>
                             if (reportedFieldAccesses.add(instruction)) {
                                 val message = s"cannot resolve field write access: $instruction"
@@ -86,27 +85,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
             }
         }
 
-        val definedMethod = declaredMethods(method)
-        val fields = readAccessesByField.keySet ++ writeAccessesByField.keySet
-
-        Results(fields map { field =>
-            val readAccessPCs = readAccessesByField.getOrElse(field, new IntTrieSetBuilder()).result()
-            val writeAccessPCs = writeAccessesByField.getOrElse(field, new IntTrieSetBuilder()).result()
-
-            new PartialResult(
-                field,
-                FieldAccessInformation.key,
-                (current: EOptionP[Field, FieldAccessInformation]) => current match {
-                    case InterimUBP(ub: FieldAccessInformation) =>
-                        Some(InterimEUBP(field, ub.included(FieldAccessInformation(Set((definedMethod, readAccessPCs)), Set((definedMethod, writeAccessPCs))))))
-
-                    case _: EPK[_, _] =>
-                        Some(InterimEUBP(field, FieldAccessInformation(Set((definedMethod, readAccessPCs)), Set((definedMethod, writeAccessPCs)))))
-
-                    case r => throw new IllegalStateException(s"unexpected previous result $r")
-                }
-            )
-        })
+        Results(fieldAccesses.partialResults(context))
     }
 }
 
@@ -114,11 +93,21 @@ object EagerFieldAccessInformationAnalysis extends BasicFPCFEagerAnalysisSchedul
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldAccessInformation)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        FieldReadAccessInformation,
+        FieldWriteAccessInformation,
+        MethodFieldReadAccessInformation,
+        MethodFieldWriteAccessInformation
+    )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(FieldAccessInformation)
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
+        FieldReadAccessInformation,
+        FieldWriteAccessInformation,
+        MethodFieldReadAccessInformation,
+        MethodFieldWriteAccessInformation
+    )
 
     override def start(p: SomeProject, ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
         val analysis = new FieldAccessInformationAnalysis(p)
