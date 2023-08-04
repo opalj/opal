@@ -6,6 +6,7 @@ package analyses
 package fieldaccess
 package reflection
 
+import org.opalj.br.BaseType
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
@@ -54,10 +55,10 @@ class ClassBasedMethodMatcher(
     override def priority: Int = 1
 }
 
-class TypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher { // TODO think about relevance of this
+class BaseTypeBasedFieldMatcher(val baseType: BaseType) extends FieldMatcher {
 
-    override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(_.fieldType == fieldType)
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.fieldType == fieldType
+    override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(_.fieldType == baseType)
+    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.fieldType == baseType
     override def priority: Int = 3
 }
 

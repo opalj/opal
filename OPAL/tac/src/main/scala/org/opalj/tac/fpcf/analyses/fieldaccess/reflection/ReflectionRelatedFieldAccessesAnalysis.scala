@@ -6,6 +6,10 @@ package analyses
 package fieldaccess
 package reflection
 
+import org.opalj.br.BaseType
+import org.opalj.br.BooleanType
+import org.opalj.br.ByteType
+import org.opalj.br.CharType
 import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
@@ -21,16 +25,21 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedFields
 import org.opalj.br.DefinedFieldsKey
+import org.opalj.br.DoubleType
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.tac.fpcf.analyses.cg.persistentUVar
 import org.opalj.br.Field
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.Method
+import org.opalj.br.ShortType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
@@ -80,7 +89,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 
         logOnce(Info(
             "analysis configuration",
-            "field access reflection analysis uses " + (if (activated) "high soundness mode" else "standard mode")
+            "field access reflection analysis uses "+(if (activated) "high soundness mode" else "standard mode")
         ))
         activated
     }
@@ -102,15 +111,19 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
     }
 }
 
-class FieldGetAnalysis private[analyses] ( final val project: SomeProject)
+class FieldGetAnalysis private[analyses] (
+        final val project:       SomeProject,
+        final val apiMethodName: String,
+        final val accessType:    Option[BaseType] = None
+)
     extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectType.Field,
         "",
         ObjectType.Field,
-        "get",
-        MethodDescriptor.apply(ObjectType.Object, ObjectType.Object)
+        apiMethodName,
+        MethodDescriptor.apply(ObjectType.Object, accessType.getOrElse(ObjectType.Object))
     )
 
     override def processNewCaller(
@@ -275,6 +288,10 @@ class FieldGetAnalysis private[analyses] ( final val project: SomeProject)
                 fieldGetReceiver,
                 callPC,
                 v => new ActualReceiverBasedFieldMatcher(v.value.asReferenceValue)
+            ),
+            MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
+                accessType,
+                v => new BaseTypeBasedFieldMatcher(v)
             )
         )
 
@@ -309,8 +326,6 @@ class FieldGetAnalysis private[analyses] ( final val project: SomeProject)
         var matchers = baseMatchers
         stmts(fieldDefSite).asAssignment.expr match {
             case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredField" | "getField", _, receiver, params) =>
-
-                // matchers += MatcherUtil.retrieveTypeBasedFieldMatcher(params(1), callPC, stmts) TODO what with this
 
                 val isGetField = call.name == "getField"
                 if (isGetField)
@@ -394,10 +409,16 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
 
     def process(): PropertyComputationResult = {
         val analyses = List(
-            /*
-             * TODO Field.get[*]
-             */
-            new FieldGetAnalysis(project),
+            // Getters which act directly on the object, called on a given field
+            new FieldGetAnalysis(project, "get"),
+            new FieldGetAnalysis(project, "getBoolean", Some(BooleanType)),
+            new FieldGetAnalysis(project, "getByte", Some(ByteType)),
+            new FieldGetAnalysis(project, "getChar", Some(CharType)),
+            new FieldGetAnalysis(project, "getDouble", Some(DoubleType)),
+            new FieldGetAnalysis(project, "getFloat", Some(FloatType)),
+            new FieldGetAnalysis(project, "getInt", Some(IntegerType)),
+            new FieldGetAnalysis(project, "getLong", Some(LongType)),
+            new FieldGetAnalysis(project, "getShort", Some(ShortType)),
 
             /*
              * TODO Field.set[*]
@@ -418,19 +439,19 @@ object ReflectionRelatedFieldAccessesAnalysisScheduler extends BasicFPCFEagerAna
         Seq(DeclaredMethodsKey, ProjectIndexKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-      FieldReadAccessInformation,
-      FieldWriteAccessInformation,
-      MethodFieldReadAccessInformation,
-      MethodFieldWriteAccessInformation
+        FieldReadAccessInformation,
+        FieldWriteAccessInformation,
+        MethodFieldReadAccessInformation,
+        MethodFieldWriteAccessInformation
     )
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = p.get(TypeIteratorKey).usedPropertyKinds
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-      FieldReadAccessInformation,
-      FieldWriteAccessInformation,
-      MethodFieldReadAccessInformation,
-      MethodFieldWriteAccessInformation
+        FieldReadAccessInformation,
+        FieldWriteAccessInformation,
+        MethodFieldReadAccessInformation,
+        MethodFieldWriteAccessInformation
     )
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
