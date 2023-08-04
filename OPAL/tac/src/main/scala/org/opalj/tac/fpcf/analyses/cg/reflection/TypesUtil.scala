@@ -184,7 +184,7 @@ object TypesUtil {
      * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
      * and the dependee provides allocation sites of Strings that give class names of such classes
      */
-    private[reflection] def getPossibleClasses(
+    def getPossibleClasses(
         context:         Context,
         value:           V,
         depender:        Entity,
@@ -221,7 +221,7 @@ object TypesUtil {
      * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
      * and the dependee provides allocation sites of Strings that give class names of such classes
      */
-    private[reflection] def getPossibleClasses(
+    def getPossibleClasses(
         context:         Context,
         defSite:         Int,
         depender:        Entity,
