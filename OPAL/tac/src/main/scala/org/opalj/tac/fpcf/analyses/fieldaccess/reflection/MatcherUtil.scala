@@ -56,25 +56,6 @@ object MatcherUtil {
         f: A => FieldMatcher
     ): FieldMatcher = if (v.isEmpty) AllFieldsMatcher else f(v.get)
 
-  /*
-    /**
-     * Given the expression for a varargs array of types (i.e., Class<?> objects), creates a
-     * MethodMatcher to match methods with the respective parameter types.
-     */
-    private[reflection] def retrieveTypeBasedFieldMatcher(
-        varArgs: Expr[V],
-        pc:      Int,
-        stmts:   Array[Stmt[V]]
-    )(implicit incompleteFieldAccesses: IncompleteFieldAccesses, highSoundness: Boolean): FieldMatcher = {
-        val paramTypesO = VarargsUtil.getTypesFromVararg(varArgs, stmts)
-        retrieveSuitableMatcher[FieldType](
-            paramTypesO,
-            pc,
-            v => new TypeBasedFieldMatcher(v)
-        )
-    }
-   */
-
     /**
      * Given an expression that evaluates to a String, creates a FieldMatcher to match fields with
      * the respective name.

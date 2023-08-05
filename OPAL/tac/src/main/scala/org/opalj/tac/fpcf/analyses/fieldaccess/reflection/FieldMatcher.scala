@@ -7,11 +7,15 @@ package fieldaccess
 package reflection
 
 import org.opalj.br.BaseType
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
-import org.opalj.br.FieldType
+import org.opalj.br.ReferenceType
+import org.opalj.tac.fpcf.analyses.cg.V
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsPrimitiveValue
 import org.opalj.value.IsReferenceValue
 
 import scala.collection.immutable.ArraySeq
@@ -71,6 +75,46 @@ class ActualReceiverBasedFieldMatcher(val receiver: IsReferenceValue) extends Fi
         val isNull = receiver.isNull
         (isNull.isNoOrUnknown && receiver.isValueASubtypeOf(f.classFile.thisType)(p.classHierarchy).isYesOrUnknown) ||
             (isNull.isYesOrUnknown && f.isStatic)
+    }
+
+    override def priority: Int = 3
+}
+
+class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher {
+    override def initialFields(implicit p: SomeProject): Iterator[Field] =
+        p.allClassFiles.iterator.flatMap { _.fields.filter(contains) }
+
+    override def contains(f: Field)(implicit p: SomeProject): Boolean = {
+        implicit val ch: ClassHierarchy = p.classHierarchy
+
+        (f.fieldType, actualParam.value) match {
+            // the actual type is null and the declared type is a ref type
+            case (_: ReferenceType, _: IsNullValue) =>
+                // TODO here we would need the declared type information
+                true
+            // declared type and actual type are reference types and assignable
+            case (pType: ReferenceType, v: IsReferenceValue) =>
+                v.isValueASubtypeOf(pType).isYesOrUnknown
+
+            // declared type and actual type are base types and the same type
+            case (pType: BaseType, v: IsPrimitiveValue[_]) =>
+                v.primitiveType eq pType
+
+            // the actual type is null and the declared type is a base type
+            case (_: BaseType, _: IsNullValue) =>
+                false
+
+            // declared type is base type, actual type might be a boxed value
+            case (pType: BaseType, v: IsReferenceValue) =>
+                v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
+
+            // actual type is base type, declared type might be a boxed type
+            case (pType: ObjectType, v: IsPrimitiveValue[_]) =>
+                pType.isPrimitiveTypeWrapperOf(v.primitiveType)
+
+            case _ =>
+                false
+        }
     }
 
     override def priority: Int = 3

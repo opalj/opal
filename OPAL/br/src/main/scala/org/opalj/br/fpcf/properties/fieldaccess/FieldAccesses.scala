@@ -18,7 +18,6 @@ import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
-import org.opalj.value.ValueInformation
 
 import scala.collection.immutable.IntMap
 
@@ -202,7 +201,7 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
         accessContext: Context,
         pc:            Int,
         field:         DefinedField,
-        receiver:      Option[(ValueInformation, IntTrieSet)]
+        receiver:      AccessReceiver
     ): Unit = {
         addFieldAccess(pc, field, FieldReadAccessInformation.key,
             () => FieldReadAccessInformation(
@@ -215,8 +214,8 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
     def addFieldWrite(
         accessContext: Context,
         pc:            Int, field: DefinedField,
-        receiver: Option[(ValueInformation, IntTrieSet)],
-        param:    Option[(ValueInformation, IntTrieSet)]
+        receiver: AccessReceiver,
+        param:    AccessParameter
     ): Unit = {
         addFieldAccess(pc, field, FieldWriteAccessInformation.key,
             () => FieldWriteAccessInformation(
