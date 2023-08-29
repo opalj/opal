@@ -1,0 +1,35 @@
+name: "Run it:test on Comment"
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: [self-hosted, it_test]
+
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/it:test') && github.event.comment.author_association == 'COLLABORATOR'
+
+    steps:
+
+      - name: Get PR branch
+        uses: xt0rted/pull-request-comment-branch@6c36a3ede0b9741885912e42afb45e18ee75b318
+        id: comment-branch
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.comment-branch.outputs.head_ref }}
+
+      - name: Run Integration Tests
+        run: sbt -J-Xmx40G cleanBuild it:test
+      - name: Run Cross Language Tests
+        run: sbt -J-Xmx40G project LLVM it:test project ValidateCross it:test
+        
+      - name: Set latest commit status as ${{ job.status }}
+        uses: myrotvorets/set-commit-status-action@655d7d2517bab7f5d1b6e74cd7d5e995264184b1
+        if: always()
+        with:
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
