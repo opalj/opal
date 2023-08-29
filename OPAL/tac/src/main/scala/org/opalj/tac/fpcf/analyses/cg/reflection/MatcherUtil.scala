@@ -12,6 +12,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.FieldTypes
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.ClassHierarchy
 
 object MatcherUtil {
 
@@ -93,6 +94,7 @@ object MatcherUtil {
         typeIterator:        TypeIterator,
         state:               TypeIteratorState,
         ps:                  PropertyStore,
+        classHierarchy:      ClassHierarchy,
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean
     ): MethodMatcher = {
@@ -131,6 +133,7 @@ object MatcherUtil {
         typeIterator:        TypeIterator,
         state:               TypeIteratorState,
         ps:                  PropertyStore,
+        classHierarchy:      ClassHierarchy,
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean
     ): MethodMatcher = {

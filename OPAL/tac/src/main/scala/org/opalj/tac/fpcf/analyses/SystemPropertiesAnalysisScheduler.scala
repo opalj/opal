@@ -45,6 +45,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
 
         var propertyMap: Map[String, Set[String]] = Map.empty
 
+        // TODO Should we be able to distinguish between the System properties and other properties objects?
         for (stmt <- stmts) stmt match {
             case VirtualFunctionCallStatement(call) if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) =>
                 propertyMap = computeProperties(propertyMap, call.params, stmts)
@@ -123,6 +124,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
     def getPossibleStrings(
         value: Expr[DUVar[ValueInformation]], stmts: Array[Stmt[DUVar[ValueInformation]]]
     ): Set[String] = {
+        // TODO Instead of only using String constants, use StringUtil to make use of points-to data if available
         value.asVar.definedBy filter { index =>
             index >= 0 && stmts(index).asAssignment.expr.isStringConst
         } map { stmts(_).asAssignment.expr.asStringConst.value }
