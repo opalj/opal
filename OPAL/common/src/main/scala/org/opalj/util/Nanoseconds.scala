@@ -48,9 +48,8 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal with Serializable {
  * @author Michael Eichberg
  */
 object Nanoseconds {
-    implicit val nanosecondsWrites = new Writes[Nanoseconds] {
-        def writes(nanosecond: Nanoseconds) = JsNumber(nanosecond.timeSpan)
-    }
+    implicit val nanosecondsWrites: Writes[Nanoseconds] =
+        (nanosecond: Nanoseconds) => JsNumber(nanosecond.timeSpan)
 
     implicit val nanosecondsReads: Reads[Nanoseconds] = JsPath.read[Long].map(Nanoseconds.apply)
 

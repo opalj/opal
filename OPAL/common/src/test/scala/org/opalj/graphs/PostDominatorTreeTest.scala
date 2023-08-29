@@ -22,10 +22,10 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
     "a graph with just one node" should "result in a post dominator tree with a single node" in {
         val g = Graph.empty[Int] addVertice 0
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(0)
         val dt = time {
@@ -54,10 +54,10 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
     "a simple tree with multiple exits" should "result in a corresponding postdominator tree" in {
         val g = Graph.empty[Int] addEdge (0 -> 1) addEdge (1 -> 2) addEdge (1 -> 3) addEdge (2 -> 4)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(3, 4)
         val dt = time {
@@ -92,10 +92,10 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
     "a graph with a cycle" should "yield the correct postdominators" in {
         val g = Graph.empty[Int] addEdge (0 -> 1) addEdge (1 -> 2) addEdge (1 -> 3) addEdge (0 -> 4) addEdge (2 -> 1)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(3, 4)
         val dt = time {
@@ -138,10 +138,10 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
     "a path with multiple artificial exit points" should "yield the correct postdominators" in {
         val g = Graph.empty[Int] addEdge (0 -> 1) addEdge (1 -> 2)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(1, 2)
         val dt = time {

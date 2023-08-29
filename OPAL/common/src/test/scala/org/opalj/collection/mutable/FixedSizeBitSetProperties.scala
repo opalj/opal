@@ -89,7 +89,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
             (!isEmpty && (bs != ZeroLengthBitSet) && (ZeroLengthBitSet != bs))
     }
 
-    property("equals and hashCode of two arbitrary sets") = forAll { e1: (IntArraySet, Int) =>
+    property("equals and hashCode of two arbitrary sets") = forAll { (e1: (IntArraySet, Int)) =>
         val (ias1, e1max) = e1
         val (ias2, e2max) = Arbitrary.arbitrary[(IntArraySet, Int)].sample.get
         val iasAreEqual = ias1 == ias2
@@ -132,7 +132,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
                 (bs3 == bs2) :| "right to left"
         }
 
-    property("equals and hashCode with something else") = forAll { e: (IntArraySet, Int) =>
+    property("equals and hashCode with something else") = forAll { (e: (IntArraySet, Int)) =>
         val (ias, max) = e
         val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
         bs != new Object
@@ -152,7 +152,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
             !bs1It.hasNext
     }
 
-    property("toString") = forAll { e: (IntArraySet, Int) =>
+    property("toString") = forAll { (e: (IntArraySet, Int)) =>
         val (ias, max) = e
         val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
         val bsToString = bs.toString.substring(12)

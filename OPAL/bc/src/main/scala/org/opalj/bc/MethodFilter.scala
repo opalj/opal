@@ -42,7 +42,7 @@ object MethodFilter {
         } else {
             classFiles.filter(_.thisType.asJVMType == className) foreach { cf =>
                 val filteredMethods = cf.methods.filter { m =>
-                    implicit val cp = cf.constant_pool
+                    implicit val cp: Constant_Pool = cf.constant_pool
                     val matches = m.name == methodName
                     if (keepMethod)
                         matches

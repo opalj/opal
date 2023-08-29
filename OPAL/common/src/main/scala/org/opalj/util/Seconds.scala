@@ -46,9 +46,7 @@ class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
  */
 object Seconds {
 
-    implicit val secondsWrites = new Writes[Seconds] {
-        def writes(second: Seconds) = JsNumber(second.timeSpan)
-    }
+    implicit val secondsWrites: Writes[Seconds] = (second: Seconds) => JsNumber(second.timeSpan)
 
     implicit val secondsReads: Reads[Seconds] = JsPath.read[Double].map(Seconds.apply)
 

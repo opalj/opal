@@ -471,10 +471,7 @@ sealed trait BaseType extends FieldType with TypeSignature {
  */
 object BaseType {
 
-    implicit val BaseTypeOrdering =
-        new Ordering[BaseType] {
-            def compare(a: BaseType, b: BaseType): Int = a.compare(b)
-        }
+    implicit val BaseTypeOrdering: Ordering[BaseType] = (a: BaseType, b: BaseType) => a.compare(b)
 
     /**
      * The set of [BaseType]s sorted by the type's id.

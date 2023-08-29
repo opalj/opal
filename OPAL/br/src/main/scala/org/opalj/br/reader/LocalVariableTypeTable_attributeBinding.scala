@@ -20,7 +20,8 @@ trait LocalVariableTypeTable_attributeBinding
     type LocalVariableTypeTable_attribute = br.LocalVariableTypeTable
 
     type LocalVariableTypeTableEntry = br.LocalVariableType
-    override implicit val localVariableTypeTableEntryType = ClassTag(classOf[br.LocalVariableType])
+    override implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableType] =
+        ClassTag(classOf[br.LocalVariableType])
 
     def LocalVariableTypeTableEntry(
         cp:              Constant_Pool,
