@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: [self-hosted, it_test]
 
-    if: github.event.issue.pull_request && github.event.comment.action == 'created' && contains(github.event.comment.body, '/it:test') && github.event.comment.author_association == 'COLLABORATOR'
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/it:test') && github.event.comment.author_association == 'COLLABORATOR'
 
     steps:
 
