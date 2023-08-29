@@ -292,7 +292,7 @@ sealed trait CallersImplementation extends Callers {
             case (calleeContextId, callers) =>
                 val calleeContext = typeIterator.contextFromId(calleeContextId)
                 val seen = if (old eq null) 0 else old.callersForContextId(calleeContextId).size
-                callers.forFirstN(callers.size - seen) { encodedPair: Long =>
+                callers.forFirstN(callers.size - seen) { (encodedPair: Long) =>
                     val (callerContextId, pc, isDirect) = Callers.toContextPcAndIsDirect(encodedPair)
                     val callerContext = typeIterator.contextFromId(callerContextId)
                     handleContext(calleeContext, callerContext, pc, isDirect)
