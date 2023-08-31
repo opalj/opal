@@ -23,6 +23,8 @@ OPAL consists of several projects:
 
 * **Abstract Interpretation Framework** (OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision.
 
+* **IFDS** (OPAL/ifds) Language Agnostic Implementation of the IFDS Algorithm. Will be moved to si in the future.
+
 * **Three Address Code** (OPAL/tac): Provides two 3-address code based intermediate representation. A naive one which is directly created based on the bytecode, and a higher-level SSA-like representation which directly provides a CFG as well as Def-Use information using the results of a basic abstract interpretation. 
 
 * **Dependencies Extraction** (OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
@@ -36,6 +38,10 @@ OPAL consists of several projects:
 * **Hermes** (OPAL/TOOLS/hermes): A framework to run various code queries against sets of projects. 
 
 * **BugPicker** (OPAL/TOOLS/bp): A tool to find control-/data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
+
+### Cross Language Projects
+
+* **LLVM** (OPAL/ll) Provides support for the analysis of LLVM IR using javacpp. 
 
 ## Developer Tools
 
