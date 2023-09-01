@@ -115,11 +115,7 @@ class ThreadStartAnalysis private[cg] (
                 }
 
             case _ =>
-                val callPC = state.dependersOf(epk).head.asInstanceOf[Int]
-
-                val receiver = state.tac.stmts(
-                    state.tac.properStmtIndexForPC(callPC)
-                ).asInstanceMethodCall.receiver.asVar
+                val (callPC, receiver) = state.dependersOf(epk).head.asInstanceOf[(Int, V)]
 
                 typeIterator.continuationForAllocations(
                     receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]
@@ -190,7 +186,7 @@ class ThreadStartAnalysis private[cg] (
         )
 
         val types = typeIterator.typesProperty(
-            receiver, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
+            receiver, callContext, (callPC, receiver), state.tac.stmts
         )
 
         typeIterator.foreachAllocation(receiver, callContext, state.tac.stmts, types) {
@@ -372,11 +368,7 @@ class ThreadStartAnalysis private[cg] (
         val persistentReceiver = receiver.flatMap(persistentUVar(_)(stmts))
         if (target.hasValue) {
             indirectCalls.addCall(
-                callContext,
-                callPC,
-                typeIterator.expandContext(callContext, declaredMethods(target.value), callPC),
-                Seq.empty,
-                persistentReceiver
+                callContext, callPC, declaredMethods(target.value), Seq.empty, persistentReceiver
             )
         } else {
             val declTgt = declaredMethods(
@@ -386,13 +378,7 @@ class ThreadStartAnalysis private[cg] (
             // also add calls to virtual declared methods (unpresent library methods)
             if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
                 indirectCalls.addIncompleteCallSite(callPC)
-                indirectCalls.addCall(
-                    callContext,
-                    callPC,
-                    typeIterator.expandContext(callContext, declTgt, callPC),
-                    Seq.empty,
-                    persistentReceiver
-                )
+                indirectCalls.addCall(callContext, callPC, declTgt, Seq.empty, persistentReceiver)
             }
         }
     }
