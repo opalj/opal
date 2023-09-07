@@ -53,7 +53,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     override def requirements(project: SomeProject): ProjectInformationKeys = {
         val requiredDomains: Set[Class[_ <: AnyRef]] = Set(classOf[RecordCFG], classOf[RecordDefUse])
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None => requiredDomains
+            case None               => requiredDomains
             case Some(requirements) => requirements ++ requiredDomains
         }
 
