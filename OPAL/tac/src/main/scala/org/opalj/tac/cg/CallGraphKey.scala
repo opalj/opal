@@ -5,8 +5,6 @@ package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
 
-import java.net.URL
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.log.LogContext
@@ -23,7 +21,8 @@ import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
@@ -52,8 +51,10 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
+        val requiredDomains: Set[Class[_ <: AnyRef]] = Set(classOf[RecordCFG], classOf[RecordDefUse])
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            _ => Set(classOf[DefaultDomainWithCFGAndDefUse[URL]])
+            case None => requiredDomains
+            case Some(requirements) => requirements ++ requiredDomains
         }
 
         project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
