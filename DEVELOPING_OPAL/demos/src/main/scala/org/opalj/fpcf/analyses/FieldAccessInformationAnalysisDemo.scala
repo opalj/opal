@@ -16,6 +16,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -50,7 +51,8 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         time {
             propertyStore = analysesManager
                 .runAll(
-                    EagerFieldAccessInformationAnalysis
+                    EagerFieldAccessInformationAnalysis,
+                    ReflectionRelatedFieldAccessesAnalysisScheduler
                 )
                 ._1
             propertyStore.waitOnPhaseCompletion()
