@@ -6,9 +6,11 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 import java.util.Arrays
+
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.writeAndOpen
+
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.da.ClassFileReader.ClassFile
@@ -33,8 +35,9 @@ import org.opalj.br.instructions.IFGT
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.PCAndInstruction
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ClassHierarchy
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -56,7 +59,7 @@ object ThirdInstrumentation extends App {
     // local variables and stack values during instrumentation.
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
     val p = Project(f.getParentFile, org.opalj.bytecode.RTJar)
-    implicit val classHierarchy = p.classHierarchy // STRICTLY REQUIRED WHEN A StackMapTable NEEDS TO BE COMPUTED!
+    implicit val classHierarchy: ClassHierarchy = p.classHierarchy // STRICTLY REQUIRED WHEN A StackMapTable NEEDS TO BE COMPUTED!
     val cf = p.classFile(TheType).get
     // let's transform the methods
     val newMethods = for (m <- cf.methods) yield {

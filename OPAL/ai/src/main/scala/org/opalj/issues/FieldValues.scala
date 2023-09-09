@@ -4,12 +4,14 @@ package issues
 
 import scala.xml.Node
 import scala.xml.Group
+
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.instructions.FieldReadAccess
+import org.opalj.br.Code
 import org.opalj.ai.AIResult
 import org.opalj.br.PCAndAnyRef
 
@@ -25,7 +27,7 @@ class FieldValues(
 
     final def classFile: ClassFile = method.classFile
 
-    private[this] implicit def code = result.code
+    private[this] implicit def code: Code = result.code
 
     private[this] def operandsArray = result.operandsArray
 

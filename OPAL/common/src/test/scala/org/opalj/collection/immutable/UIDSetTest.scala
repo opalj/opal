@@ -49,7 +49,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         } yield (s, i)
 
         it("create singleton set") {
-            forAll { i: Int =>
+            forAll { (i: Int) =>
                 val s = SUID(i)
                 val fl1 = UIDSet[SUID](i)
                 val fl2 = (UIDSet.newBuilder[SUID] += i).result()
@@ -69,7 +69,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         }
 
         it("create set(++)") {
-            forAll { orig: Set[Int] =>
+            forAll { (orig: Set[Int]) =>
                 val s = orig.map(SUID.apply)
                 val us = EmptyUIDSet ++ s
                 (s.size == us.size) :| "size" &&
@@ -91,7 +91,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         }
 
         it("create set(+)") {
-            forAll { orig: Set[Int] =>
+            forAll { (orig: Set[Int]) =>
                 val s = orig.map(SUID(_))
                 var us = EmptyUIDSet
                 s.foreach {
@@ -103,7 +103,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         }
 
         it("remove element (-)") {
-            forAll { orig: Set[Int] =>
+            forAll { (orig: Set[Int]) =>
                 val base = orig.map(SUID.apply)
                 var s = base
                 var us = EmptyUIDSet ++ s
@@ -151,7 +151,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         }
 
         it("equals") {
-            forAll { l: Set[Int] =>
+            forAll { (l: Set[Int]) =>
                 l.size >= 3 ==> {
                     val p = l.toList.permutations
                     val us1 = UIDSet.empty[SUID] ++ p.next().map(SUID.apply)
@@ -164,7 +164,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         }
 
         it("seq") {
-            forAll { l: List[Int] =>
+            forAll { (l: List[Int]) =>
                 val fl = toSUIDSet(l)
                 (fl.toSeq eq fl)
             }
@@ -407,7 +407,7 @@ class UIDSetTest extends AnyFunSpec with Matchers with ScalaCheckDrivenPropertyC
         // METHODS DEFINED BY UIDSet
 
         it("isSingletonSet") {
-            forAll { orig: Set[Int] =>
+            forAll { (orig: Set[Int]) =>
                 val s = orig.map(SUID(_))
                 val us = EmptyUIDSet ++ s
                 (s.size == 1) == us.isSingletonSet

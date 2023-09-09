@@ -94,8 +94,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         import theProject.config
 
-        implicit val project = theProject
-        implicit val logContext = theProject.logContext
+        implicit val project: Project[URL] = theProject
+        implicit val logContext: LogContext = theProject.logContext
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount

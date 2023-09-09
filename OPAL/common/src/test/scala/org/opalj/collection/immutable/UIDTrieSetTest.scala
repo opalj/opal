@@ -26,7 +26,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
         }
 
         it("create set(+) and forall and contains(id)") {
-            forAll { intSet: Set[Int] =>
+            forAll { (intSet: Set[Int]) =>
                 val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
 
                 val sUIDSet = intSet.map(SUID(_))
@@ -39,7 +39,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
         }
 
         it("create set(+) and foreach") {
-            forAll { intSet: Set[Int] =>
+            forAll { (intSet: Set[Int]) =>
                 val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
                 val sUIDSet = intSet.map(SUID(_))
                 var newSUIDSet = Set.empty[SUID]
@@ -49,7 +49,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
         }
 
         it("create set(+) and iterator") {
-            forAll { intSet: Set[Int] =>
+            forAll { (intSet: Set[Int]) =>
                 val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
                 val sUIDSet = intSet.map(SUID(_))
                 var newSUIDSet = Set.empty[SUID]
@@ -59,7 +59,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
         }
 
         it("equals and hashCode (if the sets are equal)") {
-            forAll { intSet: Set[Int] =>
+            forAll { (intSet: Set[Int]) =>
                 val p = intSet.toList.permutations
                 val initialUIDTrieSet = toSUIDSet(p.next())
                 p.take(100).forall { p =>
@@ -71,7 +71,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
         }
 
         it("equals (if the sets are not equal)") {
-            forAll { intSet: Set[Int] =>
+            forAll { (intSet: Set[Int]) =>
                 intSet.nonEmpty ==> {
                     val oUIDTrieSet = toSUIDSet(intSet)
                     oUIDTrieSet.iterator.toList.tail.tails.forall { tailUIDTrieSet =>

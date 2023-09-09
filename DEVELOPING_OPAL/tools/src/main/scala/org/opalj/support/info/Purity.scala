@@ -249,11 +249,10 @@ object Purity {
 
             manager.runAll(
                 analyses,
-                { css: List[ComputationSpecification[FPCFAnalysis]] =>
+                (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                     if (css.contains(analysis)) {
                         analyzedMethods.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
                     }
-                }
             )
         } { t => analysisTime = t.toSeconds }
         ps.shutdown()

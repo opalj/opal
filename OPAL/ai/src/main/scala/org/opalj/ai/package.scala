@@ -2,6 +2,7 @@
 package org.opalj
 
 import scala.language.existentials
+import scala.reflect.ClassTag
 
 import scala.collection.AbstractIterator
 
@@ -526,7 +527,7 @@ package object ai {
         )
 
         import org.opalj.collection.mutable.Locals
-        implicit val domainValueTag = targetDomain.DomainValueTag
+        implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var processedOperands = 0
@@ -566,7 +567,7 @@ package object ai {
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],
         targetDomain: ValuesDomain with ValuesFactory
     ): Array[targetDomain.DomainValue] = {
-        // implicit val domainValueTag = targetDomain.DomainValueTag
+        //implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         import targetDomain.DomainValueTag
         val operandsCount = theOperands.size
         val adaptedOperands = new Array[targetDomain.DomainValue](operandsCount)

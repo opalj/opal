@@ -12,7 +12,6 @@ import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSReferenceValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.ArrayType
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -248,8 +247,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
         def theUpperTypeBound: T
 
-        final def classHierarchy: ClassHierarchy = domain.classHierarchy
-
         final override def summarize(pc: Int): this.type = this
 
         override def toString: String = theUpperTypeBound.toJava
@@ -330,7 +327,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         ): ArrayLoadResult
 
         def isIndexValid(pc: Int, index: DomainValue): Answer =
-            length.map { l: Int =>
+            length.map { (l: Int) =>
                 intIsSomeValueNotInRange(pc, index, 0, l - 1) match {
                     case No => Yes
                     case Yes =>
