@@ -46,7 +46,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
         implicit val logContext: LogContext = project.logContext
         import project.resolveFieldReference
 
-        val context = SimpleContext(declaredMethods(method)); // TODO simple or callstring?
+        val context = SimpleContext(declaredMethods(method));
         val fieldAccesses = new DirectFieldAccesses()
 
         // we don't want to report unresolvable field references multiple times
