@@ -48,15 +48,15 @@ object IntIteratorProperties extends Properties("IntIterator") {
         }
     }
 
-    property("foldLeft") = forAll { is: IntArraySet =>
+    property("foldLeft") = forAll { (is: IntArraySet) =>
         is.iterator.foldLeft(0)(_ + _) == is.iterator.foldLeft(0)(_ + _)
     }
 
-    property("map") = forAll { is: IntArraySet =>
+    property("map") = forAll { (is: IntArraySet) =>
         is.iterator.map(_ + 1).toList == is.map(_ + 1).toList
     }
 
-    property("foreach") = forAll { is: IntArraySet =>
+    property("foreach") = forAll { (is: IntArraySet) =>
         var c: List[Int] = List.empty
         is.iterator.foreach { i => c = i :: c }
         c.reverse == is.toList
@@ -71,7 +71,7 @@ object IntIteratorProperties extends Properties("IntIterator") {
         is.iterator.withFilter(values.contains).toList == is.withFilter(values.contains).toList
     }
 
-    property("map[AnyRef]") = forAll { is: IntArraySet =>
+    property("map[AnyRef]") = forAll { (is: IntArraySet) =>
         val setBased =
             for {
                 i <- is.toArray
@@ -93,7 +93,7 @@ object IntIteratorProperties extends Properties("IntIterator") {
         setBased.toSet == iteratorBased.toSet
     }
 
-    property("flatMap[AnyRef]") = forAll { is: IntArraySet =>
+    property("flatMap[AnyRef]") = forAll { (is: IntArraySet) =>
         val setBased =
             for {
                 i <- is.toArray
@@ -113,17 +113,17 @@ object IntIteratorProperties extends Properties("IntIterator") {
         setBased.toSet == iteratorBased.toSet
     }
 
-    property("toArray") = forAll { is: IntArraySet =>
+    property("toArray") = forAll { (is: IntArraySet) =>
         val itArray = is.iterator.toArray
         val isArray = is.toList.toArray
         JArrays.equals(itArray, isArray) :| isArray.mkString(",")+" vs. "+itArray.mkString(",")
     }
 
-    property("toChain") = forAll { is: IntArraySet =>
+    property("toChain") = forAll { (is: IntArraySet) =>
         is.iterator.toList == is.toList
     }
 
-    property("mkString") = forAll { is: IntArraySet =>
+    property("mkString") = forAll { (is: IntArraySet) =>
         is.iterator.mkString("-", ";", "-!") == is.iterator.mkString("-", ";", "-!")
     }
 

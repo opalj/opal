@@ -53,10 +53,10 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
         val dominatorTree =
             DominatorTree(
                 startNode, startNodeHasPredecessors,
-                (n: Int) => { f: (Int => Unit) =>
+                (n: Int) => { (f: (Int => Unit)) =>
                     g.successors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
                 },
-                (n: Int) => { f: (Int => Unit) =>
+                (n: Int) => { (f: (Int => Unit)) =>
                     g.predecessors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
                 },
                 maxNode

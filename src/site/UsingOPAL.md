@@ -61,6 +61,17 @@ The architecture validation framework facilitates the development of tools for s
 
     libraryDependencies += "de.opal-project" % "architecture-validation_2.13" % "5.0.0"
 
+### LLVM
+Provides support for the analysis of LLVM IR.
+
+    libraryDependencies += "de.opal-project" % "llvm_2.13" % "5.0.0"
+
+### APK
+Provides support for the analyis of APKs, with automatic conversion from dalvik to java byte code.
+
+    libraryDependencies += "de.opal-project" % "apk_2.13" % "5.0.0"
+
+
 [comment]: # "Exploring the Abstract Interpretation Framework"
 
 [comment]: # "To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries."

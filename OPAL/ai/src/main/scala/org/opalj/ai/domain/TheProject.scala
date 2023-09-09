@@ -4,6 +4,7 @@ package ai
 package domain
 
 import org.opalj.log.LogContext
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.{ClassHierarchy => BRClassHierarchy}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -48,5 +49,5 @@ trait TheProject extends ThePropertyStore with LogContextProvider {
      */
     @inline final implicit def classHierarchy: BRClassHierarchy = project.classHierarchy
 
-    implicit final override lazy val propertyStore = project.get(PropertyStoreKey)
+    implicit final override lazy val propertyStore: PropertyStore = project.get(PropertyStoreKey)
 }

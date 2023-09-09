@@ -654,8 +654,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         def toString(upperTypeBound: String): String = {
             var description = upperTypeBound
-            if (!isPrecise) description = "_ <: "+description
-            if (isNull.isUnknown) description = s"{$description, null}"
+            if (!this.isPrecise) description = "_ <: "+description
+            if (this.isNull.isUnknown) description = s"{$description, null}"
             description += s"[↦$origin;refId=$refId]"
             description
         }
@@ -688,15 +688,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         with NonNullSingleOriginSReferenceValue[ArrayType] {
         this: DomainArrayValue =>
 
-        assert(isNull.isNoOrUnknown)
-        assert(isPrecise || !classHierarchy.isKnownToBeFinal(theUpperTypeBound))
+        assert(this.isNull.isNoOrUnknown)
+        assert(this.isPrecise || !classHierarchy.isKnownToBeFinal(theUpperTypeBound))
 
         override def updateRefId(
             refId:  RefId,
             origin: ValueOrigin,
             isNull: Answer
         ): DomainArrayValue = {
-            ArrayValue(origin, isNull, isPrecise, theUpperTypeBound, refId)
+            ArrayValue(origin, isNull, this.isPrecise, theUpperTypeBound, refId)
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
@@ -705,7 +705,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // the type hierarchy is not known to OPAL. In this case, we will definitively
             // perform the upcast - even if the type is precise.
 
-            ArrayValue(origin, isNull, isPrecise = false, supertype.asArrayType, refId)
+            ArrayValue(origin, this.isNull, isPrecise = false, supertype.asArrayType, refId)
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
@@ -736,7 +736,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                 case thatDomain: l1.ReferenceValues =>
                     val thatT = thatDomain.nextRefId()
-                    thatDomain.ArrayValue(targetOrigin, isNull, isPrecise, theUpperTypeBound, thatT)
+                    thatDomain.ArrayValue(
+                        targetOrigin, this.isNull, this.isPrecise, theUpperTypeBound, thatT
+                    )
 
                 case thatDomain: l0.DefaultTypeLevelReferenceValues =>
                     thatDomain.ReferenceValue(targetOrigin, theUpperTypeBound)
@@ -767,9 +769,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def hashCode: Int = {
             ((origin * 41 +
-                (if (isPrecise) 101 else 3)) * 13 +
-                isNull.hashCode()) * 79 +
-                upperTypeBound.hashCode()
+                (if (this.isPrecise) 101 else 3)) * 13 +
+                this.isNull.hashCode()) * 79 +
+                this.upperTypeBound.hashCode()
         }
 
         override def toString: String = toString(theUpperTypeBound.toJava)
@@ -787,9 +789,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         this: DomainObjectValue =>
 
         assert(this.isNull.isNoOrUnknown)
-        assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || isPrecise)
+        assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || this.isPrecise)
         assert(
-            !isPrecise ||
+            !this.isPrecise ||
                 !classHierarchy.isKnown(theUpperTypeBound) ||
                 classHierarchy.isInterface(theUpperTypeBound).isNo,
             s"the type ${theUpperTypeBound.toJava} defines an interface and, "+
@@ -802,7 +804,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             origin: ValueOrigin,
             isNull: Answer
         ): DomainObjectValue = {
-            ObjectValue(origin, isNull, isPrecise, theUpperTypeBound, refId)
+            ObjectValue(origin, isNull, this.isPrecise, theUpperTypeBound, refId)
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
@@ -810,7 +812,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             assert(thisUTB ne supertype)
             assert(
-                !isPrecise || !domain.isSubtypeOf(supertype, thisUTB),
+                !this.isPrecise || !domain.isSubtypeOf(supertype, thisUTB),
                 s"this type is precise ${thisUTB.toJava}; "+
                     s"refinement goal: ${supertype.toJava} "+
                     "(is this type a subtype of the given type: "+
@@ -876,7 +878,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val adaptedValue = target match {
                 case thatDomain: l1.ReferenceValues =>
                     val thatT = thatDomain.nextRefId()
-                    thatDomain.ObjectValue(pc, isNull, isPrecise, theUpperTypeBound, thatT)
+                    thatDomain.ObjectValue(pc, this.isNull, this.isPrecise, theUpperTypeBound, thatT)
 
                 case thatDomain: l0.DefaultTypeLevelReferenceValues =>
                     thatDomain.ReferenceValue(pc, theUpperTypeBound)
@@ -907,8 +909,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def hashCode: Int = {
             ((theUpperTypeBound.hashCode * 41 +
-                (if (isPrecise) 11 else 101)) * 13 +
-                isNull.hashCode()) * 79 +
+                (if (this.isPrecise) 11 else 101)) * 13 +
+                this.isNull.hashCode()) * 79 +
                 origin
         }
 
@@ -926,7 +928,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          * know the precise type of the value.
          */
         override def isPrecise: Boolean = {
-            upperTypeBound.exists(classHierarchy.isKnownToBeFinal)
+            this.upperTypeBound.exists(classHierarchy.isKnownToBeFinal)
         }
 
         override def updateRefId(
@@ -934,14 +936,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             origin: ValueOrigin,
             isNull: Answer
         ): DomainObjectValue = {
-            ObjectValue(origin, isNull, upperTypeBound, refId)
+            ObjectValue(origin, isNull, this.upperTypeBound, refId)
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
             if (supertype.isObjectType) {
                 val theSupertype = supertype.asObjectType
                 var newUTB: UIDSet[ObjectType] = UIDSet.empty
-                upperTypeBound foreach { (anUTB: ObjectType) =>
+                this.upperTypeBound foreach { (anUTB: ObjectType) =>
                     if (domain.isSubtypeOf(supertype, anUTB))
                         newUTB += theSupertype
                     else {
@@ -955,17 +957,17 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     }
                 }
                 if (newUTB.isSingletonSet) {
-                    ObjectValue(origin, isNull, isPrecise = false, newUTB.head, refId)
+                    ObjectValue(origin, this.isNull, isPrecise = false, newUTB.head, refId)
                 } else {
-                    ObjectValue(origin, isNull, newUTB + theSupertype, refId)
+                    ObjectValue(origin, this.isNull, newUTB + theSupertype, refId)
                 }
             } else {
                 /* The supertype is an array type; this implies that this MObjectValue
                  * models the upper type bound "Serializable & Cloneable"; otherwise
                  * the refinement is illegal
                  */
-                assert(upperTypeBound == ObjectType.SerializableAndCloneable)
-                ArrayValue(origin, isNull, isPrecise = false, supertype.asArrayType, refId)
+                assert(this.upperTypeBound == ObjectType.SerializableAndCloneable)
+                ArrayValue(origin, this.isNull, isPrecise = false, supertype.asArrayType, refId)
             }
         }
 
@@ -997,7 +999,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             target match {
                 case td: ReferenceValues =>
-                    td.ObjectValue(origin, isNull, this.upperTypeBound, td.nextRefId()).
+                    td.ObjectValue(origin, this.isNull, this.upperTypeBound, td.nextRefId()).
                         asInstanceOf[target.DomainValue]
 
                 case td: l0.DefaultTypeLevelReferenceValues =>
@@ -1023,14 +1025,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         protected def canEqual(other: MObjectValue): Boolean = true
 
         override lazy val hashCode: Int = {
-            ((upperTypeBound.hashCode * 41 +
-                (if (isPrecise) 11 else 101)) * 13 +
-                isNull.hashCode()) * 79 +
+            ((this.upperTypeBound.hashCode * 41 +
+                (if (this.isPrecise) 11 else 101)) * 13 +
+                this.isNull.hashCode()) * 79 +
                 origin
         }
 
         override def toString: String = {
-            toString(upperTypeBound.map(_.toJava).mkString(" with "))
+            toString(this.upperTypeBound.map(_.toJava).mkString(" with "))
         }
     }
 
