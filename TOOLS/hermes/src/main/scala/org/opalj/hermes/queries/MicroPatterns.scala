@@ -289,13 +289,13 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         !cl.isInterfaceDeclaration &&
             cl.fields.count { f => !f.isStatic } == 1 &&
             cl.fields.count { f => !f.isFinal } == 1 &&
-            cl.fields.exists(f => fa.writeAccesses(f).exists(t => cl.methods.contains(t._1)))
+            cl.fields.exists(f => fa.writeAccesses(f).exists(t => cl.methods.contains(t._1.definedMethod)))
     }
 
     def isCompoundBox(cl: ClassFile, fa: FieldAccessInformation)(implicit declaredMethods: DeclaredMethods): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count(f => f.fieldType.isReferenceType && !f.isStatic &&
-                !f.isFinal && fa.writeAccesses(f).exists(t => cl.methods.contains(t._1))) == 1 &&
+                !f.isFinal && fa.writeAccesses(f).exists(t => cl.methods.contains(t._1.definedMethod))) == 1 &&
             cl.fields.count(f => !f.isStatic && !f.fieldType.isReferenceType) + 1 == cl.fields.size
     }
 
