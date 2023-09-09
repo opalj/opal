@@ -5,6 +5,7 @@ package fpcf
 package analyses
 
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.DefinedFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.SimpleContext
