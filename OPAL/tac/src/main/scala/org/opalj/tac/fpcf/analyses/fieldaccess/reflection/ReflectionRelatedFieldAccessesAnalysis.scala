@@ -21,8 +21,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedFields
-import org.opalj.br.DefinedFieldsKey
+import org.opalj.br.analyses.DefinedFields
+import org.opalj.br.analyses.DefinedFieldsKey
 import org.opalj.br.DoubleType
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.MethodDescriptor
