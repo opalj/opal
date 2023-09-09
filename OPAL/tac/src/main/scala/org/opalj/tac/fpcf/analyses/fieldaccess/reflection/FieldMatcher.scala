@@ -7,13 +7,16 @@ package fieldaccess
 package reflection
 
 import org.opalj.br.BaseType
+import org.opalj.br.CTIntType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
+import org.opalj.br.IntLikeType
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.analyses.cg.V
+import org.opalj.value.IsIntegerLikeValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsPrimitiveValue
 import org.opalj.value.IsReferenceValue
@@ -43,8 +46,8 @@ final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldM
 }
 
 class ClassBasedFieldMatcher(
-        val possibleClasses:           Set[ObjectType],
-        val onlyMethodsExactlyInClass: Boolean
+        val possibleClasses:          Set[ObjectType],
+        val onlyFieldsExactlyInClass: Boolean
 ) extends FieldMatcher {
 
     // TODO use a ProjectInformationKey or WeakHashMap to cache fields per project
@@ -90,11 +93,16 @@ class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher 
         (f.fieldType, actualParam.value) match {
             // the actual type is null and the declared type is a ref type
             case (_: ReferenceType, _: IsNullValue) =>
-                // TODO here we would need the declared type information
                 true
+
             // declared type and actual type are reference types and assignable
             case (pType: ReferenceType, v: IsReferenceValue) =>
                 v.isValueASubtypeOf(pType).isYesOrUnknown
+
+            // both declared type and actual type are integer like
+            // IMPROVE: This can be removed when AI is powerful enough to find out the intended types of integer like values
+            case (_: CTIntType, _: IsIntegerLikeValue[_]) =>
+                true
 
             // declared type and actual type are base types and the same type
             case (pType: BaseType, v: IsPrimitiveValue[_]) =>
@@ -107,6 +115,10 @@ class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher 
             // declared type is base type, actual type might be a boxed value
             case (pType: BaseType, v: IsReferenceValue) =>
                 v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
+
+            // actual type is base type, declared type might be a boxed type
+            case (pType: ObjectType, _: IsIntegerLikeValue[_]) =>
+                pType.isPrimitiveTypeWrapper && ObjectType.primitiveType(pType).get.isInstanceOf[IntLikeType]
 
             // actual type is base type, declared type might be a boxed type
             case (pType: ObjectType, v: IsPrimitiveValue[_]) =>

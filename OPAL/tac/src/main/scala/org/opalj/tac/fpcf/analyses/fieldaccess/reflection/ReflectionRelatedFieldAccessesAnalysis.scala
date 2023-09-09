@@ -98,15 +98,15 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
         activated
     }
 
-    def addFieldRead(
-        callContext:    ContextType,
+    protected def addFieldRead(
+        accessContext:  ContextType,
         accessPC:       Int,
         actualReceiver: Field => AccessReceiver,
         matchers:       Iterable[FieldMatcher]
     )(implicit indirectFieldAccesses: IndirectFieldAccesses): Unit = {
         FieldMatching.getPossibleFields(matchers.toSeq).foreach { f =>
             indirectFieldAccesses.addFieldRead(
-                callContext,
+                accessContext,
                 accessPC,
                 definedFields(f),
                 actualReceiver(f)
@@ -114,8 +114,8 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
         }
     }
 
-    def addFieldWrite(
-        callContext:    ContextType,
+    protected def addFieldWrite(
+        accessContext:  ContextType,
         accessPC:       Int,
         actualReceiver: Field => AccessReceiver,
         actualParam:    Field => AccessParameter,
@@ -123,7 +123,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
     )(implicit indirectFieldAccesses: IndirectFieldAccesses): Unit = {
         FieldMatching.getPossibleFields(matchers.toSeq).foreach { f =>
             indirectFieldAccesses.addFieldWrite(
-                callContext,
+                accessContext,
                 accessPC,
                 definedFields(f),
                 actualReceiver(f),
@@ -793,7 +793,6 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
              * Field.set | Field.set[_ <: BaseType]
              */
             new FieldSetAnalysis(project, "set"),
-            // TODO some primitive values are misinterpreted as other values, i.e. bool|byte => int, char => byte, ...
             new FieldSetAnalysis(project, "setBoolean", Some(BooleanType)),
             new FieldSetAnalysis(project, "setByte", Some(ByteType)),
             new FieldSetAnalysis(project, "setChar", Some(CharType)),
