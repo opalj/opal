@@ -1,13 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br
-
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.locks.ReentrantReadWriteLock
-import scala.collection.mutable
+package org.opalj
+package br
 
 /**
  * Represents a declared field of a class identified by [[declaringClassType]];
@@ -35,7 +28,7 @@ sealed abstract class DeclaredField {
     val id: Int
 
     override def equals(other: Any): Boolean = other match {
-        case that: DeclaredMethod => id == that.id
+        case that: DeclaredField => id == that.id
         case _                    => false
     }
 
@@ -43,8 +36,8 @@ sealed abstract class DeclaredField {
 }
 
 /**
- * Represents a declared method; i.e., a method which belongs to the (public and private) API of a
- * class along with a reference to the original declaration.
+ * Represents a defined field; i.e., a field which belongs to the (public and private) API of a class along with its
+ * original reference.
  */
 final class DefinedField private[br] (
         override val id:           Int,
@@ -59,57 +52,5 @@ final class DefinedField private[br] (
 
     override def toString: String = {
         s"DefinedField(declaringClassType=${declaringClassType.toJava},definedField=${definedField.toJava})"
-    }
-}
-
-object DefinedFieldsKey extends ProjectInformationKey[DefinedFields, Nothing] {
-
-    override def requirements(project: SomeProject): ProjectInformationKeys = Seq.empty
-
-    override def compute(p: SomeProject): DefinedFields = new DefinedFields()
-}
-
-class DefinedFields {
-
-    @volatile private var id2definedField = new Array[DefinedField](32768)
-    private val definedField2id = new mutable.HashMap[Field, DefinedField]()
-
-    private val nextId = new AtomicInteger(1)
-    private val rwLock = new ReentrantReadWriteLock()
-
-    def apply(id: Int): DefinedField = {
-        id2definedField(id)
-    }
-
-    def apply(field: Field): DefinedField = {
-        val readLock = rwLock.readLock()
-        readLock.lock()
-        try {
-            val field0 = definedField2id.get(field)
-            if (field0.isDefined) return field0.get;
-        } finally {
-            readLock.unlock()
-        }
-
-        val writeLock = rwLock.writeLock()
-        writeLock.lock()
-        try {
-            val field0 = definedField2id.get(field)
-            if (field0.isDefined) return field0.get;
-
-            val definedField = new DefinedField(nextId.getAndIncrement(), field)
-            definedField2id.put(field, definedField)
-            val curMap = id2definedField
-            if (definedField.id < curMap.length) {
-                curMap(definedField.id) = definedField
-            } else {
-                val newMap = java.util.Arrays.copyOf(curMap, curMap.length * 2)
-                newMap(definedField.id) = definedField
-                id2definedField = newMap
-            }
-            definedField
-        } finally {
-            writeLock.unlock()
-        }
     }
 }
