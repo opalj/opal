@@ -1327,8 +1327,8 @@ class ClassHierarchy private (
         if (subtypes.isEmpty /*the upper type bound of "null" values*/ || subtypes == supertypes)
             return true;
 
-        supertypes forall { supertype: ReferenceType =>
-            subtypes exists { subtype: ReferenceType =>
+        supertypes forall { (supertype: ReferenceType) =>
+            subtypes exists { (subtype: ReferenceType) =>
                 this.isSubtypeOf(subtype, supertype)
             }
         }
@@ -1342,14 +1342,14 @@ class ClassHierarchy private (
         if (supertypes.isEmpty /*the upper type bound of "null" values*/ )
             return false;
 
-        supertypes forall { supertype: ReferenceType => isSubtypeOf(subtype, supertype) }
+        supertypes forall { (supertype: ReferenceType) => isSubtypeOf(subtype, supertype) }
     }
 
     def isSubtypeOf(subtypes: UIDSet[_ <: ReferenceType], supertype: ReferenceType): Boolean = {
         if (subtypes.isEmpty) /*the upper type bound of "null" values*/
             return true;
 
-        subtypes exists { subtype: ReferenceType => this.isSubtypeOf(subtype, supertype) }
+        subtypes exists { (subtype: ReferenceType) => this.isSubtypeOf(subtype, supertype) }
     }
 
     /**
@@ -1566,10 +1566,10 @@ class ClassHierarchy private (
             return Yes;
 
         Answer(
-            supertypes forall { supertype: ReferenceType =>
+            supertypes forall { (supertype: ReferenceType) =>
                 var subtypingRelationUnknown = false
                 val subtypeExists =
-                    subtypes exists { subtype: ReferenceType =>
+                    subtypes exists { (subtype: ReferenceType) =>
                         val isSubtypeOf = this.isASubtypeOf(subtype, supertype)
                         isSubtypeOf match {
                             case Yes     => true
@@ -1595,7 +1595,7 @@ class ClassHierarchy private (
         if (supertypes.isEmpty /* <=> upper type bound of "null" values */ )
             return No;
 
-        supertypes foreach { supertype: ReferenceType =>
+        supertypes foreach { (supertype: ReferenceType) =>
             isASubtypeOf(subtype, supertype) match {
                 case Yes     => /*Nothing to do*/
                 case Unknown => return Unknown; // FIXME No should have precedence over Unknown even if some supertypes are Unknown...
@@ -1612,7 +1612,7 @@ class ClassHierarchy private (
 
         var subtypeRelationUnknown = false
         val subtypeExists =
-            subtypes exists { subtype: ReferenceType =>
+            subtypes exists { (subtype: ReferenceType) =>
                 this.isASubtypeOf(subtype, supertype) match {
                     case Yes     => true
                     case Unknown => { subtypeRelationUnknown = true; false /* continue search */ }
@@ -1663,7 +1663,7 @@ class ClassHierarchy private (
             val candidateType = typesToProcess.dequeue()
             processedTypes += candidateType
             val isCommonSubtype =
-                remainingTypeBounds.forall { otherTypeBound: ObjectType =>
+                remainingTypeBounds.forall { (otherTypeBound: ObjectType) =>
                     isASubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
                 }
             if (isCommonSubtype) {
@@ -2130,7 +2130,7 @@ class ClassHierarchy private (
      */
     def allSupertypesOf(types: UIDSet[ObjectType], reflexive: Boolean): UIDSet[ObjectType] = {
         var allSupertypesOf: UIDSet[ObjectType] = UIDSet.empty
-        types foreach { t: ObjectType =>
+        types foreach { (t: ObjectType) =>
             if (!allSupertypesOf.contains(t)) {
                 if (isKnown(t))
                     allSupertypesOf ++= allSupertypes(t, reflexive)

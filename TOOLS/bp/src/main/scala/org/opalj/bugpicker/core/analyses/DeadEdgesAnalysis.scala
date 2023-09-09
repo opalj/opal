@@ -60,7 +60,7 @@ object DeadEdgesAnalysis {
         import result.operandsArray
         import result.localsArray
         val evaluatedInstructions = result.evaluatedInstructions
-        implicit val body = result.code
+        implicit val body: Code = result.code
         val instructions = body.instructions
         import result.cfJoins
         import result.domain.regularSuccessorsOf

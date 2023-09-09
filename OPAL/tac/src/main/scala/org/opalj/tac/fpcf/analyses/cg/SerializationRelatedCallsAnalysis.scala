@@ -84,7 +84,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             val parameters = Seq(receiverOption.flatMap(os => persistentUVar(os.asVar)))
 
             implicit val state: CGState[ContextType] = new CGState[ContextType](
-                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)),
+                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
 
             handleOOSWriteObject(callerContext, param, pc, receiver, parameters, indirectCalls)

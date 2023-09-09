@@ -4,6 +4,8 @@ package tac
 
 import java.io.File
 import java.net.URL
+
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
 import org.opalj.br.Method
@@ -13,7 +15,6 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.common.SimpleAIKey
-
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 /**
@@ -93,7 +94,7 @@ object TACTemplate {
         //
         //      Given that we may use a context-sensitive domain (e.g., ...domain.l2.DefaultDomain),
         //      we also completely load the library code and not just the public API.
-        implicit val logContext = new StandardLogContext()
+        implicit val logContext: LogContext = new StandardLogContext()
         OPALLogger.register(logContext, OPALLogger.globalLogger())
         val reader = Project.JavaClassFileReader(logContext)
         val p = Project(

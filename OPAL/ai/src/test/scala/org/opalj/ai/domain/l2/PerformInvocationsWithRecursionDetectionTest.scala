@@ -11,6 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
+import org.opalj.log.LogContext
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.biProject
@@ -148,7 +149,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                 )
 
             new CalledMethodsStore {
-                implicit val logContext = project.logContext
+                implicit val logContext: LogContext = project.logContext
                 val domain: coordinatingDomain.type = callingDomain.coordinatingDomain
                 val frequentEvaluationWarningLevel = callingDomain.frequentEvaluationWarningLevel
                 val calledMethods = Map((method, List(operands)))
