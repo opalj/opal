@@ -13,6 +13,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
+import org.opalj.br.FieldType
 import org.opalj.br.IntLikeType
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.analyses.cg.V
@@ -62,10 +63,10 @@ class ClassBasedFieldMatcher(
     override def priority: Int = 1
 }
 
-class BaseTypeBasedFieldMatcher(val baseType: BaseType) extends FieldMatcher {
+class TypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
 
-    override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(_.fieldType == baseType)
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.fieldType == baseType
+    override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(_.fieldType == fieldType)
+    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.fieldType == fieldType
     override def priority: Int = 3
 }
 
@@ -113,7 +114,7 @@ class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher 
                 false
 
             // declared type is base type, actual type might be a boxed value
-            case (pType: BaseType, v: IsReferenceValue) =>
+            case (pType: BaseType, v: IsReferenceValue) => // TODO this for int like special case
                 v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
 
             // actual type is base type, declared type might be a boxed type

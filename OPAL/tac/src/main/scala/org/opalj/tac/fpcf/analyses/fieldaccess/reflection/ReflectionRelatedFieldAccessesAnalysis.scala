@@ -6,6 +6,7 @@ package analyses
 package fieldaccess
 package reflection
 
+import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
@@ -30,13 +31,19 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.tac.fpcf.analyses.cg.persistentUVar
 import org.opalj.br.Field
+import org.opalj.br.FieldType
 import org.opalj.br.FloatType
+import org.opalj.br.GetFieldMethodHandle
+import org.opalj.br.GetStaticMethodHandle
+import org.opalj.br.PutFieldMethodHandle
+import org.opalj.br.PutStaticMethodHandle
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.Method
+import org.opalj.br.PCs
 import org.opalj.br.ShortType
 import org.opalj.br.VoidType
 import org.opalj.br.fpcf.properties.Context
@@ -51,6 +58,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.SomeEPS
+import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.TACAIBasedAPIBasedAnalysis
 import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
@@ -60,9 +68,11 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.analyses.cg.reflection.StringUtil
 import org.opalj.tac.fpcf.analyses.cg.reflection.TypesUtil
+import org.opalj.tac.fpcf.analyses.cg.reflection.VarargsUtil
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.MatcherUtil.retrieveSuitableMatcher
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.value.ValueInformation
 
 import scala.collection.immutable.ArraySeq
 
@@ -169,7 +179,6 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
             currentMatchers:          Set[FieldMatcher],
             onlyFieldsExactlyInClass: Boolean
         ): FieldMatcher = {
-            // THIS MATCHER FAILS IF ANY POSSIBLE CLASS IS NOT FINAL TODO wtf
             MatcherUtil.retrieveClassBasedFieldMatcher(
                 context,
                 classVar,
@@ -438,7 +447,7 @@ class FieldGetAnalysis private[analyses] (
             ),
             MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
                 fieldType,
-                v => new BaseTypeBasedFieldMatcher(v)
+                v => new TypeBasedFieldMatcher(v)
             )
         )
 
@@ -707,7 +716,7 @@ class FieldSetAnalysis private[analyses] (
             ),
             MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
                 fieldType,
-                new BaseTypeBasedFieldMatcher(_)
+                new TypeBasedFieldMatcher(_)
             )
         )
 
@@ -758,6 +767,426 @@ class FieldSetAnalysis private[analyses] (
     }
 }
 
+class MethodHandleInvokeAnalysis private[analyses] (
+        final val project:                SomeProject,
+        final val apiMethodName:          String,
+        final val parameterType:          Option[FieldType],
+        final val isSignaturePolymorphic: Boolean
+) extends ReflectionAnalysis with TypeConsumerAnalysis {
+
+    final override val apiMethod =
+        declaredMethods(
+            ObjectType.MethodHandle,
+            "",
+            ObjectType.MethodHandle,
+            apiMethodName,
+            MethodDescriptor(parameterType.map(ArraySeq(_)).getOrElse(ArraySeq.empty), ObjectType.Object)
+        )
+
+    override def processNewCaller(
+        calleeContext:   ContextType,
+        accessContext:   ContextType,
+        accessPC:        Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
+    ): ProperPropertyComputationResult = {
+        implicit val indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
+        implicit val state: ReflectionState[ContextType] = new ReflectionState[ContextType](
+            accessContext, FinalEP(accessContext.method.definedMethod, TheTACAI(tac))
+        )
+
+        if (receiverOption.isDefined) {
+            val descriptorOpt = if (isDirect && apiMethod.name == "invokeExact") {
+                (tac.stmts(tac.properStmtIndexForPC(accessPC)): @unchecked) match {
+                    case vmc: VirtualMethodCall[V]          => Some(vmc.descriptor)
+                    case VirtualFunctionCallStatement(call) => Some(call.descriptor)
+                }
+            } else {
+                None
+            }
+            handleMethodHandleInvoke(
+                accessContext,
+                accessPC,
+                receiverOption.get.asVar,
+                params,
+                descriptorOpt,
+                isSignaturePolymorphic,
+                tac.stmts
+            )
+        } else {
+            indirectFieldAccesses.addIncompleteAccessSite(accessPC)
+        }
+
+        returnResult(receiverOption.map(_.asVar).orNull, indirectFieldAccesses)
+    }
+
+    private def returnResult(
+        methodHandle: V, indirectFieldAccesses: IndirectFieldAccesses
+    )(implicit state: ReflectionState[ContextType]): ProperPropertyComputationResult = {
+        val results = indirectFieldAccesses.partialResults(state.callContext)
+        if (state.hasOpenDependencies)
+            Results(
+                InterimPartialResult(state.dependees, continuation(methodHandle, state)),
+                results
+            )
+        else
+            Results(results)
+    }
+
+    // PC, descriptor, actualParams, persistentActualParameters, matchers
+    private type methodHandleDependerType = (Int, Option[MethodDescriptor], Option[Seq[Option[V]]], Seq[Option[(ValueInformation, PCs)]], Set[FieldMatcher])
+    // PC, isVirtual, persistentActualParameters, matchers, nameVar, stmts, classVar, accessContext
+    private type nameDependerType = (Int, Boolean, Seq[Option[(ValueInformation, PCs)]], Set[FieldMatcher], V, Array[Stmt[V]], V, ContextType)
+    // PC, isVirtual, persistentActualParameters, matchers, classVar, stmts
+    private type classDependerType = (Int, Boolean, Seq[Option[(ValueInformation, PCs)]], Set[FieldMatcher], V, Array[Stmt[V]])
+
+    private def continuation(methodHandle: V, state: ReflectionState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+        implicit val indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
+        implicit val _state: ReflectionState[ContextType] = state
+
+        AllocationsUtil.continuationForAllocation[methodHandleDependerType, ContextType](
+            eps, state.callContext, _ => (methodHandle, state.tac.stmts),
+            _.isInstanceOf[(_, _, _, _, _)], data => failure(data._1, data._4, data._5)
+        ) { (data, allocationContext, allocationIndex, stmts) =>
+                val allMatchers = handleGetMethodHandle(
+                    allocationContext, data._1, allocationIndex, data._2, data._3, data._4, data._5, stmts
+                )
+                addFieldAccesses(state.callContext, data._1, allMatchers, data._4)
+            }
+
+        AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
+            eps, state.callContext, data => (data._5, data._6),
+            _.isInstanceOf[(_, _, _, _, _, _, _, _)], data => failure(data._1, data._3, data._4)
+        ) { (data, _, allocationIndex, stmts) =>
+                val name = StringUtil.getString(allocationIndex, stmts)
+
+                val nameMatcher = retrieveSuitableMatcher[Set[String]](
+                    name.map(Set(_)),
+                    data._1,
+                    v => new NameBasedFieldMatcher(v)
+                )
+
+                if (nameMatcher ne NoFieldsMatcher) {
+                    val matchers = data._4 + nameMatcher
+                    val allMatchers = matchers +
+                        MatcherUtil.retrieveClassBasedFieldMatcher(
+                            data._8,
+                            data._7,
+                            (data._1, data._3, matchers, data._7, data._6),
+                            data._1,
+                            stmts,
+                            project,
+                            () => failure(data._1, data._3, matchers),
+                            onlyFieldsExactlyInClass = false,
+                            considerSubclasses = data._2
+                        )
+
+                    addFieldAccesses(state.callContext, data._1, allMatchers, data._3)
+                }
+            }
+
+        AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
+            eps, state.callContext, data => (data._5, data._6),
+            _.isInstanceOf[(_, _, _, _, _, _)], data => failure(data._1, data._3, data._4)
+        ) { (data, allocationContext, allocationIndex, stmts) =>
+                val classes = TypesUtil.getPossibleClasses(
+                    allocationContext, allocationIndex, data,
+                    stmts, project, () => failure(data._1, data._3, data._4),
+                    onlyObjectTypes = false
+                ).flatMap { tpe =>
+                    if (data._2) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
+                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+                }
+
+                val matchers = data._4 +
+                    retrieveSuitableMatcher[Set[ObjectType]](
+                        Some(classes),
+                        data._1,
+                        v => new ClassBasedFieldMatcher(v, false)
+                    )
+
+                addFieldAccesses(state.callContext, data._1, matchers, data._3)
+            }
+
+        AllocationsUtil.continuationForAllocation[(classDependerType, V, Array[Stmt[V]]), ContextType](
+            eps, state.callContext, data => (data._2, data._3),
+            _.isInstanceOf[(_, _)], data => failure(data._1._1, data._1._3, data._1._4)
+        ) { (data, _, allocationIndex, stmts) =>
+                val classOpt = TypesUtil.getPossibleForNameClass(
+                    allocationIndex, stmts, project, onlyObjectTypes = false
+                ).map { tpe =>
+                    if (data._1._2) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
+                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+                }
+
+                val matchers = data._1._4 +
+                    retrieveSuitableMatcher[Set[ObjectType]](
+                        classOpt,
+                        data._1._1,
+                        v => new ClassBasedFieldMatcher(v, false)
+                    )
+
+                addFieldAccesses(state.callContext, data._1._1, matchers, data._1._3)
+            }
+
+        if (eps.isFinal) {
+            state.removeDependee(eps.toEPK)
+        } else {
+            state.updateDependency(eps)
+        }
+
+        returnResult(methodHandle, indirectFieldAccesses)
+    }
+
+    private[this] def failure(
+        accessPC: Int,
+        params:   Seq[Option[(ValueInformation, PCs)]],
+        matchers: Set[FieldMatcher]
+    )(implicit indirectFieldAccesses: IndirectFieldAccesses, state: ReflectionState[ContextType]): Unit = {
+        if (HighSoundnessMode)
+            addFieldAccesses(state.callContext, accessPC, matchers + AllFieldsMatcher, params)
+        else
+            indirectFieldAccesses.addIncompleteAccessSite(accessPC)
+    }
+
+    private[this] def handleMethodHandleInvoke(
+        accessContext:          ContextType,
+        accessPC:               Int,
+        methodHandle:           V,
+        invokeParams:           Seq[Option[Expr[V]]],
+        descriptorOpt:          Option[MethodDescriptor],
+        isSignaturePolymorphic: Boolean,
+        stmts:                  Array[Stmt[V]]
+    )(implicit state: ReflectionState[ContextType], indirectFieldAccesses: IndirectFieldAccesses): Unit = {
+        // IMPROVE: for signature polymorphic calls, we could also use the method descriptor (return type)
+        val actualInvokeParamsOpt =
+            if (isSignaturePolymorphic)
+                Some(invokeParams.map(_.map(_.asVar)))
+            else if (invokeParams.nonEmpty)
+                invokeParams.head.flatMap(p => VarargsUtil.getParamsFromVararg(p, stmts).map(_.map(Some(_))))
+            else
+                None
+
+        // TODO here we need to peel of the 1. actual parameter for non static ones
+        val baseMatchers = Set.empty[FieldMatcher] /*Set(
+              retrieveSuitableNonEssentialMatcher[Seq[V]](
+                actualInvokeParamsOpt,
+                  v => new ActualParamBasedFieldMatcher(v, project)
+                )
+              )*/
+
+        val persistentActualParams = actualInvokeParamsOpt.map(_.map(
+            _.flatMap(persistentUVar(_)(stmts))
+        )).getOrElse(Seq.empty)
+
+        val depender: methodHandleDependerType =
+            (accessPC, descriptorOpt, actualInvokeParamsOpt, persistentActualParams, baseMatchers)
+
+        AllocationsUtil.handleAllocations(
+            methodHandle, accessContext, depender, state.tac.stmts,
+            project.classHierarchy.isASubtypeOf(_, ObjectType.MethodHandle).isYesOrUnknown,
+            () => failure(accessPC, persistentActualParams, baseMatchers)
+        ) {
+                (allocationContext, allocationIndex, stmts) =>
+                    val allMatchers = handleGetMethodHandle(
+                        allocationContext,
+                        accessPC,
+                        allocationIndex,
+                        descriptorOpt,
+                        actualInvokeParamsOpt,
+                        persistentActualParams,
+                        baseMatchers,
+                        stmts
+                    )
+                    addFieldAccesses(accessContext, accessPC, allMatchers, persistentActualParams)
+            }
+    }
+
+    private[this] def handleGetMethodHandle(
+        context:                ContextType,
+        accessPC:               Int,
+        methodHandleDefSite:    Int,
+        descriptorOpt:          Option[MethodDescriptor],
+        actualParams:           Option[Seq[Option[V]]],
+        persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
+        baseMatchers:           Set[FieldMatcher],
+        stmts:                  Array[Stmt[V]]
+    )(implicit indirectFieldAccesses: IndirectFieldAccesses, state: ReflectionState[ContextType]): Set[FieldMatcher] = {
+        var matchers = baseMatchers
+
+        val definition = stmts(methodHandleDefSite).asAssignment.expr
+
+        if (definition.isMethodHandleConst) {
+            definition.asMethodHandleConst.value match {
+                case GetFieldMethodHandle(declaringClass, name, fieldType) =>
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, None, isStatic = false)
+
+                case GetStaticMethodHandle(declaringClass, name, fieldType) =>
+                    val actualReceiverTypes: Option[Set[ObjectType]] =
+                        if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
+                            val rcvr = actualParams.get.head.get.value.asReferenceValue
+                            Some(
+                                if (rcvr.isNull.isYes) Set.empty[ObjectType]
+                                else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
+                                else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
+                                else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, reflexive = true)
+                            )
+                        } else
+                            None
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, actualReceiverTypes, isStatic = true)
+
+                case PutFieldMethodHandle(declaringClass, name, fieldType) =>
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, None, isStatic = false)
+
+                case PutStaticMethodHandle(declaringClass, name, fieldType) =>
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, None, isStatic = true)
+
+                case _ => // method invocations are not directly relevant for field accesses
+                    matchers += NoFieldsMatcher
+            }
+        } else if (definition.isVirtualFunctionCall) {
+            case class MethodHandleData(classVar: V, nameVar: V, fieldType: Expr[V], isStatic: Boolean, isSetter: Boolean)
+
+            def handleParams(params: Seq[Expr[V]], isStatic: Boolean, isSetter: Boolean): MethodHandleData = {
+                val Seq(refc, name, fieldType) = params
+                MethodHandleData(refc.asVar, name.asVar, fieldType, isStatic, isSetter)
+            }
+
+            val handleDataOpt = definition.asVirtualFunctionCall match {
+                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findGetter", _, _, params) =>
+                    Some(handleParams(params, isStatic = false, isSetter = false))
+
+                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStaticGetter", _, _, params) =>
+                    Some(handleParams(params, isStatic = true, isSetter = false))
+
+                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSetter", _, _, params) =>
+                    Some(handleParams(params, isStatic = false, isSetter = true))
+
+                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStaticSetter", _, _, params) =>
+                    Some(handleParams(params, isStatic = true, isSetter = true))
+
+                case _ =>
+                    None // other method handles are not relevant for field accesses
+            }
+
+            if (handleDataOpt.isDefined) {
+                val handleData = handleDataOpt.get
+                matchers += (if (handleData.isStatic) StaticFieldMatcher else NonStaticFieldMatcher)
+                /*
+                matchers += retrieveDescriptorBasedFieldMatcher(
+                    descriptorOpt, handleData.fieldType, handleData.isStatic, isConstructor, stmts, project
+                )
+               */
+
+                if (!matchers.contains(NoFieldsMatcher))
+                    matchers += MatcherUtil.retrieveNameBasedFieldMatcher(
+                        context,
+                        handleData.nameVar,
+                        (accessPC, !handleData.isStatic, persistentActualParams, matchers, handleData.nameVar, stmts, handleData.classVar, context),
+                        accessPC,
+                        stmts,
+                        () => failure(accessPC, persistentActualParams, matchers)
+                    )
+
+                if (!matchers.contains(NoFieldsMatcher))
+                    if (!handleData.isStatic) {
+                        val receiverTypes =
+                            if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
+                                val receiverValue = actualParams.get.head.get.value
+                                if (!receiverValue.isReferenceValue)
+                                    None
+                                else {
+                                    val rcvr = receiverValue.asReferenceValue
+                                    Some(
+                                        if (rcvr.isNull.isYes) Set.empty[ObjectType]
+                                        else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
+                                        else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
+                                        else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, reflexive = true)
+                                    )
+                                }
+                            } else None
+                        if (receiverTypes.isDefined)
+                            matchers += new ClassBasedFieldMatcher(
+                                receiverTypes.get,
+                                onlyFieldsExactlyInClass = false
+                            )
+                        else
+                            matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
+                                context,
+                                handleData.classVar,
+                                (accessPC, !handleData.isStatic, persistentActualParams, matchers, handleData.classVar, stmts),
+                                accessPC,
+                                stmts,
+                                project,
+                                () => failure(accessPC, persistentActualParams, matchers),
+                                onlyFieldsExactlyInClass = false,
+                                considerSubclasses = !handleData.isStatic
+                            )
+                    }
+            } else
+                matchers += NoFieldsMatcher
+        } else if (HighSoundnessMode) {
+            /*
+            if (descriptorOpt.isDefined) {
+                // we do not know, whether the invoked method is static or not
+                // (i.e. whether the first parameter of the descriptor represent the receiver)
+                val md = descriptorOpt.get
+                if (md.parametersCount > 0) {
+                    val nonStaticDescriptor = MethodDescriptor(
+                        md.parameterTypes.tail, md.returnType
+                    )
+                    matchers += new DescriptorBasedFieldMatcher(
+                        Set(md, nonStaticDescriptor)
+                    )
+                } else {
+                    matchers += new DescriptorBasedFieldMatcher(
+                        Set(md)
+                    )
+                }
+            }
+           */
+            matchers += AllFieldsMatcher
+        } else {
+            matchers += NoFieldsMatcher
+            indirectFieldAccesses.addIncompleteAccessSite(accessPC)
+        }
+        // TODO we should use the descriptor here
+
+        matchers
+    }
+
+    private[this] def addFieldAccesses(
+        accessContext:          ContextType,
+        accessPC:               Int,
+        matchers:               Set[FieldMatcher],
+        persistentActualParams: Seq[Option[(ValueInformation, PCs)]]
+    )(implicit indirectFieldAccesses: IndirectFieldAccesses): Unit = {
+        def handleFieldAccess(receiver: AccessReceiver, param: Option[AccessParameter]): Unit = {
+            if (param.isDefined)
+                addFieldWrite(accessContext, accessPC, _ => receiver, _ => param.get, matchers)
+            else
+                addFieldRead(accessContext, accessPC, _ => receiver, matchers)
+        }
+
+        if (!matchers.contains(NoFieldsMatcher)) {
+            if (matchers.contains(StaticFieldMatcher))
+                handleFieldAccess(None, persistentActualParams.headOption)
+            else if (persistentActualParams.nonEmpty)
+                handleFieldAccess(persistentActualParams.head, persistentActualParams.tail.headOption)
+            else
+                OPALLogger.error(
+                    "reflective field accesses",
+                    s"Field access without arguments encountered in class ${accessContext.method.declaringClassType.toJava}"+
+                        s" in method ${accessContext.method.name} even though not marked as static. Maybe the"+
+                        s" arguments were not parsed correctly?",
+                )
+        }
+    }
+}
+
 object ReflectionRelatedFieldAccessesAnalysis {
 
     final val ConfigKey = {
@@ -779,7 +1208,7 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             /*
              * Field.get | Field.get[_ <: BaseType]
              */
-            new FieldGetAnalysis(project, "get"),
+            new FieldGetAnalysis(project, "get"), // TODO check static field behaviour for getField(s)
             new FieldGetAnalysis(project, "getBoolean", Some(BooleanType)),
             new FieldGetAnalysis(project, "getByte", Some(ByteType)),
             new FieldGetAnalysis(project, "getChar", Some(CharType)),
@@ -802,9 +1231,16 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             new FieldSetAnalysis(project, "setLong", Some(LongType)),
             new FieldSetAnalysis(project, "setShort", Some(ShortType)),
 
-        /*
-             * TODO MethodHandle.findSetter etc. (lookup again)
+            /*
+             * MethodHandles.lookup().(findGetter | findStaticGetter)
              */
+            new MethodHandleInvokeAnalysis(project, "invoke", Some(ArrayType.ArrayOfObject), isSignaturePolymorphic = true),
+            new MethodHandleInvokeAnalysis(project, "invokeExact", Some(ArrayType.ArrayOfObject), isSignaturePolymorphic = true),
+            new MethodHandleInvokeAnalysis(project, "invokeWithArguments", Some(ArrayType.ArrayOfObject), isSignaturePolymorphic = false),
+            new MethodHandleInvokeAnalysis(project, "invokeWithArguments", Some(ObjectType("java/util/List")), isSignaturePolymorphic = false),
+
+            // IMPROVE: Add support for Method Handles obtained using `lookup().unreflect` here
+            // IMPROVE: Add support for field accesses using `lookup().findVarHandle` here
         )
 
         Results(analyses.map(_.registerAPIMethod()))
