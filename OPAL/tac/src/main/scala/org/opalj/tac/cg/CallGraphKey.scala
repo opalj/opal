@@ -120,15 +120,18 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
-        val manager = project.get(FPCFAnalysesManagerKey)
-
-        manager.runAll(allCallGraphAnalyses(project))
+        runAnalyses(project, ps)
 
         val cg = new CallGraph()
 
         CallGraphKey.cg = Some(cg)
 
         cg
+    }
+
+    protected[this] def runAnalyses(project: SomeProject, ps: PropertyStore): Unit = {
+        val manager = project.get(FPCFAnalysesManagerKey)
+        manager.runAll(allCallGraphAnalyses(project))
     }
 
     private[this] def resolveAnalysisRunner(
