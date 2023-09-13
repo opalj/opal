@@ -5,7 +5,6 @@ package fpcf
 package properties
 package fieldaccess
 
-import org.opalj.br.DefinedField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -121,7 +120,7 @@ trait IncompleteFieldAccesses extends FieldAccesses {
 trait CompleteFieldAccesses extends FieldAccesses {
 
     private def createFieldPartialResultForContext[S <: FieldAccessInformation[S]](
-        field:       DefinedField,
+        field:       DeclaredField,
         propertyKey: PropertyKey[S],
         property:    S
     ): PartialResult[Field, _ >: Null <: FieldAccessInformation[_]] = {
@@ -143,7 +142,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
 
     protected def addFieldAccess[S <: FieldAccessInformation[S]](
         pc:              Int,
-        field:           DefinedField,
+        field:           DeclaredField,
         propertyKey:     PropertyKey[S],
         propertyFactory: () => S
     ): Unit = {
@@ -171,12 +170,12 @@ trait DirectFieldAccessesBase extends CompleteFieldAccesses {
 
     override protected def directAccessedFields: IntMap[IntTrieSet] = _accessedFields
 
-    def addFieldRead(accessContext: Context, pc: Int, field: DefinedField): Unit = {
+    def addFieldRead(accessContext: Context, pc: Int, field: DeclaredField): Unit = {
         addFieldAccess(pc, field, FieldReadAccessInformation.key,
             () => FieldReadAccessInformation(Set((accessContext.method.asDefinedMethod, IntTrieSet(pc)))))
     }
 
-    def addFieldWrite(accessContext: Context, pc: Int, field: DefinedField): Unit = {
+    def addFieldWrite(accessContext: Context, pc: Int, field: DeclaredField): Unit = {
         addFieldAccess(pc, field, FieldWriteAccessInformation.key,
             () => FieldWriteAccessInformation(Set((accessContext.method.asDefinedMethod, IntTrieSet(pc)))))
     }
@@ -201,7 +200,7 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
     def addFieldRead(
         accessContext: Context,
         pc:            Int,
-        field:         DefinedField,
+        field:         DeclaredField,
         receiver:      Option[(ValueInformation, IntTrieSet)]
     ): Unit = {
         addFieldAccess(pc, field, FieldReadAccessInformation.key,
@@ -214,9 +213,10 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
 
     def addFieldWrite(
         accessContext: Context,
-        pc:            Int, field: DefinedField,
-        receiver: Option[(ValueInformation, IntTrieSet)],
-        param:    Option[(ValueInformation, IntTrieSet)]
+        pc:            Int,
+        field:         DeclaredField,
+        receiver:      Option[(ValueInformation, IntTrieSet)],
+        param:         Option[(ValueInformation, IntTrieSet)]
     ): Unit = {
         addFieldAccess(pc, field, FieldWriteAccessInformation.key,
             () => FieldWriteAccessInformation(

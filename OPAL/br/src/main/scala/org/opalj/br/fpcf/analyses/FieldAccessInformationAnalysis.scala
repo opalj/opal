@@ -5,7 +5,7 @@ package fpcf
 package analyses
 
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.DefinedFieldsKey
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.SimpleContext
@@ -18,17 +18,12 @@ import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A simple analysis that identifies every direct read and write access to a [[org.opalj.br.Field]].
@@ -40,43 +35,31 @@ import java.util.concurrent.ConcurrentHashMap
 class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     private val declaredMethods = project.get(DeclaredMethodsKey)
-    private val definedFields = project.get(DefinedFieldsKey)
+    private val declaredFields = project.get(DeclaredFieldsKey)
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
-        implicit val logContext: LogContext = project.logContext
         import project.resolveFieldReference
 
         val context = SimpleContext(declaredMethods(method));
         val fieldAccesses = new DirectFieldAccesses()
 
-        // we don't want to report unresolvable field references multiple times
-        val reportedFieldAccesses = ConcurrentHashMap.newKeySet[Instruction]()
-
         method.body.get iterate { (pc, instruction) =>
             instruction.opcode match {
                 case GETFIELD.opcode | GETSTATIC.opcode =>
-                    val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
-                    resolveFieldReference(fieldReadAccess) match {
-                        case Some(field) =>
-                            fieldAccesses.addFieldRead(context, pc, definedFields(field))
-                        case None =>
-                            if (reportedFieldAccesses.add(instruction)) { // TODO virtuallydeclaredfield
-                                val message = s"cannot resolve field read access: $instruction"
-                                OPALLogger.warn("project configuration", message)
-                            }
+                    val access = instruction.asInstanceOf[FieldReadAccess]
+                    val field = resolveFieldReference(access) match {
+                        case Some(field) => declaredFields(field)
+                        case None        => declaredFields(access.declaringClass, access.name, access.fieldType)
                     }
+                    fieldAccesses.addFieldRead(context, pc, field)
 
                 case PUTFIELD.opcode | PUTSTATIC.opcode =>
-                    val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
-                    resolveFieldReference(fieldWriteAccess) match {
-                        case Some(field) =>
-                            fieldAccesses.addFieldWrite(context, pc, definedFields(field))
-                        case None =>
-                            if (reportedFieldAccesses.add(instruction)) {
-                                val message = s"cannot resolve field write access: $instruction"
-                                OPALLogger.warn("project configuration", message)
-                            }
+                    val access = instruction.asInstanceOf[FieldWriteAccess]
+                    val field = resolveFieldReference(access) match {
+                        case Some(field) => declaredFields(field)
+                        case None        => declaredFields(access.declaringClass, access.name, access.fieldType)
                     }
+                    fieldAccesses.addFieldWrite(context, pc, field)
 
                 case _ => /*nothing to do*/
             }
