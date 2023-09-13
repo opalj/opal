@@ -60,12 +60,10 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                         case Some(field) =>
                             fieldAccesses.addFieldRead(context, pc, definedFields(field))
                         case None =>
-                            if (reportedFieldAccesses.add(instruction)) {
+                            if (reportedFieldAccesses.add(instruction)) { // TODO virtuallydeclaredfield
                                 val message = s"cannot resolve field read access: $instruction"
                                 OPALLogger.warn("project configuration", message)
                             }
-                        // IMPROVE: In the old implementation, unresolvable field accesses were tracked. This can
-                        // also be done here but is not needed as of now.
                     }
 
                 case PUTFIELD.opcode | PUTSTATIC.opcode =>
@@ -78,8 +76,6 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
                                 val message = s"cannot resolve field write access: $instruction"
                                 OPALLogger.warn("project configuration", message)
                             }
-                        // IMPROVE: In the old implementation, unresolvable field accesses were tracked. This can
-                        // also be done here but is not needed as of now.
                     }
 
                 case _ => /*nothing to do*/
