@@ -352,7 +352,7 @@ sealed class ConcreteCallees(
                                 l,
                                 (_, vl, vr) =>
                                     if (vl == vr) vl
-                                    else throw new UnknownError("Incompatible receivers for indirect call")
+                                    else None // TODO find better solution than throwing away information
                             )
                         }
                     )
@@ -368,7 +368,8 @@ sealed class ConcreteCallees(
                                 l,
                                 (_, vl, vr) =>
                                     if (vl == vr) vl
-                                    else throw new UnknownError("Incompatible receivers for indirect call")
+                                    else if (vl.size == vr.size) Seq.fill(vl.size)(None) // TODO find better solution than throwing away information
+                                    else throw new UnknownError("Incompatible parameters for indirect call")
                             )
                         }
                     )

@@ -29,7 +29,7 @@ sealed abstract class DeclaredField {
 
     override def equals(other: Any): Boolean = other match {
         case that: DeclaredField => id == that.id
-        case _                    => false
+        case _                   => false
     }
 
     override def hashCode(): Int = id
