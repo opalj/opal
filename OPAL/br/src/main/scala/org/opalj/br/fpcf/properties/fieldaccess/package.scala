@@ -17,8 +17,8 @@ package object fieldaccess {
     type AccessReceiver = Option[(ValueInformation, PCs)]
     type AccessParameter = Option[(ValueInformation, PCs)]
 
-    type IndirectAccessReceivers = IntMap[IntMap[AccessReceiver]] // Caller Context => PC => Receiver
-    type IndirectAccessParameters = IntMap[IntMap[AccessParameter]] // Caller Context => PC => Parameter
+    type IndirectAccessReceivers = IntMap[IntMap[AccessReceiver]] // Access Context => PC => Receiver
+    type IndirectAccessParameters = IntMap[IntMap[AccessParameter]] // Access Context => PC => Parameter
 
     @inline def encodeDirectFieldAccess(method: DefinedMethod, pc: Int): FieldAccess = {
         method.id.toLong | (pc.toLong << 31)
@@ -35,8 +35,8 @@ package object fieldaccess {
     }
 
     @inline def decodeIndirectFieldAccess(fieldAccess: FieldAccess): (Int, Int) = {
-        val methodId = fieldAccess.toInt
+        val contextId = fieldAccess.toInt
         val pc = (fieldAccess >> 31).toInt
-        (methodId, pc)
+        (contextId, pc)
     }
 }
