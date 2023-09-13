@@ -58,7 +58,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.SomeEPS
-import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.TACAIBasedAPIBasedAnalysis
 import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
@@ -1189,17 +1188,10 @@ class MethodHandleInvokeAnalysis private[analyses] (
         }
 
         if (!matchers.contains(NoFieldsMatcher)) {
-            if (matchers.contains(StaticFieldMatcher))
+            if (matchers.contains(StaticFieldMatcher) || persistentActualParams.isEmpty)
                 handleFieldAccess(None, persistentActualParams.headOption)
-            else if (persistentActualParams.nonEmpty)
-                handleFieldAccess(persistentActualParams.head, persistentActualParams.tail.headOption)
             else
-                OPALLogger.warn(
-                    "reflective field accesses",
-                    s"Field access without arguments encountered in class ${accessContext.method.declaringClassType.toJava}"+
-                        s" in method ${accessContext.method.name} even though not marked as static. Maybe the"+
-                        s" arguments were not parsed correctly?",
-                )
+                handleFieldAccess(persistentActualParams.head, persistentActualParams.tail.headOption)
         }
     }
 }
