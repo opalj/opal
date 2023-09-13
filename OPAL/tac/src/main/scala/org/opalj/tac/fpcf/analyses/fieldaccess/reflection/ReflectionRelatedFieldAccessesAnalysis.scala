@@ -837,29 +837,29 @@ class MethodHandleInvokeAnalysis private[analyses] (
     }
 
     private case class MethodHandleDepender(
-        pc: Int,
-        descriptor: Option[MethodDescriptor],
-        invokeParams: Option[Seq[Option[V]]],
-        persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
-        matchers: Set[FieldMatcher]
+            pc:                     Int,
+            descriptor:             Option[MethodDescriptor],
+            invokeParams:           Option[Seq[Option[V]]],
+            persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
+            matchers:               Set[FieldMatcher]
     )
     private case class NameDepender(
-       pc: Int,
-       isStatic: Boolean,
-       persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
-       matchers: Set[FieldMatcher],
-       nameVar: V,
-       stmts: Array[Stmt[V]],
-       classVar: V,
-       accessContext: ContextType
+            pc:                     Int,
+            isStatic:               Boolean,
+            persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
+            matchers:               Set[FieldMatcher],
+            nameVar:                V,
+            stmts:                  Array[Stmt[V]],
+            classVar:               V,
+            accessContext:          ContextType
     )
     private case class ClassDepender(
-        pc: Int,
-        isStatic: Boolean,
-        persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
-        matchers: Set[FieldMatcher],
-        classVar: V,
-        stmts: Array[Stmt[V]]
+            pc:                     Int,
+            isStatic:               Boolean,
+            persistentActualParams: Seq[Option[(ValueInformation, PCs)]],
+            matchers:               Set[FieldMatcher],
+            classVar:               V,
+            stmts:                  Array[Stmt[V]]
     )
 
     private def continuation(methodHandle: V, state: ReflectionState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -1225,7 +1225,7 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             /*
              * Field.get | Field.get[_ <: BaseType]
              */
-            new FieldGetAnalysis(project, "get"), // TODO check static field behaviour for getField(s)
+            new FieldGetAnalysis(project, "get"),
             new FieldGetAnalysis(project, "getBoolean", Some(BooleanType)),
             new FieldGetAnalysis(project, "getByte", Some(ByteType)),
             new FieldGetAnalysis(project, "getChar", Some(CharType)),
@@ -1256,8 +1256,8 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             new MethodHandleInvokeAnalysis(project, "invokeWithArguments", Some(ArrayType.ArrayOfObject), isSignaturePolymorphic = false),
             new MethodHandleInvokeAnalysis(project, "invokeWithArguments", Some(ObjectType("java/util/List")), isSignaturePolymorphic = false),
 
-            // IMPROVE: Add support for Method Handles obtained using `lookup().unreflect` here
-            // IMPROVE: Add support for field accesses using `lookup().findVarHandle` here
+        // IMPROVE: Add support for Method Handles obtained using `lookup().unreflect` here
+        // IMPROVE: Add support for field accesses using `lookup().findVarHandle` here
         )
 
         Results(analyses.map(_.registerAPIMethod()))
