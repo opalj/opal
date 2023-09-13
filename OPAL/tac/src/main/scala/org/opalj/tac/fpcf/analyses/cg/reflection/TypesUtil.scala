@@ -6,7 +6,9 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.BaseType
 import org.opalj.br.MethodDescriptor
@@ -16,6 +18,8 @@ import org.opalj.br.Type
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.ArrayType
+import org.opalj.tac.fpcf.properties.cg.ForNameClasses
 
 object TypesUtil {
 
@@ -43,37 +47,35 @@ object TypesUtil {
 
     /**
      * Returns classes that may be loaded by an invocation of Class.forName.
-     * Clients MUST handle TWO types of dependencies:
-     * - One where the depender is the given one and the dependee provides allocation sites of Class
-     * objects on which the method in question is defined AND
-     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
-     * and the dependee provides allocation sites of Strings that give class names of such classes
+     * Clients MUST handle dependencies where the depender is the given one and the dependee
+     * provides allocation sites of Strings that give class names of such classes.
      */
     def getPossibleForNameClasses(
-        className:       V,
-        context:         Context,
-        depender:        Entity,
-        stmts:           Array[Stmt[V]],
-        project:         SomeProject,
-        failure:         () => Unit,
-        onlyObjectTypes: Boolean
+        className: V,
+        context:   Context,
+        depender:  Entity,
+        stmts:     Array[Stmt[V]],
+        project:   SomeProject,
+        failure:   () => Unit
     )(
         implicit
         typeIterator: TypeIterator,
         state:        TypeIteratorState,
         ps:           PropertyStore
-    ): Set[ObjectType] = {
+    ): Set[ReferenceType] = {
         StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls =>
             try {
-                val tpe = ReferenceType(cls.replace('.', '/'))
-                if (tpe.isArrayType)
-                    if (onlyObjectTypes) None
-                    else Some(ObjectType.Object)
-                else Some(tpe.asObjectType)
+                Some(ReferenceType(cls.replace('.', '/')))
             } catch {
                 case _: Exception => None
             }
-        }.filter(project.classFile(_).isDefined)
+        }.filter {
+            case at: ArrayType =>
+                val et = at.elementType
+                !et.isObjectType || project.classFile(et.asObjectType).isDefined
+            case ot: ObjectType =>
+                project.classFile(ot).isDefined
+        }
     }
 
     /**
@@ -83,9 +85,10 @@ object TypesUtil {
         classNameDefSite: Int,
         stmts:            Array[Stmt[V]],
         project:          SomeProject,
+        failure:          () => Unit,
         onlyObjectTypes:  Boolean
     ): Option[ObjectType] = {
-        StringUtil.getString(classNameDefSite, stmts).flatMap { cls =>
+        val className = StringUtil.getString(classNameDefSite, stmts).flatMap { cls =>
             try {
                 val tpe = ReferenceType(cls.replace('.', '/'))
                 if (tpe.isArrayType)
@@ -95,7 +98,9 @@ object TypesUtil {
             } catch {
                 case _: Exception => None
             }
-        }.filter(project.classFile(_).isDefined)
+        }
+        if (className.isEmpty) failure()
+        className.filter(project.classFile(_).isDefined)
     }
 
     /**
@@ -178,18 +183,15 @@ object TypesUtil {
      * Returns types that a given expression potentially evaluates to.
      * Identifies uses of Class constants, class instances returned from Class.forName,
      * by accesses to a primitive type's class as well as from Object.getClass.
-     * Clients MUST handle TWO types of dependencies:
-     * - One where the depender is the given one and the dependee provides allocation sites of Class
-     * objects AND
-     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
-     * and the dependee provides allocation sites of Strings that give class names of such classes
+     * Clients MUST handle TWO dependencies:
+     * - One where the depender is the given one and the dependee are ForNameClasses and
+     * - One where the depender is the given one and the dependee provides allocation sites
      */
     def getPossibleClasses(
         context:         Context,
         value:           V,
         depender:        Entity,
         stmts:           Array[Stmt[V]],
-        project:         SomeProject,
         failure:         () => Unit,
         onlyObjectTypes: Boolean
     )(
@@ -204,7 +206,7 @@ object TypesUtil {
             value, context, depender, stmts, _ eq ObjectType.Class, failure
         ) { (allocationContext, defSite, _stmts) =>
             possibleTypes ++= getPossibleClasses(
-                allocationContext, defSite, depender, _stmts, project, failure, onlyObjectTypes
+                allocationContext, defSite, depender, _stmts, failure, onlyObjectTypes
             )
         }
 
@@ -215,50 +217,47 @@ object TypesUtil {
      * Returns types provided by a given definition site.
      * Identifies uses of Class constants, class instances returned from Class.forName,
      * by accesses to a primitive type's class as well as from Object.getClass.
-     * Clients MUST handle TWO types of dependencies:
-     * - One where the depender is the given one and the dependee provides allocation sites of Class
-     * objects AND
-     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
-     * and the dependee provides allocation sites of Strings that give class names of such classes
+     * Clients MUST handle dependencies where the depender is the given one and the dependee are
+     * ForNameClasses.
      */
     def getPossibleClasses(
         context:         Context,
         defSite:         Int,
         depender:        Entity,
         stmts:           Array[Stmt[V]],
-        project:         SomeProject,
         failure:         () => Unit,
         onlyObjectTypes: Boolean
     )(
         implicit
-        typeIterator: TypeIterator,
-        state:        TypeIteratorState,
-        ps:           PropertyStore
+        state: TypeIteratorState,
+        ps:    PropertyStore
     ): Set[Type] = {
         var possibleTypes: Set[Type] = Set.empty
 
-        val expr = stmts(defSite).asAssignment.expr
+        val stmt = stmts(defSite).asAssignment
+        val expr = stmt.expr
 
         if (expr.isClassConst) {
             val tpe = expr.asClassConst.value
             if (tpe.isObjectType || !onlyObjectTypes)
                 possibleTypes += tpe
         } else if (isForName(expr)) {
-            val className =
-                if (expr.asFunctionCall.descriptor.parameterTypes.head eq ObjectType.String)
-                    expr.asStaticFunctionCall.params.head.asVar
-                else
-                    expr.asStaticFunctionCall.params(1).asVar
 
-            possibleTypes ++= getPossibleForNameClasses(
-                className,
-                context,
-                (depender, className, stmts),
-                stmts,
-                project,
-                failure,
-                onlyObjectTypes
-            )
+            val forNameClasses = ps((context, stmt.pc), ForNameClasses.key) match {
+                case eps: EPS[_, _] =>
+                    if (eps.isRefinable)
+                        state.addDependency(depender, eps)
+                    eps.ub.classes
+                case epk =>
+                    state.addDependency(depender, epk)
+                    UIDSet.empty
+            }
+
+            if (onlyObjectTypes)
+                possibleTypes ++= forNameClasses.filter(_.isObjectType)
+            else
+                possibleTypes ++= forNameClasses
+
         } else if (isGetClass(expr)) {
             val typesOfVarOpt = getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar)
             if (typesOfVarOpt.isEmpty)
@@ -269,6 +268,9 @@ object TypesUtil {
                 }
         } else if (isBaseTypeLoad(expr) && !onlyObjectTypes) {
             possibleTypes += getBaseType(expr)
+        } else {
+            // TODO Support ClassLoader.loadClass, etc.?
+            failure()
         }
 
         possibleTypes

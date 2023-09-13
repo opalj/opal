@@ -123,13 +123,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
         )
         if (callR.hasValue) {
             val tgtMethod = declaredMethods(callR.value)
-            calleesAndCallers.addCall(
-                callContext,
-                callPC,
-                typeIterator.expandContext(callContext, tgtMethod, callPC),
-                Seq.empty,
-                thisActual
-            )
+            calleesAndCallers.addCall(callContext, callPC, tgtMethod, Seq.empty, thisActual)
         } else {
             calleesAndCallers.addIncompleteCallSite(callPC)
         }

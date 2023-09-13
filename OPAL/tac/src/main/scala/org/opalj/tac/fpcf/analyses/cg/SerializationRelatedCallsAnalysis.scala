@@ -188,8 +188,7 @@ class OOSWriteObjectAnalysis private[analyses] (
                 "writeExternal",
                 WriteExternalDescriptor,
                 parameters,
-                receiver,
-                tgt => typeIterator.expandContext(callContext, tgt, callPC)
+                receiver
             )
         } else {
             val writeObjectMethod = project.specialCall(
@@ -208,8 +207,7 @@ class OOSWriteObjectAnalysis private[analyses] (
                 "writeObject",
                 WriteObjectDescriptor,
                 parameters,
-                receiver,
-                tgt => typeIterator.expandContext(callContext, tgt, callPC)
+                receiver
             )
         }
 
@@ -230,8 +228,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             "writeReplace",
             WriteObjectDescriptor,
             parameters,
-            receiver,
-            tgt => typeIterator.expandContext(callContext, tgt, callPC)
+            receiver
         )
     }
 
@@ -332,18 +329,13 @@ class OISReadObjectAnalysis private[analyses] (
                             "readExternal",
                             ReadExternalDescriptor,
                             parameterList,
-                            receiver,
-                            tgt => typeIterator.expandContext(context, tgt, pc)
+                            receiver
                         )
 
                         // call to no-arg constructor
                         cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c =>
                             calleesAndCallers.addCall(
-                                context,
-                                pc,
-                                typeIterator.expandContext(context, declaredMethods(c), pc),
-                                Seq.empty,
-                                receiver
+                                context, pc, declaredMethods(c), Seq.empty, receiver
                             )
                         }
                     } else {
@@ -359,27 +351,20 @@ class OISReadObjectAnalysis private[analyses] (
                             "readObject",
                             ReadObjectDescriptor,
                             parameterList,
-                            receiver,
-                            tgt => typeIterator.expandContext(context, tgt, pc)
+                            receiver
                         )
 
                         // call to first super no-arg constructor
                         val nonSerializableSuperclass = firstNotSerializableSupertype(t)
                         if (nonSerializableSuperclass.isDefined) {
-                            val constructor =
+                            val ctor =
                                 p.classFile(nonSerializableSuperclass.get).flatMap { cf =>
                                     cf.findMethod("<init>", NoArgsAndReturnVoid)
                                 }
                             // otherwise an exception will thrown at runtime
-                            if (constructor.isDefined) {
+                            if (ctor.isDefined) {
                                 calleesAndCallers.addCall(
-                                    context,
-                                    pc,
-                                    typeIterator.expandContext(
-                                        context, declaredMethods(constructor.get), pc
-                                    ),
-                                    Seq.empty,
-                                    receiver
+                                    context, pc, declaredMethods(ctor.get), Seq.empty, receiver
                                 )
                             }
                         }
@@ -395,16 +380,13 @@ class OISReadObjectAnalysis private[analyses] (
                         }
 
                         if (constructors.nonEmpty) {
-                            val constructor = constructors.minBy(t => t._1)._2
+                            //val constructor = constructors.minBy(t => t._1)._2
+                            val constructor = declaredMethods(
+                                t, t.packageName, t, "<init>", MethodDescriptor.NoArgsAndReturnVoid
+                            )
 
                             calleesAndCallers.addCall(
-                                context,
-                                pc,
-                                typeIterator.expandContext(
-                                    context, declaredMethods(constructor), pc
-                                ),
-                                Seq.empty,
-                                receiver
+                                context, pc, constructor, Seq.empty, receiver
                             )
                         }
                     }
@@ -420,8 +402,7 @@ class OISReadObjectAnalysis private[analyses] (
                         "readResolve",
                         JustReturnsObject,
                         Seq.empty,
-                        receiver,
-                        tgt => typeIterator.expandContext(context, tgt, pc)
+                        receiver
                     )
 
                     // call to `validateObject`
@@ -435,8 +416,7 @@ class OISReadObjectAnalysis private[analyses] (
                             "validateObject",
                             JustReturnsObject,
                             Seq.empty,
-                            receiver,
-                            tgt => typeIterator.expandContext(context, tgt, pc)
+                            receiver
                         )
                     }
                 }

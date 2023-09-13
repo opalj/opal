@@ -47,8 +47,8 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 
     protected val _directAccessedFields: IntMap[IntMap[IntTrieSet]]
     protected val _incompleteAccessSites: IntMap[PCs]
-    protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Caller Context => PC => DefinedFieldId => Receiver
-    protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Caller Context => PC => DefinedFieldId => Parameter
+    protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Access Context => PC => DefinedFieldId => Receiver
+    protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Access Context => PC => DefinedFieldId => Parameter
 
     // TODO access to properties
 
