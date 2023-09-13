@@ -66,7 +66,11 @@ object MatcherUtil {
         varArgs: Expr[V],
         pc:      Int,
         stmts:   Array[Stmt[V]]
-    )(implicit incompleteCallSites: IncompleteCallSites, highSoundness: Boolean): MethodMatcher = {
+    )(
+        implicit
+        incompleteCallSites: IncompleteCallSites,
+        highSoundness:       Boolean
+    ): MethodMatcher = {
         val paramTypesO = VarargsUtil.getTypesFromVararg(varArgs, stmts)
         retrieveSuitableMatcher[FieldTypes](
             paramTypesO,
@@ -109,11 +113,9 @@ object MatcherUtil {
     /**
      * Given an expression that evaluates to a Class<?> object, creates a MethodMatcher to match
      * methods which are defined on the respective class.
-     * Clients MUST handle TWO types of dependencies:
-     * - One where the depender is the given one and the dependee provides allocation sites of Class
-     * objects on which the method in question is defined AND
-     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
-     * and the dependee provides allocation sites of Strings that give class names of such classes
+     * Clients MUST handle TWO dependencies:
+     * - One where the depender is the given one and the dependee are ForNameClasses and
+     * - One where the depender is the given one and the dependee provides allocation sites
      */
     private[reflection] def retrieveClassBasedMethodMatcher(
         context:                   Context,
@@ -135,7 +137,7 @@ object MatcherUtil {
         highSoundness:       Boolean
     ): MethodMatcher = {
         val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, project, failure, onlyObjectTypes
+            context, ref, depender, stmts, failure, onlyObjectTypes
         ).flatMap { tpe =>
             if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
             else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)

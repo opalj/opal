@@ -31,4 +31,3 @@
 
 // 7 ->
 8:/*pc=37:*/ return {lv7}
-// ⚡️ <uncaught exception => abnormal return>
