@@ -22,8 +22,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DefinedFields
-import org.opalj.br.analyses.DefinedFieldsKey
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.DoubleType
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.MethodDescriptor
@@ -85,7 +85,7 @@ private[reflection] class ReflectionState[ContextType <: Context](
 
 sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 
-    implicit val definedFields: DefinedFields = project.get(DefinedFieldsKey)
+    implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     implicit final val HighSoundnessMode: Boolean = {
         val activated = try {
@@ -117,7 +117,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
             indirectFieldAccesses.addFieldRead(
                 accessContext,
                 accessPC,
-                definedFields(f),
+                declaredFields(f),
                 actualReceiver(f)
             )
         }
@@ -134,7 +134,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
             indirectFieldAccesses.addFieldWrite(
                 accessContext,
                 accessPC,
-                definedFields(f),
+                declaredFields(f),
                 actualReceiver(f),
                 actualParam(f)
             )
