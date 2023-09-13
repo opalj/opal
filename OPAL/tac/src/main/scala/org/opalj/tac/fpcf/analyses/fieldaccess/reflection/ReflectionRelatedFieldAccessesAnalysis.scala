@@ -389,7 +389,7 @@ class FieldGetAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) =>
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () => failure(data.pc, data.receiver, data.matchers),
+                    stmts, () => failure(data.pc, data.receiver, data.matchers),
                     onlyObjectTypes = false
                 )
 
@@ -410,7 +410,8 @@ class FieldGetAnalysis private[analyses] (
             _.isInstanceOf[(_, _)], data => failure(data._1.pc, data._1.receiver, data._1.matchers)
         ) { (data, _, allocationIndex, stmts) =>
                 val classOpt = TypesUtil.getPossibleForNameClass(
-                    allocationIndex, stmts, project, onlyObjectTypes = false
+                    allocationIndex, stmts, project,
+                    () => failure(data._1.pc, data._1.receiver, data._1.matchers), onlyObjectTypes = false
                 )
 
                 val matchers = data._1.matchers +
@@ -648,7 +649,7 @@ class FieldSetAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) =>
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () => failure(data.pc, data.matchers, data.receiver, data.param),
+                    stmts, () => failure(data.pc, data.matchers, data.receiver, data.param),
                     onlyObjectTypes = false
                 )
 
@@ -669,7 +670,8 @@ class FieldSetAnalysis private[analyses] (
             _.isInstanceOf[(_, _)], data => failure(data._1.pc, data._1.matchers, data._1.receiver, data._1.param)
         ) { (data, _, allocationIndex, stmts) =>
                 val classOpt = TypesUtil.getPossibleForNameClass(
-                    allocationIndex, stmts, project, onlyObjectTypes = false
+                    allocationIndex, stmts, project,
+                    () => failure(data._1.pc, data._1.matchers, data._1.receiver, data._1.param), onlyObjectTypes = false
                 )
 
                 val matchers = data._1.matchers +
@@ -716,7 +718,7 @@ class FieldSetAnalysis private[analyses] (
             MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
                 fieldType,
                 new TypeBasedFieldMatcher(_)
-            )
+            ) // TODO switch
         )
 
         val persistentReceiver = fieldSetReceiver.flatMap(persistentUVar(_)(stmts))
@@ -914,7 +916,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         ) { (data, allocationContext, allocationIndex, stmts) =>
                 val classes = TypesUtil.getPossibleClasses(
                     allocationContext, allocationIndex, data,
-                    stmts, project, () => failure(data.pc, data.persistentActualParams, data.matchers),
+                    stmts, () => failure(data.pc, data.persistentActualParams, data.matchers),
                     onlyObjectTypes = false
                 ).flatMap { tpe =>
                     if (data.isStatic) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
@@ -936,11 +938,12 @@ class MethodHandleInvokeAnalysis private[analyses] (
             _.isInstanceOf[(_, _, _)], data => failure(data._1.pc, data._1.persistentActualParams, data._1.matchers)
         ) { (data, _, allocationIndex, stmts) =>
                 val classOpt = TypesUtil.getPossibleForNameClass(
-                    allocationIndex, stmts, project, onlyObjectTypes = false
+                    allocationIndex, stmts, project,
+                    () => failure(data._1.pc, data._1.persistentActualParams, data._1.matchers), onlyObjectTypes = false
                 ).map { tpe =>
-                    if (!data._1.isStatic) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
-                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
-                }
+                        if (!data._1.isStatic) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
+                        else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+                    }
 
                 val matchers = data._1.matchers +
                     retrieveSuitableMatcher[Set[ObjectType]](

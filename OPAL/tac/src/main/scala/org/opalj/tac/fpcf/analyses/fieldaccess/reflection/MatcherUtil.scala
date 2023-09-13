@@ -114,7 +114,7 @@ object MatcherUtil {
         incompleteFieldAccesses: IncompleteFieldAccesses
     ): FieldMatcher = {
         val typesOpt = Some(TypesUtil.getPossibleClasses(
-            context, ref, depender, stmts, project, failure, onlyObjectTypes
+            context, ref, depender, stmts, failure, onlyObjectTypes
         ).flatMap { tpe =>
             if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
             else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
