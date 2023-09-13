@@ -3,9 +3,9 @@ package org.opalj
 package br
 package analyses
 
-object DefinedFieldsKey extends ProjectInformationKey[DefinedFields, Nothing] {
+object DeclaredFieldsKey extends ProjectInformationKey[DeclaredFields, Nothing] {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq.empty
 
-    override def compute(p: SomeProject): DefinedFields = new DefinedFields()
+    override def compute(p: SomeProject): DeclaredFields = new DeclaredFields()
 }

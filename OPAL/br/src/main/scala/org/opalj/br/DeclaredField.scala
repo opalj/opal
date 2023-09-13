@@ -36,6 +36,25 @@ sealed abstract class DeclaredField {
 }
 
 /**
+ * Represents a field belonging to the API of the specified class type, where the original
+ * field definition is not available (in the context of the current analysis).
+ */
+final class VirtualDeclaredField private[br] (
+        override val declaringClassType: ObjectType,
+        override val name:               String,
+        override val fieldType:          FieldType,
+        override val id:                 Int
+) extends DeclaredField {
+
+    override def definedField: Field = throw new UnsupportedOperationException();
+    override def asDefinedField: DefinedField = throw new ClassCastException();
+
+    override def toString: String = {
+        s"VirtualDeclaredField(${declaringClassType.toJava},$name,$fieldType)"
+    }
+}
+
+/**
  * Represents a defined field; i.e., a field which belongs to the (public and private) API of a class along with its
  * original reference.
  */
