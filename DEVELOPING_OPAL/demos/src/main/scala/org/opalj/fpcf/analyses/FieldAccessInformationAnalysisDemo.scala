@@ -4,7 +4,6 @@ package fpcf
 package analyses
 
 import org.opalj.br.Field
-import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -81,7 +80,6 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         val totalIncompleteAccessSiteCount = propertyStore
             .entities(MethodFieldReadAccessInformation.key)
-            .filter(ep => project.allMethodsWithBody.contains(ep.e.asInstanceOf[Method]))
             .map(_.asFinal.p.numIncompleteAccessSites)
             .sum
 
