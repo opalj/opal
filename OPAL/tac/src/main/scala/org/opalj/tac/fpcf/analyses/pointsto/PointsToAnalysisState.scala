@@ -23,8 +23,8 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.tac.fpcf.properties.cg.NoCallees
 import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldAccessInformation
@@ -47,25 +47,22 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] val getFields: ArrayBuffer[(Entity, Option[Field], ReferenceType => Boolean)] =
-        ArrayBuffer.empty
-    private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[Field])] = ArrayBuffer.empty
+    private[this] val getFields: ArrayBuffer[(Entity, Option[DeclaredField], ReferenceType => Boolean)] = ArrayBuffer.empty
+    private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[DeclaredField])] = ArrayBuffer.empty
 
-    def addGetFieldEntity(fakeEntity: (Entity, Option[Field], ReferenceType => Boolean)): Unit = {
+    def addGetFieldEntity(fakeEntity: (Entity, Option[DeclaredField], ReferenceType => Boolean)): Unit = {
         getFields += fakeEntity
     }
 
-    def getFieldsIterator: Iterator[(Entity, Option[Field], ReferenceType => Boolean)] =
-        getFields.iterator
+    def getFieldsIterator: Iterator[(Entity, Option[DeclaredField], ReferenceType => Boolean)] = getFields.iterator
 
-    def addPutFieldEntity(fakeEntity: (IntTrieSet, Option[Field])): Unit = {
+    def addPutFieldEntity(fakeEntity: (IntTrieSet, Option[DeclaredField])): Unit = {
         putFields += fakeEntity
     }
 
-    def putFieldsIterator: Iterator[(IntTrieSet, Option[Field])] = putFields.iterator
+    def putFieldsIterator: Iterator[(IntTrieSet, Option[DeclaredField])] = putFields.iterator
 
-    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType => Boolean)] =
-        ArrayBuffer.empty
+    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType => Boolean)] = ArrayBuffer.empty
     private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
 
     def addArrayLoadEntity(
