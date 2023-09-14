@@ -3,7 +3,10 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Field
+import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -16,6 +19,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -27,6 +31,10 @@ import java.net.URL
  * @author Maximilian Rüsch
  */
 object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
+
+    private val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
+      "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
+      "org/xml/sax")
 
     override def title: String = "Determines read and write accesses to fields"
 
@@ -42,6 +50,12 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
+        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               => Set(domain)
+            case Some(requirements) => requirements + domain
+        }
+
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -50,6 +64,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         time {
             propertyStore = analysesManager
                 .runAll(
+                    AllocationSiteBasedPointsToAnalysisScheduler,
                     EagerFieldAccessInformationAnalysis,
                     ReflectionRelatedFieldAccessesAnalysisScheduler
                 )
@@ -59,19 +74,20 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             analysisTime = t.toSeconds
         }
 
-        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap {
-            _.fields
-        }.toSet
+        val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
+            !JDKPackages.exists(cf.thisType.packageName.startsWith)
+        }
+        val fields = projectClassFiles.flatMap { _.fields }.toSet
 
         val readFields = propertyStore
             .entities(FieldReadAccessInformation.key)
-            .filter(ep => allFieldsInProjectClassFiles.contains(ep.e.asInstanceOf[Field])
+            .filter(ep => fields.contains(ep.e.asInstanceOf[Field])
                 && ep.asFinal.p != NoFieldReadAccessInformation)
             .map(_.e)
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
-            .filter(ep => allFieldsInProjectClassFiles.contains(ep.e.asInstanceOf[Field])
+            .filter(ep => fields.contains(ep.e.asInstanceOf[Field])
                 && ep.asFinal.p != NoFieldWriteAccessInformation)
             .map(_.e)
             .toSet
@@ -82,19 +98,20 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         val totalIncompleteAccessSiteCount = propertyStore
             .entities(MethodFieldReadAccessInformation.key)
+            .filter(ai => projectClassFiles.contains(ai.e.asInstanceOf[Method].classFile))
             .map(_.asFinal.p.numIncompleteAccessSites)
             .sum
 
         s"""
            |
-           | Not Accessed Fields: ${project.projectFieldsCount - purelyReadFields.size - purelyWrittenFields.size - readAndWrittenFields.size}
+           | Not Accessed Fields: ${fields.size - purelyReadFields.size - purelyWrittenFields.size - readAndWrittenFields.size}
            | Purely Read Fields : ${purelyReadFields.size}
            | Purely Written Fields: ${purelyWrittenFields.size}
            | Read And Written Fields: ${readAndWrittenFields.size}
            |
            | Access Sites with missing information: $totalIncompleteAccessSiteCount
            |
-           | total Fields: ${project.projectFieldsCount}
+           | total Fields: ${fields.size}
            | took : $analysisTime seconds
            |""".stripMargin
     }

@@ -158,20 +158,18 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 )
 
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handleGetField(fieldOpt, pc, objRefDefSites)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
+                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
+                    case Some(field) => declaredFields(field)
+                    case None => declaredFields(declaringClass, name, fieldType)
                 }
+                handleGetField(Some(declaredField), pc, objRefDefSites)
 
             case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handleGetStatic(fieldOpt.get, pc)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
+                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
+                    case Some(field) => declaredFields(field)
+                    case None => declaredFields(declaringClass, name, fieldType)
                 }
+                handleGetStatic(declaredField, pc)
 
             case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) =>
                 val arrayType = av.theUpperTypeBound
@@ -240,21 +238,19 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
                 handleIndirectFieldAccesses(pc)
 
-            case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handlePutField(fieldOpt, objRefDefSites, defSites)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
+            case PutField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
+                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
+                  case Some(field) => declaredFields(field)
+                  case None => declaredFields(declaringClass, name, fieldType)
                 }
+                handlePutField(Some(declaredField), objRefDefSites, defSites)
 
-            case PutStatic(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handlePutStatic(fieldOpt.get, defSites)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
+            case PutStatic(_, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
+                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
+                  case Some(field) => declaredFields(field)
+                  case None => declaredFields(declaringClass, name, fieldType)
                 }
+                handlePutStatic(declaredField, defSites)
 
             case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) =>
                 val arrayType = av.theUpperTypeBound
@@ -505,13 +501,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         val receiverOpt = readAccesses.indirectAccessReceiver(state.callContext, pc, target)
         if (receiverOpt.isDefined && !target.definedField.isStatic) { // TODO other declared field types?
             handleGetField(
-                Some(target.definedField),
+                Some(target),
                 pc,
                 valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
             )
         } else {
             // TODO distinguish between static fields and unavailable info
-            handleGetStatic(target.definedField, pc)
+            handleGetStatic(target, pc)
         }
     }
 
@@ -535,13 +531,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         val receiverOpt = writeAccesses.indirectAccessReceiver(state.callContext, pc, target)
         if (receiverOpt.isDefined && !target.definedField.isStatic) { // TODO other declared field types?
             handlePutField(
-                Some(target.definedField),
+                Some(target),
                 valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
                 rhsDefSites
             )
         } else {
             // TODO distinguish between static fields and unavailable info
-            handlePutStatic(target.definedField, rhsDefSites)
+            handlePutStatic(target, rhsDefSites)
         }
     }
 
