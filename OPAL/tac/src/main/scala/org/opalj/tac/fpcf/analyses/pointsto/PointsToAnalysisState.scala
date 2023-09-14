@@ -7,7 +7,6 @@ package pointsto
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
@@ -28,6 +27,12 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
+import org.opalj.fpcf.PropertyKey
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -205,6 +210,64 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     def calleesDependee: EOptionP[DeclaredMethod, Callees] = _calleesDependee.get
+
+    private[this] def accesses[P <: MethodFieldAccessInformation[P]](
+        ps:                 PropertyStore,
+        dependee:           Option[EOptionP[Method, P]],
+        setDependee:        EOptionP[Method, P] => Unit,
+        key:                PropertyKey[P],
+        noAccessesProperty: P
+    ): P = {
+        val accessesProperty = if (dependee.isDefined) {
+            dependee.get
+        } else {
+            val writeAccessesProperty = ps(callContext.method.asDefinedMethod.definedMethod, key)
+            setDependee(writeAccessesProperty)
+            writeAccessesProperty
+        }
+
+        if (accessesProperty.isEPK) noAccessesProperty
+        else accessesProperty.ub
+    }
+
+    private[this] var _readAccessesDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = None
+    private[this] var _writeAccessesDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = None
+
+    def readAccesses(ps: PropertyStore): MethodFieldReadAccessInformation = accesses(
+        ps,
+        _readAccessesDependee,
+        setReadAccessDependee,
+        MethodFieldReadAccessInformation.key,
+        NoMethodFieldReadAccessInformation,
+    )
+
+    def hasReadAccessDependee: Boolean = {
+        _readAccessesDependee.nonEmpty && _readAccessesDependee.get.isRefinable
+    }
+
+    def setReadAccessDependee(dependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit = {
+        _readAccessesDependee = Some(dependee)
+    }
+
+    def readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation] = _readAccessesDependee.get
+
+    def writeAccesses(ps: PropertyStore): MethodFieldWriteAccessInformation = accesses(
+        ps,
+        _writeAccessesDependee,
+        setWriteAccessDependee,
+        MethodFieldWriteAccessInformation.key,
+        NoMethodFieldWriteAccessInformation,
+    )
+
+    def hasWriteAccessDependee: Boolean = {
+        _writeAccessesDependee.nonEmpty && _writeAccessesDependee.get.isRefinable
+    }
+
+    def setWriteAccessDependee(dependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit = {
+        _writeAccessesDependee = Some(dependee)
+    }
+
+    def writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation] = _writeAccessesDependee.get
 
     override def hasOpenDependencies: Boolean = {
         hasCalleesDepenedee || super.hasOpenDependencies

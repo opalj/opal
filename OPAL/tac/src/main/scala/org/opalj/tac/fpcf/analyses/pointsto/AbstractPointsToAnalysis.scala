@@ -6,7 +6,6 @@ package analyses
 package pointsto
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
@@ -37,6 +36,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredField
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -45,7 +45,14 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
+import org.opalj.fpcf.PropertyKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -202,6 +209,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     )
                 }
                 handleCall(call, pc)
+                handleIndirectFieldAccesses(pc)
 
             case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) =>
                 state.addIncompletePointsToInfo(pc)
@@ -226,9 +234,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
             case call: Call[_] =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], call.pc)
+                handleIndirectFieldAccesses(call.pc)
 
             case ExprStmt(pc, call: Call[_]) =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
+                handleIndirectFieldAccesses(pc)
 
             case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
@@ -471,6 +481,70 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
+    private[this] def handleIndirectFieldAccesses(pc: Int)(implicit state: State): Unit = {
+        val tac = state.tac
+        val readAccesses = state.readAccesses(ps)
+        val writeAccesses = state.writeAccesses(ps)
+
+        for (target <- readAccesses.indirectAccessedFields(state.callContext, pc)) {
+            handleIndirectFieldReadAccess(pc, target, readAccesses, tac)
+        }
+
+        for (target <- writeAccesses.indirectAccessedFields(state.callContext, pc)) {
+            handleIndirectFieldWriteAccess(pc, target, writeAccesses, tac)
+        }
+    }
+
+    private def handleIndirectFieldReadAccess(
+        pc:           Int,
+        target:       DeclaredField,
+        readAccesses: MethodFieldReadAccessInformation,
+        tac:          TACode[TACMethodParameter, DUVar[ValueInformation]]
+    )(implicit state: State): Unit = {
+        // handle receiver for non static fields
+        val receiverOpt = readAccesses.indirectAccessReceiver(state.callContext, pc, target)
+        if (receiverOpt.isDefined && !target.definedField.isStatic) { // TODO other declared field types?
+            handleGetField(
+                Some(target.definedField),
+                pc,
+                valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
+            )
+        } else {
+            // TODO distinguish between static fields and unavailable info
+            handleGetStatic(target.definedField, pc)
+        }
+    }
+
+    private def handleIndirectFieldWriteAccess(
+        pc:            Int,
+        target:        DeclaredField,
+        writeAccesses: MethodFieldWriteAccessInformation,
+        tac:           TACode[TACMethodParameter, DUVar[ValueInformation]]
+    )(implicit state: State): Unit = {
+        val indirectParam = writeAccesses.indirectAccessParameter(state.callContext, pc, target)
+        val rhsDefSites = if (target.fieldType.isReferenceType) {
+            if (indirectParam.isDefined) {
+                valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+            } else {
+                state.addIncompletePointsToInfo(pc)
+                IntTrieSet.empty
+            }
+        } else IntTrieSet.empty
+
+        // handle receiver for non static fields
+        val receiverOpt = writeAccesses.indirectAccessReceiver(state.callContext, pc, target)
+        if (receiverOpt.isDefined && !target.definedField.isStatic) { // TODO other declared field types?
+            handlePutField(
+                Some(target.definedField),
+                valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
+                rhsDefSites
+            )
+        } else {
+            // TODO distinguish between static fields and unavailable info
+            handlePutStatic(target.definedField, rhsDefSites)
+        }
+    }
+
     override protected[this] def createResults(
         implicit
         state: State
@@ -486,6 +560,36 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
                         state.callContext, state.tacDependee
                     )
+                )
+            )
+        }
+
+        if (state.hasReadAccessDependee) {
+            val readAccessDependee = state.readAccessDependee
+            results += InterimPartialResult(
+                Set(readAccessDependee),
+                continuationForFieldAccesses[MethodFieldReadAccessInformation](
+                    readAccessDependee,
+                    NoMethodFieldReadAccessInformation,
+                    MethodFieldReadAccessInformation.key,
+                    (pc, target, newAccesses, tac, state) => handleIndirectFieldReadAccess(pc, target, newAccesses, tac)(state),
+                    newDependee => state.setReadAccessDependee(newDependee),
+                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
+                )
+            )
+        }
+
+        if (state.hasWriteAccessDependee) {
+            val writeAccessDependee = state.writeAccessDependee
+            results += InterimPartialResult(
+                Set(writeAccessDependee),
+                continuationForFieldAccesses[MethodFieldWriteAccessInformation](
+                    writeAccessDependee,
+                    NoMethodFieldWriteAccessInformation,
+                    MethodFieldWriteAccessInformation.key,
+                    (pc, target, newAccesses, tac, state) => handleIndirectFieldWriteAccess(pc, target, newAccesses, tac)(state),
+                    newDependee => state.setWriteAccessDependee(newDependee),
+                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
                 )
             )
         }
@@ -547,7 +651,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    def continuationForCallees(
+    private def continuationForCallees(
         oldCalleeEOptP: EOptionP[DeclaredMethod, Callees],
         state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -583,6 +687,41 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 }
 
                 state.setCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
+
+                Results(createResults(state))
+            case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
+        }
+    }
+
+    private def continuationForFieldAccesses[P <: MethodFieldAccessInformation[P]](
+        oldAccessEOptP:            EOptionP[Method, P],
+        noAccesses:                P,
+        key:                       PropertyKey[P],
+        handleIndirectFieldAccess: (PC, DeclaredField, P, TACode[TACMethodParameter, DUVar[ValueInformation]], State) => Unit,
+        setDependee:               EOptionP[Method, P] => Unit,
+        state:                     State
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps.pk match {
+            case `key` =>
+                val newAccesses = if (eps.hasUBP) eps.ub.asInstanceOf[P] else noAccesses
+                val oldAccesses = if (oldAccessEOptP.hasUBP) oldAccessEOptP.ub else noAccesses
+
+                val tac = state.tac
+                for {
+                    pc <- newAccesses.getNewestNIndirectAccessSites(
+                        state.callContext,
+                        newAccesses.numIndirectAccessSites(state.callContext) - oldAccesses.numIndirectAccessSites(state.callContext)
+                    )
+                    target <- newAccesses.getNewestNIndirectAccessedFields(
+                        state.callContext,
+                        pc,
+                        newAccesses.numIndirectAccesses(state.callContext, pc) - oldAccesses.numIndirectAccesses(state.callContext, pc)
+                    )
+                } {
+                    handleIndirectFieldAccess(pc, target, newAccesses, tac, state)
+                }
+
+                setDependee(eps.asInstanceOf[EPS[Method, P]])
 
                 Results(createResults(state))
             case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
