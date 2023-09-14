@@ -172,7 +172,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         }
     }
 
-    protected[this] def handleGetField(
+    protected[this] def handleGetField( // TODO rebuild for declared fields
         fieldOpt: Option[Field], pc: Int, objRefDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
@@ -201,7 +201,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def handleGetStatic(
-        field: Field, pc: Int, checkForCast: Boolean = true
+        field: Field, pc: Int, checkForCast: Boolean = true // TODO what is this checkForCast?
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
         val defSiteObject = getDefSite(pc)
