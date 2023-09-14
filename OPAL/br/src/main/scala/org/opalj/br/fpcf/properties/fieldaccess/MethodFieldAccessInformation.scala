@@ -5,6 +5,7 @@ package fpcf
 package properties
 package fieldaccess
 
+import org.opalj.br.analyses.DeclaredFields
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -45,23 +46,68 @@ sealed trait MethodFieldAccessInformationPropertyMetaInformation[S <: MethodFiel
 sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] extends OrderedProperty
     with MethodFieldAccessInformationPropertyMetaInformation[S] {
 
-    protected val _directAccessedFields: IntMap[IntMap[IntTrieSet]]
-    protected val _incompleteAccessSites: IntMap[PCs]
+    protected val _directAccessedFields: IntMap[IntMap[IntTrieSet]] // Access Context => PC => DefinedFieldIds
+    protected val _incompleteAccessSites: IntMap[PCs] // Access Context => PCs
     protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Access Context => PC => DefinedFieldId => Receiver
     protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Access Context => PC => DefinedFieldId => Parameter
 
-    // TODO access to properties
+    def directAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        val directAccessedFields = _directAccessedFields.get(accessContext.id).flatMap(_.get(pc)).getOrElse(IntTrieSet.empty)
+        directAccessedFields.iterator.map(declaredFields.apply)
+    }
 
-    def numAccesses: Int = numDirectAccesses + numIndirectAccesses
+    def indirectAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        val indirectAccessedFields = _indirectAccessedReceiversByField.get(accessContext.id).flatMap(_.get(pc)).getOrElse(IntMap.empty).keysIterator
+        indirectAccessedFields.map(declaredFields.apply)
+    }
+
+    def getNewestNIndirectAccessSites(accessContext: Context, n: Int): Iterator[PC] = {
+        _indirectAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator.take(n)
+    }
+
+    def getNewestNIndirectAccessedFields(
+        accessContext: Context,
+        pc:            PC,
+        n:             Int
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        val indirectAccessedFields = _indirectAccessedReceiversByField.get(accessContext.id).flatMap(_.get(pc)).getOrElse(IntMap.empty).keysIterator
+        indirectAccessedFields.take(n).map(declaredFields.apply)
+    }
+
+    def indirectAccessReceiver(
+        accessContext: Context, pc: PC, field: DeclaredField
+    ): AccessReceiver = {
+        _indirectAccessedReceiversByField(accessContext.id)(pc)(field.id)
+    }
+
+    def indirectAccessParameter(
+        accessContext: Context,
+        pc:            PC,
+        field:         DeclaredField
+    ): AccessParameter = {
+        _indirectAccessedParametersByField(accessContext.id)(pc)(field.id)
+    }
 
     def numDirectAccesses: Int = _directAccessedFields.size
 
-    def numIndirectAccesses: Int = _indirectAccessedReceiversByField.valuesIterator.map { _.size }.sum
+    private def numIndirectAccessesInAllAccessSites: Int =
+        _indirectAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
+
+    def numIndirectAccessSites(accessContext: Context): Int = _indirectAccessedReceiversByField(accessContext.id).size
+
+    def numIndirectAccesses(accessContext: Context, pc: PC): Int = _indirectAccessedReceiversByField(accessContext.id)(pc).size
 
     def numIncompleteAccessSites: Int = _incompleteAccessSites.valuesIterator.map { _.size }.sum
 
     def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (numDirectAccesses > other.numDirectAccesses || numIndirectAccesses > other.numIndirectAccesses) {
+        if (numDirectAccesses > other.numDirectAccesses ||
+            numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
         }
     }
@@ -116,6 +162,7 @@ case class MethodFieldReadAccessInformation(
 ) extends MethodFieldAccessInformation[MethodFieldReadAccessInformation] with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
 
     protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] = IntMap.empty
+    override def indirectAccessParameter(accessContext: Context, pc: PC, field: DeclaredField): AccessParameter = None
 
     final def key: PropertyKey[MethodFieldReadAccessInformation] = MethodFieldReadAccessInformation.key
 
