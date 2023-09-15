@@ -431,7 +431,7 @@ class FieldGetAnalysis private[analyses] (
     }
 
     private[this] def handleFieldRead(
-        callContext:       ContextType,
+        accessContext:     ContextType,
         accessPC:          Int,
         fieldVar:          V,
         fieldGetParameter: Option[Expr[V]],
@@ -455,7 +455,7 @@ class FieldGetAnalysis private[analyses] (
         val depender = FieldDepender(accessPC, persistentReceiver, baseMatchers)
 
         AllocationsUtil.handleAllocations(
-            fieldVar, callContext, depender, state.tac.stmts, _ eq ObjectType.Field,
+            fieldVar, accessContext, depender, state.tac.stmts, _ eq ObjectType.Field,
             () => failure(accessPC, persistentReceiver, baseMatchers)
         ) { (allocationContext, allocationIndex, stmts) =>
                 val allMatchers = handleGetField(
@@ -464,7 +464,7 @@ class FieldGetAnalysis private[analyses] (
                     baseMatchers, stmts
                 )
                 addFieldRead(
-                    callContext, accessPC,
+                    accessContext, accessPC,
                     _ => persistentReceiver,
                     allMatchers
                 )
@@ -691,7 +691,7 @@ class FieldSetAnalysis private[analyses] (
     }
 
     private[this] def handleFieldWrite(
-        callContext:        ContextType,
+        accessContext:      ContextType,
         accessPC:           Int,
         fieldVar:           V,
         fieldSetParameters: Seq[Option[Expr[V]]],
@@ -726,7 +726,7 @@ class FieldSetAnalysis private[analyses] (
         val depender = FieldDepender(accessPC, persistentReceiver, persistentActualParam, baseMatchers)
 
         AllocationsUtil.handleAllocations(
-            fieldVar, callContext, depender, state.tac.stmts, _ eq ObjectType.Field,
+            fieldVar, accessContext, depender, state.tac.stmts, _ eq ObjectType.Field,
             () => failure(accessPC, baseMatchers, persistentReceiver, persistentActualParam)
         ) { (allocationContext, allocationIndex, stmts) =>
                 val allMatchers = handleGetField(
@@ -735,7 +735,7 @@ class FieldSetAnalysis private[analyses] (
                     baseMatchers, stmts
                 )
                 addFieldWrite(
-                    callContext, accessPC,
+                    accessContext, accessPC,
                     _ => persistentReceiver,
                     _ => persistentActualParam,
                     allMatchers
