@@ -98,12 +98,23 @@ package object cg {
         case (pType: ReferenceType, v: IsReferenceValue) =>
             v.isValueASubtypeOf(pType).isNotNo
 
+        // boolean values will be encoded as integer values in bytecode
         case (_: BooleanType, IsPrimitiveValue(v)) =>
-            v eq BooleanType
+            (v eq BooleanType) || (v eq IntegerType)
 
-        // declared type and actual type are base types and the same type
+        // declared type and actual type are base types and either:
         case (pType: NumericType, IsPrimitiveValue(v)) =>
-            (v eq pType) || v.isNumericType && pType.asNumericType.isWiderThan(v.asNumericType)
+            // - the same type
+            (v eq pType) ||
+              // - both numeric types and the declared type can represent the value
+              (v.isNumericType && pType.asNumericType.isWiderThan(v.asNumericType)) ||
+              // - special cases introduced by the JVM or choice of the AI domain (e.g. everything is an integer value)
+              ((pType eq ByteType) && (v eq IntegerType)) ||
+              ((pType eq CharType) && (v eq ByteType)) ||
+              ((pType eq CharType) && (v eq IntegerType)) ||
+              ((pType eq ShortType) && (v eq ByteType)) ||
+              ((pType eq ShortType) && (v eq IntegerType))
+
 
         // the actual type is null and the declared type is a base type
         case (_: BaseType, _: IsNullValue) =>

@@ -6,20 +6,13 @@ package analyses
 package fieldaccess
 package reflection
 
-import org.opalj.br.BaseType
-import org.opalj.br.CTIntType
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
 import org.opalj.br.FieldType
-import org.opalj.br.IntLikeType
-import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.analyses.cg.V
-import org.opalj.value.IsIntegerLikeValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsPrimitiveValue
+import org.opalj.tac.fpcf.analyses.cg.isTypeCompatible
 import org.opalj.value.IsReferenceValue
 
 import scala.collection.immutable.ArraySeq
@@ -88,47 +81,8 @@ class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher 
     override def initialFields(implicit p: SomeProject): Iterator[Field] =
         p.allClassFiles.iterator.flatMap { _.fields.filter(contains) }
 
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = {
-        implicit val ch: ClassHierarchy = p.classHierarchy
-
-        (f.fieldType, actualParam.value) match {
-            // the actual type is null and the declared type is a ref type
-            case (_: ReferenceType, _: IsNullValue) =>
-                true
-
-            // declared type and actual type are reference types and assignable
-            case (pType: ReferenceType, v: IsReferenceValue) =>
-                v.isValueASubtypeOf(pType).isYesOrUnknown
-
-            // both declared type and actual type are integer like
-            // IMPROVE: This can be removed when AI is powerful enough to find out the intended types of integer like values
-            case (_: CTIntType, _: IsIntegerLikeValue[_]) =>
-                true
-
-            // declared type and actual type are base types and the same type
-            case (pType: BaseType, v: IsPrimitiveValue[_]) =>
-                v.primitiveType eq pType
-
-            // the actual type is null and the declared type is a base type
-            case (_: BaseType, _: IsNullValue) =>
-                false
-
-            // declared type is base type, actual type might be a boxed value
-            case (pType: BaseType, v: IsReferenceValue) => // TODO this for int like special case
-                v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
-
-            // actual type is base type, declared type might be a boxed type
-            case (pType: ObjectType, _: IsIntegerLikeValue[_]) =>
-                pType.isPrimitiveTypeWrapper && ObjectType.primitiveType(pType).get.isInstanceOf[IntLikeType]
-
-            // actual type is base type, declared type might be a boxed type
-            case (pType: ObjectType, v: IsPrimitiveValue[_]) =>
-                pType.isPrimitiveTypeWrapperOf(v.primitiveType)
-
-            case _ =>
-                false
-        }
-    }
+    override def contains(f: Field)(implicit p: SomeProject): Boolean =
+        isTypeCompatible(f.fieldType, actualParam.value)(p.classHierarchy)
 
     override def priority: Int = 3
 }
@@ -147,11 +101,6 @@ object StaticFieldMatcher extends PropertyBasedFieldMatcher {
 object NonStaticFieldMatcher extends PropertyBasedFieldMatcher {
 
     override def contains(f: Field)(implicit p: SomeProject): Boolean = !f.isStatic
-}
-
-object PrivateFieldMatcher extends PropertyBasedFieldMatcher {
-
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.isPrivate
 }
 
 object PublicFieldMatcher extends PropertyBasedFieldMatcher {
