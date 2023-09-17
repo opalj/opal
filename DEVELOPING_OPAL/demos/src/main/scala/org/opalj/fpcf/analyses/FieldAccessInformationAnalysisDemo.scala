@@ -26,7 +26,7 @@ import org.opalj.util.Seconds
 import java.net.URL
 
 /**
- * Runs the EagerFieldAccessInformationAnalysis.
+ * Runs several analysis to calculate direct and indirect field accesses.
  *
  * @author Maximilian Rüsch
  */
@@ -83,18 +83,19 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .entities(FieldReadAccessInformation.key)
             .filter(ep => fields.contains(ep.e.asInstanceOf[Field])
                 && ep.asFinal.p != NoFieldReadAccessInformation)
-            .map(_.e)
+            .map(_.e.asInstanceOf[Field])
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
             .filter(ep => fields.contains(ep.e.asInstanceOf[Field])
                 && ep.asFinal.p != NoFieldWriteAccessInformation)
-            .map(_.e)
+            .map(_.e.asInstanceOf[Field])
             .toSet
 
         val readAndWrittenFields = readFields intersect writtenFields
         val purelyReadFields = readFields diff readAndWrittenFields
         val purelyWrittenFields = writtenFields diff readAndWrittenFields
+        val notAccessedFields = fields diff readFields diff writtenFields
 
         val totalIncompleteAccessSiteCount = propertyStore
             .entities(MethodFieldReadAccessInformation.key)
@@ -102,12 +103,16 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .map(_.asFinal.p.numIncompleteAccessSites)
             .sum
 
+        def getFieldsList(fields: Set[Field]): String = {
+            fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
+        }
+
         s"""
            |
-           | Not Accessed Fields: ${fields.size - purelyReadFields.size - purelyWrittenFields.size - readAndWrittenFields.size}
-           | Purely Read Fields : ${purelyReadFields.size}
-           | Purely Written Fields: ${purelyWrittenFields.size}
-           | Read And Written Fields: ${readAndWrittenFields.size}
+           | Not Accessed Fields: ${notAccessedFields.size} ${getFieldsList(notAccessedFields)}
+           | Purely Read Fields : ${purelyReadFields.size} ${getFieldsList(purelyReadFields)}
+           | Purely Written Fields: ${purelyWrittenFields.size} ${getFieldsList(purelyWrittenFields)}
+           | Read And Written Fields: ${readAndWrittenFields.size} ${getFieldsList(readAndWrittenFields)}
            |
            | Access Sites with missing information: $totalIncompleteAccessSiteCount
            |
