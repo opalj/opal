@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package xl
-package common
+package utility
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
