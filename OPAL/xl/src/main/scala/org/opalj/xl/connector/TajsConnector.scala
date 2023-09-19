@@ -51,14 +51,14 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
     val PROTOCOL_NAME = "tajs-host-env"
 
     case class TajsConnectorState(
-                                     scriptEngineInstance: ScriptEngineInstance[AllocationSite],
-                                     project: SomeProject,
-                                     var code: List[String] = List.empty, //for debugging purposes
-                                     var files: List[File] = null,
-                                     var javaScriptInteraction: CrossLanguageInteraction = null,
-                                     var connectorDependees: Set[EOptionP[Entity, Property]] = Set.empty,
-                                     var presetValues: Map[PKey.StringPKey, Value] = Map.empty,
-                             ) extends BaseAnalysisState with TypeIteratorState
+            scriptEngineInstance:      ScriptEngineInstance[AllocationSite],
+            project:                   SomeProject,
+            var code:                  List[String]                         = List.empty, //for debugging purposes
+            var files:                 List[File]                           = null,
+            var javaScriptInteraction: CrossLanguageInteraction             = null,
+            var connectorDependees:    Set[EOptionP[Entity, Property]]      = Set.empty,
+            var presetValues:          Map[PKey.StringPKey, Value]          = Map.empty
+    ) extends BaseAnalysisState with TypeIteratorState
 
     def analyzeScriptEngineInstance(scriptEngineInstance: ScriptEngineInstance[AllocationSite]): ProperPropertyComputationResult = {
 
@@ -68,7 +68,7 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
             println(s"tajs connector c: eps: $eps")
             state.connectorDependees = state.connectorDependees.filter(dependee => dependee.e != eps.e || dependee.ub.key != eps.ub.key)
             eps match {
-                case UBP(javaScriptInteraction@ScriptEngineInteraction(language, possibleEmptyCode, foreignFunctionCall, puts, gets)) => //if code.size>0 =>
+                case UBP(javaScriptInteraction @ ScriptEngineInteraction(language, possibleEmptyCode, foreignFunctionCall, puts, gets)) => //if code.size>0 =>
                     //TODO Translation Process
                     val nonEmptyCode = {
                         if (possibleEmptyCode.size == 0)
@@ -77,17 +77,16 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
                             possibleEmptyCode
                         }
                     }
-                    state.code=nonEmptyCode
+                    state.code = nonEmptyCode
                     handleJavaScriptCall(nonEmptyCode, foreignFunctionCall, puts)
                     state.javaScriptInteraction = javaScriptInteraction
                     val entities = Constants.javaScriptResultVariableName :: gets.map(x => (x._1, x._2)).values.toList
                     state.connectorDependees += eps
-                    try{
+                    try {
                         val tajsAdapter = new TAJSAdapter(project)
                         val newTAJSAnalysis = analyze(oldTAJSanalysis, entities, tajsAdapter)
                         createResult(Some(newTAJSAnalysis))
-                    }
-                    catch {
+                    } catch {
                         case crossLanguageAnalysisException: CrossLanguageAnalysisException =>
                             createResult(Some(crossLanguageAnalysisException.getAnalysis()))
                     }
@@ -98,27 +97,27 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
             }
         }
 
-        def analyze(oldAnalysis: Option[Analysis],
-                    entities: List[String],
-                    javaTranslator: JavaTranslator)
-                   (implicit state:TajsConnectorState): Analysis = {
+        def analyze(
+            oldAnalysis:    Option[Analysis],
+            entities:       List[String],
+            javaTranslator: JavaTranslator
+        )(implicit state: TajsConnectorState): Analysis = {
 
             println(s">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>start tajs ${state.code.mkString("\n")}")
             LocalTAJSJavaTranslatorCopy.setLocalTAJSJavaTranslatorCopy(javaTranslator)
-            val  javaPropertyChanges = new java.util.HashMap[PKey.StringPKey, Value]()
+            val javaPropertyChanges = new java.util.HashMap[PKey.StringPKey, Value]()
             //TODO state.presetValues.foreach(kvp => javaPropertyChanges.put(kvp._1, kvp._2))
             val analysis = {
-                if(oldAnalysis.isDefined)
+                if (oldAnalysis.isDefined)
                     oldAnalysis.get
                 else {
                     val arguments = state.files.map(_.getPath).toArray
                     dk.brics.tajs.Main.init(arguments, null)
                 }
             }
-            try{
+            try {
                 dk.brics.tajs.Main.run(analysis, javaPropertyChanges);
-            }
-            catch{
+            } catch {
                 case cae: CrossLanguageAnalysisException =>
                     println("Cross Language Analysis Exception")
                     InterimResult(
@@ -128,8 +127,7 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
                         state.connectorDependees,
                         c(None)
                     )
-            }
-            finally {
+            } finally {
                 println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> end tajs")
             }
 
@@ -137,10 +135,10 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
         }
 
         def handleJavaScriptCall(
-                                    code: List[String],
-                                    javaScriptFunctionCalls: List[JavaScriptFunctionCall],
-                                    puts: Map[String, (FieldType, Set[AnyRef], Option[Double])]
-                                )(implicit state: TajsConnectorState): Unit = {
+            code:                    List[String],
+            javaScriptFunctionCalls: List[JavaScriptFunctionCall],
+            puts:                    Map[String, (FieldType, Set[AnyRef], Option[Double])]
+        )(implicit state: TajsConnectorState): Unit = {
             val fileContents: List[String] =
                 if (javaScriptFunctionCalls.nonEmpty) {
                     code ++ javaScriptFunctionCalls.map(javaScriptFunctionCall => {
@@ -148,43 +146,40 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
                             javaScriptFunctionCall.actualParams.map(_._1).mkString(", ")
                         else ""
                         javaScriptFunctionCall.actualParams.foreach(actualParam => {
-                            addAssignment(actualParam._1, Map(actualParam._2._1->actualParam._2._2.asInstanceOf[Set[DefinitionSite]]), actualParam._2._3)
+                            addAssignment(actualParam._1, Map(actualParam._2._1 -> actualParam._2._2.asInstanceOf[Set[DefinitionSite]]), actualParam._2._3)
                         })
                         s"var ${Constants.javaScriptResultVariableName} = ${javaScriptFunctionCall.functionName}(${params});"
                     })
-                }
-                else code
+                } else code
 
             state.files = utility.asFiles("JavaScript", ".js", fileContents)
 
             puts.foreach(put => {
-                addAssignment(put._1, Map(put._2._1->put._2._2.asInstanceOf[Set[DefinitionSite]]), put._2._3)
+                addAssignment(put._1, Map(put._2._1 -> put._2._2.asInstanceOf[Set[DefinitionSite]]), put._2._3)
             })
         }
 
-        def addAssignment(variableName: String, possibleTypes: Map[Type, Set[DefinitionSite]], value: Option[Double])
-                         (implicit state: TajsConnectorState): Unit =
-            state.presetValues+=
-                JavaJavaScriptTranslator.Java2JavaScript(variableName, possibleTypes,value, project)
-
+        def addAssignment(variableName: String, possibleTypes: Map[Type, Set[DefinitionSite]], value: Option[Double])(implicit state: TajsConnectorState): Unit =
+            state.presetValues +=
+                JavaJavaScriptTranslator.Java2JavaScript(variableName, possibleTypes, value, project)
 
         def createResult(analysis: Option[Analysis])(implicit state: TajsConnectorState): ProperPropertyComputationResult = {
             InterimResult(
-                    scriptEngineInstance,
-                    InterimAnalysisResult(analysis),
-                    FinalAnalysisResult(analysis),
-                    state.connectorDependees,
-                    c(analysis)
-                )
+                scriptEngineInstance,
+                InterimAnalysisResult(analysis),
+                FinalAnalysisResult(analysis),
+                state.connectorDependees,
+                c(analysis)
+            )
         }
 
-       val result = propertyStore(scriptEngineInstance, CrossLanguageInteraction.key)
+        val result = propertyStore(scriptEngineInstance, CrossLanguageInteraction.key)
         println(s"first result $result")
-       result match {
-            case ubp@UBP(ScriptEngineInteraction(language, possibleEmptyCode, javaScriptFunctionCall, puts, gets)) => // if(possibleEmptyCode.size>0)=>
+        result match {
+            case ubp @ UBP(ScriptEngineInteraction(language, possibleEmptyCode, javaScriptFunctionCall, puts, gets)) => // if(possibleEmptyCode.size>0)=>
                 println(s"ubp: $ubp")
                 val nonEmptyCode = {
-                    if (possibleEmptyCode.size==0)
+                    if (possibleEmptyCode.size == 0)
                         List("(function(){})();")
                     else {
                         possibleEmptyCode
@@ -192,7 +187,7 @@ class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with
                 }
                 state.code = nonEmptyCode
                 handleJavaScriptCall(nonEmptyCode, javaScriptFunctionCall, puts)
-                val entities = Constants.javaScriptResultVariableName :: gets.map(x=>(x._1, x._2)).values.toList
+                val entities = Constants.javaScriptResultVariableName :: gets.map(x => (x._1, x._2)).values.toList
                 val translator = new TAJSAdapter(project)
                 state.connectorDependees += result
                 val tajsAnalysis = analyze(None, entities, translator)

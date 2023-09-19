@@ -43,40 +43,46 @@ object CrossLanguageInteraction extends CrossLanguageInteractionPropertyMetaInfo
         (_: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
                 case ScriptEngineInstance => ScriptEngineInteraction()
-                case x      => throw new IllegalArgumentException(s"$x is not a method")
+                case x                    => throw new IllegalArgumentException(s"$x is not a method")
             }
         }
     )
 }
 
-case class ScriptEngineInteraction(language: Language = Language.Unknown,
-                                   code: List[String] = List.empty,
-                                   javaScriptFunctionCalls: List[JavaScriptFunctionCall] = List.empty,
-                                   puts: Map[String, (FieldType, Set[AnyRef], Option[Double])] = Map.empty,
-                                   gets: Map[V, String] = Map.empty
-                                 ) extends CrossLanguageInteraction {
-    def updated(language: Language = Language.Unknown,
-                code: List[String] = List.empty,
-                javaScriptFunctionCalls: List[JavaScriptFunctionCall] = List.empty,
-                puts: Map[String, (FieldType, Set[AnyRef], Option[Double])] = Map.empty,
-                gets: Map[V, String] = Map.empty): ScriptEngineInteraction = {
+case class ScriptEngineInteraction(
+        language:                Language                                              = Language.Unknown,
+        code:                    List[String]                                          = List.empty,
+        javaScriptFunctionCalls: List[JavaScriptFunctionCall]                          = List.empty,
+        puts:                    Map[String, (FieldType, Set[AnyRef], Option[Double])] = Map.empty,
+        gets:                    Map[V, String]                                        = Map.empty
+) extends CrossLanguageInteraction {
+    def updated(
+        language:                Language                                              = Language.Unknown,
+        code:                    List[String]                                          = List.empty,
+        javaScriptFunctionCalls: List[JavaScriptFunctionCall]                          = List.empty,
+        puts:                    Map[String, (FieldType, Set[AnyRef], Option[Double])] = Map.empty,
+        gets:                    Map[V, String]                                        = Map.empty
+    ): ScriptEngineInteraction = {
         ScriptEngineInteraction(
-            {if (this.language==Language.Unknown)
-                language
-            else
-                this.language
+            {
+                if (this.language == Language.Unknown)
+                    language
+                else
+                    this.language
             },
-            code++this.code,
-            javaScriptFunctionCalls++this.javaScriptFunctionCalls,
-            this.puts++puts,
-            this.gets++gets)
+            code ++ this.code,
+            javaScriptFunctionCalls ++ this.javaScriptFunctionCalls,
+            this.puts ++ puts,
+            this.gets ++ gets
+        )
     }
-    def update(scriptEngineInteraction: ScriptEngineInteraction): ScriptEngineInteraction ={
+    def update(scriptEngineInteraction: ScriptEngineInteraction): ScriptEngineInteraction = {
         updated(
             code = scriptEngineInteraction.code,
             javaScriptFunctionCalls = scriptEngineInteraction.javaScriptFunctionCalls,
             puts = scriptEngineInteraction.puts,
-            gets = scriptEngineInteraction.gets)
+            gets = scriptEngineInteraction.gets
+        )
     }
 }
 

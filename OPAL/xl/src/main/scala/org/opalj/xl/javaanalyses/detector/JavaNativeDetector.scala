@@ -105,15 +105,15 @@ abstract class NativeAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override def processNewCaller(
-                            calleeContext: ContextType,
-                            callerContext: ContextType,
-                            callPC: Int,
-                            tac: TACode[TACMethodParameter, V],
-                            receiverOption: Option[Expr[V]],
-                            params: Seq[Option[Expr[V]]],
-                            targetVarOption: Option[V],
-                            isDirect: Boolean
-                        ): ProperPropertyComputationResult = {
+        calleeContext:   ContextType,
+        callerContext:   ContextType,
+        callPC:          Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
+    ): ProperPropertyComputationResult = {
 
         implicit val state: State =
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
@@ -167,7 +167,7 @@ abstract class NativeAnalysis(
         }
     }
 
-    def handleCallees(callees: Callees, callerContext: ContextType, pc: Int, defSite:Entity): PointsToSet = {
+    def handleCallees(callees: Callees, callerContext: ContextType, pc: Int, defSite: Entity): PointsToSet = {
         val pointsToSet = emptyPointsToSet
 
         for (callee <- callees.callees(callerContext, pc)) {

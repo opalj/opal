@@ -76,7 +76,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
         analyses ++= RTACallGraphKey.callGraphSchedulers(project)
         analyses ++= registeredAnalyses(project)
         analyses ++= Iterable(
-          /*  AllocationSiteBasedPointsToAnalysisScheduler,
+            /*  AllocationSiteBasedPointsToAnalysisScheduler,
             AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler,
             AllocationSiteBasedTamiFlexPointsToAnalysisScheduler,
             AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
@@ -86,12 +86,12 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
             AllocationSiteBasedPointsToAnalysisScheduler,
             AllocationSiteBasedApiJavaScriptEngineDetectorScheduler,
             TriggeredTajsConnectorScheduler
-          //  TriggeredTajsCallerScheduler
-         //   AllocationSiteOpalConnectorScheduler
+        //  TriggeredTajsCallerScheduler
+        //   AllocationSiteOpalConnectorScheduler
         )
 
-        val (_/*propertyStore*/, _) = project.get(FPCFAnalysesManagerKey).runAll(analyses)
-/*
+        val (_ /*propertyStore*/ , _) = project.get(FPCFAnalysesManagerKey).runAll(analyses)
+        /*
         val defSites = project.get(DefinitionSitesKey).definitionSites.keySet()
 
         project.allProjectClassFiles.flatMap(_.methods).foreach(method => {
