@@ -20,7 +20,6 @@ import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.SomePartialResult
-import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.InterimEUBP
@@ -36,8 +35,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.FieldType
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
@@ -61,10 +58,17 @@ import org.opalj.xl.utility.Language
 import ScriptEngineDetector.engineNames
 import ScriptEngineDetector.extensions
 import ScriptEngineDetector.mimetypes
+import org.opalj.xl.javaanalyses.detector.ScriptEngineDetector.engineManager
+import org.opalj.xl.javaanalyses.detector.ScriptEngineDetector.getEngine
+import org.opalj.xl.javaanalyses.detector.ScriptEngineDetector.scriptEngine
 import org.opalj.xl.utility.Language.Language
 
+import org.opalj.fpcf.EPK
 import org.opalj.br.VoidType
-
+import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
+import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
+import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
+import org.opalj.tac.Stmt
 
 /**
  * Detects calls of put, get, eval, on the Java ScriptEngine object.
@@ -72,14 +76,10 @@ import org.opalj.br.VoidType
  * @author Tobias Roth
  * @author Dominik Helm
  */
-abstract class ScriptEngineDetector(final val project: SomeProject) extends PointsToAnalysisBase {
+abstract class ScriptEngineDetector( final val project: SomeProject) extends PointsToAnalysisBase {
     self =>
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
-    val scriptEngine = ObjectType("javax/script/ScriptEngine")
-    val engineManager = ObjectType("javax/script/ScriptEngineManager")
-    val getEngineDescriptor = MethodDescriptor(ObjectType.String, scriptEngine)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
         override protected[this] type ElementType = self.ElementType
@@ -123,35 +123,29 @@ abstract class ScriptEngineDetector(final val project: SomeProject) extends Poin
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses: List[APIBasedAnalysis] = List(
             new ScriptEngineAllocationAnalysis(
-                project,
-                declaredMethods(engineManager, "", engineManager, "getEngineByName", getEngineDescriptor),
-                engineNames
+                p, declaredMethods(engineManager, "", engineManager, "getEngineByName", getEngine), engineNames
             ) with PointsToBase,
             new ScriptEngineAllocationAnalysis(
-                project,
-                declaredMethods(engineManager, "", engineManager, "getEngineByExtension", getEngineDescriptor),
-                extensions
+                p, declaredMethods(engineManager, "", engineManager, "getEngineByExtension", getEngine), extensions
             ) with PointsToBase,
             new ScriptEngineAllocationAnalysis(
-                project,
-                declaredMethods(engineManager, "", engineManager, "getEngineByMimeType", getEngineDescriptor),
-                mimetypes
+                p, declaredMethods(engineManager, "", engineManager, "getEngineByMimeType", getEngine), mimetypes
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysis(
-                project,
+                p,
                 declaredMethods(
                     scriptEngine, "", scriptEngine, "put",
                     MethodDescriptor(ArraySeq(ObjectType.String, ObjectType.Object), VoidType)
                 )
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysis(
-                project,
+                p,
                 declaredMethods(
                     scriptEngine, "", scriptEngine, "eval", MethodDescriptor(ObjectType.String, ObjectType.Object)
                 )
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysis(
-                project,
+                p,
                 declaredMethods(
                     scriptEngine, "", scriptEngine, "get",
                     MethodDescriptor(ObjectType.String, ObjectType.Object)
@@ -172,10 +166,28 @@ abstract class ScriptEngineDetector(final val project: SomeProject) extends Poin
     }
 }
 
+object ScriptEngineDetector {
+    val scriptEngine: ObjectType = ObjectType("javax/script/ScriptEngine")
+    val engineManager: ObjectType = ObjectType("javax/script/ScriptEngineManager")
+    val getEngine: MethodDescriptor = MethodDescriptor(ObjectType.String, scriptEngine)
+
+    val engineNames: Map[String, Language] = Map.from(
+        Set("nashorn", "rhino", "js", "javascript", "ecmascript", "graal.js").map(_ -> Language.JavaScript)
+    )
+
+    val extensions: Map[String, Language] = Map.from(
+        Set("js").map(_ -> Language.JavaScript)
+    )
+
+    val mimetypes: Map[String, Language] = Map.from(
+        Set("application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript").map(_ -> Language.JavaScript)
+    )
+}
+
 abstract class ScriptEngineAllocationAnalysis(
-        final val project: SomeProject,
+        final val project:            SomeProject,
         final override val apiMethod: DeclaredMethod,
-        final val engineStrings: Map[String, Language]
+        final val engineStrings:      Map[String, Language]
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override def processNewCaller(
@@ -189,37 +201,81 @@ abstract class ScriptEngineAllocationAnalysis(
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
 
-        implicit val state: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+        implicit val ptState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
+        implicit val tiState: TypeIteratorState = new BaseAnalysisState with TypeIteratorState
 
-        val possibleStrings = StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts)
-        if (possibleStrings.isEmpty)
-            return Results(); // Unknown language
-
-        val language = engineStrings.get(possibleStrings.get.head.toLowerCase)
-        if(language.isEmpty || possibleStrings.get.tail.exists(s => engineStrings.get(s.toLowerCase) != language))
-            return Results(); // Different or unknown possible languages
+        if (params.isEmpty || params.head.isEmpty)
+            return Results(); // Unknown engine string parameter
 
         val newPointsToSet = createPointsToSet(
-            callPC,
-            callerContext,
-            apiMethod.descriptor.returnType.asReferenceType,
-            isConstant = false
+            callPC, callerContext, apiMethod.descriptor.returnType.asReferenceType, isConstant = false
         )
-        state.includeSharedPointsToSet(getDefSite(callPC), newPointsToSet)
+        ptState.includeSharedPointsToSet(getDefSite(callPC), newPointsToSet)
 
         val instance = ScriptEngineInstance(newPointsToSet.getNewestElement())
-        val engineInteraction = ScriptEngineInteraction(language = language.get)
 
-        val partialResult = PartialResult(instance, CrossLanguageInteraction.key, {
-            case _: EPK[_, _] => Some(InterimEUBP(instance, engineInteraction))
-            case r            => throw new IllegalStateException(s"unexpected previous result $r")
+        val engineString = params.head.get.asVar
+        val possibleStrings = StringUtil.getPossibleStrings(engineString, callerContext, None, tac.stmts, () => {
+            return Results(
+                createResults,
+                createInstanceResult(instance, Some(Language.Unknown), callerContext, engineString, tac.stmts)
+            );
         })
 
-        Results(
-            createResults,
-            InterimPartialResult(Iterable(partialResult), Set.empty, c(engineInteraction, Map.empty))
+        if (possibleStrings.isEmpty)
+            return Results(
+                createResults,
+                InterimPartialResult(tiState.dependees, c(instance, None, callerContext, engineString, tac.stmts))
+            ); // No language known yet
+
+        var language = engineStrings.get(possibleStrings.head.toLowerCase)
+        if (language.isEmpty || possibleStrings.tail.exists(s => engineStrings.get(s.toLowerCase) != language))
+            language = Some(Language.Unknown)
+
+        Results(createResults, createInstanceResult(instance, language, callerContext, engineString, tac.stmts))
+    }
+
+    private[this] def createInstanceResult(
+        instance:     ScriptEngineInstance[ElementType],
+        language:     Option[Language],
+        context:      ContextType,
+        engineString: V,
+        stmts:        Array[Stmt[V]]
+    )(implicit state: TypeIteratorState): ProperPropertyComputationResult = {
+        val engineInteraction = ScriptEngineInteraction(language = language.get)
+
+        val partialResult = PartialResult[ScriptEngineInstance[ElementType], CrossLanguageInteraction](
+            instance,
+            CrossLanguageInteraction.key, {
+                case _: EPK[_, _] => Some(InterimEUBP(instance, engineInteraction))
+                case r            => throw new IllegalStateException(s"unexpected previous result $r")
+            }
         )
+
+        val dependees = if (language.contains(Language.Unknown)) Set.empty[SomeEOptionP] else state.dependees
+
+        InterimPartialResult(
+            Iterable(partialResult), dependees, c(instance, language, context, engineString, stmts)
+        )
+    }
+
+    def c(
+        instance:     ScriptEngineInstance[ElementType],
+        language:     Option[Language],
+        context:      ContextType,
+        engineString: V,
+        stmts:        Array[Stmt[V]]
+    )(eps: SomeEPS)(implicit state: TypeIteratorState): ProperPropertyComputationResult = {
+        var resultLanguage = language
+        AllocationsUtil.continuationForAllocation[None.type, ContextType](
+            eps, context, _ => (engineString, stmts), _ => true, _ => { resultLanguage = Some(Language.Unknown) }
+        ) { (_, _, allocationIndex, stmts) =>
+            val newLanguage = StringUtil.getString(allocationIndex, stmts).flatMap { engineStrings.get }
+            if (newLanguage.isEmpty || newLanguage != resultLanguage)
+                resultLanguage = Some(Language.Unknown)
+        }
+        createInstanceResult(instance, resultLanguage, context, engineString, stmts)
     }
 }
 
@@ -228,25 +284,48 @@ abstract class ScriptEngineInteractionAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def c(
-        engineInteraction: ScriptEngineInteraction,
-        oldDependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-    )(
-        eps: SomeEPS
-    )(
-        implicit
-        state: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
-    ): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(newDependeePointsTo: PointsToSet @unchecked) =>
-                val newDependees = updatedDependees(eps, oldDependees)
-                val oldDependee = oldDependees(eps.toEPK)._1.ub.asInstanceOf[PointsToSet]
-                val results =
-                    resultsForScriptEngineAllocations(engineInteraction, newDependeePointsTo, oldDependee.numElements)
-                val dependees = newDependees.valuesIterator.map(_._1).toSet
-                InterimPartialResult(results, dependees, c(engineInteraction, newDependees))
+        engineInteraction:  ScriptEngineInteraction,
+        oldEngineDependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
+        context:            ContextType,
+        param:              V,
+        stmts:              Array[Stmt[V]]
+    )(eps: SomeEPS)(implicit tiState: TypeIteratorState): ProperPropertyComputationResult = {
+        var results = List.empty[SomePartialResult]
+        val epk = eps.toEPK
 
-            case _ => throw new Exception("TODO4")
+        var newEngineInteraction = engineInteraction
+
+        if (tiState.hasDependee(epk)) {
+            AllocationsUtil.continuationForAllocation[Set[String] => ScriptEngineInteraction, ContextType](
+                eps, context, _ => (param, stmts), _ => true, _ => {
+                throw new Exception("TODO: What to do if param is unknown?")
+            }
+            ) { (newInteraction, _, allocationIndex, stmts) =>
+                val newParam = StringUtil.getString(allocationIndex, stmts)
+                if (newParam.isEmpty)
+                    throw new Exception("TODO: What to do if param is unknown?")
+                newEngineInteraction = newEngineInteraction.updated(newInteraction(Set(newParam.get)))
+            }
+
+            assert(newEngineInteraction ne engineInteraction)
+
+            oldEngineDependees.valuesIterator.foreach { data =>
+                val engineAllocations = data._1.ub.asInstanceOf[PointsToSet]
+                results :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
+            }
+
+            tiState.updateDependency(eps)
         }
+
+        val newEngineDependees = if (oldEngineDependees.contains(epk)) {
+            val UBP(newPointsTo: PointsToSet @unchecked) = eps
+            val oldDependee = oldEngineDependees(epk)._1.ub.asInstanceOf[PointsToSet]
+            results :::= resultsForScriptEngineAllocations(newEngineInteraction, newPointsTo, oldDependee.numElements)
+            updatedDependees(eps, oldEngineDependees)
+        } else oldEngineDependees
+
+        val dependees = tiState.dependees ++ newEngineDependees.valuesIterator.map(_._1).toSet
+        InterimPartialResult(results, dependees, c(newEngineInteraction, newEngineDependees, context, param, stmts))
     }
 
     override def processNewCaller(
@@ -260,40 +339,52 @@ abstract class ScriptEngineInteractionAnalysis(
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
 
-        implicit val state: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+        implicit val ptState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
+
+        implicit val tiState: TypeIteratorState = new BaseAnalysisState with TypeIteratorState
 
         if (params.head.isEmpty || apiMethod.name == "put" && params(1).isEmpty)
             return Results(); // Cannot determine any result here
 
-        val engineInteraction = apiMethod.name match {
+        val interactionCtor = apiMethod.name match {
             case "eval" =>
-                val codes = StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts) //TODO use interprocedural string analysis
-                ScriptEngineInteraction(code = codes.getOrElse(List.empty).toList)
+                (s: Set[String]) => ScriptEngineInteraction(code = s.toList)
 
             case "put" =>
-                val foreignVariableNames = StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts) //TODO use interprocedural string analysis
-                val assignedVar = params(1).get.asVar
-                val tpe = if (assignedVar.value.isPrimitiveValue)
-                    assignedVar.value.asPrimitiveValue.primitiveType
-                else
-                    assignedVar.value.asReferenceValue.leastUpperType.get
-                val puts = Map.from(foreignVariableNames.flatMap(_.map(_ -> (tpe, Set.empty[AnyRef], None))))
-                ScriptEngineInteraction(puts = puts)
+                (s: Set[String]) => {
+                    val assignedVar = params(1).get.asVar
+                    val tpe = if (assignedVar.value.isPrimitiveValue)
+                        assignedVar.value.asPrimitiveValue.primitiveType
+                    else
+                        assignedVar.value.asReferenceValue.leastUpperType.get
+                    val value = (tpe, Set.empty[AnyRef], None)
+                    ScriptEngineInteraction(puts = Map.from(s.map(_ -> value)))
+                }
 
             case "get" =>
-                val foreignVariableNames = StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts) //TODO use interprocedural string analysis
-                val targetVar = targetVarOption.get
-                val gets = Map.from(foreignVariableNames.flatMap(_.map(targetVar -> _)))
-                ScriptEngineInteraction(gets = gets)
+                (s: Set[String]) => {
+                    val targetVar = targetVarOption.get
+                    ScriptEngineInteraction(gets = Map.from(s.map(targetVar -> _)))
+                }
 
             case argument => throw new IllegalArgumentException(s"$argument")
         }
 
+        val param = params.head.get.asVar
+        val possibleStrings = StringUtil.getPossibleStrings(param, callerContext, interactionCtor, tac.stmts, () => {
+            throw new Exception("TODO: What to do if param is unknown?")
+        })
+
+        val engineInteraction = interactionCtor(possibleStrings)
+
         val partialResults = resultsForScriptEngine(engineInteraction, receiverOption)
-        val dependeesMap = state.dependeesOf(None)
-        val dependees = dependeesMap.valuesIterator.map(_._1).toSet
-        InterimPartialResult(partialResults, dependees, c(engineInteraction, dependeesMap))
+        val dependeesMap = ptState.dependeesOf(interactionCtor)
+        val dependees = tiState.dependees ++ dependeesMap.valuesIterator.map(_._1)
+
+        InterimPartialResult(
+            partialResults, dependees, c(engineInteraction, dependeesMap, callerContext, param, tac.stmts)
+        )
     }
 
     private[this] def resultsForScriptEngine(
@@ -362,18 +453,4 @@ object AllocationSiteBasedApiScriptEngineDetectorScheduler extends ScriptEngineD
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject => ScriptEngineDetector =
         new ScriptEngineDetector(_) with AllocationSiteBasedAnalysis
-}
-
-object ScriptEngineDetector {
-    val engineNames = Map.from(
-        Set("nashorn", "rhino", "js", "javascript", "ecmascript", "graal.js").map(_ -> Language.JavaScript)
-    )
-
-    val extensions = Map.from(
-        Set("js").map(_ -> Language.JavaScript)
-    )
-
-    val mimetypes = Map.from(
-        Set("application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript").map(_ -> Language.JavaScript)
-    )
 }
