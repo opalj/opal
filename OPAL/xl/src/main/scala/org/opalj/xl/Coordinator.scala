@@ -8,7 +8,7 @@ import java.net.URL
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 import org.opalj.xl.connector.TriggeredTajsConnectorScheduler
-import org.opalj.xl.javaanalyses.detector.AllocationSiteBasedApiJavaScriptEngineDetectorScheduler
+import org.opalj.xl.javaanalyses.detector.AllocationSiteBasedApiScriptEngineDetectorScheduler
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -84,7 +84,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
             ReflectionAllocationsAnalysisScheduler,
             AllocationSiteBasedNewInstanceAnalysisScheduler, */
             AllocationSiteBasedPointsToAnalysisScheduler,
-            AllocationSiteBasedApiJavaScriptEngineDetectorScheduler,
+            AllocationSiteBasedApiScriptEngineDetectorScheduler,
             TriggeredTajsConnectorScheduler
         //  TriggeredTajsCallerScheduler
         //   AllocationSiteOpalConnectorScheduler

@@ -56,32 +56,13 @@ case class ScriptEngineInteraction(
         puts:                    Map[String, (FieldType, Set[AnyRef], Option[Double])] = Map.empty,
         gets:                    Map[V, String]                                        = Map.empty
 ) extends CrossLanguageInteraction {
-    def updated(
-        language:                Language                                              = Language.Unknown,
-        code:                    List[String]                                          = List.empty,
-        javaScriptFunctionCalls: List[JavaScriptFunctionCall]                          = List.empty,
-        puts:                    Map[String, (FieldType, Set[AnyRef], Option[Double])] = Map.empty,
-        gets:                    Map[V, String]                                        = Map.empty
-    ): ScriptEngineInteraction = {
+    def updated(scriptEngineInteraction: ScriptEngineInteraction): ScriptEngineInteraction = {
         ScriptEngineInteraction(
-            {
-                if (this.language == Language.Unknown)
-                    language
-                else
-                    this.language
-            },
-            code ++ this.code,
-            javaScriptFunctionCalls ++ this.javaScriptFunctionCalls,
-            this.puts ++ puts,
-            this.gets ++ gets
-        )
-    }
-    def update(scriptEngineInteraction: ScriptEngineInteraction): ScriptEngineInteraction = {
-        updated(
-            code = scriptEngineInteraction.code,
-            javaScriptFunctionCalls = scriptEngineInteraction.javaScriptFunctionCalls,
-            puts = scriptEngineInteraction.puts,
-            gets = scriptEngineInteraction.gets
+            if (this.language == Language.Unknown) scriptEngineInteraction.language else this.language,
+            scriptEngineInteraction.code ::: this.code,
+            this.javaScriptFunctionCalls ++ scriptEngineInteraction.javaScriptFunctionCalls,
+            this.puts ++ scriptEngineInteraction.puts,
+            this.gets ++ scriptEngineInteraction.gets
         )
     }
 }
