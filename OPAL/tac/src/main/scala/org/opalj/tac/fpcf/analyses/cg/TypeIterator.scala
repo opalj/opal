@@ -156,7 +156,11 @@ abstract class TypeIterator(val project: SomeProject) {
                     case Assignment(pc, _, New(_, tpe))         => Some((tpe, pc))
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
                     case Assignment(pc, _, c: Const)            => Some((c.tpe.asObjectType, pc))
-                    case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.descriptor.returnType.asObjectType, pc))
+                    case Assignment(pc, _, fc: FunctionCall[V]) =>
+                        if (fc.descriptor.returnType.isArrayType)
+                            Some((fc.descriptor.returnType.asArrayType.elementType.asObjectType, pc))
+                        else
+                            Some((fc.descriptor.returnType.asObjectType, pc))
                     case _ =>
                         hasUnknownAllocation = true
                         None
