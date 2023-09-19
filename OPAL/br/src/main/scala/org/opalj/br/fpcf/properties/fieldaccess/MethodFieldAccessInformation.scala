@@ -99,9 +99,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     private def numIndirectAccessesInAllAccessSites: Int =
         _indirectAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
 
-    def numIndirectAccessSites(accessContext: Context): Int = _indirectAccessedReceiversByField(accessContext.id).size
+    def numIndirectAccessSites(accessContext: Context): Int = _indirectAccessedReceiversByField.get(accessContext.id).map(_.size).getOrElse(0)
 
-    def numIndirectAccesses(accessContext: Context, pc: PC): Int = _indirectAccessedReceiversByField(accessContext.id)(pc).size
+    def numIndirectAccesses(accessContext: Context, pc: PC): Int = _indirectAccessedReceiversByField.get(accessContext.id).flatMap(_.get(pc)).map(_.size).getOrElse(0)
 
     def numIncompleteAccessSites: Int = _incompleteAccessSites.valuesIterator.map { _.size }.sum
 
