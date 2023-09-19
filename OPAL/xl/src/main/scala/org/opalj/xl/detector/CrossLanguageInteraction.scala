@@ -72,14 +72,11 @@ case class ScriptEngineInteraction(language: Language = Language.Unknown,
             this.gets++gets)
     }
     def update(scriptEngineInteraction: ScriptEngineInteraction): ScriptEngineInteraction ={
-        val newScriptEngineInteraction = updated(
-            code = this.code++scriptEngineInteraction.code,
-            javaScriptFunctionCalls =
-                this.javaScriptFunctionCalls++scriptEngineInteraction.javaScriptFunctionCalls,
-            puts = this.puts++scriptEngineInteraction.puts,
-            gets = this.gets++scriptEngineInteraction.gets)
-        println(s"new scriptengine interaction: $newScriptEngineInteraction")
-        newScriptEngineInteraction
+        updated(
+            code = scriptEngineInteraction.code,
+            javaScriptFunctionCalls = scriptEngineInteraction.javaScriptFunctionCalls,
+            puts = scriptEngineInteraction.puts,
+            gets = scriptEngineInteraction.gets)
     }
 }
 
