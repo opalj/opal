@@ -106,15 +106,14 @@ package object cg {
         case (pType: NumericType, IsPrimitiveValue(v)) =>
             // - the same type
             (v eq pType) ||
-              // - both numeric types and the declared type can represent the value
-              (v.isNumericType && pType.asNumericType.isWiderThan(v.asNumericType)) ||
-              // - special cases introduced by the JVM or choice of the AI domain (e.g. everything is an integer value)
-              ((pType eq ByteType) && (v eq IntegerType)) ||
-              ((pType eq CharType) && (v eq ByteType)) ||
-              ((pType eq CharType) && (v eq IntegerType)) ||
-              ((pType eq ShortType) && (v eq ByteType)) ||
-              ((pType eq ShortType) && (v eq IntegerType))
-
+                // - both numeric types and the declared type can represent the value
+                (v.isNumericType && pType.asNumericType.isWiderThan(v.asNumericType)) ||
+                // - special cases introduced by the JVM or choice of the AI domain (e.g. everything is an integer value) TODO is this even legal
+                ((pType eq ByteType) && (v eq IntegerType)) ||
+                ((pType eq CharType) && (v eq ByteType)) ||
+                ((pType eq CharType) && (v eq IntegerType)) ||
+                ((pType eq ShortType) && (v eq ByteType)) ||
+                ((pType eq ShortType) && (v eq IntegerType))
 
         // the actual type is null and the declared type is a base type
         case (_: BaseType, _: IsNullValue) =>
