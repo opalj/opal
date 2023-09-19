@@ -112,14 +112,18 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
         var results: Iterator[PartialResult[_, _ >: Null <: Property]] = Iterator.empty
         callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
-            val directCalls = new DirectCalls()
+            val calls = new DirectCallsBase with VMReachableMethodsBase()
             for (tgt <- tgts) {
                 val tgtMethod = tgt.method(declaredMethods)
-                directCalls.addCall(
-                    calleeContext, 0, typeIterator.expandContext(calleeContext, tgtMethod, 0)
-                )
+                if (tgtMethod.name == "<clinit>") {
+                    calls.addVMReachableMethod(tgtMethod);
+                } else {
+                    calls.addCall(
+                        calleeContext, 0, typeIterator.expandContext(calleeContext, tgtMethod, 0)
+                    )
+                }
             }
-            results ++= directCalls.partialResults(calleeContext)
+            results ++= calls.partialResults(calleeContext)
         }
 
         Results(InterimPartialResult(Set(eOptP), c(eOptP.ub)), results)

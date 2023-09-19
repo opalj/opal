@@ -51,7 +51,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
         val scenario = AnalysisScenario(analyses, propertyStore)
 
-        val schedule = scenario.computeSchedule(propertyStore)
+        val schedule = scenario.computeSchedule(propertyStore, FPCFAnalysesRegistry.defaultAnalysis)
         schedules ::= schedule
 
         if (trace) { debug("analysis progress", "executing "+schedule) }

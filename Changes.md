@@ -1,16 +1,37 @@
 # Changes
 
-Scala 2.13 changes
-- Replace unicode arrows (⇒,->,<-) by ascii arrows (=>,->,<-)
-- Replace Traversable by scala.collection.Iterable
-- Replace TraversableOnce by scala.collection.IterableOnce
-- Changes to OPAL's custom data structures:
-  - Replace RefIterator by scala.collection.iterator
-  - Replace Chain by scala.collection.immutable.List
-  - Replace RefArray and IntArray by scala.collection.immutable.ArraySeq
-  - Replace RefArrayStack by scala.collection.immutable.Stack
-  - Replace RefAppendChain by scala.collection.mutable.ArrayDeque
-  - Replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+## 5.0.0 - Released January 23rd 2023
+- *we are now using sbt 1.6.2*
+- *we are now using Scala 2.13*
+  - Scala 2.13 changes:
+    - replace Unicode arrows (⇒,→,←) by ASCII arrows (=>,->,<-)
+    - replace Traversable by scala.collection.Iterable
+    - replace TraversableOnce by scala.collection.IterableOnce
+    - changes to OPAL's custom data structures:
+      - replace RefIterator by scala.collection.iterator
+      - replace Chain by scala.collection.immutable.List
+      - replace RefArray and IntArray by scala.collection.immutable.ArraySeq
+      - replace RefArrayStack by scala.collection.immutable.Stack
+      - replace RefAppendChain by scala.collection.mutable.ArrayDeque
+      - replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+- full support for Java 17 up to 19
+  - support for Java 17 Sealed Classes
+  - added isStrict attribute to classes
+  - ignore isStrict attribute on classes and methods for Java >= 17
+- completed framework for call graph analyses
+  - introduced TypeIterator to uniformly access type information
+  - using contexts instead of methods to enable context-sensitive analysis (0-1-CFA, 1-1-CFA)
+  - support library analysis with CFA
+- introduced new immutability analyses
+  - replaced FieldMutabilityAnalysis with FieldAssignabilityAnalysis
+    - support for thread-safe and unsafe lazy initialization
+    - support for clone pattern
+  - introduced new FieldImmutabilityAnalysis to integrate field assignability with mutability of values
+    - support for transitive and non-transitive immutability
+    - support for immutability dependent on generic type parameters
+  - updated ClassImmutabilityAnalysis and TypeImmutabilityAnalysis to use new FieldImmutability properties
+- added EntrypointsFinder for Android apps
+- allow flushing caches for ObjectTypes/ArrayTypes to free memory when creating many projects in a row
 
 ## 4.0.0 - Released May 7th 2021
 
@@ -122,7 +143,7 @@ Scala 2.13 changes
 - `Method` and `Field` now have a back-link to their respective defining class files. The previous mechanisms provided by the `Project` are no longer available.
 - added explicit support for new code *entities* to better support Escape/Points-to analyses: `(Object/Array)AllocationSite` and `FormalParameter`
 - `ProjectInformationKey`s can now be initialized using project specific initialization information
-   (See `Project.getOrCreateProjektInformationKeyInitializationData` for further information.)
+  (See `Project.getOrCreateProjektInformationKeyInitializationData` for further information.)
 - renamed `ObjectImmutabilityAnalysi` to `ClassImmutabilityAnalysis` to reflect the names used in the forthcoming paper
 - removed the legacy method call resolution methods  (those only working with pre Java 8 code) from the `Project`
 - we are now *simplifying the control-flow at load-time* to ensure that the overall control-flow is more regular; i.e., that if instructions related to loops directly jump back and do not jump forward to a goto instruction which then jumps back
@@ -196,7 +217,7 @@ Scala 2.13 changes
 ## 0.8.9 (Initial release of OPAL on Maven Central)
 
 - added a list-like data structure (`Chain`) which is specialized for int values to save memory
- (~ 25%) and to avoid unnecessary boxing operations
+  (~ 25%) and to avoid unnecessary boxing operations
 - added preliminary Java 9 support
 - added the fix-point computations framework to facilitate the implementation of concurrent, fix-point based analyses
 

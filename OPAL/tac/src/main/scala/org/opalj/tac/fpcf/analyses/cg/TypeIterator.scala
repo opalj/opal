@@ -156,6 +156,7 @@ abstract class TypeIterator(val project: SomeProject) {
                     case Assignment(pc, _, New(_, tpe))         => Some((tpe, pc))
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
                     case Assignment(pc, _, c: Const)            => Some((c.tpe.asObjectType, pc))
+                    case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.declaringClass, pc))
                     case _ =>
                         hasUnknownAllocation = true
                         None
@@ -277,9 +278,10 @@ abstract class TypeIterator(val project: SomeProject) {
     }
 
     private[cg] def isPossibleType(use: V, tpe: ReferenceType): Boolean = {
+        val ch = project.classHierarchy
         val rv = use.value.asReferenceValue
         val lut = rv.leastUpperType
-        if (lut.isDefined && !project.classHierarchy.isSubtypeOf(tpe, lut.get))
+        if (lut.isDefined && !ch.isSubtypeOf(tpe, lut.get))
             false
         else
             rv.allValues.exists {
@@ -288,17 +290,18 @@ abstract class TypeIterator(val project: SomeProject) {
                     if (sv.isPrecise) {
                         tpe eq tub
                     } else {
-                        project.classHierarchy.isSubtypeOf(tpe, tub) &&
+                        ch.isSubtypeOf(tpe, tub) &&
                             // Exclude unknown types even if the upper bound is Object for
                             // consistency with CHA and bounds != Object
                             ((tub ne ObjectType.Object) || tpe.isArrayType ||
-                                project.classFile(tpe.asObjectType).isDefined)
+                                project.classFile(tpe.asObjectType).isDefined) &&
+                                ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
                     }
 
                 case mv: IsMObjectValue =>
                     val typeBounds = mv.upperTypeBound
                     typeBounds.forall { supertype =>
-                        project.classHierarchy.isSubtypeOf(tpe, supertype)
+                        ch.isSubtypeOf(tpe, supertype)
                     }
 
                 case _: IsNullValue =>
@@ -395,6 +398,7 @@ class CHATypeIterator(project: SomeProject)
         use: V, typesProperty: Null, additionalTypes: Set[ReferenceType]
     )(handleType: ReferenceType => Unit): Unit = {
         additionalTypes.foreach(handleType)
+        val ch = project.classHierarchy
         val rvs = use.value.asReferenceValue.allValues
         for (rv <- rvs) rv match {
             case sv: IsSReferenceValue[_] =>
@@ -402,14 +406,16 @@ class CHATypeIterator(project: SomeProject)
                     handleType(sv.theUpperTypeBound)
                 } else {
                     if (sv.theUpperTypeBound.isObjectType) {
-                        project.classHierarchy.allSubtypesForeachIterator(
+                        ch.allSubtypesForeachIterator(
                             sv.theUpperTypeBound.asObjectType, reflexive = true
                         ).filter { subtype =>
                                 val cfOption = project.classFile(subtype)
                                 cfOption.isDefined && {
                                     val cf = cfOption.get
                                     !cf.isInterfaceDeclaration && !cf.isAbstract
-                                }
+                                } && {
+                                    ch.isASubtypeOf(subtype, use.value.asReferenceValue.upperTypeBound)
+                                }.isNotNo
                             }.foreach(handleType)
                     } else handleType(ObjectType.Object)
                 }
@@ -418,7 +424,7 @@ class CHATypeIterator(project: SomeProject)
                 val typeBounds = mv.upperTypeBound
                 val remainingTypeBounds = typeBounds.tail
                 val firstTypeBound = typeBounds.head
-                val potentialTypes = project.classHierarchy.allSubtypesForeachIterator(
+                val potentialTypes = ch.allSubtypesForeachIterator(
                     firstTypeBound, reflexive = true
                 ).filter { subtype =>
                     val cfOption = project.classFile(subtype)
@@ -426,7 +432,7 @@ class CHATypeIterator(project: SomeProject)
                         val cf = cfOption.get
                         !cf.isInterfaceDeclaration && !cf.isAbstract &&
                             remainingTypeBounds.forall { supertype =>
-                                project.classHierarchy.isSubtypeOf(subtype, supertype)
+                                ch.isSubtypeOf(subtype, supertype)
                             }
                     }
                 }

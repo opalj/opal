@@ -25,7 +25,6 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.ai.ValueOrigin
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -425,7 +424,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     protected[this] def determineEscapeOfDS(
         dsl: (Context, DefinitionSiteLike)
     ): ProperPropertyComputationResult = {
-        val ctx = createContext(dsl, dsl._2.pc, dsl._2.method)
+        val ctx = createContext(dsl, dsl._2.method)
         doDetermineEscape(ctx, createState)
     }
 
@@ -444,7 +443,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
     protected[this] def createContext(
         entity:       (Context, Entity),
-        defSitePC:    ValueOrigin,
         targetMethod: Method
     ): AnalysisContext
 }

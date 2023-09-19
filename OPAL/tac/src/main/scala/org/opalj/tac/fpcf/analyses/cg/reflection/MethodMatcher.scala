@@ -6,8 +6,6 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsPrimitiveValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
@@ -15,9 +13,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.BaseType
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.ReferenceType
 
 import scala.collection.immutable.ArraySeq
 
@@ -112,31 +108,7 @@ class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends Method
             // IMPROVE: m.descriptor.parameterTypes.iterator.zip...
             // therefor, we need to actualParams.map(...) as Iterator
             m.descriptor.parameterTypes.zip(actualParams.map(_.value)).forall {
-                // the actual type is null and the declared type is a ref type
-                case (_: ReferenceType, _: IsNullValue) =>
-                    // TODO here we would need the declared type information
-                    true
-                // declared type and actual type are reference types and assignable
-                case (pType: ReferenceType, v: IsReferenceValue) =>
-                    v.isValueASubtypeOf(pType).isYesOrUnknown
-
-                // declared type and actual type are base types and the same type
-                case (pType: BaseType, v: IsPrimitiveValue[_]) => v.primitiveType eq pType
-
-                // the actual type is null and the declared type is a base type
-                case (_: BaseType, _: IsNullValue) =>
-                    false
-
-                // declared type is base type, actual type might be a boxed value
-                case (pType: BaseType, v: IsReferenceValue) =>
-                    v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
-
-                // actual type is base type, declared type might be a boxed type
-                case (pType: ObjectType, v: IsPrimitiveValue[_]) =>
-                    pType.isPrimitiveTypeWrapperOf(v.primitiveType)
-
-                case _ =>
-                    false
+                case (formal, actual) => isTypeCompatible(formal, actual)
             }
     }
 

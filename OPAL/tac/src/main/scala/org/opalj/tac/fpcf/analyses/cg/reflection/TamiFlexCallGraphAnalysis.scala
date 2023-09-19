@@ -142,18 +142,12 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         } else { // Class.newInstance
             (None, Some(Seq.empty))
         }
-        val persistentMethodInvokeReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(tac.stmts))
-        val persistentMethodInvokeActualParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
+        val persistentReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(tac.stmts))
+        val persistentParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(tac.stmts))).getOrElse(Seq.empty)
 
         for (target <- targets) {
-            indirectCalls.addCall(
-                context,
-                pc,
-                typeIterator.expandContext(context, target, pc),
-                persistentMethodInvokeActualParams,
-                persistentMethodInvokeReceiver
-            )
+            indirectCalls.addCall(context, pc, target, persistentParams, persistentReceiver)
         }
     }
 }
