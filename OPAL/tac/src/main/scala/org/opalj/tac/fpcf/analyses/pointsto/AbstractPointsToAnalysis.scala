@@ -160,14 +160,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) =>
                 val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
                     case Some(field) => declaredFields(field)
-                    case None => declaredFields(declaringClass, name, fieldType)
+                    case None        => declaredFields(declaringClass, name, fieldType)
                 }
                 handleGetField(Some(declaredField), pc, objRefDefSites)
 
             case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) =>
                 val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
                     case Some(field) => declaredFields(field)
-                    case None => declaredFields(declaringClass, name, fieldType)
+                    case None        => declaredFields(declaringClass, name, fieldType)
                 }
                 handleGetStatic(declaredField, pc)
 
@@ -240,15 +240,15 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
             case PutField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
                 val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
-                  case Some(field) => declaredFields(field)
-                  case None => declaredFields(declaringClass, name, fieldType)
+                    case Some(field) => declaredFields(field)
+                    case None        => declaredFields(declaringClass, name, fieldType)
                 }
                 handlePutField(Some(declaredField), objRefDefSites, defSites)
 
             case PutStatic(_, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
                 val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
-                  case Some(field) => declaredFields(field)
-                  case None => declaredFields(declaringClass, name, fieldType)
+                    case Some(field) => declaredFields(field)
+                    case None        => declaredFields(declaringClass, name, fieldType)
                 }
                 handlePutStatic(declaredField, defSites)
 
