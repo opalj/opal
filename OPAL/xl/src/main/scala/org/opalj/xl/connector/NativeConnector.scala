@@ -40,13 +40,13 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 class NativeConnector(override val project: SomeProject) extends FPCFAnalysis with AbstractPointsToAnalysis with AllocationSiteBasedAnalysis {
 
     case class NativeConnectorState(
-                                       context: Context,
-                                       project: SomeProject,
-                                       var files: List[File] = null,
-                                       var nativeInteraction: CrossLanguageInteraction = null,
-                                       var translatorDependees: Set[EOptionP[Entity, Property]] = Set.empty,
-                                       var presetValues: mutable.Map[PKey.StringPKey, Value] = mutable.Map.empty,
-                             ) extends BaseAnalysisState with TypeIteratorState
+            context:                 Context,
+            project:                 SomeProject,
+            var files:               List[File]                          = null,
+            var nativeInteraction:   CrossLanguageInteraction            = null,
+            var translatorDependees: Set[EOptionP[Entity, Property]]     = Set.empty,
+            var presetValues:        mutable.Map[PKey.StringPKey, Value] = mutable.Map.empty
+    ) extends BaseAnalysisState with TypeIteratorState
 
     def analyzeContext(context: Context): ProperPropertyComputationResult = {
 
@@ -68,16 +68,13 @@ class NativeConnector(override val project: SomeProject) extends FPCFAnalysis wi
             }
         }
 
-        def analyze()
-                   (implicit state:NativeConnectorState): Unit = {
+        def analyze()(implicit state: NativeConnectorState): Unit = {
             //TODO call llvm
         }
 
-
-
         def createResult(o: Object)(implicit state: NativeConnectorState): ProperPropertyComputationResult = {
             if (state.translatorDependees.isEmpty && o == null) {
-                    Result(context, NoAnalysisResult)
+                Result(context, NoAnalysisResult)
 
             } else
                 InterimResult(
@@ -108,10 +105,10 @@ object TriggeredNativeConnectorScheduler extends BasicFPCFTriggeredAnalysisSched
         CrossLanguageInteraction.key
 
     override def register(
-                    p: SomeProject,
-                    ps: PropertyStore,
-                    unused: Null
-                ): NativeConnector = {
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
+    ): NativeConnector = {
         val analysis = new NativeConnector(p)
         ps.registerTriggeredComputation(triggeredBy, analysis.analyzeContext)
         analysis

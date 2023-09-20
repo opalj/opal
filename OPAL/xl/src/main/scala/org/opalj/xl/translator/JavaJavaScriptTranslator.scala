@@ -23,7 +23,7 @@ object JavaJavaScriptTranslator {
         possibleTypes.map(tpe => {
             if (tpe.isNumericType || tpe == ObjectType.Integer ||
                 tpe == ObjectType.Double || tpe == ObjectType.Long)
-                    Value.makeAnyNum().removeAttributes()
+                Value.makeAnyNum().removeAttributes()
             else if (tpe.isBooleanType || tpe == ObjectType.Boolean)
                 possibleValues.add(Value.makeAnyBool().removeAttributes())
             else if (tpe == ObjectType.String)
@@ -42,8 +42,7 @@ object JavaJavaScriptTranslator {
                 }
                 generateJavaValue(-1, tpe.asObjectType.fqn)
             }
-        }
-        )
+        })
         (PKey.StringPKey.make(variableName),
             if (possibleValues.isEmpty)
                 Value.makeUndef()
@@ -51,8 +50,7 @@ object JavaJavaScriptTranslator {
                 if (value.isDefined)
                     possibleValues.add(Value.makeNum(value.get))
                 Value.join(possibleValues).removeAttributes()
-            }
-        )
+            })
     }
 
     def JavaScript2Java(javaScriptValues: Set[Value]): Set[ObjectType] = {
@@ -61,11 +59,10 @@ object JavaJavaScriptTranslator {
                 ObjectType(javaScriptValue.getJavaName.replace(".", "/"))
             else if (javaScriptValue.isStrIdentifier)
                 ObjectType.String
-            else if (
-                javaScriptValue.isMaybeSingleNum || javaScriptValue.isMaybeSingleNumUInt ||
-                    javaScriptValue.isMaybeAnyNum || javaScriptValue.isMaybeFuzzyNum ||
-                    javaScriptValue.isMaybeNumOther || javaScriptValue.isMaybeNumUInt ||
-                    javaScriptValue.isMaybeNumUIntPos)
+            else if (javaScriptValue.isMaybeSingleNum || javaScriptValue.isMaybeSingleNumUInt ||
+                javaScriptValue.isMaybeAnyNum || javaScriptValue.isMaybeFuzzyNum ||
+                javaScriptValue.isMaybeNumOther || javaScriptValue.isMaybeNumUInt ||
+                javaScriptValue.isMaybeNumUIntPos)
                 ObjectType.Double
             else if (javaScriptValue.isMaybeObject)
                 ObjectType.Object

@@ -342,4 +342,4 @@ object AllocationSiteJavaScriptEngineDetectorScheduler extends JavaScriptEngineD
     override val createAnalysis: SomeProject => JavaScriptEngineDetector =
         new JavaScriptEngineDetector(_) with AllocationSiteBasedAnalysis
 }
-*/
+*/ 

@@ -69,7 +69,7 @@ class ScriptEngineElement()
 case class GetEngine() extends ScriptEngineElement
 case class Eval(receiverOption: Option[Expr[V]], code: List[String]) extends ScriptEngineElement
 case class Put(receiverOption: Option[Expr[V]], varName: String, assignedVar: V) extends ScriptEngineElement
-case class Get(receiverOption: Option[Expr[V]], targetVar: V, varName:String) extends ScriptEngineElement
+case class Get(receiverOption: Option[Expr[V]], targetVar: V, varName: String) extends ScriptEngineElement
 
 /**
  * Detects calls of put, get, eval, on the Java ScriptEngine object.
@@ -128,7 +128,8 @@ abstract class JavaScriptEngineDetector(
         val analyses: List[APIBasedAnalysis] = List(
             new ScriptEngineAnalysis(
                 project,
-                declaredMethods(engineManager,
+                declaredMethods(
+                    engineManager,
                     "",
                     engineManager,
                     "getEngineByName",
@@ -137,7 +138,8 @@ abstract class JavaScriptEngineDetector(
             ) with PointsToBase,
             new ScriptEngineAnalysis(
                 project,
-                declaredMethods(engineManager,
+                declaredMethods(
+                    engineManager,
                     "",
                     engineManager,
                     "getEngineByExtension",
@@ -146,33 +148,35 @@ abstract class JavaScriptEngineDetector(
             ) with PointsToBase,
             new ScriptEngineAnalysis(
                 project,
-                declaredMethods(engineManager,
+                declaredMethods(
+                    engineManager,
                     "",
                     engineManager,
                     "getEngineByMimeType",
                     MethodDescriptor(ObjectType.String, scriptEngine)
                 )
             ) with PointsToBase,
-        new ScriptEngineAnalysis(
+            new ScriptEngineAnalysis(
                 project,
                 declaredMethods(
                     scriptEngine,
                     "",
                     scriptEngine,
                     "put",
-                    MethodDescriptor(ArraySeq(ObjectType.String,ObjectType.Object), VoidType)
-            )) with PointsToBase,
-        new ScriptEngineAnalysis(
-            project,
-            declaredMethods(
-                scriptEngine,
-                "",
-                scriptEngine,
-                "eval",
-                MethodDescriptor(ObjectType.String, ObjectType.Object)
-        )
-        ) with PointsToBase,
-      new ScriptEngineAnalysis(
+                    MethodDescriptor(ArraySeq(ObjectType.String, ObjectType.Object), VoidType)
+                )
+            ) with PointsToBase,
+            new ScriptEngineAnalysis(
+                project,
+                declaredMethods(
+                    scriptEngine,
+                    "",
+                    scriptEngine,
+                    "eval",
+                    MethodDescriptor(ObjectType.String, ObjectType.Object)
+                )
+            ) with PointsToBase,
+            new ScriptEngineAnalysis(
                 project,
                 declaredMethods(
                     scriptEngine,
@@ -182,7 +186,7 @@ abstract class JavaScriptEngineDetector(
                     MethodDescriptor(ObjectType.String, ObjectType.Object)
                 )
             ) with PointsToBase,
-          /*new ScriptEngineAnalysis(
+        /*new ScriptEngineAnalysis(
                 project,
                 declaredMethods(
                     ObjectType.Object,
@@ -198,64 +202,65 @@ abstract class JavaScriptEngineDetector(
 }
 
 abstract class ScriptEngineAnalysis(
-        final val project:            SomeProject, final override val apiMethod: DeclaredMethod
+        final val project: SomeProject, final override val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def c(scriptEngine: ScriptEngineElement, oldDependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)])(eps: SomeEPS)(implicit state: PointsToAnalysisState[ElementType, PointsToSet, ContextType]): ProperPropertyComputationResult = {
         println(s"c $scriptEngine; $eps")
         eps match {
-        case UBP(newDependeePointsTo: PointsToSet@unchecked) =>
-            val newDependees = updatedDependees(eps, oldDependees)
+            case UBP(newDependeePointsTo: PointsToSet @unchecked) =>
+                val newDependees = updatedDependees(eps, oldDependees)
 
-            scriptEngine match {
+                scriptEngine match {
 
-                case GetEngine() => throw new IllegalArgumentException(s"getEngine")
+                    case GetEngine() => throw new IllegalArgumentException(s"getEngine")
 
-                case Eval(receiverOption, code) =>
-                    println("eval2")
-                   val javaScriptInteraction = ScriptEngineInteraction(code = code)
-                   val partialResults =
-                       updateForNewestNelements(oldDependees(eps.toEPK)._1.ub.asInstanceOf[PointsToSet].numElements ,ListBuffer.empty[SomePartialResult], newDependeePointsTo, javaScriptInteraction)
-                    val dependees = newDependees.valuesIterator.map (_._1).toSet
-                    InterimPartialResult(partialResults, dependees, c(scriptEngine, newDependees))
+                    case Eval(receiverOption, code) =>
+                        println("eval2")
+                        val javaScriptInteraction = ScriptEngineInteraction(code = code)
+                        val partialResults =
+                            updateForNewestNelements(oldDependees(eps.toEPK)._1.ub.asInstanceOf[PointsToSet].numElements, ListBuffer.empty[SomePartialResult], newDependeePointsTo, javaScriptInteraction)
+                        val dependees = newDependees.valuesIterator.map(_._1).toSet
+                        InterimPartialResult(partialResults, dependees, c(scriptEngine, newDependees))
 
-                case Get(receiverOption, targetVar, varName) =>
-                    println("get2")
-                    val gets = Map(targetVar -> varName)
-                    val javaScriptInteraction = ScriptEngineInteraction(gets = gets)
-                    val partialResults =
-                        updateForNewestNelements(oldDependees(eps.toEPK)._1.ub.asInstanceOf[PointsToSet].numElements, ListBuffer.empty[SomePartialResult], newDependeePointsTo, javaScriptInteraction)
-                    val dependees = newDependees.valuesIterator.map (_._1).toSet
-                    InterimPartialResult(partialResults, dependees, c(scriptEngine, newDependees))
+                    case Get(receiverOption, targetVar, varName) =>
+                        println("get2")
+                        val gets = Map(targetVar -> varName)
+                        val javaScriptInteraction = ScriptEngineInteraction(gets = gets)
+                        val partialResults =
+                            updateForNewestNelements(oldDependees(eps.toEPK)._1.ub.asInstanceOf[PointsToSet].numElements, ListBuffer.empty[SomePartialResult], newDependeePointsTo, javaScriptInteraction)
+                        val dependees = newDependees.valuesIterator.map(_._1).toSet
+                        InterimPartialResult(partialResults, dependees, c(scriptEngine, newDependees))
 
-                case put@Put(receiverOption, javaScriptVariableName, assignedVar) =>
-                    println("put2")
-                    val tpe = if (assignedVar.value.isPrimitiveValue)
-                        assignedVar.value.asPrimitiveValue.primitiveType
-                    else
-                        assignedVar.value.asReferenceValue.leastUpperType.get
-                    val puts = Map(javaScriptVariableName -> (tpe, Set.empty[AnyRef], None:Option[Double]))
-                    val javaScriptInteraction = ScriptEngineInteraction(puts = puts)
-                    val partialResults =
-                        updateForNewestNelements(oldDependees(eps.toEPK)._1.ub.asInstanceOf[PointsToSet].numElements, ListBuffer.empty[SomePartialResult], newDependeePointsTo, javaScriptInteraction)
-                    val dependees = newDependees.valuesIterator.map(_._1).toSet
-                    InterimPartialResult(partialResults, dependees, c(scriptEngine, newDependees))
+                    case put @ Put(receiverOption, javaScriptVariableName, assignedVar) =>
+                        println("put2")
+                        val tpe = if (assignedVar.value.isPrimitiveValue)
+                            assignedVar.value.asPrimitiveValue.primitiveType
+                        else
+                            assignedVar.value.asReferenceValue.leastUpperType.get
+                        val puts = Map(javaScriptVariableName -> (tpe, Set.empty[AnyRef], None: Option[Double]))
+                        val javaScriptInteraction = ScriptEngineInteraction(puts = puts)
+                        val partialResults =
+                            updateForNewestNelements(oldDependees(eps.toEPK)._1.ub.asInstanceOf[PointsToSet].numElements, ListBuffer.empty[SomePartialResult], newDependeePointsTo, javaScriptInteraction)
+                        val dependees = newDependees.valuesIterator.map(_._1).toSet
+                        InterimPartialResult(partialResults, dependees, c(scriptEngine, newDependees))
 
-                case _ => throw new Exception("TODO3")
-            }
-        case _ => throw new Exception("TODO4")
-    }}
+                    case _ => throw new Exception("TODO3")
+                }
+            case _ => throw new Exception("TODO4")
+        }
+    }
 
     override def processNewCaller(
-                            calleeContext: ContextType,
-                            callerContext: ContextType,
-                            callPC: Int,
-                            tac: TACode[TACMethodParameter, V],
-                            receiverOption: Option[Expr[V]],
-                            params: Seq[Option[Expr[V]]],
-                            targetVarOption: Option[V],
-                            isDirect: Boolean
-                        ): ProperPropertyComputationResult = {
+        calleeContext:   ContextType,
+        callerContext:   ContextType,
+        callPC:          Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
+    ): ProperPropertyComputationResult = {
 
         implicit val state: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
@@ -265,8 +270,7 @@ abstract class ScriptEngineAnalysis(
 
         def newScriptEnginePointsToSet: ProperPropertyComputationResult = {
             println("new scriptengine points to set")
-            var partialResult:
-                PartialResult[ScriptEngineInstance[ElementType], CrossLanguageInteraction] = null
+            var partialResult: PartialResult[ScriptEngineInstance[ElementType], CrossLanguageInteraction] = null
             val newPointsToSet = createPointsToSet(
                 callPC,
                 callerContext,
@@ -283,39 +287,42 @@ abstract class ScriptEngineAnalysis(
             )
 
             newPointsToSet.forNewestNElements(1) {
-                alloc => {
-                   partialResult =
-                        PartialResult(ScriptEngineInstance[ElementType](alloc), CrossLanguageInteraction.key, {
-                        case InterimUBP(p: ScriptEngineInteraction) =>
-                            Some(InterimEUBP(ScriptEngineInstance[ElementType](alloc),
-                                p.updated(language = Language.JavaScript)))
-                        case _: EPK[_, _] =>
-                            Some(InterimEUBP(
-                                ScriptEngineInstance[ElementType](alloc),
-                                ScriptEngineInteraction(language = Language.JavaScript)))
-                        case r =>
-                            throw new IllegalStateException(s"unexpected previous result $r")
-                    })
-                }
+                alloc =>
+                    {
+                        partialResult =
+                            PartialResult(ScriptEngineInstance[ElementType](alloc), CrossLanguageInteraction.key, {
+                                case InterimUBP(p: ScriptEngineInteraction) =>
+                                    Some(InterimEUBP(
+                                        ScriptEngineInstance[ElementType](alloc),
+                                        p.updated(language = Language.JavaScript)
+                                    ))
+                                case _: EPK[_, _] =>
+                                    Some(InterimEUBP(
+                                        ScriptEngineInstance[ElementType](alloc),
+                                        ScriptEngineInteraction(language = Language.JavaScript)
+                                    ))
+                                case r =>
+                                    throw new IllegalStateException(s"unexpected previous result $r")
+                            })
+                    }
                     partialResult
             }
-            Results(createResults,
-                InterimPartialResult(List(partialResult), Set.empty, c(GetEngine(), Map.empty)))
+            Results(
+                createResults,
+                InterimPartialResult(List(partialResult), Set.empty, c(GetEngine(), Map.empty))
+            )
         }
 
         apiMethod.name match {
-            case "getEngineByExtension"
-                if (!StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.
-                    forall(extension => jsExtensions.contains(extension.toLowerCase)))=>
-                        newScriptEnginePointsToSet
-            case "getEngineByMimeType"
-                if (StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.
-                    forall(mimeType => jsMimetypes.contains(mimeType.toLowerCase))) =>
-                        newScriptEnginePointsToSet
-            case "getEngineByName"
-                if (StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.
-                    forall(engineName => jsEngineNames.contains(engineName.toLowerCase))) =>
-                        newScriptEnginePointsToSet
+            case "getEngineByExtension" if (!StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.
+                forall(extension => jsExtensions.contains(extension.toLowerCase))) =>
+                newScriptEnginePointsToSet
+            case "getEngineByMimeType" if (StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.
+                forall(mimeType => jsMimetypes.contains(mimeType.toLowerCase))) =>
+                newScriptEnginePointsToSet
+            case "getEngineByName" if (StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.
+                forall(engineName => jsEngineNames.contains(engineName.toLowerCase))) =>
+                newScriptEnginePointsToSet
             case "eval" =>
                 println("eval1")
                 val code = StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.toList //TODO use interprocedural string analysis
@@ -330,22 +337,22 @@ abstract class ScriptEngineAnalysis(
                 var puts = Map.empty[String, (FieldType, Set[AnyRef], Option[Double])]
                 val javaScriptVariableName = StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.head //TODO use sets //TODO use interprocedural string analysis
                 val assignedVar = params(1).get.asVar
-                val tpe = if(assignedVar.value.isPrimitiveValue)
+                val tpe = if (assignedVar.value.isPrimitiveValue)
                     assignedVar.value.asPrimitiveValue.primitiveType
                 else
                     assignedVar.value.asReferenceValue.leastUpperType.get
-                puts+=javaScriptVariableName->(tpe, Set.empty, None)
+                puts += javaScriptVariableName -> (tpe, Set.empty, None)
                 val javaScriptInteraction = ScriptEngineInteraction(puts = puts)
                 val partialResults = updateScriptEngine(receiverOption, javaScriptInteraction)
                 val dependeesMap = state.dependeesOf("")
                 val dependees = dependeesMap.valuesIterator.map(_._1).toSet
-                InterimPartialResult(partialResults, dependees, c(Put(receiverOption, javaScriptVariableName, assignedVar),  dependeesMap))
+                InterimPartialResult(partialResults, dependees, c(Put(receiverOption, javaScriptVariableName, assignedVar), dependeesMap))
 
             case "get" =>
                 println("get1")
                 val varName = StringUtil.getPossibleStrings(params.head.get.asVar, tac.stmts).get.head //TODO use sets
                 val targetVar = targetVarOption.get
-                val gets = Map(targetVar->varName)
+                val gets = Map(targetVar -> varName)
                 val javaScriptInteraction = ScriptEngineInteraction(gets = gets)
                 val partialResults = updateScriptEngine(receiverOption, javaScriptInteraction)
                 val dependeesMap = state.dependeesOf("")
@@ -356,19 +363,20 @@ abstract class ScriptEngineAnalysis(
         }
     }
 
-    private def updateScriptEngine(receiverOption: Option[Expr[V]], javaScriptInteraction: ScriptEngineInteraction)(implicit state: State):ListBuffer[SomePartialResult] = {
+    private def updateScriptEngine(receiverOption: Option[Expr[V]], javaScriptInteraction: ScriptEngineInteraction)(implicit state: State): ListBuffer[SomePartialResult] = {
         receiverOption.get.asVar.definedBy.foldLeft(ListBuffer.empty[SomePartialResult])(
             (list, defSite) => {
                 val allocations = currentPointsToOfDefSite("", defSite)
-               updateForNewestNelements(0, list, allocations, javaScriptInteraction)
-            })
+                updateForNewestNelements(0, list, allocations, javaScriptInteraction)
+            }
+        )
     }
-    private[this] def updateForNewestNelements(seenElements: Int, list: ListBuffer[SomePartialResult], allocations:PointsToSet, javaScriptInteraction:ScriptEngineInteraction): ListBuffer[SomePartialResult] ={
-        allocations.forNewestNElements(allocations.numElements-seenElements) {
+    private[this] def updateForNewestNelements(seenElements: Int, list: ListBuffer[SomePartialResult], allocations: PointsToSet, javaScriptInteraction: ScriptEngineInteraction): ListBuffer[SomePartialResult] = {
+        allocations.forNewestNElements(allocations.numElements - seenElements) {
             alloc =>
                 list += PartialResult[ScriptEngineInstance[ElementType], CrossLanguageInteraction](Coordinator.ScriptEngineInstance(alloc), CrossLanguageInteraction.key, {
                     case InterimUBP(p: ScriptEngineInteraction) => Some(InterimEUBP(Coordinator.ScriptEngineInstance(alloc), p.update(javaScriptInteraction)))
-                    case _: EPK[_, _] => Some(InterimEUBP(Coordinator.ScriptEngineInstance(alloc), javaScriptInteraction))
+                    case _: EPK[_, _]                           => Some(InterimEUBP(Coordinator.ScriptEngineInstance(alloc), javaScriptInteraction))
                     case r =>
                         throw new IllegalStateException(s"unexpected previous result $r")
                 })
@@ -376,8 +384,6 @@ abstract class ScriptEngineAnalysis(
         list
     }
 }
-
-
 
 trait JavaScriptEngineDetectorScheduler extends BasicFPCFEagerAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
@@ -390,7 +396,7 @@ trait JavaScriptEngineDetectorScheduler extends BasicFPCFEagerAnalysisScheduler 
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(propertyKind)
 
-    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(CrossLanguageInteraction)//Set.empty
+    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(CrossLanguageInteraction) //Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = createAnalysis(p)
