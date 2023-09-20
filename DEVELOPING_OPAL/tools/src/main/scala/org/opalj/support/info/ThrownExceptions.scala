@@ -96,7 +96,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
                 epsThrowingExceptionsByClassFile.map { e =>
                     val (cf, epsThrowingExceptionsPerMethod) = e
                     cf.thisType.toJava+"{"+
-                        epsThrowingExceptionsPerMethod.map { eps: SomeEPS =>
+                        epsThrowingExceptionsPerMethod.map { (eps: SomeEPS) =>
                             val m: Method = eps.e.asInstanceOf[Method]
                             val ThrownExceptionsProperty(types) = eps.ub
                             m.descriptor.toJava(m.name)+" throws "+types.toString

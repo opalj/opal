@@ -12,6 +12,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.Field
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.MethodReturnValue
@@ -35,7 +36,7 @@ object Values extends ProjectAnalysisApplication {
         isInterrupted: () => Boolean
     ): BasicReport = {
 
-        implicit val classHierarchy = project.classHierarchy
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 
         val (ps, _) =
             PerformanceEvaluation.time {

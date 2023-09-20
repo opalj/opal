@@ -72,7 +72,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             categorySizeDefault: Double,
             offset:              Int
         ): FeatureConfiguration = {
-            implicit val config = hermes.Config.getConfig(FanInFanOutConfigPrefix)
+            implicit val config: Config = hermes.Config.getConfig(FanInFanOutConfigPrefix)
             val numCategories = parseNumCategories(categoriesKey).getOrElse(categoriesDefault)
             val categorySize = parseCategorySize(categorySizeKey).getOrElse(categorySizeDefault)
 
@@ -213,7 +213,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             objectTypeId = ObjectType(classFileType).id
             location = ClassFileLocation(Some(source), classFileType)
         } {
-            implicit val constantPool = classFile.constant_pool
+            implicit val constantPool: Constant_Pool = classFile.constant_pool
             val cpEntryPredicate: PartialFunction[Constant_Pool_Entry, Constant_Pool_Entry] = {
                 case CONSTANT_Fieldref_info(_, name_and_type_index) => constantPool(name_and_type_index)
                 case CONSTANT_NameAndType_info(_, descriptor_index) => constantPool(descriptor_index)

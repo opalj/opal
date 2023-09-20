@@ -13,7 +13,7 @@ object Long2ListProperties extends Properties("Long2List") {
 
     def empty(): Long2List = Long2List.empty
 
-    property("+:, size, isSingletonList, isEmpty, foreach") = forAll { sLongSet: Set[Long] =>
+    property("+:, size, isSingletonList, isEmpty, foreach") = forAll { (sLongSet: Set[Long]) =>
         val oLongList = sLongSet.foldLeft(empty())((c, n) => n +: c)
         var newSLongSet = Set.empty[Long]
         oLongList foreach { newSLongSet += _ }
@@ -22,13 +22,13 @@ object Long2ListProperties extends Properties("Long2List") {
             (oLongList.isEmpty != oLongList.nonEmpty) :| "nonEmpty and isEmpty"
     }
 
-    property("forall") = forAll { sLongSet: Set[Long] =>
+    property("forall") = forAll { (sLongSet: Set[Long]) =>
         val sLongList = sLongSet.toList
         val oLongList = sLongList.foldLeft(empty())((c, n) => n +: c)
         oLongList.forall(sLongSet.contains)
     }
 
-    property("forFirstN") = forAll { sLongSet: Set[Long] =>
+    property("forFirstN") = forAll { (sLongSet: Set[Long]) =>
         val sLongList = sLongSet.toList
         val oLongList = sLongList.reverse.foldLeft(empty())((c, n) => n +: c)
         (0 to sLongSet.size).forall { i =>
@@ -43,20 +43,20 @@ object Long2ListProperties extends Properties("Long2List") {
         }
     }
 
-    property("foldLeft") = forAll { sLongSet: Set[Long] =>
+    property("foldLeft") = forAll { (sLongSet: Set[Long]) =>
         val sLongList = sLongSet.toList
         val oLongList = sLongList.foldLeft(empty())((c, n) => n +: c)
         oLongList.foldLeft(0L)(_ + _) == sLongList.foldLeft(0L)(_ + _)
     }
 
-    property("iterator") = forAll { sLongSet: Set[Long] =>
+    property("iterator") = forAll { (sLongSet: Set[Long]) =>
         val oLongList = sLongSet.foldLeft(empty())((c, n) => n +: c)
         var newSLongSet = Set.empty[Long]
         oLongList.iterator foreach { newSLongSet += _ }
         sLongSet == newSLongSet
     }
 
-    property("equals and hashCode: two sets which are definitively equal (the same values are added in the same order) equal have to have the same hash code") = forAll { sLongSet: Set[Long] =>
+    property("equals and hashCode: two sets which are definitively equal (the same values are added in the same order) equal have to have the same hash code") = forAll { (sLongSet: Set[Long]) =>
         val sLongListSet = sLongSet.toList
         val oLongList1 = sLongListSet.foldLeft(empty())((c, n) => n +: c)
         val oLongList2 = sLongListSet.foldLeft(empty())((c, n) => n +: c)
@@ -65,7 +65,7 @@ object Long2ListProperties extends Properties("Long2List") {
             (oLongList1.hashCode == oLongList2.hashCode) :| "hashCode"
     }
 
-    property("equals: two sets which are definitively not equal should not be equal") = forAll { sLongSet: Set[Long] =>
+    property("equals: two sets which are definitively not equal should not be equal") = forAll { (sLongSet: Set[Long]) =>
         sLongSet.nonEmpty ==> {
             val sLongListSet = sLongSet.toList
             val oLongList1 = sLongListSet.foldLeft(empty())((c, n) => n +: c)

@@ -23,7 +23,7 @@ object CloseResources extends ProjectAnalysisApplication {
         params:        Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
-        // implicit val logContext = p.logContext
+        // implicit val logContext: LogContext = p.logContext
         // val tacaiKey = p.get(ComputeTACAIKey)
 
         val issues = new java.util.concurrent.ConcurrentLinkedQueue[String]()

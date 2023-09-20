@@ -67,7 +67,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
 
-    property("create singleton IntTrieSet") = forAll { v: Int =>
+    property("create singleton IntTrieSet") = forAll { (v: Int) =>
         val factoryITS = IntTrieSet1(v)
         val viaEmptyITS = EmptyIntTrieSet + v
         factoryITS.size == 1 &&
@@ -79,7 +79,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             viaEmptyITS == factoryITS
     }
 
-    property("create IntTrieSet from Set step by step") = forAll { s: IntArraySet =>
+    property("create IntTrieSet from Set step by step") = forAll { (s: IntArraySet) =>
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
@@ -89,7 +89,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
-    property("create IntTrieSet from IntSet using ++") = forAll { s: IntTrieSet =>
+    property("create IntTrieSet from IntSet using ++") = forAll { (s: IntTrieSet) =>
         val its = EmptyIntTrieSet ++ s
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
@@ -99,7 +99,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
-    property("create IntTrieSet from Set[Int] using ++") = forAll { s: Set[Int] =>
+    property("create IntTrieSet from Set[Int] using ++") = forAll { (s: Set[Int]) =>
         val its = EmptyIntTrieSet ++ s
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
@@ -109,14 +109,14 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
-    property("create IntTrieSet from List (i.e., with duplicates)") = forAll { l: List[Int] =>
+    property("create IntTrieSet from List (i.e., with duplicates)") = forAll { (l: List[Int]) =>
         val its = l.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val lWithoutDuplicates = l.toSet.toList
         (its.size == lWithoutDuplicates.size) :| "matching size" &&
             its.iterator.toList.sorted == lWithoutDuplicates.sorted
     }
 
-    property("create IntTrieSet from Iterator (i.e., with duplicates)") = forAll { l: List[Int] =>
+    property("create IntTrieSet from Iterator (i.e., with duplicates)") = forAll { (l: List[Int]) =>
         val its = EmptyIntTrieSet ++ l.iterator
         val newits = its.iterator.toSet
         its.size == newits.size &&
@@ -125,14 +125,14 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             newits.forall(its.contains)
     }
 
-    property("head") = forAll { s: IntArraySet =>
+    property("head") = forAll { (s: IntArraySet) =>
         s.nonEmpty ==> {
             val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
             s.contains(its.head)
         }
     }
 
-    property("head and headAndTail should return the same head") = forAll { s: IntTrieSet =>
+    property("head and headAndTail should return the same head") = forAll { (s: IntTrieSet) =>
         var its = s
         var success = true
         while (its.nonEmpty && success) {
@@ -169,14 +169,14 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             s2.forall(v => s1.contains(v) == its.contains(v))
     }
 
-    property("foreach") = forAll { s: IntArraySet =>
+    property("foreach") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         var newS = IntArraySet.empty
         its foreach { newS += _ } // use foreach to compute a new set
         s == newS
     }
 
-    property("foreachPair") = forAll { s: IntArraySet =>
+    property("foreachPair") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         var itsPairs = Set.empty[(Int, Int)]
         its foreachPair { (p1: Int, p2: Int) =>
@@ -190,7 +190,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         (sPairs == itsPairs) :| s"$sPairs vs. $itsPairs"
     }
 
-    property("map") = forAll { s: IntArraySet =>
+    property("map") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         val mappedIts = its.map(_ * 2)
         val mappedS = s.map(_ * 2)
@@ -200,12 +200,12 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("transform") = forAll { s: IntTrieSet =>
+    property("transform") = forAll { (s: IntTrieSet) =>
         val its = s.transform(_ * 2, List.newBuilder[Int]).iterator.toList.sorted
         its == s.map(_ * 2).iterator.toList.sorted
     }
 
-    property("exists") = forAll { s: IntArraySet =>
+    property("exists") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         classify(its.isEmpty, "the set is empty") {
             s.forall(v => its.exists(_ == v)) &&
@@ -213,23 +213,23 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("forall") = forAll { s: IntArraySet =>
+    property("forall") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         its.forall(s.contains) &&
             its.forall(v => s.contains(-v)) == s.forall(v => s.contains(-v))
     }
 
-    property("foldLeft") = forAll { s: IntArraySet =>
+    property("foldLeft") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         its.foldLeft(0)(_ + _) == s.foldLeft(0)(_ + _)
     }
 
-    property("toChain") = forAll { s: IntArraySet =>
+    property("toChain") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         its.toList.iterator.toList.sorted == s.iterator.toList.sorted
     }
 
-    property("headAndTail") = forAll { s: IntArraySet =>
+    property("headAndTail") = forAll { (s: IntArraySet) =>
         var its = EmptyIntTrieSet ++ s.iterator
         var removed = List.empty[Int]
         while (its.nonEmpty) {
@@ -241,7 +241,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (removed.size == s.size) :| "all values are returned"
     }
 
-    property("flatMap") = forAll { listOfSets: List[IntArraySet] =>
+    property("flatMap") = forAll { (listOfSets: List[IntArraySet]) =>
         listOfSets.nonEmpty ==> {
             val arrayOfSets = listOfSets.toArray
             val arrayOfITSets = arrayOfSets.map(s => IntTrieSet.empty ++ s.iterator)
@@ -261,23 +261,23 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("not equals") = forAll { s: IntArraySet =>
+    property("not equals") = forAll { (s: IntArraySet) =>
         val its = EmptyIntTrieSet ++ s.iterator
         its != (new Object)
     }
 
-    property("+!") = forAll { s: IntTrieSet =>
+    property("+!") = forAll { (s: IntTrieSet) =>
         val its = EmptyIntTrieSet ++! s
         its == s
     }
 
-    property("equals") = forAll { s: IntTrieSet =>
+    property("equals") = forAll { (s: IntTrieSet) =>
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
         val newS = s + i - i
         s == newS && s.hashCode == newS.hashCode
     }
 
-    property("toString") = forAll { s: IntArraySet =>
+    property("toString") = forAll { (s: IntArraySet) =>
         val its = s.foldLeft(IntTrieSet.empty)(_ +! _)
         val itsToString = its.toString
         itsToString.startsWith("IntTrieSet(") && itsToString.endsWith(")")
@@ -307,7 +307,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("filter (identity if no value is filtered)") = forAll { s: IntTrieSet =>
+    property("filter (identity if no value is filtered)") = forAll { (s: IntTrieSet) =>
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
         s.filter(_ != i) eq s
     }
@@ -322,7 +322,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("-") = forAll { ps: (IntArraySet, IntArraySet) =>
+    property("-") = forAll { (ps: (IntArraySet, IntArraySet)) =>
         val (s, other) = ps
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = other.foldLeft(its)(_ - _)
@@ -333,7 +333,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("intersect") = forAll { ps: (IntArraySet, IntArraySet) =>
+    property("intersect") = forAll { (ps: (IntArraySet, IntArraySet)) =>
         val (ias1, ias2) = ps
         val s1 = ias1.foldLeft(IntTrieSet.empty)(_ + _)
         val s2 = ias2.foldLeft(IntTrieSet.empty)(_ + _)
@@ -342,19 +342,19 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (s2 intersect s1) == expected
     }
 
-    property("- (all elements)") = forAll { s: IntArraySet =>
+    property("- (all elements)") = forAll { (s: IntArraySet) =>
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = s.foldLeft(its)(_ - _)
         newits.size == 0 && newits.isEmpty &&
             newits == EmptyIntTrieSet
     }
 
-    property("filter (all elements)") = forAll { s: IntArraySet =>
+    property("filter (all elements)") = forAll { (s: IntArraySet) =>
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         its.filter(i => false) eq EmptyIntTrieSet
     }
 
-    property("withFilter") = forAll { ss: (IntArraySet, IntArraySet) =>
+    property("withFilter") = forAll { (ss: (IntArraySet, IntArraySet)) =>
         val (s1: IntArraySet, s2: IntArraySet) = ss
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)

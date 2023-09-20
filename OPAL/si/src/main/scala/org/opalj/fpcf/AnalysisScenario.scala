@@ -6,6 +6,8 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.graphs.Graph
 
+import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
+
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
  * a schedule to execute a set of analyses.
@@ -214,7 +216,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
      * @param propertyStore required to determine which properties are already computed!
      */
     def computeSchedule(
-        propertyStore: PropertyStore
+        propertyStore:   PropertyStore,
+        defaultAnalysis: PropertyBounds => Option[ComputationSpecification[A]] = _ => None
     )(
         implicit
         logContext: LogContext
@@ -241,18 +244,39 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         }
 
         // 1. check for properties that are not derived (and which require an analysis)
+        def useFallback(underivedProperty: PropertyBounds, propertyName: String) = {
+            if (PropertyKey.hasFallback(underivedProperty.pk)) {
+                val message = s"no analyses scheduled for: $propertyName; using fallback"
+                OPALLogger.warn("analysis configuration", message)
+            } else {
+                throw new IllegalStateException(s"no analysis scheduled for $propertyName")
+            }
+        }
+
+        val analysisAutoConfig = BaseConfig.getBoolean(AnalysisAutoConfigKey)
         val underivedProperties = usedProperties -- derivedProperties
         underivedProperties
             .filterNot { underivedProperty =>
                 alreadyComputedPropertyKinds.contains(underivedProperty.pk.id)
             }
             .foreach { underivedProperty =>
-                val propertyName = PropertyKey.name(underivedProperty.pk.id)
-                if (PropertyKey.hasFallback(underivedProperty.pk)) {
-                    val message = s"no analyses scheduled for: $propertyName; using fallback"
-                    OPALLogger.warn("analysis configuration", message)
-                } else {
-                    throw new IllegalStateException(s"no analysis scheduled for $propertyName")
+                if (!derivedProperties.contains(underivedProperty)) {
+                    val propertyName = PropertyKey.name(underivedProperty.pk.id)
+                    val defaultCSOpt =
+                        if (analysisAutoConfig) defaultAnalysis(underivedProperty) else None
+                    if (defaultCSOpt.isDefined) {
+                        val defaultCS = defaultCSOpt.get
+                        try {
+                            processCS(defaultCS)
+                            val message = s"no analyses scheduled for: $propertyName; using ${defaultCS.name}"
+                            OPALLogger.info("analysis configuration", message)
+                        } catch {
+                            case _: SpecificationViolation =>
+                                useFallback(underivedProperty, propertyName)
+                        }
+                    } else {
+                        useFallback(underivedProperty, propertyName)
+                    }
                 }
             }
 
@@ -312,6 +336,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
  * Factory to create an [[AnalysisScenario]].
  */
 object AnalysisScenario {
+
+    final val AnalysisAutoConfigKey = "org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfig"
 
     /**
      * @param analyses The set of analyses that should be executed as part of this analysis scenario.

@@ -5,6 +5,8 @@ package analyses
 package cg
 
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -90,7 +92,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
     }
 
     override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
         var instantiatedTypes = Set.empty[ObjectType]
 
         if (!project.config.hasPath(additionalInstantiatedTypesKey)) {

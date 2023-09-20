@@ -46,6 +46,9 @@ temp
 .bloop/
 .metals/
 .bsp
+project/project
+project/metals.sbt
+build_log.txt
 
 # Exclude .jvmopts as this specifies custom sbt launching options
 .jvmopts

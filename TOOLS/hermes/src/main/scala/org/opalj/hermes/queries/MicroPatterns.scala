@@ -72,7 +72,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         project:              Project[S],
         rawClassFiles:        Iterable[(org.opalj.da.ClassFile, S)]
     ): IterableOnce[Feature[S]] = {
-        implicit val theProject = project
+        implicit val theProject: Project[S] = project
 
         val fa = project.get(FieldAccessInformationKey)
 

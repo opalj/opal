@@ -504,7 +504,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         val jarEntryName = jarEntry.getName
                         if (jarEntryName.endsWith(".class")) {
                             try {
-                                val url = new URL(jarFileURL + jarEntry.getName)
+                                val url = URI.create(jarFileURL + jarEntry.getName).toURL
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile => classFileHandler(classFile, url))
                             } catch {

@@ -75,7 +75,7 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      */
     def analyze(project: Project[Source], parameters: Seq[String]): ReportableAnalysisResult = {
 
-        val analyze: Method => Option[String] = { m: Method =>
+        val analyze: Method => Option[String] = { (m: Method) =>
             val theDomain = domain(project, m)
             ai(m, theDomain)
             theDomain.report
