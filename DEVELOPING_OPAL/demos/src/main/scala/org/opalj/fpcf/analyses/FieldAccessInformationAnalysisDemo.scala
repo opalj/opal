@@ -23,7 +23,8 @@ import org.opalj.util.Seconds
 import java.net.URL
 
 /**
- * Runs the EagerFieldAccessInformationAnalysis.
+ * Runs analyses for field accesses throughout a project and automatically excludes any JDK files included in the project
+ * files from the summary at the end.
  *
  * @author Maximilian Rüsch
  */
