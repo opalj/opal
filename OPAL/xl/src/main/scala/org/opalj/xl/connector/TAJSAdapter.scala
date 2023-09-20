@@ -27,4 +27,5 @@ class TAJSAdapter(project: SomeProject) extends TajsAdapter {
         val m = List(fields(0).fieldType.asInstanceOf[Type])
         JavaJavaScriptTranslator.Java2JavaScript("", m, None)._2
     }
+    
 }
