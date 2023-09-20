@@ -3,85 +3,74 @@ package org.opalj
 package xl
 package translator
 
+import java.net.URL
+
+import dk.brics.tajs.flowgraph.SourceLocation
+import dk.brics.tajs.flowgraph.jsnodes.JavaNode
+import dk.brics.tajs.lattice.ObjectLabel
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.lattice.Value
 
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.common.DefinitionSite
-import org.opalj.br.fpcf.properties.pointsto.AllocationSite
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.Type
 
 object JavaJavaScriptTranslator {
 
-    def Java2JavaScript(variableName: String, possibleTypes: Map[Type, Set[DefinitionSite]], value: Option[Double], project: SomeProject): (PKey.StringPKey,Value) = {
+    def Java2JavaScript(variableName: String, possibleTypes: List[Type], value: Option[Double]): (PKey.StringPKey, Value) = {
 
-        //val simpleContexts = project.get(SimpleContextsKey)
-        val propertyStore = project.get(PropertyStoreKey)
-
-        //val declaredMethods = project.get(DeclaredMethodsKey)
         val possibleValues = new java.util.ArrayList[Value]()
 
-        propertyStore(new Object(), AllocationSitePointsToSet.key)
-
-        possibleTypes.foreach {
-            case (tpe, defSites) => {
-                if (tpe.isNumericType ||
-                    tpe == ObjectType.Integer ||
-                    tpe == ObjectType.Double ||
-                    tpe == ObjectType.Long)
-                    possibleValues.add(Value.makeAnyNum().removeAttributes())
-
-                else if (tpe.isBooleanType || tpe == ObjectType.Boolean)
-                    possibleValues.add(Value.makeAnyBool().removeAttributes())
-
-                else if (tpe == ObjectType.String)
-                    possibleValues.add(Value.makeAnyStr().removeAttributes())
-
-                else if (tpe.isObjectType) {
-                    //val path = ""
-                    //val url: URL = new URL("file", null, path)
-                    //val sl: SourceLocation = new SourceLocation.StaticLocationMaker(url).make(0, 0, 1, 1)
+        possibleTypes.map(tpe => {
+            if (tpe.isNumericType || tpe == ObjectType.Integer ||
+                tpe == ObjectType.Double || tpe == ObjectType.Long)
+                    Value.makeAnyNum().removeAttributes()
+            else if (tpe.isBooleanType || tpe == ObjectType.Boolean)
+                possibleValues.add(Value.makeAnyBool().removeAttributes())
+            else if (tpe == ObjectType.String)
+                possibleValues.add(Value.makeAnyStr().removeAttributes())
+            else if (tpe.isObjectType) {
+                val path = ""
+                val url = new URL("file", null, path)
+                val sl = new SourceLocation.StaticLocationMaker(url).make(0, 0, 1, 1)
+                def generateJavaValue(long: Long, javaName: String): Value = {
+                    val javaNode = new JavaNode(sl, long)
+                    javaNode.setIndex(long.toInt)
+                    val objectLabel = ObjectLabel.make(javaNode, ObjectLabel.Kind.JAVAOBJECT)
+                    objectLabel.javaName = javaName
+                    val v = Value.makeObject(objectLabel)
+                    v.setDontDelete().setDontEnum().setReadOnly()
                 }
+                generateJavaValue(-1, tpe.asObjectType.fqn)
             }
         }
-        if (possibleValues.size() > 0) {
-            (PKey.StringPKey.make(variableName), {
-                if (value != null && value.isDefined)
-                    Value.makeNum(value.get)
-                else
-                    Value.join(possibleValues).removeAttributes()
-            })
-        } else
-            (PKey.StringPKey.make(variableName), Value.makeUndef())
+        )
+        (PKey.StringPKey.make(variableName),
+            if (possibleValues.isEmpty)
+                Value.makeUndef()
+            else {
+                if (value.isDefined)
+                    possibleValues.add(Value.makeNum(value.get))
+                Value.join(possibleValues).removeAttributes()
+            }
+        )
     }
 
-    def JavaScript2Java(javaScriptValueList: Map[String, Value]): Map[String, (Option[Object], Option[AllocationSite])] = {
-        javaScriptValueList.map(entry => {
-            val entity = entry._1
-            val javaScriptValue = entry._2
-            if (javaScriptValue == null)
-                entity -> (None, None)
-            else if (javaScriptValue.isJavaObject) {
-                entity -> (Some(ObjectType(javaScriptValue.getJavaName.replace(".", "/")).asInstanceOf[Object]),
-                    Some(entry._2.getObjectLabels.stream().findFirst().get().getNode.getIndex.toDouble.asInstanceOf[AllocationSite]))
-            } else if (javaScriptValue.isStrIdentifier) {
-                entity -> (Some(ObjectType.String), None)
-            } else if (
-                javaScriptValue.isMaybeSingleNum ||
-                    javaScriptValue.isMaybeSingleNumUInt ||
-                    javaScriptValue.isMaybeAnyNum ||
-                    javaScriptValue.isMaybeFuzzyNum ||
-                    javaScriptValue.isMaybeNumOther ||
-                    javaScriptValue.isMaybeNumUInt ||
+    def JavaScript2Java(javaScriptValues: Set[Value]): Set[ObjectType] = {
+        javaScriptValues.map(javaScriptValue => {
+            if (javaScriptValue.isJavaObject)
+                ObjectType(javaScriptValue.getJavaName.replace(".", "/"))
+            else if (javaScriptValue.isStrIdentifier)
+                ObjectType.String
+            else if (
+                javaScriptValue.isMaybeSingleNum || javaScriptValue.isMaybeSingleNumUInt ||
+                    javaScriptValue.isMaybeAnyNum || javaScriptValue.isMaybeFuzzyNum ||
+                    javaScriptValue.isMaybeNumOther || javaScriptValue.isMaybeNumUInt ||
                     javaScriptValue.isMaybeNumUIntPos)
-                entity -> (Some(Double.box(javaScriptValue.getNum)), None) //Some(ObjectType.Double)
+                ObjectType.Double
             else if (javaScriptValue.isMaybeObject)
-                entity -> (Some(ObjectType.Object), None)
+                ObjectType.Object
             else
-                entity -> (None, None)
-        })
+                null
+        }).filter(_ != null)
     }
 }
