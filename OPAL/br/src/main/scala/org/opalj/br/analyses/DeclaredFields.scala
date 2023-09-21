@@ -3,16 +3,20 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.br.instructions.FieldAccess
+import org.opalj.log.OPALLogger.info
+
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import scala.collection.mutable
 
-class DeclaredFields {
-
-    @volatile private var id2declaredField = new Array[DeclaredField](32768)
-    private val declaredInformation2id = new mutable.HashMap[ObjectType, mutable.HashMap[String, mutable.HashMap[FieldType, DeclaredField]]]()
-
-    private val nextId = new AtomicInteger(1)
+class DeclaredFields(
+        private[this] val project:                SomeProject,
+        private[this] var id2declaredField:       Array[DeclaredField],
+        private[this] val declaredInformation2id: ConcurrentHashMap[ObjectType, ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]],
+        private[this] val nextId:                 AtomicInteger
+) {
+    private var extensionSize = 1000
     private val rwLock = new ReentrantReadWriteLock()
 
     def apply(id: Int): DeclaredField = {
@@ -26,6 +30,13 @@ class DeclaredFields {
             field.fieldType,
             id => new DefinedField(id, field)
         ).asDefinedField
+    }
+
+    def apply(access: FieldAccess): DeclaredField = {
+        project.resolveFieldReference(access) match {
+            case Some(field) => apply(field)
+            case None        => apply(access.declaringClass, access.name, access.fieldType)
+        }
     }
 
     def apply(
@@ -50,8 +61,11 @@ class DeclaredFields {
         val readLock = rwLock.readLock()
         readLock.lock()
         try {
-            val declaredField = declaredInformation2id.get(declaringClassType).flatMap(_.get(name)).flatMap(_.get(fieldType))
-            if (declaredField.isDefined) return declaredField.get;
+            val declaredField = declaredInformation2id
+                .computeIfAbsent(declaringClassType, _ => new ConcurrentHashMap)
+                .computeIfAbsent(name, _ => new ConcurrentHashMap)
+                .get(fieldType)
+            if (declaredField != null) return declaredField;
         } finally {
             readLock.unlock()
         }
@@ -59,23 +73,26 @@ class DeclaredFields {
         val writeLock = rwLock.writeLock()
         writeLock.lock()
         try {
-            val declaredField = declaredInformation2id.get(declaringClassType).flatMap(_.get(name)).flatMap(_.get(fieldType))
-            if (declaredField.isDefined) return declaredField.get;
+            val type2field = declaredInformation2id
+                .computeIfAbsent(declaringClassType, _ => new ConcurrentHashMap)
+                .computeIfAbsent(name, _ => new ConcurrentHashMap)
+            val declaredField = type2field.get(fieldType)
+            if (declaredField != null) return declaredField;
 
             val newDeclaredField = declaredFieldFactory(nextId.getAndIncrement())
-            declaredInformation2id
-                .getOrElseUpdate(declaringClassType, mutable.HashMap.empty)
-                .getOrElseUpdate(name, mutable.HashMap.empty)
-                .put(fieldType, newDeclaredField)
-
-            val curMap = id2declaredField
-            if (newDeclaredField.id < curMap.length) {
-                curMap(newDeclaredField.id) = newDeclaredField
-            } else {
-                val newMap = java.util.Arrays.copyOf(curMap, curMap.length * 2)
-                newMap(newDeclaredField.id) = newDeclaredField
-                id2declaredField = newMap
+            type2field.put(fieldType, newDeclaredField)
+            if (id2declaredField.size <= newDeclaredField.id) {
+                info(
+                    "project",
+                    "too many declared fields; extended the underlying array"
+                )(project.logContext)
+                val id2declaredFieldExt = new Array[DeclaredField](id2declaredField.length + extensionSize)
+                extensionSize = Math.min(extensionSize * 2, 32000)
+                Array.copy(id2declaredField, 0, id2declaredFieldExt, 0, id2declaredField.length)
+                id2declaredField = id2declaredFieldExt
             }
+            id2declaredField(newDeclaredField.id) = newDeclaredField
+
             newDeclaredField
         } finally {
             writeLock.unlock()
