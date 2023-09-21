@@ -38,8 +38,6 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
     private val declaredFields = project.get(DeclaredFieldsKey)
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
-        import project.resolveFieldReference
-
         val context = SimpleContext(declaredMethods(method));
         val fieldAccesses = new DirectFieldAccesses()
 
