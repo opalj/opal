@@ -28,7 +28,9 @@ package object fieldaccess {
         contextId.toLong | (pc.toLong << 31)
     }
 
-    @inline def decodeDirectFieldAccess(fieldAccess: FieldAccess)(implicit declaredMethods: DeclaredMethods): (DefinedMethod, Int) = {
+    @inline def decodeDirectFieldAccess(
+        fieldAccess: FieldAccess
+    )(implicit declaredMethods: DeclaredMethods): (DefinedMethod, Int) = {
         val methodId = fieldAccess.toInt
         val pc = (fieldAccess >> 31).toInt
         (declaredMethods(methodId).asDefinedMethod, pc)

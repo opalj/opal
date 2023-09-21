@@ -3,11 +3,13 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.br.instructions.FieldAccess
+
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.mutable
 
-class DeclaredFields {
+class DeclaredFields(private[this] val project: SomeProject) {
 
     @volatile private var id2declaredField = new Array[DeclaredField](32768)
     private val declaredInformation2id = new mutable.HashMap[ObjectType, mutable.HashMap[String, mutable.HashMap[FieldType, DeclaredField]]]()
@@ -26,6 +28,13 @@ class DeclaredFields {
             field.fieldType,
             id => new DefinedField(id, field)
         ).asDefinedField
+    }
+
+    def apply(access: FieldAccess): DeclaredField = {
+        project.resolveFieldReference(access) match {
+            case Some(field) => apply(field)
+            case None        => apply(access.declaringClass, access.name, access.fieldType)
+        }
     }
 
     def apply(
