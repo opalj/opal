@@ -17,7 +17,7 @@ sealed abstract class DeclaredField {
     def declaringClassType: ObjectType
     def name: String
     def fieldType: FieldType
-    def toJava: String = s"${declaringClassType.toJava}{ ${fieldType.toJava} }"
+    def toJava: String = s"${declaringClassType.toJava}{ $name:${fieldType.toJava} }"
 
     def asDefinedField: DefinedField
     def definedField: Field

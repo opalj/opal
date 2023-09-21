@@ -31,12 +31,12 @@ import java.net.URL
 object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
     private val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
-      "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
-      "org/xml/sax")
+        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
+        "org/xml/sax")
 
-    override def title: String = "Determines read and write accesses to fields"
+    override def title: String = "FieldAccessInformationAnalysis"
 
-    override def description: String = "Identifies fields which are never written nor read"
+    override def description: String = "Runs analyses for field accesses (field reads and writes) throughout a project"
 
     override def doAnalyze(
         project:       Project[URL],

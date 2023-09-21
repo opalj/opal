@@ -77,7 +77,9 @@ sealed trait FieldAccesses {
         })
     }
 
-    private[this] def partialResultForReadFields(accessContext: Context): PartialResult[Method, MethodFieldReadAccessInformation] = {
+    private[this] def partialResultForReadFields(
+        accessContext: Context
+    ): PartialResult[Method, MethodFieldReadAccessInformation] = {
         partialResultForAccessedFields(
             accessContext,
             MethodFieldReadAccessInformation.key,
@@ -91,7 +93,9 @@ sealed trait FieldAccesses {
         )
     }
 
-    private[this] def partialResultForWriteFields(accessContext: Context): PartialResult[Method, MethodFieldWriteAccessInformation] = {
+    private[this] def partialResultForWriteFields(
+        accessContext: Context
+    ): PartialResult[Method, MethodFieldWriteAccessInformation] = {
         partialResultForAccessedFields(
             accessContext,
             MethodFieldWriteAccessInformation.key,
@@ -138,7 +142,8 @@ trait CompleteFieldAccesses extends FieldAccesses {
 
     protected var _accessedFields: IntMap[IntTrieSet] = IntMap.empty
 
-    private[this] var _partialResultsForFieldBasedFieldAccesses: List[PartialResult[Field, _ >: Null <: Property with FieldAccessInformation[_]]] = List.empty
+    private[this] var _partialResultsForFieldBasedFieldAccesses: List[PartialResult[Field, _ >: Null <: Property with FieldAccessInformation[_]]] =
+        List.empty
 
     protected def addFieldAccess[S <: FieldAccessInformation[S]](
         pc:              Int,
@@ -149,7 +154,11 @@ trait CompleteFieldAccesses extends FieldAccesses {
         val oldFieldsAtPCOpt = _accessedFields.get(pc)
         if (oldFieldsAtPCOpt.isEmpty) {
             _accessedFields = _accessedFields.updated(pc, IntTrieSet(field.id))
-            _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(field, propertyKey, propertyFactory())
+            _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(
+                field,
+                propertyKey,
+                propertyFactory()
+            )
         } else {
             val oldFieldsAtPC = oldFieldsAtPCOpt.get
             val newFieldsAtPC = oldFieldsAtPC + field.id
@@ -157,7 +166,11 @@ trait CompleteFieldAccesses extends FieldAccesses {
             // here we assert that IntSet returns the identity if the element is already contained
             if (newFieldsAtPC ne oldFieldsAtPC) {
                 _accessedFields = _accessedFields.updated(pc, newFieldsAtPC)
-                _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(field, propertyKey, propertyFactory())
+                _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(
+                    field,
+                    propertyKey,
+                    propertyFactory()
+                )
             }
         }
     }
@@ -193,7 +206,12 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
 
     override protected def indirectAccessedFields: IntMap[IntTrieSet] = _accessedFields
 
-    @inline private[this] def pcFieldMapNestedUpdate[T](nestedMap: IntMap[IntMap[T]], pc: Int, fieldId: Int, value: T): IntMap[IntMap[T]] = {
+    @inline private[this] def pcFieldMapNestedUpdate[T](
+        nestedMap: IntMap[IntMap[T]],
+        pc:        Int,
+        fieldId:   Int,
+        value:     T
+    ): IntMap[IntMap[T]] = {
         nestedMap.updated(pc, nestedMap.getOrElse(pc, IntMap.empty).updated(fieldId, value))
     }
 
