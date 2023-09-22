@@ -65,11 +65,10 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                     s"must not configure multiple type iterators"
                 )
                 throw new IllegalArgumentException()
-            case Some(_) => () => this.typeIterator
-            case None => () => {
+            case Some(_) => this.typeIterator
+            case None =>
                 this.typeIterator = getTypeIterator(project)
                 this.typeIterator
-            }
         }
 
         Seq(

@@ -22,12 +22,12 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.ClassHierarchy
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.CallersOnlyWithConcreteCallers
-import org.opalj.tac.fpcf.properties.cg.ConcreteCallees
-import org.opalj.tac.fpcf.properties.cg.NoCallees
-import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
@@ -85,7 +85,7 @@ sealed trait CalleesAndCallers {
             case _: EPK[_, _] =>
                 Some(InterimEUBP(
                     callerContext.method,
-                    ConcreteCallees(
+                    org.opalj.br.fpcf.properties.cg.ConcreteCallees(
                         callerContext,
                         directCallees, indirectCallees,
                         incompleteCallSites,
@@ -198,13 +198,13 @@ trait IndirectCallsBase extends Calls {
         callee:        DeclaredMethod,
         params:        Seq[Option[(ValueInformation, IntTrieSet)]],
         receiver:      Option[(ValueInformation, IntTrieSet)]
-    )(implicit typeIterator: TypeIterator, classHierarchy: ClassHierarchy): Unit = {
+    )(implicit contextProvider: ContextProvider, classHierarchy: ClassHierarchy): Unit = {
         if (callee.descriptor.parameterTypes.size == params.size) {
             if (receiver.isEmpty || isTypeCompatible(callee.declaringClassType, receiver.get._1, true)) {
                 if (params.zip(callee.descriptor.parameterTypes).forall { p =>
                     p._1.isEmpty || isTypeCompatible(p._2, p._1.get._1)
                 }) {
-                    val calleeContext = typeIterator.expandContext(callerContext, callee, pc)
+                    val calleeContext = contextProvider.expandContext(callerContext, callee, pc)
                     addCall(callerContext, pc, calleeContext)
                     _parameters = _parameters.updated(
                         pc,

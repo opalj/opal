@@ -72,7 +72,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
                 val fp = context.virtualFormalParameters(context.declaredMethods(callee))(0)
                 val fpEntity =
                     (
-                        typeIterator.expandContext(
+                        contextProvider.expandContext(
                             context.entity._1, declaredMethods(callee), call.pc
                         ),
                             fp
