@@ -32,10 +32,10 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.ArrayType
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.properties.cg.Callees
 
 /**
  * Introduces object allocations for newInstance reflection methods.

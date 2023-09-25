@@ -61,7 +61,7 @@ class CallGraphTests extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
             case Some(_) => throw new IllegalArgumentException()
-            case None    => () => cgKey.getTypeIterator(p)
+            case None    => cgKey.getTypeIterator(p)
         }
     }
 

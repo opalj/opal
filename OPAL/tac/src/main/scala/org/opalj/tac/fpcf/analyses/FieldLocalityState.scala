@@ -21,10 +21,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.cg.Callers
 
 class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
 

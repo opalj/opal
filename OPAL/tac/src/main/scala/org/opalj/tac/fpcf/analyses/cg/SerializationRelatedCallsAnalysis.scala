@@ -33,10 +33,10 @@ import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
 import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI

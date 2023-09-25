@@ -17,6 +17,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -35,7 +36,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
         "org/xml/sax")
 
-    override def title: String = "FieldAccessInformationAnalysis"
+    override def title: String = "Determines field accesses"
 
     override def description: String = "Runs analyses for field accesses (field reads and writes) throughout a project"
 
@@ -58,6 +59,8 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+        project.get(RTACallGraphKey)
+
         time {
             propertyStore = analysesManager
                 .runAll(

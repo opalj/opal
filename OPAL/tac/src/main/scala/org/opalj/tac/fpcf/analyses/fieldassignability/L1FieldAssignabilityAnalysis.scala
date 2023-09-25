@@ -12,11 +12,13 @@ import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.SelfReferenceParameter
 import org.opalj.br.Field
-import org.opalj.br.PC
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.ContextProviderKey
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -80,6 +82,21 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         }
         false
     }
+}
+
+sealed trait L1FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        TypeExtensibilityKey,
+        ClosedPackagesKey,
+        FieldAccessInformationKey,
+        DefinitionSitesKey,
+        ContextProviderKey
+    )
+
+    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(TACAI, EscapeProperty)
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldAssignability)
 }
 
 /**

@@ -49,8 +49,11 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.DefinedMethod
 import org.opalj.br.NoPCs
@@ -58,9 +61,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
  * Determines whether the lifetime of a reference type field is the same as that of its owning
@@ -77,7 +78,7 @@ class FieldLocalityAnalysis private[analyses] (
     type V = DUVar[ValueInformation]
 
     final implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
     final val definitionSites = project.get(DefinitionSitesKey)
 

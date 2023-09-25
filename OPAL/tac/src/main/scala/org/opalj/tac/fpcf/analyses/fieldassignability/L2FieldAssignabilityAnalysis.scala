@@ -6,20 +6,24 @@ package analyses
 package fieldassignability
 
 import scala.annotation.switch
+
 import scala.collection.mutable
+
 import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
@@ -29,6 +33,8 @@ import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.br.Field
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
@@ -896,6 +902,16 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 }
 
 trait AbstractL2FieldAssignabilityAnalysisScheduler extends AbstractFieldAssignabilityAnalysisScheduler {
+trait L2FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        DeclaredMethodsKey,
+        FieldAccessInformationKey,
+        ClosedPackagesKey,
+        TypeExtensibilityKey,
+        DefinitionSitesKey,
+        ContextProviderKey
+    )
 
     override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
         FieldReadAccessInformation,

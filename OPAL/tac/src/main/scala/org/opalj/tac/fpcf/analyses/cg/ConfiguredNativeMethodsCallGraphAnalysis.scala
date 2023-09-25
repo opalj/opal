@@ -25,11 +25,12 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.ContextProviderKey
 
 /**
  * Add calls from configured native methods to the call graph.
@@ -54,7 +55,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredMethods.reader.read(
@@ -119,7 +120,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
                     calls.addVMReachableMethod(tgtMethod);
                 } else {
                     calls.addCall(
-                        calleeContext, 0, typeIterator.expandContext(calleeContext, tgtMethod, 0)
+                        calleeContext, 0, contextProvider.expandContext(calleeContext, tgtMethod, 0)
                     )
                 }
             }
@@ -132,7 +133,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
 object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, TypeIteratorKey)
+        Seq(DeclaredMethodsKey, ContextProviderKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 
