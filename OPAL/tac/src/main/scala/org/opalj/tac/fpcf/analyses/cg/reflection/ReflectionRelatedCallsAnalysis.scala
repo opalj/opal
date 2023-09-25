@@ -71,7 +71,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
             } else {
                 val options = key.split(',').toSet
 
-                val unrecognizedOptions = options -- Set("class", "method")
+                val unrecognizedOptions = options -- Set("", "class", "method")
                 if (unrecognizedOptions.nonEmpty) {
                     logOnce(Warn(
                         "analysis configuration - reflection analysis",
