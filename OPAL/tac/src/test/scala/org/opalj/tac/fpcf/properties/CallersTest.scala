@@ -19,18 +19,18 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.CallersImplWithOtherCalls
+import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.properties.cg.OnlyVMCallersAndWithUnknownContext
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.cg.CHACallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.CallersImplWithOtherCalls
-import org.opalj.tac.fpcf.properties.cg.CallersOnlyWithConcreteCallers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
-import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
-import org.opalj.tac.fpcf.properties.cg.OnlyVMCallersAndWithUnknownContext
-import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
 
 @RunWith(classOf[JUnitRunner])
 class CallersTest extends AnyFlatSpec with Matchers {
@@ -44,7 +44,7 @@ class CallersTest extends AnyFlatSpec with Matchers {
     typesProject.get(CHACallGraphKey)
     implicit val declaredMethods: DeclaredMethods = typesProject.get(DeclaredMethodsKey)
     val simpleContexts: SimpleContexts = typesProject.get(SimpleContextsKey)
-    implicit val typeIterator: TypeIterator = typesProject.get(TypeIteratorKey)
+    implicit val contextProvider: ContextProvider = typesProject.get(ContextProviderKey)
 
     val declaredMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ => true).get
     val otherMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ ne declaredMethod).get

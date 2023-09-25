@@ -35,31 +35,26 @@ import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
 import org.opalj.br.ObjectType.StringBufferId
 import org.opalj.br.ObjectType.StringBuilderId
 import org.opalj.br.ObjectType.StringId
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.tac.fpcf.properties.cg.NoInstantiatedTypes
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.fpcf.properties.CallStringContext
-import org.opalj.br.fpcf.properties.CallStringContexts
-import org.opalj.br.fpcf.properties.CallStringContextsKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.SimpleContext
-import org.opalj.br.fpcf.properties.SimpleContexts
-import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.Field
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Method
 import org.opalj.br.PCs
+import org.opalj.br.fpcf.analyses.CallStringContextProvider
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoInstantiatedTypes
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
@@ -75,7 +70,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.mergeStr
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBufferPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBuilderPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringConstPointsToSet
-import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
+import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
@@ -89,19 +84,12 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  *
  * @author Dominik Helm
  */
-abstract class TypeIterator(val project: SomeProject) {
+abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
 
-    protected[cg] type ContextType <: Context
     protected[cg] type InformationType
     protected[cg] type PropertyType <: Property
 
     val usedPropertyKinds: Set[PropertyBounds]
-
-    def newContext(method: DeclaredMethod): ContextType
-
-    def expandContext(oldContext: Context, method: DeclaredMethod, pc: Int): ContextType
-
-    def contextFromId(contextId: Int): Context
 
     def typesProperty(
         use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
@@ -311,62 +299,6 @@ abstract class TypeIterator(val project: SomeProject) {
 
     private[cg] def isPossibleType(field: Field, tpe: ReferenceType): Boolean = {
         project.classHierarchy.isSubtypeOf(tpe, field.fieldType.asReferenceType)
-    }
-}
-
-trait SimpleContextProvider extends TypeIterator {
-
-    override type ContextType = SimpleContext
-
-    val project: SomeProject
-
-    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
-
-    @inline def newContext(method: DeclaredMethod): SimpleContext = simpleContexts(method)
-
-    @inline def expandContext(
-        oldContext: Context,
-        method:     DeclaredMethod,
-        pc:         Int
-    ): SimpleContext =
-        simpleContexts(method)
-
-    @inline def contextFromId(contextId: Int): Context = {
-        if (contextId == -1) NoContext
-        else simpleContexts(declaredMethods(contextId))
-    }
-}
-
-trait CallStringContextProvider extends TypeIterator {
-
-    override type ContextType = CallStringContext
-
-    val k: Int
-
-    private[this] val callStringContexts: CallStringContexts = project.get(CallStringContextsKey)
-
-    @inline def newContext(method: DeclaredMethod): CallStringContext =
-        callStringContexts(method, Nil)
-
-    @inline override def expandContext(
-        oldContext: Context,
-        method:     DeclaredMethod,
-        pc:         Int
-    ): CallStringContext = {
-        oldContext match {
-            case csc: CallStringContext =>
-                callStringContexts(method, (oldContext.method, pc) :: csc.callString.take(k - 1))
-            case _ if oldContext.hasContext =>
-                callStringContexts(method, List((oldContext.method, pc)))
-            case _ =>
-                callStringContexts(method, Nil)
-        }
-    }
-
-    @inline override def contextFromId(contextId: Int): Context = {
-        if (contextId == -1) NoContext
-        else callStringContexts(contextId)
     }
 }
 
@@ -869,13 +801,10 @@ trait TypesBasedPointsToTypeIterator
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 }
 
-/**
- * Type iterator with 1-call sensitivity for objects, for the 0-1-CFA algorithm.
- */
-class AllocationSitesPointsToTypeIterator(project: SomeProject)
-    extends TypeIterator(project)
-    with PointsToTypeIterator[AllocationSite, AllocationSitePointsToSet]
-    with SimpleContextProvider {
+abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
+    extends TypeIterator(project) with PointsToTypeIterator[AllocationSite, AllocationSitePointsToSet] {
+
+    protected[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
 
     val mergeStringBuilderBuffer: Boolean =
         project.config.getBoolean(mergeStringBuilderBufferConfigKey)
@@ -885,7 +814,99 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
     private var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
-    private[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
+    @inline override def foreachAllocation(
+        use:             V,
+        context:         Context,
+        stmts:           Array[Stmt[V]],
+        typesProperty:   AllocationSitePointsToSet,
+        additionalTypes: Set[ReferenceType]
+    )(
+        handleAllocation: (ReferenceType, Context, Int) => Unit
+    ): Unit = {
+        typesProperty.forNewestNElements(typesProperty.numElements) { as =>
+            val (context, pc, typeId) = longToAllocationSite(as)(this)
+            val tpe = ReferenceType.lookup(typeId)
+            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
+                handleAllocation(tpe, context, pc)
+        }
+    }
+
+    @inline protected[this] override def continuationForAllocations(
+        use:                 V,
+        updatedEPS:          EPS[Entity, PropertyType],
+        oldEOptP:            EOptionP[Entity, PropertyType],
+        additionalTypes:     Set[ReferenceType],
+        handleNewAllocation: (ReferenceType, Context, Int) => Unit
+    ): Unit = {
+        val ub = updatedEPS.ub
+        val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
+        ub.forNewestNElements(ub.numElements - seenElements) { as =>
+            val (context, pc, typeId) = longToAllocationSite(as)(this)
+            val tpe = ReferenceType.lookup(typeId)
+            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
+                handleNewAllocation(tpe, context, pc)
+        }
+    }
+
+    protected[this] val pointsToProperty: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
+
+    protected[this] val emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
+
+    @inline protected[this] def createPointsToSet(
+        pc:            Int,
+        context:       ContextType,
+        allocatedType: ReferenceType,
+        isConstant:    Boolean,
+        isEmptyArray:  Boolean       = false
+    ): AllocationSitePointsToSet = {
+        @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
+            val as = allocationSiteToLong(context, pc, allocatedType, isEmptyArray)
+            AllocationSitePointsToSet1(as, allocatedType)
+        }
+
+        (allocatedType.id: @switch) match {
+            case StringBuilderId =>
+                if (mergeStringBuilderBuffer)
+                    stringBuilderPointsToSet
+                else
+                    createNewPointsToSet()
+            case StringBufferId =>
+                if (mergeStringBuilderBuffer)
+                    stringBufferPointsToSet
+                else
+                    createNewPointsToSet()
+            case StringId =>
+                if (mergeStringConstants && isConstant)
+                    stringConstPointsToSet
+                else
+                    createNewPointsToSet()
+            case ClassId =>
+                if (mergeClassConstants && isConstant)
+                    classConstPointsToSet
+                else
+                    createNewPointsToSet()
+            case _ =>
+                if (mergeExceptions &&
+                    project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
+                    val ptsO = exceptionPointsToSets.get(allocatedType.id)
+                    if (ptsO.isDefined)
+                        ptsO.get
+                    else {
+                        val newPts = mergedPointsToSetForType(allocatedType)
+                        exceptionPointsToSets += allocatedType.id -> newPts
+                        newPts
+                    }
+                } else
+                    createNewPointsToSet()
+        }
+    }
+}
+
+/**
+ * Type iterator with 1-call sensitivity for objects, for the 0-1-CFA algorithm.
+ */
+class AllocationSitesPointsToTypeIterator(project: SomeProject)
+    extends AbstractAllocationSitesPointsToTypeIterator(project) with SimpleContextProvider {
 
     override def typesProperty(
         field: Field, depender: Entity
@@ -920,23 +941,6 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                         result
                 }
             }
-        }
-    }
-
-    @inline override def foreachAllocation(
-        use:             V,
-        context:         Context,
-        stmts:           Array[Stmt[V]],
-        typesProperty:   AllocationSitePointsToSet,
-        additionalTypes: Set[ReferenceType]
-    )(
-        handleAllocation: (ReferenceType, Context, Int) => Unit
-    ): Unit = {
-        typesProperty.forNewestNElements(typesProperty.numElements) { as =>
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
-            val tpe = ReferenceType.lookup(typeId)
-            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
-                handleAllocation(tpe, context, pc)
         }
     }
 
@@ -1014,23 +1018,6 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
     }
 
     @inline protected[this] override def continuationForAllocations(
-        use:                 V,
-        updatedEPS:          EPS[Entity, PropertyType],
-        oldEOptP:            EOptionP[Entity, PropertyType],
-        additionalTypes:     Set[ReferenceType],
-        handleNewAllocation: (ReferenceType, Context, Int) => Unit
-    ): Unit = {
-        val ub = updatedEPS.ub
-        val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        ub.forNewestNElements(ub.numElements - seenElements) { as =>
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
-            val tpe = ReferenceType.lookup(typeId)
-            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
-                handleNewAllocation(tpe, context, pc)
-        }
-    }
-
-    @inline protected[this] override def continuationForAllocations(
         field:               Field,
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
@@ -1083,81 +1070,16 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 }
         }
     }
-
-    protected[this] val pointsToProperty: PropertyKey[AllocationSitePointsToSet] =
-        AllocationSitePointsToSet.key
-
-    protected[this] val emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
-
-    @inline protected[this] def createPointsToSet(
-        pc:            Int,
-        context:       SimpleContext,
-        allocatedType: ReferenceType,
-        isConstant:    Boolean,
-        isEmptyArray:  Boolean       = false
-    ): AllocationSitePointsToSet = {
-        @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
-            val as = allocationSiteToLong(context, pc, allocatedType, isEmptyArray)
-            AllocationSitePointsToSet1(as, allocatedType)
-        }
-
-        (allocatedType.id: @switch) match {
-            case StringBuilderId =>
-                if (mergeStringBuilderBuffer)
-                    stringBuilderPointsToSet
-                else
-                    createNewPointsToSet()
-            case StringBufferId =>
-                if (mergeStringBuilderBuffer)
-                    stringBufferPointsToSet
-                else
-                    createNewPointsToSet()
-            case StringId =>
-                if (mergeStringConstants && isConstant)
-                    stringConstPointsToSet
-                else
-                    createNewPointsToSet()
-            case ClassId =>
-                if (mergeClassConstants && isConstant)
-                    classConstPointsToSet
-                else
-                    createNewPointsToSet()
-            case _ =>
-                if (mergeExceptions &&
-                    project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
-                    val ptsO = exceptionPointsToSets.get(allocatedType.id)
-                    if (ptsO.isDefined)
-                        ptsO.get
-                    else {
-                        val newPts = mergedPointsToSetForType(allocatedType)
-                        exceptionPointsToSets += allocatedType.id -> newPts
-                        newPts
-                    }
-                } else
-                    createNewPointsToSet()
-        }
-    }
 }
 
 /**
  * Context-sensitive points-to type iterator for the k-l-CFA algorithm.
  */
 class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
-    extends TypeIterator(project)
-    with PointsToTypeIterator[AllocationSite, AllocationSitePointsToSet]
+    extends AbstractAllocationSitesPointsToTypeIterator(project)
     with CallStringContextProvider {
 
     assert(k > 0 && l > 0 && k >= l - 1)
-
-    val mergeStringBuilderBuffer: Boolean =
-        project.config.getBoolean(mergeStringBuilderBufferConfigKey)
-    val mergeStringConstants: Boolean = project.config.getBoolean(mergeStringConstsConfigKey)
-    val mergeClassConstants: Boolean = project.config.getBoolean(mergeClassConstsConfigKey)
-    val mergeExceptions: Boolean = project.config.getBoolean(mergeExceptionsConfigKey)
-
-    private var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
-
-    private[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
 
     override def typesProperty(
         field: Field, depender: Entity
@@ -1195,93 +1117,5 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         }
     }
 
-    @inline override def foreachAllocation(
-        use:             V,
-        context:         Context,
-        stmts:           Array[Stmt[V]],
-        typesProperty:   AllocationSitePointsToSet,
-        additionalTypes: Set[ReferenceType]
-    )(
-        handleAllocation: (ReferenceType, Context, Int) => Unit
-    ): Unit = {
-        typesProperty.forNewestNElements(typesProperty.numElements) { as =>
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
-            val tpe = ReferenceType.lookup(typeId)
-            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
-                handleAllocation(tpe, context, pc)
-        }
-    }
-
     // TODO several field-related methods are missing here!
-
-    @inline protected[this] override def continuationForAllocations(
-        use:                 V,
-        updatedEPS:          EPS[Entity, PropertyType],
-        oldEOptP:            EOptionP[Entity, PropertyType],
-        additionalTypes:     Set[ReferenceType],
-        handleNewAllocation: (ReferenceType, Context, Int) => Unit
-    ): Unit = {
-        val ub = updatedEPS.ub
-        val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        ub.forNewestNElements(ub.numElements - seenElements) { as =>
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
-            val tpe = ReferenceType.lookup(typeId)
-            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
-                handleNewAllocation(tpe, context, pc)
-        }
-    }
-
-    protected[this] val pointsToProperty: PropertyKey[AllocationSitePointsToSet] =
-        AllocationSitePointsToSet.key
-
-    protected[this] val emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
-
-    @inline protected[this] def createPointsToSet(
-        pc:            Int,
-        context:       CallStringContext,
-        allocatedType: ReferenceType,
-        isConstant:    Boolean,
-        isEmptyArray:  Boolean           = false
-    ): AllocationSitePointsToSet = {
-        @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
-            val as = allocationSiteToLong(context, pc, allocatedType, isEmptyArray)
-            AllocationSitePointsToSet1(as, allocatedType)
-        }
-
-        (allocatedType.id: @switch) match {
-            case StringBuilderId =>
-                if (mergeStringBuilderBuffer)
-                    stringBuilderPointsToSet
-                else
-                    createNewPointsToSet()
-            case StringBufferId =>
-                if (mergeStringBuilderBuffer)
-                    stringBufferPointsToSet
-                else
-                    createNewPointsToSet()
-            case StringId =>
-                if (mergeStringConstants && isConstant)
-                    stringConstPointsToSet
-                else
-                    createNewPointsToSet()
-            case ClassId =>
-                if (mergeClassConstants && isConstant)
-                    classConstPointsToSet
-                else
-                    createNewPointsToSet()
-            case _ =>
-                if (mergeExceptions &&
-                    project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
-                    val ptsO = exceptionPointsToSets.get(allocatedType.id)
-                    if (ptsO.isDefined)
-                        ptsO.get
-                    else {
-                        val newPts = mergedPointsToSetForType(allocatedType)
-                        exceptionPointsToSets += allocatedType.id -> newPts
-                        newPts
-                    }
-                } else
-                    createNewPointsToSet()
-        }
-    }
 }

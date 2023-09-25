@@ -14,7 +14,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites

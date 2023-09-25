@@ -8,28 +8,11 @@ import org.opalj.fpcf.Entity
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.PC
-import org.opalj.br.fpcf.properties.pointsto.AllocationSite
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.tac.common.DefinitionSites
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 package object pointsto {
-
-    @inline def longToAllocationSite(
-        encodedAllocationSite: AllocationSite
-    )(
-        implicit
-        typeIterator: TypeIterator
-    ): (Context, PC, Int) /* method, pc, typeid */ = {
-        val contextID = encodedAllocationSite.toInt & 0x3FFFFFF
-        val pc = (encodedAllocationSite >> 26).toInt & 0x1FFFF
-        (
-            typeIterator.contextFromId(if (contextID == 0x3FFFFFF) -1 else contextID),
-            if (pc > 0xFFFF) pc | 0xFFFF0000 else pc,
-            (encodedAllocationSite >> 44).toInt
-        )
-    }
 
     /**
      * Given a definition site (value origin) in a certain method, this returns the
@@ -41,7 +24,7 @@ package object pointsto {
         implicit
         formalParameters: VirtualFormalParameters,
         definitionSites:  DefinitionSites,
-        typeIterator:     TypeIterator
+        contextProvider:  ContextProvider
     ): Entity = {
         val entity = if (ai.isMethodExternalExceptionOrigin(defSite)) {
             val pc = ai.pcOfMethodExternalException(defSite)
@@ -54,7 +37,7 @@ package object pointsto {
         } else {
             definitionSites(context.method.definedMethod, stmts(defSite).pc)
         }
-        typeIterator match {
+        contextProvider match {
             case _: SimpleContextProvider => entity
             case _                        => (context, entity)
         }

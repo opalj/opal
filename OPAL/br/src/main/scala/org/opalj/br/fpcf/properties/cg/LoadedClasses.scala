@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.properties.cg
+package org.opalj
+package br
+package fpcf
+package properties
+package cg
 
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UIDSet
@@ -10,31 +14,31 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.ReferenceType
 
-sealed trait ForNameClassesMetaInformation extends PropertyMetaInformation {
-    final type Self = ForNameClasses
+sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
+    final type Self = LoadedClasses
 }
 
 /**
- * Represent the set of types (classes) that were loaded via a particular call to Class.forName.
+ * Represent the set of types (classes) that were loaded by the VM during execution of the
+ * respective [[org.opalj.br.analyses.Project]] (which is the entity for this property).
  *
- * @author Dominik Helm
+ * @author Florian Kuebler
  */
-sealed class ForNameClasses private[properties] (
-        final val orderedClasses: List[ReferenceType],
-        final val classes:        UIDSet[ReferenceType]
-) extends OrderedProperty with ForNameClassesMetaInformation {
+sealed class LoadedClasses private[properties] (
+        final val orderedClasses: List[ObjectType],
+        final val classes:        UIDSet[ObjectType]
+) extends OrderedProperty with LoadedClassesMetaInformation {
 
     assert(orderedClasses == null || orderedClasses.size == classes.size)
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: ForNameClasses): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {
         if (other.classes != null && !classes.subsetOf(other.classes)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
         }
     }
 
-    def updated(newClasses: IterableOnce[ReferenceType]): ForNameClasses = {
+    def updated(newClasses: IterableOnce[ObjectType]): LoadedClasses = {
         var updatedOrderedClasses = orderedClasses
         var updatedClasses = classes
         for { c <- newClasses.iterator } {
@@ -44,39 +48,39 @@ sealed class ForNameClasses private[properties] (
                 updatedClasses = nextUpdatedClasses
             }
         }
-        new ForNameClasses(updatedOrderedClasses, updatedClasses)
+        new LoadedClasses(updatedOrderedClasses, updatedClasses)
     }
 
     /**
      * Will return the loaded classes added most recently, dropping the `num` oldest ones.
      */
-    def dropOldest(num: Int): Iterator[ReferenceType] = {
+    def dropOldest(num: Int): Iterator[ObjectType] = {
         orderedClasses.iterator.take(classes.size - num)
     }
 
     def size: Int = classes.size
 
-    override def key: PropertyKey[ForNameClasses] = ForNameClasses.key
+    override def key: PropertyKey[LoadedClasses] = LoadedClasses.key
 
-    override def toString: String = s"ForNameClasses(${classes.size})"
+    override def toString: String = s"LoadedClasses(${classes.size})"
 }
 
-object NoForNameClasses extends ForNameClasses(classes = UIDSet.empty, orderedClasses = List.empty)
+object NoLoadedClasses extends LoadedClasses(classes = UIDSet.empty, orderedClasses = List.empty)
 
-object ForNameClasses extends ForNameClassesMetaInformation {
+object LoadedClasses extends LoadedClassesMetaInformation {
 
-    def apply(classes: UIDSet[ReferenceType]): ForNameClasses = {
-        new ForNameClasses(classes.toList, classes)
+    def apply(classes: UIDSet[ObjectType]): LoadedClasses = {
+        new LoadedClasses(classes.toList, classes)
     }
 
-    final val key: PropertyKey[ForNameClasses] = {
-        val name = "opalj.ForNameClasses"
+    final val key: PropertyKey[LoadedClasses] = {
+        val name = "opalj.LoadedClasses"
         PropertyKey.create(
             name,
             (ps: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                    OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(ps.logContext)
-                    NoForNameClasses
+                    OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
+                    NoLoadedClasses
                 case _ =>
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
