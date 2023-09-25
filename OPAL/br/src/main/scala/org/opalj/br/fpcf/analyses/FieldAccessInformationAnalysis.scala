@@ -8,7 +8,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.fieldaccess.DirectFieldAccesses
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
@@ -36,9 +35,10 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
 
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private val declaredFields = project.get(DeclaredFieldsKey)
+    private val contextProvider = project.get(ContextProviderKey)
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
-        val context = SimpleContext(declaredMethods(method));
+        val context = contextProvider.newContext(declaredMethods(method))
         val fieldAccesses = new DirectFieldAccesses()
 
         method.body.get iterate { (pc, instruction) =>
