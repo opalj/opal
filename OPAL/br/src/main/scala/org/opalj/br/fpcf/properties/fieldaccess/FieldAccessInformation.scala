@@ -170,11 +170,8 @@ case class FieldWriteAccessInformation(
         included(
             other,
             seenAccesses,
-            (newAccesses, newReceivers, newParameters) => FieldWriteAccessInformation(
-                newAccesses,
-                newReceivers,
-                newParameters
-            )
+            (newAccesses, newReceivers, newParameters) =>
+                FieldWriteAccessInformation(newAccesses, newReceivers, newParameters)
         )
 }
 
