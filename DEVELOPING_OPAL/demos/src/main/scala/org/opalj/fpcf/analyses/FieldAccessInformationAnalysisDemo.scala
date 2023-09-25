@@ -34,7 +34,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
         "org/xml/sax")
 
-    override def title: String = "FieldAccessInformationAnalysis"
+    override def title: String = "Determines field accesses"
 
     override def description: String = "Runs analyses for field accesses (field reads and writes) throughout a project"
 

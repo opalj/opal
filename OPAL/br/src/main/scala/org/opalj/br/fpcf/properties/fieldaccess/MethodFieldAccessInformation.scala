@@ -243,7 +243,11 @@ object MethodFieldReadAccessInformation
     def apply(
         accesses:              IntMap[IntMap[IntTrieSet]],
         incompleteAccessSites: IntMap[PCs]                = IntMap.empty
-    ): MethodFieldReadAccessInformation = MethodFieldReadAccessInformation(accesses, incompleteAccessSites, IntMap.empty)
+    ): MethodFieldReadAccessInformation = MethodFieldReadAccessInformation(
+        accesses,
+        incompleteAccessSites,
+        IntMap.empty
+    )
 }
 
 object MethodFieldWriteAccessInformation
@@ -254,7 +258,12 @@ object MethodFieldWriteAccessInformation
     def apply(
         accesses:              IntMap[IntMap[IntTrieSet]],
         incompleteAccessSites: IntMap[PCs]                = IntMap.empty
-    ): MethodFieldWriteAccessInformation = MethodFieldWriteAccessInformation(accesses, incompleteAccessSites, IntMap.empty, IntMap.empty)
+    ): MethodFieldWriteAccessInformation = MethodFieldWriteAccessInformation(
+        accesses,
+        incompleteAccessSites,
+        IntMap.empty,
+        IntMap.empty
+    )
 }
 
 object NoMethodFieldReadAccessInformation
