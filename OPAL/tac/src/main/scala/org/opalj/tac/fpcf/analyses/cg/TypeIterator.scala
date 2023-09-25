@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.DefinedMethod
+
 import scala.annotation.nowarn
 import scala.annotation.switch
 import scala.collection.immutable.IntMap
@@ -44,14 +46,15 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.PCs
 import org.opalj.br.fpcf.analyses.CallStringContextProvider
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoInstantiatedTypes
 import org.opalj.br.PC
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.fpcf.UBP
@@ -72,7 +75,6 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringCo
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.value.ValueInformation
 
 /**
@@ -823,8 +825,6 @@ trait TypesBasedPointsToTypeIterator
 
 abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
     extends TypeIterator(project) with PointsToTypeIterator[AllocationSite, AllocationSitePointsToSet] {
-
-    protected[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
 
     val mergeStringBuilderBuffer: Boolean =
         project.config.getBoolean(mergeStringBuilderBufferConfigKey)

@@ -62,7 +62,6 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBP
 
 trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
@@ -361,7 +360,8 @@ trait AbstractFieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler 
         DeclaredMethodsKey,
         ClosedPackagesKey,
         TypeExtensibilityKey,
-        DefinitionSitesKey
+        DefinitionSitesKey,
+        ContextProviderKey
     )
 
     final def derivedProperty: PropertyBounds = PropertyBounds.ub(FieldAssignability)
