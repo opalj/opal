@@ -19,14 +19,14 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.tac.fpcf.properties.cg.NoCallees
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation

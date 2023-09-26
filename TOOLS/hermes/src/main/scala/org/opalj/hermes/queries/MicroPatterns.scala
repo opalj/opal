@@ -27,6 +27,8 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.br.LongType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 
@@ -76,6 +78,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     ): IterableOnce[Feature[S]] = {
         implicit val theProject: Project[S] = project
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
         val fa = project.get(FieldAccessInformationKey)
 
@@ -261,7 +264,10 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
             cl.fields.exists { f => !f.isFinal }
     }
 
-    def isImmutable(cl: ClassFile, fa: FieldAccessInformation)(implicit declaredMethods: DeclaredMethods): Boolean = {
+    def isImmutable(cl: ClassFile, fa: FieldAccessInformation)(
+      implicit declaredMethods: DeclaredMethods,
+      declaredFields: DeclaredFields
+    ): Boolean = {
         !cl.isInterfaceDeclaration &&
             !cl.isAbstract && cl.fields.count { f => !f.isStatic } > 1 &&
             cl.fields.forall(f => f.isPrivate && !f.isStatic) &&
@@ -285,21 +291,30 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
             }
     }
 
-    def isBox(cl: ClassFile, fa: FieldAccessInformation)(implicit declaredMethods: DeclaredMethods): Boolean = {
+    def isBox(cl: ClassFile, fa: FieldAccessInformation)(
+        implicit declaredMethods: DeclaredMethods,
+        declaredFields: DeclaredFields
+    ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count { f => !f.isStatic } == 1 &&
             cl.fields.count { f => !f.isFinal } == 1 &&
             cl.fields.exists(f => fa.writeAccesses(f).exists(t => cl.methods.contains(t._1.definedMethod)))
     }
 
-    def isCompoundBox(cl: ClassFile, fa: FieldAccessInformation)(implicit declaredMethods: DeclaredMethods): Boolean = {
+    def isCompoundBox(cl: ClassFile, fa: FieldAccessInformation)(
+      implicit declaredMethods: DeclaredMethods,
+      declaredFields: DeclaredFields
+    ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count(f => f.fieldType.isReferenceType && !f.isStatic &&
                 !f.isFinal && fa.writeAccesses(f).exists(t => cl.methods.contains(t._1.definedMethod))) == 1 &&
             cl.fields.count(f => !f.isStatic && !f.fieldType.isReferenceType) + 1 == cl.fields.size
     }
 
-    def isCanopy(cl: ClassFile, fa: FieldAccessInformation)(implicit declaredMethods: DeclaredMethods): Boolean = {
+    def isCanopy(cl: ClassFile, fa: FieldAccessInformation)(
+      implicit declaredMethods: DeclaredMethods,
+      declaredFields: DeclaredFields
+    ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count { f => !f.isStatic } == 1 &&
             cl.fields.count { f => !f.isStatic && !f.isPublic } == 1 &&

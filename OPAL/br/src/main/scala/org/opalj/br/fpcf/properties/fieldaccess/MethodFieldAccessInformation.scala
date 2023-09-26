@@ -63,8 +63,10 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         accessContext: Context,
         pc:            PC
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        val indirectAccessedFields = _indirectAccessedReceiversByField.get(accessContext.id).flatMap(_.get(pc)).getOrElse(IntMap.empty).keysIterator
-        indirectAccessedFields.map(declaredFields.apply)
+        _indirectAccessedReceiversByField.get(accessContext.id).iterator
+            .flatMap(_.get(pc))
+            .flatMap(_.keys)
+            .map(declaredFields.apply)
     }
 
     def getNewestNIndirectAccessSites(accessContext: Context, n: Int): Iterator[PC] = {
@@ -76,8 +78,10 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         pc:            PC,
         n:             Int
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        val indirectAccessedFields = _indirectAccessedReceiversByField.get(accessContext.id).flatMap(_.get(pc)).getOrElse(IntMap.empty).keysIterator
-        indirectAccessedFields.take(n).map(declaredFields.apply)
+        _indirectAccessedReceiversByField.get(accessContext.id).iterator
+            .flatMap(_.get(pc))
+            .flatMap(_.keys)
+            .take(n).map(declaredFields.apply)
     }
 
     def indirectAccessReceiver(
@@ -99,11 +103,14 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     private def numIndirectAccessesInAllAccessSites: Int =
         _indirectAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
 
-    def numIndirectAccessSites(accessContext: Context): Int = _indirectAccessedReceiversByField.get(accessContext.id).map(_.size).getOrElse(0)
+    def numIndirectAccessSites(accessContext: Context): Int =
+        _indirectAccessedReceiversByField.get(accessContext.id).iterator.map(_.size).sum
 
-    def numIndirectAccesses(accessContext: Context, pc: PC): Int = _indirectAccessedReceiversByField.get(accessContext.id).flatMap(_.get(pc)).map(_.size).getOrElse(0)
+    def numIndirectAccesses(accessContext: Context, pc: PC): Int =
+        _indirectAccessedReceiversByField.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.size).sum
 
-    def numIncompleteAccessSites: Int = _incompleteAccessSites.valuesIterator.map { _.size }.sum
+    def numIncompleteAccessSites: Int =
+        _incompleteAccessSites.valuesIterator.map { _.size }.sum
 
     def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (numDirectAccesses > other.numDirectAccesses ||
@@ -159,7 +166,8 @@ case class MethodFieldReadAccessInformation(
         protected val _directAccessedFields:             IntMap[IntMap[IntTrieSet]],
         protected val _incompleteAccessSites:            IntMap[PCs],
         protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]]
-) extends MethodFieldAccessInformation[MethodFieldReadAccessInformation] with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
+) extends MethodFieldAccessInformation[MethodFieldReadAccessInformation]
+    with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
 
     protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] = IntMap.empty
     override def indirectAccessParameter(accessContext: Context, pc: PC, field: DeclaredField): AccessParameter = None
@@ -193,7 +201,8 @@ case class MethodFieldWriteAccessInformation(
         protected val _incompleteAccessSites:             IntMap[PCs],
         protected val _indirectAccessedReceiversByField:  IntMap[IntMap[IntMap[AccessReceiver]]],
         protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]]
-) extends MethodFieldAccessInformation[MethodFieldWriteAccessInformation] with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldWriteAccessInformation] {
+) extends MethodFieldAccessInformation[MethodFieldWriteAccessInformation]
+    with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldWriteAccessInformation] {
 
     final def key: PropertyKey[MethodFieldWriteAccessInformation] = MethodFieldWriteAccessInformation.key
 
@@ -226,27 +235,38 @@ case class MethodFieldWriteAccessInformation(
     }
 }
 
-object MethodFieldReadAccessInformation extends MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
+object MethodFieldReadAccessInformation
+    extends MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
 
     final val key = createPropertyKey("MethodFieldReadAccessInformation", NoMethodFieldReadAccessInformation)
 
-    def apply(accesses: IntMap[IntMap[IntTrieSet]]): MethodFieldReadAccessInformation =
-        MethodFieldReadAccessInformation(accesses, IntMap.empty, IntMap.empty)
-
-    def apply(accesses: IntMap[IntMap[IntTrieSet]], incompleteAccessSites: IntMap[PCs]): MethodFieldReadAccessInformation =
-        MethodFieldReadAccessInformation(accesses, incompleteAccessSites, IntMap.empty)
+    def apply(
+        accesses:              IntMap[IntMap[IntTrieSet]],
+        incompleteAccessSites: IntMap[PCs]                = IntMap.empty
+    ): MethodFieldReadAccessInformation = MethodFieldReadAccessInformation(
+        accesses,
+        incompleteAccessSites,
+        IntMap.empty
+    )
 }
 
-object MethodFieldWriteAccessInformation extends MethodFieldAccessInformationPropertyMetaInformation[MethodFieldWriteAccessInformation] {
+object MethodFieldWriteAccessInformation
+    extends MethodFieldAccessInformationPropertyMetaInformation[MethodFieldWriteAccessInformation] {
 
     final val key = createPropertyKey("MethodFieldWriteAccessInformation", NoMethodFieldWriteAccessInformation)
 
-    def apply(accesses: IntMap[IntMap[IntTrieSet]]): MethodFieldWriteAccessInformation =
-        MethodFieldWriteAccessInformation(accesses, IntMap.empty, IntMap.empty, IntMap.empty)
-
-    def apply(accesses: IntMap[IntMap[IntTrieSet]], incompleteAccessSites: IntMap[PCs]): MethodFieldWriteAccessInformation =
-        MethodFieldWriteAccessInformation(accesses, incompleteAccessSites, IntMap.empty, IntMap.empty)
+    def apply(
+        accesses:              IntMap[IntMap[IntTrieSet]],
+        incompleteAccessSites: IntMap[PCs]                = IntMap.empty
+    ): MethodFieldWriteAccessInformation = MethodFieldWriteAccessInformation(
+        accesses,
+        incompleteAccessSites,
+        IntMap.empty,
+        IntMap.empty
+    )
 }
 
-object NoMethodFieldReadAccessInformation extends MethodFieldReadAccessInformation(IntMap.empty, IntMap.empty, IntMap.empty)
-object NoMethodFieldWriteAccessInformation extends MethodFieldWriteAccessInformation(IntMap.empty, IntMap.empty, IntMap.empty, IntMap.empty)
+object NoMethodFieldReadAccessInformation
+    extends MethodFieldReadAccessInformation(IntMap.empty, IntMap.empty, IntMap.empty)
+object NoMethodFieldWriteAccessInformation
+    extends MethodFieldWriteAccessInformation(IntMap.empty, IntMap.empty, IntMap.empty, IntMap.empty)

@@ -6,20 +6,8 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br._
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.tac.fpcf.properties.cg.NoCallers
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.NEW
+import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -37,10 +25,29 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.cg.TypeIteratorKey
-
-import scala.collection.mutable.ArrayBuffer
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.NEW
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -62,7 +69,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
-    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // only constructors may initialize a class
@@ -256,7 +263,7 @@ class InstantiatedTypesAnalysisScheduler(
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        TypeIteratorKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
+        ContextProviderKey, ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey,
         InitialInstantiatedTypesKey
     )
 

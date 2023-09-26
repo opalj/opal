@@ -5,30 +5,32 @@ package fpcf
 package analyses
 package ifds
 
+import scala.language.existentials
+
+import java.io.File
+import java.io.PrintWriter
+
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.ai.domain.l2
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.bytecode
+
+import org.opalj.util.Milliseconds
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.bytecode
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
+import org.opalj.ai.domain.l2
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.Statistics
-import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.util.Milliseconds
-import org.opalj.util.PerformanceEvaluation.time
-
-import java.io.File
-import java.io.PrintWriter
-import scala.language.existentials
 
 /**
  * Setup to run different Evaluations of IFDS Analyses

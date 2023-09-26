@@ -8,7 +8,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.fieldaccess.DirectFieldAccesses
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
@@ -36,30 +35,19 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
 
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private val declaredFields = project.get(DeclaredFieldsKey)
+    private val contextProvider = project.get(ContextProviderKey)
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
-        import project.resolveFieldReference
-
-        val context = SimpleContext(declaredMethods(method));
+        val context = contextProvider.newContext(declaredMethods(method))
         val fieldAccesses = new DirectFieldAccesses()
 
         method.body.get iterate { (pc, instruction) =>
             instruction.opcode match {
                 case GETFIELD.opcode | GETSTATIC.opcode =>
-                    val access = instruction.asInstanceOf[FieldReadAccess]
-                    val field = resolveFieldReference(access) match {
-                        case Some(field) => declaredFields(field)
-                        case None        => declaredFields(access.declaringClass, access.name, access.fieldType)
-                    }
-                    fieldAccesses.addFieldRead(context, pc, field)
+                    fieldAccesses.addFieldRead(context, pc, declaredFields(instruction.asInstanceOf[FieldReadAccess]))
 
                 case PUTFIELD.opcode | PUTSTATIC.opcode =>
-                    val access = instruction.asInstanceOf[FieldWriteAccess]
-                    val field = resolveFieldReference(access) match {
-                        case Some(field) => declaredFields(field)
-                        case None        => declaredFields(access.declaringClass, access.name, access.fieldType)
-                    }
-                    fieldAccesses.addFieldWrite(context, pc, field)
+                    fieldAccesses.addFieldWrite(context, pc, declaredFields(instruction.asInstanceOf[FieldWriteAccess]))
 
                 case _ => /*nothing to do*/
             }
@@ -71,7 +59,7 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
 
 object EagerFieldAccessInformationAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, DeclaredFieldsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         FieldReadAccessInformation,

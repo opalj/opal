@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -38,6 +37,8 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
@@ -105,6 +106,7 @@ class LBFieldValuesAnalysis private[analyses] (
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    implicit final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     /**
      * Computes the set of the fields which are potentially refinable w.r.t. type information.
@@ -438,6 +440,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
         FieldAccessInformationKey,
         DeclaredMethodsKey,
+        DeclaredFieldsKey,
     )
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {

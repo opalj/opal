@@ -1,7 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.fieldassignability
 
+import org.opalj.br.DeclaredField
 import org.opalj.br.Field
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -36,11 +39,12 @@ import org.opalj.fpcf.UBP
  */
 class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
+    final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     case class L0FieldAssignabilityAnalysisState(field: Field) {
         var fieldAssignability: FieldAssignability = EffectivelyNonAssignable // Assume this as the optimistic default
-        var latestFieldWriteAccessInformation: Option[EOptionP[Field, FieldWriteAccessInformation]] = None
+        var latestFieldWriteAccessInformation: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
         def hasDependees: Boolean = latestFieldWriteAccessInformation.exists(_.isRefinable)
         def dependees: Set[SomeEOptionP] = latestFieldWriteAccessInformation.filter(_.isRefinable).toSet
     }
@@ -86,7 +90,7 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         if (field.classFile.methods.exists(_.isNative))
             return Result(field, Assignable);
 
-        val faiEP = propertyStore(field, FieldWriteAccessInformation.key)
+        val faiEP = propertyStore(declaredFields(field), FieldWriteAccessInformation.key)
         if (handleFieldWriteAccessInformation(faiEP))
             return Result(field, Assignable)
 
@@ -98,7 +102,7 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
      * the given PCs. Updates the state to account for the new value.
      */
     def handleFieldWriteAccessInformation(
-        faiEP: EOptionP[Field, FieldWriteAccessInformation]
+        faiEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
     )(implicit state: AnalysisState): Boolean = {
         val assignable = if (faiEP.hasUBP) {
             val seenAccesses = state.latestFieldWriteAccessInformation match { // TODO we do not need indirect handling here as static writes cannot happen indirectly?
@@ -150,7 +154,7 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
     }
 
     def continuation(eps: SomeEPS)(implicit state: AnalysisState): ProperPropertyComputationResult = {
-        if (handleFieldWriteAccessInformation(eps.asInstanceOf[EOptionP[Field, FieldWriteAccessInformation]]))
+        if (handleFieldWriteAccessInformation(eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]))
             Result(state.field, Assignable)
         else
             createResult()
@@ -159,7 +163,7 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
 
 trait L0FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, DeclaredFieldsKey)
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.ubs(FieldWriteAccessInformation)
 

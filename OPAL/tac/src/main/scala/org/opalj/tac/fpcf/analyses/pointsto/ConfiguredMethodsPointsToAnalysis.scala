@@ -27,8 +27,6 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.ObjectType
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
@@ -37,9 +35,11 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 
 /**
@@ -179,11 +179,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                val declaredField = project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType)) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(ObjectType(cf), name, FieldType(fieldType))
-                }
-                handleGetStatic(declaredField, pc, checkForCast = false)
+                handleGetStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), pc, checkForCast = false)
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
@@ -274,11 +270,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                val declaredField = project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType)) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(ObjectType(cf), name, FieldType(fieldType))
-                }
-                handlePutStatic(declaredField, IntTrieSet(0))
+                handlePutStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), IntTrieSet(0))
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)

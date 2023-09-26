@@ -42,12 +42,11 @@ import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.isImmediateVMException
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
@@ -57,9 +56,11 @@ import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.cg.NoCallers
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -329,7 +330,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             candidate foreach { mdc =>
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTMethod = declaredMethods(mdc.method)
-                    val fISTContext = typeIterator.expandContext(state.context, fISTMethod, 0)
+                    val fISTContext = contextProvider.expandContext(state.context, fISTMethod, 0)
                     val fISTPurity = propertyStore(fISTContext, Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace
@@ -437,7 +438,7 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, SimpleContextsKey, ConfiguredPurityKey)
+        Seq(DeclaredMethodsKey, SimpleContextsKey, ConfiguredPurityKey, ContextProviderKey)
 
     override def uses: Set[PropertyBounds] = {
 

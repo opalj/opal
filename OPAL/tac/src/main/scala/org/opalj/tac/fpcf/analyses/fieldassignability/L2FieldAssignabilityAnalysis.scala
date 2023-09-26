@@ -6,20 +6,22 @@ package analyses
 package fieldassignability
 
 import scala.annotation.switch
+
 import scala.collection.mutable
+
 import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
@@ -29,6 +31,7 @@ import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.br.Field
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
@@ -141,7 +144,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 // write the field as long as that new object did not yet escape.
                                 true
                             } else {
-                                val fwaiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
+                                val fwaiEP = propertyStore(declaredFields(state.field), FieldWriteAccessInformation.key)
                                 val fieldWriteAccessInformation = if (fwaiEP.hasUBP) fwaiEP.ub else NoFieldWriteAccessInformation
 
                                 val writes = fieldWriteAccessInformation.directAccesses
@@ -169,7 +172,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 })
                                     return true;
 
-                                val fraiEP = propertyStore(state.field, FieldReadAccessInformation.key)
+                                val fraiEP = propertyStore(declaredFields(state.field), FieldReadAccessInformation.key)
                                 val fieldReadAccessInformation = if (fraiEP.hasUBP) fraiEP.ub else NoFieldReadAccessInformation
                                 val fieldReadsInMethod = fieldReadAccessInformation
                                     .directAccesses
@@ -307,7 +310,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 return Assignable;
         }
 
-        val fwaiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
+        val fwaiEP = propertyStore(declaredFields(state.field), FieldWriteAccessInformation.key)
         val fieldWriteAccessInformation = if (fwaiEP.hasUBP) fwaiEP.ub else NoFieldWriteAccessInformation
 
         val writes = fieldWriteAccessInformation.directAccesses
@@ -321,7 +324,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (writes.distinctBy(_._1).size < writes.size)
             return Assignable; // More than one write per method was detected
 
-        val fraiEP = propertyStore(state.field, FieldReadAccessInformation.key)
+        val fraiEP = propertyStore(declaredFields(state.field), FieldReadAccessInformation.key)
         val fieldReadAccessInformation = if (fraiEP.hasUBP) fraiEP.ub else NoFieldReadAccessInformation
         val reads = fieldReadAccessInformation.directAccesses
 
@@ -896,7 +899,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 }
 
 trait AbstractL2FieldAssignabilityAnalysisScheduler extends AbstractFieldAssignabilityAnalysisScheduler {
-
     override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
         FieldReadAccessInformation,
         FieldWriteAccessInformation

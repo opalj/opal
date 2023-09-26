@@ -31,8 +31,8 @@ import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.SimpleContexts
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.instructions.Instruction
 
 /**

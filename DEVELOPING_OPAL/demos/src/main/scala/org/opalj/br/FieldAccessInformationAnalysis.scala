@@ -7,6 +7,8 @@ import org.opalj.util.asMB
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
@@ -44,7 +46,8 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
         parameters:    Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey);
+        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
         var memoryUsage = ""
         val accessInformation = memory {
