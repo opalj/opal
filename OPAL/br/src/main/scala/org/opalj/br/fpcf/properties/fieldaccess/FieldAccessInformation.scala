@@ -6,7 +6,6 @@ package properties
 package fieldaccess
 
 import org.opalj.br.DefinedMethod
-import org.opalj.br.Field
 import org.opalj.br.PC
 import org.opalj.br.PCs
 import org.opalj.br.analyses.DeclaredMethods
@@ -32,9 +31,9 @@ sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInfor
      * computed via the fallback reason to ensure an analysis for the information was scheduled.
      */
     protected def createPropertyKey(propertyName: String, fallbackValue: S): PropertyKey[S] = {
-        PropertyKey.create[Field, S](
+        PropertyKey.create[DeclaredField, S](
             propertyName,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+            (_: PropertyStore, reason: FallbackReason, _: DeclaredField) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => fallbackValue
                     case _ =>
@@ -65,7 +64,7 @@ sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInfor
 }
 
 /**
- * Describes all read and write accesses to a [[org.opalj.br.Field]].
+ * Describes all read and write accesses to a [[org.opalj.br.DeclaredField]].
  *
  * @author Maximilian Rüsch
  */
