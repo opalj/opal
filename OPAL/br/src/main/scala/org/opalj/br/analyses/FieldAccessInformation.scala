@@ -37,14 +37,16 @@ case class FieldAccessInformation(project: SomeProject) {
     }
 
     def readAccesses(field: Field)(
-        implicit declaredMethods: DeclaredMethods,
-        declaredFields: DeclaredFields
+        implicit
+        declaredMethods: DeclaredMethods,
+        declaredFields:  DeclaredFields
     ): Iterator[(DefinedMethod, PC)] =
         getFieldAccessInformation(declaredFields(field), FieldReadAccessInformation.key).directAccesses // TODO indirect accesses
 
     def writeAccesses(field: Field)(
-      implicit declaredMethods: DeclaredMethods,
-      declaredFields: DeclaredFields
+        implicit
+        declaredMethods: DeclaredMethods,
+        declaredFields:  DeclaredFields
     ): Iterator[(DefinedMethod, PC)] =
         getFieldAccessInformation(declaredFields(field), FieldWriteAccessInformation.key).directAccesses
 
@@ -62,8 +64,8 @@ case class FieldAccessInformation(project: SomeProject) {
      * Returns a new iterator to iterate over all field access locations.
      */
     def allAccesses(
-                     field: Field
-                   )(implicit declaredMethods: DeclaredMethods, declaredFields: DeclaredFields): Iterator[(DefinedMethod, PC)] =
+        field: Field
+    )(implicit declaredMethods: DeclaredMethods, declaredFields: DeclaredFields): Iterator[(DefinedMethod, PC)] =
         readAccesses(field) ++ writeAccesses(field)
 
     /**
