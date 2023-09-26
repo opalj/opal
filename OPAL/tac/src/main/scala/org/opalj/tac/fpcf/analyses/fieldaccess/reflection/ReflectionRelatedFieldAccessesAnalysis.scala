@@ -141,7 +141,7 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
     }
 }
 
-sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionAnalysis {
+sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     protected case class FieldDepender(pc: Int, receiver: AccessReceiver, param: Option[AccessParameter], matchers: Set[FieldMatcher])
     private case class ArrayDepender(
@@ -375,7 +375,7 @@ class FieldGetAnalysis private[analyses] (
         final val project:       SomeProject,
         final val apiMethodName: String,
         final val fieldType:     Option[BaseType] = None
-) extends ReflectionAnalysis with TypeConsumerAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
+) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectType.Field,
@@ -480,7 +480,7 @@ class FieldSetAnalysis private[analyses] (
         final val project:       SomeProject,
         final val apiMethodName: String,
         final val fieldType:     Option[BaseType] = None
-) extends ReflectionAnalysis with TypeConsumerAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
+) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectType.Field,
