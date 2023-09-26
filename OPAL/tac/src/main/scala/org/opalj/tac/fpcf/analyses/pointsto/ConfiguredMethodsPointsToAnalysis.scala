@@ -179,11 +179,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                val declaredField = project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType)) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(ObjectType(cf), name, FieldType(fieldType))
-                }
-                handleGetStatic(declaredField, pc, checkForCast = false)
+                handleGetStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), pc, checkForCast = false)
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
@@ -274,11 +270,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                val declaredField = project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType)) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(ObjectType(cf), name, FieldType(fieldType))
-                }
-                handlePutStatic(declaredField, IntTrieSet(0))
+                handlePutStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), IntTrieSet(0))
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)

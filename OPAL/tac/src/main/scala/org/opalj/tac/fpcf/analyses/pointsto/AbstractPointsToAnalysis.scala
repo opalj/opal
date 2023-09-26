@@ -158,18 +158,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 )
 
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) =>
-                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(declaringClass, name, fieldType)
-                }
-                handleGetField(Some(declaredField), pc, objRefDefSites)
+                handleGetField(Some(declaredFields(declaringClass, name, fieldType)), pc, objRefDefSites)
 
             case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) =>
-                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(declaringClass, name, fieldType)
-                }
-                handleGetStatic(declaredField, pc)
+                handleGetStatic(declaredFields(declaringClass, name, fieldType), pc)
 
             case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) =>
                 val arrayType = av.theUpperTypeBound
@@ -239,18 +231,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 handleIndirectFieldAccesses(pc)
 
             case PutField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
-                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(declaringClass, name, fieldType)
-                }
-                handlePutField(Some(declaredField), objRefDefSites, defSites)
+                handlePutField(Some(declaredFields(declaringClass, name, fieldType)), objRefDefSites, defSites)
 
             case PutStatic(_, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
-                val declaredField = p.resolveFieldReference(declaringClass, name, fieldType) match {
-                    case Some(field) => declaredFields(field)
-                    case None        => declaredFields(declaringClass, name, fieldType)
-                }
-                handlePutStatic(declaredField, defSites)
+                handlePutStatic(declaredFields(declaringClass, name, fieldType), defSites)
 
             case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) =>
                 val arrayType = av.theUpperTypeBound
