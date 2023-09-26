@@ -265,8 +265,9 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     }
 
     def isImmutable(cl: ClassFile, fa: FieldAccessInformation)(
-      implicit declaredMethods: DeclaredMethods,
-      declaredFields: DeclaredFields
+        implicit
+        declaredMethods: DeclaredMethods,
+        declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             !cl.isAbstract && cl.fields.count { f => !f.isStatic } > 1 &&
@@ -292,8 +293,9 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     }
 
     def isBox(cl: ClassFile, fa: FieldAccessInformation)(
-        implicit declaredMethods: DeclaredMethods,
-        declaredFields: DeclaredFields
+        implicit
+        declaredMethods: DeclaredMethods,
+        declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count { f => !f.isStatic } == 1 &&
@@ -302,8 +304,9 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     }
 
     def isCompoundBox(cl: ClassFile, fa: FieldAccessInformation)(
-      implicit declaredMethods: DeclaredMethods,
-      declaredFields: DeclaredFields
+        implicit
+        declaredMethods: DeclaredMethods,
+        declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count(f => f.fieldType.isReferenceType && !f.isStatic &&
@@ -312,8 +315,9 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     }
 
     def isCanopy(cl: ClassFile, fa: FieldAccessInformation)(
-      implicit declaredMethods: DeclaredMethods,
-      declaredFields: DeclaredFields
+        implicit
+        declaredMethods: DeclaredMethods,
+        declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count { f => !f.isStatic } == 1 &&
