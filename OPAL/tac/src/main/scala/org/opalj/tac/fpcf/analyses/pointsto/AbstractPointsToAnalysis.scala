@@ -44,6 +44,7 @@ import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.PC
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -490,7 +491,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
             )
         } else {
-            // TODO distinguish between static fields and unavailable info
+            // IMPROVE distinguish between static fields and unavailable info
             handleGetStatic(target, pc)
         }
     }
@@ -520,7 +521,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 rhsDefSites
             )
         } else {
-            // TODO distinguish between static fields and unavailable info
+            // IMPROVE distinguish between static fields and unavailable info
             handlePutStatic(target, rhsDefSites)
         }
     }
@@ -716,7 +717,7 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
+        Seq(DeclaredMethodsKey, DeclaredFieldsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

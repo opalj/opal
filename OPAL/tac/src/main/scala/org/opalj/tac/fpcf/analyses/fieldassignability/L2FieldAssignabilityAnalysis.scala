@@ -144,7 +144,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 // write the field as long as that new object did not yet escape.
                                 true
                             } else {
-                                val fwaiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
+                                val fwaiEP = propertyStore(declaredFields(state.field), FieldWriteAccessInformation.key)
                                 val fieldWriteAccessInformation = if (fwaiEP.hasUBP) fwaiEP.ub else NoFieldWriteAccessInformation
 
                                 val writes = fieldWriteAccessInformation.directAccesses
@@ -172,7 +172,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                 })
                                     return true;
 
-                                val fraiEP = propertyStore(state.field, FieldReadAccessInformation.key)
+                                val fraiEP = propertyStore(declaredFields(state.field), FieldReadAccessInformation.key)
                                 val fieldReadAccessInformation = if (fraiEP.hasUBP) fraiEP.ub else NoFieldReadAccessInformation
                                 val fieldReadsInMethod = fieldReadAccessInformation
                                     .directAccesses
@@ -310,7 +310,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 return Assignable;
         }
 
-        val fwaiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
+        val fwaiEP = propertyStore(declaredFields(state.field), FieldWriteAccessInformation.key)
         val fieldWriteAccessInformation = if (fwaiEP.hasUBP) fwaiEP.ub else NoFieldWriteAccessInformation
 
         val writes = fieldWriteAccessInformation.directAccesses
@@ -324,7 +324,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (writes.distinctBy(_._1).size < writes.size)
             return Assignable; // More than one write per method was detected
 
-        val fraiEP = propertyStore(state.field, FieldReadAccessInformation.key)
+        val fraiEP = propertyStore(declaredFields(state.field), FieldReadAccessInformation.key)
         val fieldReadAccessInformation = if (fraiEP.hasUBP) fraiEP.ub else NoFieldReadAccessInformation
         val reads = fieldReadAccessInformation.directAccesses
 

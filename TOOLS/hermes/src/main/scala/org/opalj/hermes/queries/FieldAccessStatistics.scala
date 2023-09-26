@@ -7,6 +7,8 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
@@ -41,6 +43,7 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
         val fieldAccessInformation = project.get(FieldAccessInformationKey)
         import fieldAccessInformation.isAccessed
         import fieldAccessInformation.allAccesses

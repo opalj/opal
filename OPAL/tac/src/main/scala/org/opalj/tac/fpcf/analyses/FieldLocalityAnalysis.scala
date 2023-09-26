@@ -55,10 +55,12 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.NoPCs
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -78,6 +80,7 @@ class FieldLocalityAnalysis private[analyses] (
     type V = DUVar[ValueInformation]
 
     final implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    final implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
     private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
     final val definitionSites = project.get(DefinitionSitesKey)
@@ -173,7 +176,7 @@ class FieldLocalityAnalysis private[analyses] (
      * `java.lang.Object.clone`.
      */
     private[this] def step3()(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
-        val faiEP = propertyStore(state.field, FieldWriteAccessInformation.key)
+        val faiEP = propertyStore(declaredFields(state.field), FieldWriteAccessInformation.key)
         if (handleFieldAccessInformation(faiEP))
             return Result(state.field, NoLocalField);
 
@@ -606,7 +609,7 @@ class FieldLocalityAnalysis private[analyses] (
      * Returns the TACode for a method if available, registering dependencies as necessary.
      */
     private def handleFieldAccessInformation(
-        faiEP: EOptionP[Field, FieldWriteAccessInformation]
+        faiEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
     )(implicit state: FieldLocalityState): Boolean = {
         val isNonLocal = if (faiEP.hasUBP) {
             val seenWriteAccesses = state.getFieldWriteAccessDepdendee match { // TODO indirect?
@@ -748,7 +751,7 @@ class FieldLocalityAnalysis private[analyses] (
                 state.getCallsites(newEP.e).exists(pc => handleCallSite(newEP.e, pc))
 
             case FieldWriteAccessInformation.key =>
-                val newEP = someEPS.asInstanceOf[EOptionP[Field, FieldWriteAccessInformation]]
+                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]
                 handleFieldAccessInformation(newEP)
         }
         if (isNotLocal) {
@@ -775,7 +778,8 @@ sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
         DefinitionSitesKey,
         TypeExtensibilityKey,
         ClosedPackagesKey,
-        TypeIteratorKey
+        ContextProviderKey,
+        DeclaredFieldsKey
     )
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.ubs(

@@ -30,6 +30,7 @@ import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.DoubleType
 import org.opalj.br.FloatType
@@ -40,6 +41,8 @@ import org.opalj.br.NoPCs
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
@@ -72,7 +75,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         var fieldAssignability: FieldAssignability = NonAssignable
         var tacPCs: Map[DefinedMethod, PCs] = Map.empty
         var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
-        var latestFieldWriteAccessInformation: Option[EOptionP[Field, FieldWriteAccessInformation]] = None
+        var latestFieldWriteAccessInformation: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
         var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
         var callerDependees: Map[DefinedMethod, EOptionP[DefinedMethod, Callers]] = Map.empty.withDefault { dm => propertyStore(dm, Callers.key) }
 
@@ -92,6 +95,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     final val typeExtensibility = project.get(TypeExtensibilityKey)
     final val closedPackages = project.get(ClosedPackagesKey)
     final val definitionSites = project.get(DefinitionSitesKey)
+    final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit final val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
@@ -151,7 +155,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             }
         }
 
-        val faiEP = propertyStore(field, FieldWriteAccessInformation.key)
+        val faiEP = propertyStore(declaredFields(field), FieldWriteAccessInformation.key)
 
         if (handleFieldWriteAccessInformation(faiEP))
             return Result(field, Assignable);
@@ -233,7 +237,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     }
 
     private def handleFieldWriteAccessInformation(
-        newEP: EOptionP[Field, FieldWriteAccessInformation]
+        newEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
     )(implicit state: AnalysisState): Boolean = {
         val assignable = if (newEP.hasUBP) {
             val newFai = newEP.ub
@@ -303,7 +307,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                     pcs.get.exists(methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, _))
                 else false
             case FieldWriteAccessInformation.key =>
-                val newEP = eps.asInstanceOf[EOptionP[Field, FieldWriteAccessInformation]]
+                val newEP = eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]
                 handleFieldWriteAccessInformation(newEP)
         }
 
@@ -361,7 +365,8 @@ trait AbstractFieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler 
         ClosedPackagesKey,
         TypeExtensibilityKey,
         DefinitionSitesKey,
-        ContextProviderKey
+        ContextProviderKey,
+        DeclaredFieldsKey
     )
 
     final def derivedProperty: PropertyBounds = PropertyBounds.ub(FieldAssignability)

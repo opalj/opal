@@ -18,6 +18,7 @@ import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.LocalField
 import org.opalj.br.ObjectType
+import org.opalj.br.DeclaredField
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
@@ -33,7 +34,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
     private[this] var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
     private[this] val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
-    private[this] var fieldWriteAccessDependee: Option[EOptionP[Field, FieldWriteAccessInformation]] = None
+    private[this] var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
 
     var tacFieldAccessPCs: Map[Method, PCs] = Map.empty
     var potentialCloneCallers: Set[Method] = Set.empty
@@ -128,11 +129,11 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
         callerDependees.get(dm)
     }
 
-    def setFieldWriteAccessDependee(ep: EOptionP[Field, FieldWriteAccessInformation]): Unit = {
+    def setFieldWriteAccessDependee(ep: EOptionP[DeclaredField, FieldWriteAccessInformation]): Unit = {
         fieldWriteAccessDependee = Some(ep)
     }
 
-    def getFieldWriteAccessDepdendee: Option[EOptionP[Field, FieldWriteAccessInformation]] = fieldWriteAccessDependee
+    def getFieldWriteAccessDepdendee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = fieldWriteAccessDependee
 
     def addCallsite(
         caller: DeclaredMethod,

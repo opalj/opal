@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 
 import scala.annotation.nowarn
@@ -52,6 +53,8 @@ import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoInstantiatedTypes
 import org.opalj.br.PC
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -927,7 +930,8 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
  */
 class AllocationSitesPointsToTypeIterator(project: SomeProject)
     extends AbstractAllocationSitesPointsToTypeIterator(project) with SimpleContextProvider {
-    implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey);
+    implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     override def typesProperty(
         field: Field, depender: Entity
@@ -942,9 +946,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             var result = emptyPointsToSet
             for {
                 // Extract FieldWriteAccessInformation
-                fai <- extractPropertyUB(EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _))
-                (definedMethod, pc) <- fai.directAccesses
-
+                fai <- extractPropertyUB(EPK(declaredFields(field), FieldWriteAccessInformation.key), state.addDependency(depender, _))
+                (definedMethod, pc) <- fai.directAccesses // TODO indirect accesses
                 // Extract TAC
                 method = definedMethod.definedMethod
                 tacEP <- extractPropertyUB(EPK(method, TACAI.key), state.addDependency((depender, definedMethod, pc), _))
@@ -1040,7 +1043,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 }
 
             case fai: FieldWriteAccessInformation =>
-                val seenAccesses = oldEOptP.asInstanceOf[EOptionP[Field, FieldWriteAccessInformation]] match { // TODO indirect
+                val seenAccesses = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match { // TODO indirect
                     case UBP(fai) => fai.numAccesses
                     case _        => 0
                 }
@@ -1099,7 +1102,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 }
 
             case fai: FieldWriteAccessInformation =>
-                val seenAccesses = oldEOptP.asInstanceOf[EOptionP[Field, FieldWriteAccessInformation]] match {
+                val seenAccesses = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
                     case UBP(fai) => fai.numAccesses
                     case _        => 0
                 }
@@ -1128,6 +1131,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
     assert(k > 0 && l > 0 && k >= l - 1)
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     override def typesProperty(
         field: Field, depender: Entity
@@ -1142,8 +1146,8 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
             var result = emptyPointsToSet;
             for {
                 // Extract FieldWriteAccessInformation
-                fai <- extractPropertyUB(EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _))
-                (definedMethod, pc) <- fai.directAccesses
+                fai <- extractPropertyUB(EPK(declaredFields(field), FieldWriteAccessInformation.key), state.addDependency(depender, _))
+                (definedMethod, pc) <- fai.directAccesses // TODO indirect accesses
 
                 // Extract TAC
                 method = definedMethod.definedMethod
