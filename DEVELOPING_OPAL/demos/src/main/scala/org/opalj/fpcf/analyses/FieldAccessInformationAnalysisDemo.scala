@@ -10,7 +10,9 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
@@ -19,9 +21,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -59,27 +59,25 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             case Some(requirements) => requirements + domain
         }
 
-        var propertyStore: PropertyStore = null
+        val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-        project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
-            _ => new AllocationSitesPointsToTypeIterator(project)
-        }
+        val typeIterator = AllocationSiteBasedPointsToCallGraphKey.getTypeIterator(project)
+        project.updateProjectInformationKeyInitializationData(TypeIteratorKey) { _ => typeIterator }
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
         time {
-            propertyStore = analysesManager
+            analysesManager
                 .runAll(
                     AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
                         ++ Set(
-                            AllocationSiteBasedPointsToAnalysisScheduler,
                             EagerFieldAccessInformationAnalysis,
                             ReflectionRelatedFieldAccessesAnalysisScheduler
                         )
                 )
-                ._1
             propertyStore.waitOnPhaseCompletion()
         } { t =>
-            analysisTime = t.toSeconds
+            analysisTime += t.toSeconds
         }
 
         val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
