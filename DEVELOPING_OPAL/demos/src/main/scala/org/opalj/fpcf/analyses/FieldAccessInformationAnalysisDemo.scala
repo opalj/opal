@@ -110,7 +110,8 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .sum
 
         def getFieldsList(fields: Set[Field]): String = {
-            fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
+            if (fields.size > 50) s"\n|     Too many fields! (${fields.size})"
+            else fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
         }
 
         s"""
