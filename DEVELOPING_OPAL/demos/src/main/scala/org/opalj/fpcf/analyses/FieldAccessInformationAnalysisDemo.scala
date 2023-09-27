@@ -19,8 +19,8 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
-import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -62,14 +62,14 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-        val typeIterator = AllocationSiteBasedPointsToCallGraphKey.getTypeIterator(project)
+        val typeIterator = XTACallGraphKey.getTypeIterator(project)
         project.updateProjectInformationKeyInitializationData(TypeIteratorKey) { _ => typeIterator }
         project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
         time {
             analysesManager
                 .runAll(
-                    AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
+                    XTACallGraphKey.allCallGraphAnalyses(project)
                         ++ Set(
                             EagerFieldAccessInformationAnalysis,
                             ReflectionRelatedFieldAccessesAnalysisScheduler
