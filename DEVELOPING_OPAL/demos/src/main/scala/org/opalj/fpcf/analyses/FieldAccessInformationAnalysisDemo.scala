@@ -35,9 +35,12 @@ import java.net.URL
  */
 object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
+  /*
     private val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
         "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
         "org/xml/sax")
+
+   */
 
     override def title: String = "Determines field accesses"
 
@@ -81,7 +84,8 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         }
 
         val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
-            !JDKPackages.exists(cf.thisType.packageName.startsWith)
+            // !JDKPackages.exists(cf.thisType.packageName.startsWith)
+            true
         }
         val fields = projectClassFiles.flatMap { _.fields }.toSet
 
@@ -110,7 +114,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .sum
 
         def getFieldsList(fields: Set[Field]): String = {
-            if (fields.size > 50) s"\n|     Too many fields! (${fields.size})"
+            if (fields.size > 50) "\n|     Too many fields to display!"
             else fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
         }
 
