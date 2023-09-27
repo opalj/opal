@@ -171,6 +171,30 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
             callerStatements: Array[Stmt[V]]
     )
 
+    final override def processNewCaller(
+       calleeContext: ContextType,
+       callerContext: ContextType,
+       accessPC: Int,
+       tac: TACode[TACMethodParameter, V],
+       receiverOption: Option[Expr[V]],
+       params: Seq[Option[Expr[V]]],
+       targetVarOption: Option[V],
+       isDirect: Boolean
+    ): ProperPropertyComputationResult = {
+        implicit val indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
+        implicit val state: ReflectionState[ContextType] = new ReflectionState[ContextType](
+            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+        )
+
+        if (receiverOption.isDefined) {
+            handleFieldAccess(callerContext, accessPC, receiverOption.get.asVar, params, tac.stmts)
+        } else {
+            indirectFieldAccesses.addIncompleteAccessSite(accessPC)
+        }
+
+        returnResult(receiverOption.map(_.asVar).orNull)
+    }
+
     protected def returnResult(fieldVar: V)(
         implicit
         state:                 ReflectionState[ContextType],
@@ -184,6 +208,14 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
         else
             Results(indirectFieldAccesses.partialResults(state.callContext))
     }
+
+    protected def handleFieldAccess(
+        accessContext: ContextType,
+        accessPC: Int,
+        fieldVar: V,
+        fieldSetParameters: Seq[Option[Expr[V]]],
+        stmts: Array[Stmt[V]]
+    )(implicit state: ReflectionState[ContextType], indirectFieldAccesses: IndirectFieldAccesses): Unit
 
     protected def addFieldAccess(
         accessContext:   ContextType,
@@ -385,38 +417,14 @@ class FieldGetAnalysis private[analyses] (
         MethodDescriptor.apply(ObjectType.Object, fieldType.getOrElse(ObjectType.Object))
     )
 
-    override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
-        accessPC:        Int,
-        tac:             TACode[TACMethodParameter, V],
-        receiverOption:  Option[Expr[V]],
-        params:          Seq[Option[Expr[V]]],
-        targetVarOption: Option[V],
-        isDirect:        Boolean
-    ): ProperPropertyComputationResult = {
-        implicit val indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
-        implicit val state: ReflectionState[ContextType] = new ReflectionState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
-        )
-
-        if (receiverOption.isDefined) {
-            handleFieldRead(callerContext, accessPC, receiverOption.get.asVar, params.head, tac.stmts)
-        } else {
-            indirectFieldAccesses.addIncompleteAccessSite(accessPC)
-        }
-
-        returnResult(receiverOption.map(_.asVar).orNull)
-    }
-
-    private[this] def handleFieldRead(
+    protected def handleFieldAccess(
         accessContext:     ContextType,
         accessPC:          Int,
         fieldVar:          V,
-        fieldGetParameter: Option[Expr[V]],
+        fieldGetParameters: Seq[Option[Expr[V]]],
         stmts:             Array[Stmt[V]]
     )(implicit state: ReflectionState[ContextType], indirectFieldAccesses: IndirectFieldAccesses): Unit = {
-        val fieldGetReceiver: Option[V] = fieldGetParameter.map(_.asVar)
+        val fieldGetReceiver: Option[V] = fieldGetParameters.head.map(_.asVar)
 
         val baseMatchers = Set(
             MatcherUtil.retrieveSuitableMatcher[V](
@@ -490,31 +498,7 @@ class FieldSetAnalysis private[analyses] (
         MethodDescriptor.apply(ArraySeq(ObjectType.Object, fieldType.getOrElse(ObjectType.Object)), VoidType)
     )
 
-    override def processNewCaller(
-        calleeContext:   ContextType,
-        callerContext:   ContextType,
-        accessPC:        Int,
-        tac:             TACode[TACMethodParameter, V],
-        receiverOption:  Option[Expr[V]],
-        params:          Seq[Option[Expr[V]]],
-        targetVarOption: Option[V],
-        isDirect:        Boolean
-    ): ProperPropertyComputationResult = {
-        implicit val indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
-        implicit val state: ReflectionState[ContextType] = new ReflectionState[ContextType](
-            callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
-        )
-
-        if (receiverOption.isDefined) {
-            handleFieldWrite(callerContext, accessPC, receiverOption.get.asVar, params, tac.stmts)
-        } else {
-            indirectFieldAccesses.addIncompleteAccessSite(accessPC)
-        }
-
-        returnResult(receiverOption.map(_.asVar).orNull)
-    }
-
-    private[this] def handleFieldWrite(
+    protected def handleFieldAccess(
         accessContext:      ContextType,
         accessPC:           Int,
         fieldVar:           V,
