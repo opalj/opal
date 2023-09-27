@@ -14,11 +14,10 @@ import org.opalj.br.analyses.SomeProject
 
 object MethodHandlesUtil {
     private[reflection] def retrieveMatchersForMethodHandleConst(
-        declaringClass:      ReferenceType,
-        name:                String,
-        fieldType:           FieldType,
-        actualReceiverTypes: Option[Set[ObjectType]],
-        isStatic:            Boolean
+        declaringClass: ReferenceType,
+        name:           String,
+        fieldType:      FieldType,
+        isStatic:       Boolean
     )(implicit project: SomeProject): Set[FieldMatcher] = {
         Set(
             new TypeBasedFieldMatcher(fieldType),
@@ -27,16 +26,10 @@ object MethodHandlesUtil {
             if (declaringClass.isArrayType)
                 new ClassBasedFieldMatcher(Set(ObjectType.Object), onlyFieldsExactlyInClass = false)
             else if (!isStatic)
-                if (actualReceiverTypes.isDefined)
                 new ClassBasedFieldMatcher(
-                actualReceiverTypes.get,
+                project.classHierarchy.allSubtypes(declaringClass.asObjectType, reflexive = true),
                 onlyFieldsExactlyInClass = false
             )
-            else
-                new ClassBasedFieldMatcher(
-                    project.classHierarchy.allSubtypes(declaringClass.asObjectType, reflexive = true),
-                    onlyFieldsExactlyInClass = false
-                )
             else
                 new ClassBasedFieldMatcher(Set(declaringClass.asObjectType), onlyFieldsExactlyInClass = false)
         )

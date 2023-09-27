@@ -33,10 +33,7 @@ import org.opalj.tac.fpcf.analyses.cg.persistentUVar
 import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.FloatType
-import org.opalj.br.GetFieldMethodHandle
-import org.opalj.br.GetStaticMethodHandle
-import org.opalj.br.PutFieldMethodHandle
-import org.opalj.br.PutStaticMethodHandle
+import org.opalj.br.InstanceFieldAccessMethodHandle
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -45,6 +42,7 @@ import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.ShortType
+import org.opalj.br.StaticFieldAccessMethodHandle
 import org.opalj.br.VoidType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
@@ -172,14 +170,14 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
     )
 
     final override def processNewCaller(
-       calleeContext: ContextType,
-       callerContext: ContextType,
-       accessPC: Int,
-       tac: TACode[TACMethodParameter, V],
-       receiverOption: Option[Expr[V]],
-       params: Seq[Option[Expr[V]]],
-       targetVarOption: Option[V],
-       isDirect: Boolean
+        calleeContext:   ContextType,
+        callerContext:   ContextType,
+        accessPC:        Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         implicit val indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
         implicit val state: ReflectionState[ContextType] = new ReflectionState[ContextType](
@@ -210,11 +208,11 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
     }
 
     protected def handleFieldAccess(
-        accessContext: ContextType,
-        accessPC: Int,
-        fieldVar: V,
+        accessContext:      ContextType,
+        accessPC:           Int,
+        fieldVar:           V,
         fieldSetParameters: Seq[Option[Expr[V]]],
-        stmts: Array[Stmt[V]]
+        stmts:              Array[Stmt[V]]
     )(implicit state: ReflectionState[ContextType], indirectFieldAccesses: IndirectFieldAccesses): Unit
 
     protected def addFieldAccess(
@@ -418,11 +416,11 @@ class FieldGetAnalysis private[analyses] (
     )
 
     protected def handleFieldAccess(
-        accessContext:     ContextType,
-        accessPC:          Int,
-        fieldVar:          V,
+        accessContext:      ContextType,
+        accessPC:           Int,
+        fieldVar:           V,
         fieldGetParameters: Seq[Option[Expr[V]]],
-        stmts:             Array[Stmt[V]]
+        stmts:              Array[Stmt[V]]
     )(implicit state: ReflectionState[ContextType], indirectFieldAccesses: IndirectFieldAccesses): Unit = {
         val fieldGetReceiver: Option[V] = fieldGetParameters.head.map(_.asVar)
 
@@ -849,31 +847,22 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         if (definition.isMethodHandleConst) {
             definition.asMethodHandleConst.value match {
-                case GetFieldMethodHandle(declaringClass, name, fieldType) =>
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, None, isStatic = false)
+                case handle: InstanceFieldAccessMethodHandle =>
+                    matchers += MatcherUtil.retrieveSuitableNonEssentialMatcher[V](
+                        actualParams.flatMap(_.head),
+                        v => new ActualReceiverBasedFieldMatcher(v.value.asReferenceValue)
+                    )
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(
+                        handle.declaringClassType, handle.name, handle.fieldType, isStatic = false
+                    )
 
-                case GetStaticMethodHandle(declaringClass, name, fieldType) =>
-                    val actualReceiverTypes: Option[Set[ObjectType]] =
-                        if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
-                            val rcvr = actualParams.get.head.get.value.asReferenceValue
-                            Some(
-                                if (rcvr.isNull.isYes) Set.empty[ObjectType]
-                                else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
-                                else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
-                                else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, reflexive = true)
-                            )
-                        } else
-                            None
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, actualReceiverTypes, isStatic = true)
-
-                case PutFieldMethodHandle(declaringClass, name, fieldType) =>
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, None, isStatic = false)
-
-                case PutStaticMethodHandle(declaringClass, name, fieldType) =>
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(declaringClass, name, fieldType, None, isStatic = true)
+                case handle: StaticFieldAccessMethodHandle =>
+                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(
+                        handle.declaringClassType, handle.name, handle.fieldType, isStatic = true
+                    )
 
                 case _ => // method invocations are not directly relevant for field accesses
-                    matchers += NoFieldsMatcher
+                    matchers = Set(NoFieldsMatcher)
             }
         } else if (definition.isVirtualFunctionCall) {
             case class MethodHandleData(classVar: V, nameVar: V, fieldType: Expr[V], isStatic: Boolean, isSetter: Boolean)
