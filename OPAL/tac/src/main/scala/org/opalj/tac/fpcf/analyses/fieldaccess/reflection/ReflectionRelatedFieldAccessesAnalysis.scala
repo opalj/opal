@@ -868,8 +868,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
             case class MethodHandleData(classVar: V, nameVar: V, fieldType: Expr[V], isStatic: Boolean, isSetter: Boolean)
 
             def handleParams(params: Seq[Expr[V]], isStatic: Boolean, isSetter: Boolean): MethodHandleData = {
-                val Seq(refc, name, fieldType) = params
-                MethodHandleData(refc.asVar, name.asVar, fieldType, isStatic, isSetter)
+                val Seq(refClass, name, fieldType) = params
+                MethodHandleData(refClass.asVar, name.asVar, fieldType, isStatic, isSetter)
             }
 
             val handleDataOpt = definition.asVirtualFunctionCall match {
@@ -910,26 +910,9 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
                 if (!matchers.contains(NoFieldsMatcher))
                     if (!handleData.isStatic) {
-                        val receiverTypes =
-                            if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
-                                val receiverValue = actualParams.get.head.get.value
-                                if (!receiverValue.isReferenceValue)
-                                    None
-                                else {
-                                    val rcvr = receiverValue.asReferenceValue
-                                    Some(
-                                        if (rcvr.isNull.isYes) Set.empty[ObjectType]
-                                        else if (rcvr.leastUpperType.get.isArrayType) Set(ObjectType.Object)
-                                        else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asObjectType)
-                                        else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asObjectType, reflexive = true)
-                                    )
-                                }
-                            } else None
-                        if (receiverTypes.isDefined)
-                            matchers += new ClassBasedFieldMatcher(
-                                receiverTypes.get,
-                                onlyFieldsExactlyInClass = false
-                            )
+                        val receiverValueOpt = actualParams.flatMap(_.head)
+                        if (receiverValueOpt.isDefined && receiverValueOpt.get.value.isReferenceValue)
+                            matchers += new ActualReceiverBasedFieldMatcher(receiverValueOpt.get.value.asReferenceValue)
                         else
                             matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
                                 context,
@@ -944,7 +927,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                             )
                     }
             } else
-                matchers += NoFieldsMatcher
+                matchers = Set(NoFieldsMatcher)
         } else if (HighSoundnessMode) {
             /*
             if (descriptorOpt.isDefined) {
@@ -967,7 +950,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
            */
             matchers += AllFieldsMatcher
         } else {
-            matchers += NoFieldsMatcher
+            matchers = Set(NoFieldsMatcher)
             indirectFieldAccesses.addIncompleteAccessSite(accessPC)
         }
         // TODO we should use the descriptor here
