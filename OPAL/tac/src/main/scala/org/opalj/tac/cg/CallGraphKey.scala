@@ -60,13 +60,16 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         }
 
         project.updateProjectInformationKeyInitializationData(ContextProviderKey) {
-            case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator =>
-                implicit val logContext: LogContext = project.logContext
-                OPALLogger.error(
-                    "analysis configuration",
-                    s"must not configure multiple type iterators"
-                )
-                throw new IllegalArgumentException()
+            case Some(typeIterator: TypeIterator) =>
+                if (typeIterator ne this.typeIterator) {
+                    implicit val logContext: LogContext = project.logContext
+                    OPALLogger.error(
+                        "analysis configuration",
+                        s"must not configure multiple type iterators"
+                    )
+                    throw new IllegalArgumentException()
+                }
+                this.typeIterator
             case Some(_: ContextProvider) =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.error(
@@ -74,7 +77,6 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                     "a context provider has already been established"
                 )
                 throw new IllegalStateException()
-            case Some(_) => this.typeIterator
             case None =>
                 this.typeIterator = getTypeIterator(project)
                 this.typeIterator
