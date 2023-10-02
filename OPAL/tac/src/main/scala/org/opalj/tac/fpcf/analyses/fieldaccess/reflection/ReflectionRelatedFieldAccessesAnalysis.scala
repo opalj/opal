@@ -797,24 +797,29 @@ class MethodHandleInvokeAnalysis private[analyses] (
             else
                 None
 
-        // TODO here we need to peel of the 1. actual parameter for non static ones
-        val baseMatchers = Set.empty[FieldMatcher] /*Set(
-              retrieveSuitableNonEssentialMatcher[Seq[V]](
-                actualInvokeParamsOpt,
-                  v => new ActualParamBasedFieldMatcher(v, project)
-                )
-              )*/
-
         val persistentActualParams = actualInvokeParamsOpt.map(_.map(
             _.flatMap(persistentUVar(_)(stmts))
         )).getOrElse(Seq.empty)
 
-        val depender = MethodHandleDepender(accessPC, descriptorOpt, actualInvokeParamsOpt, persistentActualParams, baseMatchers)
+        var matchers = Set.empty[FieldMatcher]
+        if (descriptorOpt.isDefined) {
+            val md = descriptorOpt.get
+            if (md.parametersCount == 2) {
+                // Invocations with 2 parameters are non-static setters
+                matchers += NonStaticFieldMatcher
+                matchers += new TypeBasedFieldMatcher(md.parameterTypes.tail.head.asFieldType)
+            } else if (md.parametersCount == 0) {
+                // Invocations with 0 parameters are static getters
+                matchers += StaticFieldMatcher
+            }
+        }
+
+        val depender = MethodHandleDepender(accessPC, descriptorOpt, actualInvokeParamsOpt, persistentActualParams, matchers)
 
         AllocationsUtil.handleAllocations(
             methodHandle, accessContext, depender, state.tac.stmts,
             project.classHierarchy.isASubtypeOf(_, ObjectType.MethodHandle).isYesOrUnknown,
-            () => failure(accessPC, persistentActualParams, baseMatchers)
+            () => failure(accessPC, persistentActualParams, matchers)
         ) {
                 (allocationContext, allocationIndex, stmts) =>
                     val allMatchers = handleGetMethodHandle(
@@ -824,7 +829,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                         descriptorOpt,
                         actualInvokeParamsOpt,
                         persistentActualParams,
-                        baseMatchers,
+                        matchers,
                         stmts
                     )
                     addFieldAccesses(accessContext, accessPC, allMatchers, persistentActualParams)
@@ -892,11 +897,12 @@ class MethodHandleInvokeAnalysis private[analyses] (
             if (handleDataOpt.isDefined) {
                 val handleData = handleDataOpt.get
                 matchers += (if (handleData.isStatic) StaticFieldMatcher else NonStaticFieldMatcher)
-                /*
-                matchers += retrieveDescriptorBasedFieldMatcher(
-                    descriptorOpt, handleData.fieldType, handleData.isStatic, isConstructor, stmts, project
-                )
-               */
+
+                if (descriptorOpt.isDefined && !handleData.isSetter && descriptorOpt.get.returnType.isFieldType) {
+                    // We can use the return type from the method descriptor if we encounter a getter and the result is
+                    // used in an expression (e.g. the descriptors return type is )
+                    matchers += new TypeBasedFieldMatcher(descriptorOpt.get.returnType.asFieldType)
+                }
 
                 if (!matchers.contains(NoFieldsMatcher))
                     matchers += MatcherUtil.retrieveNameBasedFieldMatcher(
@@ -929,31 +935,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
             } else
                 matchers = Set(NoFieldsMatcher)
         } else if (HighSoundnessMode) {
-            /*
-            if (descriptorOpt.isDefined) {
-                // we do not know, whether the invoked method is static or not
-                // (i.e. whether the first parameter of the descriptor represent the receiver)
-                val md = descriptorOpt.get
-                if (md.parametersCount > 0) {
-                    val nonStaticDescriptor = MethodDescriptor(
-                        md.parameterTypes.tail, md.returnType
-                    )
-                    matchers += new DescriptorBasedFieldMatcher(
-                        Set(md, nonStaticDescriptor)
-                    )
-                } else {
-                    matchers += new DescriptorBasedFieldMatcher(
-                        Set(md)
-                    )
-                }
-            }
-           */
             matchers += AllFieldsMatcher
         } else {
             matchers = Set(NoFieldsMatcher)
             indirectFieldAccesses.addIncompleteAccessSite(accessPC)
         }
-        // TODO we should use the descriptor here
 
         matchers
     }

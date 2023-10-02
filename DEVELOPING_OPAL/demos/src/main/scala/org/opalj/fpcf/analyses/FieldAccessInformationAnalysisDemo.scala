@@ -35,7 +35,7 @@ import java.net.URL
  */
 object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
-  /*
+    /*
     private val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
         "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
         "org/xml/sax")

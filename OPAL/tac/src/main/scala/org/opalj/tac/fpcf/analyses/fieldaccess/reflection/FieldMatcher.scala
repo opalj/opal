@@ -58,8 +58,8 @@ class ClassBasedFieldMatcher(
 
 class TypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
 
-    override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(_.fieldType == fieldType)
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.fieldType == fieldType
+    override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
+    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.fieldType == fieldType // TODO do we need more complex matching here?
     override def priority: Int = 3
 }
 
