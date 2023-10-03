@@ -18,7 +18,6 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBPS
 import org.opalj.value.IsMObjectValue
@@ -76,6 +75,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBu
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBuilderPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringConstPointsToSet
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.value.ValueInformation
@@ -634,7 +634,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     override type InformationType = PointsToSet
     override type PropertyType = PointsToSet
 
-    protected[this] val pointsToProperty: PropertyKey[PointsToSet]
+    protected[this] def pointsToProperty: PropertyMetaInformation
     protected[this] def emptyPointsToSet: PointsToSet
 
     private[this] val propertyStore = project.get(PropertyStoreKey)
@@ -757,7 +757,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         implicit
         state: TypeIteratorState
     ): PointsToSet = {
-        val epk = EPK(dependee, pointsToProperty)
+        val epk = EPK(dependee, pointsToProperty.key).asInstanceOf[EPK[Entity, PointsToSet]]
         val p2s = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
 
         if (p2s.isRefinable)
@@ -799,8 +799,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
 trait TypesBasedPointsToTypeIterator
     extends PointsToTypeIterator[ReferenceType, TypeBasedPointsToSet] {
 
-    protected[this] val pointsToProperty: PropertyKey[TypeBasedPointsToSet] =
-        TypeBasedPointsToSet.key
+    protected[this] def pointsToProperty: PropertyMetaInformation = TypeBasedPointsToSet
 
     protected[this] val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
@@ -871,7 +870,7 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    protected[this] val pointsToProperty: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
+    protected[this] def pointsToProperty: PropertyMetaInformation = AllocationSitePointsToSet
 
     protected[this] val emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
 
