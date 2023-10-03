@@ -5,6 +5,8 @@ package analyses
 
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.fieldaccess
+import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
+import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.FinalP
@@ -36,42 +38,32 @@ case class FieldAccessInformation(project: SomeProject) {
         }
     }
 
-    def readAccesses(field: Field)(
-        implicit
-        declaredMethods: DeclaredMethods,
-        declaredFields:  DeclaredFields
-    ): Iterator[(DefinedMethod, PC)] =
-        getFieldAccessInformation(declaredFields(field), FieldReadAccessInformation.key).directAccesses // TODO indirect accesses
+    def readAccesses(
+        field: Field
+    )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        getFieldAccessInformation(declaredFields(field), FieldReadAccessInformation.key).accesses
 
-    def writeAccesses(field: Field)(
-        implicit
-        declaredMethods: DeclaredMethods,
-        declaredFields:  DeclaredFields
-    ): Iterator[(DefinedMethod, PC)] =
-        getFieldAccessInformation(declaredFields(field), FieldWriteAccessInformation.key).directAccesses
+    def writeAccesses(
+        field: Field
+    )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        getFieldAccessInformation(declaredFields(field), FieldWriteAccessInformation.key).accesses
 
-    def isRead(
-        field: Field
-    )(implicit declaredMethods: DeclaredMethods, declaredFields: DeclaredFields): Boolean = readAccesses(field).nonEmpty
-    def isWritten(
-        field: Field
-    )(implicit declaredMethods: DeclaredMethods, declaredFields: DeclaredFields): Boolean = writeAccesses(field).nonEmpty
-    def isAccessed(
-        field: Field
-    )(implicit declaredMethods: DeclaredMethods, declaredFields: DeclaredFields): Boolean = isRead(field) || isWritten(field)
+    def isRead(field: Field)(implicit declaredFields: DeclaredFields): Boolean = readAccesses(field).nonEmpty
+    def isWritten(field: Field)(implicit declaredFields: DeclaredFields): Boolean = writeAccesses(field).nonEmpty
+    def isAccessed(field: Field)(implicit declaredFields: DeclaredFields): Boolean = isRead(field) || isWritten(field)
 
     /**
      * Returns a new iterator to iterate over all field access locations.
      */
     def allAccesses(
         field: Field
-    )(implicit declaredMethods: DeclaredMethods, declaredFields: DeclaredFields): Iterator[(DefinedMethod, PC)] =
+    )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
         readAccesses(field) ++ writeAccesses(field)
 
     /**
      * Basic statistics about the number of field reads and writes.
      */
-    def statistics(implicit declaredMethods: DeclaredMethods, declaredFields: DeclaredFields): Map[String, Int] = {
+    def statistics(implicit declaredFields: DeclaredFields): Map[String, Int] = {
         Map(
             "field reads" -> project.allFields.flatMap(readAccesses).size,
             "field writes" -> project.allFields.flatMap(writeAccesses).size

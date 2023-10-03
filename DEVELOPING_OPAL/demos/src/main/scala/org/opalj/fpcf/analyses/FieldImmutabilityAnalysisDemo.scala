@@ -25,12 +25,12 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.MutableField
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 
 /**
  * Runs the EagerL0FieldImmutabilityAnalysis including all analyses needed for improving the result.

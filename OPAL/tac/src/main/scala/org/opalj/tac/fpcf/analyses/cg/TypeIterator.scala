@@ -18,7 +18,6 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBPS
 import org.opalj.value.IsMObjectValue
@@ -47,17 +46,16 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.Field
+import org.opalj.br.PCs
 import org.opalj.br.fpcf.analyses.CallStringContextProvider
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoInstantiatedTypes
-import org.opalj.br.PC
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.fpcf.UBP
@@ -76,6 +74,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBu
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBuilderPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringConstPointsToSet
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.value.ValueInformation
@@ -634,7 +633,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     override type InformationType = PointsToSet
     override type PropertyType = PointsToSet
 
-    protected[this] val pointsToProperty: PropertyKey[PointsToSet]
+    protected[this] def pointsToProperty: PropertyMetaInformation
     protected[this] def emptyPointsToSet: PointsToSet
 
     private[this] val propertyStore = project.get(PropertyStoreKey)
@@ -757,7 +756,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         implicit
         state: TypeIteratorState
     ): PointsToSet = {
-        val epk = EPK(dependee, pointsToProperty)
+        val epk = EPK(dependee, pointsToProperty.key).asInstanceOf[EPK[Entity, PointsToSet]]
         val p2s = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
 
         if (p2s.isRefinable)
@@ -799,8 +798,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
 trait TypesBasedPointsToTypeIterator
     extends PointsToTypeIterator[ReferenceType, TypeBasedPointsToSet] {
 
-    protected[this] val pointsToProperty: PropertyKey[TypeBasedPointsToSet] =
-        TypeBasedPointsToSet.key
+    protected[this] def pointsToProperty: PropertyMetaInformation = TypeBasedPointsToSet
 
     protected[this] val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
@@ -871,7 +869,7 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    protected[this] val pointsToProperty: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
+    protected[this] def pointsToProperty: PropertyMetaInformation = AllocationSitePointsToSet
 
     protected[this] val emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
 
@@ -947,12 +945,13 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             for {
                 // Extract FieldWriteAccessInformation
                 fai <- extractPropertyUB(EPK(declaredFields(field), FieldWriteAccessInformation.key), state.addDependency(depender, _))
-                (definedMethod, pc) <- fai.directAccesses // TODO indirect accesses
+                (accessContextId, _, receiver, _) <- fai.accesses
                 // Extract TAC
-                method = definedMethod.definedMethod
-                tacEP <- extractPropertyUB(EPK(method, TACAI.key), state.addDependency((depender, definedMethod, pc), _))
+                definedMethod = contextFromId(accessContextId).method
+                method = contextFromId(accessContextId).method.definedMethod
+                tacEP <- extractPropertyUB(EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _))
                 theTAC <- tacEP.tac
-                defSite <- theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy
+                defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy
             } {
                 val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
 
@@ -983,12 +982,11 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         depender:      Entity,
         definedMethod: DefinedMethod,
         theTAC:        TACode[TACMethodParameter, DUVar[ValueInformation]],
-        pc:            PC
+        receiver:      (ValueInformation, PCs)
     )(
         handleAllocation: AllocationSite => Unit
     )(implicit state: TypeIteratorState): Unit = {
-        val putField = theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField
-        putField.objRef.asVar.definedBy.foreach { defSite =>
+        uVarForDefSites(receiver, theTAC.pcToIndex).definedBy.foreach { defSite =>
             val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
             val objects = currentPointsTo(
                 depender,
@@ -1038,26 +1036,16 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             case tac: TheTACAI =>
                 val theTAC = tac.theTAC
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, definedMethod: DefinedMethod, pc: PC) =>
-                        handleAllocationTacUpdate(depender, definedMethod, theTAC, pc)(handleAllocationSiteTypes(depender, _))
+                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef) if receiver.isInstanceOf[Option[_]] &&
+                        receiver.asInstanceOf[Option[_]].isDefined =>
+                        handleAllocationTacUpdate(
+                            depender, definedMethod, theTAC,
+                            receiver.asInstanceOf[AccessReceiver].get
+                        )(handleAllocationSiteTypes(depender, _))
                 }
 
             case fai: FieldWriteAccessInformation =>
-                val seenAccesses = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match { // TODO indirect
-                    case UBP(fai) => fai.numAccesses
-                    case _        => 0
-                }
-
-                state.dependersOf(updatedEPS.toEPK).foreach { depender =>
-                    fai.getNewestNDirectAccesses(fai.numAccesses - seenAccesses) foreach { wa =>
-                        val tacEPK = EPK(wa._1.definedMethod, TACAI.key)
-                        val tacEP = if (state.hasDependee(tacEPK)) state.getProperty(tacEPK) else propertyStore(wa._1.definedMethod, TACAI.key)
-                        if (tacEP.isRefinable) state.addDependency((depender, wa._1, wa._2), tacEP)
-
-                        if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
-                            handleAllocationTacUpdate(depender, wa._1, tacEP.ub.tac.get, wa._2)(handleAllocationSiteTypes(depender, _))
-                    }
-                }
+                continuationForFieldAccesses(updatedEPS, oldEOptP, fai)(handleAllocationSiteTypes)
         }
     }
 
@@ -1097,25 +1085,46 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
             case tac: TheTACAI =>
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, definedMethod: DefinedMethod, pc: PC) =>
-                        handleAllocationTacUpdate(depender, definedMethod, tac.theTAC, pc)(handlePointsToOfAllocationSite(depender, _))
+                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef) if receiver.isInstanceOf[Option[_]] &&
+                        receiver.asInstanceOf[Option[_]].isDefined =>
+                        handleAllocationTacUpdate(
+                            depender, definedMethod, tac.theTAC,
+                            receiver.asInstanceOf[AccessReceiver].get
+                        )(handlePointsToOfAllocationSite(depender, _))
                 }
 
             case fai: FieldWriteAccessInformation =>
-                val seenAccesses = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
-                    case UBP(fai) => fai.numAccesses
-                    case _        => 0
-                }
+                continuationForFieldAccesses(updatedEPS, oldEOptP, fai)(handlePointsToOfAllocationSite)
+        }
+    }
 
-                state.dependersOf(updatedEPS.toEPK).foreach { depender =>
-                    fai.getNewestNDirectAccesses(fai.numAccesses - seenAccesses) foreach { wa =>
-                        val tacEPK = EPK(wa._1.definedMethod, TACAI.key)
-                        val tacEP = if (state.hasDependee(tacEPK)) state.getProperty(tacEPK) else propertyStore(wa._1.definedMethod, TACAI.key)
-                        if (tacEP.isRefinable) state.addDependency((depender, wa._1, wa._2), tacEP)
+    @inline private def continuationForFieldAccesses(
+        updatedEPS: EPS[Entity, Property],
+        oldEOptP:   EOptionP[Entity, Property],
+        fai:        FieldWriteAccessInformation
+    )(
+        handleAllocationSite: (Entity, AllocationSite) => Unit
+    )(implicit state: TypeIteratorState): Unit = {
+        val (seenDirectAccesses, seenIndirectAccesses) = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
+            case UBP(fai) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+            case _        => (0, 0)
+        }
 
-                        if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
-                            handleAllocationTacUpdate(depender, wa._1, tacEP.ub.tac.get, wa._2)(handlePointsToOfAllocationSite(depender, _))
-                    }
+        state.dependersOf(updatedEPS.toEPK).foreach { depender =>
+            fai.getNewestAccesses(
+                fai.numDirectAccesses - seenDirectAccesses,
+                fai.numIndirectAccesses - seenIndirectAccesses
+            ) foreach { wa =>
+                    val definedMethod = contextFromId(wa._1).method.asDefinedMethod
+
+                    val receiverOpt = wa._3
+
+                    val tacEPK = EPK(definedMethod.definedMethod, TACAI.key)
+                    val tacEP = if (state.hasDependee(tacEPK)) state.getProperty(tacEPK) else propertyStore(definedMethod.definedMethod, TACAI.key)
+                    if (tacEP.isRefinable) state.addDependency((depender, definedMethod, receiverOpt), tacEP)
+
+                    if (tacEP.hasUBP && tacEP.ub.tac.isDefined && receiverOpt.isDefined)
+                        handleAllocationTacUpdate(depender, definedMethod, tacEP.ub.tac.get, receiverOpt.get)(handleAllocationSite(depender, _))
                 }
         }
     }
@@ -1130,7 +1139,6 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
     assert(k > 0 && l > 0 && k >= l - 1)
 
-    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     override def typesProperty(
@@ -1147,18 +1155,20 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
             for {
                 // Extract FieldWriteAccessInformation
                 fai <- extractPropertyUB(EPK(declaredFields(field), FieldWriteAccessInformation.key), state.addDependency(depender, _))
-                (definedMethod, pc) <- fai.directAccesses // TODO indirect accesses
+                (accessContextId, _, receiver, _) <- fai.accesses
+                if receiver.isDefined
 
                 // Extract TAC
+                definedMethod = contextFromId(accessContextId).method.asDefinedMethod
                 method = definedMethod.definedMethod
-                tacEP <- extractPropertyUB(EPK(method, TACAI.key), state.addDependency((depender, definedMethod, pc), _))
+                tacEP <- extractPropertyUB(EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _))
                 theTAC <- tacEP.tac
-                defSite <- theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy
+                defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy
 
                 // Extract caller context
                 callers <- extractPropertyUB(
                     EPK(definedMethod, Callers.key),
-                    state.addDependency((depender, definedMethod, pc), _)
+                    state.addDependency((depender, definedMethod, receiver), _)
                 )
                 (calleeContext, _, _, _) <- callers.callContexts(definedMethod)(this).iterator
             } {
