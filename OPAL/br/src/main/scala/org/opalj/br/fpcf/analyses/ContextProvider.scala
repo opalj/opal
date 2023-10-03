@@ -36,8 +36,8 @@ trait SimpleContextProvider extends ContextProvider {
 
     override type ContextType = SimpleContext
 
-    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    protected[this] implicit lazy val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] lazy val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
     @inline def newContext(method: DeclaredMethod): SimpleContext = simpleContexts(method)
 
@@ -60,7 +60,7 @@ trait CallStringContextProvider extends ContextProvider {
 
     val k: Int
 
-    private[this] val callStringContexts: CallStringContexts = project.get(CallStringContextsKey)
+    private[this] lazy val callStringContexts: CallStringContexts = project.get(CallStringContextsKey)
 
     @inline def newContext(method: DeclaredMethod): CallStringContext =
         callStringContexts(method, Nil)
