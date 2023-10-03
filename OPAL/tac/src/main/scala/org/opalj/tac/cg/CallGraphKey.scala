@@ -18,9 +18,11 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.cg.CallBySignatureKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -57,15 +59,24 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             case Some(requirements) => requirements ++ requiredDomains
         }
 
-        project.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
-            case Some(typeIterator: TypeIterator) if typeIterator ne this.typeIterator =>
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey) {
+            case Some(typeIterator: TypeIterator) =>
+                if (typeIterator ne this.typeIterator) {
+                    implicit val logContext: LogContext = project.logContext
+                    OPALLogger.error(
+                        "analysis configuration",
+                        s"must not configure multiple type iterators"
+                    )
+                    throw new IllegalArgumentException()
+                }
+                this.typeIterator
+            case Some(_: ContextProvider) =>
                 implicit val logContext: LogContext = project.logContext
                 OPALLogger.error(
                     "analysis configuration",
-                    s"must not configure multiple type iterators"
+                    "a context provider has already been established"
                 )
-                throw new IllegalArgumentException()
-            case Some(_) => this.typeIterator
+                throw new IllegalStateException()
             case None =>
                 this.typeIterator = getTypeIterator(project)
                 this.typeIterator
