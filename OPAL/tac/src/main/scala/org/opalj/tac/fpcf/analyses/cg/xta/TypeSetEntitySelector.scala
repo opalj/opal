@@ -7,8 +7,9 @@ package cg
 package xta
 
 import org.opalj.br.ArrayType
+import org.opalj.br.DefinedField
 import org.opalj.br.DefinedMethod
-import org.opalj.br.Field
+import org.opalj.br.VirtualDeclaredField
 import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.fpcf.Entity
 
@@ -30,8 +31,8 @@ object XTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod        => dm
         case _: VirtualDeclaredMethod => ExternalWorld
-        case f: Field                 => f
-        case _: ExternalField         => ExternalWorld
+        case f: DefinedField          => f.definedField
+        case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
         case _                        => sys.error("unexpected entity: "+e)
@@ -47,8 +48,8 @@ object MTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod        => dm.definedMethod.classFile
         case _: VirtualDeclaredMethod => ExternalWorld
-        case f: Field                 => f
-        case _: ExternalField         => ExternalWorld
+        case f: DefinedField          => f.definedField
+        case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
         case _                        => sys.error("unexpected entity: "+e)
@@ -65,8 +66,8 @@ object FTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod        => dm
         case _: VirtualDeclaredMethod => ExternalWorld
-        case f: Field                 => f.classFile
-        case _: ExternalField         => ExternalWorld
+        case f: DefinedField          => f.definedField.classFile
+        case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
         case _                        => sys.error("unexpected entity: "+e)
@@ -83,8 +84,8 @@ object CTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod        => dm.definedMethod.classFile
         case _: VirtualDeclaredMethod => ExternalWorld
-        case f: Field                 => f.classFile
-        case _: ExternalField         => ExternalWorld
+        case f: DefinedField          => f.definedField.classFile
+        case _: VirtualDeclaredField  => ExternalWorld
         case at: ArrayType            => at
         case ExternalWorld            => ExternalWorld
         case _                        => sys.error("unexpected entity: "+e)
