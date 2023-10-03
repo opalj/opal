@@ -11,8 +11,10 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
@@ -40,6 +42,7 @@ import org.opalj.fpcf.UBP
 class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
     final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    final val contextProvider: ContextProvider = project.get(ContextProviderKey)
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     case class L0FieldAssignabilityAnalysisState(field: Field) {
@@ -105,33 +108,28 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         faiEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
     )(implicit state: AnalysisState): Boolean = {
         val assignable = if (faiEP.hasUBP) {
-            val seenAccesses = state.latestFieldWriteAccessInformation match { // TODO we do not need indirect handling here as static writes cannot happen indirectly?
-                case Some(UBP(fai)) => fai.numDirectAccesses
-                case _              => 0
+            val (seenDirectAccesses, seenIndirectAccesses) = state.latestFieldWriteAccessInformation match {
+                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _              => (0, 0)
             }
 
-            faiEP.ub.getNewestNDirectAccesses(faiEP.ub.numDirectAccesses - seenAccesses) exists { wa =>
-                val method = wa._1.definedMethod
-
-                val classFile = state.field.classFile
-                val thisType = classFile.thisType
-                if (method.isStaticInitializer) {
-                    method.body.get.instructions(wa._2) match {
-                        case PUTSTATIC(`thisType`, fieldName, fieldType) =>
-                            // We don't need to lookup the field in the class
-                            // hierarchy since we are only concerned about private
-                            // fields so far... so we don't have to do a full
-                            // resolution of the field reference.
-                            val exists = classFile.findField(fieldName, fieldType).isDefined
-                            if (!exists)
-                                throw new IllegalStateException("Field that should exist does not exist!") // TODO remove
-
-                            exists
-                        case _ => false
-                    }
-                } else
-                    false
-            }
+            faiEP.ub.getNewestAccesses(
+                faiEP.ub.numDirectAccesses - seenDirectAccesses,
+                faiEP.ub.numIndirectAccesses - seenIndirectAccesses
+            ) exists { wa =>
+                    val method = contextProvider.contextFromId(wa._1).method.definedMethod
+                    if (method.isStaticInitializer) {
+                        if (wa._3.isDefined) {
+                            // If a receiver is defined, we know that the access was not static
+                            // IMPROVE: Add static information to accesses and resolve this
+                            false
+                        } else {
+                            // As a fallback, we look for a trivial static write access in the statements
+                            method.body.get.instructions(wa._2).opcode == PUTSTATIC.opcode
+                        }
+                    } else
+                        false
+                }
         } else
             false
 
