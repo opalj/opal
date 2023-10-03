@@ -17,7 +17,6 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
-import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -58,7 +57,6 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-        project.get(RTACallGraphKey)
 
         time {
             propertyStore = analysesManager
