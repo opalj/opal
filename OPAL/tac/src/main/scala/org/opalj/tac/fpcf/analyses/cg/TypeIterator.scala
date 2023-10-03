@@ -1036,9 +1036,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             case tac: TheTACAI =>
                 val theTAC = tac.theTAC
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef)
-                        if receiver.isInstanceOf[Option[_]] &&
-                            receiver.asInstanceOf[Option[_]].isDefined =>
+                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef) if receiver.isInstanceOf[Option[_]] &&
+                        receiver.asInstanceOf[Option[_]].isDefined =>
                         handleAllocationTacUpdate(
                             depender, definedMethod, theTAC,
                             receiver.asInstanceOf[AccessReceiver].get
@@ -1086,13 +1085,12 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
             case tac: TheTACAI =>
                 state.dependersOf(updatedEPS.toEPK).foreach {
-                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef)
-                      if receiver.isInstanceOf[Option[_]] &&
-                          receiver.asInstanceOf[Option[_]].isDefined =>
-                      handleAllocationTacUpdate(
-                        depender, definedMethod, tac.theTAC,
-                        receiver.asInstanceOf[AccessReceiver].get
-                      )(handlePointsToOfAllocationSite(depender, _))
+                    case (depender: Entity, definedMethod: DefinedMethod, receiver: AnyRef) if receiver.isInstanceOf[Option[_]] &&
+                        receiver.asInstanceOf[Option[_]].isDefined =>
+                        handleAllocationTacUpdate(
+                            depender, definedMethod, tac.theTAC,
+                            receiver.asInstanceOf[AccessReceiver].get
+                        )(handlePointsToOfAllocationSite(depender, _))
                 }
 
             case fai: FieldWriteAccessInformation =>
@@ -1101,34 +1099,34 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
     }
 
     @inline private def continuationForFieldAccesses(
-      updatedEPS: EPS[Entity, Property],
-      oldEOptP: EOptionP[Entity, Property],
-      fai: FieldWriteAccessInformation
+        updatedEPS: EPS[Entity, Property],
+        oldEOptP:   EOptionP[Entity, Property],
+        fai:        FieldWriteAccessInformation
     )(
         handleAllocationSite: (Entity, AllocationSite) => Unit
     )(implicit state: TypeIteratorState): Unit = {
-      val (seenDirectAccesses, seenIndirectAccesses) = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
-        case UBP(fai) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-        case _ => (0, 0)
-      }
-
-      state.dependersOf(updatedEPS.toEPK).foreach { depender =>
-        fai.getNewestAccesses(
-          fai.numDirectAccesses - seenDirectAccesses,
-          fai.numIndirectAccesses - seenIndirectAccesses
-        ) foreach { wa =>
-          val definedMethod = contextFromId(wa._1).method.asDefinedMethod
-
-          val receiverOpt = wa._3
-
-          val tacEPK = EPK(definedMethod.definedMethod, TACAI.key)
-          val tacEP = if (state.hasDependee(tacEPK)) state.getProperty(tacEPK) else propertyStore(definedMethod.definedMethod, TACAI.key)
-          if (tacEP.isRefinable) state.addDependency((depender, definedMethod, receiverOpt), tacEP)
-
-          if (tacEP.hasUBP && tacEP.ub.tac.isDefined && receiverOpt.isDefined)
-              handleAllocationTacUpdate(depender, definedMethod, tacEP.ub.tac.get, receiverOpt.get)(handleAllocationSite(depender, _))
+        val (seenDirectAccesses, seenIndirectAccesses) = oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
+            case UBP(fai) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+            case _        => (0, 0)
         }
-      }
+
+        state.dependersOf(updatedEPS.toEPK).foreach { depender =>
+            fai.getNewestAccesses(
+                fai.numDirectAccesses - seenDirectAccesses,
+                fai.numIndirectAccesses - seenIndirectAccesses
+            ) foreach { wa =>
+                    val definedMethod = contextFromId(wa._1).method.asDefinedMethod
+
+                    val receiverOpt = wa._3
+
+                    val tacEPK = EPK(definedMethod.definedMethod, TACAI.key)
+                    val tacEP = if (state.hasDependee(tacEPK)) state.getProperty(tacEPK) else propertyStore(definedMethod.definedMethod, TACAI.key)
+                    if (tacEP.isRefinable) state.addDependency((depender, definedMethod, receiverOpt), tacEP)
+
+                    if (tacEP.hasUBP && tacEP.ub.tac.isDefined && receiverOpt.isDefined)
+                        handleAllocationTacUpdate(depender, definedMethod, tacEP.ub.tac.get, receiverOpt.get)(handleAllocationSite(depender, _))
+                }
+        }
     }
 }
 
