@@ -70,8 +70,37 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
             .map(declaredFields.apply)
     }
 
-    def getNewestNIndirectAccessSites(accessContext: Context, n: Int): Iterator[PC] = {
-        _indirectAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator.take(n)
+    def getAccessSites(accessContext: Context): Iterator[PC] = {
+        getDirectAccessSites(accessContext) ++ getIndirectAccessSites(accessContext)
+    }
+
+    def getDirectAccessSites(accessContext: Context): Iterator[PC] = {
+        _directAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator
+    }
+
+    def getIndirectAccessSites(accessContext: Context): Iterator[PC] = {
+        _indirectAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator
+    }
+
+    def getNewestAccessedFields(
+        accessContext:             Context,
+        pc:                        PC,
+        newestDirectAccessSites:   Int,
+        newestIndirectAccessSites: Int
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        getNewestNDirectAccessedFields(accessContext, pc, newestDirectAccessSites) ++
+            getNewestNIndirectAccessedFields(accessContext, pc, newestIndirectAccessSites)
+    }
+
+    def getNewestNDirectAccessedFields(
+        accessContext: Context,
+        pc:            PC,
+        n:             Int
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        _directAccessedReceiversByField.get(accessContext.id).iterator
+            .flatMap(_.get(pc))
+            .flatMap(_.keys)
+            .take(n).map(declaredFields.apply)
     }
 
     def getNewestNIndirectAccessedFields(
@@ -102,17 +131,11 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     private def numDirectAccessesInAllAccessSites: Int =
         _directAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
 
-    def numDirectAccessSites(accessContext: Context): Int =
-        _directAccessedReceiversByField.get(accessContext.id).iterator.map(_.size).sum
-
     def numDirectAccesses(accessContext: Context, pc: PC): Int =
         _directAccessedReceiversByField.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.size).sum
 
     private def numIndirectAccessesInAllAccessSites: Int =
         _indirectAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
-
-    def numIndirectAccessSites(accessContext: Context): Int =
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator.map(_.size).sum
 
     def numIndirectAccesses(accessContext: Context, pc: PC): Int =
         _indirectAccessedReceiversByField.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.size).sum
