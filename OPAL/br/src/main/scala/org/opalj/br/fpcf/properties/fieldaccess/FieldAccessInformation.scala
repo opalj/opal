@@ -5,12 +5,7 @@ package fpcf
 package properties
 package fieldaccess
 
-import org.opalj.br.DefinedMethod
 import org.opalj.br.PC
-import org.opalj.br.PCs
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.collection.immutable.LongLinkedSet
-import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.OrderedProperty
@@ -18,7 +13,6 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
 
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.LongMap
@@ -42,22 +36,13 @@ sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInfor
         )
     }
 
-    protected def getEncodedDirectAccessSet(accesses: Set[(DefinedMethod, PCs)]): LongLinkedTrieSet = {
-        var result = LongLinkedTrieSet.empty
-        for {
-            (definedMethod, pcs) <- accesses
-            pc <- pcs
-        } result += encodeDirectFieldAccess(definedMethod, pc)
-        result
-    }
-
-    protected def getEncodedIndirectAccessSet[V](accesses: IntMap[IntMap[V]]): LongMap[V] = {
+    protected def getEncodedAccessSet[V](accesses: IntMap[IntMap[V]]): LongMap[V] = {
         var result = LongMap.empty[V]
         for {
             (contextId, valuesByPC) <- accesses
             (pc, value) <- valuesByPC
         } {
-            result += encodeIndirectFieldAccess(contextId, pc) -> value
+            result += encodeFieldAccess(contextId, pc) -> value
         }
         result
     }
@@ -71,64 +56,73 @@ sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInfor
 sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends OrderedProperty
     with FieldAccessInformationPropertyMetaInformation[S] {
 
-    protected val encodedDirectAccesses: LongLinkedSet
+    protected val encodedDirectAccessReceivers: LongMap[AccessReceiver] // Caller Context and PC => Receiver
+    protected val encodedDirectAccessParameters: LongMap[AccessParameter] // Caller Context and PC => Parameter
     protected val encodedIndirectAccessReceivers: LongMap[AccessReceiver] // Caller Context and PC => Receiver
     protected val encodedIndirectAccessParameters: LongMap[AccessParameter] // Caller Context and PC => Parameter
 
-    def directAccesses(implicit declaredMethods: DeclaredMethods): Iterator[(DefinedMethod, PC)] =
-        encodedDirectAccesses.iterator.map(decodeDirectFieldAccess(_))
+    def accesses: Iterator[(Int, PC, AccessReceiver, AccessParameter)] = directAccesses ++ indirectAccesses
 
-    def indirectAccesses: Iterator[(Int, PC, AccessReceiver, AccessParameter)] = {
-        encodedIndirectAccessReceivers.iterator.map {
+    def directAccesses: Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        decodeAccesses(encodedDirectAccessReceivers.iterator, encodedDirectAccessParameters)
+
+    def indirectAccesses: Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        decodeAccesses(encodedIndirectAccessReceivers.iterator, encodedIndirectAccessParameters)
+
+    private def decodeAccesses(
+        encodedReceivers:  Iterator[(FieldAccess, AccessReceiver)],
+        encodedParameters: LongMap[AccessParameter]
+    ): Iterator[(Int, PC, AccessReceiver, AccessParameter)] = {
+        encodedReceivers.map {
             kv =>
                 {
-                    val (fa: FieldAccess, receiver: Option[(ValueInformation, br.PCs)]) = kv
-                    val parameter = encodedIndirectAccessParameters.getOrElse(fa, None)
-                    val decodedFieldAccess = decodeIndirectFieldAccess(fa)
+                    val (fa: FieldAccess, receiver: AccessReceiver) = kv
+                    val parameter = encodedParameters.getOrElse(fa, None)
+                    val decodedFieldAccess = decodeFieldAccess(fa)
                     (decodedFieldAccess._1, decodedFieldAccess._2, receiver, parameter)
                 }
         }
     }
 
-    def getNewestNDirectAccesses(n: Int)(implicit declaredMethods: DeclaredMethods): Iterator[(DefinedMethod, PC)] =
-        encodedDirectAccesses.iterator.take(n).map(decodeDirectFieldAccess(_))
+    def getNewestAccesses(newestDirectAccesses: Int, newestIndirectAccesses: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        getNewestNDirectAccesses(newestDirectAccesses) ++ getNewestNIndirectAccesses(newestIndirectAccesses)
 
-    def getNewestNIndirectAccesses(n: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] = {
-        encodedIndirectAccessReceivers.iterator.take(n).map {
-            kv =>
-                {
-                    val (fa: FieldAccess, receiver: Option[(ValueInformation, br.PCs)]) = kv
-                    val parameter = encodedIndirectAccessParameters.getOrElse(fa, None)
-                    val decodedFieldAccess = decodeIndirectFieldAccess(fa)
-                    (decodedFieldAccess._1, decodedFieldAccess._2, receiver, parameter)
-                }
-        }
-    }
+    def getNewestNDirectAccesses(n: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        decodeAccesses(encodedDirectAccessReceivers.iterator.take(n), encodedDirectAccessParameters)
+
+    def getNewestNIndirectAccesses(n: Int): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        decodeAccesses(encodedIndirectAccessReceivers.iterator.take(n), encodedIndirectAccessParameters)
 
     def numAccesses: Int = numDirectAccesses + numIndirectAccesses
 
-    def numDirectAccesses: Int = encodedDirectAccesses.size
+    def numDirectAccesses: Int = encodedDirectAccessReceivers.valuesIterator.map { _.size }.sum
 
     def numIndirectAccesses: Int = encodedIndirectAccessReceivers.valuesIterator.map { _.size }.sum
 
-    def included(other: S, seenAccesses: Int = 0): S
+    def included(other: S, seenDirectAccesses: Int = 0, seenIndirectAccesses: Int = 0): S
 
     protected def included(
-        other:           S,
-        seenAccesses:    Int,
-        propertyFactory: (LongLinkedSet, LongMap[AccessReceiver], LongMap[AccessParameter]) => S
+        other:                S,
+        seenDirectAccesses:   Int,
+        seenIndirectAccesses: Int,
+        propertyFactory:      (LongMap[AccessReceiver], LongMap[AccessParameter], LongMap[AccessReceiver], LongMap[AccessParameter]) => S
     ): S = {
-        var newAccesses = encodedDirectAccesses
-        other.encodedDirectAccesses.forFirstN(other.numDirectAccesses - seenAccesses)(newAccesses += _)
-        val newReceivers = encodedIndirectAccessReceivers ++ other.encodedIndirectAccessReceivers
-        val newParameters = encodedIndirectAccessParameters ++ other.encodedIndirectAccessParameters
+        val newDirectReceivers = encodedDirectAccessReceivers ++
+            other.encodedDirectAccessReceivers.iterator.take(other.numDirectAccesses - seenDirectAccesses)
+        val newDirectParameters = encodedDirectAccessParameters ++
+            other.encodedDirectAccessParameters.iterator.take(other.numDirectAccesses - seenDirectAccesses)
+        val newIndirectReceivers = encodedIndirectAccessReceivers ++
+            other.encodedIndirectAccessReceivers.iterator.take(other.numIndirectAccesses - seenIndirectAccesses)
+        val newIndirectParameters = encodedIndirectAccessParameters ++
+            other.encodedIndirectAccessParameters.iterator.take(other.numIndirectAccesses - seenIndirectAccesses)
 
-        if ((newAccesses eq encodedDirectAccesses)
-            && newReceivers == encodedIndirectAccessReceivers
-            && newParameters == encodedIndirectAccessParameters)
+        if (newDirectReceivers == encodedDirectAccessReceivers
+            && newDirectParameters == encodedDirectAccessParameters
+            && newIndirectReceivers == encodedIndirectAccessReceivers
+            && newIndirectParameters == encodedIndirectAccessParameters)
             return this.asInstanceOf[S];
 
-        propertyFactory(newAccesses, newReceivers, newParameters)
+        propertyFactory(newDirectReceivers, newDirectParameters, newIndirectReceivers, newIndirectParameters)
     }
 
     def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
@@ -139,25 +133,28 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
 }
 
 case class FieldReadAccessInformation(
-        protected val encodedDirectAccesses:                LongLinkedSet,
+        protected val encodedDirectAccessReceivers:         LongMap[AccessReceiver],
         protected[this] val encodedIndirectAccessReceivers: LongMap[AccessReceiver]
 ) extends FieldAccessInformation[FieldReadAccessInformation]
     with FieldAccessInformationPropertyMetaInformation[FieldReadAccessInformation] {
 
+    val encodedDirectAccessParameters: LongMap[AccessParameter] = LongMap.empty
     val encodedIndirectAccessParameters: LongMap[AccessParameter] = LongMap.empty
 
     final def key: PropertyKey[FieldReadAccessInformation] = FieldReadAccessInformation.key
 
-    def included(other: FieldReadAccessInformation, seenAccesses: Int): FieldReadAccessInformation =
+    def included(other: FieldReadAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldReadAccessInformation =
         included(
             other,
-            seenAccesses,
-            (newAccesses, newReceivers, _) => FieldReadAccessInformation(newAccesses, newReceivers)
+            seenDirectAccesses,
+            seenIndirectAccesses,
+            (newDirectReceivers, _, newIndirectReceivers, _) => FieldReadAccessInformation(newDirectReceivers, newIndirectReceivers)
         )
 }
 
 case class FieldWriteAccessInformation(
-        protected val encodedDirectAccesses:                 LongLinkedSet,
+        protected[this] val encodedDirectAccessReceivers:    LongMap[AccessReceiver],
+        protected[this] val encodedDirectAccessParameters:   LongMap[AccessParameter],
         protected[this] val encodedIndirectAccessReceivers:  LongMap[AccessReceiver],
         protected[this] val encodedIndirectAccessParameters: LongMap[AccessParameter]
 ) extends FieldAccessInformation[FieldWriteAccessInformation]
@@ -165,46 +162,49 @@ case class FieldWriteAccessInformation(
 
     final def key: PropertyKey[FieldWriteAccessInformation] = FieldWriteAccessInformation.key
 
-    def included(other: FieldWriteAccessInformation, seenAccesses: Int): FieldWriteAccessInformation =
+    def included(other: FieldWriteAccessInformation, seenDirectAccesses: Int, seenIndirectAccesses: Int): FieldWriteAccessInformation =
         included(
             other,
-            seenAccesses,
-            (newAccesses, newReceivers, newParameters) =>
-                FieldWriteAccessInformation(newAccesses, newReceivers, newParameters)
+            seenDirectAccesses,
+            seenIndirectAccesses,
+            (newDirectReceivers, newDirectParameters, newIndirectReceivers, newIndirectParameters) =>
+                FieldWriteAccessInformation(newDirectReceivers, newDirectParameters, newIndirectReceivers, newIndirectParameters)
         )
 }
 
 object FieldReadAccessInformation
     extends FieldAccessInformationPropertyMetaInformation[FieldReadAccessInformation] {
 
-    final val key = createPropertyKey("FieldReadAccessInformation", NoFieldReadAccessInformation)
+    final val key = createPropertyKey("opalj.FieldReadAccessInformation", NoFieldReadAccessInformation)
 
     def apply(
-        accesses:              Set[(DefinedMethod, PCs)],
-        indirectCallReceivers: IndirectAccessReceivers   = IntMap.empty
+        directAccessReceivers:   AccessReceivers,
+        indirectAccessReceivers: AccessReceivers = IntMap.empty
     ): FieldReadAccessInformation = FieldReadAccessInformation(
-        getEncodedDirectAccessSet(accesses),
-        getEncodedIndirectAccessSet(indirectCallReceivers)
+        getEncodedAccessSet(directAccessReceivers),
+        getEncodedAccessSet(indirectAccessReceivers)
     )
 }
 
 object FieldWriteAccessInformation
     extends FieldAccessInformationPropertyMetaInformation[FieldWriteAccessInformation] {
 
-    final val key = createPropertyKey("FieldWriteAccessInformation", NoFieldWriteAccessInformation)
+    final val key = createPropertyKey("opalj.FieldWriteAccessInformation", NoFieldWriteAccessInformation)
 
     def apply(
-        accesses:               Set[(DefinedMethod, PCs)],
-        indirectCallReceivers:  IndirectAccessReceivers   = IntMap.empty,
-        indirectCallParameters: IndirectAccessParameters  = IntMap.empty
+        directAccessReceivers:    AccessReceivers,
+        directAccessParameters:   AccessParameters,
+        indirectAccessReceivers:  AccessReceivers  = IntMap.empty,
+        indirectAccessParameters: AccessParameters = IntMap.empty
     ): FieldWriteAccessInformation = FieldWriteAccessInformation(
-        getEncodedDirectAccessSet(accesses),
-        getEncodedIndirectAccessSet(indirectCallReceivers),
-        getEncodedIndirectAccessSet(indirectCallParameters)
+        getEncodedAccessSet(directAccessReceivers),
+        getEncodedAccessSet(directAccessParameters),
+        getEncodedAccessSet(indirectAccessReceivers),
+        getEncodedAccessSet(indirectAccessParameters)
     )
 }
 
 object NoFieldReadAccessInformation
-    extends FieldReadAccessInformation(LongLinkedTrieSet.empty, LongMap.empty)
+    extends FieldReadAccessInformation(LongMap.empty, LongMap.empty)
 object NoFieldWriteAccessInformation
-    extends FieldWriteAccessInformation(LongLinkedTrieSet.empty, LongMap.empty, LongMap.empty)
+    extends FieldWriteAccessInformation(LongMap.empty, LongMap.empty, LongMap.empty, LongMap.empty)

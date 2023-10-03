@@ -4,7 +4,6 @@ package br
 package fpcf
 package properties
 
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.value.ValueInformation
 
 import scala.collection.immutable.IntMap
@@ -17,26 +16,14 @@ package object fieldaccess {
     type AccessReceiver = Option[(ValueInformation, PCs)]
     type AccessParameter = Option[(ValueInformation, PCs)]
 
-    type IndirectAccessReceivers = IntMap[IntMap[AccessReceiver]] // Access Context => PC => Receiver
-    type IndirectAccessParameters = IntMap[IntMap[AccessParameter]] // Access Context => PC => Parameter
+    type AccessReceivers = IntMap[IntMap[AccessReceiver]] // Access Context => PC => Receiver
+    type AccessParameters = IntMap[IntMap[AccessParameter]] // Access Context => PC => Parameter
 
-    @inline def encodeDirectFieldAccess(method: DefinedMethod, pc: Int): FieldAccess = {
-        method.id.toLong | (pc.toLong << 32)
-    }
-
-    @inline def encodeIndirectFieldAccess(contextId: Int, pc: Int): FieldAccess = {
+    @inline def encodeFieldAccess(contextId: Int, pc: Int): FieldAccess = {
         contextId.toLong | (pc.toLong << 32)
     }
 
-    @inline def decodeDirectFieldAccess(
-        fieldAccess: FieldAccess
-    )(implicit declaredMethods: DeclaredMethods): (DefinedMethod, Int) = {
-        val methodId = fieldAccess.toInt
-        val pc = (fieldAccess >> 32).toInt
-        (declaredMethods(methodId).asDefinedMethod, pc)
-    }
-
-    @inline def decodeIndirectFieldAccess(fieldAccess: FieldAccess): (Int, Int) = {
+    @inline def decodeFieldAccess(fieldAccess: FieldAccess): (Int, Int) = {
         val contextId = fieldAccess.toInt
         val pc = (fieldAccess >> 32).toInt
         (contextId, pc)
