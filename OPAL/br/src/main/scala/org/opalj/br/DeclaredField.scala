@@ -19,6 +19,7 @@ sealed abstract class DeclaredField {
     def fieldType: FieldType
     def toJava: String = s"${fieldType.toJava} ${declaringClassType.toJava}.$name"
 
+    val isDefinedField: Boolean
     def asDefinedField: DefinedField
     def definedField: Field
 
@@ -46,6 +47,7 @@ final class VirtualDeclaredField private[br] (
         override val id:                 Int
 ) extends DeclaredField {
 
+    override val isDefinedField = false
     override def definedField: Field = throw new UnsupportedOperationException();
     override def asDefinedField: DefinedField = throw new ClassCastException();
 
@@ -67,6 +69,7 @@ final class DefinedField private[br] (
     override def name: String = definedField.name
     override def fieldType: FieldType = definedField.fieldType
 
+    override val isDefinedField = true
     override def asDefinedField: DefinedField = this
 
     override def toString: String = {
