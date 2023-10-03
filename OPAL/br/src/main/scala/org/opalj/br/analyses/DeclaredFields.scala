@@ -44,12 +44,15 @@ class DeclaredFields(
         name:               String,
         fieldType:          FieldType
     ): DeclaredField = {
-        getDeclaredField(
-            declaringClassType,
-            name,
-            fieldType,
-            id => new VirtualDeclaredField(declaringClassType, name, fieldType, id)
-        )
+        project.resolveFieldReference(declaringClassType, name, fieldType) match {
+            case Some(field) => apply(field)
+            case None => getDeclaredField(
+                declaringClassType,
+                name,
+                fieldType,
+                id => new VirtualDeclaredField(declaringClassType, name, fieldType, id)
+            )
+        }
     }
 
     private def getDeclaredField(
