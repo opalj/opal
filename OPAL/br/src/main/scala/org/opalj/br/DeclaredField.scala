@@ -73,3 +73,9 @@ final class DefinedField private[br] (
         s"DefinedField(declaringClassType=${declaringClassType.toJava},definedField=${definedField.toJava})"
     }
 }
+
+object DefinedField {
+    def unapply(definedField: DefinedField): Option[Field] = {
+        Some(definedField.definedField)
+    }
+}
