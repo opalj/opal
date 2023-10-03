@@ -5,7 +5,7 @@ package analyses
 
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.Field
+import org.opalj.br.DefinedField
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -13,7 +13,6 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.EagerFieldAccessInformationAnalysis
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
@@ -21,6 +20,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -91,13 +91,13 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         val readFields = propertyStore
             .entities(FieldReadAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[Field])
+            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
                 && ep.asFinal.p != NoFieldReadAccessInformation)
             .map(_.e.asInstanceOf[Field])
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
-            .filter(ep => fields.contains(ep.e.asInstanceOf[Field])
+            .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
                 && ep.asFinal.p != NoFieldWriteAccessInformation)
             .map(_.e.asInstanceOf[Field])
             .toSet
