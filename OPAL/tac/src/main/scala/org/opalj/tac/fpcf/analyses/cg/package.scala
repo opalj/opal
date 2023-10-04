@@ -88,6 +88,43 @@ package object cg {
     }
 
     final def isTypeCompatible(
+        formal: FieldType, actual: FieldType
+    )(implicit ch: ClassHierarchy): Boolean = (formal, actual) match {
+        // declared type and actual type are reference types and assignable
+        case (ft: ReferenceType, at: ReferenceType) =>
+            ch.isSubtypeOf(at, ft)
+
+        // declared type and actual type are base types and either:
+        case (ft: NumericType, at: BaseType) =>
+            // - the same type
+            (at eq ft) ||
+                // - both numeric types and the declared type can represent the value
+                (at.isNumericType && ft.asNumericType.isWiderThan(at.asNumericType))
+
+        // declared type is base type, actual type might be a boxed value
+        case (ft: BaseType, at: ReferenceType) =>
+            ch.isSubtypeOf(at, ft.WrapperType) ||
+                (ft match {
+                    case BooleanType | ByteType | CharType => false
+                    case nt: NumericType =>
+                        Seq(ByteType, CharType, ShortType, IntegerType, LongType, FloatType, DoubleType).exists { tpe =>
+                            nt.isWiderThan(tpe) && ch.isSubtypeOf(at, tpe.WrapperType)
+                        }
+                })
+
+        // actual type is base type, declared type might be a boxed type
+        case (ft: ObjectType, at: BaseType) =>
+            primitiveType(ft) match {
+                case Some(BooleanType)     => at.isBooleanType
+                case Some(nt: NumericType) => at.isNumericType && nt.isWiderThan(at.asNumericType)
+                case _                     => false
+            }
+
+        case _ =>
+            false
+    }
+
+    final def isTypeCompatible(
         formal: FieldType, actual: ValueInformation, forCallReceiver: Boolean = false
     )(implicit classHierarchy: ClassHierarchy): Boolean = (formal, actual) match {
         // the actual type is null and the declared type is a ref type
@@ -108,7 +145,7 @@ package object cg {
             (v eq pType) ||
                 // - both numeric types and the declared type can represent the value
                 (v.isNumericType && pType.asNumericType.isWiderThan(v.asNumericType)) ||
-                // - special cases introduced by the JVM or choice of the AI domain (e.g. everything is an integer value) TODO is this even legal
+                // - special cases introduced by the JVM or choice of the AI domain (e.g. everything is an integer value)
                 ((pType eq ByteType) && (v eq IntegerType)) ||
                 ((pType eq CharType) && (v eq ByteType)) ||
                 ((pType eq CharType) && (v eq IntegerType)) ||

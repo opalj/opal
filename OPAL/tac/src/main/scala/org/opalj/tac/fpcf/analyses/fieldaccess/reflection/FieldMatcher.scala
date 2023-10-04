@@ -56,10 +56,25 @@ class ClassBasedFieldMatcher(
     override def priority: Int = 1
 }
 
-class TypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
+/**
+ * Considers all fields that have a type that is assignable to the given type. The given type thus acts as the upper
+ * bound type. Usually encountered in return / cast types of field accesses.
+ */
+class UBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = f.fieldType == fieldType // TODO do we need more complex matching here?
+    override def contains(f: Field)(implicit p: SomeProject): Boolean = isTypeCompatible(fieldType, f.fieldType)(p.classHierarchy)
+    override def priority: Int = 3
+}
+
+/**
+ * Considers all fields that have a type to which the given type is assignable. The given type thus acts as the lower
+ * bound type. Usually encountered in parameters of field accesses.
+ */
+class LBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
+
+    override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
+    override def contains(f: Field)(implicit p: SomeProject): Boolean = isTypeCompatible(f.fieldType, fieldType)(p.classHierarchy)
     override def priority: Int = 3
 }
 

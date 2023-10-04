@@ -432,7 +432,7 @@ class FieldGetAnalysis private[analyses] (
             ),
             MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
                 fieldType,
-                v => new TypeBasedFieldMatcher(v)
+                v => new LBTypeBasedFieldMatcher(v)
             )
         )
 
@@ -523,8 +523,8 @@ class FieldSetAnalysis private[analyses] (
             ),
             MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
                 fieldType,
-                new TypeBasedFieldMatcher(_)
-            ) // TODO switch
+                new LBTypeBasedFieldMatcher(_)
+            )
         )
 
         val persistentReceiver = fieldSetReceiver.flatMap(persistentUVar(_)(stmts))
@@ -807,7 +807,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
             if (md.parametersCount == 2) {
                 // Invocations with 2 parameters are non-static setters
                 matchers += NonStaticFieldMatcher
-                matchers += new TypeBasedFieldMatcher(md.parameterTypes.tail.head.asFieldType)
+                matchers += new LBTypeBasedFieldMatcher(md.parameterTypes.tail.head.asFieldType)
             } else if (md.parametersCount == 0) {
                 // Invocations with 0 parameters are static getters
                 matchers += StaticFieldMatcher
@@ -901,7 +901,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 if (descriptorOpt.isDefined && !handleData.isSetter && descriptorOpt.get.returnType.isFieldType) {
                     // We can use the return type from the method descriptor if we encounter a getter and the result is
                     // used in an expression (e.g. the descriptors return type is )
-                    matchers += new TypeBasedFieldMatcher(descriptorOpt.get.returnType.asFieldType)
+                    matchers += new UBTypeBasedFieldMatcher(descriptorOpt.get.returnType.asFieldType)
                 }
 
                 if (!matchers.contains(NoFieldsMatcher))

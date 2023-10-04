@@ -6,6 +6,7 @@ package analyses
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DefinedField
+import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -93,13 +94,13 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .entities(FieldReadAccessInformation.key)
             .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
                 && ep.asFinal.p != NoFieldReadAccessInformation)
-            .map(_.e.asInstanceOf[Field])
+            .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
             .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
                 && ep.asFinal.p != NoFieldWriteAccessInformation)
-            .map(_.e.asInstanceOf[Field])
+            .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
 
         val readAndWrittenFields = readFields intersect writtenFields

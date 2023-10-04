@@ -20,7 +20,7 @@ object MethodHandlesUtil {
         isStatic:       Boolean
     )(implicit project: SomeProject): Set[FieldMatcher] = {
         Set(
-            new TypeBasedFieldMatcher(fieldType),
+            new LBTypeBasedFieldMatcher(fieldType),
             new NameBasedFieldMatcher(Set(name)),
             if (isStatic) StaticFieldMatcher else NonStaticFieldMatcher,
             if (declaringClass.isArrayType)
