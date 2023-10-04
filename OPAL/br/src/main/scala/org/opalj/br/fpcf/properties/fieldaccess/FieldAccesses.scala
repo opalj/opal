@@ -148,7 +148,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
         fieldId:   Int,
         value:     T
     ): IntMap[IntMap[T]] = {
-        nestedMap.updated(pc, nestedMap.getOrElse(pc, IntMap.empty).updated(fieldId, value)) // TODO protect for None values with Some already defined
+        nestedMap.updated(pc, nestedMap.getOrElse(pc, IntMap.empty).updated(fieldId, value))
     }
 
     protected var _accessedFields: IntMap[IntTrieSet] = IntMap.empty
