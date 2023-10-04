@@ -27,9 +27,11 @@ import org.opalj.fpcf.Results
 
 /**
  * A simple analysis that identifies every direct read and write access to a [[org.opalj.br.Field]] without using
- * receiver or value information. If you need receiver or value information
+ * receiver or value information. If you need receiver or value information execute the similar analysis from TAC.
  *
  * @note Fields which are not accessed at all are not further considered.
+ * @note This analysis should never be executed together with its corresponding analysis from TAC to prevent overrides
+ *       of receiver / value information.
  *
  * @author Maximilian Rüsch
  */
