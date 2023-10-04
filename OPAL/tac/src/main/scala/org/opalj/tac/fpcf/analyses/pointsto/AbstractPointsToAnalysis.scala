@@ -482,17 +482,19 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         readAccesses: MethodFieldReadAccessInformation,
         tac:          TACode[TACMethodParameter, DUVar[ValueInformation]]
     )(implicit state: State): Unit = {
-        // handle receiver for non static fields
-        val receiverOpt = readAccesses.indirectAccessReceiver(state.callContext, pc, target)
-        if (receiverOpt.isDefined && target.isDefinedField && !target.definedField.isStatic) {
-            handleGetField(
-                Some(target),
-                pc,
-                valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
-            )
-        } else {
-            // IMPROVE distinguish between static fields and unavailable info
-            handleGetStatic(target, pc)
+        // IMPROVE add static field information for virtual declared fields
+        if (target.isDefinedField) {
+            val receiverOpt = readAccesses.indirectAccessReceiver(state.callContext, pc, target)
+            if (target.definedField.isStatic) {
+                handleGetStatic(target, pc)
+            } else if (receiverOpt.isDefined) {
+                // handle receiver for non static fields if available
+                handleGetField(
+                    Some(target),
+                    pc,
+                    valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
+                )
+            }
         }
     }
 
@@ -512,17 +514,19 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             }
         } else IntTrieSet.empty
 
-        // handle receiver for non static fields
-        val receiverOpt = writeAccesses.indirectAccessReceiver(state.callContext, pc, target)
-        if (receiverOpt.isDefined && target.isDefinedField && !target.definedField.isStatic) {
-            handlePutField(
-                Some(target),
-                valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
-                rhsDefSites
-            )
-        } else {
-            // IMPROVE distinguish between static fields and unavailable info
-            handlePutStatic(target, rhsDefSites)
+        // IMPROVE add static field information for virtual declared fields
+        if (target.isDefinedField) {
+            val receiverOpt = writeAccesses.indirectAccessReceiver(state.callContext, pc, target)
+            if (target.definedField.isStatic) {
+                handlePutStatic(target, rhsDefSites)
+            } else if (receiverOpt.isDefined) {
+                // handle receiver for non static fields if available
+                handlePutField(
+                    Some(target),
+                    valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
+                    rhsDefSites
+                )
+            }
         }
     }
 
