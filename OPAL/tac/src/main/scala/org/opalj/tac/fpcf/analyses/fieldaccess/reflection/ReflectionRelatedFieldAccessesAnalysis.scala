@@ -432,7 +432,7 @@ class FieldGetAnalysis private[analyses] (
             ),
             MatcherUtil.retrieveSuitableNonEssentialMatcher[BaseType](
                 fieldType,
-                v => new LBTypeBasedFieldMatcher(v)
+                v => new UBTypeBasedFieldMatcher(v)
             )
         )
 
