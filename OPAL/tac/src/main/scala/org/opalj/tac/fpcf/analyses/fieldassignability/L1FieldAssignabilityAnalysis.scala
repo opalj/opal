@@ -8,15 +8,16 @@ import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.SelfReferenceParameter
 import org.opalj.br.Field
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
+import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -43,42 +44,31 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V],
         callers:       Callers,
-        pc:            PC
+        pc:            PC,
+        receiver:      AccessReceiver,
+        value:         AccessParameter
     )(implicit state: AnalysisState): Boolean = {
         val stmts = taCode.stmts
         val method = definedMethod.definedMethod
 
-        val index = taCode.properStmtIndexForPC(pc)
-        if (index >= 0) {
-            val stmtCandidate = stmts(index)
-            if (stmtCandidate.pc == pc) {
-                stmtCandidate match {
-                    case _: PutStatic[_] =>
-                        if (!method.isStaticInitializer)
-                            return true;
-                    case stmt: PutField[V] =>
-                        val objRef = stmt.objRef.asVar
-                        if ((!method.isConstructor ||
-                            objRef.definedBy != SelfReferenceParameter) &&
-                            !referenceHasNotEscaped(objRef, stmts, definedMethod, callers)) {
-                            // note that here we assume real three address code (flat hierarchy)
+        if (receiver.isDefined) {
+            val objRef = uVarForDefSites(receiver.get, taCode.pcToIndex).asVar
+            // note that here we assume real three address code (flat hierarchy)
 
-                            // for instance fields it is okay if they are written in the
-                            // constructor (w.r.t. the currently initialized object!)
+            // for instance fields it is okay if they are written in the
+            // constructor (w.r.t. the currently initialized object!)
 
-                            // If the field that is written is not the one referred to by the
-                            // self reference, it is not effectively final.
+            // If the field that is written is not the one referred to by the
+            // self reference, it is not effectively final.
 
-                            // However, a method (e.g. clone) may instantiate a new object and
-                            // write the field as long as that new object did not yet escape.
-                            return true;
-                        }
-                    case _ => throw new RuntimeException("unexpected field access");
-                }
-            } else { // nothing to do as the put field is dead
-            }
+            // However, a method (e.g. clone) may instantiate a new object and
+            // write the field as long as that new object did not yet escape.
+            (!method.isConstructor ||
+                objRef.definedBy != SelfReferenceParameter) &&
+                !referenceHasNotEscaped(objRef, stmts, definedMethod, callers)
+        } else {
+            !method.isStaticInitializer
         }
-        false
     }
 }
 
