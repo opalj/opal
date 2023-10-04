@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.analyses
+package org.opalj
+package br
+package fpcf
+package analyses
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredFieldsKey
