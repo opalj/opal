@@ -82,6 +82,33 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         _indirectAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator
     }
 
+    def getAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        getDirectAccessedFields(accessContext, pc) ++ getIndirectAccessedFields(accessContext, pc)
+    }
+
+    def getDirectAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        _directAccessedReceiversByField.get(accessContext.id).iterator
+            .flatMap(_.get(pc))
+            .flatMap(_.keys)
+            .map(declaredFields.apply)
+    }
+
+    def getIndirectAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        _indirectAccessedReceiversByField.get(accessContext.id).iterator
+            .flatMap(_.get(pc))
+            .flatMap(_.keys)
+            .map(declaredFields.apply)
+    }
+
     def getNewestAccessedFields(
         accessContext:             Context,
         pc:                        PC,

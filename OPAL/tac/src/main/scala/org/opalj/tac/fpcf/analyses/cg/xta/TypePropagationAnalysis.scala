@@ -284,8 +284,8 @@ final class TypePropagationAnalysis private[analyses] (
             declaredField <- readAccesses.getNewestAccessedFields(
                 state.callContext,
                 pc,
-                state.seenDirectReadAccesses(pc),
-                state.seenIndirectReadAccesses(pc)
+                state.seenDirectReadAccesses.getOrElse(pc, 0),
+                state.seenIndirectReadAccesses.getOrElse(pc, 0)
             )
         } {
             if (declaredField.fieldType.isReferenceType) {
@@ -321,8 +321,8 @@ final class TypePropagationAnalysis private[analyses] (
             declaredField <- writeAccesses.getNewestAccessedFields(
                 state.callContext,
                 pc,
-                state.seenDirectWriteAccesses(pc),
-                state.seenIndirectWriteAccesses(pc)
+                state.seenDirectWriteAccesses.getOrElse(pc, 0),
+                state.seenIndirectWriteAccesses.getOrElse(pc, 0)
             )
         } {
             val fieldType = declaredField.fieldType
