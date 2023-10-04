@@ -9,10 +9,10 @@ import org.opalj.bi.ACC_PROTECTED
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.analyses.ContextProvider
 
 import scala.collection.immutable.ArraySeq
 
@@ -42,8 +42,8 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
     ): IndexedSeq[LocationsContainer[S]] = {
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+        val contextProvider: ContextProvider = project.get(ContextProviderKey)
         val fieldAccessInformation = project.get(FieldAccessInformationKey)
         import fieldAccessInformation.isAccessed
         import fieldAccessInformation.allAccesses
@@ -65,7 +65,8 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
                         case Some(ACC_PROTECTED) => 2
                         case Some(ACC_PUBLIC)    => 3
                     }
-                } else if (!field.isPrivate && allAccesses(field).forall(mi => mi._1.definedMethod.classFile eq cf)) {
+                } else if (!field.isPrivate && allAccesses(field).forall(ac =>
+                    contextProvider.contextFromId(ac._1).method.definedMethod.classFile eq cf)) {
                     field.visibilityModifier match {
                         case None                => 4
                         case Some(ACC_PROTECTED) => 5

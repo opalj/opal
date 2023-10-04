@@ -31,6 +31,8 @@ import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.analyses.ContextProvider
 
 /**
  * Counts which kinds of micro patterns are actually available.
@@ -77,7 +79,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         rawClassFiles:        Iterable[(org.opalj.da.ClassFile, S)]
     ): IterableOnce[Feature[S]] = {
         implicit val theProject: Project[S] = project
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
         implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
         val fa = project.get(FieldAccessInformationKey)
@@ -266,14 +268,14 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
 
     def isImmutable(cl: ClassFile, fa: FieldAccessInformation)(
         implicit
-        declaredMethods: DeclaredMethods,
+        contextProvider: ContextProvider,
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             !cl.isAbstract && cl.fields.count { f => !f.isStatic } > 1 &&
             cl.fields.forall(f => f.isPrivate && !f.isStatic) &&
             cl.fields.forall { f =>
-                fa.writeAccesses(f).forall(p => isInitMethod(p._1.definedMethod))
+                fa.writeAccesses(f).forall(p => isInitMethod(contextProvider.contextFromId(p._1).method.definedMethod))
             }
     }
 
@@ -294,36 +296,39 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
 
     def isBox(cl: ClassFile, fa: FieldAccessInformation)(
         implicit
-        declaredMethods: DeclaredMethods,
+        contextProvider: ContextProvider,
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count { f => !f.isStatic } == 1 &&
             cl.fields.count { f => !f.isFinal } == 1 &&
-            cl.fields.exists(f => fa.writeAccesses(f).exists(t => cl.methods.contains(t._1.definedMethod)))
+            cl.fields.exists(f => fa.writeAccesses(f).exists(t =>
+                cl.methods.contains(contextProvider.contextFromId(t._1).method.definedMethod)))
     }
 
     def isCompoundBox(cl: ClassFile, fa: FieldAccessInformation)(
         implicit
-        declaredMethods: DeclaredMethods,
+        contextProvider: ContextProvider,
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count(f => f.fieldType.isReferenceType && !f.isStatic &&
-                !f.isFinal && fa.writeAccesses(f).exists(t => cl.methods.contains(t._1.definedMethod))) == 1 &&
+                !f.isFinal && fa.writeAccesses(f).exists(t =>
+                    cl.methods.contains(contextProvider.contextFromId(t._1).method.definedMethod))) == 1 &&
             cl.fields.count(f => !f.isStatic && !f.fieldType.isReferenceType) + 1 == cl.fields.size
     }
 
     def isCanopy(cl: ClassFile, fa: FieldAccessInformation)(
         implicit
-        declaredMethods: DeclaredMethods,
+        contextProvider: ContextProvider,
         declaredFields:  DeclaredFields
     ): Boolean = {
         !cl.isInterfaceDeclaration &&
             cl.fields.count { f => !f.isStatic } == 1 &&
             cl.fields.count { f => !f.isStatic && !f.isPublic } == 1 &&
             cl.fields.exists { f =>
-                !f.isStatic && fa.writeAccesses(f).forall(p => isInitMethod(p._1.definedMethod))
+                !f.isStatic && fa.writeAccesses(f).forall(p =>
+                    isInitMethod(contextProvider.contextFromId(p._1).method.definedMethod))
             }
     }
 
