@@ -29,8 +29,6 @@ import org.opalj.ai.domain
 import org.opalj.br.LongType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 
