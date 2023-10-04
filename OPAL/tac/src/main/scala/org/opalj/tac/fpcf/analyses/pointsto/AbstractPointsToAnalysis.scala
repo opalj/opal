@@ -484,7 +484,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     )(implicit state: State): Unit = {
         // handle receiver for non static fields
         val receiverOpt = readAccesses.indirectAccessReceiver(state.callContext, pc, target)
-        if (receiverOpt.isDefined && !target.definedField.isStatic) { // TODO other declared field types?
+        if (receiverOpt.isDefined && target.isDefinedField && !target.definedField.isStatic) {
             handleGetField(
                 Some(target),
                 pc,
@@ -514,7 +514,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
         // handle receiver for non static fields
         val receiverOpt = writeAccesses.indirectAccessReceiver(state.callContext, pc, target)
-        if (receiverOpt.isDefined && !target.definedField.isStatic) { // TODO other declared field types?
+        if (receiverOpt.isDefined && target.isDefinedField && !target.definedField.isStatic) {
             handlePutField(
                 Some(target),
                 valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
@@ -628,6 +628,45 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 Results(results)
 
+            case UBP(fai: MethodFieldReadAccessInformation) =>
+                val defSite = e match {
+                    case ds: DefinitionSite               => ds
+                    case (_: Context, ds: DefinitionSite) => ds
+                }
+                // IMPROVE: Only handle new accesses
+                val fields = fai.getAccessedFields(state.callContext, defSite.pc)
+
+                val typeFilter = dependees(eps.toEPK)._2
+
+                var newDependees = updatedDependees(eps, dependees)
+                var newPointsToSet = emptyPointsToSet
+                fields.foreach { field =>
+                    // if we already have a dependency to that field, we do not need to process it
+                    // otherwise, it might still be the case that we processed it before but it is
+                    // final and thus not part of dependees anymore
+                    if (field.fieldType.isReferenceType) {
+                        if (!dependees.contains(EPK(field, pointsToPropertyKey))) {
+                            val p2s = ps(field, pointsToPropertyKey)
+                            if (p2s.isRefinable) {
+                                newDependees += (p2s.toEPK -> ((p2s, typeFilter)))
+                            }
+                            newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
+                        }
+                    }
+                }
+
+                val results = createPartialResults(
+                    e,
+                    newPointsToSet,
+                    newDependees,
+                    { old =>
+                        old.included(newPointsToSet, typeFilter)
+                    },
+                    true
+                )(state)
+
+                Results(results)
+
             case _ => super.continuationForShared(e, dependees, state)(eps)
         }
     }
@@ -689,10 +728,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 val tac = state.tac
                 for {
-                    pc <- newAccesses.getNewestNIndirectAccessSites(
-                        state.callContext,
-                        newAccesses.numIndirectAccessSites(state.callContext) - oldAccesses.numIndirectAccessSites(state.callContext)
-                    )
+                    pc <- newAccesses.getIndirectAccessSites(state.callContext)
                     target <- newAccesses.getNewestNIndirectAccessedFields(
                         state.callContext,
                         pc,

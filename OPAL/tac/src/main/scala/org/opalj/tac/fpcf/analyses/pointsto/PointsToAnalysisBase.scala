@@ -187,7 +187,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true).flatMap(_.fields.iterator).map((as, _))
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                            .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                     for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSet(
                             defSiteObject,
@@ -253,7 +254,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true).flatMap(_.fields.iterator).map((as, _))
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                            .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                     for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSets(
                             fieldEntity,
@@ -374,7 +376,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true).flatMap(_.fields.iterator).map((as, _))
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                                .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                         for (fieldEntity <- fieldEntities)
                             results = results ++ createPartialResults(
                                 fieldEntity,
@@ -457,7 +460,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))) {
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true).flatMap(_.fields.iterator).map((as, _))
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                                .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                         for (fieldEntity <- fieldEntities) {
                             val fieldEntries = ps(fieldEntity, pointsToPropertyKey)
                             newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
