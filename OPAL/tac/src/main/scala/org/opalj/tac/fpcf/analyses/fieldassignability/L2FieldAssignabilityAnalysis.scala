@@ -6,7 +6,9 @@ package analyses
 package fieldassignability
 
 import scala.annotation.switch
+
 import scala.collection.mutable
+
 import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.analyses.SomeProject
@@ -19,6 +21,7 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
+
 import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.cfg.BasicBlock
@@ -38,7 +41,10 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.CaughtException
 import org.opalj.tac.ClassConst
@@ -144,57 +150,124 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 // write the field as long as that new object did not yet escape.
                 true
             } else {
-                val fieldWriteAccessInformation = state.latestMethodSpecificFieldWriteAccessInformation match { // TODO fix and continuation
-                    case Some(UBP(fai)) => fai
-                    case _ =>
-                        // Field access information should have already been written to the state by the abstract analysis
-                        throw new IllegalStateException("No field write access information encountered even though expected")
-                }
-
-                val writes = fieldWriteAccessInformation.accesses
-                val writesInMethod = writes.filter(w => contextProvider.contextFromId(w._1).method eq definedMethod)
-
-                if (writesInMethod.distinctBy(_._1).size > 1)
-                    return true; // Field is written in multiple locations, thus must be assignable
-
-                // If we have no information about the receiver, we soundly return
-                if (receiverVar.isEmpty)
-                    return true;
-                val assignedValueObject = receiverVar.get
-                if (assignedValueObject.definedBy.exists(_ < 0))
-                    return true;
-                val assignedValueObjectVar =
-                    stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
-
-                val fieldWriteInMethodIndex = taCode.pcToIndex(writesInMethod.next()._2)
-                if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index =>
-                    val stmt = stmts(index)
-
-                    fieldWriteInMethodIndex == index || // The value is itself written to another object
-                        // IMPROVE: Can we use field access information to care about reflective accesses here?
-                        stmt.isPutField && stmt.asPutField.name != state.field.name ||
-                        stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
-                        stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
-                        dominates(fieldWriteInMethodIndex, index, taCode)
-                })
-                    return true;
-
-                val fraiEP = propertyStore(declaredFields(state.field), FieldReadAccessInformation.key) // TODO fix and continuation
-                val fieldReadAccessInformation = if (fraiEP.hasUBP) fraiEP.ub else NoFieldReadAccessInformation
-                val fieldReadsInMethod = fieldReadAccessInformation
-                    .accesses
-                    .filter(a => contextProvider.contextFromId(a._1).method eq definedMethod)
-                    .map(_._2)
-                if (!fieldReadsInMethod.forall { pc =>
-                    val index = taCode.pcToIndex(pc)
-                    fieldWriteInMethodIndex == index ||
-                        dominates(fieldWriteInMethodIndex, index, taCode)
-                })
-                    return true;
-                false
+                checkWriteDominance(definedMethod, taCode, receiverVar, pc)
             }
 
         }
+    }
+
+    private def checkWriteDominance(
+        definedMethod: DefinedMethod,
+        taCode:        TACode[TACMethodParameter, V],
+        receiverVar:   Option[V],
+        pc:            PC
+    )(implicit state: State): Boolean = {
+        val stmts = taCode.stmts
+
+        val writes = state.fieldWriteAccessDependee.get.ub.accesses
+        val writesInMethod = writes.filter { w =>
+            contextProvider.contextFromId(w._1).method eq definedMethod
+        }.toSeq
+
+        if (writesInMethod.distinctBy(_._2).size > 1)
+            return true; // Field is written in multiple locations, thus must be assignable
+
+        // If we have no information about the receiver, we soundly return
+        if (receiverVar.isEmpty)
+            return true;
+        val assignedValueObject = receiverVar.get
+        if (assignedValueObject.definedBy.exists(_ < 0))
+            return true;
+        val assignedValueObjectVar =
+            stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
+
+        val fieldWriteInMethodIndex = taCode.pcToIndex(writesInMethod.head._2)
+        if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index =>
+            val stmt = stmts(index)
+
+            fieldWriteInMethodIndex == index || // The value is itself written to another object
+                // IMPROVE: Can we use field access information to care about reflective accesses here?
+                stmt.isPutField && stmt.asPutField.name != state.field.name ||
+                stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
+                stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
+                dominates(fieldWriteInMethodIndex, index, taCode)
+        })
+            return true;
+
+        val writeAccess = (definedMethod, taCode, receiverVar, pc)
+
+        if (state.fieldReadAccessDependee.isEmpty) {
+            state.fieldReadAccessDependee =
+                Some(propertyStore(declaredFields(state.field), FieldReadAccessInformation.key))
+        }
+
+        val fraiEP = state.fieldReadAccessDependee.get
+
+        if (fraiEP.hasUBP && handleFieldReadAccessInformation(fraiEP.ub, 0, 0, Seq(writeAccess)))
+            return true;
+
+        state.openWrites ::= writeAccess
+
+        false
+    }
+
+    override def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
+        eps.pk match {
+            case FieldReadAccessInformation.key =>
+                val newEP = eps.asInstanceOf[EOptionP[DeclaredField, FieldReadAccessInformation]]
+                val (seenDirectAccesses, seenIndirectAccesses) = state.fieldReadAccessDependee match {
+                    case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                    case _              => (0, 0)
+                }
+                if (handleFieldReadAccessInformation(
+                    newEP.ub, seenDirectAccesses, seenIndirectAccesses, state.openWrites
+                )) {
+                    Result(state.field, Assignable)
+                } else {
+                    state.fieldReadAccessDependee = Some(newEP)
+                    createResult()
+                }
+            case _ =>
+                super.c(eps)
+        }
+    }
+
+    override protected[this] def handleFieldWriteAccessInformation(
+        newEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
+    )(implicit state: State): Boolean = {
+        val openWrites = state.openWrites
+        state.openWrites = List.empty
+        super.handleFieldWriteAccessInformation(newEP) && {
+            openWrites.exists { writeAccess =>
+                checkWriteDominance(writeAccess._1, writeAccess._2, writeAccess._3, writeAccess._4)
+            }
+        }
+    }
+
+    private def handleFieldReadAccessInformation(
+        fieldReadAccessInformation: FieldReadAccessInformation,
+        seenDirectAccesses:         Int,
+        seenIndirectAccesses:       Int,
+        writes:                     Seq[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], PC)]
+    )(implicit state: State): Boolean = {
+        fieldReadAccessInformation.getNewestAccesses(
+            fieldReadAccessInformation.numDirectAccesses - seenDirectAccesses,
+            fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
+        ) exists { readAccess =>
+                {
+                    val method = contextProvider.contextFromId(readAccess._1).method
+                    val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
+                    writes.exists { writeAccess =>
+                        {
+                            val fieldWriteInMethodIndex = taCode.pcToIndex(writeAccess._4)
+                            (writeAccess._1 eq method) && {
+                                val index = taCode.pcToIndex(readAccess._2)
+                                fieldWriteInMethodIndex == index || dominates(fieldWriteInMethodIndex, index, taCode)
+                            }
+                        }
+                    }
+                }
+            }
     }
 
     //lazy initialization:
@@ -202,22 +275,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     case class State(
             field: Field
     ) extends AbstractFieldAssignabilityAnalysisState {
-        // TODO add dependency management for continuation for method specific reads and writes
+        var openWrites = List.empty[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], PC)]
 
-        var latestMethodSpecificFieldReadAccessInformation: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
-        var latestMethodSpecificFieldWriteAccessInformation: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
+        var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
 
-        override def hasDependees: Boolean = {
-            latestMethodSpecificFieldReadAccessInformation.exists(_.isRefinable) ||
-                latestMethodSpecificFieldWriteAccessInformation.exists(_.isRefinable) ||
-                super.hasDependees
-        }
+        override def hasDependees: Boolean = fieldReadAccessDependee.exists(_.isRefinable) || super.hasDependees
 
-        override def dependees: Set[SomeEOptionP] = {
-            super.dependees ++
-                latestMethodSpecificFieldReadAccessInformation.filter(_.isRefinable) ++
-                latestMethodSpecificFieldWriteAccessInformation.filter(_.isRefinable)
-        }
+        override def dependees: Set[SomeEOptionP] = super.dependees ++ fieldReadAccessDependee.filter(_.isRefinable)
     }
 
     type AnalysisState = State
@@ -919,7 +983,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
 }
 
-trait AbstractL2FieldAssignabilityAnalysisScheduler extends AbstractFieldAssignabilityAnalysisScheduler {
+trait L2FieldAssignabilityAnalysisScheduler extends AbstractFieldAssignabilityAnalysisScheduler {
     override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
         FieldReadAccessInformation,
         FieldWriteAccessInformation
@@ -929,8 +993,7 @@ trait AbstractL2FieldAssignabilityAnalysisScheduler extends AbstractFieldAssigna
 /**
  * Executor for the eager field assignability analysis.
  */
-object EagerL2FieldAssignabilityAnalysis
-    extends AbstractL2FieldAssignabilityAnalysisScheduler
+object EagerL2FieldAssignabilityAnalysis extends L2FieldAssignabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -948,8 +1011,7 @@ object EagerL2FieldAssignabilityAnalysis
 /**
  * Executor for the lazy field assignability analysis.
  */
-object LazyL2FieldAssignabilityAnalysis
-    extends AbstractFieldAssignabilityAnalysisScheduler
+object LazyL2FieldAssignabilityAnalysis extends L2FieldAssignabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
