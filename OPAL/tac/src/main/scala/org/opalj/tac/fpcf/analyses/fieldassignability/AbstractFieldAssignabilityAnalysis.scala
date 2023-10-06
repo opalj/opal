@@ -55,7 +55,6 @@ import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.tac.DUVar
 import org.opalj.tac.common.DefinitionSite
@@ -73,7 +72,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         val field: Field
         var fieldAssignability: FieldAssignability = NonAssignable
-        var fieldAccesses: Map[DefinedMethod, Set[(PC, AccessReceiver, AccessParameter)]] = Map.empty
+        var fieldAccesses: Map[DefinedMethod, Set[(PC, AccessReceiver)]] = Map.empty
         var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
         var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
         var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
@@ -172,8 +171,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         taCode:   TACode[TACMethodParameter, V],
         callers:  Callers,
         pc:       PC,
-        receiver: AccessReceiver,
-        value:    AccessParameter
+        receiver: AccessReceiver
     )(implicit state: AnalysisState): Boolean
 
     /**
@@ -255,7 +253,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             ) exists { writeAccess =>
                     val method = contextProvider.contextFromId(writeAccess._1).method.asDefinedMethod
                     state.fieldAccesses += method -> (state.fieldAccesses.getOrElse(method, Set.empty) +
-                        ((writeAccess._2, writeAccess._3, writeAccess._4)))
+                        ((writeAccess._2, writeAccess._3)))
 
                     val tacEP = state.tacDependees.get(method) match {
                         case Some(tacEP) => tacEP
@@ -275,7 +273,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
                     if (tacEP.hasUBP && callersEP.hasUBP)
                         methodUpdatesField(
-                            method, tacEP.ub.tac.get, callersEP.ub, writeAccess._2, writeAccess._3, writeAccess._4
+                            method, tacEP.ub.tac.get, callersEP.ub, writeAccess._2, writeAccess._3
                         )
                     else
                         false
@@ -306,7 +304,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 val callersProperty = state.callerDependees(method)
                 if (callersProperty.hasUBP && accesses.isDefined)
                     accesses.get.exists(access =>
-                        methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, access._1, access._2, access._3))
+                        methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, access._1, access._2))
                 else false
             case Callers.key =>
                 val newEP = eps.asInstanceOf[EOptionP[DefinedMethod, Callers]]
@@ -316,7 +314,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 val tacProperty = state.tacDependees(method)
                 if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined && accesses.isDefined)
                     accesses.get.exists(access =>
-                        methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, access._1, access._2, access._3))
+                        methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, access._1, access._2))
                 else false
             case FieldWriteAccessInformation.key =>
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]
