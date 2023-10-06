@@ -133,7 +133,11 @@ trait CompleteFieldAccesses extends FieldAccesses {
     ): PartialResult[DeclaredField, _ >: Null <: FieldAccessInformation[_]] = {
         PartialResult[DeclaredField, FieldAccessInformation[S]](field, propertyKey, {
             case InterimUBP(ub) =>
-                Some(InterimEUBP(field, ub.included(property)))
+                val accessInformation = ub.included(property)
+                if (accessInformation eq ub)
+                    None
+                else
+                    Some(InterimEUBP(field, accessInformation))
 
             case _: EPK[_, _] =>
                 Some(InterimEUBP(field, property))
