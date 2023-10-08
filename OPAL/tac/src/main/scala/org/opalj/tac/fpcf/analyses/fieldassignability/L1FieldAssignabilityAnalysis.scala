@@ -14,7 +14,6 @@ import org.opalj.tac.SelfReferenceParameter
 import org.opalj.br.Field
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
@@ -45,8 +44,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         taCode:        TACode[TACMethodParameter, V],
         callers:       Callers,
         pc:            PC,
-        receiver:      AccessReceiver,
-        value:         AccessParameter
+        receiver:      AccessReceiver
     )(implicit state: AnalysisState): Boolean = {
         val stmts = taCode.stmts
         val method = definedMethod.definedMethod

@@ -429,7 +429,7 @@ class RTATypeIterator(project: SomeProject)
 
     val usedPropertyKinds: Set[PropertyBounds] = Set(PropertyBounds.ub(InstantiatedTypes))
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
+    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
@@ -531,7 +531,7 @@ class PropagationBasedTypeIterator(
 
     val usedPropertyKinds: Set[PropertyBounds] = Set(PropertyBounds.ub(InstantiatedTypes))
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
+    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
@@ -636,10 +636,10 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     protected[this] def pointsToProperty: PropertyMetaInformation
     protected[this] def emptyPointsToSet: PointsToSet
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
-    protected[this] implicit val formalParameters: VirtualFormalParameters =
+    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
+    protected[this] implicit lazy val formalParameters: VirtualFormalParameters =
         project.get(VirtualFormalParametersKey)
-    protected[this] implicit val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    protected[this] implicit lazy val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
     private[this] implicit val typeIterator: TypeIterator = this
 
     protected[this] def createPointsToSet(
@@ -928,8 +928,8 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
  */
 class AllocationSitesPointsToTypeIterator(project: SomeProject)
     extends AbstractAllocationSitesPointsToTypeIterator(project) with SimpleContextProvider {
-    implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    implicit lazy val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    implicit lazy val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     override def typesProperty(
         field: Field, depender: Entity
@@ -1139,7 +1139,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
     assert(k > 0 && l > 0 && k >= l - 1)
 
-    private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    private[this] implicit lazy val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     override def typesProperty(
         field: Field, depender: Entity

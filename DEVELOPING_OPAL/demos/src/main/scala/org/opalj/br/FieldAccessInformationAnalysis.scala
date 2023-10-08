@@ -55,9 +55,7 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
             val Array(declaringClassName, fieldName) =
                 parameters.head.substring(7).replace('.', '/').split(' ')
             val declaringClassType = ObjectType(declaringClassName)
-            val fields = project.classFile(declaringClassType) map { cf: ClassFile =>
-                cf.findField(fieldName)
-            } getOrElse List.empty
+            val fields = project.classFile(declaringClassType).map(_.findField(fieldName)).getOrElse(List.empty)
 
             val (reads, writes) = fields
                 .foldLeft((Seq.empty[(DefinedMethod, PCs)], Seq.empty[(DefinedMethod, PCs)])) { (accesses, field) =>
