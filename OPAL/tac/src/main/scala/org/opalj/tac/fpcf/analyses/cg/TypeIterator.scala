@@ -424,7 +424,7 @@ class RTATypeIterator(project: SomeProject)
 
     val usedPropertyKinds: Set[PropertyBounds] = Set(PropertyBounds.ub(InstantiatedTypes))
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
+    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
@@ -526,7 +526,7 @@ class PropagationBasedTypeIterator(
 
     val usedPropertyKinds: Set[PropertyBounds] = Set(PropertyBounds.ub(InstantiatedTypes))
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
+    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
@@ -631,10 +631,10 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     protected[this] val pointsToProperty: PropertyKey[PointsToSet]
     protected[this] def emptyPointsToSet: PointsToSet
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
-    protected[this] implicit val formalParameters: VirtualFormalParameters =
+    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
+    protected[this] implicit lazy val formalParameters: VirtualFormalParameters =
         project.get(VirtualFormalParametersKey)
-    protected[this] implicit val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    protected[this] implicit lazy val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
     private[this] implicit val typeIterator: TypeIterator = this
 
     protected[this] def createPointsToSet(
@@ -804,7 +804,7 @@ trait TypesBasedPointsToTypeIterator
 abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
     extends TypeIterator(project) with PointsToTypeIterator[AllocationSite, AllocationSitePointsToSet] {
 
-    protected[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
+    protected[this] lazy val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
 
     val mergeStringBuilderBuffer: Boolean =
         project.config.getBoolean(mergeStringBuilderBufferConfigKey)
