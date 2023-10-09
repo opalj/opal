@@ -49,6 +49,7 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
@@ -56,13 +57,12 @@ import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.cg.CallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 class ReturnValueFreshnessState(val context: Context) {
@@ -177,7 +177,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
-    private[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     private[this] val definitionSites = project.get(DefinitionSitesKey)
 
     /**
@@ -530,7 +530,7 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReturnValueFreshness)
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DefinitionSitesKey, SimpleContextsKey, TypeIteratorKey)
+        Seq(DefinitionSitesKey, SimpleContextsKey, ContextProviderKey)
 
     override def uses: Set[PropertyBounds] = {
         Set(

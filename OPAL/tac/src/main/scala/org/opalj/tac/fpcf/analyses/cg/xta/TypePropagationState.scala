@@ -6,25 +6,25 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.br.ReferenceType
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.tac.fpcf.properties.TACAI
 import java.util.{HashSet => JHashSet}
 import java.util.{HashMap => JHashMap}
 import java.util.{Set => JSet}
 
 import scala.jdk.CollectionConverters._
 
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Manages the state of each method analyzed by [[TypePropagationAnalysis]].

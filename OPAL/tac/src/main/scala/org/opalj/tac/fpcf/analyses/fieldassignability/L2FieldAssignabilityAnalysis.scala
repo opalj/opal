@@ -6,7 +6,9 @@ package analyses
 package fieldassignability
 
 import scala.annotation.switch
+
 import scala.collection.mutable
+
 import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.analyses.SomeProject
@@ -14,7 +16,6 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -29,6 +30,7 @@ import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
+
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.collection.immutable.IntTrieSet
@@ -37,6 +39,8 @@ import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.br.Field
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.CaughtException
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
@@ -898,7 +902,8 @@ trait L2FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         FieldAccessInformationKey,
         ClosedPackagesKey,
         TypeExtensibilityKey,
-        DefinitionSitesKey
+        DefinitionSitesKey,
+        ContextProviderKey
     )
 
     final override def uses: Set[PropertyBounds] = Set(

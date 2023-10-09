@@ -44,7 +44,7 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
@@ -55,9 +55,9 @@ import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
-import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -98,7 +98,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
-    protected[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 
