@@ -11,6 +11,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyBounds
@@ -31,7 +32,6 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
 

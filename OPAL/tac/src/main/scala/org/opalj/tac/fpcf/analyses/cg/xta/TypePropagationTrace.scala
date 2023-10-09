@@ -18,12 +18,12 @@ import scala.collection.mutable
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ReferenceType
-import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 
 /**

@@ -3,6 +3,12 @@ package org.opalj
 package fpcf
 package ifds
 
+import scala.annotation.tailrec
+
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.value.ValueInformation
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldType
@@ -12,14 +18,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.ifds.AbstractIFDSFact
-import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Callable
-import org.opalj.ifds.Dependees.Getter
-import org.opalj.ifds.IFDSFact
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
@@ -33,10 +32,11 @@ import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.ifds.JavaForwardIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.value.ValueInformation
-
-import scala.annotation.tailrec
+import org.opalj.ifds.AbstractIFDSFact
+import org.opalj.ifds.AbstractIFDSNullFact
+import org.opalj.ifds.Callable
+import org.opalj.ifds.Dependees.Getter
+import org.opalj.ifds.IFDSFact
 
 trait VTAFact extends AbstractIFDSFact
 case object VTANullFact extends VTAFact with AbstractIFDSNullFact

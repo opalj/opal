@@ -5,21 +5,18 @@ package fpcf
 package analyses
 package taint
 
+import java.io.File
+
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.ifds.Callable
-import org.opalj.ifds.IFDSAnalysis
-import org.opalj.ifds.IFDSAnalysisScheduler
-import org.opalj.ifds.IFDSFact
-import org.opalj.ifds.IFDSProperty
-import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
@@ -30,11 +27,14 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.Variable
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.Taint
-
-import java.io.File
+import org.opalj.ifds.Callable
+import org.opalj.ifds.IFDSAnalysis
+import org.opalj.ifds.IFDSAnalysisScheduler
+import org.opalj.ifds.IFDSFact
+import org.opalj.ifds.IFDSProperty
+import org.opalj.ifds.IFDSPropertyMetaInformation
 
 /**
  * A forward IFDS taint analysis which tracks the String parameters of all methods of the rt.jar
