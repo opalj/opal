@@ -61,7 +61,7 @@ class ThreadStartAnalysis private[cg] (
         targetVarOption: Option[V],
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
-        val partialAnalysisResults = new ThreadStartAnalysisResults();
+        val partialAnalysisResults = new ThreadStartAnalysisResults()
         implicit val state: CGState[ContextType] = new CGState[ContextType](
             callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
