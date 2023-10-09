@@ -316,7 +316,7 @@ class ThreadStartAnalysis private[cg] (
                 if (indexOfThreadGroupParameter != -1) {
                     val theReceiver = params(indexOfThreadGroupParameter).asVar
                     for (threadGroupValue <- theReceiver.value.asReferenceValue.allValues) {
-                        if (threadGroupValue.isPrecise) {
+                        if (threadGroupValue.isPrecise && threadGroupValue.isNull.isNo) {
                             addThreadGroupMethod(
                                 callContext,
                                 callPC,
