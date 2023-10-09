@@ -161,10 +161,10 @@ class ThreadStartAnalysis private[cg] (
      * updated set.
      */
     private[this] def handleStart(
-        callContext:        ContextType,
-        callPC:             Int,
-        receiver:           V,
-        partialAnalysisResults:      ThreadStartAnalysisResults
+        callContext:            ContextType,
+        callPC:                 Int,
+        receiver:               V,
+        partialAnalysisResults: ThreadStartAnalysisResults
     )(implicit state: CGState[ContextType]): Unit = {
         // a call to Thread.start will trigger the JVM to later on call Thread.exit()
         val exitMethod = project.specialCall(
@@ -214,11 +214,11 @@ class ThreadStartAnalysis private[cg] (
     }
 
     private[this] def handleTypeAndHasRunnable(
-        tpe:           ReferenceType,
-        callContext:   ContextType,
-        callPC:        Int,
-        stmts:         Array[Stmt[V]],
-        receiver:      V,
+        tpe:                    ReferenceType,
+        callContext:            ContextType,
+        callPC:                 Int,
+        stmts:                  Array[Stmt[V]],
+        receiver:               V,
         partialAnalysisResults: ThreadStartAnalysisResults
     ): Boolean = {
         val runMethod = project.instanceCall(
@@ -265,12 +265,12 @@ class ThreadStartAnalysis private[cg] (
      * [[Runnable]] (passed as an argument to the constructor).
      */
     private[this] def handleThreadInit(
-        callContext:        ContextType,
-        callPC:             Int,
-        allocationContext:  Context,
-        threadDefSite:      Int,
-        stmts:              Array[Stmt[V]],
-        partialAnalysisResults:      ThreadStartAnalysisResults
+        callContext:            ContextType,
+        callPC:                 Int,
+        allocationContext:      Context,
+        threadDefSite:          Int,
+        stmts:                  Array[Stmt[V]],
+        partialAnalysisResults: ThreadStartAnalysisResults
     ): Unit = stmts(threadDefSite) match {
         case Assignment(_, thread, New(_, _)) =>
             for {
@@ -338,11 +338,11 @@ class ThreadStartAnalysis private[cg] (
      * updated set.
      */
     private[this] def addRunnableMethod(
-        callContext:   ContextType,
-        callPC:        Int,
-        receiverValue: IsReferenceValue,
-        receiver:      Option[V],
-        stmts:         Array[Stmt[V]],
+        callContext:            ContextType,
+        callPC:                 Int,
+        receiverValue:          IsReferenceValue,
+        receiver:               Option[V],
+        stmts:                  Array[Stmt[V]],
         partialAnalysisResults: IndirectCalls
     ): Unit = {
         val thisType = callContext.method.declaringClassType
@@ -411,14 +411,14 @@ class ThreadStartAnalysis private[cg] (
      * updated set.
      */
     private[this] def addMethod(
-        callContext:   ContextType,
-        callPC:        Int,
-        receiver:      Option[V],
-        stmts:         Array[Stmt[V]],
-        target:        org.opalj.Result[Method],
-        preciseType:   ObjectType,
-        name:          String,
-        descriptor:    MethodDescriptor,
+        callContext:            ContextType,
+        callPC:                 Int,
+        receiver:               Option[V],
+        stmts:                  Array[Stmt[V]],
+        target:                 org.opalj.Result[Method],
+        preciseType:            ObjectType,
+        name:                   String,
+        descriptor:             MethodDescriptor,
         partialAnalysisResults: IndirectCalls
     ): Unit = {
         val caller = callContext.method.asDefinedMethod

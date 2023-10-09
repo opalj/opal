@@ -55,8 +55,10 @@ class ThreadRelatedCallsTest extends PropertiesTest {
     describe("ThreadStartAnalysis is executed") {
 
         val as = executeAnalyses(
-            Set(LazyTACAIProvider, AllocationSiteBasedPointsToAnalysisScheduler,
-                CallGraphAnalysisScheduler, ThreadRelatedCallsAnalysisScheduler)
+            Set(LazyTACAIProvider,
+                AllocationSiteBasedPointsToAnalysisScheduler,
+                CallGraphAnalysisScheduler,
+                ThreadRelatedCallsAnalysisScheduler)
         )
         as.propertyStore.shutdown()
 
