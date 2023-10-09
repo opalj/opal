@@ -36,12 +36,15 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
+class ThreadStartAnalysisResults extends IndirectCalls with VMReachableMethodsBase
+
 /**
  * On calls to Thread.start(), it adds calls to the corresponding run method.
  * The run method is determined using points-to information.
  *
  * @author Florian Kuebler
  * @author Dominik Helm
+ * @author Julius Naeumann
  */
 class ThreadStartAnalysis private[cg] (
         override val project:   SomeProject,
@@ -58,43 +61,39 @@ class ThreadStartAnalysis private[cg] (
         targetVarOption: Option[V],
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
-        val indirectCalls = new IndirectCalls()
-        val vmReachableMethods = new VMReachableMethods()
+        val partialAnalysisResults = new ThreadStartAnalysisResults();
         implicit val state: CGState[ContextType] = new CGState[ContextType](
             callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
 
         if (receiverOption.isDefined) {
             val receiver = receiverOption.get.asVar
-            handleStart(callerContext, callPC, receiver, indirectCalls, vmReachableMethods)
-            returnResult(receiver, indirectCalls, vmReachableMethods)
+            handleStart(callerContext, callPC, receiver, partialAnalysisResults)
+            returnResult(receiver, partialAnalysisResults)
         } else {
-            indirectCalls.addIncompleteCallSite(callPC)
-            Results(indirectCalls.partialResults(callerContext))
+            partialAnalysisResults.addIncompleteCallSite(callPC)
+            Results(partialAnalysisResults.partialResults(callerContext))
         }
     }
 
     def returnResult(
-        receiver: V, indirectCalls: IndirectCalls, vmReachableMethods: VMReachableMethods
+        receiver: V, partialAnalysisResults: ThreadStartAnalysisResults
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-        val runnableResults = Results(indirectCalls.partialResults(state.callContext))
-        val vmReachableResults = Results(vmReachableMethods.partialResults(state.callContext))
+        val runnableResults = Results(partialAnalysisResults.partialResults(state.callContext))
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(receiver, state)),
-                runnableResults,
-                vmReachableResults
+                runnableResults
             )
         else
-            Results(runnableResults, vmReachableResults)
+            Results(runnableResults)
     }
 
     def c(receiver: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         val epk = eps.toEPK
 
         // ensures, that we only add new vm reachable methods
-        val indirectCalls = new IndirectCalls()
-        val vmReachableMethods = new VMReachableMethods()
+        val partialAnalysisResults = new ThreadStartAnalysisResults()
         implicit val _state: CGState[ContextType] = state
 
         eps.ub match {
@@ -104,7 +103,7 @@ class ThreadStartAnalysis private[cg] (
                 } {
                     AllocationsUtil.handleAllocation(
                         allocationContext, allocationPC, allocationContext,
-                        () => indirectCalls.addIncompleteCallSite(callPC)
+                        () => partialAnalysisResults.addIncompleteCallSite(callPC)
                     ) { (allocationContext, allocationIndex, stmts) =>
                             handleThreadInit(
                                 state.callContext,
@@ -112,8 +111,7 @@ class ThreadStartAnalysis private[cg] (
                                 allocationContext,
                                 allocationIndex,
                                 stmts,
-                                indirectCalls,
-                                vmReachableMethods
+                                partialAnalysisResults
                             )
                         }
                 }
@@ -125,12 +123,12 @@ class ThreadStartAnalysis private[cg] (
                     receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]
                 ) { (tpe, allocationContext, allocationPC) =>
                     val hasRunnable = handleTypeAndHasRunnable(
-                        tpe, state.callContext, callPC, state.tac.stmts, receiver, indirectCalls
+                        tpe, state.callContext, callPC, state.tac.stmts, receiver, partialAnalysisResults
                     )
                     if (hasRunnable)
                         AllocationsUtil.handleAllocation(
                             allocationContext, allocationPC, (callPC, allocationContext),
-                            () => indirectCalls.addIncompleteCallSite(callPC)
+                            () => partialAnalysisResults.addIncompleteCallSite(callPC)
                         ) { (allocationContext, allocationIndex, stmts) =>
                                 handleThreadInit(
                                     state.callContext,
@@ -138,8 +136,7 @@ class ThreadStartAnalysis private[cg] (
                                     allocationContext,
                                     allocationIndex,
                                     stmts,
-                                    indirectCalls,
-                                    vmReachableMethods
+                                    partialAnalysisResults
                                 )
                             }
                 }
@@ -151,7 +148,7 @@ class ThreadStartAnalysis private[cg] (
             state.updateDependency(eps)
         }
 
-        returnResult(receiver, indirectCalls, vmReachableMethods)
+        returnResult(receiver, partialAnalysisResults)
     }
 
     /**
@@ -167,8 +164,7 @@ class ThreadStartAnalysis private[cg] (
         callContext:        ContextType,
         callPC:             Int,
         receiver:           V,
-        indirectCalls:      IndirectCalls,
-        vmReachableMethods: VMReachableMethods
+        partialAnalysisResults:      ThreadStartAnalysisResults
     )(implicit state: CGState[ContextType]): Unit = {
         // a call to Thread.start will trigger the JVM to later on call Thread.exit()
         val exitMethod = project.specialCall(
@@ -188,7 +184,7 @@ class ThreadStartAnalysis private[cg] (
             ObjectType.Thread,
             "exit",
             MethodDescriptor.NoArgsAndReturnVoid,
-            indirectCalls
+            partialAnalysisResults
         )
 
         val types = typeIterator.typesProperty(
@@ -198,12 +194,12 @@ class ThreadStartAnalysis private[cg] (
         typeIterator.foreachAllocation(receiver, callContext, state.tac.stmts, types) {
             (tpe, method, pc) =>
                 val hasRunnable = handleTypeAndHasRunnable(
-                    tpe, callContext, callPC, state.tac.stmts, receiver, indirectCalls
+                    tpe, callContext, callPC, state.tac.stmts, receiver, partialAnalysisResults
                 )
                 if (hasRunnable)
                     AllocationsUtil.handleAllocation(
                         method, pc, (callPC, method),
-                        () => indirectCalls.addIncompleteCallSite(callPC)
+                        () => partialAnalysisResults.addIncompleteCallSite(callPC)
                     ) { (allocationContext, allocationIndex, stmts) =>
                             handleThreadInit(
                                 callContext,
@@ -211,8 +207,7 @@ class ThreadStartAnalysis private[cg] (
                                 allocationContext,
                                 allocationIndex,
                                 stmts,
-                                indirectCalls,
-                                vmReachableMethods
+                                partialAnalysisResults
                             )
                         }
         }
@@ -224,7 +219,7 @@ class ThreadStartAnalysis private[cg] (
         callPC:        Int,
         stmts:         Array[Stmt[V]],
         receiver:      V,
-        indirectCalls: IndirectCalls
+        partialAnalysisResults: ThreadStartAnalysisResults
     ): Boolean = {
         val runMethod = project.instanceCall(
             tpe.asObjectType, tpe, "run", MethodDescriptor.NoArgsAndReturnVoid
@@ -239,7 +234,7 @@ class ThreadStartAnalysis private[cg] (
             tpe.asObjectType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid,
-            indirectCalls
+            partialAnalysisResults
         )
 
         (tpe eq ObjectType.Thread) ||
@@ -275,8 +270,7 @@ class ThreadStartAnalysis private[cg] (
         allocationContext:  Context,
         threadDefSite:      Int,
         stmts:              Array[Stmt[V]],
-        indirectCalls:      IndirectCalls,
-        vmReachableMethods: VMReachableMethods
+        partialAnalysisResults:      ThreadStartAnalysisResults
     ): Unit = stmts(threadDefSite) match {
         case Assignment(_, thread, New(_, _)) =>
             for {
@@ -300,10 +294,10 @@ class ThreadStartAnalysis private[cg] (
                                 else
                                     None,
                                 stmts,
-                                indirectCalls
+                                partialAnalysisResults
                             )
                         } else {
-                            indirectCalls.addIncompleteCallSite(callPC)
+                            partialAnalysisResults.addIncompleteCallSite(callPC)
                         }
                     }
                 }
@@ -321,17 +315,17 @@ class ThreadStartAnalysis private[cg] (
                                 callContext,
                                 callPC,
                                 threadGroupValue,
-                                vmReachableMethods
+                                partialAnalysisResults
                             )
                         } else {
-                            indirectCalls.addIncompleteCallSite(callPC)
+                            partialAnalysisResults.addIncompleteCallSite(callPC)
                         }
                     }
                 }
             }
         case _ =>
             // the thread object is not newly allocated
-            indirectCalls.addIncompleteCallSite(callPC)
+            partialAnalysisResults.addIncompleteCallSite(callPC)
     }
 
     /**
@@ -349,7 +343,7 @@ class ThreadStartAnalysis private[cg] (
         receiverValue: IsReferenceValue,
         receiver:      Option[V],
         stmts:         Array[Stmt[V]],
-        indirectCalls: IndirectCalls
+        partialAnalysisResults: IndirectCalls
     ): Unit = {
         val thisType = callContext.method.declaringClassType
         val preciseType = receiverValue.leastUpperType.get.asObjectType
@@ -369,7 +363,7 @@ class ThreadStartAnalysis private[cg] (
             preciseType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid,
-            indirectCalls
+            partialAnalysisResults
         )
     }
 
@@ -377,7 +371,7 @@ class ThreadStartAnalysis private[cg] (
         callContext:        ContextType,
         callPC:             Int,
         receiverValue:      IsReferenceValue,
-        vmReachableMethods: VMReachableMethods
+        vmReachableMethods: ThreadStartAnalysisResults
     ): Unit = {
         val thisType = callContext.method.declaringClassType
         val preciseType = receiverValue.leastUpperType.get.asObjectType
@@ -425,12 +419,12 @@ class ThreadStartAnalysis private[cg] (
         preciseType:   ObjectType,
         name:          String,
         descriptor:    MethodDescriptor,
-        indirectCalls: IndirectCalls
+        partialAnalysisResults: IndirectCalls
     ): Unit = {
         val caller = callContext.method.asDefinedMethod
         val persistentReceiver = receiver.flatMap(persistentUVar(_)(stmts))
         if (target.hasValue) {
-            indirectCalls.addCall(
+            partialAnalysisResults.addCall(
                 callContext, callPC, declaredMethods(target.value), Seq.empty, persistentReceiver
             )
         } else {
@@ -440,8 +434,8 @@ class ThreadStartAnalysis private[cg] (
 
             // also add calls to virtual declared methods (unpresent library methods)
             if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
-                indirectCalls.addIncompleteCallSite(callPC)
-                indirectCalls.addCall(callContext, callPC, declTgt, Seq.empty, persistentReceiver)
+                partialAnalysisResults.addIncompleteCallSite(callPC)
+                partialAnalysisResults.addCall(callContext, callPC, declTgt, Seq.empty, persistentReceiver)
             }
         }
     }
