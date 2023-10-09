@@ -41,9 +41,11 @@ class ThreadRelatedCallsTest extends PropertiesTest {
         val baseConfig = super.createConfig()
         // For these tests, we want to restrict entry points to "main" methods.
         // Also, no types should be instantiated by default.
-        baseConfig.withValue(InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+        baseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
-        ).withValue(InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
             )
     }
@@ -55,10 +57,12 @@ class ThreadRelatedCallsTest extends PropertiesTest {
     describe("ThreadStartAnalysis is executed") {
 
         val as = executeAnalyses(
-            Set(LazyTACAIProvider,
+            Set(
+                LazyTACAIProvider,
                 AllocationSiteBasedPointsToAnalysisScheduler,
                 CallGraphAnalysisScheduler,
-                ThreadRelatedCallsAnalysisScheduler)
+                ThreadRelatedCallsAnalysisScheduler
+            )
         )
         as.propertyStore.shutdown()
 

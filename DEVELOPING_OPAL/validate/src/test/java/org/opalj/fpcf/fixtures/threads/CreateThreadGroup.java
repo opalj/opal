@@ -7,7 +7,7 @@ import org.opalj.fpcf.properties.callgraph.VMReachable;
 public class CreateThreadGroup {
     @DirectCall(
             name = "run",
-            line = 16,
+            line = 15,
             resolvedTargets = {"Lorg/opalj/fpcf/fixtures/threads/MyRunnable;"})
     public static void main(String[] args) {
         ThreadGroup myThreadGroup = new MyThreadGroup();
