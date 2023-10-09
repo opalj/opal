@@ -1,14 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 import org.opalj.ai.domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.cg.{InitialEntryPointsKey, InitialInstantiatedTypesKey}
-import org.opalj.tac.cg.{CHACallGraphKey, TypeIteratorKey}
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-import org.opalj.tac.fpcf.analyses.cg._
+import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.ThreadRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 
 import java.net.URL
@@ -36,11 +41,9 @@ class ThreadRelatedCallsTest extends PropertiesTest {
         val baseConfig = super.createConfig()
         // For these tests, we want to restrict entry points to "main" methods.
         // Also, no types should be instantiated by default.
-        baseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+        baseConfig.withValue(InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
-        ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+        ).withValue(InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
             )
     }
@@ -52,7 +55,8 @@ class ThreadRelatedCallsTest extends PropertiesTest {
     describe("ThreadStartAnalysis is executed") {
 
         val as = executeAnalyses(
-            Set(LazyTACAIProvider, AllocationSiteBasedPointsToAnalysisScheduler, CallGraphAnalysisScheduler, ThreadRelatedCallsAnalysisScheduler)
+            Set(LazyTACAIProvider, AllocationSiteBasedPointsToAnalysisScheduler,
+                CallGraphAnalysisScheduler, ThreadRelatedCallsAnalysisScheduler)
         )
         as.propertyStore.shutdown()
 

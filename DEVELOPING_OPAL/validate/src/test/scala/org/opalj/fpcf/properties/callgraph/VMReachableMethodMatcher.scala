@@ -1,7 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.callgraph
+package org.opalj
+package fpcf
+package properties
+package callgraph
 
-import org.opalj.br.{AnnotationLike, ElementValue, ObjectType}
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ElementValue
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.Property

@@ -321,11 +321,6 @@ class ThreadStartAnalysis private[cg] (
                                 callContext,
                                 callPC,
                                 threadGroupValue,
-                                if (callContext.method == allocationContext.method)
-                                    Some(theReceiver)
-                                else
-                                    None,
-                                stmts,
                                 vmReachableMethods
                             )
                         } else {
@@ -382,8 +377,6 @@ class ThreadStartAnalysis private[cg] (
         callContext:        ContextType,
         callPC:             Int,
         receiverValue:      IsReferenceValue,
-        receiver:           Option[V],
-        stmts:              Array[Stmt[V]],
         vmReachableMethods: VMReachableMethods
     ): Unit = {
         val thisType = callContext.method.declaringClassType
