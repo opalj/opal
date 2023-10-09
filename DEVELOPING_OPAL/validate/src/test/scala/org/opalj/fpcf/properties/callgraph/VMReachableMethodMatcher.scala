@@ -3,9 +3,9 @@ package org.opalj.fpcf.properties.callgraph
 
 import org.opalj.br.{AnnotationLike, ElementValue, ObjectType}
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.tac.fpcf.properties.cg.Callers
 
 class VMReachableMethodMatcher extends AbstractPropertyMatcher {
 

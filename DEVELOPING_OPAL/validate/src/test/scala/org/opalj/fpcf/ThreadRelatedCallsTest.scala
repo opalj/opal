@@ -23,7 +23,7 @@ class ThreadRelatedCallsTest extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
             case Some(_) => throw new IllegalArgumentException()
-            case None    => () => CHACallGraphKey.getTypeIterator(p)
+            case None    => CHACallGraphKey.getTypeIterator(p)
         }
         val requiredDomains: Set[Class[_ <: AnyRef]] = Set(classOf[DefaultReferenceValuesDomainWithCFGAndDefUse[_]])
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
