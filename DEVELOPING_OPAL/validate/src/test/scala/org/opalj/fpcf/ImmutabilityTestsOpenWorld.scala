@@ -2,6 +2,7 @@
 package org.opalj.fpcf
 
 import java.net.URL
+
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
@@ -11,9 +12,11 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
 
 /**
@@ -51,7 +54,8 @@ class ImmutabilityTestsOpenWorld extends PropertiesTest {
                 EagerTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis
+                LazySimpleEscapeAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
         )
 
