@@ -2,21 +2,23 @@
 package org.opalj
 package fpcf
 
+import java.net.URL
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.ai.domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.ai.domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.ThreadRelatedCallsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
-
-import java.net.URL
 
 /**
  * Tests  ThreadRelatedCallsAnalysis
@@ -59,6 +61,7 @@ class ThreadRelatedCallsTest extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 LazyTACAIProvider,
+                EagerFieldAccessInformationAnalysis,
                 AllocationSiteBasedPointsToAnalysisScheduler,
                 CallGraphAnalysisScheduler,
                 ThreadRelatedCallsAnalysisScheduler
