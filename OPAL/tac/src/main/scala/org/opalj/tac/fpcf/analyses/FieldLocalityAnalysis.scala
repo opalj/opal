@@ -628,7 +628,7 @@ class FieldLocalityAnalysis private[analyses] (
                         callers.forNewCalleeContexts(null, definedMethod) {
                             isLocal &&= isLocalForFieldReadAccess(_, pc, receiver, tacai)
                         }
-                        isLocal
+                        !isLocal
                     } else
                         false
                 }
@@ -671,7 +671,7 @@ class FieldLocalityAnalysis private[analyses] (
                         callers.forNewCalleeContexts(null, definedMethod) {
                             isLocal &&= isLocalForFieldWriteAccess(_, pc, parameter, tacai)
                         }
-                        isLocal
+                        !isLocal
                     } else
                         false
                 }

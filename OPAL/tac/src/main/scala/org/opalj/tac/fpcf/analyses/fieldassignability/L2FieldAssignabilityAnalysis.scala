@@ -248,7 +248,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         writes:                     Seq[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], Int)]
     )(implicit state: State): Boolean = {
         writes.exists { writeAccess =>
-
             fieldReadAccessInformation.getNewestAccesses(
                 fieldReadAccessInformation.numDirectAccesses - seenDirectAccesses,
                 fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
@@ -258,7 +257,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                         val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
                         val writeIndex = writeAccess._4
                         val readIndex = taCode.pcToIndex(readAccess._2)
-                        writeIndex == readIndex || dominates(writeIndex, readIndex, taCode)
+                        writeIndex != readIndex && !dominates(writeIndex, readIndex, taCode)
                     }
                 }
         }
