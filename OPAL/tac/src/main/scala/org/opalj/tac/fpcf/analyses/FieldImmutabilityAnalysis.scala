@@ -68,6 +68,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.DeclaredField
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -77,11 +79,11 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
  * Analysis that determines the immutability of org.opalj.br.Field
  * @author Tobias Roth
  */
-class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
+class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     extends FPCFAnalysis {
 
     case class State(
-            field:                          Field,
+            field:                          DeclaredField,
             var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
             var genericTypeParameters:      SortedSet[String]               = SortedSet.empty,
             var innerTypes:                 Set[ReferenceType]              = Set.empty,
@@ -93,6 +95,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     }
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
+    final val declaredFields = project.get(DeclaredFieldsKey)
     implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     def doDetermineFieldImmutability(entity: Entity): ProperPropertyComputationResult = entity match {
@@ -105,7 +108,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         field: Field
     ): ProperPropertyComputationResult = {
 
-        implicit val state: State = State(field)
+        implicit val state: State = State(declaredFields(field))
 
         /**
          * Query type iterator for concrete class types.
@@ -131,7 +134,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 state.upperBound = DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
             }
 
-            state.field.attributes.foreach {
+            state.field.definedField.attributes.foreach {
 
                 case TypeVariableSignature(t) =>
                     collectGenericIdentifierAndSetDependentImmutability(t)
@@ -233,7 +236,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                 case EUBP(c, MutableClass) if (field.fieldType == ObjectType.Object && c == ObjectType.Object) => {
 
-                    state.field.attributes.foreach {
+                    state.field.definedField.attributes.foreach {
                         case TypeVariableSignature(_) =>
                             state.upperBound =
                                 DependentlyImmutableField(state.genericTypeParameters).meet(state.upperBound)
@@ -338,7 +341,8 @@ trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(FieldImmutability)
     )
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(TypeIteratorKey, DeclaredFieldsKey, TypeExtensibilityKey)
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 }
 
@@ -354,7 +358,7 @@ object EagerFieldImmutabilityAnalysis
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0FieldImmutabilityAnalysis(p)
+        val analysis = new FieldImmutabilityAnalysis(p)
         val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
@@ -377,7 +381,7 @@ object LazyFieldImmutabilityAnalysis
         ps:     PropertyStore,
         unused: Null
     ): FPCFAnalysis = {
-        val analysis = new L0FieldImmutabilityAnalysis(p)
+        val analysis = new FieldImmutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldImmutability.key,
             analysis.doDetermineFieldImmutability
