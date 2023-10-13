@@ -281,11 +281,13 @@ final class TypePropagationAnalysis private[analyses] (
         val bytecode = state.callContext.method.definedMethod.body.get
         for {
             pc <- readAccesses.getAccessSites(state.callContext)
+            numDirectAccess = readAccesses.numDirectAccesses(state.callContext, pc)
+            numIndirectAccess = readAccesses.numIndirectAccesses(state.callContext, pc)
             declaredField <- readAccesses.getNewestAccessedFields(
                 state.callContext,
                 pc,
-                state.seenDirectReadAccesses.getOrElse(pc, 0),
-                state.seenIndirectReadAccesses.getOrElse(pc, 0)
+                numDirectAccess - state.seenDirectReadAccesses.getOrElse(pc, 0),
+                numIndirectAccess - state.seenIndirectReadAccesses.getOrElse(pc, 0)
             )
         } {
             if (declaredField.fieldType.isReferenceType) {
@@ -308,8 +310,8 @@ final class TypePropagationAnalysis private[analyses] (
                 }
             }
 
-            state.seenDirectReadAccesses += pc -> readAccesses.numDirectAccesses(state.callContext, pc)
-            state.seenIndirectReadAccesses += pc -> readAccesses.numIndirectAccesses(state.callContext, pc)
+            state.seenDirectReadAccesses += pc -> numDirectAccess
+            state.seenIndirectReadAccesses += pc -> numIndirectAccess
         }
     }
 
@@ -318,11 +320,13 @@ final class TypePropagationAnalysis private[analyses] (
     )(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
         for {
             pc <- writeAccesses.getAccessSites(state.callContext)
+            numDirectAccess = writeAccesses.numDirectAccesses(state.callContext, pc)
+            numIndirectAccess = writeAccesses.numIndirectAccesses(state.callContext, pc)
             declaredField <- writeAccesses.getNewestAccessedFields(
                 state.callContext,
                 pc,
-                state.seenDirectWriteAccesses.getOrElse(pc, 0),
-                state.seenIndirectWriteAccesses.getOrElse(pc, 0)
+                numDirectAccess - state.seenDirectWriteAccesses.getOrElse(pc, 0),
+                numIndirectAccess - state.seenIndirectWriteAccesses.getOrElse(pc, 0)
             )
         } {
             val fieldType = declaredField.fieldType
@@ -336,8 +340,8 @@ final class TypePropagationAnalysis private[analyses] (
                 }
             }
 
-            state.seenDirectWriteAccesses += pc -> writeAccesses.numDirectAccesses(state.callContext, pc)
-            state.seenIndirectWriteAccesses += pc -> writeAccesses.numIndirectAccesses(state.callContext, pc)
+            state.seenDirectWriteAccesses += pc -> numDirectAccess
+            state.seenIndirectWriteAccesses += pc -> numIndirectAccess
         }
     }
 

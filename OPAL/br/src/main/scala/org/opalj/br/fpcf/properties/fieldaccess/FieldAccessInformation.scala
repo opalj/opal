@@ -95,9 +95,9 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
 
     def numAccesses: Int = numDirectAccesses + numIndirectAccesses
 
-    def numDirectAccesses: Int = encodedDirectAccessReceivers.valuesIterator.map { _.size }.sum
+    def numDirectAccesses: Int = encodedDirectAccessReceivers.size
 
-    def numIndirectAccesses: Int = encodedIndirectAccessReceivers.valuesIterator.map { _.size }.sum
+    def numIndirectAccesses: Int = encodedIndirectAccessReceivers.size
 
     def included(other: S, seenDirectAccesses: Int = 0, seenIndirectAccesses: Int = 0): S
 

@@ -41,7 +41,7 @@ class ImmutabilityTestsClosedWorld extends PropertiesTest {
         p.get(TypeBasedPointsToCallGraphKey)
     }
 
-    describe("run all immutability analysis with a closed world assumption (with type provider") {
+    describe("run all immutability analysis with a closed world assumption (with type iterator") {
 
         val as = executeAnalyses(
             Set(
