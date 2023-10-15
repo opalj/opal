@@ -16,7 +16,7 @@ sealed trait AliasPropertyMetaInformation extends PropertyMetaInformation {
  * Describes the alias properties of the associated entities.
  *
  * Alias properties can establish a binding between a pair of entities, including definition sites, formal parameters, method return values, fields, etc.
- * For more information, see TODO.
+ * For more information, see [[org.opalj.tac.fpcf.analyses.alias.AliasSourceElement]] and [[org.opalj.tac.fpcf.analyses.alias.AliasEntity]].
  * The pair may consist of different types of entities, such as a field and a formal parameter.
  *
  * An alias property provides information about the relationship of the memory locations of the associated entities.
