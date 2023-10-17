@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
+/*package org.opalj
 package xl
 package javaanalyses
 package detector
@@ -422,3 +422,4 @@ object JavaScriptEngineDetector {
     val jsExtensions = Set("js")
     val jsMimetypes = Set("application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript")
 }
+*/ 

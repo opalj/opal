@@ -3,20 +3,20 @@ package org.opalj
 package xl
 package detector
 
-import org.opalj.br.FieldType
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.xl.utility.JavaScriptFunctionCall
-import Coordinator.V
 import org.opalj.xl.utility.NativeFunctionCall
 import org.opalj.xl.utility.Language
 import org.opalj.xl.utility.Language.Language
 import org.opalj.xl.Coordinator.ScriptEngineInstance
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Property
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 sealed trait CrossLanguageInteractionPropertyMetaInformation extends Property with PropertyMetaInformation {
     final type Self = CrossLanguageInteraction
@@ -34,6 +34,7 @@ sealed trait CrossLanguageInteraction extends CrossLanguageInteractionPropertyMe
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
+
     final def key: PropertyKey[CrossLanguageInteraction] = CrossLanguageInteraction.key
 }
 
@@ -49,20 +50,18 @@ object CrossLanguageInteraction extends CrossLanguageInteractionPropertyMetaInfo
     )
 }
 
-case class ScriptEngineInteraction(
-        language:                Language                                              = Language.Unknown,
-        code:                    List[String]                                          = List.empty,
-        javaScriptFunctionCalls: List[JavaScriptFunctionCall]                          = List.empty,
-        puts:                    Map[String, (FieldType, Set[AnyRef], Option[Double])] = Map.empty,
-        gets:                    Map[V, String]                                        = Map.empty
+case class ScriptEngineInteraction[ContextType, PointsToSet](
+        language:                Language                                                      = Language.Unknown,
+        code:                    List[String]                                                  = List.empty,
+        javaScriptFunctionCalls: List[JavaScriptFunctionCall[ContextType, PointsToSet]]        = List.empty[JavaScriptFunctionCall[ContextType, PointsToSet]],
+        puts:                    Map[(String, ContextType, IntTrieSet, TheTACAI), PointsToSet] = Map.empty[(String, ContextType, IntTrieSet, TheTACAI), PointsToSet]
 ) extends CrossLanguageInteraction {
-    def updated(scriptEngineInteraction: ScriptEngineInteraction): ScriptEngineInteraction = {
+    def updated(scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet]): ScriptEngineInteraction[ContextType, PointsToSet] = {
         ScriptEngineInteraction(
             if (this.language == Language.Unknown) scriptEngineInteraction.language else this.language,
             scriptEngineInteraction.code ::: this.code,
             this.javaScriptFunctionCalls ++ scriptEngineInteraction.javaScriptFunctionCalls,
-            this.puts ++ scriptEngineInteraction.puts,
-            this.gets ++ scriptEngineInteraction.gets
+            this.puts ++ scriptEngineInteraction.puts, //TODO join PointsToSet.included zum zusammenfassen
         )
     }
 }

@@ -43,8 +43,8 @@ object AnalysisResult extends AnalysisResultPropertyMetaInformation {
     )
 }
 
-case class FinalAnalysisResult(o: Object) extends AnalysisResult
+case class FinalAnalysisResult[Key, Value](store: Map[Key, Value]) extends AnalysisResult
+
+case class InterimAnalysisResult[Key, Value](store: Map[Key, Value]) extends AnalysisResult
 
 case object NoAnalysisResult extends AnalysisResult
-
-case class InterimAnalysisResult(o: Object) extends AnalysisResult

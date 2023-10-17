@@ -5,55 +5,100 @@ package translator
 
 import java.net.URL
 
+import dk.brics.tajs.flowgraph.jsnodes.JNode
 import dk.brics.tajs.flowgraph.SourceLocation
-import dk.brics.tajs.flowgraph.jsnodes.JavaNode
+import dk.brics.tajs.flowgraph.AbstractNode
 import dk.brics.tajs.lattice.ObjectLabel
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.lattice.Value
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.ObjectType
-import org.opalj.br.Type
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.ReferenceType
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 object JavaJavaScriptTranslator {
 
-    def Java2JavaScript(variableName: String, possibleTypes: List[Type], value: Option[Double]): (PKey.StringPKey, Value) = {
+    def Java2JavaScript[PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet], ContextType](variableName: String, context: ContextType, pointsToSetLike: PointsToSet, defSites: IntTrieSet, theTACAI: TheTACAI): (PKey.StringPKey, Value) = {
 
-        val possibleValues = new java.util.ArrayList[Value]()
+        var defaultValue: Option[Value] = None
 
-        possibleTypes.map(tpe => {
-            if (tpe.isNumericType || tpe == ObjectType.Integer ||
-                tpe == ObjectType.Double || tpe == ObjectType.Long)
-                Value.makeAnyNum().removeAttributes()
-            else if (tpe.isBooleanType || tpe == ObjectType.Boolean)
-                possibleValues.add(Value.makeAnyBool().removeAttributes())
-            else if (tpe == ObjectType.String)
-                possibleValues.add(Value.makeAnyStr().removeAttributes())
-            else if (tpe.isObjectType) {
-                val path = ""
-                val url = new URL("file", null, path)
-                val sl = new SourceLocation.StaticLocationMaker(url).make(0, 0, 1, 1)
-                def generateJavaValue(long: Long, javaName: String): Value = {
-                    val javaNode = new JavaNode(sl, long)
-                    javaNode.setIndex(long.toInt)
-                    val objectLabel = ObjectLabel.make(javaNode, ObjectLabel.Kind.JAVAOBJECT)
-                    objectLabel.javaName = javaName
-                    val v = Value.makeObject(objectLabel)
-                    v.setDontDelete().setDontEnum().setReadOnly()
-                }
-                generateJavaValue(-1, tpe.asObjectType.fqn)
+        if (pointsToSetLike != null)
+            pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) {
+                tpe =>
+                    {
+                        if (tpe.isNumericType || tpe == ObjectType.Integer ||
+                            tpe == ObjectType.Double || tpe == ObjectType.Long) {
+                            //val v: Value = Value.makeAnyNum().removeAttributes()
+                            //TODO possibleValues.add(v)
+                        } else if (tpe.isBooleanType || tpe == ObjectType.Boolean) {
+                            //TODO possibleValues.add(Value.makeAnyBool().removeAttributes())
+                        } else if (tpe == ObjectType.String) {
+                            //TODO possibleValues.add(Value.makeAnyStr().removeAttributes())
+                        } else {
+                            val path = ""
+                            val url = new URL("file", null, path)
+                            val sl = new SourceLocation.StaticLocationMaker(url).make(0, 0, 1, 1)
+
+                            pointsToSetLike.forNewestNElements(pointsToSetLike.numElements) {
+                                elementType =>
+                                    {
+                                        val jNode =
+                                            new JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI](pointsToSetLike, context, defSites, theTACAI, -1, sl)
+                                        val objectLabel = ObjectLabel.make(jNode, ObjectLabel.Kind.JAVAOBJECT)
+                                        jNode.getType
+
+                                        val v = Value.makeObject(objectLabel).setDontDelete().setDontEnum().setReadOnly()
+                                        if (defaultValue.isDefined)
+                                            defaultValue.get.join(v)
+                                        else
+                                            defaultValue = Some(v)
+                                    }
+                            }
+                        }
+                    }
             }
-        })
+
         (PKey.StringPKey.make(variableName),
-            if (possibleValues.isEmpty)
+            if (defaultValue.isEmpty)
                 Value.makeUndef()
             else {
-                if (value.isDefined)
-                    possibleValues.add(Value.makeNum(value.get))
-                Value.join(possibleValues).removeAttributes()
+                defaultValue.get.removeAttributes.join(Value.makeUndef()).removeAttributes()
+                //  Value.join(possibleValues)
             })
     }
-
-    def JavaScript2Java(javaScriptValues: Set[Value]): Set[ObjectType] = {
+    def JavaScript2Java[PointsToSet, ContextType](javaScriptValues: Set[Value]): (Set[ReferenceType], Set[PointsToSet], Set[AbstractNode]) = {
+        var pointsToSetSet = Set.empty[PointsToSet]
+        var typesSet = Set.empty[ReferenceType]
+        var jsNodes = Set.empty[AbstractNode]
+        javaScriptValues.foreach(v => {
+            if (v.isStrIdentifier) typesSet += ObjectType.String
+            else if (v.isMaybeSingleNum || v.isMaybeSingleNumUInt || v.isMaybeAnyNum || v.isMaybeFuzzyNum ||
+                v.isMaybeNumOther || v.isMaybeNumUInt || v.isMaybeNumUIntPos) {
+                typesSet += ObjectType.Double
+            } else if (v.isMaybeAnyBool) {
+                typesSet += ObjectType.Boolean
+            } else if (v.isJavaObject) {
+                typesSet += ObjectType(v.getJavaName)
+                v.getObjectLabels.forEach(objectLabel => {
+                    if (objectLabel.getNode().
+                        isInstanceOf[JNode[_, _, _, _]]) {
+                        val node = objectLabel.getNode().
+                            asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]]
+                        pointsToSetSet += node.getType
+                    }
+                })
+            } else if (v.isMaybeObject) {
+                typesSet += ObjectType.Object
+                v.getObjectLabels.forEach(ol => {
+                    jsNodes = jsNodes + ol.getNode
+                })
+            }
+        })
+        (typesSet, pointsToSetSet, jsNodes)
+    }
+    /*
         javaScriptValues.map(javaScriptValue => {
             if (javaScriptValue.isJavaObject)
                 ObjectType(javaScriptValue.getJavaName.replace(".", "/"))
@@ -69,5 +114,5 @@ object JavaJavaScriptTranslator {
             else
                 null
         }).filter(_ != null)
-    }
+    } */
 }

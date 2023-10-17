@@ -72,15 +72,15 @@ class NativeConnector(override val project: SomeProject) extends FPCFAnalysis wi
             //TODO call llvm
         }
 
-        def createResult(o: Object)(implicit state: NativeConnectorState): ProperPropertyComputationResult = {
-            if (state.translatorDependees.isEmpty && o == null) {
+        def createResult(store: Map[Object, Object])(implicit state: NativeConnectorState): ProperPropertyComputationResult = {
+            if (state.translatorDependees.isEmpty && store == null && store.isEmpty) {
                 Result(context, NoAnalysisResult)
 
             } else
                 InterimResult(
                     state.nativeInteraction,
                     NoAnalysisResult,
-                    InterimAnalysisResult(o),
+                    InterimAnalysisResult(store),
                     state.translatorDependees,
                     c(null)
                 )

@@ -5,12 +5,14 @@ package utility
 
 import Coordinator.V
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.FieldType
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 object Language extends Enumeration {
     type Language = Value
 
-    val Unknown, JavaScript, Java, Native, WebAssembly, Python, TIP = Value
+    val Unknown, JavaScript, Java, Native, WebAssembly, Python = Value
 }
 
 object Constants {
@@ -19,12 +21,9 @@ object Constants {
 
 object VarNames {
     var i = 0
-    def genVName(): String = {
-        i = i + 1;
-        s"tmpVariableOPAL$i"
-    }
+    def genVName(n: Int): String = s"tmpVariableOPAL$n"
 }
 
-case class JavaScriptFunctionCall(functionName: String, actualParams: Map[String, (FieldType, Set[AnyRef], Option[Double])], returnValue: V)
+case class JavaScriptFunctionCall[ContextType, PointsToSet](functionName: String = "", actualParams: Map[(Integer, ContextType, IntTrieSet, TheTACAI), PointsToSet] = Map.empty[(Integer, ContextType, IntTrieSet, TheTACAI), PointsToSet], returnValue: V = null)
 
 case class NativeFunctionCall(functionName: String, actualParams: Map[String, (FieldType, Set[AnyRef])], returnValue: V)
