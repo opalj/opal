@@ -157,7 +157,7 @@ object TACNaive {
                 schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
-            def returnInstruction(returnedValue: SimpleVar): Unit = {
+            def returnInstruction(returnedValue: IdBasedVar): Unit = {
                 statements(pc) = List(ReturnValue(pc, returnedValue))
             }
 
@@ -302,11 +302,11 @@ object TACNaive {
                 case LSTORE_3.opcode => storeInstruction(3)
                 case LSTORE.opcode   => storeInstruction(as[LSTORE](instruction).lvIndex)
 
-                case IRETURN.opcode  => returnInstruction(OperandVar.IntReturnValue)
-                case LRETURN.opcode  => returnInstruction(OperandVar.LongReturnValue)
-                case FRETURN.opcode  => returnInstruction(OperandVar.FloatReturnValue)
-                case DRETURN.opcode  => returnInstruction(OperandVar.DoubleReturnValue)
-                case ARETURN.opcode  => returnInstruction(OperandVar.ReferenceReturnValue)
+                case IRETURN.opcode | LRETURN.opcode |
+                    FRETURN.opcode | DRETURN.opcode |
+                    ARETURN.opcode =>
+                    returnInstruction(stack.head)
+
                 case RETURN.opcode   => statements(pc) = List(Return(pc))
 
                 case AALOAD.opcode   => arrayLoad(ComputationalTypeReference)
