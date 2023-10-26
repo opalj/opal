@@ -38,7 +38,7 @@ public @interface PointsToSet {
     int variableDefinition();
 
     JavaMethodContextAllocSite[] expectedJavaAllocSites() default {};
-
+    JavaScriptContextAllocSite[] expectedJavaScriptAllocSites() default {};
 
     /**
      * The call graph analyses which we expect to resolve the annotated calls.
