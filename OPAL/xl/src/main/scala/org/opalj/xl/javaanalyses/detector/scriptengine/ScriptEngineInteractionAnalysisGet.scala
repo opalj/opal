@@ -7,6 +7,7 @@ package scriptengine
 
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.lattice.Value
+
 import org.opalj.xl.translator.JavaJavaScriptTranslator
 import org.opalj.xl.utility.InterimAnalysisResult
 import org.opalj.xl.Coordinator
@@ -25,7 +26,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.SimpleContext
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
@@ -56,7 +57,10 @@ abstract class ScriptEngineInteractionAnalysisGet(
         context:          ContextType,
         param:            V,
         stmts:            Array[Stmt[V]]
-    )(eps: SomeEPS)(implicit typeIteratorState: TypeIteratorState, pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]): ProperPropertyComputationResult = {
+    )(eps: SomeEPS)(implicit
+        typeIteratorState: TypeIteratorState,
+                    pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
+    ): ProperPropertyComputationResult = {
         val epk = eps.toEPK
 
         var dependees: Set[SomeEOptionP] = Set.empty
@@ -100,13 +104,14 @@ abstract class ScriptEngineInteractionAnalysisGet(
 
                                     val (referenceTypes, pointsToSetSet, jsNodes) = js2java(possibleValues)
 
-                                    this.createPointsToSet(-100 - jsNodes.head.getIndex, SimpleContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
+                                    val jsPointsToSet: PointsToSet = this.createPointsToSet(-100 - jsNodes.head.getIndex, NoContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
 
                                     pointsToSetSet.foreach { pointsToSet =>
                                         pointsToAnalysisState.includeSharedPointsToSet(
                                             targetVarDefSite, pointsToSet
                                         )
                                     }
+                                    pointsToAnalysisState.includeSharedPointsToSet(targetVarDefSite, jsPointsToSet)
                                 case eps => dependees += eps
                             }
                         }
@@ -180,10 +185,13 @@ abstract class ScriptEngineInteractionAnalysisGet(
                                     targetVarDefSite, pointsToSet
                                 )
                             }
+
                         case eps => dependees += eps
                     }
                 }
             }
+            val getTargetDependees = pointsToAnalysisState.dependeesOf("getTarget")
+            dependees = dependees ++ getTargetDependees.valuesIterator.map(_._1)
         })
 
         Results(createResults, InterimPartialResult(List.empty[SomePartialResult], dependees, c(

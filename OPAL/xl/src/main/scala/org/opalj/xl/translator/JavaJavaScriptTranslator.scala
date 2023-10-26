@@ -47,8 +47,23 @@ object JavaJavaScriptTranslator {
                                         val jNode =
                                             new JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI](pointsToSetLike, context, defSites, theTACAI, -1, sl)
                                         val objectLabel = ObjectLabel.make(jNode, ObjectLabel.Kind.JAVAOBJECT)
-                                        jNode.getType
 
+                                        var tpe: ReferenceType = null
+                                        pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) {
+                                            t =>
+                                                {
+                                                    if (tpe == null)
+                                                        tpe = t
+                                                    else {
+                                                        if (t > tpe)
+                                                            tpe = t
+                                                    }
+                                                }
+                                        }
+                                        if (tpe == null)
+                                            tpe = ObjectType.Object
+
+                                        objectLabel.setJavaName(tpe.toJava)
                                         val v = Value.makeObject(objectLabel).setDontDelete().setDontEnum().setReadOnly()
                                         if (defaultValue.isDefined)
                                             defaultValue.get.join(v)

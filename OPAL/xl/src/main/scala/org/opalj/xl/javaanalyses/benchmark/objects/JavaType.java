@@ -9,9 +9,10 @@ public class JavaType {
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        se.put("p", new Object());
-        se.eval("var n = 3; var HashMap = Java.type(\"java.util.HashMap\"); var mapDef = new HashMap(); var a = p; var o = {n:5}; var b = 7;");
-        Object a = se.get("mapDef");
+        Object p = new Object();
+        se.put("p", p);
+        se.eval("var n = 3; var HashMap = Java.type('java.util.HashMap'); var p = new HashMap(); var o = {n:5}; var b = 7;");
+        Object a = se.get("p");
         System.out.println(a.getClass());
     }
 }

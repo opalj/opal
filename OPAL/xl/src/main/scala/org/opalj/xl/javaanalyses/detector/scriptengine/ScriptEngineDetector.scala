@@ -42,6 +42,7 @@ import ScriptEngineDetector.engineNames
 import ScriptEngineDetector.extensions
 import ScriptEngineDetector.mimetypes
 import org.opalj.xl.javaanalyses.detector.scriptengine.ScriptEngineDetector.invocable
+import org.opalj.xl.trash.ScriptEngineInteractionAnalysisInvokeFunction
 
 import org.opalj.br.ArrayType
 import org.opalj.br.VoidType
@@ -89,8 +90,8 @@ abstract class ScriptEngineDetector( final val project: SomeProject) extends Poi
     def process(project: SomeProject): PropertyComputationResult = {
         val analyses: List[APIBasedAnalysis] = List(
             new ScriptEngineAllocationAnalysis(
-            project, declaredMethods(engineManager, "", engineManager, "getEngineByName", getEngine), engineNames
-        ) with PointsToBase,
+                project, declaredMethods(engineManager, "", engineManager, "getEngineByName", getEngine), engineNames
+            ) with PointsToBase,
             new ScriptEngineAllocationAnalysis(
                 project, declaredMethods(engineManager, "", engineManager, "getEngineByExtension", getEngine), extensions
             ) with PointsToBase,
@@ -109,10 +110,6 @@ abstract class ScriptEngineDetector( final val project: SomeProject) extends Poi
                 project,
                 declaredMethods(scriptEngine, "", scriptEngine, "get", MethodDescriptor(ObjectType.String, ObjectType.Object))
             ) with PointsToBase,
-            new ScriptEngineInteractionAnalysisInvokeFunction(
-                project,
-                declaredMethods(invocable, "", invocable, "invokeFunction", MethodDescriptor(ArraySeq(ObjectType.String, ArrayType.ArrayOfObject), ObjectType.Object))
-            ) with PointsToBase
         )
         Results(analyses.map(_.registerAPIMethod()))
     }
