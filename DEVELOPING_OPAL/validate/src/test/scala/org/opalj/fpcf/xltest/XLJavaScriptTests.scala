@@ -25,7 +25,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.xl.AllocationSiteBasedTriggeredTajsConnectorScheduler
-import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedApiScriptEngineDetectorScheduler
+import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 
 import java.net.URL
 
@@ -39,7 +39,7 @@ class XLJavaScriptTests extends PropertiesTest {
     override def withRT = false
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/xl/js/")
+        List("org/opalj/fpcf/fixtures/xl/js/sandbox")
     }
 
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
@@ -61,7 +61,7 @@ class XLJavaScriptTests extends PropertiesTest {
         var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
         analyses ++= AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(FixtureProject)
         analyses ++= Iterable(
-            AllocationSiteBasedApiScriptEngineDetectorScheduler,
+            AllocationSiteBasedScriptEngineDetectorScheduler,
             AllocationSiteBasedTriggeredTajsConnectorScheduler,
             new TypePropagationAnalysisScheduler(XTASetEntitySelector)
         )

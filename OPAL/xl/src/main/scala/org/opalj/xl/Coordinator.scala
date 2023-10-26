@@ -3,7 +3,7 @@ package org.opalj.xl
 
 import java.net.URL
 
-import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedApiScriptEngineDetectorScheduler
+import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 import org.opalj.xl.utility.AnalysisResult
 import org.opalj.xl.utility.InterimAnalysisResult
 
@@ -51,7 +51,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
 
         analyses ++= AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
         analyses ++= Iterable(
-            AllocationSiteBasedApiScriptEngineDetectorScheduler,
+            AllocationSiteBasedScriptEngineDetectorScheduler,
             AllocationSiteBasedTriggeredTajsConnectorScheduler
         )
 

@@ -41,10 +41,7 @@ import org.opalj.xl.utility.Language.Language
 import ScriptEngineDetector.engineNames
 import ScriptEngineDetector.extensions
 import ScriptEngineDetector.mimetypes
-import org.opalj.xl.javaanalyses.detector.scriptengine.ScriptEngineDetector.invocable
-import org.opalj.xl.trash.ScriptEngineInteractionAnalysisInvokeFunction
 
-import org.opalj.br.ArrayType
 import org.opalj.br.VoidType
 
 /**
@@ -103,12 +100,12 @@ abstract class ScriptEngineDetector( final val project: SomeProject) extends Poi
                 MethodDescriptor(ArraySeq(ObjectType.String, ObjectType.Object), VoidType))
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysisEval(
-                project,
-                declaredMethods(scriptEngine, "", scriptEngine, "eval", MethodDescriptor(ObjectType.String, ObjectType.Object))
+                project, declaredMethods(scriptEngine, "", scriptEngine, "eval",
+                MethodDescriptor(ObjectType.String, ObjectType.Object))
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysisGet(
-                project,
-                declaredMethods(scriptEngine, "", scriptEngine, "get", MethodDescriptor(ObjectType.String, ObjectType.Object))
+                project, declaredMethods(scriptEngine, "", scriptEngine, "get",
+                MethodDescriptor(ObjectType.String, ObjectType.Object))
             ) with PointsToBase,
         )
         Results(analyses.map(_.registerAPIMethod()))
@@ -117,7 +114,6 @@ abstract class ScriptEngineDetector( final val project: SomeProject) extends Poi
 
 object ScriptEngineDetector {
     val scriptEngine: ObjectType = ObjectType("javax/script/ScriptEngine")
-    val invocable: ObjectType = ObjectType("javax/script/Invocable")
     val engineManager: ObjectType = ObjectType("javax/script/ScriptEngineManager")
     val getEngine: MethodDescriptor = MethodDescriptor(ObjectType.String, scriptEngine)
 
@@ -155,13 +151,13 @@ trait ScriptEngineDetectorScheduler extends BasicFPCFEagerAnalysisScheduler {
     }
 }
 
-object TypeBasedApiScriptEngineDetectorSchedulerScheduler extends ScriptEngineDetectorScheduler {
+object TypeBasedScriptEngineDetectorScheduler extends ScriptEngineDetectorScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject => ScriptEngineDetector =
         new ScriptEngineDetector(_) with TypeBasedAnalysis
 }
 
-object AllocationSiteBasedApiScriptEngineDetectorScheduler extends ScriptEngineDetectorScheduler {
+object AllocationSiteBasedScriptEngineDetectorScheduler extends ScriptEngineDetectorScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject => ScriptEngineDetector =
         new ScriptEngineDetector(_) with AllocationSiteBasedAnalysis

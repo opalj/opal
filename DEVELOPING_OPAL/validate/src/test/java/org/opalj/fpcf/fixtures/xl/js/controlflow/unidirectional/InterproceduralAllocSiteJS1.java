@@ -24,5 +24,6 @@ public class InterproceduralAllocSiteJS1 {
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.eval("var x = {'a':10}; var y = x;");
         Object p = se.get("y");
+        return p;
     }
 }
