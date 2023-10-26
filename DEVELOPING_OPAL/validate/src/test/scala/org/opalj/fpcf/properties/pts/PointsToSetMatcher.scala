@@ -1,0 +1,109 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.fpcf.properties.pts
+
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ElementValue
+import org.opalj.br.ElementValuePairs
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
+
+import scala.collection.immutable.ArraySeq
+
+class PointsToSetMatcher extends AbstractPropertyMatcher {
+
+    override def validateProperty(
+        p:          Project[_],
+        as:         Set[ObjectType],
+        entity:     Any,
+        a:          AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String] = {
+        val singleAnnotation = ObjectType("org/opalj/fpcf/properties/pts/PointsToSet")
+        //val containerAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
+
+        if (a.annotationType == singleAnnotation) {
+            validateSingleAnnotation(p, as, entity, a, properties)
+        } else {
+            Some("Invalid annotation.")
+        }
+    }
+
+    private def findElement(
+        elements:       ElementValuePairs,
+        annotationName: String
+    ): Option[ElementValue] = {
+        elements.find(_.name == annotationName).map(_.value)
+    }
+    private def validateSingleAnnotation(
+        p:          Project[_],
+        as:         Set[ObjectType],
+        entity:     Any,
+        a:          AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String] = {
+        val annotationType = a.annotationType.asObjectType
+
+        val variableDefinitionLine = getValue(p, annotationType, a.elementValuePairs, "variableDefinition").asIntValue.value
+
+        val subAnnotations: ArraySeq[AnnotationLike] =
+            getValue(p, annotationType, a.elementValuePairs, "expectedJavaAllocSites")
+                .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
+
+        // expected allocation sites tuples ( line number, type id)
+        val expectedAllocSites = subAnnotations.map(
+            allocSiteAnnotation => (
+                findElement(allocSiteAnnotation.elementValuePairs, "cf").get.asClassValue.value.asObjectType,
+                findElement(allocSiteAnnotation.elementValuePairs, "methodName").get.asStringValue.value,
+                findElement(allocSiteAnnotation.elementValuePairs, "methodDescriptor").get.asStringValue.value,
+                findElement(allocSiteAnnotation.elementValuePairs, "allocSiteLinenumber").get.asIntValue.value,
+                findElement(allocSiteAnnotation.elementValuePairs, "allocatedType").get.asStringValue.value,
+            )
+        ).toSet
+
+        implicit val ps: PropertyStore = p.get(PropertyStoreKey)
+        implicit val typeIterator: TypeIterator = p.get(TypeIteratorKey)
+        val m = entity.asInstanceOf[Method]
+        val methodCode = m.body match {
+            case Some(code) => code
+            case None       => return Some("Code of call site is not available.");
+        }
+        val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == m).toSet
+
+        val defsiteOfInterest = {
+            defsitesInMethod.find(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine) match {
+                case Some(s) => s
+                case None    => return Some(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}")
+            }
+        }
+        val ptsProperties = ps.properties(defsiteOfInterest).map(_.toFinalEP.p)
+        val pts = {
+            ptsProperties.find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet]) match {
+                case Some(s) => s
+                case None    => return Some(s"No points-to-set found for definition  ${m.name} , line ${variableDefinitionLine}")
+            }
+        }
+        val detectedAllocSites = (for {
+            (ctx, pc, typeId) <- pts.elements.iterator.map(longToAllocationSite)
+        } yield {
+            (ctx.method.declaringClassType.asObjectType, ctx.method.name, ctx.method.descriptor.toUMLNotation, methodCode.lineNumber(pc).getOrElse(-1), ObjectType.lookup(typeId).toJava)
+        }).toSet
+
+        val missingAllocSiteSet = expectedAllocSites diff detectedAllocSites
+
+        if (missingAllocSiteSet.nonEmpty) {
+            Some(s"${missingAllocSiteSet.size} unresolved alloc sites for variable in  ${m.name} , line ${variableDefinitionLine}. remember to sbt test:compile")
+        } else {
+            None
+        }
+    }
+}

@@ -1,9 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package xl
-package javaanalyses
-package detector
-package scriptengine
+package org.opalj.xl.trash
 
 import org.opalj.xl.detector.ScriptEngineInteraction
 import org.opalj.xl.translator.JavaJavaScriptTranslator

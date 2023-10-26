@@ -331,7 +331,7 @@ lazy val `XLanguage` = (project in file("OPAL/xl"))
     .settings(buildSettings: _*)
     .settings(
         name := "Cross Language",
-        libraryDependencies += "dk.brics.tajs" % "tajs" % "1.0" from "https://www.brics.dk/TAJS/dist/tajs-all.jar",
+        libraryDependencies += "dk.brics.tajs" % "XLTAJSprivate" % "1.0.1" from "file:///Users/julius/Developer/XLTAJSprivate/dist/tajs-all.jar", //https://www.brics.dk/TAJS/dist/tajs-all.jar",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Cross Language"),
         run / fork := true
     )
@@ -412,7 +412,8 @@ lazy val `Framework` = (project in file("OPAL/framework"))
   .dependsOn(
     ba  % "it->it;it->test;test->test;compile->compile",
     av  % "it->it;it->test;test->test;compile->compile",
-    tac % "it->it;it->test;test->test;compile->compile"
+    tac % "it->it;it->test;test->test;compile->compile",
+    xl % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
