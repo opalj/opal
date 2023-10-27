@@ -26,8 +26,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.Field
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
@@ -37,6 +35,10 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CFA_1_0_CallGraphKey
@@ -47,10 +49,8 @@ import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
@@ -242,7 +242,7 @@ object CallGraph extends ProjectAnalysisApplication {
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))
 
-        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+        implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
         for (m <- allMethods) {
             val mSig = m.descriptor.toJava(m.name)

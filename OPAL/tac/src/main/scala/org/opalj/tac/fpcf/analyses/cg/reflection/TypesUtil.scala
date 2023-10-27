@@ -19,7 +19,7 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.ArrayType
-import org.opalj.tac.fpcf.properties.cg.ForNameClasses
+import org.opalj.br.fpcf.properties.cg.ForNameClasses
 
 object TypesUtil {
 

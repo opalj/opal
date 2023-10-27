@@ -1315,6 +1315,7 @@ object ObjectType {
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
     final val Thread = ObjectType("java/lang/Thread")
+    final val ThreadGroup = ObjectType("java/lang/ThreadGroup")
     final val Runnable = ObjectType("java/lang/Runnable")
 
     // Types related to the invokedynamic instruction

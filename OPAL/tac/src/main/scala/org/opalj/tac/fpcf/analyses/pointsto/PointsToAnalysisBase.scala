@@ -5,7 +5,9 @@ package fpcf
 package analyses
 package pointsto
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -27,11 +29,9 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Base class for handling instructions in points-to analysis scenarios.

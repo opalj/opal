@@ -3,27 +3,27 @@ package org.opalj
 package fpcf
 package ifds
 
+import java.io.File
+import java.io.PrintWriter
+
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ifds.Statistics
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.cg.Callers
-
-import java.io.File
-import java.io.PrintWriter
 
 /**
  * A variable type analysis implemented as an IFDS analysis.
@@ -32,6 +32,7 @@ import java.io.PrintWriter
  * The subsuming taint can be mixed in to enable subsuming.
  *
  * @param project The analyzed project.
+ *
  * @author Mario Trageser
  */
 class IFDSBasedVariableTypeAnalysis(project: SomeProject, subsumeFacts: Boolean = false)
@@ -41,7 +42,7 @@ class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false) exte
     override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, ContextProviderKey, PropertyStoreKey)
 }
 
 /**
