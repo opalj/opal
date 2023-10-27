@@ -30,9 +30,9 @@ import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScript
 import java.net.URL
 
 /**
- * Tests the immutability analyses with an open world assumption
- *
- * @author Tobias Roth
+ * Tests XL interaction by validating Points-to-sets
+ * 
+ * @author Julius Naeumann
  */
 class XLJavaScriptTests extends PropertiesTest {
 
@@ -51,7 +51,7 @@ class XLJavaScriptTests extends PropertiesTest {
         }
     }
 
-    describe("run the immutability analysis with an open world assumption (without type provider") {
+    describe("test JavaScript XL points-to-sets") {
         val statistics =
             FixtureProject
                 .statistics.map(kv => "- "+kv._1+": "+kv._2)

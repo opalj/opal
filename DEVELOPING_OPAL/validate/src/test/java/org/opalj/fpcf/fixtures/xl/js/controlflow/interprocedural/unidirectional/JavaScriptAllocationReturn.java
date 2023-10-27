@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.unidirectional;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -7,16 +7,20 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-public class InterproceduralAllocSiteJS1 {
-    @PointsToSet(variableDefinition = 19,
+/**
+ * A function evaluateScript() evaluates a script that instantiates a JS object, which is returned.
+ */
+public class JavaScriptAllocationReturn {
+    @PointsToSet(variableDefinition = 22,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = InterproceduralAllocSiteJS1.class,
-                    evalCallLineNumber = 25,
+                    evalCallSource = JavaScriptAllocationReturn.class,
+                    evalCallLineNumber = 29,
                     allocatedType = ""
             )
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         Object p = evaluateScript();
+        System.out.println(p.getClass());
     }
 
     public static Object evaluateScript() throws ScriptException {
