@@ -124,8 +124,8 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
                             // IMPROVE: Add static information to accesses and resolve this
                             false
                         } else {
-                            // As a fallback, we look for a trivial static write access in the statements
-                            method.body.get.instructions(wa._2).opcode == PUTSTATIC.opcode
+                            // As a fallback, we soundly assume assignability
+                            true
                         }
                     } else
                         false

@@ -959,7 +959,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                     result = combine(
                         result,
                         typesProperty(
-                            field, DefinitionSite(method, defPC), depender, newContext(definedMethod), theTAC.stmts
+                            field, DefinitionSite(method, defPC),
+                            depender, newContext(definedMethod), theTAC.stmts
                         )
                     )
                 }
@@ -1196,5 +1197,5 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         }
     }
 
-    // TODO several field-related methods are missing here! Implement this when field access information considers reflective calls
+    // TODO several field-related methods are missing here!
 }

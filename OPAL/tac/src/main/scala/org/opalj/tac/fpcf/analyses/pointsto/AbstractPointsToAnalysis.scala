@@ -736,7 +736,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     target <- newAccesses.getNewestNIndirectAccessedFields(
                         state.callContext,
                         pc,
-                        newAccesses.numIndirectAccesses(state.callContext, pc) - oldAccesses.numIndirectAccesses(state.callContext, pc)
+                        newAccesses.numIndirectAccesses(state.callContext, pc) -
+                            oldAccesses.numIndirectAccesses(state.callContext, pc)
                     )
                 } {
                     handleIndirectFieldAccess(pc, target, newAccesses, tac, state)
@@ -763,7 +764,9 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         Callers,
         Callees,
         TACAI,
-        propertyKind
+        propertyKind,
+        MethodFieldReadAccessInformation,
+        MethodFieldWriteAccessInformation
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set(PropertyBounds.ub(propertyKind))
