@@ -170,8 +170,13 @@ trait ClassValues
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
             //TODO handle missing methods (cf. https://github.com/opalj/opal/issues/87)
+
+            val secondOperandIsStringValue = operands.size > 1 && operands(operands.size - 2).isInstanceOf[StringValue]
+
             operands.last match {
+
                 case sv: StringValue =>
+                    // Handle forName calls where the first argument is the class FQN
                     val value = sv.value
                     methodDescriptor match {
                         case `forName_String`                           => simpleClassForNameCall(pc, value)
@@ -184,8 +189,20 @@ trait ClassValues
                             )
                     }
 
+
+                case _ if secondOperandIsStringValue =>
+                    // Handle forName calls where the second argument is the class FQN
+
+                    // IMPROVE: If there was tracking for Module values in place, we could validate that the FQN is
+                    //          actually part of the given module. For now, this is a safe over-approximation.
+                    val value = operands(operands.size - 2).asInstanceOf[StringValue].value
+                    methodDescriptor match {
+                      case `forName_Module_String`                        => simpleClassForNameCall(pc, value)
+                      case `forName_Module_String_Class`                  => simpleClassForNameCall(pc, value)
+                    }
+
                 case _ =>
-                    // call default handler (the first argument is not a string)
+                    // call default handler (the first and second argument are not a string)
                     super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
 
             }
@@ -268,4 +285,14 @@ private object ClassValues {
             ObjectType.Class
         )
     }
+
+  final val forName_Module_String = MethodDescriptor(
+    ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
+    ObjectType.Class
+  )
+
+  final val forName_Module_String_Class = MethodDescriptor(
+    ArraySeq(ObjectType("java/lang/Module"), ObjectType.String, ObjectType.Class),
+    ObjectType.Class
+  )
 }
