@@ -199,6 +199,10 @@ trait ClassValues
                     methodDescriptor match {
                       case `forName_Module_String`                        => simpleClassForNameCall(pc, value)
                       case `forName_Module_String_Class`                  => simpleClassForNameCall(pc, value)
+                      case _ =>
+                        throw new DomainException(
+                          s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
+                        )
                     }
 
                 case _ =>
