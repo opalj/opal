@@ -448,11 +448,7 @@ class FieldGetAnalysis private[analyses] (
                     persistentReceiver, None,
                     baseMatchers, stmts
                 )
-                addFieldRead(
-                    accessContext, accessPC,
-                    _ => persistentReceiver,
-                    allMatchers
-                )
+                addFieldRead(accessContext, accessPC, _ => persistentReceiver, allMatchers)
             }
     }
 
@@ -540,12 +536,7 @@ class FieldSetAnalysis private[analyses] (
                     persistentReceiver, Some(persistentActualParam),
                     baseMatchers, stmts
                 )
-                addFieldWrite(
-                    accessContext, accessPC,
-                    _ => persistentReceiver,
-                    _ => persistentActualParam,
-                    allMatchers
-                )
+                addFieldWrite(accessContext, accessPC, _ => persistentReceiver, _ => persistentActualParam, allMatchers)
             }
     }
 

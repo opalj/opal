@@ -11,6 +11,7 @@ import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
 import org.opalj.br.FieldType
+import org.opalj.br.analyses.ProjectIndex
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.analyses.cg.isTypeCompatible
 import org.opalj.value.IsReferenceValue
@@ -31,9 +32,17 @@ trait FieldMatcher {
 }
 
 final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldMatcher {
+    private[this] var projectIndexOpt: Option[ProjectIndex] = None
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] = {
-        possibleNames.iterator.flatMap(p.get(ProjectIndexKey).findFields)
+        val projectIndex = projectIndexOpt match {
+            case None =>
+                projectIndexOpt = Some(p.get(ProjectIndexKey))
+                projectIndexOpt.get
+            case Some(index) => index
+        }
+
+        possibleNames.iterator.flatMap(projectIndex.findFields)
     }
     override def contains(f: Field)(implicit p: SomeProject): Boolean = possibleNames.contains(f.name)
     override def priority: Int = 2
@@ -78,6 +87,12 @@ class LBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
     override def priority: Int = 3
 }
 
+/**
+ * Considers all fields that either
+ * - are static fields AND the receiver may be null or
+ * - are instance fields AND the receiver may not be null AND the receiver is a value at least a subtype of the class
+ *    declaring the field
+ */
 class ActualReceiverBasedFieldMatcher(val receiver: IsReferenceValue) extends FieldMatcher {
 
     override def initialFields(implicit p: SomeProject): Iterator[Field] =
@@ -92,6 +107,9 @@ class ActualReceiverBasedFieldMatcher(val receiver: IsReferenceValue) extends Fi
     override def priority: Int = 3
 }
 
+/**
+ * Considers all fields to which the given parameter would be assignable.
+ */
 class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher {
     override def initialFields(implicit p: SomeProject): Iterator[Field] =
         p.allClassFiles.iterator.flatMap { _.fields.filter(contains) }
