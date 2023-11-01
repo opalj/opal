@@ -121,6 +121,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             }
         }
 
+        // Process indirect field accesses in this method
+        handleIndirectFieldAccesses
+
         for (stmt <- tac.stmts) stmt match {
             case Assignment(pc, _, New(_, tpe)) =>
                 handleAllocation(pc, tpe)
@@ -200,7 +203,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     )
                 }
                 handleCall(call, pc)
-                handleIndirectFieldAccesses(pc)
 
             case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) =>
                 state.addIncompletePointsToInfo(pc)
@@ -225,11 +227,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
             case call: Call[_] =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], call.pc)
-                handleIndirectFieldAccesses(call.pc)
 
             case ExprStmt(pc, call: Call[_]) =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
-                handleIndirectFieldAccesses(pc)
 
             case PutField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
                 handlePutField(Some(declaredFields(declaringClass, name, fieldType)), objRefDefSites, defSites)
@@ -462,16 +462,22 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    private[this] def handleIndirectFieldAccesses(pc: Int)(implicit state: State): Unit = {
+    private[this] def handleIndirectFieldAccesses(implicit state: State): Unit = {
         val tac = state.tac
         val readAccesses = state.readAccesses(ps)
         val writeAccesses = state.writeAccesses(ps)
 
-        for (target <- readAccesses.indirectAccessedFields(state.callContext, pc)) {
+        for (
+            pc <- readAccesses.getAccessSites(state.callContext);
+            target <- readAccesses.indirectAccessedFields(state.callContext, pc)
+        ) {
             handleIndirectFieldReadAccess(pc, target, readAccesses, tac)
         }
 
-        for (target <- writeAccesses.indirectAccessedFields(state.callContext, pc)) {
+        for (
+            pc <- readAccesses.getAccessSites(state.callContext);
+            target <- writeAccesses.indirectAccessedFields(state.callContext, pc)
+        ) {
             handleIndirectFieldWriteAccess(pc, target, writeAccesses, tac)
         }
     }

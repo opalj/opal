@@ -935,7 +935,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         state:         TypeIteratorState
     ): AllocationSitePointsToSet = {
         if (field.isDefinedField && field.definedField.isStatic) {
-            // IMPROVE: Handle static case also for VirtualDeclaredFields when static information is available on them
+            // IMPROVE: Handle static case also for VirtualDeclaredFields once static information is available
             currentPointsTo(depender, field)
         } else {
             var result = emptyPointsToSet
@@ -959,8 +959,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 result = combine(
                     result,
                     typesProperty(
-                        field, DefinitionSite(method, defPC),
-                        depender, newContext(definedMethod), theTAC.stmts
+                        field, DefinitionSite(method, defPC), depender, newContext(definedMethod), theTAC.stmts
                     )
                 )
             }
