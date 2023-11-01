@@ -1,6 +1,6 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.unidirectional;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
-import org.opalj.fpcf.fixtures.xl.js.objects.javatype.SimpleContainerClass;
+import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -8,9 +8,15 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-public class InterproceduralAllocSiteJava1 {
+/**
+ * EngineWrapper contains an instance of ScriptEngine. calls to eval and put are wrapped.
+ * Real world test cases:
+ * https://github.com/MyRobotLab/myrobotlab/blob/3b12214657191d80fac696bf6ff0ac70317042d3/src/main/java/org/myrobotlab/service/JavaScript.java#L58
+ * https://github.com/Free2Free/hutool/blob/7dc9078a99f2eb5bfff4e02ae0d67ef362449484/hutool-script/src/main/java/cn/hutool/script/JavaScriptEngine.java#L96
+ */
+public class EngineWrapper {
     private ScriptEngine engine;
-    public InterproceduralAllocSiteJava1(ScriptEngineManager sem) {
+    public EngineWrapper(ScriptEngineManager sem) {
         engine = sem.getEngineByName("JavaScript");
     }
     public void setObject(Object o) {
@@ -20,22 +26,23 @@ public class InterproceduralAllocSiteJava1 {
         engine.eval("var n = w;");
         return engine.get("n");
     }
-    @PointsToSet(variableDefinition = 38,
+    @PointsToSet(variableDefinition = 44,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = InterproceduralAllocSiteJava1.class,
+                            cf = EngineWrapper.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 36,
+                            allocSiteLinenumber = 42,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.SimpleContainerClass")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
-        InterproceduralAllocSiteJava1 engineContainer = new InterproceduralAllocSiteJava1(sem);
+        EngineWrapper engineContainer = new EngineWrapper(sem);
         SimpleContainerClass s = new SimpleContainerClass();
         engineContainer.setObject(s);
         Object out = engineContainer.evaluate();
+        System.out.println(out.getClass());
     }
 
 

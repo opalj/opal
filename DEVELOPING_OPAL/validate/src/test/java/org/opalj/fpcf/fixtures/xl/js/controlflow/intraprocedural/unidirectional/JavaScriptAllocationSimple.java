@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.unidirectional;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -7,10 +7,10 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-public class IntraproceduralAllocSiteJS1 {
+public class JavaScriptAllocationSimple {
     @PointsToSet(variableDefinition = 22,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = IntraproceduralAllocSiteJS1.class,
+                    evalCallSource = JavaScriptAllocationSimple.class,
                     evalCallLineNumber = 21,
                     allocatedType = ""
             )
