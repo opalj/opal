@@ -934,40 +934,37 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         propertyStore: PropertyStore,
         state:         TypeIteratorState
     ): AllocationSitePointsToSet = {
-        if (field.isDefinedField) {
-            if (field.definedField.isStatic) {
-                currentPointsTo(depender, field)
-            } else {
-                var result = emptyPointsToSet
-                for {
-                    // Extract FieldWriteAccessInformation
-                    fai <- extractPropertyUB(
-                        EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _)
-                    )
-                    (accessContextId, _, receiver, _) <- fai.accesses
-                    // Extract TAC
-                    definedMethod = contextFromId(accessContextId).method
-                    method = contextFromId(accessContextId).method.definedMethod
-                    tacEP <- extractPropertyUB(
-                        EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _)
-                    )
-                    theTAC <- tacEP.tac
-                    defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy
-                } {
-                    val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
-
-                    result = combine(
-                        result,
-                        typesProperty(
-                            field, DefinitionSite(method, defPC), depender, newContext(definedMethod), theTAC.stmts
-                        )
-                    )
-                }
-
-                result
-            }
+        if (field.isDefinedField && field.definedField.isStatic) {
+            // IMPROVE: Handle static case also for VirtualDeclaredFields once static information is available
+            currentPointsTo(depender, field)
         } else {
-            NoAllocationSites // FIXME: Deal with VirtualDeclaredFields
+            var result = emptyPointsToSet
+            for {
+                // Extract FieldWriteAccessInformation
+                fai <- extractPropertyUB(
+                    EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _)
+                )
+                (accessContextId, _, receiver, _) <- fai.accesses
+                // Extract TAC
+                definedMethod = contextFromId(accessContextId).method
+                method = contextFromId(accessContextId).method.definedMethod
+                tacEP <- extractPropertyUB(
+                    EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _)
+                )
+                theTAC <- tacEP.tac
+                defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy
+            } {
+                val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
+
+                result = combine(
+                    result,
+                    typesProperty(
+                        field, DefinitionSite(method, defPC), depender, newContext(definedMethod), theTAC.stmts
+                    )
+                )
+            }
+
+            result
         }
     }
 
@@ -1152,49 +1149,46 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         propertyStore: PropertyStore,
         state:         TypeIteratorState
     ): AllocationSitePointsToSet = {
-        if (field.isDefinedField) {
-            if (field.definedField.isStatic) {
-                currentPointsTo(depender, field)
-            } else {
-                var result = emptyPointsToSet;
-                for {
-                    // Extract FieldWriteAccessInformation
-                    fai <- extractPropertyUB(
-                        EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _)
-                    )
-                    (accessContextId, _, receiver, _) <- fai.accesses
-                    if receiver.isDefined
-
-                    // Extract TAC
-                    definedMethod = contextFromId(accessContextId).method.asDefinedMethod
-                    method = definedMethod.definedMethod
-                    tacEP <- extractPropertyUB(
-                        EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _)
-                    )
-                    theTAC <- tacEP.tac
-                    defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy
-
-                    // Extract caller context
-                    callers <- extractPropertyUB(
-                        EPK(definedMethod, Callers.key),
-                        state.addDependency((depender, definedMethod, receiver), _)
-                    )
-                    (calleeContext, _, _, _) <- callers.callContexts(definedMethod)(this).iterator
-                } {
-                    val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
-
-                    result = combine(
-                        result,
-                        typesProperty(field, DefinitionSite(method, defPC), depender, calleeContext, theTAC.stmts)
-                    )
-                }
-
-                result
-            }
+        if (field.isDefinedField && field.definedField.isStatic) {
+            // IMPROVE: Handle static case also for VirtualDeclaredFields when static information is available on them
+            currentPointsTo(depender, field)
         } else {
-            NoAllocationSites // FIXME: Deal with VirtualDeclaredFields
+            var result = emptyPointsToSet;
+            for {
+                // Extract FieldWriteAccessInformation
+                fai <- extractPropertyUB(
+                    EPK(field, FieldWriteAccessInformation.key), state.addDependency(depender, _)
+                )
+                (accessContextId, _, receiver, _) <- fai.accesses
+                if receiver.isDefined
+
+                // Extract TAC
+                definedMethod = contextFromId(accessContextId).method.asDefinedMethod
+                method = definedMethod.definedMethod
+                tacEP <- extractPropertyUB(
+                    EPK(method, TACAI.key), state.addDependency((depender, definedMethod, receiver), _)
+                )
+                theTAC <- tacEP.tac
+                defSite <- uVarForDefSites(receiver.get, theTAC.pcToIndex).definedBy
+
+                // Extract caller context
+                callers <- extractPropertyUB(
+                    EPK(definedMethod, Callers.key),
+                    state.addDependency((depender, definedMethod, receiver), _)
+                )
+                (calleeContext, _, _, _) <- callers.callContexts(definedMethod)(this).iterator
+            } {
+                val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
+
+                result = combine(
+                    result,
+                    typesProperty(field, DefinitionSite(method, defPC), depender, calleeContext, theTAC.stmts)
+                )
+            }
+
+            result
         }
     }
 
-    // TODO several field-related methods are missing here! Implement this when field access information considers reflective calls
+    // TODO several field-related methods are missing here!
 }

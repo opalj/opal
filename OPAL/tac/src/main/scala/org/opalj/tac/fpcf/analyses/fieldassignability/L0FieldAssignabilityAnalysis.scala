@@ -20,7 +20,6 @@ import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.InterimResult
@@ -124,8 +123,8 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
                             // IMPROVE: Add static information to accesses and resolve this
                             false
                         } else {
-                            // As a fallback, we look for a trivial static write access in the statements
-                            method.body.get.instructions(wa._2).opcode == PUTSTATIC.opcode
+                            // As a fallback, we soundly assume assignability
+                            true
                         }
                     } else
                         false

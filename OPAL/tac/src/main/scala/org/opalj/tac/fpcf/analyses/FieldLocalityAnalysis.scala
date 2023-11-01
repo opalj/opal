@@ -660,7 +660,8 @@ class FieldLocalityAnalysis private[analyses] (
                     val method = definedMethod.definedMethod
                     val pc = wa._2
                     val parameter = wa._4
-                    state.tacFieldWriteAccesses += method -> (state.tacFieldWriteAccesses.getOrElse(method, Set.empty) + ((pc, parameter)))
+                    state.tacFieldWriteAccesses += method ->
+                        (state.tacFieldWriteAccesses.getOrElse(method, Set.empty) + ((pc, parameter)))
 
                     val tacaiAndCallers = getTACAIAndCallers(method)
                     if (tacaiAndCallers.isDefined) {
@@ -838,6 +839,7 @@ sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
         EscapeProperty,
         ReturnValueFreshness,
         Callees,
+        FieldReadAccessInformation,
         FieldWriteAccessInformation
     )
 

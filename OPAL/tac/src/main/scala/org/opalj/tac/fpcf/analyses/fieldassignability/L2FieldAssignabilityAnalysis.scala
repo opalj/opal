@@ -996,10 +996,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 }
 
 trait L2FieldAssignabilityAnalysisScheduler extends AbstractFieldAssignabilityAnalysisScheduler {
-    override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
-        FieldReadAccessInformation,
-        FieldWriteAccessInformation
-    )
+    override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(FieldReadAccessInformation)
 }
 
 /**
