@@ -57,7 +57,9 @@ abstract class ScriptEngineInteractionAnalysisPut(
         oldPutDependees:    Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         context:            ContextType,
         param:              V,
-        stmts:              Array[Stmt[V]]
+        stmts:              Array[Stmt[V]],
+        possibleStrings:    Set[String],
+        tac:                TheTACAI
     )(eps: SomeEPS)(implicit typeIteratorState: TypeIteratorState, pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]): ProperPropertyComputationResult = {
         var results = List.empty[SomePartialResult]
         val epk = eps.toEPK
@@ -72,8 +74,15 @@ abstract class ScriptEngineInteractionAnalysisPut(
                 val newParam = StringUtil.getString(allocationIndex, stmts)
                 if (newParam.isEmpty)
                     throw new Exception("TODO: What to do if param is unknown?")
-                throw new Exception("TO DO")
-                //TODO!!! newEngineInteraction = newEngineInteraction.updated(newInteraction(Set(newParam.get)))
+
+                /* val puts = Map(newParam.get->
+                    List(newParam.get)
+                    possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> pointsToSet)
+                )
+
+                newEngineInteraction = newEngineInteraction.updated(
+                    ScriptEngineInteraction(puts= Set(newParam.get))*/
+                throw new Exception("TODO") //TODO
             }
 
             assert(newEngineInteraction ne engineInteraction)
@@ -87,54 +96,52 @@ abstract class ScriptEngineInteractionAnalysisPut(
         }
 
         val newPutDependees = if (oldPutDependees.contains(epk)) {
-            /* val UBP(newPointsTo: PointsToSet@unchecked) = eps
-            val oldPutDependee = oldPutDependees(epk)._1.ub.asInstanceOf[PointsToSet]
-            var pointsToSet = this.emptyPointsToSet
+            val UBP(newPointsTo: PointsToSet @unchecked) = eps
 
-            val assignedValue = params(1).get.asVar
+            val puts = Map.from(
+                possibleStrings.map(s => (s, context, param.definedBy, tac) -> newPointsTo)
+            )
+            val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
+            newEngineInteraction.updated(scriptEngineInteraction)
 
-            assignedValue.asVar.definedBy.foreach(defSite => {
-                val allocations = currentPointsToOfDefSite("assignedPutValue", defSite)
-                pointsToSet = pointsToSet.included(allocations)
-            })
-            val puts = Map.from(possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> pointsToSet))
-            scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
-            */
-            //TODO
-            // newEngineInteraction.updated(ScriptEngineInteraction(puts = engineInteraction.puts.map(p => p._1 -> p._2.included(newPointsTo)))) //TODO
-            // Map.from(possibleStrings.map(_ -> pointsToSet))))
-            //results :::= resultsForScriptEngineAllocations(newEngineInteraction, newPointsTo, oldPutDependee.numElements
-
-            oldPutDependees.valuesIterator.foreach { data =>
-                val engineAllocations = data._1.ub.asInstanceOf[PointsToSet]
-                results :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
-            }
+            val data = oldPutDependees(epk)
+            val seen = if (data._1.hasUBP) data._1.ub.asInstanceOf[PointsToSet].numElements else 0
+            results :::= resultsForScriptEngineAllocations(newEngineInteraction, newPointsTo, seen)
 
             updatedDependees(eps, oldPutDependees)
         } else oldPutDependees
 
         val newEngineDependees = if (oldEngineDependees.contains(epk)) {
             val UBP(newPointsTo: PointsToSet @unchecked) = eps
-            val oldDependee = oldEngineDependees(epk)._1.ub.asInstanceOf[PointsToSet]
-            results :::= resultsForScriptEngineAllocations(newEngineInteraction, newPointsTo, oldDependee.numElements)
+            val seen =
+                if (oldEngineDependees(epk)._1.hasUBP)
+                    oldEngineDependees(epk)._1.ub.asInstanceOf[PointsToSet].numElements
+                else
+                    0
+
+            results :::= resultsForScriptEngineAllocations(newEngineInteraction, newPointsTo, seen)
+
             updatedDependees(eps, oldEngineDependees)
         } else oldEngineDependees
 
-        val dependees = typeIteratorState.dependees ++
-            newEngineDependees.valuesIterator.map(_._1).toSet ++
-            newPutDependees.valuesIterator.map(_._1).toSet
+        val dependees =
+            typeIteratorState.dependees ++
+                newEngineDependees.valuesIterator.map(_._1).toSet ++
+                newPutDependees.valuesIterator.map(_._1).toSet
 
         InterimPartialResult(
             results,
             dependees,
             c(
-                callIndex, //TODO ?
+                callIndex,
                 newEngineInteraction,
                 newEngineDependees,
                 newPutDependees,
                 context,
                 param,
-                stmts
+                stmts,
+                possibleStrings,
+                TheTACAI(tac.tac.get)
             )
         )
     }
@@ -169,10 +176,12 @@ abstract class ScriptEngineInteractionAnalysisPut(
         val assignedValue = params(1).get.asVar
         var pointsToSet = this.emptyPointsToSet
         assignedValue.asVar.definedBy.foreach(defSite => {
-            val allocations = currentPointsToOfDefSite("assignedPutValue", defSite)
+            val allocations = currentPointsToOfDefSite("put", defSite)
             pointsToSet = pointsToSet.included(allocations)
         })
-        val puts = Map.from(possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> pointsToSet))
+        val puts = Map.from(
+            possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> pointsToSet)
+        )
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
 
         val partialResults = resultsForScriptEngine("engine", scriptEngineInteraction, receiverOption)
@@ -184,8 +193,8 @@ abstract class ScriptEngineInteractionAnalysisPut(
                 Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
         val putDependeesMap =
-            if (pointsToAnalysisState.hasDependees("assignedPutValue"))
-                pointsToAnalysisState.dependeesOf("assignedPutValue")
+            if (pointsToAnalysisState.hasDependees("put"))
+                pointsToAnalysisState.dependeesOf("put")
             else Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
         dependees = dependees ++
@@ -196,7 +205,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
         Results(createResults, InterimPartialResult(partialResults, dependees, c(
             callPC, scriptEngineInteraction,
             engineDependeesMap,
-            putDependeesMap, callerContext, param, tac.stmts
+            putDependeesMap, callerContext, param, tac.stmts, possibleStrings, TheTACAI(tac)
         )))
     }
 

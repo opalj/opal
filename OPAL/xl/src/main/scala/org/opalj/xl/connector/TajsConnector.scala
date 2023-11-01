@@ -48,7 +48,7 @@ import org.opalj.xl.translator.JavaJavaScriptTranslator
 import org.opalj.xl.translator.translator.globalObject
 import org.opalj.xl.utility.Language
 import org.opalj.xl.Coordinator.ScriptEngineInstance
-import org.opalj.xl.utility.FinalAnalysisResult
+import org.opalj.xl.utility.Bottom
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.FinalEP
@@ -201,11 +201,11 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 store = store.map(entry => (entry._1, entry._2.join(Value.makeUndef())))
             }
 
-            println(s"store: ${store.mkString("\n")}")
+            // println(s"store: ${store.mkString("\n")}")
             InterimResult(
                 scriptEngineInstance,
+                Bottom,
                 InterimAnalysisResult[PKey, Value](store),
-                FinalAnalysisResult[PKey, Value](store),
                 state.connectorDependees,
                 c(scriptEngineInteraction, analysis, blockAndContext)
             )

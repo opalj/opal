@@ -64,9 +64,9 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
         println("TAJS results:")
         project.allProjectClassFiles.flatMap(_.methods).foreach(method => {
             propertyStore(method, AnalysisResult.key) match {
-                case FinalP(InterimAnalysisResult(s)) =>
-                    println(s"TAJS result: $s")
-                case x => println(x)
+                case FinalP(InterimAnalysisResult(tajsStore)) =>
+                    println(s"TAJS result: $tajsStore")
+                case x => println(s"other case: $x")
             }
         })
         println()

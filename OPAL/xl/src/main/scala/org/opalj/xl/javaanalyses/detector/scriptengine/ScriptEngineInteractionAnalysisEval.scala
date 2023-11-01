@@ -52,7 +52,11 @@ abstract class ScriptEngineInteractionAnalysisEval(
         context:            ContextType,
         param:              V,
         stmts:              Array[Stmt[V]]
-    )(eps: SomeEPS)(implicit typeIteratorState: TypeIteratorState, pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]): ProperPropertyComputationResult = {
+    )(eps: SomeEPS)(implicit
+        typeIteratorState: TypeIteratorState,
+                    pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
+    ): ProperPropertyComputationResult = {
+
         println(s"eval continuation $eps")
 
         var results = List.empty[SomePartialResult]
@@ -96,7 +100,7 @@ abstract class ScriptEngineInteractionAnalysisEval(
             results,
             dependees,
             c(
-                callIndex, //TODO ?
+                callIndex,
                 newEngineInteraction,
                 newEngineDependees,
                 context,
@@ -117,8 +121,6 @@ abstract class ScriptEngineInteractionAnalysisEval(
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
 
-        println("process new caller eval")
-
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
 
@@ -131,8 +133,6 @@ abstract class ScriptEngineInteractionAnalysisEval(
             })
 
         var dependees: Set[SomeEOptionP] = Set.empty
-
-        println(s"possible strings: $possibleStrings")
 
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](code = possibleStrings.toList)
 
@@ -184,8 +184,8 @@ abstract class ScriptEngineInteractionAnalysisEval(
                         updated(engineInteraction)))
                 case _: EPK[_, _] =>
                     Some(InterimEUBP(instance, engineInteraction))
-                case r =>
-                    throw new IllegalStateException(s"unexpected previous result $r")
+                case result =>
+                    throw new IllegalStateException(s"unexpected previous result $result")
             }
             )
         }
