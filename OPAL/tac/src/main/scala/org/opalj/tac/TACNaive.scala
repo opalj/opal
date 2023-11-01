@@ -307,16 +307,16 @@ object TACNaive {
                     ARETURN.opcode =>
                     returnInstruction(stack.head)
 
-                case RETURN.opcode   => statements(pc) = List(Return(pc))
+                case RETURN.opcode => statements(pc) = List(Return(pc))
 
-                case AALOAD.opcode   => arrayLoad(ComputationalTypeReference)
-                case DALOAD.opcode   => arrayLoad(ComputationalTypeDouble)
-                case FALOAD.opcode   => arrayLoad(ComputationalTypeFloat)
-                case IALOAD.opcode   => arrayLoad(ComputationalTypeInt)
-                case LALOAD.opcode   => arrayLoad(ComputationalTypeLong)
-                case SALOAD.opcode   => arrayLoad(ComputationalTypeInt)
-                case BALOAD.opcode   => arrayLoad(ComputationalTypeInt)
-                case CALOAD.opcode   => arrayLoad(ComputationalTypeInt)
+                case AALOAD.opcode => arrayLoad(ComputationalTypeReference)
+                case DALOAD.opcode => arrayLoad(ComputationalTypeDouble)
+                case FALOAD.opcode => arrayLoad(ComputationalTypeFloat)
+                case IALOAD.opcode => arrayLoad(ComputationalTypeInt)
+                case LALOAD.opcode => arrayLoad(ComputationalTypeLong)
+                case SALOAD.opcode => arrayLoad(ComputationalTypeInt)
+                case BALOAD.opcode => arrayLoad(ComputationalTypeInt)
+                case CALOAD.opcode => arrayLoad(ComputationalTypeInt)
 
                 case AASTORE.opcode | DASTORE.opcode |
                     FASTORE.opcode | IASTORE.opcode |
