@@ -7,13 +7,11 @@ package scriptengine
 
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.lattice.Value
-
 import org.opalj.xl.translator.JavaJavaScriptTranslator
 import org.opalj.xl.utility.InterimAnalysisResult
 import org.opalj.xl.Coordinator
 import org.opalj.xl.utility.AnalysisResult
 import org.opalj.xl.Coordinator.V
-import org.opalj.xl.utility.FinalAnalysisResult
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
@@ -24,6 +22,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
+import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.NoContext
@@ -56,25 +55,57 @@ abstract class ScriptEngineInteractionAnalysisGet(
         targetVarDefSite: Entity,
         context:          ContextType,
         param:            V,
-        stmts:            Array[Stmt[V]]
+        stmts:            Array[Stmt[V]],
+        oldDependees:     Set[SomeEOptionP]
     )(eps: SomeEPS)(implicit
         typeIteratorState: TypeIteratorState,
                     pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     ): ProperPropertyComputationResult = {
+        var dependees: Set[SomeEOptionP] = oldDependees.filter(x => x.e != eps.e) // || x.pk!=eps.pk)
+        println(s"continuation get analysis $oldDependees")
+        println(s"eps: $eps")
         val epk = eps.toEPK
 
-        var dependees: Set[SomeEOptionP] = Set.empty
-
         eps match {
-            case InterimUBP(FinalAnalysisResult(store)) =>
+            case InterimUBP(InterimAnalysisResult(store)) =>
+                println("enter interim analysis result case")
+                println(s"possible strings ${possibleStrings.mkString("\n")}")
                 val possibleValues = possibleStrings.map(variableName => store.asInstanceOf[Map[PKey, Value]]
                     .getOrElse(PKey.StringPKey.make(variableName), Value.makeUndef()))
+                println(s"possible values: ${possibleValues.mkString("\n")}")
                 val pointsToSetSet = js2java(possibleValues)._2
 
                 pointsToSetSet.foreach { pointsToSet =>
                     pointsToAnalysisState.includeSharedPointsToSet(
                         targetVarDefSite, pointsToSet
                     )
+                }
+                dependees += eps
+            case UBP(newPointsTo: PointsToSet @unchecked) =>
+                println(s"points to continuation: $eps")
+                newPointsTo.forNewestNElements(newPointsTo.numElements) { alloc =>
+                    {
+                        val instance = Coordinator.ScriptEngineInstance(alloc)
+                        val result = propertyStore(instance, AnalysisResult.key)
+                        println(s"get analysis querying result: $result")
+                        result match {
+                            case InterimUBP(InterimAnalysisResult(store)) =>
+                                val possibleValues =
+                                    possibleStrings.map(variableName => store.asInstanceOf[Map[PKey, Value]]
+                                        .getOrElse(PKey.StringPKey.make(variableName), Value.makeUndef()))
+                                println(s"possible strings ${possibleStrings.mkString("\n")}")
+                                println(s"possible values: ${possibleValues.mkString("\n")}")
+                                val pointsToSetSet = js2java(possibleValues)._2
+
+                                pointsToSetSet.foreach { pointsToSet =>
+                                    pointsToAnalysisState.includeSharedPointsToSet(
+                                        targetVarDefSite, pointsToSet
+                                    )
+                                }
+                                dependees += eps
+                            case eps => dependees += eps
+                        }
+                    }
                 }
 
             case eps => dependees += eps
@@ -96,7 +127,9 @@ abstract class ScriptEngineInteractionAnalysisGet(
                     allocations.forNewestNElements(allocations.numElements) { alloc =>
                         {
                             val instance = Coordinator.ScriptEngineInstance(alloc)
-                            propertyStore(instance, AnalysisResult.key) match {
+                            val result = propertyStore(instance, AnalysisResult.key)
+                            println(s"get analysis querying result: $result")
+                            result match {
                                 case InterimUBP(InterimAnalysisResult(store)) =>
                                     val possibleValues =
                                         possibleStrings.map(variableName => store.asInstanceOf[Map[PKey, Value]]
@@ -124,19 +157,20 @@ abstract class ScriptEngineInteractionAnalysisGet(
 
         dependees = typeIteratorState.dependees ++ dependees
 
-        Results(InterimPartialResult(
+        Results(createResults, InterimPartialResult(
             List.empty[SomePartialResult], // results,
             dependees,
             c(
                 receiverOption,
-                callIndex, //TODO ?
+                callIndex,
                 possibleStrings,
                 targetVarDefSite,
                 context,
                 param,
-                stmts
+                stmts,
+                dependees
             )
-        ), createResults)
+        ))
     }
 
     override def processNewCaller(
@@ -149,7 +183,7 @@ abstract class ScriptEngineInteractionAnalysisGet(
         targetVarOption: Option[V],
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
-
+        println("start get analysis")
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
 
@@ -172,7 +206,9 @@ abstract class ScriptEngineInteractionAnalysisGet(
             allocations.forNewestNElements(allocations.numElements) { alloc =>
                 {
                     val instance = Coordinator.ScriptEngineInstance(alloc)
-                    propertyStore(instance, AnalysisResult.key) match {
+                    val result = propertyStore(instance, AnalysisResult.key)
+                    println(s"get analysis querying result: $result")
+                    result match {
                         case InterimUBP(InterimAnalysisResult(store)) =>
                             val possibleValues =
                                 possibleStrings.map(variableName => store.asInstanceOf[Map[PKey, Value]]
@@ -191,13 +227,13 @@ abstract class ScriptEngineInteractionAnalysisGet(
                 }
             }
             val getTargetDependees = pointsToAnalysisState.dependeesOf("getTarget")
-            dependees = dependees ++ getTargetDependees.valuesIterator.map(_._1)
+            dependees ++= getTargetDependees.valuesIterator.map(_._1)
         })
 
         Results(createResults, InterimPartialResult(List.empty[SomePartialResult], dependees, c(
             receiverOption,
             callPC, possibleStrings, targetVarDefSite,
-            callerContext, param, tac.stmts
+            callerContext, param, tac.stmts, dependees
         )))
     }
 }

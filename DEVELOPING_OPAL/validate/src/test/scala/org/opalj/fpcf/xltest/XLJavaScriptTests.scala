@@ -1,10 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package xltest
+package org.opalj.fpcf.xltest
+
+import java.net.URL
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import org.opalj.xl.AllocationSiteBasedTriggeredTajsConnectorScheduler
+import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
+
+import org.opalj.fpcf.PropertiesTest
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
@@ -12,7 +18,6 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.fpcf.PropertiesTest
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
@@ -24,10 +29,6 @@ import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.xl.AllocationSiteBasedTriggeredTajsConnectorScheduler
-import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
-
-import java.net.URL
 
 /**
  * Tests XL interaction by validating Points-to-sets
@@ -39,7 +40,7 @@ class XLJavaScriptTests extends PropertiesTest {
     override def withRT = false
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/xl/js/sandbox")
+        List("org/opalj/fpcf/fixtures/xl/js/")
     }
 
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
@@ -79,7 +80,8 @@ class XLJavaScriptTests extends PropertiesTest {
             val epss = as.propertyStore.properties(ds).toIndexedSeq
 
             val properties = epss.map(_.toFinalEP.p)
-            val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).map(_.asInstanceOf[PointsToSetLike[_, _, _]])
+            val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).
+                map(_.asInstanceOf[PointsToSetLike[_, _, _]])
 
             println(contextP)
         }
@@ -97,7 +99,8 @@ class XLJavaScriptTests extends PropertiesTest {
             val epss = as.propertyStore.properties(c).toIndexedSeq
 
             val properties = epss.map(_.toFinalEP.p)
-            val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).map(_.asInstanceOf[PointsToSetLike[_, _, _]])
+            val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).
+                map(_.asInstanceOf[PointsToSetLike[_, _, _]])
 
             println(contextP)
         }

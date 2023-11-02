@@ -46,12 +46,17 @@ abstract class ScriptEngineInteractionAnalysisEval(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def c(
+        callIndex:          Int,
         engineInteraction:  ScriptEngineInteraction[ContextType, PointsToSet],
         oldEngineDependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         context:            ContextType,
         param:              V,
         stmts:              Array[Stmt[V]]
-    )(eps: SomeEPS)(implicit typeIteratorState: TypeIteratorState): ProperPropertyComputationResult = {
+    )(eps: SomeEPS)(implicit
+        typeIteratorState: TypeIteratorState,
+                    pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
+    ): ProperPropertyComputationResult = {
+
         println(s"eval continuation $eps")
 
         var results = List.empty[SomePartialResult]
@@ -88,12 +93,14 @@ abstract class ScriptEngineInteractionAnalysisEval(
             updatedDependees(eps, oldEngineDependees)
         } else oldEngineDependees
 
-        val dependees = typeIteratorState.dependees ++ newEngineDependees.valuesIterator.map(_._1).toSet
+        val dependees = typeIteratorState.dependees ++
+            newEngineDependees.valuesIterator.map(_._1).toSet
 
         InterimPartialResult(
             results,
             dependees,
             c(
+                callIndex,
                 newEngineInteraction,
                 newEngineDependees,
                 context,
@@ -127,6 +134,8 @@ abstract class ScriptEngineInteractionAnalysisEval(
                 throw new Exception("TODO: What to do if param is unknown?")
             })
 
+        var dependees: Set[SomeEOptionP] = Set.empty
+
         println(s"possible strings: $possibleStrings")
 
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](code = possibleStrings.toList)
@@ -139,7 +148,7 @@ abstract class ScriptEngineInteractionAnalysisEval(
             else
                 Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
-        val dependees = typeIteratorState.dependees ++ engineDependeesMap.valuesIterator.map(_._1)
+        dependees = dependees ++ typeIteratorState.dependees ++ engineDependeesMap.valuesIterator.map(_._1)
 
         Results(
             createResults,
@@ -156,6 +165,10 @@ abstract class ScriptEngineInteractionAnalysisEval(
         receiverOption.get.asVar.definedBy.foldLeft(List.empty[SomePartialResult])(
             (results, defSite) => {
                 val allocations = currentPointsToOfDefSite(depender, defSite)
+                var instances = List.empty[ScriptEngineInstance[ElementType]]
+                allocations.forNewestNElements(allocations.numElements) {
+                    alloc => instances = Coordinator.ScriptEngineInstance(alloc) :: instances
+                }
                 resultsForScriptEngineAllocations(javaScriptInteraction, allocations, 0) ::: results
             }
         )
