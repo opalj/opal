@@ -1,31 +1,35 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
-import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-public class JavaAllocationSimpleAlias {
-    @PointsToSet(variableDefinition = 29,
+/**
+ * two functions defined in separate eval calls.
+ */
+public class TwoEvals {
+    @PointsToSet(variableDefinition = 32,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JavaAllocationSimpleAlias.class,
+                            cf = JavaAllocationJSIdentity.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 26,
-                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.objects.javatype.SimpleContainerClass")
+                            allocSiteLinenumber = 31,
+                            allocatedType = "java.lang.Integer")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        SimpleContainerClass w = new SimpleContainerClass();
-        se.put("w", w);
-        se.eval("var n = w;");
-        Object p = se.get("n");
-        System.out.println(p.getClass());
+        se.eval("function f(n){return n;}");
+        se.eval("function g(n){return f(n);}");
+        Invocable inv = (Invocable) se;
+        Integer in = 50;
+        Object out = inv.invokeFunction("f", in);
+        System.out.println(out);
     }
 }

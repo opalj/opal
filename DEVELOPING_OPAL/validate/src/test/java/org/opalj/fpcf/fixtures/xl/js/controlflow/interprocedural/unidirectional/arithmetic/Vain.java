@@ -1,11 +1,18 @@
-package org.opalj.xl.javaanalyses.benchmark.unidirectional.execution.arithmetic;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional.arithmetic;
+
+import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
+import org.opalj.fpcf.properties.pts.PointsToSet;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+/**
+ * broken test case?
+ */
 public class Vain {
+
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
