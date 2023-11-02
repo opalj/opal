@@ -404,7 +404,7 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
 class FieldGetAnalysis private[analyses] (
         final val project:       SomeProject,
         final val apiMethodName: String,
-        final val fieldType:     Option[BaseType] = None
+        final val fieldType:     Option[BaseType]
 ) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -481,7 +481,7 @@ class FieldGetAnalysis private[analyses] (
 class FieldSetAnalysis private[analyses] (
         final val project:       SomeProject,
         final val apiMethodName: String,
-        final val fieldType:     Option[BaseType] = None
+        final val fieldType:     Option[BaseType]
 ) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -978,7 +978,7 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             /*
              * Field.get | Field.get[_ <: BaseType]
              */
-            new FieldGetAnalysis(project, "get"),
+            new FieldGetAnalysis(project, "get", None),
             new FieldGetAnalysis(project, "getBoolean", Some(BooleanType)),
             new FieldGetAnalysis(project, "getByte", Some(ByteType)),
             new FieldGetAnalysis(project, "getChar", Some(CharType)),
@@ -991,7 +991,7 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             /*
              * Field.set | Field.set[_ <: BaseType]
              */
-            new FieldSetAnalysis(project, "set"),
+            new FieldSetAnalysis(project, "set", None),
             new FieldSetAnalysis(project, "setBoolean", Some(BooleanType)),
             new FieldSetAnalysis(project, "setByte", Some(ByteType)),
             new FieldSetAnalysis(project, "setChar", Some(CharType)),
