@@ -11,7 +11,6 @@ import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
 import org.opalj.br.FieldType
-import org.opalj.br.analyses.ProjectIndex
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.analyses.cg.isTypeCompatible
 import org.opalj.value.IsReferenceValue
@@ -32,16 +31,8 @@ trait FieldMatcher {
 }
 
 final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldMatcher {
-    private[this] var projectIndexOpt: Option[ProjectIndex] = None
-
     override def initialFields(implicit p: SomeProject): Iterator[Field] = {
-        val projectIndex = projectIndexOpt match {
-            case None =>
-                projectIndexOpt = Some(p.get(ProjectIndexKey))
-                projectIndexOpt.get
-            case Some(index) => index
-        }
-
+        val projectIndex = p.get(ProjectIndexKey)
         possibleNames.iterator.flatMap(projectIndex.findFields)
     }
     override def contains(f: Field)(implicit p: SomeProject): Boolean = possibleNames.contains(f.name)
@@ -53,10 +44,9 @@ class ClassBasedFieldMatcher(
         val onlyFieldsExactlyInClass: Boolean
 ) extends FieldMatcher {
 
-    // TODO use a ProjectInformationKey or WeakHashMap to cache fields per project
-    // (for the contains check)
+    // IMPROVE use a ProjectInformationKey or WeakHashMap to cache fields per class per project (for the contains check)
     private[this] def fields(implicit p: SomeProject): Set[Field] = possibleClasses.flatMap { c =>
-        // todo what about "inherited" fields?
+        // IMPROVE consider inherited fields
         p.classFile(c).map(_.fields).getOrElse(ArraySeq.empty)
     }
 
