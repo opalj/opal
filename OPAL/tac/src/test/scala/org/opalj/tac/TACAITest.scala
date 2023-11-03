@@ -68,7 +68,7 @@ class TACAITest extends AnyFunSpec with Matchers {
 
                         val simpleDomainName = domainName.stripPrefix("org.opalj.ai.domain.")
                         val expectedFileName =
-                            projectName.substring(0, projectName.indexOf('.')) +
+                            projectName.substring(0, projectName.indexOf('.')).replace("-9", "") +
                                 s"-$jdk-$className-$methodName-$simpleDomainName.tac.txt"
                         val expectedInputStream = this.getClass.getResourceAsStream(expectedFileName)
                         if (expectedInputStream eq null)
