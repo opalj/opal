@@ -189,7 +189,6 @@ trait ClassValues
                             )
                     }
 
-
                 case _ if secondOperandIsStringValue =>
                     // Handle forName calls where the second argument is the class FQN
 
@@ -197,12 +196,12 @@ trait ClassValues
                     //          actually part of the given module. For now, this is a safe over-approximation.
                     val value = operands(operands.size - 2).asInstanceOf[StringValue].value
                     methodDescriptor match {
-                      case `forName_Module_String`                        => simpleClassForNameCall(pc, value)
-                      case `forName_Module_String_Class`                  => simpleClassForNameCall(pc, value)
-                      case _ =>
-                        throw new DomainException(
-                          s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
-                        )
+                        case `forName_Module_String`       => simpleClassForNameCall(pc, value)
+                        case `forName_Module_String_Class` => simpleClassForNameCall(pc, value)
+                        case _ =>
+                            throw new DomainException(
+                                s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
+                            )
                     }
 
                 case _ =>
@@ -290,13 +289,17 @@ private object ClassValues {
         )
     }
 
-  final val forName_Module_String = MethodDescriptor(
-    ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
-    ObjectType.Class
-  )
+    final val forName_Module_String = {
+        MethodDescriptor(
+            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
+            ObjectType.Class
+        )
+    }
 
-  final val forName_Module_String_Class = MethodDescriptor(
-    ArraySeq(ObjectType("java/lang/Module"), ObjectType.String, ObjectType.Class),
-    ObjectType.Class
-  )
+    final val forName_Module_String_Class = {
+        MethodDescriptor(
+            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String, ObjectType.Class),
+            ObjectType.Class
+        )
+    }
 }
