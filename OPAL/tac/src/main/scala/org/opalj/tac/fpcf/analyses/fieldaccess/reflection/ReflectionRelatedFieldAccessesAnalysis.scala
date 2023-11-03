@@ -329,23 +329,6 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
         baseMatchers:    Set[FieldMatcher],
         stmts:           Array[Stmt[V]]
     )(implicit indirectFieldAccesses: IndirectFieldAccesses, state: ReflectionState[ContextType]): Set[FieldMatcher] = {
-        def constructClassBasedFieldMatcherForClassVar(
-            classVar:                 V,
-            currentMatchers:          Set[FieldMatcher],
-            onlyFieldsExactlyInClass: Boolean
-        ): FieldMatcher = {
-            MatcherUtil.retrieveClassBasedFieldMatcher(
-                context,
-                classVar,
-                ClassDepender(accessPC, actualReceiver, actualParameter, currentMatchers, classVar, stmts),
-                accessPC,
-                stmts,
-                project,
-                () => failure(accessPC, actualReceiver, actualParameter, currentMatchers),
-                onlyFieldsExactlyInClass,
-            )
-        }
-
         var matchers = baseMatchers
         stmts(fieldDefSite).asAssignment.expr match {
             case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredField" | "getField", _, receiver, params) =>
@@ -362,15 +345,18 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
                         () => failure(accessPC, actualReceiver, actualParameter, matchers)
                     )
 
-                if (!matchers.contains(NoFieldsMatcher))
-                    matchers += constructClassBasedFieldMatcherForClassVar(receiver.asVar, matchers, !isGetField)
-
-            case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredFields" | "getFields", _, receiver, _) =>
-                val isGetFields = call.name == "getFields"
-                if (isGetFields)
-                    matchers += PublicFieldMatcher
-                if (!matchers.contains(NoFieldsMatcher))
-                    matchers += constructClassBasedFieldMatcherForClassVar(receiver.asVar, matchers, !isGetFields)
+                if (!matchers.contains(NoFieldsMatcher)) {
+                    matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
+                        context,
+                        receiver.asVar,
+                        ClassDepender(accessPC, actualReceiver, actualParameter, matchers, receiver.asVar, stmts),
+                        accessPC,
+                        stmts,
+                        project,
+                        () => failure(accessPC, actualReceiver, actualParameter, matchers),
+                        onlyFieldsExactlyInClass = !isGetField,
+                    )
+                }
 
             case ArrayLoad(_, _, arrayRef) =>
                 val arrayDepender = ArrayDepender(accessPC, actualReceiver, actualParameter, matchers, arrayRef.asVar, stmts)
@@ -379,12 +365,54 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
                     arrayRef.asVar, context, arrayDepender, stmts, _ eq ObjectType.Field,
                     () => failure(accessPC, actualReceiver, actualParameter, baseMatchers)
                 ) { (allocationContext, allocationIndex, stmts) =>
-                        matchers ++= handleGetField(
+                        matchers ++= handleFieldArray(
                             allocationContext, accessPC, allocationIndex,
                             actualReceiver, actualParameter,
                             baseMatchers, stmts
                         )
                     }
+
+            case _ =>
+                if (HighSoundnessMode) {
+                    matchers += AllFieldsMatcher
+                } else {
+                    indirectFieldAccesses.addIncompleteAccessSite(accessPC)
+                    matchers += NoFieldsMatcher
+                }
+        }
+
+        matchers
+    }
+
+    private def handleFieldArray(
+        context:         ContextType,
+        accessPC:        Int,
+        fieldDefSite:    Int,
+        actualReceiver:  AccessReceiver,
+        actualParameter: Option[AccessParameter],
+        baseMatchers:    Set[FieldMatcher],
+        stmts:           Array[Stmt[V]]
+    )(implicit indirectFieldAccesses: IndirectFieldAccesses, state: ReflectionState[ContextType]): Set[FieldMatcher] = {
+        var matchers = baseMatchers
+        stmts(fieldDefSite).asAssignment.expr match {
+            case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredFields" | "getFields", _, receiver, _) =>
+                val isGetFields = call.name == "getFields"
+                if (isGetFields)
+                    matchers += PublicFieldMatcher
+                if (!matchers.contains(NoFieldsMatcher)) {
+                    matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
+                        context,
+                        receiver.asVar,
+                        ClassDepender(accessPC, actualReceiver, actualParameter, matchers, receiver.asVar, stmts),
+                        accessPC,
+                        stmts,
+                        project,
+                        () => failure(accessPC, actualReceiver, actualParameter, matchers),
+                        onlyFieldsExactlyInClass = !isGetFields,
+                    )
+                }
+
+            // IMPROVE support storing fields obtained via "getField" in an array manually here by using points-to information
 
             case _ =>
                 if (HighSoundnessMode) {
