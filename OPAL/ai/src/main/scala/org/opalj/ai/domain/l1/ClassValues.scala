@@ -169,13 +169,11 @@ trait ClassValues
         import org.opalj.ai.domain.l1.ClassValues._
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
-            //TODO handle missing methods (cf. https://github.com/opalj/opal/issues/87)
 
-            val secondOperandIsStringValue = operands.size > 1 && operands(operands.size - 2).isInstanceOf[StringValue]
+            val firstTwoOperands = (operands.last, if (operands.size > 1) Some(operands(operands.size - 2)) else None)
 
-            operands.last match {
-
-                case sv: StringValue =>
+            firstTwoOperands match {
+                case (sv: StringValue, _) =>
                     // Handle forName calls where the first argument is the class FQN
                     val value = sv.value
                     methodDescriptor match {
@@ -188,13 +186,12 @@ trait ClassValues
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
-
-                case _ if secondOperandIsStringValue =>
+                case (_, Some(sv: StringValue)) =>
                     // Handle forName calls where the second argument is the class FQN
 
                     // IMPROVE: If there was tracking for Module values in place, we could validate that the FQN is
                     //          actually part of the given module. For now, this is a safe over-approximation.
-                    val value = operands(operands.size - 2).asInstanceOf[StringValue].value
+                    val value = sv.value
                     methodDescriptor match {
                         case `forName_Module_String`       => simpleClassForNameCall(pc, value)
                         case `forName_Module_String_Class` => simpleClassForNameCall(pc, value)
@@ -207,7 +204,6 @@ trait ClassValues
                 case _ =>
                     // call default handler (the first and second argument are not a string)
                     super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
-
             }
         } else {
             // call default handler
