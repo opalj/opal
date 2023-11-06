@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.xltest
+package org.opalj
+package fpcf
+package xltest
 
 import java.net.URL
 
@@ -32,7 +34,7 @@ import org.opalj.tac.fpcf.properties.cg.Callees
 
 /**
  * Tests XL interaction by validating Points-to-sets
- * 
+ *
  * @author Julius Naeumann
  */
 class XLJavaScriptTests extends PropertiesTest {
