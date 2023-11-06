@@ -98,7 +98,7 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
         val detectedAllocSites = (for {
             (ctx, pc, typeId) <- pts.elements.iterator.map(longToAllocationSite)
         } yield {
-            (ctx.method.declaringClassType.asObjectType, ctx.method.name, ctx.method.descriptor.toUMLNotation, methodCode.lineNumber(pc).getOrElse(-1), ObjectType.lookup(typeId).toJava)
+            (ctx.method.declaringClassType.asObjectType, ctx.method.name, ctx.method.descriptor.toUMLNotation, ctx.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1), ObjectType.lookup(typeId).toJava)
         }).toSet
         println("------------------")
         println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
