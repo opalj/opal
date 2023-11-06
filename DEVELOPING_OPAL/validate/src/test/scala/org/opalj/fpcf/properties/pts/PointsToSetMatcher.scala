@@ -80,10 +80,13 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
         val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == m).toSet
 
         val defsiteOfInterest = {
-            defsitesInMethod.find(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine) match {
-                case Some(s) => s
-                case None    => return Some(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}")
-            }
+          //The last defSite is the one of interest
+            val lastDefSite = defsitesInMethod.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine).last
+            if(lastDefSite!=null)
+              lastDefSite
+            else
+              Some(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}")
+
         }
         val ptsProperties = ps.properties(defsiteOfInterest).map(_.toFinalEP.p)
         val pts = {
@@ -97,11 +100,15 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
         } yield {
             (ctx.method.declaringClassType.asObjectType, ctx.method.name, ctx.method.descriptor.toUMLNotation, methodCode.lineNumber(pc).getOrElse(-1), ObjectType.lookup(typeId).toJava)
         }).toSet
+        println("------------------")
+        println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
+        println(s"expected alloc site: ${expectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
 
         val missingAllocSiteSet = expectedAllocSites diff detectedAllocSites
+        println(s"missing alloc site: ${missingAllocSiteSet.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
 
         if (missingAllocSiteSet.nonEmpty) {
-            Some(s"${missingAllocSiteSet.size} unresolved alloc sites for variable in  ${m.name} , line ${variableDefinitionLine}. remember to sbt test:compile")
+            Some(s"detected alloc site: ${detectedAllocSites.mkString("\n")}\n${missingAllocSiteSet.size} unresolved alloc sites for variable in  ${m.name} , line ${variableDefinitionLine}. remember to sbt test:compile")
         } else {
             None
         }
