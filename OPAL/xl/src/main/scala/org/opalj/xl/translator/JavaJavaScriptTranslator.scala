@@ -11,6 +11,7 @@ import dk.brics.tajs.flowgraph.AbstractNode
 import dk.brics.tajs.lattice.ObjectLabel
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.lattice.Value
+import org.opalj.xl.Coordinator.V
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.ObjectType
@@ -20,7 +21,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
 
 object JavaJavaScriptTranslator {
 
-    def Java2JavaScript[PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet], ContextType](variableName: String, context: ContextType, pointsToSetLike: PointsToSet, defSites: IntTrieSet, theTACAI: TheTACAI): (PKey.StringPKey, Value) = {
+    def Java2JavaScript[PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet], ContextType](variableName: String, context: ContextType, pointsToSetLike: PointsToSet, defSites: IntTrieSet, theTACAI: TheTACAI, assignedValue: Option[V]): (PKey.StringPKey, Value) = {
 
         var defaultValue: Option[Value] = None
 
@@ -28,6 +29,7 @@ object JavaJavaScriptTranslator {
             pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) {
                 tpe =>
                     {
+                        println(tpe)
                         if (tpe.isNumericType || tpe == ObjectType.Integer ||
                             tpe == ObjectType.Double || tpe == ObjectType.Long) {
                             //val v: Value = Value.makeAnyNum().removeAttributes()
@@ -76,8 +78,12 @@ object JavaJavaScriptTranslator {
             }
 
         (PKey.StringPKey.make(variableName),
-            if (defaultValue.isEmpty)
-                Value.makeUndef()
+            if (defaultValue.isEmpty) {
+                //assignedValue.asInstanceOf[Some].value.asInstanceOf[UVar].value.asInstanceOf[ASObjectValue].leastUpperType.asInstanceOf[Some].value.asInstanceOf[ObjectType].isNumericType
+                //  if(assignedValue)
+                //Value.makeUnknown()
+                Value.makeAbsent() //TODO
+            } //Value.makeUndef()
             else {
                 defaultValue.get.removeAttributes.join(Value.makeUndef()).removeAttributes()
                 //  Value.join(possibleValues)

@@ -93,7 +93,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             eps match {
                 case ubp @ UBP(javaScriptInteraction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
                     state.code = state.code ++ fillEmptyCode(possibleEmptyCode)
-                    state.puts ++= puts.map(put => java2js(put._1._1, put._1._2.asInstanceOf[ContextType], put._2.asInstanceOf[PointsToSet], put._1._3, put._1._4))
+                    state.puts ++= puts.map(put => java2js(put._1._1, put._1._2.asInstanceOf[ContextType], put._2._1.asInstanceOf[PointsToSet], put._1._3, put._1._4, null))
                     state.connectorDependees += ubp
                     state.files = utility.asFiles("JavaScript", ".js", state.code)
                     val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
@@ -149,7 +149,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                             jNode.getDefSites.foreach(defSite => {
                                 val pointsToSet = currentPointsToOfDefSite("object", defSite)
                                 possibleValues.add(
-                                    java2js("", context, pointsToSet, jNode.getDefSites, jNode.getTacai)._2
+                                    java2js("", context, pointsToSet, jNode.getDefSites, jNode.getTacai, null)._2
                                 )
                             })
 
@@ -218,7 +218,17 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             case ubp @ UBP(engineInteraction @ ScriptEngineInteraction(
                 Language.JavaScript, possibleEmptyCode, _, puts)) =>
                 state.code = state.code ++ fillEmptyCode(possibleEmptyCode)
-                state.puts ++= puts.map(put => java2js(put._1._1, put._1._2.asInstanceOf[ContextType], put._2.asInstanceOf[PointsToSet], put._1._3, put._1._4))
+
+                state.puts ++= puts.map(put => {
+                    val variableName = put._1._1
+                    val context = put._1._2.asInstanceOf[ContextType]
+                    val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
+                    val intTrieSet: IntTrieSet = put._1._3
+                    val tacai: TheTACAI = put._1._4
+                    val v = Some(put._2._2)
+                    val jsValue = java2js(variableName, context, pointsToSet, intTrieSet, tacai, v)
+                    jsValue
+                })
                 state.connectorDependees += ubp
                 state.files = utility.asFiles("JavaScript", ".js", state.code)
                 val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)

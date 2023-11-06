@@ -13,6 +13,7 @@ import org.opalj.xl.utility.NativeFunctionCall
 import org.opalj.xl.utility.Language
 import org.opalj.xl.utility.Language.Language
 import org.opalj.xl.Coordinator.ScriptEngineInstance
+import org.opalj.xl.Coordinator.V
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Property
@@ -51,10 +52,10 @@ object CrossLanguageInteraction extends CrossLanguageInteractionPropertyMetaInfo
 }
 
 case class ScriptEngineInteraction[ContextType, PointsToSet](
-        language:                Language                                                      = Language.Unknown,
-        code:                    List[String]                                                  = List.empty,
-        javaScriptFunctionCalls: List[JavaScriptFunctionCall[ContextType, PointsToSet]]        = List.empty[JavaScriptFunctionCall[ContextType, PointsToSet]],
-        puts:                    Map[(String, ContextType, IntTrieSet, TheTACAI), PointsToSet] = Map.empty[(String, ContextType, IntTrieSet, TheTACAI), PointsToSet]
+        language:                Language                                                           = Language.Unknown,
+        code:                    List[String]                                                       = List.empty,
+        javaScriptFunctionCalls: List[JavaScriptFunctionCall[ContextType, PointsToSet]]             = List.empty[JavaScriptFunctionCall[ContextType, PointsToSet]],
+        puts:                    Map[(String, ContextType, IntTrieSet, TheTACAI), (PointsToSet, V)] = Map.empty[(String, ContextType, IntTrieSet, TheTACAI), (PointsToSet, V)]
 ) extends CrossLanguageInteraction {
     def updated(scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet]): ScriptEngineInteraction[ContextType, PointsToSet] = {
         ScriptEngineInteraction(
