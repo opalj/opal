@@ -27,5 +27,6 @@ public class IntraproceduralAllocSiteJava1 {
         se.put("w", w);
         se.eval("var n = w;");
         Object p = se.get("n");
+        System.out.println(p);
     }
 }
