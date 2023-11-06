@@ -170,8 +170,8 @@ trait ClassValues
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
 
-            operands.reverse match {
-                case (sv: StringValue) :: _ =>
+            operands match {
+                case _ :+ (sv: StringValue) =>
                     // Handle forName calls where the first argument is the class FQN
                     val value = sv.value
                     methodDescriptor match {
@@ -184,7 +184,7 @@ trait ClassValues
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
-                case _ :: (sv: StringValue) :: _ =>
+                case _ :+ (sv: StringValue) :+ _ =>
                     // Handle forName calls where the second argument is the class FQN
 
                     // IMPROVE: If there was tracking for Module values in place, we could validate that the FQN is
