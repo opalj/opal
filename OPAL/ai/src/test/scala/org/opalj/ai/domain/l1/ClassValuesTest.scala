@@ -78,6 +78,27 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         classType should be(Some(domain.ClassValue(4, ObjectType("java/lang/Integer"))))
     }
 
+    it should ("be able to trace literal strings in Class.forName(Module, String) calls") in {
+        val domain = new RecordingDomain
+        val method = classFile.methods.find(m => m.name == "literalStringInClassForNameModule").get
+        BaseAI(method, domain)
+        domain.returnedValue should be(Some(domain.ClassValue(origin = 7, ObjectType("java/lang/String"))))
+    }
+
+    it should ("be able to trace known string variables in Class.forName(Module, String) calls") in {
+        val domain = new RecordingDomain
+        val method = classFile.methods.find(m => m.name == "stringVariableInClassForNameModule").get
+        BaseAI(method, domain)
+        domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ObjectType("java/lang/Integer"))))
+    }
+
+    it should ("over-approximate when incompatible class names and modules are combined in Class.forName") in {
+        val domain = new RecordingDomain
+        val method = classFile.methods.find(m => m.name == "invalidModuleAndNameInClassForName").get
+        BaseAI(method, domain)
+        domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ObjectType("java/lang/Integer"))))
+    }
+
     it should ("be able to correctly join multiple class values") in {
         val domain = new RecordingDomain
         val c1 = domain.ClassValue(1, ObjectType.Serializable)
@@ -143,6 +164,6 @@ object PlainClassesTest {
         }
     }
 
-    val testClassFile = locateTestResources("ai.jar", "bi")
+    val testClassFile = locateTestResources("ai-9.jar", "bi")
     val classFile = ClassFiles(testClassFile).map(_._1).find(_.thisType.fqn == "ai/domain/PlainClassesJava").get
 }

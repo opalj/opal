@@ -43,7 +43,7 @@ class ConstraintsBetweenIntegerValuesTest extends AnyFunSpec with Matchers {
 
     describe("with constraint tracking between integer values") {
 
-        val testProject = org.opalj.br.TestSupport.biProject("ai.jar")
+        val testProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         it("it should handle cases where we constrain and compare unknown values (without join)") {

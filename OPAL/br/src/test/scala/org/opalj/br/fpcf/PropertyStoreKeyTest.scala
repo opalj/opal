@@ -18,7 +18,7 @@ import org.opalj.br.analyses.SomeProject
 class PropertyStoreKeyTest extends AnyFunSpec with Matchers {
 
     describe("using the default PropertyStoreKey") {
-        val p: SomeProject = biProject("ai.jar")
+        val p: SomeProject = biProject("ai-9.jar")
 
         val ps = p.get(PropertyStoreKey)
 
