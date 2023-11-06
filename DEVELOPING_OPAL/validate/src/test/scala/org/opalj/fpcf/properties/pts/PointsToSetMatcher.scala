@@ -80,12 +80,12 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
         val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == m).toSet
 
         val defsiteOfInterest = {
-          //The last defSite is the one of interest
+            //The last defSite is the one of interest
             val lastDefSite = defsitesInMethod.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine).last
-            if(lastDefSite!=null)
-              lastDefSite
+            if (lastDefSite != null)
+                lastDefSite
             else
-              Some(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}")
+                Some(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}")
 
         }
         val ptsProperties = ps.properties(defsiteOfInterest).map(_.toFinalEP.p)

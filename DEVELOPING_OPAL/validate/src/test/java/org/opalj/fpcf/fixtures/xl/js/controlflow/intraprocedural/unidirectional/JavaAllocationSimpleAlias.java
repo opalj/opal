@@ -9,13 +9,13 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class JavaAllocationSimpleAlias {
-    @PointsToSet(variableDefinition = 29,
+    @PointsToSet(variableDefinition = 28,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaAllocationSimpleAlias.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 26,
+                            allocSiteLinenumber = 25,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.objects.javatype.SimpleContainerClass")
             }
     )

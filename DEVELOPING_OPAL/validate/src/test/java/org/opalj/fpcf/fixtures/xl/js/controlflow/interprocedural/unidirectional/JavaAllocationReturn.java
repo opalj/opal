@@ -1,10 +1,8 @@
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
-import org.opalj.fpcf.fixtures.PTSLogger;
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
-import org.opalj.support.debug.PTSTracker;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;

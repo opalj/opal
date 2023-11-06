@@ -19,9 +19,12 @@ public class Add {
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        se.eval("function add(a,b){return a + b;}");
-        Invocable inv = (Invocable) se;
-        Double result = (Double) inv.invokeFunction("add", 1, 3);
+        Integer x = 1;
+        Integer y = 3 ;
+        se.put("x",x);
+        se.put("y",y);
+        se.eval("function add(a,b){return a + b;} var z = add(x,y);");
+        Double result = (Double) se.get("z");
         System.out.println("result: " + result);
     }
 }
