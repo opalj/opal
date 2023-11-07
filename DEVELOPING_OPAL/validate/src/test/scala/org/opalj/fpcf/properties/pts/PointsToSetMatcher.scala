@@ -16,8 +16,9 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.fpcf.properties.NoContext
 
 class PointsToSetMatcher extends AbstractPropertyMatcher {
 
@@ -81,9 +82,10 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
 
         val defsiteOfInterest = {
             //The last defSite is the one of interest
-            val lastDefSite = defsitesInMethod.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine).last
-            if (lastDefSite != null)
-                lastDefSite
+            val defSites = defsitesInMethod.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine)
+            //val lastDefSite = .last
+            if (defSites.size > 0)
+                defSites.last
             else
                 Some(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}")
 
@@ -98,7 +100,10 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
         val detectedAllocSites = (for {
             (ctx, pc, typeId) <- pts.elements.iterator.map(longToAllocationSite)
         } yield {
-            (ctx.method.declaringClassType.asObjectType, ctx.method.name, ctx.method.descriptor.toUMLNotation, ctx.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1), ObjectType.lookup(typeId).toJava)
+            if (ctx != NoContext) {
+                (ctx.method.declaringClassType.asObjectType, ctx.method.name, ctx.method.descriptor.toUMLNotation, ctx.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1), ObjectType.lookup(typeId).toJava)
+            } else
+                (ObjectType.Object, "JavaScript", "<uml>", pc, ObjectType.lookup(typeId).toJava)
         }).toSet
         println("------------------")
         println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")

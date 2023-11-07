@@ -16,7 +16,7 @@ public class JavaAllocationSimpleAlias {
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
                             allocSiteLinenumber = 25,
-                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.objects.javatype.SimpleContainerClass")
+                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {

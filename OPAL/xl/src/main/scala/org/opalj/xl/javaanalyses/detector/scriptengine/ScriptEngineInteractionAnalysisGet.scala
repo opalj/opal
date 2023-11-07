@@ -73,13 +73,16 @@ abstract class ScriptEngineInteractionAnalysisGet(
                 val possibleValues = possibleStrings.map(variableName => store.asInstanceOf[Map[PKey, Value]]
                     .getOrElse(PKey.StringPKey.make(variableName), Value.makeUndef()))
                 println(s"possible values: ${possibleValues.mkString("\n")}")
-                val pointsToSetSet = js2java(possibleValues)._2
+                val (referenceTypes, pointsToSetSet, jsNodes) = js2java(possibleValues)
 
                 pointsToSetSet.foreach { pointsToSet =>
                     pointsToAnalysisState.includeSharedPointsToSet(
                         targetVarDefSite, pointsToSet
                     )
                 }
+
+                val jsPointsToSet: PointsToSet = this.createPointsToSet(-100 - jsNodes.head.getIndex, NoContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
+                pointsToAnalysisState.includeSharedPointsToSet(targetVarDefSite, jsPointsToSet)
                 dependees += eps
             case UBP(newPointsTo: PointsToSet @unchecked) =>
                 println(s"points to continuation: $eps")
@@ -95,13 +98,16 @@ abstract class ScriptEngineInteractionAnalysisGet(
                                         .getOrElse(PKey.StringPKey.make(variableName), Value.makeUndef()))
                                 println(s"possible strings ${possibleStrings.mkString("\n")}")
                                 println(s"possible values: ${possibleValues.mkString("\n")}")
-                                val pointsToSetSet = js2java(possibleValues)._2
+                                val (referenceTypes, pointsToSetSet, jsNodes) = js2java(possibleValues)
 
                                 pointsToSetSet.foreach { pointsToSet =>
                                     pointsToAnalysisState.includeSharedPointsToSet(
                                         targetVarDefSite, pointsToSet
                                     )
                                 }
+
+                                val jsPointsToSet: PointsToSet = this.createPointsToSet(-100 - jsNodes.head.getIndex, NoContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
+                                pointsToAnalysisState.includeSharedPointsToSet(targetVarDefSite, jsPointsToSet)
                                 dependees += eps
                             case eps => dependees += eps
                         }
@@ -137,13 +143,12 @@ abstract class ScriptEngineInteractionAnalysisGet(
 
                                     val (referenceTypes, pointsToSetSet, jsNodes) = js2java(possibleValues)
 
-                                    val jsPointsToSet: PointsToSet = this.createPointsToSet(-100 - jsNodes.head.getIndex, NoContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
-
                                     pointsToSetSet.foreach { pointsToSet =>
                                         pointsToAnalysisState.includeSharedPointsToSet(
                                             targetVarDefSite, pointsToSet
                                         )
                                     }
+                                    val jsPointsToSet: PointsToSet = this.createPointsToSet(-100 - jsNodes.head.getIndex, NoContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
                                     pointsToAnalysisState.includeSharedPointsToSet(targetVarDefSite, jsPointsToSet)
                                 case eps => dependees += eps
                             }

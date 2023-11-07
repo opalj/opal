@@ -42,7 +42,7 @@ class XLJavaScriptTests extends PropertiesTest {
     override def withRT = false
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/xl/js/")
+        List("org/opalj/fpcf/fixtures/xl/js/sandbox/")
     }
 
     override def createConfig(): Config = ConfigFactory.load("reference.conf")

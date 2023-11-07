@@ -28,14 +28,14 @@ public class EngineWrapper {
         engine.eval("var n = w;");
         return engine.get("n");
     }
-    @PointsToSet(variableDefinition = 44,
+    @PointsToSet(variableDefinition = 46,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = EngineWrapper.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 42,
-                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.SimpleContainerClass")
+                            allocSiteLinenumber = 44,
+                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
