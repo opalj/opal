@@ -11,8 +11,8 @@ import javax.script.ScriptException;
 public class Min {
     @PointsToSet(variableDefinition = 24,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = Add.class,
-                    evalCallLineNumber = 22,
+                    cf = Add.class,
+                    nodeIdTAJS = 1,
                     allocatedType = ""
             )
     )

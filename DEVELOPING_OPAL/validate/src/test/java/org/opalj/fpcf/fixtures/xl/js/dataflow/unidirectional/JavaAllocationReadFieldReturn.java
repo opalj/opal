@@ -19,8 +19,8 @@ public class JavaAllocationReadFieldReturn {
     @PointsToSet(variableDefinition = 35,
             expectedJavaScriptAllocSites = {
                     @JavaScriptContextAllocSite(
-                            evalCallSource = JavaAllocationReadFieldReturn.class,
-                            evalCallLineNumber = 34,
+                            cf = JavaAllocationReadFieldReturn.class,
+                            nodeIdTAJS = 1,
                             allocatedType = ""
                     )
             }

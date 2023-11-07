@@ -56,17 +56,35 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
 
         val variableDefinitionLine = getValue(p, annotationType, a.elementValuePairs, "variableDefinition").asIntValue.value
 
-        val subAnnotations: ArraySeq[AnnotationLike] =
+        val subAnnotationsJava: ArraySeq[AnnotationLike] =
             getValue(p, annotationType, a.elementValuePairs, "expectedJavaAllocSites")
                 .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
 
         // expected allocation sites tuples ( line number, type id)
-        val expectedAllocSites = subAnnotations.map(
+        val expectedJavaAllocSites = subAnnotationsJava.map(
             allocSiteAnnotation => (
                 findElement(allocSiteAnnotation.elementValuePairs, "cf").get.asClassValue.value.asObjectType,
                 findElement(allocSiteAnnotation.elementValuePairs, "methodName").get.asStringValue.value,
                 findElement(allocSiteAnnotation.elementValuePairs, "methodDescriptor").get.asStringValue.value,
                 findElement(allocSiteAnnotation.elementValuePairs, "allocSiteLinenumber").get.asIntValue.value,
+                findElement(allocSiteAnnotation.elementValuePairs, "allocatedType").get.asStringValue.value,
+            )
+        ).toSet
+
+        val subAnnotationsJS: ArraySeq[AnnotationLike] =
+            getValue(p, annotationType, a.elementValuePairs, "expectedJavaScriptAllocSites")
+                .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
+        /*
+evalCallSource = JavaScriptAllocationReturn.class,
+                    evalCallLineNumber = 34,
+                    allocatedType = "java.lang.Object"
+ */
+        // expected allocation sites tuples ( line number, type id)
+        val expectedJSAllocSites = subAnnotationsJS.map(
+            allocSiteAnnotation => (
+                findElement(allocSiteAnnotation.elementValuePairs, "cf").get.asClassValue.value.asObjectType,
+                "JavaScript", "<uml>",
+                -findElement(allocSiteAnnotation.elementValuePairs, "nodeIdTAJS").get.asIntValue.value - 100,
                 findElement(allocSiteAnnotation.elementValuePairs, "allocatedType").get.asStringValue.value,
             )
         ).toSet
@@ -103,13 +121,14 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
             if (ctx != NoContext) {
                 (ctx.method.declaringClassType.asObjectType, ctx.method.name, ctx.method.descriptor.toUMLNotation, ctx.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1), ObjectType.lookup(typeId).toJava)
             } else
-                (ObjectType.Object, "JavaScript", "<uml>", pc, ObjectType.lookup(typeId).toJava)
+                (m.classFile.thisType.asObjectType, "JavaScript", "<uml>", pc, ObjectType.lookup(typeId).toJava)
         }).toSet
         println("------------------")
         println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
-        println(s"expected alloc site: ${expectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
+        println(s"expected Java alloc sites: ${expectedJavaAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
+        println(s"expected JS alloc sites: ${expectedJSAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
 
-        val missingAllocSiteSet = expectedAllocSites diff detectedAllocSites
+        val missingAllocSiteSet = (expectedJavaAllocSites ++ expectedJSAllocSites) diff detectedAllocSites
         println(s"missing alloc site: ${missingAllocSiteSet.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
 
         if (missingAllocSiteSet.nonEmpty) {

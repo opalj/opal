@@ -11,8 +11,8 @@ import javax.script.ScriptException;
 public class Div {
     @PointsToSet(variableDefinition = 25,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = Div.class,
-                    evalCallLineNumber = 23,
+                    cf = Div.class,
+                    nodeIdTAJS = 1,
                     allocatedType = ""
             )
     )

@@ -11,8 +11,8 @@ import javax.script.ScriptException;
 public class Mult {
     @PointsToSet(variableDefinition = 24,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = Mult.class,
-                    evalCallLineNumber = 22,
+                    cf = Mult.class,
+                    nodeIdTAJS = 1,
                     allocatedType = ""
             )
     )

@@ -10,8 +10,8 @@ import javax.script.ScriptException;
 public class JavaScriptAllocationSimple {
     @PointsToSet(variableDefinition = 22,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = JavaScriptAllocationSimple.class,
-                    evalCallLineNumber = 21,
+                    cf = JavaScriptAllocationSimple.class,
+                    nodeIdTAJS = 1,
                     allocatedType = ""
             )
     )
