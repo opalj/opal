@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional.arithmetic;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional.arithmetic;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
