@@ -12,14 +12,14 @@ import javax.script.ScriptException;
  * evaluates a script returns instance.
  */
 public class JavaAllocationReturn {
-    @PointsToSet(variableDefinition = 29,
+    @PointsToSet(variableDefinition = 27,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
                 cf = JavaAllocationReturn.class,
                     methodName = "getObject",
-                    methodDescriptor = "(java.lang.String[]): java.lang.Object",
-                    allocSiteLinenumber = 44,
-                    allocatedType = "org.opalj.fpcf.fixtures.xl.js.SimpleContainerClass")
+                    methodDescriptor = "(): java.lang.Object",
+                    allocSiteLinenumber = 42,
+                    allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
 
             }
     )

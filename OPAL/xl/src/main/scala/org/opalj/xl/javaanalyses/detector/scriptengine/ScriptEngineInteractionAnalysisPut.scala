@@ -59,7 +59,8 @@ abstract class ScriptEngineInteractionAnalysisPut(
         param:              V,
         stmts:              Array[Stmt[V]],
         possibleStrings:    Set[String],
-        tac:                TheTACAI
+        tac:                TheTACAI,
+        assignedValue:      V
     )(eps: SomeEPS)(implicit typeIteratorState: TypeIteratorState, pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]): ProperPropertyComputationResult = {
         var results = List.empty[SomePartialResult]
         val epk = eps.toEPK
@@ -99,7 +100,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
             val UBP(newPointsTo: PointsToSet @unchecked) = eps
 
             val puts = Map.from(
-                possibleStrings.map(s => (s, context, param.definedBy, tac) -> newPointsTo)
+                possibleStrings.map(s => (s, context, param.definedBy, tac) -> (newPointsTo, assignedValue))
             )
             val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
             newEngineInteraction.updated(scriptEngineInteraction)
@@ -141,7 +142,8 @@ abstract class ScriptEngineInteractionAnalysisPut(
                 param,
                 stmts,
                 possibleStrings,
-                TheTACAI(tac.tac.get)
+                TheTACAI(tac.tac.get),
+                assignedValue
             )
         )
     }
@@ -180,7 +182,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
             pointsToSet = pointsToSet.included(allocations)
         })
         val puts = Map.from(
-            possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> pointsToSet)
+            possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> (pointsToSet, assignedValue.asVar))
         )
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
 
@@ -205,7 +207,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
         Results(createResults, InterimPartialResult(partialResults, dependees, c(
             callPC, scriptEngineInteraction,
             engineDependeesMap,
-            putDependeesMap, callerContext, param, tac.stmts, possibleStrings, TheTACAI(tac)
+            putDependeesMap, callerContext, param, tac.stmts, possibleStrings, TheTACAI(tac), assignedValue.asVar
         )))
     }
 
