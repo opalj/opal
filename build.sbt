@@ -35,6 +35,7 @@ ScalacConfiguration.globalScalacOptions
 
 ThisBuild / resolvers += Resolver.jcenterRepo
 ThisBuild / resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
+ThisBuild / resolvers += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
 
 // OPAL already parallelizes most tests/analyses internally!
 ThisBuild / parallelExecution := false

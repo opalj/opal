@@ -62,7 +62,7 @@ object FixtureDiscovery {
      */
     def parseConfigFile(configFile: File) = {
       if (configFile.exists) {
-        val (requires, configurationOptions) = fromFile(configFile).getLines
+        val (requires, configurationOptions) = fromFile(configFile).getLines()
           .map(_.trim)
           .filter(l => l.nonEmpty && !l.startsWith("#"))
           .toList
