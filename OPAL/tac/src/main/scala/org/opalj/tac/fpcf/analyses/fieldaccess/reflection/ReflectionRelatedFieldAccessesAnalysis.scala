@@ -1041,6 +1041,7 @@ object ReflectionRelatedFieldAccessesAnalysisScheduler extends BasicFPCFEagerAna
         Seq(DeclaredMethodsKey, DeclaredFieldsKey, ProjectIndexKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        ForNameClasses,
         FieldReadAccessInformation,
         FieldWriteAccessInformation,
         MethodFieldReadAccessInformation,
