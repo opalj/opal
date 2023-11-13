@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.dataflow.bidirectional;
+package org.opalj.fpcf.fixtures.xl.js.dataflow.unidirectional.JSAccessJava;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -36,5 +36,4 @@ public class JavaHashMapSet {
         Object obj2 = map.get("a");
         System.out.println(obj2);
     }
-    public String myfield;
 }
