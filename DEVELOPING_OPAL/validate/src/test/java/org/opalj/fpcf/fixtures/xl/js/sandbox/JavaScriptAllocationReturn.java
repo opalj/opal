@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.xl.js.sandbox;
 
-import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -12,30 +11,28 @@ import javax.script.ScriptException;
  * A function evaluateScript() evaluates a script that instantiates a JS object, which is returned.
  */
 public class JavaScriptAllocationReturn {
-    @PointsToSet(variableDefinition = 23,
-            expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = JavaScriptAllocationReturn.class,
-                    evalCallLineNumber = 29,
-                    allocatedType = "java.lang.Object"
-            )
-    )
+
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         Object p = evaluateScript();
         System.out.println(p.getClass());
     }
 
+    @PointsToSet(variableDefinition = 34,
+            expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
+                    evalCallSource = JavaScriptAllocationReturn.class,
+                    evalCallLineNumber = 30,
+                    allocatedType = "java.lang.Object"
+            )
+    )
     public static Object evaluateScript() throws ScriptException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         SimpleContainerClass simpleContainerClass = new SimpleContainerClass();
-        Integer n = 8;
-        Object p;
-        if(3<n) {
-            se.eval("var x = {'a':10}; var y = x; Java.type");
-            p = se.get("y");
-        }
-       else p = simpleContainerClass;
-
-        return p;
+        simpleContainerClass.o = "abc";
+        se.put("scc", simpleContainerClass);
+        se.eval("var p = scc.o;");//={};"); //function O(a) {this.a=a;}; const o = new O(\"name\");");
+        Object p = se.get("p");
+        Object a = p;
+        return a;
     }
 }

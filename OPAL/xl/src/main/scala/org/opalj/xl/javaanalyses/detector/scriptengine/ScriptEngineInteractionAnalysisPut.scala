@@ -100,7 +100,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
             val UBP(newPointsTo: PointsToSet @unchecked) = eps
 
             val puts = Map.from(
-                possibleStrings.map(s => (s, context, param.definedBy, tac) -> (newPointsTo, assignedValue))
+                possibleStrings.map(s => (s, context, tac) -> (newPointsTo, assignedValue))
             )
             val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
             newEngineInteraction.updated(scriptEngineInteraction)
@@ -182,7 +182,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
             pointsToSet = pointsToSet.included(allocations)
         })
         val puts = Map.from(
-            possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> (pointsToSet, assignedValue.asVar))
+            possibleStrings.map(s => (s, callerContext, TheTACAI(tac)) -> (pointsToSet, assignedValue.asVar))
         )
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
 
