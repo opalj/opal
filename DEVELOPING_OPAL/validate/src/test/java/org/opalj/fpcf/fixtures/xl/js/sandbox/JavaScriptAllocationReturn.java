@@ -11,7 +11,13 @@ import javax.script.ScriptException;
  * A function evaluateScript() evaluates a script that instantiates a JS object, which is returned.
  */
 public class JavaScriptAllocationReturn {
-
+    @PointsToSet(variableDefinition = 23,
+            expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
+                    cf = JavaScriptAllocationReturn.class,
+                    nodeIdTAJS = 11,
+                    allocatedType = "java.lang.Object"
+            )
+    )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         Object p = evaluateScript();
         System.out.println(p.getClass());
@@ -28,11 +34,14 @@ public class JavaScriptAllocationReturn {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         SimpleContainerClass simpleContainerClass = new SimpleContainerClass();
-        simpleContainerClass.o = "abc";
-        se.put("scc", simpleContainerClass);
-        se.eval("var p = scc.o;");//={};"); //function O(a) {this.a=a;}; const o = new O(\"name\");");
-        Object p = se.get("p");
-        Object a = p;
-        return a;
+        Integer n = 8;
+        Object p;
+        if(3<n) {
+            se.eval("var x = {'a':10}; var y = x; Java.type");
+            p = se.get("y");
+        }
+       else p = simpleContainerClass;
+
+        return p;
     }
 }

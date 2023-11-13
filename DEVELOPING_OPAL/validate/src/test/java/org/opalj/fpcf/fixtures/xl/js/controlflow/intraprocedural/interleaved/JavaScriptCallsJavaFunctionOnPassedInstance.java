@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.interleaved;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -9,7 +9,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 /**
- * An instance of JavaScriptCallsJavaFunction and SimpleContainerClass are passed to ScriptEngine. interprocedural variation.
+ * An instance of JavaScriptCallsJavaFunction and SimpleContainerClass are passed to ScriptEngine.
  * in eval, JavaScriptCallsJavaFunction.javaFunctionCalledFromJS() is called, SimpleContainerClass instance is passed.
  * PTS of arg in javaFunctionCalledFromJS shoudl include alloc site before eval call.
  */
@@ -23,7 +23,7 @@ public class JavaScriptCallsJavaFunctionOnPassedInstance {
         w.s = s;
         se.put("w", w);
         JavaScriptCallsJavaFunctionOnPassedInstance inst = new JavaScriptCallsJavaFunctionOnPassedInstance();
-        setScriptEngineInstance(se, inst);
+        se.put("inst", inst);
         se.eval("var n = w; var javainstance = inst; javainstance.javaFunctionCalledFromJS(n);");
     }
 
@@ -40,10 +40,5 @@ public class JavaScriptCallsJavaFunctionOnPassedInstance {
     public void javaFunctionCalledFromJS(SimpleContainerClass argument) {
         String s = argument.s;
         System.out.println(s);
-    }
-
-
-    public static void setScriptEngineInstance(ScriptEngine se, JavaScriptCallsJavaFunctionOnPassedInstance inst) {
-        se.put("inst", inst);
     }
 }

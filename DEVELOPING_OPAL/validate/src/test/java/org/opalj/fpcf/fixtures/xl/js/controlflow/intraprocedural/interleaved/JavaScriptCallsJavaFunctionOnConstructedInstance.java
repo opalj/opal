@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.interleaved;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -25,7 +25,7 @@ public class JavaScriptCallsJavaFunctionOnConstructedInstance {
         w.s = s;
         se.put("w", w);
         JavaScriptCallsJavaFunctionOnConstructedInstance inst = new JavaScriptCallsJavaFunctionOnConstructedInstance();
-        setScriptEngineInstance(se, inst);
+        se.put("inst", inst);
         se.eval("var n = w; var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.interleaved.JavaScriptCallsJavaFunctionOnConstructedInstance\"); var javainstance = new javaTestClass(); javainstance.javaFunctionCalledFromJS(n);");
     }
 
@@ -42,9 +42,5 @@ public class JavaScriptCallsJavaFunctionOnConstructedInstance {
     public void javaFunctionCalledFromJS(SimpleContainerClass argument) {
         String s = argument.s;
         System.out.println(s);
-    }
-
-    public static void setScriptEngineInstance(ScriptEngine se, JavaScriptCallsJavaFunctionOnConstructedInstance inst) {
-        se.put("inst", inst);
     }
 }

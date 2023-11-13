@@ -8,12 +8,12 @@ package org.opalj.fpcf.properties.pts;
 public @interface JavaScriptContextAllocSite {
 
     // source file containing eval call (specified through class)
-    Class<?> evalCallSource();
+    Class<?> cf();
 
     /**
-     * line number of eval call
+     * TAJS nodeId
      */
-    int evalCallLineNumber();
+    int nodeIdTAJS();
 
     /**
      * alloc site type

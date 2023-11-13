@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional.arithmetic;
+package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional.arithmetic;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -11,8 +11,8 @@ import javax.script.ScriptException;
 public class Min {
     @PointsToSet(variableDefinition = 24,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
-                    evalCallSource = Add.class,
-                    evalCallLineNumber = 22,
+                    cf = Add.class,
+                    nodeIdTAJS = 1,
                     allocatedType = ""
             )
     )
