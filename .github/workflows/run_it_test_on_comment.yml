@@ -20,6 +20,14 @@ jobs:
         with:
           ref: ${{ steps.comment-branch.outputs.head_ref }}
 
+      - name: Set latest commit status as pending
+        uses: myrotvorets/set-commit-status-action@655d7d2517bab7f5d1b6e74cd7d5e995264184b1
+        if: always()
+        with:
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: pending
+
       - name: Run Integration Tests
         run: sbt -J-Xmx40G cleanBuild it:test
       - name: Run Cross Language Tests
