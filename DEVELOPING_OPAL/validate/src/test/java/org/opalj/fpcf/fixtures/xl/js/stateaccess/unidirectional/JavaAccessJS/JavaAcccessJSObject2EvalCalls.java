@@ -1,7 +1,7 @@
-package org.opalj.fpcf.fixtures.xl.js.dataflow.unidirectional.JavaAccessJS;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JavaAccessJS;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import org.opalj.fpcf.fixtures.xl.js.dataflow.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
+import org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 

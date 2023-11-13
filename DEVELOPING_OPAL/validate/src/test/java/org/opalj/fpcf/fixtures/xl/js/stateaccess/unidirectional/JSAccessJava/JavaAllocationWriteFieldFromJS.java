@@ -1,6 +1,5 @@
-package org.opalj.fpcf.fixtures.xl.js.dataflow.unidirectional.JSAccessJava;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava;
 
-import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
