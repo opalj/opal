@@ -98,21 +98,15 @@ evalCallSource = JavaScriptAllocationReturn.class,
         }
         val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == m).toSet
 
-        val defsiteOfInterest = {
-            //The last defSite is the one of interest
-            val defSites = defsitesInMethod.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine)
-            //val lastDefSite = .last
-            if (defSites.size > 0)
-                defSites.last
-            else
-                Some(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}")
+        //The last defSite is the one of interest
+        val defSite = defsitesInMethod.iterator.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine).maxByOption(_.pc)
+        val defsiteOfInterest = defSite.getOrElse(throw new Exception(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}"))
 
-        }
         val ptsProperties = ps.properties(defsiteOfInterest).map(_.toFinalEP.p)
         val pts = {
             ptsProperties.find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet]) match {
                 case Some(s) => s
-                case None    => return Some(s"No points-to-set found for definition  ${m.name} , line ${variableDefinitionLine}")
+                case None    => /*return Some*/ throw new Exception(s"No points-to-set found for definition  ${m.name} , line ${variableDefinitionLine}")
             }
         }
         val detectedAllocSites = (for {

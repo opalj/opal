@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.xl.js.sandbox;
 
-import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -24,6 +23,13 @@ public class JavaScriptAllocationReturn {
         System.out.println(p.getClass());
     }
 
+    @PointsToSet(variableDefinition = 34,
+            expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
+                    evalCallSource = JavaScriptAllocationReturn.class,
+                    evalCallLineNumber = 30,
+                    allocatedType = "java.lang.Object"
+            )
+    )
     public static Object evaluateScript() throws ScriptException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");

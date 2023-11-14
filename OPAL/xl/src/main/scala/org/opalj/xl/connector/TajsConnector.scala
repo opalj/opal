@@ -49,10 +49,14 @@ import org.opalj.xl.translator.translator.globalObject
 import org.opalj.xl.utility.Language
 import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.utility.Bottom
-
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPK
+import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
@@ -69,7 +73,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             var files:                   List[File]                                        = null,
             var scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet] = null,
             var connectorDependees:      Set[EOptionP[Entity, Property]]                   = Set.empty,
-            var puts:                    Map[PKey.StringPKey, Value]                       = Map.empty
+            var puts:                    Map[PKey.StringPKey, Value]                       = Map.empty,
+            var connectorResults:        Set[ProperPropertyComputationResult]              = Set.empty[ProperPropertyComputationResult]
     ) extends BaseAnalysisState with TypeIteratorState
 
     def analyzeScriptEngineInstance(scriptEngineInstance: ScriptEngineInstance[ElementType]): ProperPropertyComputationResult = {
@@ -88,22 +93,21 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             oldScriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet],
             oldTAJSanalysis:            Option[Analysis], blockAndContext: Option[BlockAndContext[Context]]
         )(eps: SomeEPS)(implicit state: TajsConnectorState): ProperPropertyComputationResult = {
-            state.connectorDependees =
-                state.connectorDependees.filter(dependee => dependee.e != eps.e)
+            state.connectorDependees = state.connectorDependees.filter(dependee => dependee.e != eps.e)
             eps match {
-                case ubp @ UBP(javaScriptInteraction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
-                    state.code = state.code ++ fillEmptyCode(possibleEmptyCode)
-                    state.puts ++= puts.map(put => java2js(put._1._1, put._1._2.asInstanceOf[ContextType], put._2._1.asInstanceOf[PointsToSet], put._1._3, put._1._4, null))
-                    state.connectorDependees += ubp
-                    state.files = utility.asFiles("JavaScript", ".js", state.code)
+
+                case UBP(javaScriptInteraction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
+                    prepareAnalysis(possibleEmptyCode, puts)
                     val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
                     createResult(javaScriptInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analysis, blockAndContext)
 
                 case UBP(ScriptEngineInteraction(Language.Unknown, _, _, _)) =>
+                    state.connectorDependees += eps
                     Results()
 
                 case UBP(_: PointsToSet @unchecked) =>
                     val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
+                    state.connectorDependees += eps
                     createResult(oldScriptEngineInteraction, analysis, blockAndContext)
 
                 case ep =>
@@ -113,12 +117,11 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
         }
 
         def analyze(tajsAdapter: TajsAdapter)(implicit state: TajsConnectorState): (Option[Analysis], Option[BlockAndContext[Context]]) = {
-            println(s">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>start tajs ${state.code.mkString("\n")} \n ${state.puts.mkString("\n")}  ")
 
             LocalTAJSAdapter.setLocalTAJSAdapter(tajsAdapter)
 
-            val arguments = state.files.map(_.getPath).toArray
-            val analysis = Main.init(arguments, null)
+            val javaScriptFilePaths = state.files.map(_.getPath).toArray
+            val analysis = Main.init(javaScriptFilePaths, null)
 
             val flowGraph = analysis.getSolver.getFlowGraph
             val mainFunction = flowGraph.getMain
@@ -127,51 +130,101 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             analysisLatticeElement.getStates(entryBlock).forEach((context, tajsState) => {
                 val obj = tajsState.getStore.get(globalObject)
                 obj.setWritable()
-                state.puts.foreach(put =>
-                    tajsState.getStore.get(globalObject).setProperty(put._1, put._2))
+                state.puts.foreach(put => tajsState.getStore.get(globalObject).setProperty(put._1, put._2))
             })
-            run(analysis, new java.util.HashMap[PKey.StringPKey, Value]())
-            println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> end tajs")
+            run(analysis)
             (Some(analysis), None)
         }
 
         object tajsAdapter extends TajsAdapter {
-            override def queryObject(v: Value): Value = {
-                println(s"Query Object Call.................................$v")
-                val possibleValues = new java.util.ArrayList[Value]()
+
+            override def setProperty(v: Value, propertyName: String, rhsFieldValue: Value): Unit = {
+
                 if (v.isJavaObject) {
-                    v.getObjectLabels.forEach(
-                        ol => {
-                            val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
-                            val context = jNode.getContext()
-                            implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-                                new PointsToAnalysisState(context, FinalEP(context.method.definedMethod, jNode.getTacai))
-                            jNode.getDefSites.foreach(defSite => {
-                                val pointsToSet = currentPointsToOfDefSite("object", defSite)
-                                possibleValues.add(
-                                    java2js("", context, pointsToSet, jNode.getDefSites, jNode.getTacai, null)._2
-                                )
+                    v.getObjectLabels.forEach(ol => {
+                        val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
+                        val javaName = ol.getJavaName
+                        val objectType = ObjectType(javaName.replace(".", "/"))
+                        val classFile = project.classFile(objectType)
+                        val possibleFields = classFile.get.fields.find(_.name == propertyName)
+                        //val context = jNode.getContext
+                        val pointsToSet = jNode.getPointsToSet.asInstanceOf[PointsToSet]
+
+                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
+                        rhsFieldValue.getObjectLabels.forEach(ol => {
+                            val node = ol.getNode
+                            val index = -100 - node.getIndex
+                            val rhsPointsToSet = createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
+                            possibleFields.foreach(field => {
+                                pointsToSet.forNewestNElements(pointsToSet.numElements) { as =>
+                                    val tpe = getTypeOf(as)
+                                    if (tpe.isObjectType) {
+                                        Iterator((as, field)).foreach(fieldEntity => {
+                                            pointsToAnalysisState.includeSharedPointsToSet(
+                                                fieldEntity,
+                                                rhsPointsToSet,
+                                                PointsToSetLike.noFilter
+                                            )
+                                        })
+                                    }
+                                }
                             })
+                        })
 
-                            val objectDependeesMap =
-                                if (pointsToAnalysisState.hasDependees("object"))
-                                    pointsToAnalysisState.dependeesOf("object")
-                                else
-                                    Map.empty
+                        val setPropertyDependeesMap =
+                            if (pointsToAnalysisState.hasDependees("setProperty"))
+                                pointsToAnalysisState.dependeesOf("setProperty")
+                            else
+                                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
-                            val objectDependees = objectDependeesMap.valuesIterator.map(_._1)
-                            state.connectorDependees = state.connectorDependees ++ objectDependees.toSet
-                        }
-                    )
-                    Value.join(possibleValues)
-                } else
-                    Value.makeUndef()
-
+                        state.connectorDependees = state.connectorDependees ++ setPropertyDependeesMap.valuesIterator.map(_._1)
+                        state.connectorResults ++= createResults
+                    })
+                }
             }
 
-            override def queryField(v: Value, fieldName: String): Value = ???
+            override def readProperty(v: Value, propertyName: String): Value = {
+                var jsValue = Value.makeAbsent()
+                if (v.isJavaObject) {
+                    v.getObjectLabels.forEach(ol => {
+                        val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
+                        val javaName = ol.getJavaName
+                        val objectType = ObjectType(javaName.replace(".", "/"))
+                        val classFile = project.classFile(objectType)
+                        val possibleFields = classFile.get.fields.find(_.name == propertyName)
+                        //val context = jNode.getContext
+                        val tacai = jNode.getTacai
+                        val baseValuePointsToSet = jNode.getPointsToSet.asInstanceOf[PointsToSet]
 
-            override def queryMethod(v: Value, methodName: String): Value = ???
+                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
+
+                        baseValuePointsToSet.forNewestNElements(baseValuePointsToSet.numElements) { as =>
+                            possibleFields.foreach(field => {
+                                val fieldEntities = Iterator((as, field))
+                                for (fieldEntity <- fieldEntities) {
+                                    val propertyPointsToSet =
+                                        currentPointsTo("readProperty", fieldEntity, PointsToSetLike.noFilter)
+                                    jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, tacai)._2)
+                                }
+                            })
+                        }
+
+                        val readPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("readProperty"))
+                            pointsToAnalysisState.dependeesOf("readProperty")
+                        else
+                            Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                        state.connectorDependees = state.connectorDependees ++
+                            readPropertyDependeesMap.valuesIterator.map(_._1)
+                        state.connectorResults ++= createResults
+                    })
+                }
+                jsValue
+            }
+
+            override def callFunction(v: Value, methodName: String): Value = ???
         }
 
         def createResult(
@@ -191,6 +244,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 val ordinaryExistStore = ordinaryExitStates.
                     asScala.values.flatMap(_.getStore.get(globalObject).getAllProperties.asScala).
                     toMap
+
                 val exceptionalExitStore = exceptionalExitStates.asScala.values.
                     flatMap(_.getStore.get(globalObject).getAllProperties.asScala).toMap
 
@@ -201,40 +255,46 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 store = store.map(entry => (entry._1, entry._2.join(Value.makeUndef())))
             }
 
-            // println(s"store: ${store.mkString("\n")}")
-            InterimResult(
-                scriptEngineInstance,
-                Bottom,
-                InterimAnalysisResult[PKey, Value](store),
-                state.connectorDependees,
-                c(scriptEngineInteraction, analysis, blockAndContext)
+            Results(
+                state.connectorResults,
+                InterimResult(
+                    scriptEngineInstance,
+                    Bottom,
+                    InterimAnalysisResult[PKey, Value](store),
+                    state.connectorDependees,
+                    c(scriptEngineInteraction, analysis, blockAndContext)
+                )
             )
         }
 
+        def prepareAnalysis(possibleEmptyCode: List[String], puts: Map[(String, Any, TheTACAI), (Any, Coordinator.V)]): Unit = {
+            state.code = state.code ++ fillEmptyCode(possibleEmptyCode)
+            state.puts ++= puts.map(put => {
+                val variableName = put._1._1
+                val context = put._1._2.asInstanceOf[ContextType]
+                val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
+                val tacai: TheTACAI = put._1._3
+                val jsValue = java2js(variableName, context, pointsToSet, tacai)
+                jsValue
+            })
+            state.files = utility.asFiles("JavaScript", ".js", state.code)
+        }
+
         //start of analysis
-        val result = propertyStore(scriptEngineInstance, CrossLanguageInteraction.key)
-        // println(s"connector start, result: $result")
-        result match {
-            case ubp @ UBP(engineInteraction @ ScriptEngineInteraction(
-                Language.JavaScript, possibleEmptyCode, _, puts)) =>
-                state.code = state.code ++ fillEmptyCode(possibleEmptyCode)
+        propertyStore(scriptEngineInstance, CrossLanguageInteraction.key) match {
 
-                state.puts ++= puts.map(put => {
-                    val variableName = put._1._1
-                    val context = put._1._2.asInstanceOf[ContextType]
-                    val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
-                    val intTrieSet: IntTrieSet = put._1._3
-                    val tacai: TheTACAI = put._1._4
-                    val v = Some(put._2._2)
-                    val jsValue = java2js(variableName, context, pointsToSet, intTrieSet, tacai, v)
-                    jsValue
-                })
-                state.connectorDependees += ubp
-                state.files = utility.asFiles("JavaScript", ".js", state.code)
+            case ubp @ UBP(interaction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
+                prepareAnalysis(possibleEmptyCode, puts)
                 val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
-                createResult(engineInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analysis, blockAndContext)
+                state.connectorDependees += ubp
+                createResult(
+                    interaction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]],
+                    analysis,
+                    blockAndContext
+                )
 
-            case UBP(ScriptEngineInteraction(Language.Unknown, _, _, _)) =>
+            case ubp @ UBP(ScriptEngineInteraction(Language.Unknown, _, _, _)) =>
+                state.connectorDependees += ubp
                 Results()
 
             case ep =>
