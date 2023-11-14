@@ -13,7 +13,7 @@ import javax.script.ScriptException;
  * java modifies js state through setMember()
  * field is immediately read through getSatte ( no JS analysis necessary )
  */
-public class JavaAcccessJSObject {
+public class JavaAcccessJSObjectInstant {
     @PointsToSet(variableDefinition = 39,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
@@ -26,7 +26,7 @@ public class JavaAcccessJSObject {
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
-        JavaAcccessJSObject instance = new JavaAcccessJSObject();
+        JavaAcccessJSObjectInstant instance = new JavaAcccessJSObjectInstant();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("instance", instance);
