@@ -14,8 +14,8 @@ public class JavaScriptAllocationReturn {
     @PointsToSet(variableDefinition = 22,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
                     cf = JavaScriptAllocationReturn.class,
-                    nodeIdTAJS = 1,
-                    allocatedType = ""
+                    nodeIdTAJS = 11,
+                    allocatedType = "java.lang.Object"
             )
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {

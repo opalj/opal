@@ -80,14 +80,15 @@ evalCallSource = JavaScriptAllocationReturn.class,
                     allocatedType = "java.lang.Object"
  */
         // expected allocation sites tuples ( line number, type id)
-        val expectedJSAllocSites = subAnnotationsJS.map(
-            allocSiteAnnotation => (
-                findElement(allocSiteAnnotation.elementValuePairs, "cf").get.asClassValue.value.asObjectType,
-                "JavaScript", "<uml>",
-                -findElement(allocSiteAnnotation.elementValuePairs, "nodeIdTAJS").get.asIntValue.value - 100,
-                findElement(allocSiteAnnotation.elementValuePairs, "allocatedType").get.asStringValue.value,
-            )
-        ).toSet
+        val expectedJSAllocSites = subAnnotationsJS.iterator.
+            filter(allocSiteAnnotation => findElement(allocSiteAnnotation.elementValuePairs, "cf").isDefined).map(
+                allocSiteAnnotation => (
+                    findElement(allocSiteAnnotation.elementValuePairs, "cf").get.asClassValue.value.asObjectType,
+                    "JavaScript", "<uml>",
+                    -findElement(allocSiteAnnotation.elementValuePairs, "nodeIdTAJS").get.asIntValue.value - 100,
+                    findElement(allocSiteAnnotation.elementValuePairs, "allocatedType").get.asStringValue.value,
+                )
+            ).toSet
 
         implicit val ps: PropertyStore = p.get(PropertyStoreKey)
         implicit val typeIterator: TypeIterator = p.get(TypeIteratorKey)

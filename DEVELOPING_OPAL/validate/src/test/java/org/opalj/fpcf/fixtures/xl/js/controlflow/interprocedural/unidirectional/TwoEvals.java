@@ -1,9 +1,9 @@
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
+import org.opalj.fpcf.fixtures.xl.js.sandbox.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
-import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -18,18 +18,18 @@ public class TwoEvals {
                             cf = JavaAllocationJSIdentity.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 31,
-                            allocatedType = "java.lang.Integer")
+                            allocSiteLinenumber = 28,
+                            allocatedType = "import org.opalj.fpcf.fixtures.xl.js.sandbox.SimpleContainerClass")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
+        SimpleContainerClass in = new SimpleContainerClass();
+        se.put("i", in);
         defineF(se);
         defineG(se);
-        Invocable inv = (Invocable) se;
-        Integer in = 50;
-        Object out = inv.invokeFunction("f", in);
+        Object out = se.get("r");
         System.out.println(out);
     }
 
@@ -37,6 +37,6 @@ public class TwoEvals {
         se.eval("function f(n){return n;}");
     }
     public static void defineG(ScriptEngine se) throws ScriptException {
-        se.eval("function g(n){return f(n);}");
+        se.eval("function g(n){return f(n);} var r = g(i);");
     }
 }
