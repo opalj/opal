@@ -10,7 +10,7 @@ addSbtPlugin("org.scalariform" % "sbt-scalariform"        % "1.8.3")
 addSbtPlugin("org.scalameta"   % "sbt-scalafmt"           % "2.4.2")
 
 addSbtPlugin("com.eed3si9n"     % "sbt-unidoc"   % "0.4.3")
-addSbtPlugin("com.eed3si9n"     % "sbt-assembly" % "0.15.0")
+addSbtPlugin("com.eed3si9n"     % "sbt-assembly" % "2.1.4")
 
 // Dependency management:
 addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.1.1")

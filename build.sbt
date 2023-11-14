@@ -82,15 +82,15 @@ ThisBuild / javaOptions ++= Seq(
 addCommandAlias(
   "compileAll",
   "; copyResources ; scalastyle ; " +
-    "test:compile ; test:scalastyle ; " +
-    "it:scalariformFormat ; it:scalastyle ; it:compile "
+    "OPAL / test / compile ; test:scalastyle ; " +
+    "OPAL / IntegrationTest / scalariformFormat ; OPAL / IntegrationTest / scalastyle ; OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
 
 addCommandAlias(
   "cleanAll",
-  "; clean ; cleanCache ; cleanLocal ; test:clean ; it:clean ; cleanFiles"
+  "; clean ; cleanCache ; cleanLocal ; OPAL / Test / clean ; OPAL / IntegrationTest / clean ; cleanFiles"
 )
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
@@ -115,7 +115,7 @@ lazy val buildSettings =
     scalariformSettings ++
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
-    Seq(Defaults.itSettings: _*) ++
+    Seq(inConfig(IntegrationTest)(Defaults.testSettings): _*) ++
     Seq(
       unmanagedSourceDirectories
         .withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil
