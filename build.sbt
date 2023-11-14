@@ -82,7 +82,7 @@ ThisBuild / javaOptions ++= Seq(
 addCommandAlias(
   "compileAll",
   "; copyResources ; scalastyle ; " +
-    "OPAL / test / compile ; test:scalastyle ; " +
+    "OPAL / Test / compile ; OPAL / Test / scalastyle ; " +
     "OPAL / IntegrationTest / scalariformFormat ; OPAL / IntegrationTest / scalastyle ; OPAL / IntegrationTest / compile "
 )
 
