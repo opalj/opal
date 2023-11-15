@@ -17,6 +17,9 @@ jobs:
         
       - name: Checkout PR branch
         uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set latest commit status as pending
         uses: myrotvorets/set-commit-status-action@655d7d2517bab7f5d1b6e74cd7d5e995264184b1
