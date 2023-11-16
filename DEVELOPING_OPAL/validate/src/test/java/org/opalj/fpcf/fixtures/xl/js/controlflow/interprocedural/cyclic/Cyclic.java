@@ -54,9 +54,13 @@ public class Cyclic {
     }
 
     public String callShortenThroughScriptEngine(String s) throws ScriptException, NoSuchMethodException {
-        Invocable inv = (Invocable) se;
-        String result = (String)(inv.invokeFunction("f", s));
+        se.put("arg", s);
+        se.eval("var res = f(arg)");
+        String result = (String) se.get("res");
         return result;
+        // Invocable inv = (Invocable) se;
+        // String result = (String)(inv.invokeFunction("f", s));
+        // return result;
     }
 }
 
