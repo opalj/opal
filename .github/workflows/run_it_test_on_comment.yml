@@ -16,7 +16,7 @@ jobs:
         id: head-branch
         with:
           script: |
-            octokit.rest.pulls.get({
+            github.rest.pulls.get({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
