@@ -50,7 +50,7 @@ case object NoContext extends Context {
 /**
  * A simple context that provides the bare minumum for context-insensitive analyses.
  */
-case class SimpleContext private[properties] (method: DeclaredMethod) extends Context {
+case class SimpleContext(method: DeclaredMethod) extends Context {
     override def id: Int = method.id
 }
 

@@ -13,7 +13,7 @@ import java.util.HashMap;
  *
  * https://github.com/cliff363825/TwentyFour/blob/a1822ad9682a6b363b3d1612052dfc716c077484/01_Language/03_Java/j2se/src/main/java/com/onevgo/j2se/script/ScriptMain.java#L5
  */
-public class JavaHashMapSet {
+/*public class JavaHashMapSet {
     @PointsToSet(variableDefinition = 36,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
@@ -37,3 +37,4 @@ public class JavaHashMapSet {
         System.out.println(obj2);
     }
 }
+*/

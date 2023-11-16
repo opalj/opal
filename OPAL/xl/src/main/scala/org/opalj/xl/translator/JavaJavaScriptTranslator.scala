@@ -24,14 +24,16 @@ object JavaJavaScriptTranslator {
         variableName:    String,
         context:         ContextType,
         pointsToSetLike: PointsToSet,
-        theTACAI:        TheTACAI
+        theTACAI:        TheTACAI,
+        tpe:             Option[ObjectType] = None
     ): (PKey.StringPKey, Value) = {
 
         var defaultValue = Value.makeAbsent()
 
-        if (pointsToSetLike != null)
+        if (pointsToSetLike != null) {
             pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) { tpe =>
                 {
+                    println(tpe)
                     if (tpe == ObjectType.String)
                         defaultValue = defaultValue.join(Value.makeAnyStr().removeAttributes())
                     if (tpe.isNumericType || tpe == ObjectType.Integer ||
@@ -60,6 +62,16 @@ object JavaJavaScriptTranslator {
                     }
                 }
             }
+            if (defaultValue == Value.makeAbsent()) {
+                if (tpe != null && tpe.isDefined) {
+                    val t = tpe.get
+                    if (t.isBooleanType)
+                        defaultValue = defaultValue.join(Value.makeAnyBool())
+                    if (t.isPrimitiveTypeWrapper)
+                        defaultValue = defaultValue.join(Value.makeAnyNum())
+                }
+            }
+        }
         (PKey.StringPKey.make(variableName), defaultValue)
     }
     def JavaScript2Java[PointsToSet, ContextType](javaScriptValues: Set[Value]): (Set[ReferenceType], Set[PointsToSet], Integer) = {
@@ -85,6 +97,7 @@ object JavaJavaScriptTranslator {
                         val node = objectLabel.getNode().
                             asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]]
                         pointsToSetSet += node.getPointsToSet
+                        //jsNodes+=node
                     }
                 })
             } else if (v.isJSJavaObject) {
@@ -105,6 +118,10 @@ object JavaJavaScriptTranslator {
         })
         val index = if (jsNodes.isEmpty) -50
         else -100 - jsNodes.head.getIndex
+
+        if (pointsToSetSet.isEmpty && typesSet.isEmpty)
+            typesSet += ObjectType.Object
+
         (typesSet, pointsToSetSet, index)
     }
 }

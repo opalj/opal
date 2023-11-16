@@ -88,8 +88,12 @@ abstract class ScriptEngineInteractionAnalysisEval(
 
         val newEngineDependees = if (oldEngineDependees.contains(epk)) {
             val UBP(newPointsTo: PointsToSet @unchecked) = eps
-            val oldDependee = oldEngineDependees(epk)._1.ub.asInstanceOf[PointsToSet]
-            results :::= resultsForScriptEngineAllocations(newEngineInteraction, newPointsTo, oldDependee.numElements)
+            val elementSize = if (oldEngineDependees(epk) != null && !oldEngineDependees(epk)._1.isInstanceOf[SomeEOptionP]) {
+                val oldDependee = oldEngineDependees(epk)._1.ub.asInstanceOf[PointsToSet]
+                oldDependee.numElements
+            } else 0
+
+            results :::= resultsForScriptEngineAllocations(newEngineInteraction, newPointsTo, elementSize)
             updatedDependees(eps, oldEngineDependees)
         } else oldEngineDependees
 

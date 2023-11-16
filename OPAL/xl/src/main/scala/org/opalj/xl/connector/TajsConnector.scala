@@ -49,7 +49,13 @@ import org.opalj.xl.translator.translator.globalObject
 import org.opalj.xl.utility.Language
 import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.utility.Bottom
+
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.InterimEP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
@@ -57,11 +63,15 @@ import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.DeclaredMethod
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
 
 abstract class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with PointsToAnalysisBase {
     self =>
@@ -82,6 +92,9 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
         implicit val state = TajsConnectorState(scriptEngineInstance, project)
 
         def java2js = JavaJavaScriptTranslator.Java2JavaScript[PointsToSet, ContextType]
+        // def js2java = JavaJavaScriptTranslator.JavaScript2Java[PointsToSet, ContextType]
+
+        val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
         def fillEmptyCode(possibleEmptyCode: List[String]): List[String] =
             if (possibleEmptyCode.size == 0)
@@ -99,6 +112,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 case UBP(javaScriptInteraction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
                     prepareAnalysis(possibleEmptyCode, puts)
                     val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
+                    state.connectorDependees += eps
                     createResult(javaScriptInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analysis, blockAndContext)
 
                 case UBP(ScriptEngineInteraction(Language.Unknown, _, _, _)) =>
@@ -106,7 +120,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     Results()
 
                 case UBP(_: PointsToSet @unchecked) =>
-                    val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
+                    val (analysis, blockAndContext) = resume(oldTAJSanalysis.get) //analyze(tajsAdapter = tajsAdapter)
                     state.connectorDependees += eps
                     createResult(oldScriptEngineInteraction, analysis, blockAndContext)
 
@@ -136,6 +150,11 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             (Some(analysis), None)
         }
 
+        def resume(analysis: Analysis): (Option[Analysis], Option[BlockAndContext[Context]]) = {
+            run(analysis)
+            (Some(analysis), None)
+        }
+
         object tajsAdapter extends TajsAdapter {
 
             override def setProperty(v: Value, propertyName: String, rhsFieldValue: Value): Unit = {
@@ -145,7 +164,9 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                         val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
                         val javaName = ol.getJavaName
                         val objectType = ObjectType(javaName.replace(".", "/"))
+                        println(objectType)
                         val classFile = project.classFile(objectType)
+                        println(classFile)
                         val possibleFields = classFile.get.fields.find(_.name == propertyName)
                         //val context = jNode.getContext
                         val pointsToSet = jNode.getPointsToSet.asInstanceOf[PointsToSet]
@@ -206,7 +227,11 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                                 for (fieldEntity <- fieldEntities) {
                                     val propertyPointsToSet =
                                         currentPointsTo("readProperty", fieldEntity, PointsToSetLike.noFilter)
-                                    jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, tacai)._2)
+                                    val fieldType = field.fieldType
+                                    val t = if (fieldType.isObjectType) {
+                                        Some(fieldType.asObjectType)
+                                    } else None
+                                    jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, tacai, t)._2)
                                 }
                             })
                         }
@@ -224,7 +249,84 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 jsValue
             }
 
-            override def callFunction(v: Value, methodName: String): Value = ???
+            override def callFunction(v: Value, methodName: String, parameters: java.util.List[Value]): Value = {
+                var result = Value.makeAbsent()
+
+                if (v.isJavaObject) {
+                    v.getObjectLabels.forEach(ol => {
+                        // val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
+                        val javaName = ol.getJavaName
+                        val objectType = ObjectType(javaName.replace(".", "/"))
+                        val instanceMethods = project.instanceMethods(objectType)
+                        val possibleMethods = instanceMethods.filter(_.name == methodName)
+
+                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+
+                        possibleMethods.foreach(method => {
+
+                            val declaredMethod = declaredMethods(method.method) //declaredMethods(method)
+                            val context = typeIterator.newContext(declaredMethod)
+
+                            //Call Graph
+                            state.connectorResults += PartialResult[DeclaredMethod, Callers](declaredMethod, Callers.key, {
+                                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
+                                    Some(InterimEUBP(declaredMethod, ub.updatedWithUnknownContext()))
+
+                                case _: InterimEP[_, _] => None
+
+                                case _: EPK[_, _] =>
+                                    Some(InterimEUBP(declaredMethod, OnlyCallersWithUnknownContext))
+
+                                case r =>
+                                    throw new IllegalStateException(s"unexpected previous result $r")
+                            })
+
+                            // function parameters
+                            val fps = formalParameters(declaredMethod)
+                            var paramIndex = 0
+                            parameters.forEach(parameter => {
+                                var parameterPointsToSet = emptyPointsToSet
+                                if (parameter.isJavaObject) {
+                                    parameter.getObjectLabels.forEach(ol =>
+                                        parameterPointsToSet = ol.getNode.asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]].getPointsToSet)
+                                } //else if(parameter.isJSJavaObject)
+                                val paramType = declaredMethod.descriptor.parameterType(paramIndex)
+                                val fp = getFormalParameter(paramIndex + 1, fps, context)
+                                val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
+                                pointsToAnalysisState.includeSharedPointsToSet(
+                                    fp,
+                                    parameterPointsToSet, //currentPointsToOfDefSites(fp, paramDefSites, filter),
+                                    filter
+                                )
+                                paramIndex = paramIndex + 1
+                            })
+
+                            //Function return value
+                            //val callees: Callees = pointsToAnalysisState.callees(ps)
+                            //val targets = callees.callees(pointsToAnalysisState.callContext, pc)
+                            //val defSiteObject = getDefSite(pc)
+
+                            if (context.method.descriptor.returnType.isReferenceType) {
+
+                                val pointsToSet = currentPointsTo("callFunction", context, PointsToSetLike.noFilter)
+
+                                val v = java2js("returnValue", context.asInstanceOf[ContextType], pointsToSet, null, None)
+                                result = v._2.join(result)
+                            }
+                        })
+
+                        val callFunctionDependeesMap =
+                            if (pointsToAnalysisState.hasDependees("callFunction"))
+                                pointsToAnalysisState.dependeesOf("callFunction")
+                            else
+                                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+                        state.connectorDependees = state.connectorDependees ++ callFunctionDependeesMap.valuesIterator.map(_._1)
+                        state.connectorResults ++= createResults
+                    })
+                }
+                result
+            }
         }
 
         def createResult(
@@ -251,7 +353,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 store = ordinaryExistStore.map(entry =>
                     (entry._1, entry._2.join(exceptionalExitStore.getOrElse(entry._1, Value.makeUndef())))) ++
                     exceptionalExitStore.filter(entry => !ordinaryExistStore.contains(entry._1))
-
+                println()
                 store = store.map(entry => (entry._1, entry._2.join(Value.makeUndef())))
             }
 
@@ -267,14 +369,16 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             )
         }
 
-        def prepareAnalysis(possibleEmptyCode: List[String], puts: Map[(String, Any, TheTACAI), (Any, Coordinator.V)]): Unit = {
+        def prepareAnalysis(possibleEmptyCode: List[String], puts: Map[(String, Any, TheTACAI), (Any, Coordinator.V, Option[ObjectType])]): Unit = {
             state.code = state.code ++ fillEmptyCode(possibleEmptyCode)
             state.puts ++= puts.map(put => {
                 val variableName = put._1._1
                 val context = put._1._2.asInstanceOf[ContextType]
                 val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
                 val tacai: TheTACAI = put._1._3
-                val jsValue = java2js(variableName, context, pointsToSet, tacai)
+                // val v = put._2._2
+                val optionType = put._2._3
+                val jsValue = java2js(variableName, context, pointsToSet, tacai, optionType)
                 jsValue
             })
             state.files = utility.asFiles("JavaScript", ".js", state.code)

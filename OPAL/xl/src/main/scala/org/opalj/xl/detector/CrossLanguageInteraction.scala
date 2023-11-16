@@ -16,6 +16,7 @@ import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.Coordinator.V
 
 import org.opalj.fpcf.Property
+import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 sealed trait CrossLanguageInteractionPropertyMetaInformation extends Property with PropertyMetaInformation {
@@ -51,10 +52,10 @@ object CrossLanguageInteraction extends CrossLanguageInteractionPropertyMetaInfo
 }
 
 case class ScriptEngineInteraction[ContextType, PointsToSet](
-        language:                Language                                               = Language.Unknown,
-        code:                    List[String]                                           = List.empty,
-        javaScriptFunctionCalls: List[JavaScriptFunctionCall[ContextType, PointsToSet]] = List.empty[JavaScriptFunctionCall[ContextType, PointsToSet]],
-        puts:                    Map[(String, ContextType, TheTACAI), (PointsToSet, V)] = Map.empty[(String, ContextType, TheTACAI), (PointsToSet, V)]
+        language:                Language                                                                   = Language.Unknown,
+        code:                    List[String]                                                               = List.empty,
+        javaScriptFunctionCalls: List[JavaScriptFunctionCall[ContextType, PointsToSet]]                     = List.empty[JavaScriptFunctionCall[ContextType, PointsToSet]],
+        puts:                    Map[(String, ContextType, TheTACAI), (PointsToSet, V, Option[ObjectType])] = Map.empty[(String, ContextType, TheTACAI), (PointsToSet, V, Option[ObjectType])]
 ) extends CrossLanguageInteraction {
     def updated(scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet]): ScriptEngineInteraction[ContextType, PointsToSet] = {
         ScriptEngineInteraction(

@@ -71,7 +71,7 @@ object UnusedResults extends ProjectAnalysisApplication {
 
         implicit val p: SomeProject = project
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val x: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
 
         project.get(RTACallGraphKey)

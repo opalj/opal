@@ -16,8 +16,12 @@ public class Vain {
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        Invocable inv = (Invocable) se;
-        Double result = (Double) inv.invokeFunction("f", 1, 3);
+        Integer a = new Integer(1);
+        Integer b = new Integer(3);
+        se.put("a", a);
+        se.put("b", b);
+        se.eval("var z = f(a,b);");
+        Double result = (Double) se.get("z");
         System.out.println("result: " + result);
     }
 }

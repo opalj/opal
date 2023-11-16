@@ -18,18 +18,18 @@ public class TwoEvals {
                             cf = TwoEvals.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 31,
-                            allocatedType = "java.lang.Integer")
+                            allocSiteLinenumber = 28,
+                            allocatedType = "java.lang.String")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
+        String s = "abc";
+        se.put("s", s);
         se.eval("function f(n){return n;}");
-        se.eval("function g(n){return f(n);}");
-        Invocable inv = (Invocable) se;
-        Integer in = 50;
-        Object out = inv.invokeFunction("f", in);
+        se.eval("function g(n){return f(n);} var z = g(s);");
+        String out = (String) se.get("z");
         System.out.println(out);
     }
 }

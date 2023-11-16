@@ -27,6 +27,7 @@ import org.opalj.fpcf.SomePartialResult
 import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
 import org.opalj.tac.Stmt
@@ -67,7 +68,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
         val newEngineInteraction = engineInteraction
 
         if (typeIteratorState.hasDependee(epk)) {
-            AllocationsUtil.continuationForAllocation[None.type, ContextType](
+            AllocationsUtil.continuationForAllocation[String, ContextType](
                 eps, context, _ => (param, stmts), _ => true, _ => {
                 throw new Exception("TODO: What to do if param is unknown?")
             }
@@ -89,8 +90,10 @@ abstract class ScriptEngineInteractionAnalysisPut(
             assert(newEngineInteraction ne engineInteraction)
 
             oldEngineDependees.valuesIterator.foreach { data =>
-                val engineAllocations = data._1.ub.asInstanceOf[PointsToSet]
-                results :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
+                if (data != null && data._1.hasUBP) {
+                    val engineAllocations = data._1.ub.asInstanceOf[PointsToSet]
+                    results :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
+                }
             }
 
             typeIteratorState.updateDependency(eps)
@@ -100,7 +103,16 @@ abstract class ScriptEngineInteractionAnalysisPut(
             val UBP(newPointsTo: PointsToSet @unchecked) = eps
 
             val puts = Map.from(
-                possibleStrings.map(s => (s, context, tac) -> (newPointsTo, assignedValue))
+                possibleStrings.map(s => (s, context, tac) -> {
+                    var tpe: Option[ObjectType] = null
+
+                    val actualTypes = typeIterator.typesProperty(assignedValue.asVar, context, "type", stmts)
+                    typeIterator.foreachType(assignedValue.asVar, actualTypes) { actualType =>
+                        tpe = Some(actualType.asObjectType)
+                    }
+
+                    (newPointsTo, assignedValue, tpe)
+                })
             )
             val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
             newEngineInteraction.updated(scriptEngineInteraction)
@@ -182,7 +194,17 @@ abstract class ScriptEngineInteractionAnalysisPut(
             pointsToSet = pointsToSet.included(allocations)
         })
         val puts = Map.from(
-            possibleStrings.map(s => (s, callerContext, TheTACAI(tac)) -> (pointsToSet, assignedValue.asVar))
+            possibleStrings.map(s => (s, callerContext, TheTACAI(tac)) -> {
+
+                val actualTypes = typeIterator.typesProperty(assignedValue.asVar, callerContext, "type", tac.stmts)
+
+                var tpe: Option[ObjectType] = null
+                typeIterator.foreachType(assignedValue.asVar, actualTypes) { actualType =>
+                    tpe = Some(actualType.asObjectType)
+                }
+
+                (pointsToSet, assignedValue.asVar, tpe)
+            })
         )
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
 

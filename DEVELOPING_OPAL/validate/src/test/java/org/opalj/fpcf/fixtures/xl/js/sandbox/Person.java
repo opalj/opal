@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.xl.js.sandbox;
 
-public class SimpleContainerClass {
+public class Person {
 
-    Object o;
 }

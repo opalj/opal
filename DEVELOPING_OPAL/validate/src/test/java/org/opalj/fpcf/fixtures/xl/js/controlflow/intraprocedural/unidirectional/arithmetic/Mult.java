@@ -9,19 +9,22 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class Mult {
-    @PointsToSet(variableDefinition = 24,
-            expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
+    @PointsToSet(variableDefinition = 27,
+            expectedJavaScriptAllocSites = {@JavaScriptContextAllocSite(
                     cf = Mult.class,
-                    nodeIdTAJS = 1,
-                    allocatedType = ""
-            )
+                    nodeIdTAJS = -50,
+                    allocatedType = "java.lang.Double"
+            )}
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        se.eval("function mult(a,b){return a * b;}");
-        Invocable inv = (Invocable) se;
-        Double result = (Double) inv.invokeFunction("mult", 1, 3);
+        Integer a = new Integer(1);
+        Integer b = new Integer(3);
+        se.put("a", a);
+        se.put("b", b);
+        se.eval("function mult(a,b){return a * b;} var z = mult(a,b);");
+        Double result = (Double) se.get("z");
         System.out.println("result: " + result);
     }
 }

@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
-import org.opalj.fpcf.fixtures.xl.js.sandbox.SimpleContainerClass;
+import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -19,7 +19,7 @@ public class TwoEvals {
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
                             allocSiteLinenumber = 28,
-                            allocatedType = "import org.opalj.fpcf.fixtures.xl.js.sandbox.SimpleContainerClass")
+                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {

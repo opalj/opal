@@ -8,17 +8,19 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class JavaScriptAllocationSimple {
-    @PointsToSet(variableDefinition = 22,
-            expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
+    @PointsToSet(variableDefinition = 23,
+            expectedJavaScriptAllocSites = {
+            @JavaScriptContextAllocSite(
                     cf = JavaScriptAllocationSimple.class,
-                    nodeIdTAJS = 1,
-                    allocatedType = ""
-            )
+                    nodeIdTAJS = 11,
+                    allocatedType = "java.lang.Object"
+            )}
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.eval("var x = {'a':10}; var y = x;");
         Object p = se.get("y");
+        System.out.println("result: " + p);
     }
 }
