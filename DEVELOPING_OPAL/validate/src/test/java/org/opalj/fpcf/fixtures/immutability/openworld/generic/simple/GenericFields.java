@@ -58,11 +58,11 @@ public class GenericFields<T> {
 
     public GenericFields(T t, Object o, FinalClassWithNoFields fcwnf){
 
-        this.singleMutable = new Generic(new ClassWithMutableFields());
+        this.singleMutable = new Generic<>(new ClassWithMutableFields());
         this.multipleMutable = new MultipleGeneric<>(t, new ClassWithMutableFields(), fcwnf);
 
         this.singleNonTransitivelyImmutable =
-                new Generic(new FinalClassWithNonTransitivelyImmutableField(new Object()));
+                new Generic<>(new FinalClassWithNonTransitivelyImmutableField(new Object()));
 
         this.multipleNonTransitivelyImmutable =
                 new MultipleGeneric<>(fcwnf,new FinalClassWithNonTransitivelyImmutableField(new Object()), t);

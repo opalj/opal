@@ -283,7 +283,7 @@ object DominatorTree {
             val w = vertex(i)
 
             // Step 2
-            foreachPredecessorOf(w) { v: Int =>
+            foreachPredecessorOf(w) { (v: Int) =>
                 val u = eval(v)
                 val uSemi = semi(u)
                 if (uSemi < semi(w)) {

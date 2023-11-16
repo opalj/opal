@@ -5,6 +5,7 @@ package bc
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.io.ByteArrayInputStream
+
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_STATIC
@@ -22,8 +23,9 @@ import org.opalj.da.CONSTANT_String_info
 import org.opalj.da.Code_attribute
 import org.opalj.da.Code
 import org.opalj.br.reader.Java8Framework
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.da.Constant_Pool
 
 /**
  * Demonstrates how to create a "HelloWorld" class and how
@@ -220,11 +222,11 @@ object DAandBR extends App {
     val newBRClassFile = brClassFile.copy(methods = newBRMethods)
 
     val newDAClassFile = cf.copy(methods = cf.methods.filter { daM =>
-        implicit val cp = cf.constant_pool
+        implicit val cp: Constant_Pool = cf.constant_pool
         brClassFile.methods.exists { brM =>
             brM.name == daM.name && brM.descriptor.toJVMDescriptor == daM.descriptor
         }
     })
 
-    println("Created class file: "+Files.write(Paths.get("Test.class"), assembledCF).toAbsolutePath())
+    println("Created class file: "+Files.write(Paths.get("Test.class"), assembledCF).toAbsolutePath)
 }

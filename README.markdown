@@ -13,7 +13,7 @@ OPAL consists of several projects:
 
 * **Static Analysis Infrastructure** (OPAL/si): Contains a generic lattice-based framework for the implementation of modularized static analyses.
 
-* **Bytecode Infrastructure** (OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 16 bytecode.
+* **Bytecode Infrastructure** (OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 21 bytecode.
 
 * **Bytecode Disassembler** (OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create readable HTML representations of Java class files.
 
@@ -22,6 +22,8 @@ OPAL consists of several projects:
 * **Bytecode Representation** (OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses of Java class files.
 
 * **Abstract Interpretation Framework** (OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision.
+
+* **IFDS** (OPAL/ifds) Language Agnostic Implementation of the IFDS Algorithm. Will be moved to si in the future.
 
 * **Three Address Code** (OPAL/tac): Provides two 3-address code based intermediate representation. A naive one which is directly created based on the bytecode, and a higher-level SSA-like representation which directly provides a CFG as well as Def-Use information using the results of a basic abstract interpretation. 
 
@@ -37,6 +39,10 @@ OPAL consists of several projects:
 
 * **BugPicker** (OPAL/TOOLS/bp): A tool to find control-/data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
 
+### Cross Language Projects
+
+* **LLVM** (OPAL/ll) Provides support for the analysis of LLVM IR using javacpp. 
+
 ## Developer Tools
 
 OPAL also comes with a growing number of tools that are intended to help developers to become familiar with Java Bytecode and/or OPAL. These projects are found in the folder `DEVELOPING_OPAL/tools` and can be run using the SBT console.
@@ -45,7 +51,7 @@ OPAL also comes with a growing number of tools that are intended to help develop
 The following applies to the "Master/Develop" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 8 at least update 171, Scala 2.12.15 and SBT 1.6.2 installed and running and that SBT can use at least 4GB of RAM (-Xmx4G). Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have at least Java 16 (running OPAL, i.e., not compiling the test fixtures, should still work with Java 8), Scala 2.13.11, and SBT 1.6.2 installed and running and that SBT can use at least 4GB of RAM (-Xmx4G). Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.

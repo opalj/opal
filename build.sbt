@@ -29,12 +29,13 @@ ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licens
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-ThisBuild / scalaVersion := "2.13.10"
+ThisBuild / scalaVersion := "2.13.11"
 
 ScalacConfiguration.globalScalacOptions
 
 ThisBuild / resolvers += Resolver.jcenterRepo
 ThisBuild / resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
+ThisBuild / resolvers += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
 
 // OPAL already parallelizes most tests/analyses internally!
 ThisBuild / parallelExecution := false
@@ -44,7 +45,7 @@ ThisBuild / logBuffered := false
 
 ThisBuild / javacOptions ++= Seq("-encoding", "utf8", "-source", "1.8")
 
-ThisBuild /testOptions := {
+ThisBuild / testOptions := {
   baseDirectory
     .map(bd => Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
     .value
@@ -61,7 +62,7 @@ ScalaUnidoc / unidoc / scalacOptions := {
 
 ScalaUnidoc / unidoc / scalacOptions ++=
   Opts.doc.sourceUrl(
-  	"https://raw.githubusercontent.com/stg-tud/opal/" +
+    "https://raw.githubusercontent.com/stg-tud/opal/" +
       (if (isSnapshot.value) "develop" else "master") +
       "/€{FILE_PATH}.scala"
   )
@@ -94,6 +95,18 @@ addCommandAlias(
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
+addCommandAlias("buildAllCross", "; compileAll ; unidoc ;  publishLocal ; " +
+                        "project LLVM ; compileAll ; unidoc ; publishLocal ;" +
+                        "project ValidateCross ; compileAll ; publishLocal ; " +
+                        // Add other crosslanguage projects here
+                        " project OPAL ;")
+
+addCommandAlias("cleanBuildCross", "; project OPAL ; cleanAll ; buildAll ; " +
+                        "project LLVM ; cleanAll; buildAll ;" +
+                        "project ValidateCross ; cleanAll ; buildAll ;" +
+                        // Add other crosslanguage projects here
+                        " project OPAL ;")
+
 lazy val IntegrationTest = config("it") extend Test
 
 // Default settings without scoverage
@@ -103,7 +116,10 @@ lazy val buildSettings =
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
     Seq(Defaults.itSettings: _*) ++
-    Seq(unmanagedSourceDirectories.withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil) ++
+    Seq(
+      unmanagedSourceDirectories
+        .withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil
+    ) ++
     Seq(
       Test / unmanagedSourceDirectories := (Test / javaSource).value :: (Test / scalaSource).value :: Nil
     ) ++
@@ -119,6 +135,9 @@ lazy val buildSettings =
     // see https://github.com/sbt/sbt-assembly/issues/391
     Seq(assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
+      case PathList("META-INF", "versions", xs @ _, "module-info.class") => MergeStrategy.discard
+      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "jni-config.json") => MergeStrategy.discard
+      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "reflect-config.json") => MergeStrategy.discard
       case other => (assembly / assemblyMergeStrategy).value(other)
     })
 
@@ -138,7 +157,7 @@ def getScalariformPreferences(dir: File) = {
 lazy val opal = `OPAL`
 lazy val `OPAL` = (project in file("."))
 //  .configure(_.copy(id = "OPAL"))
-  .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
+  .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
@@ -146,8 +165,7 @@ lazy val `OPAL` = (project in file("."))
       validate,
       demos,
       tools
-    )
-  )
+    ))
   .aggregate(
     common,
     si,
@@ -157,9 +175,11 @@ lazy val `OPAL` = (project in file("."))
     bc,
     ba,
     ai,
+    ifds,
     tac,
     de,
     av,
+    apk,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -277,6 +297,19 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+lazy val ifds = `IFDS`
+lazy val `IFDS` = (project in file("OPAL/ifds"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "IFDS",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
+    fork := true,
+    libraryDependencies ++= Dependencies.ifds
+  )
+  .dependsOn(si % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(br % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
 lazy val tac = `ThreeAddressCode`
 lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
   .settings(buildSettings: _*)
@@ -289,6 +322,7 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
     run / fork := true
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 lazy val ba = `BytecodeAssembler`
@@ -325,6 +359,33 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
     // Test / publishArtifact := true
   )
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
+lazy val ll = `LLVM`
+lazy val `LLVM` = (project in file("OPAL/ll"))
+  .settings(buildSettings: _*)
+  .enablePlugins(ScalaUnidocPlugin)
+  .settings(
+    name := "LLVM",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
+    fork := true,
+    libraryDependencies ++= Dependencies.llvm
+  )
+  .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
+lazy val apk = `APK`
+lazy val `APK` = (project in file("OPAL/apk"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "APK",
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - APK"),
+    libraryDependencies ++= Dependencies.apk,
+  )
+  .dependsOn(
+    br % "it->it;it->test;test->test;compile->compile",
+    ll % "it->it;it->test;test->test;compile->compile"
+  )
   .configs(IntegrationTest)
 
 lazy val framework = `Framework`
@@ -407,6 +468,22 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
   )
   .configs(IntegrationTest)
 
+lazy val validateCross = `ValidateCross`
+lazy val `ValidateCross` = (project in file("DEVELOPING_OPAL/validateCross"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "Validate Cross",
+    publishArtifact := false,
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Validate"),
+    Test / compileOrder := CompileOrder.Mixed
+  )
+  .dependsOn(
+      ll % "it->it;it->test;test->test;compile->compile",
+      validate % "it->it;it->test;test->test;compile->compile"
+  )
+  .configs(IntegrationTest)
+
+
 lazy val demos = `Demos`
 lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
   .settings(buildSettings: _*)
@@ -446,6 +523,19 @@ compile := {
   r
 }
 
+lazy val runProjectDependencyGeneration =  ThisBuild / taskKey[Unit] ("Regenerates the Project Dependencies Graphics")
+
+runProjectDependencyGeneration := {
+  import scala.sys.process._
+  val s: TaskStreams = streams.value
+  val uid = "id -u".!!.stripSuffix("\n")
+  val gid = "id -g".!!.stripSuffix("\n")
+  val baseCommand = s"docker run --userns=host --rm -u $uid:$gid -v ${baseDirectory.value.getAbsolutePath}/:/data minlag/mermaid-cli -i OPAL/ProjectDependencies.mmd -c mermaid-config.json"
+  s.log.info("Regenerating ProjectDependencies.svg")
+  baseCommand + " -o OPAL/ProjectDependencies.svg" ! s.log
+  s.log.info("Regenerating ProjectDependencies.pdf")
+  baseCommand + "  -o OPAL/ProjectDependencies.pdf" ! s.log
+}
 //
 //
 // SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL

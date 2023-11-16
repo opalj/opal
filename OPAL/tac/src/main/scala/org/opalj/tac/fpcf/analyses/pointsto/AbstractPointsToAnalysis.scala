@@ -29,9 +29,7 @@ import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.ValueInformation
-import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.Method
-import org.opalj.tac.fpcf.properties.cg.NoCallees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ReferenceType
 import org.opalj.br.FieldType
@@ -42,16 +40,18 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -93,9 +93,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             throwingStmt match {
                 case Throw(_, UVar(_, defSites)) =>
                     val entity = MethodExceptions(state.callContext)
-                    val filter = { t: ReferenceType =>
+                    val filter = (t: ReferenceType) =>
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
-                    }
                     state.includeSharedPointsToSets(
                         entity, currentPointsToOfDefSites(entity, defSites, filter), filter
                     )
@@ -103,9 +102,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] =>
                     val entity = MethodExceptions(state.callContext)
                     val callSite = getCallExceptions(throwingStmt.pc)
-                    val filter = { t: ReferenceType =>
+                    val filter = (t: ReferenceType) =>
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
-                    }
                     state.includeSharedPointsToSet(
                         entity, currentPointsTo(entity, callSite, filter), filter
                     )
@@ -141,8 +139,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val index = tac.properStmtIndexForPC(pc)
                 val nextStmt = tac.stmts(index + 1)
                 val filter = nextStmt match {
-                    case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) => t: ReferenceType => classHierarchy.isSubtypeOf(t, cmpTpe)
-                    case _ => PointsToSetLike.noFilter
+                    case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) =>
+                        (t: ReferenceType) => classHierarchy.isSubtypeOf(t, cmpTpe)
+                    case _ =>
+                        PointsToSetLike.noFilter
                 }
                 state.includeSharedPointsToSets(
                     defSiteObject,
@@ -184,7 +184,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     val nextStmt = tac.stmts(index + 1)
                     val filter = nextStmt match {
                         case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) =>
-                            t: ReferenceType => classHierarchy.isSubtypeOf(t, cmpTpe)
+                            (t: ReferenceType) => classHierarchy.isSubtypeOf(t, cmpTpe)
                         case _ =>
                             PointsToSetLike.noFilter
                     }
@@ -255,11 +255,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) =>
-                val filter = { t: ReferenceType =>
+                val filter = (t: ReferenceType) =>
                     classHierarchy.isSubtypeOf(
                         t, state.callContext.method.descriptor.returnType.asReferenceType
                     )
-                }
                 state.includeSharedPointsToSets(
                     state.callContext,
                     currentPointsToOfDefSites(state.callContext, defSites, filter),
@@ -335,7 +334,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 state.includeSharedPointsToSet(
                     arrayEntity,
                     arrayReferencePTS,
-                    { t: ReferenceType => classHierarchy.isSubtypeOf(t, theType) }
+                    (t: ReferenceType) => classHierarchy.isSubtypeOf(t, theType)
                 )
 
                 remainingCounts = remainingCounts.tail
@@ -360,7 +359,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
 
         val callExceptions = getCallExceptions(pc)
-        val filter = { t: ReferenceType => classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
+        val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
         for (target <- callees.callees(state.callContext, pc)) {
             val targetExceptions = MethodExceptions(target)
             state.includeSharedPointsToSet(

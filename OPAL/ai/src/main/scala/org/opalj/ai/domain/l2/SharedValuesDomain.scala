@@ -39,8 +39,8 @@ class SharedDefaultDomain[Source](
         val method:  Method
 ) extends TheMethod
     with ThrowAllPotentialExceptionsConfiguration
-    with DefaultHandlingOfMethodResults
     with IgnoreSynchronization
+    with l0.DefaultTypeLevelHandlingOfMethodResults
     with l0.TypeLevelFieldAccessInstructions
     with l0.TypeLevelInvokeInstructions
     with l0.TypeLevelDynamicLoads

@@ -471,10 +471,7 @@ sealed trait BaseType extends FieldType with TypeSignature {
  */
 object BaseType {
 
-    implicit val BaseTypeOrdering =
-        new Ordering[BaseType] {
-            def compare(a: BaseType, b: BaseType): Int = a.compare(b)
-        }
+    implicit val BaseTypeOrdering: Ordering[BaseType] = (a: BaseType, b: BaseType) => a.compare(b)
 
     /**
      * The set of [BaseType]s sorted by the type's id.
@@ -1318,6 +1315,7 @@ object ObjectType {
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
     final val Thread = ObjectType("java/lang/Thread")
+    final val ThreadGroup = ObjectType("java/lang/ThreadGroup")
     final val Runnable = ObjectType("java/lang/Runnable")
 
     // Types related to the invokedynamic instruction

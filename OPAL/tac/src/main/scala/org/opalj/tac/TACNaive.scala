@@ -598,7 +598,7 @@ object TACNaive {
                 case GETSTATIC.opcode =>
                     val GETSTATIC(declaringClass, name, fieldType) = instruction
                     val getStatic = GetStatic(pc, declaringClass, name, fieldType)
-                    val newVal = OperandVar(ComputationalTypeReference, stack)
+                    val newVal = OperandVar(fieldType.computationalType, stack)
                     statements(pc) = List(Assignment[IdBasedVar](pc, newVal, getStatic))
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
@@ -606,7 +606,7 @@ object TACNaive {
                     val objRef :: rest = stack
                     val GETFIELD(declaringClass, name, fieldType) = instruction
                     val getField = GetField(pc, declaringClass, name, fieldType, objRef)
-                    val newVal = OperandVar(ComputationalTypeReference, rest)
+                    val newVal = OperandVar(fieldType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVal, getField))
                     schedule(pcOfNextInstruction(pc), newVal :: rest)
 

@@ -28,14 +28,12 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.ai.ValueOrigin
-import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
         val entity:                  (Context, Entity),
-        val defSitePC:               ValueOrigin,
         val targetMethod:            Method,
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
@@ -71,7 +69,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
             case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
                 Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer =>
-                val ctx = createContext(fp, -1, dm.definedMethod)
+                val ctx = createContext(fp, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
             case VirtualFormalParameter(_, _) =>
                 Result(fp, AtMost(NoEscape))
@@ -80,11 +78,9 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 
     override def createContext(
         entity:       (Context, Entity),
-        defSite:      ValueOrigin,
         targetMethod: Method
     ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
         entity,
-        defSite,
         targetMethod,
         declaredMethods,
         virtualFormalParameters,
@@ -98,7 +94,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, TypeIteratorKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, ContextProviderKey)
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),

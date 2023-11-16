@@ -22,13 +22,12 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.ai.ValueOrigin
-import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.tac.common.DefinitionSiteLike
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -425,7 +424,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     protected[this] def determineEscapeOfDS(
         dsl: (Context, DefinitionSiteLike)
     ): ProperPropertyComputationResult = {
-        val ctx = createContext(dsl, dsl._2.pc, dsl._2.method)
+        val ctx = createContext(dsl, dsl._2.method)
         doDetermineEscape(ctx, createState)
     }
 
@@ -440,11 +439,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    protected[this] implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     protected[this] def createContext(
         entity:       (Context, Entity),
-        defSitePC:    ValueOrigin,
         targetMethod: Method
     ): AnalysisContext
 }

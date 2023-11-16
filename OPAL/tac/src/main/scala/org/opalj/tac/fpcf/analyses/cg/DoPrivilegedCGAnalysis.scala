@@ -24,12 +24,12 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -123,13 +123,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
         )
         if (callR.hasValue) {
             val tgtMethod = declaredMethods(callR.value)
-            calleesAndCallers.addCall(
-                callContext,
-                callPC,
-                typeIterator.expandContext(callContext, tgtMethod, callPC),
-                Seq.empty,
-                thisActual
-            )
+            calleesAndCallers.addCall(callContext, callPC, tgtMethod, Seq.empty, thisActual)
         } else {
             calleesAndCallers.addIncompleteCallSite(callPC)
         }

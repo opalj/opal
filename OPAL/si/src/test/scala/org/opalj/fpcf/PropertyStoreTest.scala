@@ -586,7 +586,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                             )
                         }
                     )
-                    ps.scheduleEagerComputationForEntity("e") { e: String =>
+                    ps.scheduleEagerComputationForEntity("e") { (e: String) =>
                         val initialSomeEOptionP = ps("e", SuperPalindromeKey)
                         initialSomeEOptionP should be(EPK("e", SuperPalindromeKey))
                         InterimResult(
@@ -1722,7 +1722,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     Result(e, p)
                 }
             )
-            ps.scheduleEagerComputationForEntity("aaa") { s: String =>
+            ps.scheduleEagerComputationForEntity("aaa") { (s: String) =>
                 ps("a", ppk) match {
                     case epk: EPK[_, _] =>
                         InterimResult(

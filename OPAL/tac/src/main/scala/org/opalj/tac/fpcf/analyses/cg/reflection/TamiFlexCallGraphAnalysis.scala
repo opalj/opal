@@ -6,6 +6,8 @@ package analyses
 package cg
 package reflection
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -23,18 +25,17 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Adds the specified calls from the tamiflex.log to the call graph.
  * TODO: Merge with reflection analysis
  * TODO: Also handle class-forName -> Loaded classes
+ *
  * @author Florian Kuebler
  */
 class TamiFlexCallGraphAnalysis private[analyses] (
@@ -142,18 +143,12 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         } else { // Class.newInstance
             (None, Some(Seq.empty))
         }
-        val persistentMethodInvokeReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(tac.stmts))
-        val persistentMethodInvokeActualParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
+        val persistentReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(tac.stmts))
+        val persistentParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(tac.stmts))).getOrElse(Seq.empty)
 
         for (target <- targets) {
-            indirectCalls.addCall(
-                context,
-                pc,
-                typeIterator.expandContext(context, target, pc),
-                persistentMethodInvokeActualParams,
-                persistentMethodInvokeReceiver
-            )
+            indirectCalls.addCall(context, pc, target, persistentParams, persistentReceiver)
         }
     }
 }

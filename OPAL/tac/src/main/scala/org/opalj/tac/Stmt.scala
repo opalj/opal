@@ -762,6 +762,7 @@ sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
     final override def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
     final override def asMethodCall: this.type = this
     final override def isMethodCall: Boolean = true
+    final override def isStaticCall: Boolean = isStaticMethodCall
 
 }
 

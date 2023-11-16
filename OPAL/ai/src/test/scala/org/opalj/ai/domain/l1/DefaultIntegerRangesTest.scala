@@ -3294,7 +3294,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
     describe("using IntegerRangeValues") {
 
-        val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+        val aiProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
         val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         describe("when we have multiple loops that reuse the same local variable") {

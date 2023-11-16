@@ -6,8 +6,22 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -18,28 +32,13 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CHECKCAST
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.DefinedMethod
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
@@ -47,6 +46,7 @@ import scala.collection.mutable.ArrayBuffer
  *
  * @param project         Project under analysis
  * @param selectTypeSetEntity Function which, for each entity, selects which entity its type set is attached to.
+ *
  * @author Andreas Bauer
  */
 final class TypePropagationAnalysis private[analyses] (

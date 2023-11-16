@@ -32,8 +32,8 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
  * Provides initial points to sets for the parameters of entry point methods, fields and arrays as

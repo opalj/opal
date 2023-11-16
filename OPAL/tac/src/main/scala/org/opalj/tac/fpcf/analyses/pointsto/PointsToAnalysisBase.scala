@@ -5,7 +5,9 @@ package fpcf
 package analyses
 package pointsto
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -27,11 +29,9 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Base class for handling instructions in points-to analysis scenarios.
@@ -104,7 +104,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         val declClassType = targetMethod.declaringClassType
         val tgtMethod = targetMethod.definedMethod
         val filter = if (isNonVirtualCall) {
-            t: ReferenceType => classHierarchy.isSubtypeOf(t, declClassType)
+            (t: ReferenceType) => classHierarchy.isSubtypeOf(t, declClassType)
         } else {
             val overrides =
                 if (project.overridingMethods.contains(tgtMethod))
@@ -113,7 +113,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 else
                     Set.empty
             // TODO this might not be 100% correct in some corner cases
-            t: ReferenceType =>
+            (t: ReferenceType) =>
                 classHierarchy.isSubtypeOf(t, declClassType) &&
                     !overrides.exists(st => classHierarchy.isSubtypeOf(t, st))
         }
@@ -145,9 +145,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         val paramType = target.method.descriptor.parameterType(paramIndex)
         if (paramType.isReferenceType) {
             val fp = getFormalParameter(paramIndex + 1, fps, target)
-            val filter = { t: ReferenceType =>
-                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-            }
+            val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
             state.includeSharedPointsToSets(
                 fp,
                 currentPointsToOfDefSites(fp, paramDefSites, filter),
@@ -165,7 +163,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             val nextStmt = tac.stmts(index + 1)
             nextStmt match {
                 case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) =>
-                    t: ReferenceType => classHierarchy.isSubtypeOf(t, cmpTpe)
+                    (t: ReferenceType) => classHierarchy.isSubtypeOf(t, cmpTpe)
                 case _ =>
                     PointsToSetLike.noFilter
             }
@@ -243,9 +241,9 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         val fakeEntity = (rhsDefSites, fieldOpt)
         state.addPutFieldEntity(fakeEntity)
 
-        val filter = if (fieldOpt.isDefined) { t: ReferenceType =>
-            classHierarchy.isSubtypeOf(t, fieldOpt.get.fieldType.asReferenceType)
-        } else
+        val filter = if (fieldOpt.isDefined)
+            (t: ReferenceType) => classHierarchy.isSubtypeOf(t, fieldOpt.get.fieldType.asReferenceType)
+        else
             PointsToSetLike.noFilter
 
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts =>
@@ -268,9 +266,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def handlePutStatic(field: Field, rhsDefSites: IntTrieSet)(implicit state: State): Unit = {
-        val filter = { t: ReferenceType =>
-            classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
-        }
+        val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
         state.includeSharedPointsToSets(
             field,
             currentPointsToOfDefSites(field, rhsDefSites, filter),
@@ -291,9 +287,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     !isEmptyArray(as)) {
                     val arrayEntity = ArrayEntity(as)
                     val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
-                    val filter = { t: ReferenceType =>
-                        classHierarchy.isSubtypeOf(t, componentType)
-                    }
+                    val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, componentType)
                     state.includeSharedPointsToSets(
                         arrayEntity,
                         currentPointsToOfDefSites(arrayEntity, rhsDefSites, filter),
@@ -373,9 +367,9 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     if (tpe.isObjectType && (fieldOpt.isEmpty ||
                         classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
 
-                        val typeFilter = if (fieldOpt.isDefined) { t: ReferenceType =>
-                            classHierarchy.isSubtypeOf(t, fieldOpt.get.fieldType.asReferenceType)
-                        } else
+                        val typeFilter = if (fieldOpt.isDefined)
+                            (t: ReferenceType) => classHierarchy.isSubtypeOf(t, fieldOpt.get.fieldType.asReferenceType)
+                        else
                             PointsToSetLike.noFilter
 
                         val fieldEntities =
@@ -421,9 +415,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                         classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
                         !isEmptyArray(as)) {
                         val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
-                        val typeFilter = { t: ReferenceType =>
-                            classHierarchy.isSubtypeOf(t, componentType)
-                        }
+                        val typeFilter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, componentType)
                         results = results ++ createPartialResults(
                             ArrayEntity(as),
                             knownPointsTo,

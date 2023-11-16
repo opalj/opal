@@ -41,7 +41,7 @@ class ConstantFieldValuesResolutionTest extends AnyFunSpec with Matchers {
 
     describe("Using ConstantFieldValuesResolution") {
 
-        val testProject = org.opalj.br.TestSupport.biProject("ai.jar")
+        val testProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         it("(Prerequisite) it should be possible to get the constant value of a field") {

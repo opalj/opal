@@ -21,12 +21,13 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.CallersOnlyWithConcreteCallers
-import org.opalj.tac.fpcf.properties.cg.ConcreteCallees
-import org.opalj.tac.fpcf.properties.cg.NoCallees
-import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
@@ -84,7 +85,7 @@ sealed trait CalleesAndCallers {
             case _: EPK[_, _] =>
                 Some(InterimEUBP(
                     callerContext.method,
-                    ConcreteCallees(
+                    org.opalj.br.fpcf.properties.cg.ConcreteCallees(
                         callerContext,
                         directCallees, indirectCallees,
                         incompleteCallSites,
@@ -194,19 +195,28 @@ trait IndirectCallsBase extends Calls {
     def addCall(
         callerContext: Context,
         pc:            Int,
-        calleeContext: Context,
+        callee:        DeclaredMethod,
         params:        Seq[Option[(ValueInformation, IntTrieSet)]],
         receiver:      Option[(ValueInformation, IntTrieSet)]
-    ): Unit = {
-        addCall(callerContext, pc, calleeContext)
-        _parameters = _parameters.updated(
-            pc,
-            _parameters.getOrElse(pc, IntMap.empty).updated(calleeContext.id, params)
-        )
-        _receivers = _receivers.updated(
-            pc,
-            _receivers.getOrElse(pc, IntMap.empty).updated(calleeContext.id, receiver)
-        )
+    )(implicit contextProvider: ContextProvider, classHierarchy: ClassHierarchy): Unit = {
+        if (callee.descriptor.parameterTypes.size == params.size) {
+            if (receiver.isEmpty || isTypeCompatible(callee.declaringClassType, receiver.get._1, true)) {
+                if (params.zip(callee.descriptor.parameterTypes).forall { p =>
+                    p._1.isEmpty || isTypeCompatible(p._2, p._1.get._1)
+                }) {
+                    val calleeContext = contextProvider.expandContext(callerContext, callee, pc)
+                    addCall(callerContext, pc, calleeContext)
+                    _parameters = _parameters.updated(
+                        pc,
+                        _parameters.getOrElse(pc, IntMap.empty).updated(calleeContext.id, params)
+                    )
+                    _receivers = _receivers.updated(
+                        pc,
+                        _receivers.getOrElse(pc, IntMap.empty).updated(calleeContext.id, receiver)
+                    )
+                }
+            }
+        }
     }
 
     def addCallOrFallback(
@@ -218,14 +228,13 @@ trait IndirectCallsBase extends Calls {
         fallbackName:       String,
         fallbackDescriptor: MethodDescriptor,
         parameters:         Seq[Option[(ValueInformation, IntTrieSet)]],
-        receiver:           Option[(ValueInformation, IntTrieSet)],
-        expandContext:      DeclaredMethod => Context
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
+        receiver:           Option[(ValueInformation, IntTrieSet)]
+    )(implicit declaredMethods: DeclaredMethods, typeIterator: TypeIterator, classHierarchy: ClassHierarchy): Unit = {
         if (callee.hasValue) {
             addCall(
                 callerContext,
                 pc,
-                expandContext(declaredMethods(callee.value)),
+                declaredMethods(callee.value),
                 parameters,
                 receiver
             )
@@ -237,7 +246,7 @@ trait IndirectCallsBase extends Calls {
                 fallbackName,
                 fallbackDescriptor
             )
-            addCall(callerContext, pc, expandContext(fallbackCallee), parameters, receiver)
+            addCall(callerContext, pc, fallbackCallee, parameters, receiver)
         }
     }
 }

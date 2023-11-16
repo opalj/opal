@@ -7,9 +7,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.collection.immutable.IntTrieSet
@@ -42,8 +44,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
@@ -55,6 +55,10 @@ import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
@@ -242,29 +246,29 @@ object Purity {
                 case FinalEP(m: DeclaredMethod, c: Callers) if c ne NoCallers => m
             }.toSet
 
-        val analyzedMethods = projMethods.filter(reachableMethods.contains)
+        val contextProvider = project.get(ContextProviderKey)
+        val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
 
         time {
             val analyses = analysis :: support
 
             manager.runAll(
                 analyses,
-                { css: List[ComputationSpecification[FPCFAnalysis]] =>
+                (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                     if (css.contains(analysis)) {
-                        analyzedMethods.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
+                        analyzedContexts.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
                     }
-                }
             )
         } { t => analysisTime = t.toSeconds }
         ps.shutdown()
 
-        val entitiesWithPurity = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
+        val entitiesWithPurity = ps(analyzedContexts, br.fpcf.properties.Purity.key).filter {
             case FinalP(p) => p ne ImpureByLackOfInformation
             case ep        => throw new RuntimeException(s"non final purity result $ep")
         }
 
         val projectEntitiesWithPurity = entitiesWithPurity.filter { ep =>
-            val pn = ep.e.asInstanceOf[DeclaredMethod].declaringClassType.asObjectType.packageName
+            val pn = ep.e.asInstanceOf[Context].method.declaringClassType.asObjectType.packageName
             packages match {
                 case None     => isJDK || !JDKPackages.exists(pn.startsWith)
                 case Some(ps) => ps.exists(pn.startsWith)
@@ -275,20 +279,20 @@ object Purity {
             !dm.definedMethod.isStatic && p.size == 1 && p.head == 0
         }
 
-        val compileTimePure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, CompileTimePure) => m }
-        val pure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, Pure) => m }
-        val sideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, SideEffectFree) => m }
-        val externallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if isExternal(m, p) => m }
-        val externallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if isExternal(m, p) => m }
-        val contextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
-        val contextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
-        val dPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DPure) => m }
-        val dSideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DSideEffectFree) => m }
-        val dExternallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if isExternal(m, p) => m }
-        val dExternallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if isExternal(m, p) => m }
-        val dContextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
-        val dContextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
-        val lbImpure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) => m }
+        val compileTimePure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), CompileTimePure) => m }
+        val pure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), Pure) => m }
+        val sideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), SideEffectFree) => m }
+        val externallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if isExternal(m, p) => m }
+        val externallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if isExternal(m, p) => m }
+        val contextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
+        val contextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
+        val dPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DPure) => m }
+        val dSideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DSideEffectFree) => m }
+        val dExternallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if isExternal(m, p) => m }
+        val dExternallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if isExternal(m, p) => m }
+        val dContextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallyPure(p)) if !isExternal(m, p) => (m, p) }
+        val dContextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), DContextuallySideEffectFree(p)) if !isExternal(m, p) => (m, p) }
+        val lbImpure = projectEntitiesWithPurity.collect { case FinalEP(Context(m: DefinedMethod), ImpureByAnalysis) => m }
 
         if (projectEvalDir.isDefined) {
 

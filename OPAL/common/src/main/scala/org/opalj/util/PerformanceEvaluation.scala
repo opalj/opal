@@ -116,7 +116,7 @@ object GlobalPerformanceEvaluation extends PerformanceEvaluation
  * {{{
  * import org.opalj.util.PerformanceEvaluation.{memory,time}
  * var store : Array[Object] = null
- * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+ * implicit val logContext: Option[LogContext] = Some(org.opalj.log.GlobalLogContext)
  * for(i <- 1 to 5){
  *   memory{store = null}(l => println("empty: "+l))
  *   memory{
@@ -210,7 +210,7 @@ object PerformanceEvaluation {
      * {{{
      * import org.opalj.util.PerformanceEvaluation.{gc,memory,time,avg}
      * var store : Array[Object] = null
-     * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+     * implicit val logContext: Option[LogContext] = Some(org.opalj.log.GlobalLogContext)
      * time{
      *   for(i <- 1 to 5){
      *     memory{store = null}(l => println("empty: "+l))

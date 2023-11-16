@@ -27,8 +27,6 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.ObjectType
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
@@ -37,9 +35,11 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.SimpleContextProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 
 /**
@@ -263,9 +263,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             case md: MethodDescription =>
                 val method = md.method(declaredMethods)
                 val returnType = method.descriptor.returnType.asReferenceType
-                val filter = { t: ReferenceType =>
-                    classHierarchy.isSubtypeOf(t, returnType)
-                }
+                val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, returnType)
                 val entity = state.callContext
                 state.includeSharedPointsToSet(
                     entity,
