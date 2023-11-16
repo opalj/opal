@@ -469,14 +469,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
         for (
             pc <- readAccesses.getAccessSites(state.callContext);
-            target <- readAccesses.indirectAccessedFields(state.callContext, pc)
+            target <- readAccesses.getIndirectAccessedFields(state.callContext, pc)
         ) {
             handleIndirectFieldReadAccess(pc, target, readAccesses, tac)
         }
 
         for (
             pc <- writeAccesses.getAccessSites(state.callContext);
-            target <- writeAccesses.indirectAccessedFields(state.callContext, pc)
+            target <- writeAccesses.getIndirectAccessedFields(state.callContext, pc)
         ) {
             handleIndirectFieldWriteAccess(pc, target, writeAccesses, tac)
         }
