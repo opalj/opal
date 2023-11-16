@@ -10,6 +10,8 @@ import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.LongLinkedTrieSet0
+import org.opalj.collection.immutable.LongLinkedTrieSet1
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimUBP
@@ -207,7 +209,10 @@ trait DirectFieldAccessesBase extends CompleteFieldAccesses {
 
     def addFieldRead(accessContext: Context, pc: Int, field: DeclaredField, receiver: AccessReceiver): Unit = {
         addFieldAccess(pc, field, FieldReadAccessInformation.key,
-            () => FieldReadAccessInformation(IntMap((accessContext.id, IntMap((pc, receiver))))))
+            () => FieldReadAccessInformation(
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
+                IntMap((accessContext.id, IntMap((pc, receiver))))
+            ))
 
         _readReceivers = pcFieldMapNestedUpdate(_readReceivers, pc, field.id, receiver)
     }
@@ -215,6 +220,7 @@ trait DirectFieldAccessesBase extends CompleteFieldAccesses {
     def addFieldWrite(accessContext: Context, pc: Int, field: DeclaredField, receiver: AccessReceiver, param: AccessParameter): Unit = {
         addFieldAccess(pc, field, FieldWriteAccessInformation.key,
             () => FieldWriteAccessInformation(
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
                 IntMap((accessContext.id, IntMap((pc, receiver)))),
                 IntMap((accessContext.id, IntMap((pc, param))))
             ))
@@ -238,7 +244,9 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
     ): Unit = {
         addFieldAccess(pc, field, FieldReadAccessInformation.key,
             () => FieldReadAccessInformation(
+                LongLinkedTrieSet0,
                 IntMap.empty,
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
                 IntMap((accessContext.id, IntMap((pc, receiver))))
             ))
         _readReceivers = pcFieldMapNestedUpdate(_readReceivers, pc, field.id, receiver)
@@ -253,8 +261,10 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
     ): Unit = {
         addFieldAccess(pc, field, FieldWriteAccessInformation.key,
             () => FieldWriteAccessInformation(
+                LongLinkedTrieSet0,
                 IntMap.empty,
                 IntMap.empty,
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
                 IntMap((accessContext.id, IntMap((pc, receiver)))),
                 IntMap((accessContext.id, IntMap((pc, param))))
             ))
