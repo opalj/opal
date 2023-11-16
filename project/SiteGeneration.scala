@@ -166,7 +166,7 @@ object SiteGeneration {
         sourceFolder,
         "play.twirl.api.HtmlFormat.Appendable",
         "play.twirl.api.HtmlFormat",
-        additionalImports = TwirlCompiler.DefaultImports
+        additionalImports = TwirlCompiler.defaultImports(scala.util.Properties.versionNumberString)
       )
       for {
         (baseFileName, sourceFile, title, html, useBanner, _) <- pages

@@ -15,7 +15,7 @@ object Dependencies {
     val scalatestjunit = "3.2.5.0"
     val scalacheck = "3.2.12.0"
 
-    val scalaxml = "1.3.0"
+    val scalaxml = "2.2.0"
     val scalaparsercombinators = "1.1.2"
     val scalaparallelcollections = "1.0.4"
     val playjson = "2.9.2"
