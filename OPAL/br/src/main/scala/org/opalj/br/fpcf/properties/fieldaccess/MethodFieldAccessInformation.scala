@@ -76,9 +76,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         accessContext: Context,
         pc:            PC
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _directAccessedReceiversByField.get(accessContext.id).iterator
+        _directAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .map(declaredFields.apply)
     }
 
@@ -86,9 +86,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         accessContext: Context,
         pc:            PC
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator
+        _indirectAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .map(declaredFields.apply)
     }
 
