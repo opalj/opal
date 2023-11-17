@@ -157,6 +157,17 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
         object tajsAdapter extends TajsAdapter {
 
+            override def newObject(index: Integer, javaName: String): Value = {
+                val referenceType = ObjectType(javaName.replace(".", "/"))
+
+                //  implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                //    new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
+
+                val emptyPointsToSet = createPointsToSet(-100 - index, NoContext.asInstanceOf[ContextType], referenceType, false, false)
+                val value = java2js("newObject", NoContext.asInstanceOf[ContextType], emptyPointsToSet, null, None)._2
+                value
+            }
+
             override def setProperty(v: Value, propertyName: String, rhsFieldValue: Value): Unit = {
 
                 if (v.isJavaObject) {
@@ -175,8 +186,19 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                             new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
                         rhsFieldValue.getObjectLabels.forEach(ol => {
                             val node = ol.getNode
-                            val index = -100 - node.getIndex
-                            val rhsPointsToSet = createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
+                            val (rhsPointsToSet, index, objectType) =
+                                if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
+                                    val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
+                                    val pointsToSet = jnode.getPointsToSet.asInstanceOf[PointsToSet]
+                                    val javaName = ol.getJavaName
+                                    val index = jNode.getIndex
+                                    (pointsToSet, index, ObjectType(javaName.replace(".", "/")))
+                                } else {
+                                    val index = -100 - node.getIndex
+                                    val rhsPointsToSet = createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
+                                    (rhsPointsToSet, index, ObjectType.Object)
+                                }
+
                             possibleFields.foreach(field => {
                                 pointsToSet.forNewestNElements(pointsToSet.numElements) { as =>
                                     val tpe = getTypeOf(as)
