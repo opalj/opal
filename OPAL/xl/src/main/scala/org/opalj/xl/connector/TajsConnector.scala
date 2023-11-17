@@ -91,7 +91,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
         implicit val state = TajsConnectorState(scriptEngineInstance, project)
 
-        def java2js = JavaJavaScriptTranslator.Java2JavaScript[PointsToSet, ContextType]
+        def java2js = JavaJavaScriptTranslator.Java2JavaScript[PointsToSet, ContextType] _
         // def js2java = JavaJavaScriptTranslator.JavaScript2Java[PointsToSet, ContextType]
 
         val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -157,7 +157,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
         object tajsAdapter extends TajsAdapter {
 
-            override def newObject(index: Integer, javaName: String): Value = {
+            def newObject(index: Integer, javaName: String): Value = {
                 val referenceType = ObjectType(javaName.replace(".", "/"))
 
                 //  implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
