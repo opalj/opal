@@ -1,5 +1,6 @@
 package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.cyclic;
 
+import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -17,36 +18,42 @@ public class Cyclic {
 
     public static void main(String[] args) throws ScriptException, NoSuchMethodException {
         Cyclic c = new Cyclic();
-        String res = c.shorten("AAAAA");
+        SimpleContainerClass initial = new SimpleContainerClass();
+        SimpleContainerClass res = c.decrement(initial);
         System.out.println();
     }
-    @PointsToSet(variableDefinition = 35,
+    @PointsToSet(variableDefinition = 36,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = Cyclic.class,
-                            methodName = "shorten",
-                            methodDescriptor = "(java.lang.String): java.lang.String",
-                            allocSiteLinenumber = 37,
-                            allocatedType = "java.lang.String")
+                            methodName = "decrement",
+                            methodDescriptor = "(org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass): org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass",
+                            allocSiteLinenumber = 38,
+                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )
-    public String shorten(String p) throws ScriptException, NoSuchMethodException {
-        String param = p;
+    public SimpleContainerClass decrement(SimpleContainerClass p) throws ScriptException, NoSuchMethodException {
+        SimpleContainerClass param = p;
         System.out.println("parameter: "+param + " id: " + System.identityHashCode(param));
-        String shortened = param.substring(1);
-        System.out.println("shortened: "+ shortened + " id: " + System.identityHashCode(shortened));
+        SimpleContainerClass decremented = new SimpleContainerClass();
+        decremented.n = param.n - 1;
+        System.out.println("decremented: "+ decremented + " id: " + System.identityHashCode(decremented));
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("jThis", this);
-        se.eval("function f(n){return jThis.shorten(n);}");
-        if(!shortened.isEmpty()){
-            Invocable inv = (Invocable) se;
-             String result = (String)(inv.invokeFunction("f", shortened));
+        se.eval("function f(n){return jThis.decrement(n);}");
+        if(decremented.n > 0){
+            se.put("arg", decremented);
+            se.eval("var res = f(arg)");
+            SimpleContainerClass result = (SimpleContainerClass) se.get("res");
             return result;
+            //Invocable inv = (Invocable) se;
+            //SimpleContainerClass result = (SimpleContainerClass)(inv.invokeFunction("f", decremented));
+            //return result;
         }
         else {
-            System.out.println("n: " + shortened);
-            return shortened;
+            System.out.println("n: " + decremented);
+            return decremented;
         }
     }
 }

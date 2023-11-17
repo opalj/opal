@@ -2,6 +2,7 @@ package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.cyclic;
 
 import org.opalj.No;
 import org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved.JavaScriptCallsJavaFunctionOnPassedInstance;
+import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -22,41 +23,42 @@ public class Cyclic {
         ScriptEngineManager sem = new ScriptEngineManager();
         c.se = sem.getEngineByName("JavaScript");
         c.se.put("jThis", c);
-        c.se.eval("function f(n){return jThis.shorten(n);}");
-
-        String res = c.shorten("AAAAA");
+        c.se.eval("function f(n){return jThis.decrement(n);}");
+        SimpleContainerClass initial = new SimpleContainerClass();
+        SimpleContainerClass res = c.decrement(initial);
         System.out.println(res);
     }
-    @PointsToSet(variableDefinition = 41,
+    @PointsToSet(variableDefinition = 42,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = Cyclic.class,
-                            methodName = "shorten",
-                            methodDescriptor = "(java.lang.String): java.lang.String",
-                            allocSiteLinenumber = 43,
-                            allocatedType = "java.lang.String")
+                            methodName = "decrement",
+                            methodDescriptor = "(org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass): org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass",
+                            allocSiteLinenumber = 44,
+                            allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )
-    public String shorten(String p) throws ScriptException, NoSuchMethodException {
-        String param = p;
+    public SimpleContainerClass decrement(SimpleContainerClass p) throws ScriptException, NoSuchMethodException {
+        SimpleContainerClass param = p;
         System.out.println("parameter: "+param + " id: " + System.identityHashCode(param));
-        String shortened = param.substring(1);
-        System.out.println("shortened: "+ shortened + " id: " + System.identityHashCode(shortened));
+        SimpleContainerClass decremented = new SimpleContainerClass();
+        decremented.n = param.n - 1;
+        System.out.println("decremented: "+ decremented + " id: " + System.identityHashCode(decremented));
 
-        if(!shortened.isEmpty()){
-            String result =  callShortenThroughScriptEngine(shortened);
+        if(decremented.n > 0){
+            SimpleContainerClass result =  callDecementThroughScriptEngine(decremented);
             return result;
         }
         else {
-            System.out.println("n: " + shortened);
-            return shortened;
+            System.out.println("n: " + decremented);
+            return decremented;
         }
     }
 
-    public String callShortenThroughScriptEngine(String s) throws ScriptException, NoSuchMethodException {
+    public SimpleContainerClass callDecementThroughScriptEngine(SimpleContainerClass s) throws ScriptException, NoSuchMethodException {
         se.put("arg", s);
         se.eval("var res = f(arg)");
-        String result = (String) se.get("res");
+        SimpleContainerClass result = (SimpleContainerClass) se.get("res");
         return result;
         // Invocable inv = (Invocable) se;
         // String result = (String)(inv.invokeFunction("f", s));
