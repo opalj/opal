@@ -157,7 +157,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
         object tajsAdapter extends TajsAdapter {
 
-            def newObject(index: Integer, javaName: String): Value = {
+            override def newObject(index: Integer, javaName: String): Value = {
                 val referenceType = ObjectType(javaName.replace(".", "/"))
 
                 //  implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
