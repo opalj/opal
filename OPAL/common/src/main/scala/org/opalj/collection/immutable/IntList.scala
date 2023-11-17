@@ -36,9 +36,6 @@ sealed trait IntList extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     def +:(v: Int): IntList
 
-    /** Prepends the given values from the other list to this list. */
-    def ++:(other: IntList): IntList
-
     final override def equals(other: Any): Boolean = {
         other match {
             case l: IntList => equals(l)
@@ -79,7 +76,6 @@ case object EmptyIntList extends IntList {
     override def iterator: IntIterator = IntIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
     override def +:(v: Int): IntList = new IntListNode(v, this)
-    override def ++:(other: IntList): IntList = other
 
     override def equals(that: IntList): Boolean = that eq this
     override def hashCode(): Int = 31
@@ -133,15 +129,6 @@ final case class IntListNode(
     }
 
     override def +:(v: Int): IntList = new IntListNode(v, this)
-    override def ++:(other: IntList): IntList = {
-        var newList = this
-        for {
-            value <- other.iterator
-        } {
-            newList = IntListNode(value, newList)
-        }
-        newList
-    }
 
     override def equals(that: IntList): Boolean = {
         (that eq this) || {
