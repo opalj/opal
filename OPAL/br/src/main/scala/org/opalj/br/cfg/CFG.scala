@@ -811,20 +811,20 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         }.map(_._2)
 
         // If there is one unique such node, we have a 'uniqueExitNode', otherwise not
-        val uniqueExitNode = if(exitNodes.length == 1) Some(exitNodes.head) else None
+        val uniqueExitNode = if (exitNodes.length == 1) Some(exitNodes.head) else None
 
         // Additional exit nodes are empty if there is only one exit node. Otherwise, they are collected as all nodes
         // leading into artificial ExitNodes that are NOT the "normalReturnNode", i.e. abnormal termination.
         // TODO: Verify this is intended behavior for PostDominatorTrees
-        val additionalExitNodes = if(uniqueExitNode.isDefined) EmptyIntTrieSet else {
-          IntTrieSet(
-            basicBlocks
-              .zipWithIndex
-              .filter { next =>
-                next._1.successors.size == 1 && next._1.successors.head.isInstanceOf[ExitNode] && !next._1.successors.head.equals(normalReturnNode)
-              }
-              .map(_._2)
-          )
+        val additionalExitNodes = if (uniqueExitNode.isDefined) EmptyIntTrieSet else {
+            IntTrieSet(
+                basicBlocks
+                    .zipWithIndex
+                    .filter { next =>
+                        next._1.successors.size == 1 && next._1.successors.head.isInstanceOf[ExitNode] && !next._1.successors.head.equals(normalReturnNode)
+                    }
+                    .map(_._2)
+            )
         }
 
         // All nodes that have an ExitNode successor which is NOT the normalReturnNode are "additionalExitNodes"

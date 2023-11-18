@@ -21,7 +21,7 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) {
      * is passed).
      */
     private def processReduceCondOrReduceOr(
-                                             children: List[StringTree], processOr: Boolean = true
+        children: List[StringTree], processOr: Boolean = true
     ): List[StringConstancyInformation] = {
         val reduced = children.flatMap(reduceAcc)
         val resetElement = reduced.find(_.constancyType == StringConstancyType.RESET)
@@ -330,9 +330,9 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) {
  * Otherwise, the number of repetitions is computed by `upperBound - lowerBound`.
  */
 case class StringTreeRepetition(
-                                 var child:  StringTree,
-                                 lowerBound: Option[Int]       = None,
-                                 upperBound: Option[Int]       = None
+        var child:  StringTree,
+        lowerBound: Option[Int] = None,
+        upperBound: Option[Int] = None
 ) extends StringTree(ListBuffer(child))
 
 /**
