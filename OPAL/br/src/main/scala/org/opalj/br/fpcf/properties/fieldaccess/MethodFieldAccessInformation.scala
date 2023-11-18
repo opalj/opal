@@ -6,7 +6,7 @@ package properties
 package fieldaccess
 
 import org.opalj.br.analyses.DeclaredFields
-import org.opalj.collection.immutable.LongLinkedSet
+import org.opalj.collection.immutable.IntList
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.OrderedProperty
@@ -46,11 +46,10 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     with MethodFieldAccessInformationPropertyMetaInformation[S] {
 
     protected val _incompleteAccessSites: IntMap[PCs] // Access Context => PCs
-    // IMPROVE use an IntLinkedSet here instead of converting to long beforehand
-    protected val _directAccessedFields: IntMap[IntMap[LongLinkedSet]] // Access Context => PC => DefinedFieldId
+    protected val _directAccessedFields: IntMap[IntMap[IntList]] // Access Context => PC => DefinedFieldId
     protected val _directAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Access Context => PC => DefinedFieldId => Receiver
     protected val _directAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Access Context => PC => DefinedFieldId => Parameter
-    protected val _indirectAccessedFields: IntMap[IntMap[LongLinkedSet]] // Access Context => PC => DefinedFieldId
+    protected val _indirectAccessedFields: IntMap[IntMap[IntList]] // Access Context => PC => DefinedFieldId
     protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Access Context => PC => DefinedFieldId => Receiver
     protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Access Context => PC => DefinedFieldId => Parameter
 
@@ -80,7 +79,6 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         _directAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
             .flatMap(_.iterator)
-            .map(_.asInstanceOf[Int])
             .map(declaredFields.apply)
     }
 
@@ -91,7 +89,6 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         _indirectAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
             .flatMap(_.iterator)
-            .map(_.asInstanceOf[Int])
             .map(declaredFields.apply)
     }
 
@@ -113,7 +110,6 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         _directAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
             .flatMap(_.iterator)
-            .map(_.asInstanceOf[Int])
             .take(n).map(declaredFields.apply)
     }
 
@@ -125,7 +121,6 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         _indirectAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
             .flatMap(_.iterator)
-            .map(_.asInstanceOf[Int])
             .take(n).map(declaredFields.apply)
     }
 
@@ -166,17 +161,17 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     }
 
     protected def integrateAccessedFieldsForContext(
-        baseMap:     IntMap[IntMap[LongLinkedSet]],
+        baseMap:     IntMap[IntMap[IntList]],
         contextId:   Int,
-        updateValue: IntMap[LongLinkedSet]
-    ): IntMap[IntMap[LongLinkedSet]] = {
+        updateValue: IntMap[IntList]
+    ): IntMap[IntMap[IntList]] = {
         baseMap.updateWith(
             contextId,
             updateValue,
             (o, n) =>
                 o.unionWith(
                     n,
-                    (_, l, r) => r.foldLeft(l)((set: LongLinkedSet, value: Long) => set + value)
+                    (_, l, r) => l.++:(r)
                 )
         )
     }
@@ -208,9 +203,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 
 case class MethodFieldReadAccessInformation(
         protected val _incompleteAccessSites:            IntMap[PCs],
-        protected val _directAccessedFields:             IntMap[IntMap[LongLinkedSet]],
+        protected val _directAccessedFields:             IntMap[IntMap[IntList]],
         protected val _directAccessedReceiversByField:   IntMap[IntMap[IntMap[AccessReceiver]]],
-        protected val _indirectAccessedFields:           IntMap[IntMap[LongLinkedSet]],
+        protected val _indirectAccessedFields:           IntMap[IntMap[IntList]],
         protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]]
 ) extends MethodFieldAccessInformation[MethodFieldReadAccessInformation]
     with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
@@ -225,9 +220,9 @@ case class MethodFieldReadAccessInformation(
     def updateWithFieldAccesses(
         accessContext:           Context,
         incompleteAccessSites:   br.PCs,
-        directAccessedFields:    IntMap[LongLinkedSet],
+        directAccessedFields:    IntMap[IntList],
         directAccessReceivers:   AccessReceivers,
-        indirectAccessedFields:  IntMap[LongLinkedSet],
+        indirectAccessedFields:  IntMap[IntList],
         indirectAccessReceivers: AccessReceivers
     ): MethodFieldReadAccessInformation = {
         val cId = accessContext.id
@@ -250,10 +245,10 @@ case class MethodFieldReadAccessInformation(
 
 case class MethodFieldWriteAccessInformation(
         protected val _incompleteAccessSites:             IntMap[PCs],
-        protected val _directAccessedFields:              IntMap[IntMap[LongLinkedSet]],
+        protected val _directAccessedFields:              IntMap[IntMap[IntList]],
         protected val _directAccessedReceiversByField:    IntMap[IntMap[IntMap[AccessReceiver]]],
         protected val _directAccessedParametersByField:   IntMap[IntMap[IntMap[AccessParameter]]],
-        protected val _indirectAccessedFields:            IntMap[IntMap[LongLinkedSet]],
+        protected val _indirectAccessedFields:            IntMap[IntMap[IntList]],
         protected val _indirectAccessedReceiversByField:  IntMap[IntMap[IntMap[AccessReceiver]]],
         protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]]
 ) extends MethodFieldAccessInformation[MethodFieldWriteAccessInformation]
@@ -265,10 +260,10 @@ case class MethodFieldWriteAccessInformation(
     def updateWithFieldAccesses(
         accessContext:            Context,
         incompleteAccessSites:    br.PCs,
-        directAccessedFields:     IntMap[LongLinkedSet],
+        directAccessedFields:     IntMap[IntList],
         directAccessReceivers:    IntMap[IntMap[AccessReceiver]],
         directAccessParameters:   IntMap[IntMap[AccessParameter]],
-        indirectAccessedFields:   IntMap[LongLinkedSet],
+        indirectAccessedFields:   IntMap[IntList],
         indirectAccessReceivers:  IntMap[IntMap[AccessReceiver]],
         indirectAccessParameters: IntMap[IntMap[AccessParameter]]
     ): MethodFieldWriteAccessInformation = {
