@@ -53,36 +53,16 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Access Context => PC => DefinedFieldId => Receiver
     protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Access Context => PC => DefinedFieldId => Parameter
 
-    def directAccessedFields(
-        accessContext: Context,
-        pc:            PC
-    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _directAccessedReceiversByField.get(accessContext.id).iterator
-            .flatMap(_.get(pc))
-            .flatMap(_.keys)
-            .map(declaredFields.apply)
-    }
-
-    def indirectAccessedFields(
-        accessContext: Context,
-        pc:            PC
-    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator
-            .flatMap(_.get(pc))
-            .flatMap(_.keys)
-            .map(declaredFields.apply)
-    }
-
     def getAccessSites(accessContext: Context): Iterator[PC] = {
         getDirectAccessSites(accessContext) ++ getIndirectAccessSites(accessContext)
     }
 
     def getDirectAccessSites(accessContext: Context): Iterator[PC] = {
-        _directAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator
+        _directAccessedFields.getOrElse(accessContext.id, IntMap.empty).keysIterator
     }
 
     def getIndirectAccessSites(accessContext: Context): Iterator[PC] = {
-        _indirectAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator
+        _indirectAccessedFields.getOrElse(accessContext.id, IntMap.empty).keysIterator
     }
 
     def getAccessedFields(
@@ -96,9 +76,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         accessContext: Context,
         pc:            PC
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _directAccessedReceiversByField.get(accessContext.id).iterator
+        _directAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .map(declaredFields.apply)
     }
 
@@ -106,9 +86,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         accessContext: Context,
         pc:            PC
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator
+        _indirectAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .map(declaredFields.apply)
     }
 
@@ -127,9 +107,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         pc:            PC,
         n:             Int
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _directAccessedReceiversByField.get(accessContext.id).iterator
+        _directAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .take(n).map(declaredFields.apply)
     }
 
@@ -138,9 +118,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         pc:            PC,
         n:             Int
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator
+        _indirectAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .take(n).map(declaredFields.apply)
     }
 
@@ -159,16 +139,16 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     }
 
     private def numDirectAccessesInAllAccessSites: Int =
-        _directAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
+        _directAccessedFields.valuesIterator.map { _.valuesIterator.map { _.iterator.size }.sum }.sum
 
     def numDirectAccesses(accessContext: Context, pc: PC): Int =
-        _directAccessedReceiversByField.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.size).sum
+        _directAccessedFields.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.iterator.size).sum
 
     private def numIndirectAccessesInAllAccessSites: Int =
-        _indirectAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
+        _indirectAccessedFields.valuesIterator.map { _.valuesIterator.map { _.iterator.size }.sum }.sum
 
     def numIndirectAccesses(accessContext: Context, pc: PC): Int =
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.size).sum
+        _indirectAccessedFields.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.iterator.size).sum
 
     def numIncompleteAccessSites: Int =
         _incompleteAccessSites.valuesIterator.map { _.size }.sum
