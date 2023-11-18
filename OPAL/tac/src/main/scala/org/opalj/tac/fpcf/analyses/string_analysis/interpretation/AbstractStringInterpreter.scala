@@ -12,7 +12,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.properties.{NoContext, StringConstancyProperty}
-import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
