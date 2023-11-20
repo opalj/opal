@@ -12,13 +12,10 @@ import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.xta.{TypePropagationAnalysisScheduler, XTASetEntitySelector}
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.xl.AllocationSiteBasedTriggeredTajsConnectorScheduler
 import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 
 import java.net.URL
-import scala.collection.Iterable
-
 
 object ComparePTS {
     def main(args: Array[String]): Unit = {
@@ -26,18 +23,30 @@ object ComparePTS {
         val withTAJS = new PointsToAnalysisRunner()
         withoutTAJS.main(args)
         withTAJS.main(args ++ Iterable("RunTAJS"))
-        println(s"Points to set without TAJS: ${withoutTAJS.pts.size}")
-        println(s"Points to set with TAJS: ${withTAJS.pts.size}")
-        println(s"diff: ${withTAJS.pts.size - withoutTAJS.pts.size}")
+        val groupedWithout = withoutTAJS.pts.groupBy(_._2.method.signature.toString)
+        val groupedWith = withTAJS.pts.groupBy(_._2.method.signature.toString)
+        val combinedMap = (groupedWithout.keySet ++ groupedWith.keySet).map(ds => (ds, groupedWithout.get(ds).map(_.map(_._3)), groupedWith.get(ds).map(_.map(_._3))))
+        val differences = combinedMap.filter(comparison => comparison._2.toString != comparison._3.toString)
+        println(s"diff: $differences")
+        val groupedWithoutByMethod = withoutTAJS.pts.groupBy(_._1.toString)
+        for (elem <- groupedWithoutByMethod) {
+            println(elem._1)
+            val sorted = elem._2.toArray.sortBy(mdsas => mdsas._2.pc)
+            for (pts <- sorted) {
+                println("  "+pts._2.pc+"  "+pts._3.toString)
 
+            }
+        }
+
+        println(s"without TAJS: ${withoutTAJS.pts.count(_._3.exists(_.types.nonEmpty))} non-empty pts")
+        println(s"with TAJS: ${withTAJS.pts.count(_._3.exists(_.types.nonEmpty))} non-empty pts")
     }
 }
 class PointsToAnalysisRunner extends ProjectAnalysisApplication {
     var pts = Set[(DefinedMethod, DefinitionSite, Option[AllocationSitePointsToSet])]()
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-         Iterable()
+        Iterable()
     }
-
 
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
         val TAJSAnalyses = Iterable(
@@ -48,7 +57,6 @@ class PointsToAnalysisRunner extends ProjectAnalysisApplication {
 
         analyses ++= AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
         analyses ::= new TypePropagationAnalysisScheduler(XTASetEntitySelector)
-        analyses ::= AllocationSiteBasedPointsToAnalysisScheduler
         val runTAJS = parameters.contains("RunTAJS")
         if (runTAJS) analyses ++= TAJSAnalyses
 
@@ -61,7 +69,6 @@ class PointsToAnalysisRunner extends ProjectAnalysisApplication {
                 ps
             }
         )
-
 
         val (ps1, _) = project.get(FPCFAnalysesManagerKey).runAll(analyses)
 

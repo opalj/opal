@@ -20,7 +20,7 @@ public class PTSLogger {
         if (instance == null) {
             log = String.format("<methodId=\"%s\" pc=\"%d\" instanceId=\"null\"/>\n", methodId, pc);
         } else {
-            log = String.format("<methodId=\"%s\" pc=\"%d\" instanceId=\"%d\" class=\"%s\"/>\n", methodId, pc, System.identityHashCode(instance), instance.getClass());
+            log = String.format("<methodId=\"%s\" pc=\"%d\" instanceId=\"%d\" class=\"%s\"/>\n", methodId, pc, System.identityHashCode(instance), instance.getClass().getName());
         }
         System.out.print(log);
         pw.printf(log);
