@@ -44,7 +44,6 @@ abstract class ScriptEngineInteractionAnalysisGet(
         final override val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
-
     def js2java = JavaJavaScriptTranslator.JavaScript2Java[PointsToSet, ContextType] _
 
     def handleJSResult(possibleStrings: Set[String], store: Map[Any, Any], targetVarDefSite: Entity)(
