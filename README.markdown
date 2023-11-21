@@ -56,7 +56,7 @@ Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
 * [Optional - but highly recommended] Edit the file `local.sbt` and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
--Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (`CPUBoundTasks === "Number of real CPUs (Cores)"`, `IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5"`). You can also set these properties when using sbt by typing:  
+-Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (`CPUBoundTasks === "Number of real CPUs (Cores)"`, `IOBoundTasks === "Number of (hyperthreaded) cores * 1.5"`). You can also set these properties when using sbt by typing:  
 `eval sys.props("org.opalj.threads.CPUBoundTasks") = "1"`.
 * Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails, it may be due to insufficient memory. In this case it is necessary to start SBT itself with more memory.*
 * Call `sbt it:test` to run the integration test suite. Executing this test suite may take very long (on a fast desktop with 32GB and 8 Cores it takes ~2h).
