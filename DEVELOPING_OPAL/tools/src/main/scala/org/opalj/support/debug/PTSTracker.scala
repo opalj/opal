@@ -7,21 +7,18 @@ import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
 import org.opalj.bi.Java15Version
 import org.opalj.br.IntegerType
-import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.instructions.{DUP, INVOKESPECIAL, INVOKESTATIC, LoadString, MethodInvocationInstruction, NEW, POP, SIPUSH}
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.InMemoryClassLoader
 
 import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 
 /**
  * instrument possible def sites to log instance. TODO:
@@ -51,26 +48,27 @@ object PTSTracker {
                 println(RED+"[error] cannot process file: "+e.getMessage+"."+RESET)
                 return ;
         }
-        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
-        val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
+        //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
+        //val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
         val PTSLoggerType = ObjectType("org/opalj/fpcf/fixtures/PTSLogger")
+        val ptsClassFile = PTSTracker.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
+        val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
+        val ContainerClassTypeFile = PTSTracker.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
+
         // TODO: copy all attributes etc.
+        val testCases = mutable.Set[(String, Array[Byte])]()
         var methodId = 1
         for (cf <- project.allProjectClassFiles.filter(_.fqn.startsWith("org/opalj/fpcf/fixtures/xl/js/"))) {
-
-            println(cf.sourceFile)
+            var hasMain = false
             val newMethods =
                 for (m <- cf.methods) yield {
-
+                    if (m.name.equals("main")) hasMain = true
                     methodId = (methodId.+)(1)
                     m.body match {
                         case None =>
                             m.copy() // methods which are native and abstract ...
 
                         case Some(code) =>
-                            val tac = tacai(m)
-                            println(tac)
-                            // let's search all "toString" calls
                             val lCode = LabeledCode(code)
                             var modified = false
                             var lastNew: Option[(Int, ObjectType)] = Option.empty
@@ -99,14 +97,14 @@ object PTSTracker {
                                         insertLog = true
                                     }
                                     case MethodInvocationInstruction(refType, isInterface, name, methodDescriptor) => {
-                                        if (!methodDescriptor.returnType.isVoidType) {
+                                        if (!methodDescriptor.returnType.isVoidType && !methodDescriptor.returnType.isBaseType) {
                                             // don't log if return value POP'd immediately
                                             val nextInstPC = code.pcOfNextInstruction(pc)
                                             val nextInst = code.find(_.pc == nextInstPC)
                                             nextInst match {
                                                 case Some(PCAndInstruction(_, POP)) =>
-                                                case Some(_) => insertLog = true
-                                                case None =>
+                                                case Some(_)                        => insertLog = true
+                                                case None                           =>
                                             }
 
                                         }
@@ -149,28 +147,34 @@ object PTSTracker {
             println(outputPath)
             outputPath.getParent.toFile.mkdirs()
             Files.write(outputPath, newRawCF) //, StandardOpenOption.TRUNCATE_EXISTING)
+            if (hasMain) testCases add (cf.thisType.toJava, newRawCF)
+        }
+        for ((className, code) <- testCases) {
+            // cannot use inmemoryclassloader, because scriptengine will still use
+            val cl = new InMemoryClassLoader(Map(
+                (className, code),
+                (PTSLoggerType.toJava, ptsClassFile),
+                (ContainerClassType.toJava, ContainerClassTypeFile)
+            ))
+            Thread.currentThread().setContextClassLoader(cl);
 
-            // // Let's see the old class file...
-            // val odlCFHTML = ClassFile(in).head.toXHTML(None)
-            // val oldCFHTMLFile = writeAndOpen(odlCFHTML, "SimpleInstrumentationDemo", ".html")
-            // println("original: "+oldCFHTMLFile)
-            //
-            // // Let's see the new class file...
-            // val newCF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
-            // println("instrumented: "+writeAndOpen(newCF, "NewSimpleInstrumentationDemo", ".html"))
-            //
-            // // Let's test that the new class does what it is expected to do... (we execute the
-            // // instrumented method)
-            // val cl = new InMemoryClassLoader(Map((cf.thisType.toJava, newRawCF)))
-            // val newClass = cl.findClass(cf.thisType.toJava)
-            // println(newClass)
+            val newClass = cl.findClass(className)
+            println(newClass)
 
-            // val instance = newClass.getDeclaredConstructor().newInstance()
-            //newClass.getMethod("main", String[]).getClass()).invoke(null)
-            // newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, Integer.valueOf(0))
-            // newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, Integer.valueOf(1))
+            //val instance = newClass.getDeclaredConstructor().newInstance()
+            val main = newClass.getMethod("main", (Array[String]().getClass()))
+            if (main != null) {
+                try {
+                    main.invoke(null, Array[String]())
+                } catch {
+                    case e: Exception => e.printStackTrace()
+                }
+            }
         }
 
+    }
+    def readFile(path: String) = {
+        Files.readAllBytes(Paths.get(path))
     }
 
 }
