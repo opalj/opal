@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.tools
+package org.opalj
+package support
+package tools
 
 import java.io.File
 

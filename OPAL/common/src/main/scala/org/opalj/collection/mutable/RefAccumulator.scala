@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection.mutable
+package org.opalj
+package collection
+package mutable
 
 /**
  * A list based accumulator of values '''and''' collections of values where the collections

@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 /**
  * A property which has an explicit name. This is particularly useful when we want to refer to a

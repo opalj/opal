@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.hermes
+package org.opalj
+package hermes
 package queries
 
 import org.opalj.br.ObjectType

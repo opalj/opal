@@ -1,18 +1,21 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import java.net.URL
-import org.opalj.ai.domain.l1
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
 

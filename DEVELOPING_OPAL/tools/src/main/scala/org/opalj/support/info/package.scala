@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support
+package org.opalj
+package support
 
 /**
  * Contains standalone tools/analyses that provide general, coarse-grained information about

@@ -1,14 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.hermes.queries.jcg
+package org.opalj
+package hermes
+package queries
+package jcg
 
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.da
-import org.opalj.hermes.DefaultFeatureQuery
-import org.opalj.hermes.HermesConfig
-import org.opalj.hermes.InstructionLocation
-import org.opalj.hermes.LocationsContainer
-import org.opalj.hermes.ProjectConfiguration
 
 import org.opalj.bi.REF_invokeInterface
 import org.opalj.bi.REF_invokeSpecial
