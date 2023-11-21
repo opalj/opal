@@ -22,7 +22,7 @@ public class Add {
         se.put("x",x);
         se.put("y",y);
         se.eval("function add(a,b){return a + b;} var z = add(x,y);");
-        Double result = (Double) se.get("z");
+        Integer result = (Integer) se.get("z");
         System.out.println("result: " + result);
     }
 }

@@ -24,7 +24,7 @@ public class Min {
         se.put("a", a);
         se.put("b", b);
         se.eval("function min(a,b){return a - b;} var z = min(a,b);");
-        Double result = (Double) se.get("z");
+        Integer result = (Integer) se.get("z");
         System.out.println("result: " + result);
     }
 }

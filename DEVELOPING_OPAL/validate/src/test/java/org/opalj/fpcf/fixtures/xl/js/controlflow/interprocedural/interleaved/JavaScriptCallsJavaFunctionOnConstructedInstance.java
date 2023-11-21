@@ -26,7 +26,7 @@ public class JavaScriptCallsJavaFunctionOnConstructedInstance {
         se.put("w", w);
         JavaScriptCallsJavaFunctionOnConstructedInstance inst = new JavaScriptCallsJavaFunctionOnConstructedInstance();
         setScriptEngineInstance(se, inst);
-        se.eval("var n = w; var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.interleaved.JavaScriptCallsJavaFunctionOnConstructedInstance\"); var javainstance = new javaTestClass(); javainstance.javaFunctionCalledFromJS(n);");
+        se.eval("var n = w; var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved.JavaScriptCallsJavaFunctionOnConstructedInstance\"); var javainstance = new javaTestClass(); javainstance.javaFunctionCalledFromJS(n);");
     }
 
     @PointsToSet(variableDefinition = 43,

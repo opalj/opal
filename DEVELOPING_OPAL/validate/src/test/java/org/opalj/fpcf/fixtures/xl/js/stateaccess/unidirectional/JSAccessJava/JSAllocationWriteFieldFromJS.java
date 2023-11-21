@@ -31,7 +31,7 @@ public class JSAllocationWriteFieldFromJS {
         se.put("instance", instance);
         Object myobject = new Object();
         se.put("myobject", myobject);
-        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.dataflow.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS\"); var instance = new javaTestClass();  instance.myfield = mystring");
+        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS\"); var instance = new javaTestClass();  instance.myfield = mystring");
         Object instancefield = instance.myfield;
         System.out.println(instancefield);
 
