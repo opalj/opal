@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ifds
+package org.opalj
+package fpcf
+package ifds
 
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.BackwardFlowPath
 import org.opalj.ifds.IFDSFact
 import org.opalj.tac.cg.RTACallGraphKey

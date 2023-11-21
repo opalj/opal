@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac
+package org.opalj
+package tac
 
 import java.net.URL
 import java.io.File

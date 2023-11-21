@@ -1,12 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.javacompilation
+package org.opalj
+package javacompilation
 
 import sbt._
 import java.io.File
 import java.io.Writer
 import scala.io.Source.fromFile
 
-import org.opalj.javacompilation.FixtureCompileSpec._
+import org.opalj.javacompilation.FixtureCompileSpec.JavaFixtureCompilationTask
+import org.opalj.javacompilation.FixtureCompileSpec.TestFixture
+import org.opalj.javacompilation.FixtureCompileSpec.TestFixtureCompiler
 
 /**
  * Defines methods to find and compile test fixtures.

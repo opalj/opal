@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ba
+package org.opalj
+package ba
 
 import scala.collection.mutable.ArrayBuffer
 import it.unimi.dsi.fastutil.ints.Int2IntAVLTreeMap

@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.reader
+package org.opalj
+package br
+package reader
 
 import org.opalj.bi.reader.PermittedSubclasses_attributeReader
-import org.opalj.br.PermittedSubclasses
 
 import scala.collection.immutable.ArraySeq
 

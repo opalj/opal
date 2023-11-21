@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.fieldassignability
+package org.opalj
+package tac
+package fpcf
+package analyses
+package fieldassignability
 
 import org.opalj.br.Method
 import org.opalj.br.PCs
@@ -15,13 +19,8 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.SelfReferenceParameter
 import org.opalj.br.Field
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability

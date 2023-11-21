@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.instructions
+package org.opalj
+package br
+package instructions
 
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
