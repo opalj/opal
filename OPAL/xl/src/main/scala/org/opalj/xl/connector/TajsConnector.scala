@@ -65,6 +65,7 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.Fields
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
@@ -172,7 +173,12 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                         val javaName = ol.getJavaName
                         val objectType = ObjectType(javaName.replace(".", "/"))
                         val classFile = project.classFile(objectType)
-                        val possibleFields = classFile.get.fields.find(_.name == propertyName)
+                        val possibleFields = {
+                            if(classFile.isDefined)
+                                classFile.get.fields.find(_.name == propertyName).toList
+                            else
+                                List.empty[Fields]
+                        } //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         //val context = jNode.getContext
                         val pointsToSet = jNode.getPointsToSet.asInstanceOf[PointsToSet]
 
