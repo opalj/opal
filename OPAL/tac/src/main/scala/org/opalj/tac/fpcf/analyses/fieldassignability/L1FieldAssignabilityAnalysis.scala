@@ -12,9 +12,6 @@ import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
-import org.opalj.tac.SelfReferenceParameter
 import org.opalj.br.Field
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.cg.Callers
