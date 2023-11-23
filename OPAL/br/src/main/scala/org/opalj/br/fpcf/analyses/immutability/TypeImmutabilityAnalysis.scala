@@ -1,18 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.analyses.immutability
+package org.opalj
+package br
+package fpcf
+package analyses
+package immutability
 
-import org.opalj.Answer
-import org.opalj.No
-import org.opalj.Unknown
-import org.opalj.Yes
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType

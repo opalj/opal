@@ -1,8 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.cfg
-
-import org.opalj.br.ObjectType
-import org.opalj.br.ExceptionHandler
+package org.opalj
+package br
+package cfg
 
 /**
  * This node represents an exception handler.

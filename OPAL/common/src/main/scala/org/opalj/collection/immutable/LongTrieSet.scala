@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection
+package org.opalj
+package collection
 package immutable
 
 import scala.annotation.tailrec
 
-import org.opalj.collection.LongIterator
 import java.lang.Long.{hashCode => lHashCode}
 
 sealed abstract class LongTrieSet extends LongSet { intSet =>

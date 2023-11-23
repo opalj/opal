@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support
+package org.opalj
+package support
 
 /**
  * Contains tools which are required/necessary/helpful to generate resources for OPAL, such as the

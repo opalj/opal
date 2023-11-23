@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.reader
+package org.opalj
+package br
+package reader
 
 /**
  * This configuration can be used to read in Java 17 (version 61) class files. All

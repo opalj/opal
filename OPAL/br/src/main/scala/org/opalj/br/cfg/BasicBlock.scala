@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.cfg
-
-import org.opalj.br.Code
+package org.opalj
+package br
+package cfg
 
 /**
  * Represents a basic block of a method's control flow graph (CFG). The basic block

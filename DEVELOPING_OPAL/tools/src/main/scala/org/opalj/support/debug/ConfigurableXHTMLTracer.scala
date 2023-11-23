@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.debug
+package org.opalj
+package support
+package debug
 
 import org.opalj.ai.AIResult
 

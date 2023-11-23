@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.da
+package org.opalj
+package da
 
 import scala.xml.Node
 import scala.xml.NodeBuffer

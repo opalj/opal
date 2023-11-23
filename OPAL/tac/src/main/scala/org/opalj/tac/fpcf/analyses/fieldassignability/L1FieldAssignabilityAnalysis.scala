@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.fieldassignability
+package org.opalj
+package tac
+package fpcf
+package analyses
+package fieldassignability
 
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
