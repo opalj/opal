@@ -1,5 +1,6 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JavaAccessJS;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.bidirectional;
 
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -10,33 +11,38 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 /**
- * java modifies js state through setMember()
- * field is immediately read through getSatte ( no JS analysis necessary )
+ * java instance stored in javascript field ( using eval).
+ * then, javascript field stored in java field (from javascript).
  */
-public class JavaAcccessJSObjectInstant {
-    @PointsToSet(variableDefinition = 39,
+public class JavaJSJSJava {
+    @PointsToSet(variableDefinition = 41,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JSAllocationWriteFieldFromJS.class,
+                            cf = JavaJSJSJava.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 37,
+                            allocSiteLinenumber = 35,
                             allocatedType = "java.lang.Object")
-
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
-        JavaAcccessJSObjectInstant instance = new JavaAcccessJSObjectInstant();
+        JavaJSJSJava instance = new JavaJSJSJava();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("instance", instance);
-        se.eval("var n = {'a':'b'}");
-        ScriptObjectMirror n = (ScriptObjectMirror) se.get("n");
-        System.out.println(n);
-        Object myobject = new Object();
-        n.setMember("field", myobject);
-        Object getField = n.get("field"); // ob and n are not the same instance in java
-        System.out.println(getField); // getfield and myobject are the same instance
+        se.eval("var n = {'a':'b'};");
+        Object n = se.get("n");
+        Object o = new Object();
+        System.out.println(o);
+        se.put("o",o);
+        se.eval("n.field = o;");
+        se.put("n2", n);
+        se.eval("instance.myfield = n2.field;");
+        Object getField = instance.myfield;
+        System.out.println(getField);
     }
+
+
+    public Object myfield;
 
 }

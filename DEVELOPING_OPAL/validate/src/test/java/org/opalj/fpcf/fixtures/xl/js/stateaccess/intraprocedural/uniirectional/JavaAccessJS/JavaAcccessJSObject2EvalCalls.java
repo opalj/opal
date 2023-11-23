@@ -1,6 +1,6 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JavaAccessJS;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.uniirectional.JavaAccessJS;
 
-import org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
+import org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.uniirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 

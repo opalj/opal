@@ -1,6 +1,5 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.bidirectional;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.bidirectional;
 
-import jdk.nashorn.api.scripting.JSObject;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -9,36 +8,35 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 /**
- * object stored in java field (from javascript).
- * reference in java field stored in javascript field (from java, using eval).
+ * java instance stored in javascript field ( using eval).
+ * then, javascript field stored in java field (from javascript).
  */
-public class JSJavaJavaJS {
-    @PointsToSet(variableDefinition = 38,
+public class JavaJSJSJava {
+    @PointsToSet(variableDefinition = 41,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JSJavaJavaJS.class,
+                            cf = JavaJSJSJava.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 32,
+                            allocSiteLinenumber = 35,
                             allocatedType = "java.lang.Object")
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
-        JSJavaJavaJS instance = new JSJavaJavaJS();
+        JavaJSJSJava instance = new JavaJSJSJava();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("instance", instance);
+        se.eval("var n = {'a':'b'};");
+        Object n = se.get("n");
         Object o = new Object();
         System.out.println(o);
-        se.put("o", o);
-        se.eval("var n = {'a':'b'}; instance.myfield = o;");
-        Object n = se.get("n");
-        se.put("myfield", instance.myfield);
-        se.eval("n.field = myfield");
+        se.put("o",o);
+        se.eval("n.field = o;");
         se.put("n2", n);
-        se.eval("var n_field = n2.field");
-        Object n_field = se.get("n_field");
-        System.out.println(n_field);
+        se.eval("instance.myfield = n2.field;");
+        Object getField = instance.myfield;
+        System.out.println(getField);
     }
 
 

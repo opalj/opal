@@ -1,6 +1,5 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.bidirectional;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.bidirectional;
 
-import jdk.nashorn.api.scripting.JSObject;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
