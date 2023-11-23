@@ -65,6 +65,19 @@ public class PlainClassesJava {
         return c.newInstance();
     }
 
+    public Object literalStringInClassForNameModule() throws ClassNotFoundException {
+        return Class.forName(String.class.getModule(), "java.lang.String");
+    }
+
+    public Object stringVariableInClassForNameModule() throws ClassNotFoundException {
+        String className = "java.lang.Integer";
+        return Class.forName(Integer.class.getModule(), className);
+    }
+
+    public Object invalidModuleAndNameInClassForName() throws ClassNotFoundException {
+        return Class.forName(this.getClass().getModule(), "java.lang.Integer");
+    }
+
     public Object getClassByKeyAlt(int i) throws Exception {
         String s;
         switch (i) {

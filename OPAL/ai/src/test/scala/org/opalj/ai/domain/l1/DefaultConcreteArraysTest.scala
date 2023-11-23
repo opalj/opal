@@ -622,7 +622,7 @@ class DefaultConcreteArraysTestDomain(
 }
 
 private object DefaultArraysTest {
-    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
+    val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

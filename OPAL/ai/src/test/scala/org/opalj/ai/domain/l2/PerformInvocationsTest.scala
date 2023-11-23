@@ -276,7 +276,7 @@ object PerformInvocationsTestFixture {
         ): InvocationDomain = new L1InvocationDomain(project, method)
     }
 
-    val project = biProject("ai.jar")
+    val project = biProject("ai-9.jar")
     val StaticCalls = project.classFile(ObjectType("ai/domain/StaticCalls")).get
 
 }

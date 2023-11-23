@@ -609,7 +609,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 theDomain.refIsNull(-1, exception.head) should be(No)
             }
 
-            val theProject = biProject("ai.jar")
+            val theProject = biProject("ai-9.jar")
             val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
             val ReferenceValuesFrenzy = theProject.classFile(targetType).get
 
