@@ -21,7 +21,6 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.value.ValueInformation
 
-import scala.collection.+:
 import scala.collection.immutable.IntMap
 
 /**
