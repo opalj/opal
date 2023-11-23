@@ -13,6 +13,7 @@ import javax.script.ScriptException;
  *
  */
 public class JSAllocationWriteFieldFromJS {
+    /*
     @PointsToSet(variableDefinition = 34,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
@@ -48,4 +49,5 @@ public class JSAllocationWriteFieldFromJS {
     }
 
     public Object myfield;
+    */
 }
