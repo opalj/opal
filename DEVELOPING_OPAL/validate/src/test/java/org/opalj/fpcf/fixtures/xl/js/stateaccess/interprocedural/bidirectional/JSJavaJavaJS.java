@@ -1,6 +1,5 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.bidirectional;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.bidirectional;
 
-import jdk.nashorn.api.scripting.JSObject;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -41,7 +40,11 @@ public class JSJavaJavaJS {
         System.out.println(n_field);
     }
 
-
+    private static void setJSField(ScriptEngine se, Object fieldValue, Object jsObject) throws ScriptException {
+        se.put("o", fieldValue);
+        se.put("n2", jsObject);
+        se.eval("n2.field = o;");
+    }
     public Object myfield;
 
 }

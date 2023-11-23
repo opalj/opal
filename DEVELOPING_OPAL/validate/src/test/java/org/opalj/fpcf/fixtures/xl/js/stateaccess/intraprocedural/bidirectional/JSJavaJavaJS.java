@@ -12,13 +12,13 @@ import javax.script.ScriptException;
  * reference in java field stored in javascript field (from java, using eval).
  */
 public class JSJavaJavaJS {
-    @PointsToSet(variableDefinition = 38,
+    @PointsToSet(variableDefinition = 42,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JSJavaJavaJS.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 32,
+                            allocSiteLinenumber = 30,
                             allocatedType = "java.lang.Object")
             }
     )
@@ -30,12 +30,15 @@ public class JSJavaJavaJS {
         Object o = new Object();
         System.out.println(o);
         se.put("o", o);
+        // JS -> Java state
         se.eval("var n = {'a':'b'}; instance.myfield = o;");
         Object n = se.get("n");
+        // Java -> JS state
         se.put("myfield", instance.myfield);
         se.eval("n.field = myfield");
         se.put("n2", n);
         se.eval("var n_field = n2.field");
+        // verify
         Object n_field = se.get("n_field");
         System.out.println(n_field);
     }

@@ -18,7 +18,7 @@ public class JavaJSJSJava {
                             cf = JavaJSJSJava.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 35,
+                            allocSiteLinenumber = 32,
                             allocatedType = "java.lang.Object")
             }
     )
@@ -31,10 +31,13 @@ public class JavaJSJSJava {
         Object n = se.get("n");
         Object o = new Object();
         System.out.println(o);
+        // Java -> JS state
         se.put("o",o);
         se.eval("n.field = o;");
         se.put("n2", n);
+        // JS -> Java state
         se.eval("instance.myfield = n2.field;");
+        // verification
         Object getField = instance.myfield;
         System.out.println(getField);
     }

@@ -1,4 +1,4 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JSAccessJava;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
@@ -14,13 +14,13 @@ import javax.script.ScriptException;
  *
  */
 public class JavaAllocationWriteFieldFromJS {
-    @PointsToSet(variableDefinition = 37,
+    @PointsToSet(variableDefinition = 34,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JSAllocationWriteFieldFromJS.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 34,
+                            allocSiteLinenumber = 32,
                             allocatedType = "java.lang.Object")
 
             }
@@ -29,13 +29,17 @@ public class JavaAllocationWriteFieldFromJS {
         JavaAllocationWriteFieldFromJS instance = new JavaAllocationWriteFieldFromJS();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        se.put("instance", instance);
         Object myobject = new Object();
-        se.put("myobject", myobject);
-        se.eval("instance.myfield = myobject");
+        setJavaField(se, myobject, instance);
         Object instancefield = instance.myfield;
         System.out.println(instancefield);
 
+    }
+
+    private static void setJavaField(ScriptEngine se, Object fieldValue, Object javaObject) throws ScriptException {
+        se.put("o", fieldValue);
+        se.put("n2", javaObject);
+        se.eval("n2.myfield = o;");
     }
     public Object myfield;
 }

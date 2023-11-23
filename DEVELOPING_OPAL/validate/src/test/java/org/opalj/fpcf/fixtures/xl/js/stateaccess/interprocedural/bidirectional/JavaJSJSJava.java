@@ -1,8 +1,5 @@
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.bidirectional;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.bidirectional;
 
-import jdk.nashorn.api.scripting.JSObject;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -34,12 +31,17 @@ public class JavaJSJSJava {
         Object n = se.get("n");
         Object o = new Object();
         System.out.println(o);
-        se.put("o",o);
-        se.eval("n.field = o;");
+        setJSField(se, o, n);
         se.put("n2", n);
         se.eval("instance.myfield = n2.field;");
         Object getField = instance.myfield;
         System.out.println(getField);
+    }
+
+    private static void setJSField(ScriptEngine se, Object fieldValue, Object jsObject) throws ScriptException {
+        se.put("o", fieldValue);
+        se.put("n2", jsObject);
+        se.eval("n2.field = o;");
     }
 
 

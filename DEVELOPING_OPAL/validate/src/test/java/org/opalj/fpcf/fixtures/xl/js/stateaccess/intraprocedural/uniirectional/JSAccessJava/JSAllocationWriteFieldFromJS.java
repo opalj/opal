@@ -19,19 +19,19 @@ public class JSAllocationWriteFieldFromJS {
                 cf = JSAllocationWriteFieldFromJS.class,
                     methodName = "main",
                     methodDescriptor = "(java.lang.String[]): void",
-                    allocSiteLinenumber = 32,
+                    allocSiteLinenumber = 30,
                     allocatedType = "java.lang.Object")
 
             }
     )
     public static void main(String args[]) throws ScriptException, NoSuchMethodException {
-        JSAllocationWriteFieldFromJS instance = new JSAllocationWriteFieldFromJS();
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
-        se.put("instance", instance);
         Object myobject = new Object();
+        System.out.println(myobject);
         se.put("myobject", myobject);
-        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS\"); var instance = new javaTestClass();  instance.myfield = mystring");
+        se.eval("var javaTestClass = Java.type(\"org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.uniirectional.JSAccessJava.JSAllocationWriteFieldFromJS\"); var instance = new javaTestClass();  instance.myfield = myobject");
+        JSAllocationWriteFieldFromJS instance = (JSAllocationWriteFieldFromJS)se.get("instance");
         Object instancefield = instance.myfield;
         System.out.println(instancefield);
 
