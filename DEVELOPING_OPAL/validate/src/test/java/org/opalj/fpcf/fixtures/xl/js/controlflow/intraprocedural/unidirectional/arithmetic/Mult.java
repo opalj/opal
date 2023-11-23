@@ -24,7 +24,7 @@ public class Mult {
         se.put("a", a);
         se.put("b", b);
         se.eval("function mult(a,b){return a * b;} var z = mult(a,b);");
-        Integer result = (Integer) se.get("z");
+        Double result = (Double) se.get("z");
         System.out.println("result: " + result);
     }
 }
