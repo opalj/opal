@@ -10,7 +10,7 @@ import javax.script.ScriptException;
 /**
  * java instance stored in javascript field ( using eval).
  * then, javascript field stored in java field (from javascript).
- */
+
 public class JavaJSJSJava {
     @PointsToSet(variableDefinition = 41,
             expectedJavaAllocSites = {
@@ -48,3 +48,4 @@ public class JavaJSJSJava {
     public Object myfield;
 
 }
+*/
