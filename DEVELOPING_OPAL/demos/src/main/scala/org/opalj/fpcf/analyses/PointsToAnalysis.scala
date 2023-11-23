@@ -121,7 +121,8 @@ object GroundTruthParser {
 
   def normalizeType(str: String): String = {
     val equivalences = Map(
-      ("javax.script.ScriptEngine", "jdk.nashorn.api.scripting.NashornScriptEngine")
+      ("jdk.nashorn.api.scripting.NashornScriptEngine", "javax.script.ScriptEngine"),
+      ("jdk.nashorn.api.scripting.ScriptObjectMirror", "java.lang.Object"),
     )
     equivalences.getOrElse(str, str)
   }
