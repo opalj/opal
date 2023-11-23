@@ -60,9 +60,6 @@ public class Cyclic {
         se.eval("var res = f(arg)");
         SimpleContainerClass result = (SimpleContainerClass) se.get("res");
         return result;
-        // Invocable inv = (Invocable) se;
-        // String result = (String)(inv.invokeFunction("f", s));
-        // return result;
     }
 }
 

@@ -79,11 +79,11 @@ abstract class ScriptEngineInteractionAnalysisGet(
         val epk = eps.toEPK
         eps match {
 
-            case InterimUBP(InterimAnalysisResult(store)) =>
+            case ubp @ InterimUBP(InterimAnalysisResult(store)) =>
                 handleJSResult(possibleStrings, store, targetVarDefSite)
-                dependees += eps
+                dependees += ubp
 
-            case UBP(newPointsTo: PointsToSet @unchecked) =>
+            case ubp @ UBP(newPointsTo: PointsToSet @unchecked) =>
                 newPointsTo.forNewestNElements(newPointsTo.numElements) { alloc =>
                     {
                         val instance = Coordinator.ScriptEngineInstance(alloc)
@@ -98,7 +98,7 @@ abstract class ScriptEngineInteractionAnalysisGet(
                         }
                     }
                 }
-                dependees += eps
+                dependees += ubp
 
             case eps => dependees += eps
         }
@@ -160,7 +160,7 @@ abstract class ScriptEngineInteractionAnalysisGet(
         targetVarOption: Option[V],
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
-        println("start get analysis")
+
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
 
@@ -183,21 +183,10 @@ abstract class ScriptEngineInteractionAnalysisGet(
             allocations.forNewestNElements(allocations.numElements) { alloc =>
                 {
                     val instance = Coordinator.ScriptEngineInstance(alloc)
-                    val result = propertyStore(instance, AnalysisResult.key)
-                    println(s"get analysis querying result: $result")
-                    result match {
-                        case InterimUBP(InterimAnalysisResult(store)) =>
-                            val possibleValues =
-                                possibleStrings.map(variableName => store.asInstanceOf[Map[PKey, Value]]
-                                    .getOrElse(PKey.StringPKey.make(variableName), Value.makeUndef()))
-
-                            val pointsToSetSet = js2java(possibleValues)._2
-
-                            pointsToSetSet.foreach { pointsToSet =>
-                                pointsToAnalysisState.includeSharedPointsToSet(
-                                    targetVarDefSite, pointsToSet
-                                )
-                            }
+                    propertyStore(instance, AnalysisResult.key) match {
+                        case ubp @ InterimUBP(InterimAnalysisResult(store)) =>
+                            handleJSResult(possibleStrings, store, targetVarDefSite)
+                            dependees += ubp
 
                         case eps => dependees += eps
                     }

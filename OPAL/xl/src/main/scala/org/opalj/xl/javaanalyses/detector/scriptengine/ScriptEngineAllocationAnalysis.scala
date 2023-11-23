@@ -54,8 +54,6 @@ abstract class ScriptEngineAllocationAnalysis(
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
 
-        println("alloc analysis process new caller")
-
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
 
@@ -122,7 +120,7 @@ abstract class ScriptEngineAllocationAnalysis(
 
     def c(instance: ScriptEngineInstance[ElementType], language: Option[Language],
           context: ContextType, engineString: V, stmts: Array[Stmt[V]])(eps: SomeEPS)(implicit state: TypeIteratorState): ProperPropertyComputationResult = {
-        println(s"alloc analysis continuation")
+
         var resultLanguage = language
         AllocationsUtil.continuationForAllocation[None.type, ContextType](
             eps, context, _ => (engineString, stmts), _ => true, _ => {

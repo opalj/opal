@@ -33,7 +33,6 @@ object JavaJavaScriptTranslator {
         if (pointsToSetLike != null) {
             pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) { tpe =>
                 {
-                    println(tpe)
                     if (tpe == ObjectType.String)
                         defaultValue = defaultValue.join(Value.makeAnyStr().removeAttributes())
                     if (tpe.isNumericType || tpe == ObjectType.Integer ||
@@ -90,14 +89,14 @@ object JavaJavaScriptTranslator {
             } else if (v.isMaybeAnyBool) {
                 typesSet += ObjectType.Boolean
             } else if (v.isAlsoJavaObject) {
-                typesSet += ObjectType(v.getJavaName)
                 v.getObjectLabels.forEach(objectLabel => {
                     if (objectLabel.getNode().
                         isInstanceOf[JNode[_, _, _, _]]) {
+                        typesSet += ObjectType(objectLabel.getJavaName)
                         val node = objectLabel.getNode().
                             asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]]
                         pointsToSetSet += node.getPointsToSet
-                        //jsNodes+=node
+                        jsNodes += node
                     }
                 })
             } else if (v.isJSJavaObject) {
