@@ -6,7 +6,7 @@ import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePairs
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.{Project, VirtualFormalParameter}
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.fpcf.Property
@@ -16,9 +16,10 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
-import scala.collection.immutable.ArraySeq
 
+import scala.collection.immutable.ArraySeq
 import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.fpcf
 
 class PointsToSetMatcher extends AbstractPropertyMatcher {
 
@@ -55,7 +56,11 @@ class PointsToSetMatcher extends AbstractPropertyMatcher {
         val annotationType = a.annotationType.asObjectType
 
         val variableDefinitionLine = getValue(p, annotationType, a.elementValuePairs, "variableDefinition").asIntValue.value
-
+        val parameterIndex = getValue(p, annotationType, a.elementValuePairs, "parameterIndex").asIntValue.value
+        assert(
+            (variableDefinitionLine == -1 && parameterIndex >= 0) || (variableDefinitionLine >= 0 && parameterIndex == -1),
+            "Must specify either variableDefinition or parameterIndex "
+        )
         val subAnnotationsJava: ArraySeq[AnnotationLike] =
             getValue(p, annotationType, a.elementValuePairs, "expectedJavaAllocSites")
                 .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
@@ -97,12 +102,19 @@ evalCallSource = JavaScriptAllocationReturn.class,
             case Some(code) => code
             case None       => return Some("Code of call site is not available.");
         }
-        val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == m).toSet
 
-        //The last defSite is the one of interest
-        val defSite = defsitesInMethod.iterator.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine).maxByOption(_.pc)
-        val defsiteOfInterest = defSite.getOrElse(throw new Exception(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}"))
+        var defsiteOfInterest: fpcf.Entity = null
+        if (variableDefinitionLine >= 0) {
+            val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == m).toSet
 
+            //The last defSite is the one of interest
+            val defSite = defsitesInMethod.iterator.filter(ds => methodCode.lineNumber(ds.pc).getOrElse(-1) == variableDefinitionLine).maxByOption(_.pc)
+            defsiteOfInterest = defSite.getOrElse(throw new Exception(s"No definition site found for  ${m.name} , line ${variableDefinitionLine}"))
+        } else {
+            val params = ps.entities(propertyFilter = _.e.isInstanceOf[VirtualFormalParameter]).map(_.asInstanceOf[VirtualFormalParameter]).filter(_.method.definedMethod == m).toList
+            val paramsOption = params.find(_.parameterIndex == parameterIndex)
+            defsiteOfInterest = paramsOption.getOrElse(throw new Exception(s"No parameter for  ${m.name} , index ${parameterIndex}. hint: parameterIndex 0 is thisRef."))
+        }
         val ptsProperties = ps.properties(defsiteOfInterest).map(_.toFinalEP.p)
         val pts = {
             ptsProperties.find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet]) match {
@@ -119,9 +131,9 @@ evalCallSource = JavaScriptAllocationReturn.class,
                 (m.classFile.thisType.asObjectType, "JavaScript", "<uml>", pc, ObjectType.lookup(typeId).toJava)
         }).toSet
         println("------------------")
-        println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
-        println(s"expected Java alloc sites: ${expectedJavaAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
-        println(s"expected JS alloc sites: ${expectedJSAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
+        println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
+        println(s"expected Java alloc sites: ${expectedJavaAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
+        println(s"expected JS alloc sites: ${expectedJSAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
 
         val missingAllocSiteSet = (expectedJavaAllocSites ++ expectedJSAllocSites) diff detectedAllocSites
         println(s"missing alloc site: ${missingAllocSiteSet.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")

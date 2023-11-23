@@ -22,7 +22,7 @@ public class Cyclic {
         SimpleContainerClass res = c.decrement(initial);
         System.out.println();
     }
-    @PointsToSet(variableDefinition = 36,
+    @PointsToSet(parameterIndex = 0,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = Cyclic.class,

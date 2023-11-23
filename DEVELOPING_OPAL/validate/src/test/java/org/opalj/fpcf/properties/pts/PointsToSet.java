@@ -35,8 +35,8 @@ public @interface PointsToSet {
     /**
      * the points-to-set to be validated (line number of def-site)
      */
-    int variableDefinition();
-
+    int variableDefinition() default -1;
+    int parameterIndex() default -1;
     JavaMethodContextAllocSite[] expectedJavaAllocSites() default {};
     JavaScriptContextAllocSite[] expectedJavaScriptAllocSites() default {};
 
