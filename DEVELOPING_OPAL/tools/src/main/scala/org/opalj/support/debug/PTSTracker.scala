@@ -15,6 +15,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.{DUP, INVOKESPECIAL, INVOKESTATIC, LoadString, MethodInvocationInstruction, NEW, POP, SIPUSH}
 import org.opalj.util.InMemoryClassLoader
 
+import java.io.{FileOutputStream, PrintWriter}
 import java.net.{URL, URLClassLoader}
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -30,7 +31,7 @@ object PTSTracker {
         import Console.RED
         import Console.RESET
         if (args.length != 2) {
-            println("You have to specify the method that should be analyzed.")
+            println("You have to specify the code that should be analyzed.")
             println("\t1: directory containing class files ")
             println("\t2: destination of instrumented class files")
             return ;
@@ -49,7 +50,10 @@ object PTSTracker {
                 println(RED+"[error] cannot process file: "+e.getMessage+"."+RESET)
                 return ;
         }
-        //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
+        // clear trace.xml file
+      val fw = new PrintWriter(new FileOutputStream("trace.xml", false));
+      fw.write(" ")
+      //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         //val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
         val classloaderScriptEngineJars = new URLClassLoader(
           Array(
@@ -72,7 +76,9 @@ object PTSTracker {
                     if (m.name.equals("main")) hasMain = true
                     methodId = (methodId.+)(1)
                     println(s"instrumenting ${m.fullyQualifiedSignature}")
-                    println(s"<method fullyqualified=\"" + m.fullyQualifiedSignature+ "\" id=\"" + methodId + "\"/>")
+                    val tag = (s"<method fullyqualified=\"" + m.fullyQualifiedSignature+ "\" id=\"" + methodId + "\"/>")
+                  println(tag)
+                  fw.write(tag + "\n")
                     m.body match {
                         case None =>
                             m.copy() // methods which are native and abstract ...
@@ -155,7 +161,7 @@ object PTSTracker {
             Files.write(outputPath, newRawCF) //, StandardOpenOption.TRUNCATE_EXISTING)
             if (hasMain) testCases add (cf.thisType.toJava, newRawCF)
         }
-
+        fw.close()
         for ((className, code) <- testCases) {
 
             // cannot use inmemoryclassloader, because scriptengine will still use

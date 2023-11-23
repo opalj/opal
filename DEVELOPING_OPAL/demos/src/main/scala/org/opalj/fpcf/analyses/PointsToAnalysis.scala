@@ -55,9 +55,6 @@ case class MethodResult(
                          falseNegativeData: Set[(String, Int, String, Int)]
                        ) {
   override def toString: String = {
-    val truePositiveStr = f"  True positives: $truePositive"
-    val falsePositiveStr = f"  False positives: $falsePositive"
-    val falseNegativeStr = f"  False negatives: $falseNegative"
 
     //val truePositiveDataStr = truePositiveData.map {
     //  case (method, pc, tpType, allocSiteID) =>
@@ -77,10 +74,10 @@ case class MethodResult(
     s"""MethodResult: $method
        |  Precision: ${precision * 100}%.2f%
        |  Recall: ${recall * 100}%.2f%
-       |$truePositiveStr
-       |$falsePositiveStr
+       |  True positives: $truePositive
+       |  False positives: $falsePositive
        |$falsePositiveDataStr
-       |$falseNegativeStr
+       |  False negatives: $falseNegative
        |$falseNegativeDataStr
        |""".stripMargin
   }
@@ -122,11 +119,15 @@ object GroundTruthParser {
   def normalizeType(str: String): String = {
     val equivalences = Map(
       ("jdk.nashorn.api.scripting.NashornScriptEngine", "javax.script.ScriptEngine"),
+      ("org.openjdk.nashorn.api.scripting.NashornScriptEngine", "javax.script.ScriptEngine"),
       ("jdk.nashorn.api.scripting.ScriptObjectMirror", "java.lang.Object"),
+      ("org.openjdk.nashorn.api.scripting.ScriptObjectMirror", "java.lang.Object"),
     )
     equivalences.getOrElse(str, str)
   }
-
+  def ignoreFalseNegative(falseNegative: (String, Int, String, Int)) : Boolean = {
+    false //falseNegative._3 == "org.openjdk.nashorn.api.scripting.NashornScriptEngine"
+  }
   def generateMapping(groundTruth: Set[(String, Int, String, Int)], test: Set[(String, Long, String, Int)]): (Map[Long, Int], Map[Int, Option[Long]]) = {
     val allocSiteToInstanceId = mutable.Map[Long, Int]()
     val instanceIdToAllocSite = mutable.Map[Int, Option[Long]]()
@@ -219,7 +220,9 @@ object GroundTruthParser {
         }
         for (instance <- instances) {
           if (!testInstanceIdsForPC.contains((instance.instanceId, instance.objClass))) {
-            falseNegativeData add ((method.signature, pc, instance.objClass, instance.instanceId))
+            val falseNegative = (method.signature, pc, instance.objClass, instance.instanceId)
+            if (!ignoreFalseNegative(falseNegative))
+              falseNegativeData add falseNegative
           } else {
             print("")
           }
@@ -247,7 +250,7 @@ object GroundTruthParser {
     }
 
   }
-  def printTotalPrecisionRecall(results: Map[Int, MethodResult]) = {
+  def printTotalPrecisionRecall(results: Map[Int, MethodResult]): Unit = {
     val truePositive = results.values.map(_.truePositive).sum
     val falsePositive = results.values.map(_.falsePositive).sum
     val falseNegative = results.values.map(_.falseNegative).sum
@@ -260,20 +263,20 @@ object GroundTruthParser {
 
 object ComparePTS {
   def main(args: Array[String]): Unit = {
-      val groundTruth = GroundTruthParser.parseGroundTruth("/home/julius/IdeaProjects/opal/OPAL/xl/groundtruth.xmltxt")
+      val groundTruth = GroundTruthParser.parseGroundTruth("trace.xml")
     val withoutTAJS = new PointsToAnalysisRunner()
     val withTAJS = new PointsToAnalysisRunner()
     withoutTAJS.main(args)
 
-    val groupedWithoutByMethod = withoutTAJS.pts.groupBy(_._1.toString)
-    for (elem <- groupedWithoutByMethod) {
+    //val groupedWithoutByMethod = withoutTAJS.pts.groupBy(_._1.toString)
+    /*for (elem <- groupedWithoutByMethod) {
       println(elem._1)
       val sorted = elem._2.toArray.sortBy(mdsas => mdsas._2.pc)
       for (pts <- sorted) {
         println("  " + pts._2.pc + "  " + pts._3.toString)
 
       }
-    }
+    }*/
 
      val evalWithoutTAJS = GroundTruthParser.evaluate(groundTruth, withoutTAJS.pts, withoutTAJS.p)
     withTAJS.main(args ++ Iterable("RunTAJS"))
@@ -285,15 +288,32 @@ object ComparePTS {
     //val differences = combinedMap.filter(comparison => comparison._2.toString != comparison._3.toString)
     println(s"without TAJS: ${withoutTAJS.pts.count(_._3.exists(_.types.nonEmpty))} non-empty pts")
     println(s"<pointstotrace id=\"withoutTAJS\" />")
-    withoutTAJS.printPointsToSet()
+    //withoutTAJS.printPointsToSet()
     println(s"with TAJS: ${withTAJS.pts.count(_._3.exists(_.types.nonEmpty))} non-empty pts")
     println(s"<pointstotrace id=\"withTAJS\" />")
-    withTAJS.printPointsToSet()
+    //withTAJS.printPointsToSet()
 
-    for ((id, results) <- evalWithoutTAJS) {
-      if (results.falseNegative + results.falsePositive + results.truePositive > 0)
-        println(results.toString)
+    for ((id) <- evalWithoutTAJS.keys) {
+        val resultWithoutTAJS = evalWithoutTAJS(id)
+        val resultWithTAJS = evalWithTAJS(id)
+      if (resultWithoutTAJS.falseNegative + resultWithTAJS.falsePositive + resultWithoutTAJS.truePositive > 0) {
+        val withoutStr = resultWithoutTAJS.toString
+        val withStr = resultWithTAJS.toString
+        if (withStr == withoutStr){
+          println(withStr)
+        } else {
+          println("without TAJS: ")
+          println(withoutStr)
+          println("with TAJS:")
+          println(withStr)
+
+
+        }
+      }
     }
+
+
+
 
     println("without TAJS")
     GroundTruthParser.printTotalPrecisionRecall(evalWithoutTAJS)
@@ -353,7 +373,7 @@ class PointsToAnalysisRunner extends ProjectAnalysisApplication {
       val ptsInMethod = defsitesInMethod.toArray.map(defsite => (m, defsite, ps1.properties(defsite).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
       pts ++= ptsInMethod
       results += m.name + "\n"
-      results += "points to sets: " + pts
+      // results += "points to sets: " + pts
     }
 
     BasicReport(

@@ -2,6 +2,7 @@ package org.opalj.fpcf.fixtures;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 
 public class PTSLogger {
@@ -9,7 +10,7 @@ public class PTSLogger {
 
     static {
         try {
-            pw = new PrintWriter(new File("asdsda"));
+            pw = new PrintWriter(new FileOutputStream("trace.xml", true));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
