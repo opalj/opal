@@ -171,7 +171,7 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
             (o, n) =>
                 o.unionWith(
                     n,
-                    (_, l, r) => l.++:(r)
+                    (_, l, r) => r ++: l
                 )
         )
     }

@@ -133,15 +133,7 @@ final case class IntListNode(
     }
 
     override def +:(v: Int): IntList = new IntListNode(v, this)
-    override def ++:(other: IntList): IntList = {
-        var newList = this
-        for {
-            value <- other.iterator
-        } {
-            newList = IntListNode(value, newList)
-        }
-        newList
-    }
+    override def ++:(other: IntList): IntList = other.iterator.foldLeft(this)((list, value) => IntListNode(value, list))
 
     override def equals(that: IntList): Boolean = {
         (that eq this) || {
