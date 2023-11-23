@@ -15,6 +15,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.{DUP, INVOKESPECIAL, INVOKESTATIC, LoadString, MethodInvocationInstruction, NEW, POP, SIPUSH}
 import org.opalj.util.InMemoryClassLoader
 
+import java.net.{URL, URLClassLoader}
 import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.immutable.ArraySeq
@@ -50,6 +51,12 @@ object PTSTracker {
         }
         //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         //val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
+        val classloaderScriptEngineJars = new URLClassLoader(
+          Array(
+            new URL("file:///home/julius/Downloads/asm-all-5.2.jar"),
+            new URL("file:///home/julius/Downloads/nashorn-core-15.4.jar")
+          ),
+          ClassLoader.getSystemClassLoader)
         val PTSLoggerType = ObjectType("org/opalj/fpcf/fixtures/PTSLogger")
         val ptsClassFile = PTSTracker.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
         val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
@@ -64,10 +71,12 @@ object PTSTracker {
                 for (m <- cf.methods) yield {
                     if (m.name.equals("main")) hasMain = true
                     methodId = (methodId.+)(1)
+                    println(s"instrumenting ${m.fullyQualifiedSignature}")
+                    println(s"<method fullyqualified=\"" + m.fullyQualifiedSignature+ "\" id=\"" + methodId + "\"/>")
                     m.body match {
                         case None =>
                             m.copy() // methods which are native and abstract ...
-
+                          
                         case Some(code) =>
                             val lCode = LabeledCode(code)
                             var modified = false
@@ -91,7 +100,6 @@ object PTSTracker {
                                             }
                                             case None =>
                                         }
-
                                     }
                                     case LoadString(value) => {
                                         insertLog = true
@@ -106,7 +114,6 @@ object PTSTracker {
                                                 case Some(_)                        => insertLog = true
                                                 case None                           =>
                                             }
-
                                         }
                                     }
                                     case _ => {
@@ -125,7 +132,6 @@ object PTSTracker {
                                         )
                                     )
                                 }
-
                             }
                             if (modified) {
                                 val (newCode, _) =
@@ -149,13 +155,15 @@ object PTSTracker {
             Files.write(outputPath, newRawCF) //, StandardOpenOption.TRUNCATE_EXISTING)
             if (hasMain) testCases add (cf.thisType.toJava, newRawCF)
         }
+
         for ((className, code) <- testCases) {
+
             // cannot use inmemoryclassloader, because scriptengine will still use
             val cl = new InMemoryClassLoader(Map(
                 (className, code),
                 (PTSLoggerType.toJava, ptsClassFile),
                 (ContainerClassType.toJava, ContainerClassTypeFile)
-            ))
+            ), parent = classloaderScriptEngineJars)
             Thread.currentThread().setContextClassLoader(cl);
 
             val newClass = cl.findClass(className)
