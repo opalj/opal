@@ -21,8 +21,6 @@ import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
-import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 
 /**
  * Tests XL interaction by validating Points-to-sets
@@ -48,8 +46,7 @@ class XLJavaScriptTests extends PropertiesTest {
     def addAnalyses(): Iterable[FPCFAnalysisScheduler] = {
         Iterable(
             AllocationSiteBasedScriptEngineDetectorScheduler,
-            AllocationSiteBasedTriggeredTajsConnectorScheduler,
-            new TypePropagationAnalysisScheduler(XTASetEntitySelector)
+            AllocationSiteBasedTriggeredTajsConnectorScheduler
         )
     }
 

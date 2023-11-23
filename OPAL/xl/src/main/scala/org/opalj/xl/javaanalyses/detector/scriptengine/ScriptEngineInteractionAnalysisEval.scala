@@ -57,8 +57,6 @@ abstract class ScriptEngineInteractionAnalysisEval(
                     pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     ): ProperPropertyComputationResult = {
 
-        println(s"eval continuation $eps")
-
         var results = List.empty[SomePartialResult]
         val epk = eps.toEPK
         var newEngineInteraction = engineInteraction
@@ -125,8 +123,6 @@ abstract class ScriptEngineInteractionAnalysisEval(
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
 
-        println("process new caller eval")
-
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
 
@@ -139,8 +135,6 @@ abstract class ScriptEngineInteractionAnalysisEval(
             })
 
         var dependees: Set[SomeEOptionP] = Set.empty
-
-        println(s"possible strings: $possibleStrings")
 
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](code = possibleStrings.toList)
 
