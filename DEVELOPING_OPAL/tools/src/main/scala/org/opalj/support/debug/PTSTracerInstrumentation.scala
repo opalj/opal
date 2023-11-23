@@ -25,15 +25,15 @@ import scala.collection.mutable
 /**
  * instrument possible def sites to log instance. TODO:
  */
-object PTSTracker {
+object PTSTracerInstrumentation {
 
     def main(args: Array[String]): Unit = {
         import Console.RED
         import Console.RESET
         if (args.length != 2) {
             println("You have to specify the code that should be analyzed.")
-            println("\t1: directory containing class files ")
-            println("\t2: destination of instrumented class files")
+            println("\t1: directory containing class files      e.g.  /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes")
+            println("\t2: destination of instrumented class files e.g /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/instrumented")
             return ;
         }
         val inputClassPath = args(0)
@@ -62,9 +62,9 @@ object PTSTracker {
           ),
           ClassLoader.getSystemClassLoader)
         val PTSLoggerType = ObjectType("org/opalj/fpcf/fixtures/PTSLogger")
-        val ptsClassFile = PTSTracker.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
+        val ptsClassFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
         val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
-        val ContainerClassTypeFile = PTSTracker.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
+        val ContainerClassTypeFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
 
         // TODO: copy all attributes etc.
         val testCases = mutable.Set[(String, Array[Byte])]()

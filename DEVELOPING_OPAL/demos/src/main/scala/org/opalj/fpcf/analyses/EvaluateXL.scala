@@ -263,6 +263,9 @@ object GroundTruthParser {
 
 object ComparePTS {
   def main(args: Array[String]): Unit = {
+    if (args.isEmpty){
+      throw new IllegalArgumentException("specify cp. e.g. -cp=/home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes/org/opalj/fpcf/fixtures/xl")
+    }
       val groundTruth = GroundTruthParser.parseGroundTruth("trace.xml")
     val withoutTAJS = new PointsToAnalysisRunner()
     val withTAJS = new PointsToAnalysisRunner()
