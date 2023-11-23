@@ -56,10 +56,11 @@ case class MethodResult(
                        ) {
   override def toString: String = {
 
-    //val truePositiveDataStr = truePositiveData.map {
-    //  case (method, pc, tpType, allocSiteID) =>
-    //    f"  Method: $method, PC: $pc, Type: $tpType, AllocSiteID: $allocSiteID"
-    //}.mkString("\n")
+    val truePositiveDataStr = truePositiveData.map {
+      case (method, pc, tpType, allocSiteID) =>
+        f"  Method: $method, PC: $pc, Type: $tpType, AllocSiteID: $allocSiteID"
+    }.mkString("\n")
+
 
     val falsePositiveDataStr = falsePositiveData.map {
       case (method, pc, fpType, allocSiteID) =>
@@ -70,11 +71,13 @@ case class MethodResult(
       case (method, pc, fnType, instanceID) =>
         f"  Method: $method, PC: $pc, Type: $fnType, InstanceID: $instanceID"
     }.mkString("\n")
-
-    s"""MethodResult: $method
-       |  Precision: ${precision * 100}%.2f%
-       |  Recall: ${recall * 100}%.2f%
+    val p = precision * 100
+    val r = recall * 100
+    f"""MethodResult: $method
+       |  Precision: $p%.2f%%
+       |  Recall: $r%.2f%%
        |  True positives: $truePositive
+       |  $truePositiveDataStr
        |  False positives: $falsePositive
        |$falsePositiveDataStr
        |  False negatives: $falseNegative
@@ -254,10 +257,10 @@ object GroundTruthParser {
     val truePositive = results.values.map(_.truePositive).sum
     val falsePositive = results.values.map(_.falsePositive).sum
     val falseNegative = results.values.map(_.falseNegative).sum
-    val precision = if (truePositive + falsePositive > 0) truePositive.toDouble / (truePositive + falsePositive) else 0
-    val recall = if (truePositive + falseNegative > 0) truePositive.toDouble / (truePositive + falseNegative) else 0
-    println(s"true positives: $truePositive false positives: $falsePositive false negatives: $falseNegative")
-    println(s"total precision: $precision total recall: $recall")
+    val precision = if (truePositive + falsePositive > 0) 100 * truePositive.toDouble / (truePositive + falsePositive) else 0
+    val recall = if (truePositive + falseNegative > 0) 100 * truePositive.toDouble / (truePositive + falseNegative) else 0
+    println(f"true positives: $truePositive false positives: $falsePositive false negatives: $falseNegative")
+    println(f"total precision: $precision%.2f%% total recall: $recall%.2f%%")
   }
 }
 
@@ -296,10 +299,12 @@ object ComparePTS {
     println(s"<pointstotrace id=\"withTAJS\" />")
     //withTAJS.printPointsToSet()
 
-    for ((id) <- evalWithoutTAJS.keys) {
+    for ((id) <-  evalWithoutTAJS.keys.toList.sorted) {
         val resultWithoutTAJS = evalWithoutTAJS(id)
         val resultWithTAJS = evalWithTAJS(id)
       if (resultWithoutTAJS.falseNegative + resultWithTAJS.falsePositive + resultWithoutTAJS.truePositive > 0) {
+        print(id)
+        print(": ")
         val withoutStr = resultWithoutTAJS.toString
         val withStr = resultWithTAJS.toString
         if (withStr == withoutStr){
