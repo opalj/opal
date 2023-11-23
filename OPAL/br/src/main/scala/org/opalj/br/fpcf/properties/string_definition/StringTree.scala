@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.properties.string_definition
+package org.opalj
+package br
+package fpcf
+package properties
+package string_definition
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

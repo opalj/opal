@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
+package interprocedural
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -16,17 +22,7 @@ import org.opalj.br.fpcf.properties.{NoContext, StringConstancyProperty}
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.ReturnValue
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.P
 
 /**
  * The `InterproceduralVirtualFunctionCallInterpreter` is responsible for processing

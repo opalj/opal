@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -25,29 +29,18 @@ import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.tac.Stmt
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.ExprStmt
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
-import org.opalj.tac.Assignment
-import org.opalj.tac.DUVar
-import org.opalj.tac.FunctionCall
-import org.opalj.tac.MethodCall
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
-import org.opalj.tac.ArrayLoad
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
-import org.opalj.tac.BinaryExpr
-import org.opalj.tac.Expr
 import org.opalj.tac.fpcf.analyses.cg.{RTATypeIterator, TypeIterator}
 
 /**

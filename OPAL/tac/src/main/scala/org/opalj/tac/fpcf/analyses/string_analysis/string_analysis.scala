@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses
+package org.opalj
+package tac
+package fpcf
+package analyses
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -9,8 +12,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.DUVar
-import org.opalj.tac.FunctionCall
 
 /**
  * @author Patrick Mell

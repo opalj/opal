@@ -1,9 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package preprocessing
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
-
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat

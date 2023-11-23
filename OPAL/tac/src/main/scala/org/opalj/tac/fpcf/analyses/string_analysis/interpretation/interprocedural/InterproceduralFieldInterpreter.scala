@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
+package interprocedural
 
 import scala.collection.mutable.ListBuffer
 
@@ -12,14 +18,6 @@ import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
-import org.opalj.tac.FieldRead
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
-import org.opalj.tac.Stmt
 
 /**
  * The `InterproceduralFieldInterpreter` is responsible for processing instances of [[FieldRead]]s.

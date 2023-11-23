@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.cfg
+package org.opalj
+package br
+package cfg
 
 import java.net.URL
 import org.junit.runner.RunWith
@@ -9,7 +11,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.instructions.IF_ICMPNE
 import org.opalj.br.instructions.IFNE
-import org.opalj.br.Code
 import org.opalj.br.instructions.IFEQ
 import org.opalj.br.instructions.ILOAD
 import org.scalatestplus.junit.JUnitRunner

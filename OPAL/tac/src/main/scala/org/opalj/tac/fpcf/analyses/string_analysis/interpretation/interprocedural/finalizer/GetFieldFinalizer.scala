@@ -1,9 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer
-
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
-import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.FieldRead
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
+package interprocedural
+package finalizer
 
 class GetFieldFinalizer(
         state: InterproceduralComputationState

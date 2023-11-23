@@ -1,5 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -13,18 +18,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.Assignment
-import org.opalj.tac.Expr
-import org.opalj.tac.New
-import org.opalj.tac.Stmt
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.DUVar
-import org.opalj.tac.GetField
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
-import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 
 abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
 

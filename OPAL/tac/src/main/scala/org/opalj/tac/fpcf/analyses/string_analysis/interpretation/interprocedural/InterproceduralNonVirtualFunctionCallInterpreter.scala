@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
+package interprocedural
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -10,14 +16,7 @@ import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.NonVirtualFunctionCall
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.ReturnValue
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * The `InterproceduralNonVirtualFunctionCallInterpreter` is responsible for processing

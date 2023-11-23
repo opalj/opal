@@ -1,7 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer
-
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
+package interprocedural
+package finalizer
 
 /**
  * When processing instruction interprocedurally, it is not always possible to compute a final

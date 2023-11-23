@@ -1,10 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package preprocessing
 
 import org.opalj.br.cfg.CFG
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * An approach based on an intuitive traversing of the control flow graph (CFG). This implementation

@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
+package common
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -9,12 +15,6 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.Stmt
-import org.opalj.tac.StringConst
-import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * The `StringConstInterpreter` is responsible for processing [[StringConst]]s.

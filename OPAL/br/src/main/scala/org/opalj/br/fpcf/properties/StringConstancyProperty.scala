@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.properties
+package org.opalj
+package br
+package fpcf
+package properties
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason

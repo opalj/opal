@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -22,8 +26,6 @@ import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
@@ -34,10 +36,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.DUVar
-import org.opalj.tac.EagerDetachedTACAIKey
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program

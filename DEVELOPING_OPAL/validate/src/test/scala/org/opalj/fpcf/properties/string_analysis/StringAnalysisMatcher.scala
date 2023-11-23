@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_analysis
+package org.opalj
+package fpcf
+package properties
+package string_analysis
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.fpcf.Property
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**

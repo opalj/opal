@@ -1,17 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package preprocessing
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.value.ValueInformation
-import org.opalj.tac.Assignment
-import org.opalj.tac.DUVar
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.New
-import org.opalj.tac.Stmt
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**

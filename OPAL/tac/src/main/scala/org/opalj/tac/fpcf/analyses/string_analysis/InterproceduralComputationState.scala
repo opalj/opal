@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -13,12 +17,7 @@ import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
-import org.opalj.tac.DUVar
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
-import org.opalj.tac.FunctionCall
-import org.opalj.tac.VirtualFunctionCall
 
 /**
  * This class is to be used to store state information that are required at a later point in

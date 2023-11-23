@@ -1,11 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer
+package org.opalj
+package tac
+package fpcf
+package analyses
+package string_analysis
+package interpretation
+package interprocedural
+package finalizer
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
-import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * @author Patrick Mell
