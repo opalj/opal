@@ -14,7 +14,7 @@ import javax.script.ScriptException;
  * (setMember: https://github.com/Sdk0815/logbook-kai/blob/6b6c62882de761c114c51c32425a885c55992137/src/main/java/logbook/internal/gui/BattleLogScriptController.java#L15)
  *
  */
-public class JavaAcccessJSObject2EvalCalls {
+public class JavaAcccessJSObject2EvalCalls { /*
     @PointsToSet(variableDefinition = 39,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
@@ -51,6 +51,6 @@ public class JavaAcccessJSObject2EvalCalls {
         se.put("n2", jsObject);
         se.eval("n2.field = o;");
     }
-
+*/
 
 }

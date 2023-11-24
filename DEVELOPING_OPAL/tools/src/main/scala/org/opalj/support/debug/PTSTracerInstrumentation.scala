@@ -15,6 +15,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.{DUP, INVOKESPECIAL, INVOKESTATIC, LoadString, MethodInvocationInstruction, NEW, POP, SIPUSH}
 import org.opalj.util.InMemoryClassLoader
 
+import java.io.{FileOutputStream, PrintWriter}
 import java.net.{URL, URLClassLoader}
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -24,15 +25,15 @@ import scala.collection.mutable
 /**
  * instrument possible def sites to log instance. TODO:
  */
-object PTSTracker {
+object PTSTracerInstrumentation {
 
     def main(args: Array[String]): Unit = {
         import Console.RED
         import Console.RESET
         if (args.length != 2) {
-            println("You have to specify the method that should be analyzed.")
-            println("\t1: directory containing class files ")
-            println("\t2: destination of instrumented class files")
+            println("You have to specify the code that should be analyzed.")
+            println("\t1: directory containing class files      e.g.  /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes")
+            println("\t2: destination of instrumented class files e.g /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/instrumented")
             return ;
         }
         val inputClassPath = args(0)
@@ -49,7 +50,10 @@ object PTSTracker {
                 println(RED+"[error] cannot process file: "+e.getMessage+"."+RESET)
                 return ;
         }
-        //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
+        // clear trace.xml file
+      val fw = new PrintWriter(new FileOutputStream("trace.xml", false));
+      fw.write(" ")
+      //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         //val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
         val classloaderScriptEngineJars = new URLClassLoader(
           Array(
@@ -58,9 +62,9 @@ object PTSTracker {
           ),
           ClassLoader.getSystemClassLoader)
         val PTSLoggerType = ObjectType("org/opalj/fpcf/fixtures/PTSLogger")
-        val ptsClassFile = PTSTracker.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
+        val ptsClassFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
         val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
-        val ContainerClassTypeFile = PTSTracker.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
+        val ContainerClassTypeFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
 
         // TODO: copy all attributes etc.
         val testCases = mutable.Set[(String, Array[Byte])]()
@@ -72,7 +76,9 @@ object PTSTracker {
                     if (m.name.equals("main")) hasMain = true
                     methodId = (methodId.+)(1)
                     println(s"instrumenting ${m.fullyQualifiedSignature}")
-                    println(s"<method fullyqualified=\"" + m.fullyQualifiedSignature+ "\" id=\"" + methodId + "\"/>")
+                    val tag = (s"<method fullyqualified=\"" + m.fullyQualifiedSignature+ "\" id=\"" + methodId + "\"/>")
+                  println(tag)
+                  fw.write(tag + "\n")
                     m.body match {
                         case None =>
                             m.copy() // methods which are native and abstract ...
@@ -155,7 +161,7 @@ object PTSTracker {
             Files.write(outputPath, newRawCF) //, StandardOpenOption.TRUNCATE_EXISTING)
             if (hasMain) testCases add (cf.thisType.toJava, newRawCF)
         }
-
+        fw.close()
         for ((className, code) <- testCases) {
 
             // cannot use inmemoryclassloader, because scriptengine will still use
