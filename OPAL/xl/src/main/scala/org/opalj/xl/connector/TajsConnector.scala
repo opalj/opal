@@ -70,6 +70,7 @@ import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
+import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.cg.OnlyCallersWithUnknownContext
@@ -112,12 +113,37 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             eps match {
 
                 case UBP(javaScriptInteraction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
+                    println(oldScriptEngineInteraction == javaScriptInteraction)
+                    println("---")
+                    println(oldScriptEngineInteraction.puts.map(_._2._1).mkString("\n"))
+                    println("- - - - - - - -")
+                    println(puts.map(_._2._1).mkString("\n"))
+                    puts.map(_._2._1).foreach(
+                        put => {
+                            val pts = put.asInstanceOf[AllocationSitePointsToSet]
+                            if (pts.numElements > 5) {
+                                pts.forNewestNElements(pts.numElements) {
+                                    x =>
+                                        println(longToAllocationSite(x))
+                                }
+                                throw new Exception(
+                                    s"""
+                                       | code: ${state.code}
+                                       | puts: ${state.puts}
+                                       |""".stripMargin
+                                )
+                            }
+                        }
+                    )
+                    println("***")
+
                     prepareAnalysis(possibleEmptyCode, puts)
                     val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
                     state.connectorDependees += eps
                     createResult(javaScriptInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analysis, blockAndContext)
 
                 case UBP(_: PointsToSet @unchecked) =>
+                    println("Resume:")
                     val (analysis, blockAndContext) = resume(oldTAJSanalysis.get) //analyze(tajsAdapter = tajsAdapter)
                     state.connectorDependees += eps
                     createResult(oldScriptEngineInteraction, analysis, blockAndContext)
@@ -160,8 +186,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             override def newObject(index: Integer, javaName: String): Value = {
                 val referenceType = ObjectType(javaName.replace(".", "/"))
 
-                val emptyPointsToSet = createPointsToSet(-100 - index, NoContext.asInstanceOf[ContextType], referenceType, false, false)
-                val value = java2js("newObject", NoContext.asInstanceOf[ContextType], emptyPointsToSet, null, None)._2
+                val newPointsToSet = createPointsToSet(-100 - index, NoContext.asInstanceOf[ContextType], referenceType, false, false)
+                val value = java2js("newObject", NoContext.asInstanceOf[ContextType], newPointsToSet, null, None)._2
                 value
             }
 
@@ -174,7 +200,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                         val objectType = ObjectType(javaName.replace(".", "/"))
                         val classFile = project.classFile(objectType)
                         val possibleFields = {
-                            if(classFile.isDefined)
+                            if (classFile.isDefined)
                                 classFile.get.fields.find(_.name == propertyName).toList
                             else
                                 List.empty[Fields]
@@ -221,7 +247,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                             else
                                 Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
-                        state.connectorDependees = state.connectorDependees ++ setPropertyDependeesMap.valuesIterator.map(_._1)
+                        state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
                         state.connectorResults ++= createResults
                     })
                 }
@@ -370,7 +396,6 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 store = ordinaryExistStore.map(entry =>
                     (entry._1, entry._2.join(exceptionalExitStore.getOrElse(entry._1, Value.makeUndef())))) ++
                     exceptionalExitStore.filter(entry => !ordinaryExistStore.contains(entry._1))
-                println("result n: "+store.get(PKey.StringPKey.make("w")))
                 store = store.map(entry => (entry._1, entry._2.join(Value.makeUndef())))
             }
 
@@ -388,8 +413,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
         def prepareAnalysis(possibleEmptyCode: List[String], puts: Map[(String, Any, TheTACAI), (Any, Coordinator.V, Option[ObjectType])]): Unit = {
 
-            state.code = state.code ++ fillEmptyCode(possibleEmptyCode)
-            state.puts ++= puts.map(put => {
+            state.code = fillEmptyCode(possibleEmptyCode)
+            state.puts = puts.map(put => {
                 val variableName = put._1._1
                 val context = put._1._2.asInstanceOf[ContextType]
                 val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
@@ -403,7 +428,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             state.files = utility.asFiles("JavaScript", ".js", state.code)
         }
 
-        println("start analysis................................")
+        println("start analysis................................CONNECTOR--------------------------------------------------------------------------")
 
         //start of analysis
         propertyStore(scriptEngineInstance, CrossLanguageInteraction.key) match {

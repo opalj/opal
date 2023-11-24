@@ -34,7 +34,7 @@ object JavaJavaScriptTranslator {
             pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) { tpe =>
                 {
                     if (tpe == ObjectType.String)
-                        defaultValue = defaultValue.join(Value.makeAnyStr().removeAttributes())
+                        defaultValue = defaultValue.join(Value.makeAnyStr().removeAttributes()) //TODO
                     if (tpe.isNumericType || tpe == ObjectType.Integer ||
                         tpe == ObjectType.Double || tpe == ObjectType.Long) {
                         defaultValue = defaultValue.join(Value.makeAnyNum().removeAttributes())
@@ -100,23 +100,26 @@ object JavaJavaScriptTranslator {
                     }
                 })
             } else if (v.isJSJavaObject) {
-                v.getObjectLabels.forEach(ol => {
+                throw new Exception("blub")
+                /*v.getObjectLabels.forEach(ol => {
                     typesSet += ObjectType(ol.getJavaName.replace(".", "/"))
                     v.getObjectLabels.forEach(ol => {
-                        jsNodes = jsNodes + ol.getNode
+                        jsNodes += ol.getNode
                     })
-                })
+                }) */
             } else if (v.isStrIdentifier || v.isMaybeAnyStr) {
                 typesSet += ObjectType.String
             } else if (v.isMaybeObject) {
                 typesSet += ObjectType.Object
                 v.getObjectLabels.forEach(ol => {
-                    jsNodes = jsNodes + ol.getNode
+                    jsNodes += ol.getNode
                 })
             }
         })
         val index = if (jsNodes.isEmpty) -50
         else -100 - jsNodes.head.getIndex
+
+        println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"+index)
 
         if (pointsToSetSet.isEmpty && typesSet.isEmpty)
             typesSet += ObjectType.Object

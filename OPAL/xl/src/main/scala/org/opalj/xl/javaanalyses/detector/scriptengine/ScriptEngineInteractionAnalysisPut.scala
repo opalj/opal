@@ -81,26 +81,25 @@ abstract class ScriptEngineInteractionAnalysisPut(
                 if (newParam.isEmpty)
                     throw new Exception("TODO: What to do if param is unknown?")
 
-                /* val puts = Map(newParam.get->
-                    List(newParam.get)
-                    possibleStrings.map(s => (s, callerContext, assignedValue.asVar.definedBy, TheTACAI(tac)) -> pointsToSet)
+                /*   val puts = Map(newParam.get->
+                    possibleStrings.map(s => (s, context, assignedValue.asVar.definedBy, tac)) -> pointsToSet)) //TheTACAI(tac)) -> pointsToSet)
                 )
 
-                newEngineInteraction = newEngineInteraction.updated(
-                    ScriptEngineInteraction(puts= Set(newParam.get))*/
-                throw new Exception("TODO") //TODO
+                newEngineInteraction = newEngineInteraction.updated(ScriptEngineInteraction(puts = puts)) */
+                throw new Exception("TODO: implement") //TODO
             }
 
             assert(newEngineInteraction ne engineInteraction)
 
-            /*   oldEngineDependees.valuesIterator.foreach { data =>
+            oldEngineDependees.valuesIterator.foreach { data =>
                 if (data != null && data._1.hasUBP) {
                     val engineAllocations = data._1.ub.asInstanceOf[PointsToSet]
-                    results :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
+                    partialResults :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
                 }
-            } */
+            }
 
             typeIteratorState.updateDependency(eps)
+            //throw  new Exception("TODO implement 2")
         }
 
         val newPutDependees = if (oldPutDependees.contains(epk)) {

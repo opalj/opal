@@ -71,6 +71,13 @@ abstract class ScriptEngineInteractionAnalysisEval(
                 if (newParam.isEmpty)
                     throw new Exception("TODO: What to do if param is unknown?")
 
+                println(
+                    s"""
+                       | engineInteraction: ${engineInteraction.code}
+                       | new EnginInteraction ${newParam.get}
+                       |
+                       | """.stripMargin
+                )
                 newEngineInteraction = newEngineInteraction.updated(ScriptEngineInteraction(code = List(newParam.get)))
             }
 
