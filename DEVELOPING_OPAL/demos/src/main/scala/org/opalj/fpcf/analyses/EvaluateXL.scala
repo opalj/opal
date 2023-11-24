@@ -70,7 +70,9 @@ case class MethodResult(
                          falseNegative: Int,
                          truePositiveData: Set[TruePositive],
                          falsePositiveData: Set[FalsePositive],
-                         falseNegativeData: Set[FalseNegative]
+                         falseNegativeData: Set[FalseNegative],
+                         allocSiteToInstanceIdForMethod : mutable.Map[Long, Option[Int]],
+                         instanceIdToAllocSiteForMethod : mutable.Map[Int, Option[Long]]
                        ) {
   override def toString: String = {
 
@@ -78,6 +80,8 @@ case class MethodResult(
     val falsePositiveDataStr = falsePositiveData.toList.sortBy(_.defsitePC).map(_.toString).mkString("\n")
     val falseNegativeDataStr = falseNegativeData.toList.sortBy(_.defsitePC).map(_.toString).mkString("\n")
 
+    val allocSiteToInstanceIdForMethodStr = allocSiteToInstanceIdForMethod.toList.sortBy(_._1).mkString(" ")
+    val instanceIdToAllocSiteForMethodStr = instanceIdToAllocSiteForMethod.toList.sortBy(_._1).mkString(" ")
     val p = precision * 100
     val r = recall * 100
     f"""MethodResult: $method
@@ -89,7 +93,9 @@ case class MethodResult(
        |$falsePositiveDataStr
        |  False negatives: $falseNegative
        |$falseNegativeDataStr
-       |""".stripMargin
+       | Alloc site ID to instance ID: $allocSiteToInstanceIdForMethodStr
+       | Instance ID to Alloc site ID: $instanceIdToAllocSiteForMethodStr
+       | """.stripMargin
   }
 }
 
@@ -135,8 +141,11 @@ object GroundTruthParser {
     )
     equivalences.getOrElse(str, str)
   }
-  def ignoreFalseNegative(falseNegative: (String, Int, String, Int)) : Boolean = {
-    false //falseNegative._3 == "org.openjdk.nashorn.api.scripting.NashornScriptEngine"
+  def ignoreFalseNegative(falseNegative: FalseNegative) : Boolean = {
+    false
+  }
+  def ignoreFalsePositive(falsePositive: FalsePositive) : Boolean = {
+    falsePositive.allocsitePC < 0
   }
   def generateMapping(groundTruth: Set[(String, Int, String, Int)], test: Set[(String, Long, String, Int)]): (Map[Long, Int], Map[Int, Option[Long]]) = {
     val allocSiteToInstanceId = mutable.Map[Long, Int]()
@@ -192,11 +201,12 @@ object GroundTruthParser {
     implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     groundTruth.methods.foldLeft(Map.empty[Int, MethodResult]) { case (results, (methodId, method)) =>
-
       val truePositiveData = mutable.Set.empty[TruePositive]
       val falsePositiveData = mutable.Set.empty[FalsePositive]
       val falseNegativeData = mutable.Set.empty[FalseNegative]
       val testPTSforMethod = groupedWithoutByMethod.get(method.signature)
+      val allocSiteToInstanceIdForMethod = mutable.Map[Long, Option[Int]]()
+      val instanceIdToAllocSiteForMethod = mutable.Map[Int, Option[Long]]()
       for ((pc, instances) <- method.pcToInstances) {
         val groundTruthInstanceIds = instances.map(instance => instance.instanceId -> normalizeType(instance.objClass)).toMap
         val testPTSforPC = testPTSforMethod.map(pt => pt.filter(_._2.pc == pc))
@@ -206,19 +216,24 @@ object GroundTruthParser {
             for (pts <- defSite) {
               pts._3 match {
                 case Some(as) => for (allocSiteId <- as.elements.iterator) {
+                  val defsitePC = pts._2.pc
                   val (ctx, pc, typeId) = longToAllocationSite(allocSiteId)
                   val allocSiteType = normalizeType(ObjectType.lookup(typeId).toJava)
                   allocSiteToInstanceId.get(allocSiteId) match {
                     case Some(groundTruthId) if groundTruthInstanceIds.contains(groundTruthId) =>
+                      allocSiteToInstanceIdForMethod.put(allocSiteId, Option(groundTruthId))
                       val groundTruthType = groundTruthInstanceIds(groundTruthId)
                       val groundTruthTypeNormalized = normalizeType(groundTruthType)
                       testInstanceIdsForPC add (groundTruthId , groundTruthTypeNormalized)
                       if (normalizeType(allocSiteType) == groundTruthTypeNormalized) {
-                        truePositiveData += TruePositive(method.signature, pts._2.pc, groundTruthType, groundTruthId, allocSiteId, pc, allocSiteType)
+                        truePositiveData += TruePositive(method.signature, defsitePC, groundTruthType, groundTruthId, allocSiteId, pc, allocSiteType)
                       } else {
-                        falsePositiveData += FalsePositive(method.signature, pts._2.pc, allocSiteType, allocSiteId, pc)
+                        falsePositiveData += FalsePositive(method.signature, defsitePC, allocSiteType, allocSiteId, pc)
                       }
-                    case _ => falsePositiveData += FalsePositive(method.signature, pts._2.pc, allocSiteType, allocSiteId, pc)
+                    case _ => {
+                      allocSiteToInstanceIdForMethod.put(allocSiteId, Option.empty)
+                      falsePositiveData += FalsePositive(method.signature, defsitePC, allocSiteType, allocSiteId, pc)
+                    }
                   }
                 }
                 case None =>
@@ -230,11 +245,9 @@ object GroundTruthParser {
           }
         }
         for (instance <- instances) {
+          instanceIdToAllocSiteForMethod.put(instance.instanceId, instanceIdToAllocSite.getOrElse(instance.instanceId, Option.empty))
           if (!testInstanceIdsForPC.contains((instance.instanceId, instance.objClass))) {
-            val falseNegative = (method.signature, pc, instance.objClass, instance.instanceId)
-            if (!ignoreFalseNegative(falseNegative)) {
-              falseNegativeData += FalseNegative(method.signature, pc, instance.objClass, instance.instanceId)
-            }
+            falseNegativeData += FalseNegative(method.signature, pc, instance.objClass, instance.instanceId)
           } else {
             print("")
           }
@@ -255,8 +268,10 @@ object GroundTruthParser {
         falsePositive,
         falseNegative,
         truePositiveData.toSet,
-        falsePositiveData.toSet,
-        falseNegativeData.toSet
+        falsePositiveData.filter(!ignoreFalsePositive(_)).toSet,
+        falseNegativeData.filter(!ignoreFalseNegative(_)).toSet,
+        allocSiteToInstanceIdForMethod,
+        instanceIdToAllocSiteForMethod
       ))
 
     }
