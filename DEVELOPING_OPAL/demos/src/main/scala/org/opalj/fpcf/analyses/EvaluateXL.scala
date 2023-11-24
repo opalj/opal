@@ -42,6 +42,24 @@ class Dataset {
     }
   }
 }
+case class TruePositive(defsiteMethod: String, defsitePC: Int, instanceType: String, instanceID: Int, allocSiteID: Long, allocsitePC: Int, allocsiteType: String) {
+  override def toString: String =
+    s"TruePositive(defsitePC=$defsitePC, instanceType=$instanceType, " +
+      s"instanceID=$instanceID, allocSiteID=$allocSiteID, allocsitePC=$allocsitePC, allocsiteType=$allocsiteType)"
+}
+
+case class FalsePositive(defsiteMethod: String, defsitePC: Int, allocSiteType: String, allocSiteID: Long, allocsitePC: Int) {
+  override def toString: String =
+    s"FalsePositive(defsitePC=$defsitePC, allocSiteType=$allocSiteType, " +
+      s"allocSiteID=$allocSiteID, allocsitePC=$allocsitePC)"
+}
+
+case class FalseNegative(defsiteMethod: String, defsitePC: Int, instanceType: String, instanceID: Int) {
+  override def toString: String =
+    s"FalseNegative(defsitePC=$defsitePC, instanceType=$instanceType, " +
+      s"instanceID=$instanceID)"
+}
+
 
 case class MethodResult(
                          method: String,
@@ -50,34 +68,23 @@ case class MethodResult(
                          truePositive: Int,
                          falsePositive: Int,
                          falseNegative: Int,
-                         truePositiveData: Set[(String, Int, String, Long)],
-                         falsePositiveData: Set[(String, Int, String, Long)],
-                         falseNegativeData: Set[(String, Int, String, Int)]
+                         truePositiveData: Set[TruePositive],
+                         falsePositiveData: Set[FalsePositive],
+                         falseNegativeData: Set[FalseNegative]
                        ) {
   override def toString: String = {
 
-    val truePositiveDataStr = truePositiveData.map {
-      case (method, pc, tpType, allocSiteID) =>
-        f"  Method: $method, PC: $pc, Type: $tpType, AllocSiteID: $allocSiteID"
-    }.mkString("\n")
+    val truePositiveDataStr = truePositiveData.toList.sortBy(_.defsitePC).map(_.toString).mkString("\n")
+    val falsePositiveDataStr = falsePositiveData.toList.sortBy(_.defsitePC).map(_.toString).mkString("\n")
+    val falseNegativeDataStr = falseNegativeData.toList.sortBy(_.defsitePC).map(_.toString).mkString("\n")
 
-
-    val falsePositiveDataStr = falsePositiveData.map {
-      case (method, pc, fpType, allocSiteID) =>
-        f"  Method: $method, PC: $pc, Type: $fpType, AllocSiteID: $allocSiteID"
-    }.mkString("\n")
-
-    val falseNegativeDataStr = falseNegativeData.map {
-      case (method, pc, fnType, instanceID) =>
-        f"  Method: $method, PC: $pc, Type: $fnType, InstanceID: $instanceID"
-    }.mkString("\n")
     val p = precision * 100
     val r = recall * 100
     f"""MethodResult: $method
        |  Precision: $p%.2f%%
        |  Recall: $r%.2f%%
        |  True positives: $truePositive
-       |  $truePositiveDataStr
+       |$truePositiveDataStr
        |  False positives: $falsePositive
        |$falsePositiveDataStr
        |  False negatives: $falseNegative
@@ -186,9 +193,9 @@ object GroundTruthParser {
 
     groundTruth.methods.foldLeft(Map.empty[Int, MethodResult]) { case (results, (methodId, method)) =>
 
-      val truePositiveData = mutable.Set.empty[(String, Int, String, Long)]
-      val falsePositiveData = mutable.Set.empty[(String, Int, String, Long)]
-      val falseNegativeData = mutable.Set.empty[(String, Int, String, Int)]
+      val truePositiveData = mutable.Set.empty[TruePositive]
+      val falsePositiveData = mutable.Set.empty[FalsePositive]
+      val falseNegativeData = mutable.Set.empty[FalseNegative]
       val testPTSforMethod = groupedWithoutByMethod.get(method.signature)
       for ((pc, instances) <- method.pcToInstances) {
         val groundTruthInstanceIds = instances.map(instance => instance.instanceId -> normalizeType(instance.objClass)).toMap
@@ -203,14 +210,15 @@ object GroundTruthParser {
                   val allocSiteType = normalizeType(ObjectType.lookup(typeId).toJava)
                   allocSiteToInstanceId.get(allocSiteId) match {
                     case Some(groundTruthId) if groundTruthInstanceIds.contains(groundTruthId) =>
-                      val groundTruthType = normalizeType(groundTruthInstanceIds(groundTruthId))
-                      testInstanceIdsForPC add (groundTruthId , groundTruthType)
-                      if (normalizeType(allocSiteType) == groundTruthType) {
-                        truePositiveData add ((method.signature, pc, allocSiteType, allocSiteId))
+                      val groundTruthType = groundTruthInstanceIds(groundTruthId)
+                      val groundTruthTypeNormalized = normalizeType(groundTruthType)
+                      testInstanceIdsForPC add (groundTruthId , groundTruthTypeNormalized)
+                      if (normalizeType(allocSiteType) == groundTruthTypeNormalized) {
+                        truePositiveData += TruePositive(method.signature, pts._2.pc, groundTruthType, groundTruthId, allocSiteId, pc, allocSiteType)
                       } else {
-                        falsePositiveData add(method.signature, pc, allocSiteType, allocSiteId)
+                        falsePositiveData += FalsePositive(method.signature, pts._2.pc, allocSiteType, allocSiteId, pc)
                       }
-                    case _ => falsePositiveData add(method.signature, pc, allocSiteType, allocSiteId)
+                    case _ => falsePositiveData += FalsePositive(method.signature, pts._2.pc, allocSiteType, allocSiteId, pc)
                   }
                 }
                 case None =>
@@ -224,8 +232,9 @@ object GroundTruthParser {
         for (instance <- instances) {
           if (!testInstanceIdsForPC.contains((instance.instanceId, instance.objClass))) {
             val falseNegative = (method.signature, pc, instance.objClass, instance.instanceId)
-            if (!ignoreFalseNegative(falseNegative))
-              falseNegativeData add falseNegative
+            if (!ignoreFalseNegative(falseNegative)) {
+              falseNegativeData += FalseNegative(method.signature, pc, instance.objClass, instance.instanceId)
+            }
           } else {
             print("")
           }
