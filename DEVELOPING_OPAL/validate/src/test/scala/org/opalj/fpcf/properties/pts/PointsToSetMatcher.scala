@@ -113,7 +113,7 @@ evalCallSource = JavaScriptAllocationReturn.class,
         } else {
             val params = ps.entities(propertyFilter = _.e.isInstanceOf[VirtualFormalParameter]).map(_.asInstanceOf[VirtualFormalParameter]).filter(_.method.definedMethod == m).toList
             val paramsOption = params.find(_.parameterIndex == parameterIndex)
-            defsiteOfInterest = paramsOption.getOrElse(throw new Exception(s"No parameter for  ${m.name} , index ${parameterIndex}. hint: parameterIndex 0 is thisRef."))
+            defsiteOfInterest = paramsOption.getOrElse(throw new Exception(s"No parameter for  ${m.name} , index ${parameterIndex}. hint: parameterIndex -1 is thisRef."))
         }
         val ptsProperties = ps.properties(defsiteOfInterest).map(_.toFinalEP.p)
         val pts = {
