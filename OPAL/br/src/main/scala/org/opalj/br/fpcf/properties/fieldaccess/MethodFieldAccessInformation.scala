@@ -6,6 +6,7 @@ package properties
 package fieldaccess
 
 import org.opalj.br.analyses.DeclaredFields
+import org.opalj.collection.immutable.IntList
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.OrderedProperty
@@ -45,41 +46,50 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     with MethodFieldAccessInformationPropertyMetaInformation[S] {
 
     protected val _incompleteAccessSites: IntMap[PCs] // Access Context => PCs
+    protected val _directAccessedFields: IntMap[IntMap[IntList]] // Access Context => PC => DefinedFieldId
     protected val _directAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Access Context => PC => DefinedFieldId => Receiver
     protected val _directAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Access Context => PC => DefinedFieldId => Parameter
+    protected val _indirectAccessedFields: IntMap[IntMap[IntList]] // Access Context => PC => DefinedFieldId
     protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]] // Access Context => PC => DefinedFieldId => Receiver
     protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]] // Access Context => PC => DefinedFieldId => Parameter
-
-    def directAccessedFields(
-        accessContext: Context,
-        pc:            PC
-    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _directAccessedReceiversByField.get(accessContext.id).iterator
-            .flatMap(_.get(pc))
-            .flatMap(_.keys)
-            .map(declaredFields.apply)
-    }
-
-    def indirectAccessedFields(
-        accessContext: Context,
-        pc:            PC
-    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator
-            .flatMap(_.get(pc))
-            .flatMap(_.keys)
-            .map(declaredFields.apply)
-    }
 
     def getAccessSites(accessContext: Context): Iterator[PC] = {
         getDirectAccessSites(accessContext) ++ getIndirectAccessSites(accessContext)
     }
 
     def getDirectAccessSites(accessContext: Context): Iterator[PC] = {
-        _directAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator
+        _directAccessedFields.getOrElse(accessContext.id, IntMap.empty).keysIterator
     }
 
     def getIndirectAccessSites(accessContext: Context): Iterator[PC] = {
-        _indirectAccessedReceiversByField.getOrElse(accessContext.id, IntMap.empty).keysIterator
+        _indirectAccessedFields.getOrElse(accessContext.id, IntMap.empty).keysIterator
+    }
+
+    def getAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        getDirectAccessedFields(accessContext, pc) ++ getIndirectAccessedFields(accessContext, pc)
+    }
+
+    def getDirectAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        _directAccessedFields.get(accessContext.id).iterator
+            .flatMap(_.get(pc))
+            .flatMap(_.iterator)
+            .map(declaredFields.apply)
+    }
+
+    def getIndirectAccessedFields(
+        accessContext: Context,
+        pc:            PC
+    )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
+        _indirectAccessedFields.get(accessContext.id).iterator
+            .flatMap(_.get(pc))
+            .flatMap(_.iterator)
+            .map(declaredFields.apply)
     }
 
     def getNewestAccessedFields(
@@ -97,9 +107,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         pc:            PC,
         n:             Int
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _directAccessedReceiversByField.get(accessContext.id).iterator
+        _directAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .take(n).map(declaredFields.apply)
     }
 
@@ -108,9 +118,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
         pc:            PC,
         n:             Int
     )(implicit declaredFields: DeclaredFields): Iterator[DeclaredField] = {
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator
+        _indirectAccessedFields.get(accessContext.id).iterator
             .flatMap(_.get(pc))
-            .flatMap(_.keys)
+            .flatMap(_.iterator)
             .take(n).map(declaredFields.apply)
     }
 
@@ -129,16 +139,16 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
     }
 
     private def numDirectAccessesInAllAccessSites: Int =
-        _directAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
+        _directAccessedFields.valuesIterator.map { _.valuesIterator.map { _.iterator.size }.sum }.sum
 
     def numDirectAccesses(accessContext: Context, pc: PC): Int =
-        _directAccessedReceiversByField.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.size).sum
+        _directAccessedFields.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.iterator.size).sum
 
     private def numIndirectAccessesInAllAccessSites: Int =
-        _indirectAccessedReceiversByField.valuesIterator.map { _.valuesIterator.map { _.size }.sum }.sum
+        _indirectAccessedFields.valuesIterator.map { _.valuesIterator.map { _.iterator.size }.sum }.sum
 
     def numIndirectAccesses(accessContext: Context, pc: PC): Int =
-        _indirectAccessedReceiversByField.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.size).sum
+        _indirectAccessedFields.get(accessContext.id).iterator.flatMap(_.get(pc)).map(_.iterator.size).sum
 
     def numIncompleteAccessSites: Int =
         _incompleteAccessSites.valuesIterator.map { _.size }.sum
@@ -148,6 +158,22 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
             numIndirectAccessesInAllAccessSites > other.numIndirectAccessesInAllAccessSites) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
         }
+    }
+
+    protected def integrateAccessedFieldsForContext(
+        baseMap:     IntMap[IntMap[IntList]],
+        contextId:   Int,
+        updateValue: IntMap[IntList]
+    ): IntMap[IntMap[IntList]] = {
+        baseMap.updateWith(
+            contextId,
+            updateValue,
+            (o, n) =>
+                o.unionWith(
+                    n,
+                    (_, l, r) => r ++: l
+                )
+        )
     }
 
     protected def integrateAccessInformationForContext[AIT](
@@ -177,7 +203,9 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 
 case class MethodFieldReadAccessInformation(
         protected val _incompleteAccessSites:            IntMap[PCs],
+        protected val _directAccessedFields:             IntMap[IntMap[IntList]],
         protected val _directAccessedReceiversByField:   IntMap[IntMap[IntMap[AccessReceiver]]],
+        protected val _indirectAccessedFields:           IntMap[IntMap[IntList]],
         protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]]
 ) extends MethodFieldAccessInformation[MethodFieldReadAccessInformation]
     with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
@@ -192,17 +220,21 @@ case class MethodFieldReadAccessInformation(
     def updateWithFieldAccesses(
         accessContext:           Context,
         incompleteAccessSites:   br.PCs,
+        directAccessedFields:    IntMap[IntList],
         directAccessReceivers:   AccessReceivers,
+        indirectAccessedFields:  IntMap[IntList],
         indirectAccessReceivers: AccessReceivers
     ): MethodFieldReadAccessInformation = {
         val cId = accessContext.id
 
         new MethodFieldReadAccessInformation(
             _incompleteAccessSites.updateWith(cId, incompleteAccessSites, (o, n) => o ++ n),
+            integrateAccessedFieldsForContext(_directAccessedFields, accessContext.id, directAccessedFields),
             integrateAccessInformationForContext(
                 _directAccessedReceiversByField, cId, directAccessReceivers,
                 () => new UnknownError("Incompatible receivers for direct call")
             ),
+            integrateAccessedFieldsForContext(_indirectAccessedFields, accessContext.id, indirectAccessedFields),
             integrateAccessInformationForContext(
                 _indirectAccessedReceiversByField, cId, indirectAccessReceivers,
                 () => new UnknownError("Incompatible receivers for indirect call")
@@ -213,8 +245,10 @@ case class MethodFieldReadAccessInformation(
 
 case class MethodFieldWriteAccessInformation(
         protected val _incompleteAccessSites:             IntMap[PCs],
+        protected val _directAccessedFields:              IntMap[IntMap[IntList]],
         protected val _directAccessedReceiversByField:    IntMap[IntMap[IntMap[AccessReceiver]]],
         protected val _directAccessedParametersByField:   IntMap[IntMap[IntMap[AccessParameter]]],
+        protected val _indirectAccessedFields:            IntMap[IntMap[IntList]],
         protected val _indirectAccessedReceiversByField:  IntMap[IntMap[IntMap[AccessReceiver]]],
         protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]]
 ) extends MethodFieldAccessInformation[MethodFieldWriteAccessInformation]
@@ -226,8 +260,10 @@ case class MethodFieldWriteAccessInformation(
     def updateWithFieldAccesses(
         accessContext:            Context,
         incompleteAccessSites:    br.PCs,
+        directAccessedFields:     IntMap[IntList],
         directAccessReceivers:    IntMap[IntMap[AccessReceiver]],
         directAccessParameters:   IntMap[IntMap[AccessParameter]],
+        indirectAccessedFields:   IntMap[IntList],
         indirectAccessReceivers:  IntMap[IntMap[AccessReceiver]],
         indirectAccessParameters: IntMap[IntMap[AccessParameter]]
     ): MethodFieldWriteAccessInformation = {
@@ -235,6 +271,7 @@ case class MethodFieldWriteAccessInformation(
 
         new MethodFieldWriteAccessInformation(
             _incompleteAccessSites.updateWith(cId, incompleteAccessSites, (o, n) => o ++ n),
+            integrateAccessedFieldsForContext(_directAccessedFields, accessContext.id, directAccessedFields),
             integrateAccessInformationForContext(
                 _directAccessedReceiversByField, cId, directAccessReceivers,
                 () => new UnknownError("Incompatible receivers for direct call")
@@ -243,6 +280,7 @@ case class MethodFieldWriteAccessInformation(
                 _indirectAccessedParametersByField, cId, directAccessParameters,
                 () => new UnknownError("Incompatible parameters for direct call")
             ),
+            integrateAccessedFieldsForContext(_indirectAccessedFields, accessContext.id, indirectAccessedFields),
             integrateAccessInformationForContext(
                 _indirectAccessedReceiversByField, cId, indirectAccessReceivers,
                 () => new UnknownError("Incompatible receivers for indirect call")
@@ -268,6 +306,20 @@ object MethodFieldWriteAccessInformation
 }
 
 object NoMethodFieldReadAccessInformation
-    extends MethodFieldReadAccessInformation(IntMap.empty, IntMap.empty, IntMap.empty)
+    extends MethodFieldReadAccessInformation(
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty
+    )
 object NoMethodFieldWriteAccessInformation
-    extends MethodFieldWriteAccessInformation(IntMap.empty, IntMap.empty, IntMap.empty, IntMap.empty, IntMap.empty)
+    extends MethodFieldWriteAccessInformation(
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty,
+        IntMap.empty
+    )

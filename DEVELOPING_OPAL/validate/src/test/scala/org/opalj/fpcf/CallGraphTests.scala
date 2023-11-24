@@ -31,6 +31,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
@@ -107,7 +108,8 @@ class CallGraphTests extends PropertiesTest {
             // Handles type propagation.
             new TypePropagationAnalysisScheduler(selector),
             // Handles reflection based calls (especially: instantiations).
-            ReflectionRelatedCallsAnalysisScheduler
+            ReflectionRelatedCallsAnalysisScheduler,
+            EagerFieldAccessInformationAnalysis
         )
     }
 

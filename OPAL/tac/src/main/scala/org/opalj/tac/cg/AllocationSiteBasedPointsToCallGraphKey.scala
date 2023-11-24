@@ -10,6 +10,7 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
@@ -47,7 +48,8 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
             AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
             AllocationSiteBasedUnsafePointsToAnalysisScheduler,
             ReflectionAllocationsAnalysisScheduler,
-            AllocationSiteBasedNewInstanceAnalysisScheduler
+            AllocationSiteBasedNewInstanceAnalysisScheduler,
+            EagerFieldAccessInformationAnalysis,
         ) ::: (if (isLibrary) List(AllocationSiteBasedLibraryPointsToAnalysisScheduler) else Nil)
     }
     override def getTypeIterator(project: SomeProject) =

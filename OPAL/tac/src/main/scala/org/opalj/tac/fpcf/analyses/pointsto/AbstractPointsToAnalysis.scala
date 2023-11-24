@@ -6,7 +6,6 @@ package analyses
 package pointsto
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
@@ -35,6 +34,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredField
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -43,10 +43,18 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.PC
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
+import org.opalj.fpcf.PropertyKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -113,6 +121,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             }
         }
 
+        // Process indirect field accesses in this method
+        handleIndirectFieldAccesses
+
         for (stmt <- tac.stmts) stmt match {
             case Assignment(pc, _, New(_, tpe)) =>
                 handleAllocation(pc, tpe)
@@ -151,20 +162,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 )
 
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handleGetField(fieldOpt, pc, objRefDefSites)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
-                }
+                handleGetField(Some(declaredFields(declaringClass, name, fieldType)), pc, objRefDefSites)
 
             case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handleGetStatic(fieldOpt.get, pc)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
-                }
+                handleGetStatic(declaredFields(declaringClass, name, fieldType), pc)
 
             case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) =>
                 val arrayType = av.theUpperTypeBound
@@ -230,21 +231,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case ExprStmt(pc, call: Call[_]) =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
-            case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handlePutField(fieldOpt, objRefDefSites, defSites)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
-                }
+            case PutField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
+                handlePutField(Some(declaredFields(declaringClass, name, fieldType)), objRefDefSites, defSites)
 
-            case PutStatic(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
-                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined) {
-                    handlePutStatic(fieldOpt.get, defSites)
-                } else {
-                    state.addIncompletePointsToInfo(pc)
-                }
+            case PutStatic(_, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
+                handlePutStatic(declaredFields(declaringClass, name, fieldType), defSites)
 
             case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) =>
                 val arrayType = av.theUpperTypeBound
@@ -471,6 +462,80 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
+    private[this] def handleIndirectFieldAccesses(implicit state: State): Unit = {
+        val tac = state.tac
+        val readAccesses = state.readAccesses(ps)
+        val writeAccesses = state.writeAccesses(ps)
+
+        for (
+            pc <- readAccesses.getAccessSites(state.callContext);
+            target <- readAccesses.getIndirectAccessedFields(state.callContext, pc)
+        ) {
+            handleIndirectFieldReadAccess(pc, target, readAccesses, tac)
+        }
+
+        for (
+            pc <- writeAccesses.getAccessSites(state.callContext);
+            target <- writeAccesses.getIndirectAccessedFields(state.callContext, pc)
+        ) {
+            handleIndirectFieldWriteAccess(pc, target, writeAccesses, tac)
+        }
+    }
+
+    private def handleIndirectFieldReadAccess(
+        pc:           Int,
+        target:       DeclaredField,
+        readAccesses: MethodFieldReadAccessInformation,
+        tac:          TACode[TACMethodParameter, DUVar[ValueInformation]]
+    )(implicit state: State): Unit = {
+        // IMPROVE add static field information for virtual declared fields
+        if (target.isDefinedField) {
+            val receiverOpt = readAccesses.indirectAccessReceiver(state.callContext, pc, target)
+            if (target.definedField.isStatic) {
+                handleGetStatic(target, pc)
+            } else if (receiverOpt.isDefined) {
+                // handle receiver for non static fields if available
+                handleGetField(
+                    Some(target),
+                    pc,
+                    valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
+                )
+            }
+        }
+    }
+
+    private def handleIndirectFieldWriteAccess(
+        pc:            Int,
+        target:        DeclaredField,
+        writeAccesses: MethodFieldWriteAccessInformation,
+        tac:           TACode[TACMethodParameter, DUVar[ValueInformation]]
+    )(implicit state: State): Unit = {
+        val indirectParam = writeAccesses.indirectAccessParameter(state.callContext, pc, target)
+        val rhsDefSites = if (target.fieldType.isReferenceType) {
+            if (indirectParam.isDefined) {
+                valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+            } else {
+                state.addIncompletePointsToInfo(pc)
+                IntTrieSet.empty
+            }
+        } else IntTrieSet.empty
+
+        // IMPROVE add static field information for virtual declared fields
+        if (target.isDefinedField) {
+            val receiverOpt = writeAccesses.indirectAccessReceiver(state.callContext, pc, target)
+            if (target.definedField.isStatic) {
+                handlePutStatic(target, rhsDefSites)
+            } else if (receiverOpt.isDefined) {
+                // handle receiver for non static fields if available
+                handlePutField(
+                    Some(target),
+                    valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
+                    rhsDefSites
+                )
+            }
+        }
+    }
+
     override protected[this] def createResults(
         implicit
         state: State
@@ -486,6 +551,36 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
                         state.callContext, state.tacDependee
                     )
+                )
+            )
+        }
+
+        if (state.hasReadAccessDependee) {
+            val readAccessDependee = state.readAccessDependee
+            results += InterimPartialResult(
+                Set(readAccessDependee),
+                continuationForFieldAccesses[MethodFieldReadAccessInformation](
+                    readAccessDependee,
+                    NoMethodFieldReadAccessInformation,
+                    MethodFieldReadAccessInformation.key,
+                    (pc, target, newAccesses, tac, state) => handleIndirectFieldReadAccess(pc, target, newAccesses, tac)(state),
+                    newDependee => state.setReadAccessDependee(newDependee),
+                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
+                )
+            )
+        }
+
+        if (state.hasWriteAccessDependee) {
+            val writeAccessDependee = state.writeAccessDependee
+            results += InterimPartialResult(
+                Set(writeAccessDependee),
+                continuationForFieldAccesses[MethodFieldWriteAccessInformation](
+                    writeAccessDependee,
+                    NoMethodFieldWriteAccessInformation,
+                    MethodFieldWriteAccessInformation.key,
+                    (pc, target, newAccesses, tac, state) => handleIndirectFieldWriteAccess(pc, target, newAccesses, tac)(state),
+                    newDependee => state.setWriteAccessDependee(newDependee),
+                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
                 )
             )
         }
@@ -543,11 +638,50 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 Results(results)
 
+            case UBP(fai: MethodFieldReadAccessInformation) =>
+                val defSite = e match {
+                    case ds: DefinitionSite               => ds
+                    case (_: Context, ds: DefinitionSite) => ds
+                }
+                // IMPROVE: Only handle new accesses
+                val fields = fai.getAccessedFields(state.callContext, defSite.pc)
+
+                val typeFilter = dependees(eps.toEPK)._2
+
+                var newDependees = updatedDependees(eps, dependees)
+                var newPointsToSet = emptyPointsToSet
+                fields.foreach { field =>
+                    // if we already have a dependency to that field, we do not need to process it
+                    // otherwise, it might still be the case that we processed it before but it is
+                    // final and thus not part of dependees anymore
+                    if (field.fieldType.isReferenceType) {
+                        if (!dependees.contains(EPK(field, pointsToPropertyKey))) {
+                            val p2s = ps(field, pointsToPropertyKey)
+                            if (p2s.isRefinable) {
+                                newDependees += (p2s.toEPK -> ((p2s, typeFilter)))
+                            }
+                            newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
+                        }
+                    }
+                }
+
+                val results = createPartialResults(
+                    e,
+                    newPointsToSet,
+                    newDependees,
+                    { old =>
+                        old.included(newPointsToSet, typeFilter)
+                    },
+                    true
+                )(state)
+
+                Results(results)
+
             case _ => super.continuationForShared(e, dependees, state)(eps)
         }
     }
 
-    def continuationForCallees(
+    private def continuationForCallees(
         oldCalleeEOptP: EOptionP[DeclaredMethod, Callees],
         state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -588,6 +722,39 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }
+
+    private def continuationForFieldAccesses[P <: MethodFieldAccessInformation[P]](
+        oldAccessEOptP:            EOptionP[Method, P],
+        noAccesses:                P,
+        key:                       PropertyKey[P],
+        handleIndirectFieldAccess: (PC, DeclaredField, P, TACode[TACMethodParameter, DUVar[ValueInformation]], State) => Unit,
+        setDependee:               EOptionP[Method, P] => Unit,
+        state:                     State
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps.pk match {
+            case `key` =>
+                val newAccesses = if (eps.hasUBP) eps.ub.asInstanceOf[P] else noAccesses
+                val oldAccesses = if (oldAccessEOptP.hasUBP) oldAccessEOptP.ub else noAccesses
+
+                val tac = state.tac
+                for {
+                    pc <- newAccesses.getIndirectAccessSites(state.callContext)
+                    target <- newAccesses.getNewestNIndirectAccessedFields(
+                        state.callContext,
+                        pc,
+                        newAccesses.numIndirectAccesses(state.callContext, pc) -
+                            oldAccesses.numIndirectAccesses(state.callContext, pc)
+                    )
+                } {
+                    handleIndirectFieldAccess(pc, target, newAccesses, tac, state)
+                }
+
+                setDependee(eps.asInstanceOf[EPS[Method, P]])
+
+                Results(createResults(state))
+            case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
+        }
+    }
 }
 
 trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
@@ -597,13 +764,15 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
+        Seq(DeclaredMethodsKey, DeclaredFieldsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
         Callees,
         TACAI,
-        propertyKind
+        propertyKind,
+        MethodFieldReadAccessInformation,
+        MethodFieldWriteAccessInformation
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set(PropertyBounds.ub(propertyKind))

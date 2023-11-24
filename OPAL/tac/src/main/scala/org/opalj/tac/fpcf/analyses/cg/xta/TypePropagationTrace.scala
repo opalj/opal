@@ -7,20 +7,18 @@ package cg
 package xta
 
 import scala.annotation.elidable
-
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.time.Instant
-
 import scala.collection.mutable
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ReferenceType
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
@@ -60,6 +58,7 @@ private[xta] class TypePropagationTrace {
 
     private def simplifiedName(e: Any): String = e match {
         case defM: DefinedMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
+        case m: Method           => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
         case rt: ReferenceType   => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
         case _                   => e.toString
     }
@@ -90,6 +89,18 @@ private[xta] class TypePropagationTrace {
     }
 
     @elidable(elidable.ASSERTION)
+    def traceReadAccessUpdate(receiver: Method): Unit = {
+        traceMsg(s"read access property update: ${simplifiedName(receiver)}")
+        _trace.events += TypePropagationTrace.ReadAccessUpdate(receiver)
+    }
+
+    @elidable(elidable.ASSERTION)
+    def traceWriteAccessUpdate(receiver: Method): Unit = {
+        traceMsg(s"write access property update: ${simplifiedName(receiver)}")
+        _trace.events += TypePropagationTrace.WriteAccessUpdate(receiver)
+    }
+
+    @elidable(elidable.ASSERTION)
     def traceTypeUpdate(receiver: DeclaredMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
         traceMsg(s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
         _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
@@ -112,6 +123,8 @@ object TypePropagationTrace {
     trait UpdateEvent extends Event
     case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
     case class CalleesUpdate(receiver: Entity) extends UpdateEvent
+    case class ReadAccessUpdate(receiver: Entity) extends UpdateEvent
+    case class WriteAccessUpdate(receiver: Entity) extends UpdateEvent
 
     // Global variable holding the type propagation trace of the last executed XTA analysis.
     var LastTrace: Trace = _

@@ -17,6 +17,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
 
 /**
@@ -44,7 +45,7 @@ class ImmutabilityTestsOpenWorld extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    describe("run the immutability analysis with an open world assumption (without type provider") {
+    describe("run the immutability analysis with an open world assumption (without type iterator)") {
 
         val as = executeAnalyses(
             Set(
@@ -54,7 +55,8 @@ class ImmutabilityTestsOpenWorld extends PropertiesTest {
                 EagerTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis
+                LazySimpleEscapeAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
         )
 

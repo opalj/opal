@@ -3,12 +3,12 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.util.asMB
 import org.opalj.util.PerformanceEvaluation.memory
-
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
 
@@ -44,6 +44,7 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
         parameters:    Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
+        implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
         var memoryUsage = ""
         val accessInformation = memory {
@@ -54,14 +55,21 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
             val Array(declaringClassName, fieldName) =
                 parameters.head.substring(7).replace('.', '/').split(' ')
             val declaringClassType = ObjectType(declaringClassName)
-            val writes = accessInformation.writeAccesses(declaringClassType, fieldName)
-            val reads = accessInformation.readAccesses(declaringClassType, fieldName)
+            val fields = project.classFile(declaringClassType).map(_.findField(fieldName)).getOrElse(List.empty)
 
-            def accessInformationToString(data: Seq[(Method, PCs)]): String = {
+            val (reads, writes) = fields
+                .foldLeft((Seq.empty[(DefinedMethod, PCs)], Seq.empty[(DefinedMethod, PCs)])) { (accesses, field) =>
+                    val newReads = (accesses._1 ++ accessInformation.readAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
+                    val newWrites = (accesses._2 ++ accessInformation.writeAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
+
+                    (newReads, newWrites)
+                }
+
+            def accessInformationToString(data: Seq[(DefinedMethod, PCs)]): String = {
                 (
                     data.map { e =>
                         val (method, pcs) = e
-                        method.toJava(pcs.mkString("pcs: ", ", ", ""))
+                        method.definedMethod.toJava(pcs.mkString("pcs: ", ", ", ""))
                     }
                 ).mkString("\t ", "\n\t ", "\n")
             }

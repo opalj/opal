@@ -5,26 +5,19 @@ package fpcf
 package analyses
 package fieldassignability
 
-import org.opalj.br.Method
-import org.opalj.br.PCs
-import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.br.Field
+import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -48,68 +41,41 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * effectively final and true otherwise.
      */
     def methodUpdatesField(
-        method:  Method,
-        taCode:  TACode[TACMethodParameter, V],
-        callers: Callers,
-        pcs:     PCs
+        definedMethod: DefinedMethod,
+        taCode:        TACode[TACMethodParameter, V],
+        callers:       Callers,
+        pc:            PC,
+        receiver:      AccessReceiver
     )(implicit state: AnalysisState): Boolean = {
         val stmts = taCode.stmts
-        for (pc <- pcs) {
-            val index = taCode.properStmtIndexForPC(pc)
-            if (index >= 0) {
-                val stmtCandidate = stmts(index)
-                if (stmtCandidate.pc == pc) {
-                    stmtCandidate match {
-                        case _: PutStatic[_] =>
-                            if (!method.isStaticInitializer)
-                                return true;
-                        case stmt: PutField[V] =>
-                            val objRef = stmt.objRef.asVar
-                            if ((!method.isConstructor ||
-                                objRef.definedBy != SelfReferenceParameter) &&
-                                !referenceHasNotEscaped(objRef, stmts, method, callers)) {
-                                // note that here we assume real three address code (flat hierarchy)
+        val method = definedMethod.definedMethod
 
-                                // for instance fields it is okay if they are written in the
-                                // constructor (w.r.t. the currently initialized object!)
+        if (receiver.isDefined) {
+            val objRef = uVarForDefSites(receiver.get, taCode.pcToIndex).asVar
+            // note that here we assume real three address code (flat hierarchy)
 
-                                // If the field that is written is not the one referred to by the
-                                // self reference, it is not effectively final.
+            // for instance fields it is okay if they are written in the
+            // constructor (w.r.t. the currently initialized object!)
 
-                                // However, a method (e.g. clone) may instantiate a new object and
-                                // write the field as long as that new object did not yet escape.
-                                return true;
-                            }
-                        case _ => throw new RuntimeException("unexpected field access");
-                    }
-                } else { // nothing to do as the put field is dead
-                }
-            }
+            // If the field that is written is not the one referred to by the
+            // self reference, it is not effectively final.
+
+            // However, a method (e.g. clone) may instantiate a new object and
+            // write the field as long as that new object did not yet escape.
+            (!method.isConstructor ||
+                objRef.definedBy != SelfReferenceParameter) &&
+                !referenceHasNotEscaped(objRef, stmts, definedMethod, callers)
+        } else {
+            !method.isStaticInitializer
         }
-        false
     }
-}
-
-sealed trait L1FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        TypeExtensibilityKey,
-        ClosedPackagesKey,
-        FieldAccessInformationKey,
-        DefinitionSitesKey,
-        ContextProviderKey
-    )
-
-    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(TACAI, EscapeProperty)
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldAssignability)
 }
 
 /**
  * Executor for the eager field assignability analysis.
  */
 object EagerL1FieldAssignabilityAnalysis
-    extends L1FieldAssignabilityAnalysisScheduler
+    extends AbstractFieldAssignabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -128,7 +94,7 @@ object EagerL1FieldAssignabilityAnalysis
  * Executor for the lazy field assignability analysis.
  */
 object LazyL1FieldAssignabilityAnalysis
-    extends L1FieldAssignabilityAnalysisScheduler
+    extends AbstractFieldAssignabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
