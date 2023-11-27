@@ -229,7 +229,7 @@ object GroundTruthParser {
     val (allocSiteToInstanceIds, instanceIdToAllocSite): (Map[Long, Set[Int]], Map[Int, Option[Long]]) = generateMapping(groundTruthData.toSet, testData.toSet)
     //implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
     val results = mutable.Map[Int, MethodResult]()
-    for ((method, testPTS) <- testData.groupBy(_.defsiteMethodSignature)) {
+    for ((method, testPTS) <- testData.groupBy(_.defsiteMethodSignature).filter(m => !m._1.contains("$string_concat$"))) {
       val truePositiveData = mutable.Set.empty[TruePositive]
       val falsePositiveData = mutable.Set.empty[FalsePositive]
       val falseNegativeData = mutable.Set.empty[FalseNegative]
