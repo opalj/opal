@@ -16,12 +16,15 @@ public class PTSLogger {
         }
     }
 
-    public static void logDefsiteInstance(Object instance, int methodId, int pc) {
+    public static void logDefsiteInstance(Object instance, int methodId, int pc, boolean isAllocation) {
         String log = null;
         if (instance == null) {
             log = String.format("<methodId=\"%s\" pc=\"%d\" instanceId=\"null\"/>\n", methodId, pc);
         } else {
-            log = String.format("<methodId=\"%s\" pc=\"%d\" instanceId=\"%d\" class=\"%s\"/>\n", methodId, pc, System.identityHashCode(instance), instance.getClass().getName());
+            if (isAllocation)
+                log = String.format("<allocation methodId=\"%s\" pc=\"%d\" instanceId=\"%d\" class=\"%s\"/>\n", methodId, pc, System.identityHashCode(instance), instance.getClass().getName());
+            else
+                log = String.format("<traceevent methodId=\"%s\" pc=\"%d\" instanceId=\"%d\" class=\"%s\"/>\n", methodId, pc, System.identityHashCode(instance), instance.getClass().getName());
         }
         System.out.print(log);
         pw.printf(log);

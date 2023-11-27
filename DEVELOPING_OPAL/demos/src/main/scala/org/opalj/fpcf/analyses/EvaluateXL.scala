@@ -23,14 +23,22 @@ import scala.io.Source
 import scala.util.matching.Regex
 
 class Method(val methodId: Int, val signature: String) {
-  val pcToInstances: mutable.Map[Int, List[Instance]] = mutable.Map.empty[Int, List[Instance]].withDefaultValue(List.empty[Instance])
+  val pcToInstances: mutable.Map[Int, Set[Instance]] = mutable.Map.empty[Int, Set[Instance]].withDefaultValue(Set.empty[Instance])
 }
-
-class Instance(val instanceId: Int, val objClass: String)
+case class Allocation(method: Method, pc: Int, classtype: String)
+class Instance(val instanceId: Int, val objClass: String, val allocation: Option[Allocation]) {
+  override def toString: String = {
+  s"Instance($instanceId $objClass ${allocation.map(a => s"m ${a.method.methodId} pc ${a.pc}").getOrElse("noallocsite")})"
+  }
+}
+case class GroundTruthLogEvent(instanceClass: String, instanceId: Int, methodSignature: String, pc: Int)
+case class DefsiteData(objClass: String, allocSiteId: Long, allocSitePC: Int, defsiteMethodSignature: String, defsitePC: Int)
 
 class Dataset {
   val methods: mutable.Map[Int, Method] = mutable.Map.empty[Int, Method]
-
+  // method Id + program counter
+  val allocations = mutable.Map[(String, Int), Allocation]()
+  val instanceIdToAllocation = mutable.Map[Int, Allocation]()
   def addMethod(methodId: Int, method: Method): Unit = {
     methods(methodId) = method
   }
@@ -38,14 +46,15 @@ class Dataset {
   def addInstance(methodId: Int, pc: Int, instance: Instance): Unit = {
     if (methods.contains(methodId)) {
       val method = methods(methodId)
-      method.pcToInstances(pc) = method.pcToInstances(pc) :+ instance
+      method.pcToInstances(pc) = method.pcToInstances(pc) + instance
     }
   }
+
 }
-case class TruePositive(defsiteMethod: String, defsitePC: Int, instanceType: String, instanceID: Int, allocSiteID: Long, allocsitePC: Int, allocsiteType: String) {
+case class TruePositive(defsiteMethod: String, defsitePC: Int, instances: Set[Instance], allocSiteID: Long, allocsitePC: Int, allocsiteType: String) {
   override def toString: String =
-    s"    TruePositive(defsitePC=$defsitePC, instanceType=$instanceType, " +
-      s"instanceID=$instanceID, allocSiteID=$allocSiteID, allocsitePC=$allocsitePC, allocsiteType=$allocsiteType)"
+    s"    TruePositive(defsitePC=$defsitePC, instances=${instances.mkString(" ")}, " +
+      s"allocSiteID=$allocSiteID, allocsitePC=$allocsitePC, allocsiteType=$allocsiteType)"
 }
 
 case class FalsePositive(defsiteMethod: String, defsitePC: Int, allocSiteType: String, allocSiteID: Long, allocsitePC: Int) {
@@ -54,10 +63,9 @@ case class FalsePositive(defsiteMethod: String, defsitePC: Int, allocSiteType: S
       s"allocSiteID=$allocSiteID, allocsitePC=$allocsitePC)"
 }
 
-case class FalseNegative(defsiteMethod: String, defsitePC: Int, instanceType: String, instanceID: Int) {
+case class FalseNegative(defsiteMethod: String, defsitePC: Int, instances: Set[Instance]) {
   override def toString: String =
-    s"    FalseNegative(defsitePC=$defsitePC, instanceType=$instanceType, " +
-      s"instanceID=$instanceID)"
+    s"    FalseNegative(defsitePC=$defsitePC, instances=${instances.mkString(" ")}"
 }
 
 
@@ -71,8 +79,8 @@ case class MethodResult(
                          truePositiveData: Set[TruePositive],
                          falsePositiveData: Set[FalsePositive],
                          falseNegativeData: Set[FalseNegative],
-                         allocSiteToInstanceIdForMethod : mutable.Map[Long, Option[Int]],
-                         instanceIdToAllocSiteForMethod : mutable.Map[Int, Option[Long]]
+                         allocSiteToInstanceIdsForMethod : mutable.Map[Long, Set[Instance]],
+                         instanceIdsToAllocSiteForMethod : mutable.Map[Set[Instance], Option[Long]]
                        ) {
   override def toString: String = {
 
@@ -80,8 +88,8 @@ case class MethodResult(
     val falsePositiveDataStr = falsePositiveData.toList.sortBy(_.defsitePC).map(_.toString).mkString("\n")
     val falseNegativeDataStr = falseNegativeData.toList.sortBy(_.defsitePC).map(_.toString).mkString("\n")
 
-    val allocSiteToInstanceIdForMethodStr = allocSiteToInstanceIdForMethod.toList.sortBy(_._1).mkString(" ")
-    val instanceIdToAllocSiteForMethodStr = instanceIdToAllocSiteForMethod.toList.sortBy(_._1).mkString(" ")
+    val allocSiteToInstanceIdForMethodStr = allocSiteToInstanceIdsForMethod.toList.sortBy(_._1).mkString(" ")
+    val instanceIdToAllocSiteForMethodStr = instanceIdsToAllocSiteForMethod.toList.sortBy(_._2).mkString(" ")
     val p = precision * 100
     val r = recall * 100
     f"""MethodResult: $method
@@ -105,11 +113,11 @@ object GroundTruthParser {
     val dataset = new Dataset()
 
     val methodPattern = new Regex("<method fullyqualified=\"(.+)\" id=\"(\\d+)\"/>")
-    val instancePattern = new Regex("<methodId=\"(\\d+)\" pc=\"(\\d+)\" instanceId=\"(\\d+)\" class=\"([^\"]+)\"/>")
+    val instancePattern = new Regex("<(allocation|traceevent) methodId=\"(\\d+)\" pc=\"(\\d+)\" instanceId=\"(\\d+)\" class=\"([^\"]+)\"/>")
 
     for (line <- Source.fromFile(groundTruthPath).getLines()) {
       methodPattern.findFirstMatchIn(line) match {
-        case Some(m) if !m.group(1).contains("$string_concat$") =>
+        case Some(m) /* if !m.group(1).contains("$string_concat$") */ =>
           val signature = m.group(1)
           val methodId = m.group(2).toInt
           dataset.addMethod(methodId, new Method(methodId, signature))
@@ -118,12 +126,26 @@ object GroundTruthParser {
 
       instancePattern.findFirstMatchIn(line) match {
         case Some(m) =>
-          val methodId = m.group(1).toInt
-          val pc = m.group(2).toInt
-          val instanceId = m.group(3).toInt
-          val objClass = m.group(4)
-          val instance = new Instance(instanceId, objClass)
-          dataset.addInstance(methodId, pc, instance)
+          val eventtype = m.group(1)
+          val methodId = m.group(2).toInt
+          val pc = m.group(3).toInt
+          val instanceId = m.group(4).toInt
+          val objClass = m.group(5)
+
+          dataset.methods.get(methodId) match {
+            case Some(method) => {
+
+              if (eventtype equals "allocation") {
+                val allocation = Allocation(method, pc, objClass)
+                dataset.allocations.getOrElseUpdate((method.signature, pc), allocation)
+                dataset.instanceIdToAllocation.put(instanceId, allocation)
+              }
+              val instance = new Instance(instanceId, objClass, dataset.instanceIdToAllocation.get(instanceId))
+              dataset.addInstance(methodId, pc, instance)
+            }
+            case _ =>
+          }
+
         case _ =>
       }
     }
@@ -141,117 +163,208 @@ object GroundTruthParser {
     )
     equivalences.getOrElse(str, str)
   }
+
+  def ignoreTruePositive(truePositive: TruePositive): Boolean = {
+      truePositive.defsiteMethod.contains("$string_concat$")
+  }
   def ignoreFalseNegative(falseNegative: FalseNegative) : Boolean = {
-    false
+    falseNegative.instances.exists(_.objClass.equals("org.openjdk.nashorn.api.scripting.NashornScriptEngine"))
   }
   def ignoreFalsePositive(falsePositive: FalsePositive) : Boolean = {
-    falsePositive.allocsitePC < 0
+    falsePositive.allocsitePC < 0 ||
+      falsePositive.defsiteMethod.contains("$string_concat$")
   }
-  def generateMapping(groundTruth: Set[(String, Int, String, Int)], test: Set[(String, Long, String, Int)]): (Map[Long, Int], Map[Int, Option[Long]]) = {
-    val allocSiteToInstanceId = mutable.Map[Long, Int]()
+  def generateMapping(groundTruth: Set[GroundTruthLogEvent], test: Set[DefsiteData]): (Map[Long, Set[Int]], Map[Int, Option[Long]]) = {
+    val allocSiteToInstanceId = mutable.Map[Long, Set[Int]]()
     val instanceIdToAllocSite = mutable.Map[Int, Option[Long]]()
-    val groundTruthDict = groundTruth.map(typeInstanceMethodPc => ((normalizeType(typeInstanceMethodPc._1), typeInstanceMethodPc._3, typeInstanceMethodPc._4), typeInstanceMethodPc._2)).toMap
-    for ((typeName, allocsite, method, pc) <- test) {
-      val normalized = normalizeType(typeName)
-      groundTruthDict.get((normalized, method, pc)) match {
+    val groundTruthDict = groundTruth.map(event => ((normalizeType(event.instanceClass), event.methodSignature, event.pc), event.instanceId)).toMap
+    for (defsiteData <- test) {
+      val normalized = normalizeType(defsiteData.objClass)
+      groundTruthDict.get((normalized, defsiteData.defsiteMethodSignature, defsiteData.defsitePC)) match {
         case Some(instanceId) => {
-          allocSiteToInstanceId.put(allocsite, instanceId)
-          instanceIdToAllocSite.put(instanceId, Option(allocsite))
+          allocSiteToInstanceId.put(defsiteData.allocSiteId, allocSiteToInstanceId.getOrElse(defsiteData.allocSiteId, Set.empty[Int]) + instanceId)
+          instanceIdToAllocSite.put(instanceId, Option(defsiteData.allocSiteId))
         }
         case None => {}
       }
     }
-    for ((typeName, instanceId, method, pc) <- groundTruth) {
-      if (!groundTruthDict.contains((normalizeType(typeName), method, pc))) {
-        instanceIdToAllocSite.put(instanceId, Option.empty)
+    for (event <- groundTruth) {
+      if (!groundTruthDict.contains((normalizeType(event.instanceClass), event.methodSignature, event.pc))) {
+        instanceIdToAllocSite.put(event.instanceId, Option.empty)
       }
     }
+    // expected: allocsite 175924209254439 <=> inst 44563007 (Vain.main, PC 35)
     (allocSiteToInstanceId.toMap, instanceIdToAllocSite.toMap)
 
   }
 
   def evaluate(groundTruth: Dataset, testPts: Set[(DefinedMethod, DefinitionSite, Option[AllocationSitePointsToSet])], project: Project[URL]) : Map[Int, MethodResult]= {
     val groupedWithoutByMethod = testPts.groupBy(_._1.definedMethod.fullyQualifiedSignature)
-    val groundTruthData = mutable.Set[(String, Int, String, Int)]()
-
-    for ((_, method) <- groundTruth.methods) {
+    val groundTruthData = mutable.Set[GroundTruthLogEvent]()
+    val signatureToMethodId = mutable.Map[String, Int]()
+    for ((methodId, method) <- groundTruth.methods) {
+      signatureToMethodId.put(method.signature, methodId)
       for ((pc, instances) <- method.pcToInstances) {
         for (instance <- instances) {
-          groundTruthData add (instance.objClass, instance.instanceId, method.signature, pc)
+          groundTruthData add GroundTruthLogEvent(instance.objClass, instance.instanceId, method.signature, pc)
         }
       }
     }
-    val testData = mutable.Set[(String, Long, String, Int)]()
+    val testData = mutable.Set[DefsiteData]()
     for ((methodSignature, defSite) <- groupedWithoutByMethod) {
       implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
       val sorted = defSite.toArray.sortBy(mdsas => mdsas._2.pc)
       for (pts <- sorted) {
         pts._3 match {
           case Some(as) => for (allocSiteId <- as.elements.iterator) {
-            val (ctx, pc, typeId) = longToAllocationSite(allocSiteId)
+            val (ctx, allocSitePC, typeId) = longToAllocationSite(allocSiteId)
             val objClass = ObjectType.lookup(typeId).toJava
-            testData add ((objClass, allocSiteId, methodSignature, pts._2.pc))
-            println("<pointsto method=\"" + methodSignature + "\" pc=\"" + pts._2.pc + "\" type=\"" + objClass + "\" allocSiteId=\"" + allocSiteId + "\" allocSitePc=\"" + pc + "\" />")
+            testData add DefsiteData(objClass, allocSiteId, allocSitePC, methodSignature, pts._2.pc)
+            println("<pointsto method=\"" + methodSignature + "\" pc=\"" + pts._2.pc + "\" type=\"" + objClass + "\" allocSiteId=\"" + allocSiteId + "\" allocSitePc=\"" + allocSitePC + "\" />")
           }
           case None =>
         }
       }
     }
-    val (allocSiteToInstanceId, instanceIdToAllocSite): (Map[Long, Int], Map[Int, Option[Long]]) = generateMapping(groundTruthData.toSet, testData.toSet)
-    implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    val (allocSiteToInstanceIds, instanceIdToAllocSite): (Map[Long, Set[Int]], Map[Int, Option[Long]]) = generateMapping(groundTruthData.toSet, testData.toSet)
+    //implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+    val results = mutable.Map[Int, MethodResult]()
+    for ((method, testPTS) <- testData.groupBy(_.defsiteMethodSignature)) {
+      val truePositiveData = mutable.Set.empty[TruePositive]
+      val falsePositiveData = mutable.Set.empty[FalsePositive]
+      val falseNegativeData = mutable.Set.empty[FalseNegative]
+      val allocSiteToInstanceIdsForMethod = mutable.Map[Long, Set[Instance]]()
+      val instanceIdsToAllocSiteForMethod = mutable.Map[Set[Instance], Option[Long]]()
+      val methodId = signatureToMethodId(method)
+      val groundTruthMethod = groundTruth.methods(methodId)
+      //val instancesAndPossibleAllocSites = instances.map(instance => (instanceIdToAllocSite.getOrElse(instance.instanceId, Option.empty), instance.instanceId, normalizeType(instance.objClass)))
+      ///val possibleAllocSitesForInstanceIds = instancesAndPossibleAllocSites.groupBy(allocSiteInstIdType => (allocSiteInstIdType._1, allocSiteInstIdType._3)).view.mapValues(instances => instances.map(inst => new Instance(inst._2, inst._3))).toMap
 
+      val testDataCoveredInstances = mutable.Set[(Int, Int)]()
+      for (defsite <- testPTS) {
+        val groundTruthInstancesAtPC = groundTruthMethod.pcToInstances.getOrElse(defsite.defsitePC, Set.empty)
+
+        allocSiteToInstanceIds.get(defsite.allocSiteId) match {
+          case Some(groundTruthInstanceIds) => {
+            val groundTruthInstancesForDefSite = groundTruthInstancesAtPC.filter(instance => groundTruthInstanceIds.contains(instance.instanceId))
+
+            if (Set(normalizeType(defsite.objClass)) equals groundTruthInstancesForDefSite.map(inst => normalizeType(inst.objClass))) {
+              truePositiveData += TruePositive(method, defsite.defsitePC, groundTruthInstancesForDefSite, defsite.allocSiteId, defsite.allocSitePC, defsite.objClass)
+            } else {
+              falsePositiveData += FalsePositive(method, defsite.defsitePC, defsite.objClass, defsite.allocSiteId, defsite.allocSitePC)
+            }
+            testDataCoveredInstances ++= groundTruthInstanceIds.map(inst => (defsite.defsitePC, inst))
+          }
+          case None => {
+            falsePositiveData += FalsePositive(method, defsite.defsitePC, defsite.objClass, defsite.allocSiteId, defsite.allocSitePC)
+
+          }
+        }
+      }
+
+      for ((pc, instancesAtPc) <- groundTruthMethod.pcToInstances) {
+
+        for ((allocation, instances) <- instancesAtPc.groupBy(inst => inst.allocation)) {
+          if (! instances.map(inst => (pc, inst.instanceId)).subsetOf(testDataCoveredInstances)) {
+            falseNegativeData += FalseNegative(method, pc, instances)
+          }
+        }
+      }
+
+      val filteredTruePositiveData = truePositiveData.filter(!ignoreTruePositive(_)).toSet
+      val filteredFalsePositiveData = falsePositiveData.filter(!ignoreFalsePositive(_)).toSet
+      val filteredFalseNegativeData = falseNegativeData.filter(!ignoreFalseNegative(_)).toSet
+
+      val truePositive = filteredTruePositiveData.size
+      val falsePositive = filteredFalsePositiveData.size
+      val falseNegative = filteredFalseNegativeData.size
+      val precision = if (truePositive + falsePositive > 0) truePositive.toDouble / (truePositive + falsePositive) else 0
+      val recall = if (truePositive + falseNegative > 0) truePositive.toDouble / (truePositive + falseNegative) else 0
+
+      results put (methodId, MethodResult(
+        method,
+        precision,
+        recall,
+        truePositive,
+        falsePositive,
+        falseNegative,
+        filteredTruePositiveData.toSet,
+        filteredFalsePositiveData.toSet,
+        filteredFalseNegativeData.toSet,
+        allocSiteToInstanceIdsForMethod,
+        instanceIdsToAllocSiteForMethod
+      ))
+    }
+    results.toMap
+  }
+    /*
+      all.get((Option(allocSiteId), normalizeType(allocSiteType))) match {
+        case Some(groundTruthInstances) =>
+          allocSiteToInstanceIdsForMethod.put(allocSiteId, groundTruthInstances)
+          //val groundTruthType = groundTruthInstanceIds(groundTruthIds.find(_ => true).get)
+          //val groundTruthTypeNormalized = normalizeType(groundTruthType)
+          testAllocsitesForPC add(allocSiteId, allocSiteType)
+          //if (normalizeType(allocSiteType) == groundTruthTypeNormalized) {
+          truePositiveData += TruePositive(method.signature, pc, groundTruthInstances, allocSiteId, pc, allocSiteType)
+        //} else {
+        //  falsePositiveData += FalsePositive(method.signature, defsitePC, allocSiteType, allocSiteId, pc)
+        //}
+        case _ => {
+          allocSiteToInstanceIdsForMethod.put(allocSiteId, Set.empty)
+          falsePositiveData += FalsePositive(method.signature, pc, allocSiteType, allocSiteId, pc)
+        }
+      }
+    }
+      /*
     groundTruth.methods.foldLeft(Map.empty[Int, MethodResult]) { case (results, (methodId, method)) =>
       val truePositiveData = mutable.Set.empty[TruePositive]
       val falsePositiveData = mutable.Set.empty[FalsePositive]
       val falseNegativeData = mutable.Set.empty[FalseNegative]
       val testPTSforMethod = groupedWithoutByMethod.get(method.signature)
-      val allocSiteToInstanceIdForMethod = mutable.Map[Long, Option[Int]]()
-      val instanceIdToAllocSiteForMethod = mutable.Map[Int, Option[Long]]()
+      val allocSiteToInstanceIdsForMethod = mutable.Map[Long, Set[Instance]]()
+      val instanceIdsToAllocSiteForMethod = mutable.Map[Set[Instance], Option[Long]]()
+
       for ((pc, instances) <- method.pcToInstances) {
-        val groundTruthInstanceIds = instances.map(instance => instance.instanceId -> normalizeType(instance.objClass)).toMap
+        //val groundTruthInstanceIds = instances.map(instance => instance.instanceId -> normalizeType(instance.objClass)).toMap
+        val instancesAndPossibleAllocSites = instances.map(instance => (instanceIdToAllocSite.getOrElse(instance.instanceId, Option.empty), instance.instanceId, normalizeType(instance.objClass)))
+        val possibleAllocSitesForInstanceIds = instancesAndPossibleAllocSites.groupBy(allocSiteInstIdType => (allocSiteInstIdType._1, allocSiteInstIdType._3)).view.mapValues(instances =>  instances.map(inst => new Instance(inst._2, inst._3))).toMap
         val testPTSforPC = testPTSforMethod.map(pt => pt.filter(_._2.pc == pc))
-        val testInstanceIdsForPC = mutable.Set[(Int, String)]()
-        testPTSforPC match {
-          case Some(defSite) => {
-            for (pts <- defSite) {
-              pts._3 match {
-                case Some(as) => for (allocSiteId <- as.elements.iterator) {
-                  val defsitePC = pts._2.pc
-                  val (ctx, pc, typeId) = longToAllocationSite(allocSiteId)
-                  val allocSiteType = normalizeType(ObjectType.lookup(typeId).toJava)
-                  allocSiteToInstanceId.get(allocSiteId) match {
-                    case Some(groundTruthId) if groundTruthInstanceIds.contains(groundTruthId) =>
-                      allocSiteToInstanceIdForMethod.put(allocSiteId, Option(groundTruthId))
-                      val groundTruthType = groundTruthInstanceIds(groundTruthId)
-                      val groundTruthTypeNormalized = normalizeType(groundTruthType)
-                      testInstanceIdsForPC add (groundTruthId , groundTruthTypeNormalized)
-                      if (normalizeType(allocSiteType) == groundTruthTypeNormalized) {
-                        truePositiveData += TruePositive(method.signature, defsitePC, groundTruthType, groundTruthId, allocSiteId, pc, allocSiteType)
-                      } else {
-                        falsePositiveData += FalsePositive(method.signature, defsitePC, allocSiteType, allocSiteId, pc)
-                      }
-                    case _ => {
-                      allocSiteToInstanceIdForMethod.put(allocSiteId, Option.empty)
-                      falsePositiveData += FalsePositive(method.signature, defsitePC, allocSiteType, allocSiteId, pc)
-                    }
-                  }
+        val testAllocsitesForPC = mutable.Set[(Long, String)]()
+        val allocSites = testPTSforPC.getOrElse(Set.empty).flatMap(as => as._3)
+        for (as <- allocSites) {
+           for (allocSiteId <- as.elements.iterator) {
+              val (ctx, allocSitePC, typeId) = longToAllocationSite(allocSiteId)
+              val allocSiteType = normalizeType(ObjectType.lookup(typeId).toJava)
+              possibleAllocSitesForInstanceIds.get((Option(allocSiteId), normalizeType(allocSiteType))) match {
+                case Some(groundTruthInstances) =>
+                  allocSiteToInstanceIdsForMethod.put(allocSiteId, groundTruthInstances)
+                  //val groundTruthType = groundTruthInstanceIds(groundTruthIds.find(_ => true).get)
+                  //val groundTruthTypeNormalized = normalizeType(groundTruthType)
+                  testAllocsitesForPC add (allocSiteId , allocSiteType)
+                  //if (normalizeType(allocSiteType) == groundTruthTypeNormalized) {
+                    truePositiveData += TruePositive(method.signature, pc, groundTruthInstances, allocSiteId, pc, allocSiteType)
+                  //} else {
+                  //  falsePositiveData += FalsePositive(method.signature, defsitePC, allocSiteType, allocSiteId, pc)
+                  //}
+                case _ => {
+                  allocSiteToInstanceIdsForMethod.put(allocSiteId, Set.empty)
+                  falsePositiveData += FalsePositive(method.signature, pc, allocSiteType, allocSiteId, pc)
                 }
-                case None =>
               }
             }
-          }
-          case None => {
-            // no PTS
-          }
         }
-        for (instance <- instances) {
-          instanceIdToAllocSiteForMethod.put(instance.instanceId, instanceIdToAllocSite.getOrElse(instance.instanceId, Option.empty))
-          if (!testInstanceIdsForPC.contains((instance.instanceId, instance.objClass))) {
-            falseNegativeData += FalseNegative(method.signature, pc, instance.objClass, instance.instanceId)
+        instances.map(inst => ())
+
+        for ((possibleAllocSite, groundTruthInstances) <- possibleAllocSitesForInstanceIds) {
+          instanceIdsToAllocSiteForMethod.put(groundTruthInstances, possibleAllocSite._1)
+          if ( possibleAllocSite._1.isEmpty || !testAllocsitesForPC.contains((possibleAllocSite._1.get, possibleAllocSite._2))) {
+            falseNegativeData += FalseNegative(method.signature, pc, groundTruthInstances)
           } else {
             print("")
           }
         }
+
+
 
       }
       val truePositive = truePositiveData.size
@@ -270,13 +383,13 @@ object GroundTruthParser {
         truePositiveData.toSet,
         falsePositiveData.filter(!ignoreFalsePositive(_)).toSet,
         falseNegativeData.filter(!ignoreFalseNegative(_)).toSet,
-        allocSiteToInstanceIdForMethod,
-        instanceIdToAllocSiteForMethod
-      ))
+        allocSiteToInstanceIdsForMethod,
+        instanceIdsToAllocSiteForMethod
+      )) */
 
     }
+  */
 
-  }
   def printTotalPrecisionRecall(results: Map[Int, MethodResult]): Unit = {
     val truePositive = results.values.map(_.truePositive).sum
     val falsePositive = results.values.map(_.falsePositive).sum
