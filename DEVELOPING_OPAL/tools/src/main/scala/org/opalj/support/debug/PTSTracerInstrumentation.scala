@@ -6,13 +6,9 @@ import org.opalj.ba.LabeledCode
 import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
 import org.opalj.bi.Java15Version
-import org.opalj.br.IntegerType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.VoidType
+import org.opalj.br.{BooleanType, IntegerType, MethodDescriptor, ObjectType, PCAndInstruction, VoidType}
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.{DUP, INVOKESPECIAL, INVOKESTATIC, LoadString, MethodInvocationInstruction, NEW, POP, SIPUSH}
+import org.opalj.br.instructions.{BIPUSH, DUP, GETFIELD, INVOKESPECIAL, INVOKESTATIC, LoadString, MethodInvocationInstruction, NEW, POP, SIPUSH}
 import org.opalj.util.InMemoryClassLoader
 
 import java.io.{FileOutputStream, PrintWriter}
@@ -63,8 +59,6 @@ object PTSTracerInstrumentation {
           ClassLoader.getSystemClassLoader)
         val PTSLoggerType = ObjectType("org/opalj/fpcf/fixtures/PTSLogger")
         val ptsClassFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
-        val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
-        val ContainerClassTypeFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
 
         // TODO: copy all attributes etc.
         val testCases = mutable.Set[(String, Array[Byte])]()
@@ -93,6 +87,7 @@ object PTSTracerInstrumentation {
                             } {
                                 var insertLog = false
                                 var pcToLog = pc
+                                var isAllocation = 0
                                 inst match {
                                     case NEW(objectType) => {
                                         lastNew = Option((pc, objectType))
@@ -103,13 +98,19 @@ object PTSTracerInstrumentation {
                                                 insertLog = true
                                                 pcToLog = pcAndType._1
                                                 lastNew = Option.empty
+                                              isAllocation = 1
                                             }
                                             case None =>
                                         }
                                     }
+                                    case GETFIELD(objectType, name, fieldType) => {
+                                      if (!fieldType.isBaseType)
+                                        insertLog = true
+                                    }
                                     case LoadString(value) => {
                                         insertLog = true
                                     }
+
                                     case MethodInvocationInstruction(refType, isInterface, name, methodDescriptor) => {
                                         if (!methodDescriptor.returnType.isVoidType && !methodDescriptor.returnType.isBaseType) {
                                             // don't log if return value POP'd immediately
@@ -134,7 +135,8 @@ object PTSTracerInstrumentation {
                                             DUP,
                                             SIPUSH(methodId),
                                             SIPUSH(pcToLog),
-                                            INVOKESTATIC(PTSLoggerType, isInterface = false, "logDefsiteInstance", MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, IntegerType), VoidType))
+                                            BIPUSH(isAllocation),
+                                            INVOKESTATIC(PTSLoggerType, isInterface = false, "logDefsiteInstance", MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, IntegerType, BooleanType), VoidType))
                                         )
                                     )
                                 }
@@ -162,7 +164,10 @@ object PTSTracerInstrumentation {
             if (hasMain) testCases add (cf.thisType.toJava, newRawCF)
         }
         fw.close()
-        for ((className, code) <- testCases) {
+      val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
+      val ContainerClassTypeFile = PTSTracerInstrumentation.readFile(outputClassPath + "/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
+
+      for ((className, code) <- testCases) {
 
             // cannot use inmemoryclassloader, because scriptengine will still use
             val cl = new InMemoryClassLoader(Map(
