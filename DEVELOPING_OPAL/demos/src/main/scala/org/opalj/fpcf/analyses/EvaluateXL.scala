@@ -25,10 +25,16 @@ import scala.util.matching.Regex
 class Method(val methodId: Int, val signature: String) {
   val pcToInstances: mutable.Map[Int, Set[Instance]] = mutable.Map.empty[Int, Set[Instance]].withDefaultValue(Set.empty[Instance])
 }
-case class Allocation(method: Method, pc: Int, classtype: String)
-class Instance(val instanceId: Int, val objClass: String, val allocation: Option[Allocation]) {
+class Allocation(classType: String)
+case class ActualAllocation(method: Method, pc: Int, classtype: String) extends Allocation(classType = classtype) {
+  override def toString = s"Allocation(m ${method.methodId} pc ${pc})"
+}
+case class DummyAllocation(method: Method, pc: Int, classtype: String) extends Allocation(classType = classtype) {
+  override def toString = s"NoAllocation( m ${method.methodId} pc ${pc})"
+}
+class Instance(val instanceId: Int, val objClass: String, val allocation: Allocation) {
   override def toString: String = {
-  s"Instance($instanceId $objClass ${allocation.map(a => s"m ${a.method.methodId} pc ${a.pc}").getOrElse("noallocsite")})"
+  s"Instance($instanceId $objClass $allocation)"
   }
 }
 case class GroundTruthLogEvent(instanceClass: String, instanceId: Int, methodSignature: String, pc: Int)
@@ -37,7 +43,7 @@ case class DefsiteData(objClass: String, allocSiteId: Long, allocSitePC: Int, de
 class Dataset {
   val methods: mutable.Map[Int, Method] = mutable.Map.empty[Int, Method]
   // method Id + program counter
-  val allocations = mutable.Map[(String, Int), Allocation]()
+  val allocations = mutable.Map[(String, Int),Allocation]()
   val instanceIdToAllocation = mutable.Map[Int, Allocation]()
   def addMethod(methodId: Int, method: Method): Unit = {
     methods(methodId) = method
@@ -136,11 +142,16 @@ object GroundTruthParser {
             case Some(method) => {
 
               if (eventtype equals "allocation") {
-                val allocation = Allocation(method, pc, objClass)
+                val allocation = ActualAllocation(method, pc, objClass)
                 dataset.allocations.getOrElseUpdate((method.signature, pc), allocation)
                 dataset.instanceIdToAllocation.put(instanceId, allocation)
               }
-              val instance = new Instance(instanceId, objClass, dataset.instanceIdToAllocation.get(instanceId))
+
+              val allocSite = dataset.instanceIdToAllocation.getOrElseUpdate(instanceId, {
+                val dummyAllocation = dataset.allocations.getOrElseUpdate((method.signature, pc), DummyAllocation(method, pc, objClass))
+                dummyAllocation
+              })
+              val instance = new Instance(instanceId, objClass, allocSite)
               dataset.addInstance(methodId, pc, instance)
             }
             case _ =>
@@ -165,10 +176,11 @@ object GroundTruthParser {
   }
 
   def ignoreTruePositive(truePositive: TruePositive): Boolean = {
+    truePositive.allocsitePC < 0 ||
       truePositive.defsiteMethod.contains("$string_concat$")
   }
   def ignoreFalseNegative(falseNegative: FalseNegative) : Boolean = {
-    falseNegative.instances.exists(_.objClass.equals("org.openjdk.nashorn.api.scripting.NashornScriptEngine"))
+    false //falseNegative.instances.exists(_.objClass.equals("org.openjdk.nashorn.api.scripting.NashornScriptEngine"))
   }
   def ignoreFalsePositive(falsePositive: FalsePositive) : Boolean = {
     falsePositive.allocsitePC < 0 ||
@@ -235,21 +247,23 @@ object GroundTruthParser {
       val instanceIdsToAllocSiteForMethod = mutable.Map[Set[Instance], Option[Long]]()
       val methodId = signatureToMethodId(method)
       val groundTruthMethod = groundTruth.methods(methodId)
-
-      val testDataCoveredInstances = mutable.Set[(Int, Int)]()
+      var testAllocationsAtPC = Map[Int, Set[Allocation]]()
+      //val testDataCoveredInstances = mutable.Set[(Int, Int)]()
       for (defsite <- testPTS) {
         val groundTruthInstancesAtPC = groundTruthMethod.pcToInstances.getOrElse(defsite.defsitePC, Set.empty)
 
         allocSiteToInstanceIds.get(defsite.allocSiteId) match {
           case Some(groundTruthInstanceIds) => {
+
             val groundTruthInstancesForDefSite = groundTruthInstancesAtPC.filter(instance => groundTruthInstanceIds.contains(instance.instanceId))
 
             if (Set(normalizeType(defsite.objClass)) equals groundTruthInstancesForDefSite.map(inst => normalizeType(inst.objClass))) {
+              testAllocationsAtPC += (defsite.defsitePC -> groundTruthInstanceIds.map(groundTruth.instanceIdToAllocation))
               truePositiveData += TruePositive(method, defsite.defsitePC, groundTruthInstancesForDefSite, defsite.allocSiteId, defsite.allocSitePC, defsite.objClass)
             } else {
               falsePositiveData += FalsePositive(method, defsite.defsitePC, defsite.objClass, defsite.allocSiteId, defsite.allocSitePC)
             }
-            testDataCoveredInstances ++= groundTruthInstanceIds.map(inst => (defsite.defsitePC, inst))
+            //testDataCoveredInstances ++= groundTruthInstanceIds.map(inst => (defsite.defsitePC, inst))
           }
           case None => {
             falsePositiveData += FalsePositive(method, defsite.defsitePC, defsite.objClass, defsite.allocSiteId, defsite.allocSitePC)
@@ -259,9 +273,12 @@ object GroundTruthParser {
       }
 
       for ((pc, instancesAtPc) <- groundTruthMethod.pcToInstances) {
+        // expect 489047267 1173504361 2026371507
 
         for ((allocation, instances) <- instancesAtPc.groupBy(inst => inst.allocation)) {
-          if (! instances.map(inst => (pc, inst.instanceId)).subsetOf(testDataCoveredInstances)) {
+          if (!testAllocationsAtPC.getOrElse(pc,Set.empty).contains(allocation)) {
+          //groundTruthAllocations = instances.map(_.instanceId).map(groundTruth.instanceIdToAllocation())
+          //if (! instances.map(inst => (pc, inst.instanceId)).subsetOf(testDataCoveredInstances)) {
             falseNegativeData += FalseNegative(method, pc, instances)
           }
         }
@@ -294,7 +311,7 @@ object GroundTruthParser {
     results.toMap
   }
 
-  def printTotalPrecisionRecall(results: Map[Int, MethodResult]): Unit = {
+  def printTotalPrecisionRecall(results: Map[Int, MethodResult]): (Int, Int, Int, Double, Double) = {
     val truePositive = results.values.map(_.truePositive).sum
     val falsePositive = results.values.map(_.falsePositive).sum
     val falseNegative = results.values.map(_.falseNegative).sum
@@ -302,6 +319,7 @@ object GroundTruthParser {
     val recall = if (truePositive + falseNegative > 0) 100 * truePositive.toDouble / (truePositive + falseNegative) else 0
     println(f"true positives: $truePositive false positives: $falsePositive false negatives: $falseNegative")
     println(f"total precision: $precision%.2f%% total recall: $recall%.2f%%")
+    (truePositive, falsePositive, falseNegative, precision, recall)
   }
 }
 
@@ -347,10 +365,29 @@ object ComparePTS {
     }
 
     println("without TAJS")
-    GroundTruthParser.printTotalPrecisionRecall(evalWithoutTAJS)
+    val evalWithout = GroundTruthParser.printTotalPrecisionRecall(evalWithoutTAJS)
     println("with TAJS")
-    GroundTruthParser.printTotalPrecisionRecall(evalWithTAJS)
+    val evalWith = GroundTruthParser.printTotalPrecisionRecall(evalWithTAJS)
 
+    println("""
+      \begin{table}
+      \center
+      \begin{tabular}{lcc}
+      	\toprule
+      \textbf{Points-To Analysis } & \textbf{Only Java} & \textbf{Java + JS}  \\
+      	\midrule""" + f"""
+        True Positives  & \\tnum{${evalWithout._1}} & \\tnum{${evalWith._1}} \\\\
+        False Positives & \\tnum{${evalWithout._2}} & \\tnum{${evalWith._2}} \\\\
+        False Negatives & \\tnum{${evalWithout._3}} & \\tnum{${evalWith._3}} \\\\
+        \\midrule
+        Precision & \\tnum{${evalWithout._4}%.2f\\%%} & \\tnum{${evalWith._4}%.2f\\%%} \\\\
+        Recall    & \\tnum{${evalWithout._5}%.2f\\%%} & \\tnum{${evalWith._5}%.2f\\%%} \\\\""" + """
+      	\bottomrule
+      \end{tabular}
+      \caption{Precision And Recall of Points-To-Sets}
+      \label{tab:precisionRecall}
+      \end{table}
+      """.stripMargin)
   }
 }
 
