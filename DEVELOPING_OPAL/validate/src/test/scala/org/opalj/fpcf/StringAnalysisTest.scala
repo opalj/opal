@@ -143,14 +143,14 @@ object StringAnalysisTestRunner {
 }
 
 /**
- * Tests whether the [[IntraproceduralStringAnalysis]] works correctly with respect to some
- * well-defined tests.
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis]] works correctly with
+ * respect to some well-defined tests.
  *
  * @author Patrick Mell
  */
 class IntraproceduralStringAnalysisTest extends PropertiesTest {
 
-    describe("the org.opalj.fpcf.LocalStringAnalysis is started") {
+    describe("the org.opalj.fpcf.IntraproceduralStringAnalysis is started") {
         val runner = new StringAnalysisTestRunner(
             IntraproceduralStringAnalysisTest.fqTestMethodsClass,
             IntraproceduralStringAnalysisTest.nameTestMethod,
@@ -192,8 +192,8 @@ object IntraproceduralStringAnalysisTest {
 }
 
 /**
- * Tests whether the InterproceduralStringAnalysis works correctly with respect to some
- * well-defined tests.
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis]] works correctly with
+ * respect to some well-defined tests.
  *
  * @author Patrick Mell
  */
