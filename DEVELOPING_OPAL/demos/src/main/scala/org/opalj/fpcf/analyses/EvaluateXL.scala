@@ -351,16 +351,16 @@ object ComparePTS {
         print(": ")
         val withoutStr = resultWithoutTAJS.toString
         val withStr = resultWithTAJS.toString
-        if (withStr == withoutStr){
+        /*if (withStr == withoutStr){
           println(withStr)
-        } else {
+        } else */
           println("without TAJS: ")
           println(withoutStr)
           println("with TAJS:")
           println(withStr)
 
 
-        }
+
       }
     }
 
