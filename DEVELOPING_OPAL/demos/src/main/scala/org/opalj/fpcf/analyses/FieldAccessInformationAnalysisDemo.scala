@@ -64,7 +64,6 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         val typeIterator = XTACallGraphKey.getTypeIterator(project)
-        project.updateProjectInformationKeyInitializationData(TypeIteratorKey) { _ => typeIterator }
         project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
         time {
@@ -78,7 +77,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
                 )
             propertyStore.waitOnPhaseCompletion()
         } { t =>
-            analysisTime += t.toSeconds
+            analysisTime = t.toSeconds
         }
 
         val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
