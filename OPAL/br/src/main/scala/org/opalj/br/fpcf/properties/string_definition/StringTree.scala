@@ -15,7 +15,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
  *
  * @author Patrick Mell
  */
-sealed abstract class StringTree(val children: ListBuffer[StringTree]) {
+sealed abstract class StringTree(val children: ListBuffer[StringTree]) { // question do it even make sense to have mutable here?
 
     /**
      * This is a helper function which processes the `reduce` operation for [[StringTreeOr]] and
@@ -190,25 +190,26 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) {
     private def simplifyAcc(subtree: StringTree): StringTree = {
         subtree match {
             case StringTreeOr(cs) =>
+                val newChildren = cs.clone()
                 cs.foreach {
                     case nextC @ StringTreeOr(subChildren) =>
                         simplifyAcc(nextC)
-                        var insertIndex = subtree.children.indexOf(nextC)
+                        var insertIndex = newChildren.indexOf(nextC)
                         subChildren.foreach { next =>
-                            subtree.children.insert(insertIndex, next)
+                            newChildren.insert(insertIndex, next)
                             insertIndex += 1
                         }
-                        subtree.children.-=(nextC)
+                        newChildren.-=(nextC)
                     case _ =>
                 }
-                val unique = removeDuplicateTreeValues(cs)
+                val unique = removeDuplicateTreeValues(newChildren)
                 subtree.children.clear()
                 subtree.children.appendAll(unique)
                 subtree
             case stc: StringTreeCond =>
                 // If the child of a StringTreeCond is a StringTreeRepetition, replace the
                 // StringTreeCond by the StringTreeRepetition element (otherwise, regular
-                // expressions like ((s)*)+ will follow which is equivalent to (s)*).
+                // expressions like ((s)*)+ will follow which is equivalent to (s)*). question isn't this q mark, see p.24?
                 if (stc.children.nonEmpty && stc.children.head.isInstanceOf[StringTreeRepetition]) {
                     stc.children.head
                 } else {
@@ -316,7 +317,7 @@ sealed abstract class StringTree(val children: ListBuffer[StringTree]) {
      *
      * @return This function modifies `this` tree and returns this instance, e.g., for chaining
      *         commands.
-     * @note Applying this function changes the representation of the tree but not produce a
+     * @note Applying this function changes the representation of the tree but does not produce a
      *       semantically different tree!
      */
     def groupRepetitionElements(): StringTree = groupRepetitionElementsAcc(this)
