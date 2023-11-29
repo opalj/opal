@@ -192,7 +192,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
             )
         } else {
             val oldFieldsAtPC = oldFieldsAtPCOpt.get
-            val newFieldsAtPC = oldFieldsAtPC.+:(field.id)
+            val newFieldsAtPC = field.id +: oldFieldsAtPC
 
             // here we assert that IntSet returns the identity if the element is already contained
             if (newFieldsAtPC ne oldFieldsAtPC) {
@@ -221,7 +221,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
             )
         } else {
             val oldFieldsAtPC = oldFieldsAtPCOpt.get
-            val newFieldsAtPC = oldFieldsAtPC.+:(field.id)
+            val newFieldsAtPC = field.id +: oldFieldsAtPC
 
             // here we assert that IntSet returns the identity if the element is already contained
             if (newFieldsAtPC ne oldFieldsAtPC) {

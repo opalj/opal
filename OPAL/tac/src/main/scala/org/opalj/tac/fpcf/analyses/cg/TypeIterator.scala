@@ -5,12 +5,11 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.DeclaredField
-import org.opalj.br.DefinedMethod
-
 import scala.annotation.nowarn
 import scala.annotation.switch
+
 import scala.collection.immutable.IntMap
+
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -18,12 +17,17 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSReferenceValue
+import org.opalj.value.ValueInformation
+import org.opalj.br.DeclaredField
+import org.opalj.br.DefinedMethod
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ObjectType
@@ -49,13 +53,13 @@ import org.opalj.br.PCs
 import org.opalj.br.fpcf.analyses.CallStringContextProvider
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoInstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
-import org.opalj.fpcf.UBP
+import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -70,11 +74,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.mergeStr
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBufferPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBuilderPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringConstPointsToSet
-import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
-import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
-import org.opalj.value.ValueInformation
 
 /**
  * Core class of the call-graph framework: Provides type and (if available) points-to information to

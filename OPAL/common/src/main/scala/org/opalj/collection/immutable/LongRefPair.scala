@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection.immutable
+package org.opalj
+package collection
+package immutable
 
 /**
  * A simple pairing of a long value and a reference value.
