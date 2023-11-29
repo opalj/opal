@@ -10,6 +10,7 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.Node
+import org.opalj.value.ValueInformation
 
 /**
  * Common definitions related to the definition and processing of three address code.
@@ -17,6 +18,8 @@ import org.opalj.graphs.Node
  * @author Michael Eichberg
  */
 package object tac {
+
+    type V = DUVar[ValueInformation]
 
     /**
      * Identifies the implicit `this` reference in the 3-address code representation.

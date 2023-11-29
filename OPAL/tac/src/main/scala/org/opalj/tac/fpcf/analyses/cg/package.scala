@@ -38,8 +38,6 @@ import org.opalj.ai.isImmediateVMException
 
 package object cg {
 
-    type V = DUVar[ValueInformation]
-
     /**
      * A persistent representation (using pcs instead of TAC value origins) for a UVar.
      */

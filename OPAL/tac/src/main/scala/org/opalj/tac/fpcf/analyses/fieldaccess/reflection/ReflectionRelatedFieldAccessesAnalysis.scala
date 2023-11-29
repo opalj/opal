@@ -63,7 +63,6 @@ import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
-import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.analyses.cg.reflection.StringUtil
 import org.opalj.tac.fpcf.analyses.cg.reflection.TypesUtil
 import org.opalj.tac.fpcf.analyses.cg.reflection.VarargsUtil

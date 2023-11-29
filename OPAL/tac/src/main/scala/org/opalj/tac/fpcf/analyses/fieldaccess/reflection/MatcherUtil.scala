@@ -14,7 +14,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
-import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.analyses.cg.reflection.StringUtil
 import org.opalj.tac.fpcf.analyses.cg.reflection.TypesUtil
 
