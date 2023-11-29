@@ -130,13 +130,13 @@ evalCallSource = JavaScriptAllocationReturn.class,
             } else
                 (m.classFile.thisType.asObjectType, "JavaScript", "<uml>", pc, ObjectType.lookup(typeId).toJava)
         }).toSet
-        println("------------------")
-        println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
-        println(s"expected Java alloc sites: ${expectedJavaAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
-        println(s"expected JS alloc sites: ${expectedJSAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
+        // println("------------------")
+        // println(s"detected alloc site: ${detectedAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
+        // println(s"expected Java alloc sites: ${expectedJavaAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
+        // println(s"expected JS alloc sites: ${expectedJSAllocSites.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")} \n")
 
         val missingAllocSiteSet = (expectedJavaAllocSites ++ expectedJSAllocSites) diff detectedAllocSites
-        println(s"missing alloc site: ${missingAllocSiteSet.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
+        // println(s"missing alloc site: ${missingAllocSiteSet.map(x => s"${x._1} ${x._2} ${x._3} ${x._4} ${x._5}")}")
 
         if (missingAllocSiteSet.nonEmpty) {
             Some(s"detected alloc site: ${detectedAllocSites.mkString("\n")}\n${missingAllocSiteSet.size} unresolved alloc sites for variable in  ${m.name} , line ${variableDefinitionLine}. remember to sbt test:compile")
