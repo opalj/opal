@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.cfg
+package org.opalj
+package br
+package cfg
 
 /**
  * Represents the artificial exit node of a control flow graph. The graph contains

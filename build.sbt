@@ -35,6 +35,7 @@ ScalacConfiguration.globalScalacOptions
 
 ThisBuild / resolvers += Resolver.jcenterRepo
 ThisBuild / resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
+ThisBuild / resolvers += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
 
 // OPAL already parallelizes most tests/analyses internally!
 ThisBuild / parallelExecution := false
@@ -81,15 +82,15 @@ ThisBuild / javaOptions ++= Seq(
 addCommandAlias(
   "compileAll",
   "; copyResources ; scalastyle ; " +
-    "test:compile ; test:scalastyle ; " +
-    "it:scalariformFormat ; it:scalastyle ; it:compile "
+    "OPAL / Test / compile ; OPAL / Test / scalastyle ; " +
+    "OPAL / IntegrationTest / scalariformFormat ; OPAL / IntegrationTest / scalastyle ; OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
 
 addCommandAlias(
   "cleanAll",
-  "; clean ; cleanCache ; cleanLocal ; test:clean ; it:clean ; cleanFiles"
+  "; clean ; cleanCache ; cleanLocal ; OPAL / Test / clean ; OPAL / IntegrationTest / clean ; cleanFiles"
 )
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
@@ -114,7 +115,7 @@ lazy val buildSettings =
     scalariformSettings ++
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
-    Seq(Defaults.itSettings: _*) ++
+    Seq(inConfig(IntegrationTest)(Defaults.testSettings): _*) ++
     Seq(
       unmanagedSourceDirectories
         .withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil

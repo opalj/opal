@@ -13,6 +13,8 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
@@ -33,12 +35,9 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
 
     protected[this] implicit val typeIterator: TypeIterator
 
-    protected[this] implicit val definitionSites: DefinitionSites = {
-        p.get(DefinitionSitesKey)
-    }
-    protected[this] implicit val formalParameters: VirtualFormalParameters = {
-        p.get(VirtualFormalParametersKey)
-    }
+    protected[this] implicit val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
+    protected[this] implicit val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
+    protected[this] implicit val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
 
     protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet]
     protected[this] def emptyPointsToSet: PointsToSet

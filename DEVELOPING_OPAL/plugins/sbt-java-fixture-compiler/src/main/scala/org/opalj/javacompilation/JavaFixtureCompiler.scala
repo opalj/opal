@@ -1,14 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.javacompilation
+package org.opalj
+package javacompilation
 
 import sbt._
-import sbt.Keys._
+import sbt.Keys.resourceManaged
+import sbt.Keys.sourceDirectory
+import sbt.Keys.streams
+import sbt.Keys.TaskStreams
 
 import java.io.File
 import java.io.PrintWriter
 
-import org.opalj.javacompilation.FixtureDiscovery._
-import org.opalj.javacompilation.FixtureCompileSpec._
+import org.opalj.javacompilation.FixtureCompileSpec.JavaFixtureCompilationResult
+import org.opalj.javacompilation.FixtureCompileSpec.JavaFixtureCompilationTask
+import org.opalj.javacompilation.FixtureCompileSpec.JavaFixturePackagingResult
+import org.opalj.javacompilation.FixtureCompileSpec.resolveCompiler
+import org.opalj.javacompilation.FixtureCompileSpec.TestFixtureCompiler
+import org.opalj.javacompilation.FixtureDiscovery.LogWriter
+import org.opalj.javacompilation.FixtureDiscovery.OPALTestFixtureDiscovery
 
 /**
  * Plug-in to compile java fixtures against the Eclipse JDT Java compiler.

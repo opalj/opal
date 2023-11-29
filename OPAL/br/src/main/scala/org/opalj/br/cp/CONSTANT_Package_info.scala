@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.cp
+package org.opalj
+package br
+package cp
 
 import org.opalj.bi.ConstantPoolTags
 

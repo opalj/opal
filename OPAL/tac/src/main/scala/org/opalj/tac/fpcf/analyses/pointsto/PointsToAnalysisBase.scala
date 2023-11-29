@@ -24,7 +24,7 @@ import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.ArrayType
-import org.opalj.br.Field
+import org.opalj.br.DeclaredField
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ObjectType
@@ -173,7 +173,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def handleGetField(
-        fieldOpt: Option[Field], pc: Int, objRefDefSites: IntTrieSet, checkForCast: Boolean = true
+        fieldOpt: Option[DeclaredField], pc: Int, objRefDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
         val defSiteObject = getDefSite(pc)
@@ -184,10 +184,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             pts.forNewestNElements(pts.numElements) { as =>
                 val tpe = getTypeOf(as)
                 if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                            .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                     for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSet(
                             defSiteObject,
@@ -201,7 +202,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def handleGetStatic(
-        field: Field, pc: Int, checkForCast: Boolean = true
+        field: DeclaredField, pc: Int, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
         val defSiteObject = getDefSite(pc)
@@ -236,7 +237,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     }
 
     protected[this] def handlePutField(
-        fieldOpt: Option[Field], objRefDefSites: IntTrieSet, rhsDefSites: IntTrieSet
+        fieldOpt: Option[DeclaredField], objRefDefSites: IntTrieSet, rhsDefSites: IntTrieSet
     )(implicit state: State): Unit = {
         val fakeEntity = (rhsDefSites, fieldOpt)
         state.addPutFieldEntity(fakeEntity)
@@ -250,10 +251,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             pts.forNewestNElements(pts.numElements) { as =>
                 val tpe = getTypeOf(as)
                 if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                            .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                     for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSets(
                             fieldEntity,
@@ -265,7 +267,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         }
     }
 
-    protected[this] def handlePutStatic(field: Field, rhsDefSites: IntTrieSet)(implicit state: State): Unit = {
+    protected[this] def handlePutStatic(field: DeclaredField, rhsDefSites: IntTrieSet)(implicit state: State): Unit = {
         val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
         state.includeSharedPointsToSets(
             field,
@@ -353,7 +355,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     protected[this] def continuationForNewAllocationSitesAtPutField(
         knownPointsTo:  PointsToSet,
         rhsDefSitesEPS: Map[SomeEPK, SomeEOptionP],
-        fieldOpt:       Option[Field],
+        fieldOpt:       Option[DeclaredField],
         dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -365,7 +367,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as =>
                     val tpe = getTypeOf(as)
                     if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))) {
 
                         val typeFilter = if (fieldOpt.isDefined)
                             (t: ReferenceType) => classHierarchy.isSubtypeOf(t, fieldOpt.get.fieldType.asReferenceType)
@@ -374,7 +376,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                                .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                         for (fieldEntity <- fieldEntities)
                             results = results ++ createPartialResults(
                                 fieldEntity,
@@ -441,7 +444,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
     // todo name
     protected[this] def continuationForNewAllocationSitesAtGetField(
         defSiteObject: Entity,
-        fieldOpt:      Option[Field],
+        fieldOpt:      Option[DeclaredField],
         filter:        ReferenceType => Boolean,
         dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         state:         State
@@ -454,10 +457,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as =>
                     val tpe = getTypeOf(as)
                     if (tpe.isObjectType && (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))) {
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                                .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                         for (fieldEntity <- fieldEntities) {
                             val fieldEntries = ps(fieldEntity, pointsToPropertyKey)
                             newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)

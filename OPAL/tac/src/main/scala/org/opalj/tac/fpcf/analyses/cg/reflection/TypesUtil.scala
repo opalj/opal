@@ -187,7 +187,7 @@ object TypesUtil {
      * - One where the depender is the given one and the dependee are ForNameClasses and
      * - One where the depender is the given one and the dependee provides allocation sites
      */
-    private[reflection] def getPossibleClasses(
+    def getPossibleClasses(
         context:         Context,
         value:           V,
         depender:        Entity,
@@ -220,7 +220,7 @@ object TypesUtil {
      * Clients MUST handle dependencies where the depender is the given one and the dependee are
      * ForNameClasses.
      */
-    private[reflection] def getPossibleClasses(
+    def getPossibleClasses(
         context:         Context,
         defSite:         Int,
         depender:        Entity,

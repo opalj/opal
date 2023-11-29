@@ -9,14 +9,16 @@ import org.opalj.br.DeclaredField
 import org.opalj.br.Method
 import org.opalj.br.PCs
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.collection.immutable.IntList
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.LongLinkedTrieSet0
+import org.opalj.collection.immutable.LongLinkedTrieSet1
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
-import org.opalj.value.ValueInformation
 
 import scala.collection.immutable.IntMap
 
@@ -39,15 +41,21 @@ sealed trait FieldAccesses {
             ) ++ partialResultsForFieldBasedFieldAccesses
 
     private[this] def containsNoMethodBasedAccessInformation =
-        directAccessedFields.isEmpty && indirectAccessedFields.isEmpty && incompleteAccessSites.isEmpty
+        directReadFields.isEmpty &&
+            directWriteFields.isEmpty &&
+            indirectReadFields.isEmpty &&
+            indirectWriteFields.isEmpty &&
+            incompleteAccessSites.isEmpty
 
-    protected def directAccessedFields: IntMap[IntTrieSet] = IntMap.empty
+    protected def directReadFields: IntMap[IntList] = IntMap.empty
     protected def directReadReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
+    protected def directWriteFields: IntMap[IntList] = IntMap.empty
     protected def directWriteReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
     protected def directWriteParameters: IntMap[IntMap[AccessParameter]] = IntMap.empty
 
-    protected def indirectAccessedFields: IntMap[IntTrieSet] = IntMap.empty
+    protected def indirectReadFields: IntMap[IntList] = IntMap.empty
     protected def indirectReadReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
+    protected def indirectWriteFields: IntMap[IntList] = IntMap.empty
     protected def indirectWriteReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
     protected def indirectWriteParameters: IntMap[IntMap[AccessParameter]] = IntMap.empty
 
@@ -89,7 +97,9 @@ sealed trait FieldAccesses {
             previousFRA => previousFRA.updateWithFieldAccesses(
                 accessContext,
                 incompleteAccessSites,
+                directReadFields,
                 directReadReceivers,
+                indirectReadFields,
                 indirectReadReceivers
             )
         )
@@ -105,8 +115,10 @@ sealed trait FieldAccesses {
             previousFWA => previousFWA.updateWithFieldAccesses(
                 accessContext,
                 incompleteAccessSites,
+                directWriteFields,
                 directWriteReceivers,
                 directWriteParameters,
+                indirectWriteFields,
                 indirectWriteReceivers,
                 indirectWriteParameters
             )
@@ -133,7 +145,11 @@ trait CompleteFieldAccesses extends FieldAccesses {
     ): PartialResult[DeclaredField, _ >: Null <: FieldAccessInformation[_]] = {
         PartialResult[DeclaredField, FieldAccessInformation[S]](field, propertyKey, {
             case InterimUBP(ub) =>
-                Some(InterimEUBP(field, ub.included(property)))
+                val accessInformation = ub.included(property)
+                if (accessInformation eq ub)
+                    None
+                else
+                    Some(InterimEUBP(field, accessInformation))
 
             case _: EPK[_, _] =>
                 Some(InterimEUBP(field, property))
@@ -152,38 +168,67 @@ trait CompleteFieldAccesses extends FieldAccesses {
         nestedMap.updated(pc, nestedMap.getOrElse(pc, IntMap.empty).updated(fieldId, value))
     }
 
-    protected var _accessedFields: IntMap[IntTrieSet] = IntMap.empty
+    protected var _readFields: IntMap[IntList] = IntMap.empty
     protected var _readReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
+    protected var _writeFields: IntMap[IntList] = IntMap.empty
     protected var _writeReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
     protected var _writeParameters: IntMap[IntMap[AccessParameter]] = IntMap.empty
 
     private[this] var _partialResultsForFieldBasedFieldAccesses: List[PartialResult[DeclaredField, _ >: Null <: Property with FieldAccessInformation[_]]] =
         List.empty
 
-    protected def addFieldAccess[S <: FieldAccessInformation[S]](
+    protected def addFieldReadAccess(
         pc:              Int,
         field:           DeclaredField,
-        propertyKey:     PropertyKey[S],
-        propertyFactory: () => S
+        propertyFactory: () => FieldReadAccessInformation
     ): Unit = {
-        val oldFieldsAtPCOpt = _accessedFields.get(pc)
+        val oldFieldsAtPCOpt = _readFields.get(pc)
         if (oldFieldsAtPCOpt.isEmpty) {
-            _accessedFields = _accessedFields.updated(pc, IntTrieSet(field.id))
+            _readFields = _readFields.updated(pc, IntList(field.id))
             _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(
                 field,
-                propertyKey,
+                FieldReadAccessInformation.key,
                 propertyFactory()
             )
         } else {
             val oldFieldsAtPC = oldFieldsAtPCOpt.get
-            val newFieldsAtPC = oldFieldsAtPC + field.id
+            val newFieldsAtPC = field.id +: oldFieldsAtPC
 
             // here we assert that IntSet returns the identity if the element is already contained
             if (newFieldsAtPC ne oldFieldsAtPC) {
-                _accessedFields = _accessedFields.updated(pc, newFieldsAtPC)
+                _readFields = _readFields.updated(pc, newFieldsAtPC)
                 _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(
                     field,
-                    propertyKey,
+                    FieldReadAccessInformation.key,
+                    propertyFactory()
+                )
+            }
+        }
+    }
+
+    protected def addFieldWriteAccess(
+        pc:              Int,
+        field:           DeclaredField,
+        propertyFactory: () => FieldWriteAccessInformation
+    ): Unit = {
+        val oldFieldsAtPCOpt = _writeFields.get(pc)
+        if (oldFieldsAtPCOpt.isEmpty) {
+            _writeFields = _writeFields.updated(pc, IntList(field.id))
+            _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(
+                field,
+                FieldWriteAccessInformation.key,
+                propertyFactory()
+            )
+        } else {
+            val oldFieldsAtPC = oldFieldsAtPCOpt.get
+            val newFieldsAtPC = field.id +: oldFieldsAtPC
+
+            // here we assert that IntSet returns the identity if the element is already contained
+            if (newFieldsAtPC ne oldFieldsAtPC) {
+                _writeFields = _writeFields.updated(pc, newFieldsAtPC)
+                _partialResultsForFieldBasedFieldAccesses ::= createFieldPartialResultForContext(
+                    field,
+                    FieldWriteAccessInformation.key,
                     propertyFactory()
                 )
             }
@@ -196,21 +241,26 @@ trait CompleteFieldAccesses extends FieldAccesses {
 
 trait DirectFieldAccessesBase extends CompleteFieldAccesses {
 
-    override protected def directAccessedFields: IntMap[IntTrieSet] = _accessedFields
+    override protected def directReadFields: IntMap[IntList] = _readFields
     override protected def directReadReceivers: IntMap[IntMap[AccessReceiver]] = _readReceivers
+    override protected def directWriteFields: IntMap[IntList] = _writeFields
     override protected def directWriteReceivers: IntMap[IntMap[AccessReceiver]] = _writeReceivers
     override protected def directWriteParameters: IntMap[IntMap[AccessParameter]] = _writeParameters
 
     def addFieldRead(accessContext: Context, pc: Int, field: DeclaredField, receiver: AccessReceiver): Unit = {
-        addFieldAccess(pc, field, FieldReadAccessInformation.key,
-            () => FieldReadAccessInformation(IntMap((accessContext.id, IntMap((pc, receiver))))))
+        addFieldReadAccess(pc, field,
+            () => FieldReadAccessInformation(
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
+                IntMap((accessContext.id, IntMap((pc, receiver))))
+            ))
 
         _readReceivers = pcFieldMapNestedUpdate(_readReceivers, pc, field.id, receiver)
     }
 
     def addFieldWrite(accessContext: Context, pc: Int, field: DeclaredField, receiver: AccessReceiver, param: AccessParameter): Unit = {
-        addFieldAccess(pc, field, FieldWriteAccessInformation.key,
+        addFieldWriteAccess(pc, field,
             () => FieldWriteAccessInformation(
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
                 IntMap((accessContext.id, IntMap((pc, receiver)))),
                 IntMap((accessContext.id, IntMap((pc, param))))
             ))
@@ -221,8 +271,9 @@ trait DirectFieldAccessesBase extends CompleteFieldAccesses {
 
 trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
 
-    override protected def indirectAccessedFields: IntMap[IntTrieSet] = _accessedFields
+    override protected def indirectReadFields: IntMap[IntList] = _readFields
     override protected def indirectReadReceivers: IntMap[IntMap[AccessReceiver]] = _readReceivers
+    override protected def indirectWriteFields: IntMap[IntList] = _writeFields
     override protected def indirectWriteReceivers: IntMap[IntMap[AccessReceiver]] = _writeReceivers
     override protected def indirectWriteParameters: IntMap[IntMap[AccessParameter]] = _writeParameters
 
@@ -230,11 +281,13 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
         accessContext: Context,
         pc:            Int,
         field:         DeclaredField,
-        receiver:      Option[(ValueInformation, IntTrieSet)]
+        receiver:      AccessReceiver
     ): Unit = {
-        addFieldAccess(pc, field, FieldReadAccessInformation.key,
+        addFieldReadAccess(pc, field,
             () => FieldReadAccessInformation(
+                LongLinkedTrieSet0,
                 IntMap.empty,
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
                 IntMap((accessContext.id, IntMap((pc, receiver))))
             ))
         _readReceivers = pcFieldMapNestedUpdate(_readReceivers, pc, field.id, receiver)
@@ -244,13 +297,15 @@ trait IndirectFieldAccessesBase extends CompleteFieldAccesses {
         accessContext: Context,
         pc:            Int,
         field:         DeclaredField,
-        receiver:      Option[(ValueInformation, IntTrieSet)],
-        param:         Option[(ValueInformation, IntTrieSet)]
+        receiver:      AccessReceiver,
+        param:         AccessParameter
     ): Unit = {
-        addFieldAccess(pc, field, FieldWriteAccessInformation.key,
+        addFieldWriteAccess(pc, field,
             () => FieldWriteAccessInformation(
+                LongLinkedTrieSet0,
                 IntMap.empty,
                 IntMap.empty,
+                LongLinkedTrieSet1(encodeFieldAccess(accessContext.id, pc)),
                 IntMap((accessContext.id, IntMap((pc, receiver)))),
                 IntMap((accessContext.id, IntMap((pc, param))))
             ))

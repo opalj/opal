@@ -6,7 +6,7 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
-import org.opalj.tac.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.fieldassignability.L2FieldAssignabilityAnalysis;
 
 /**
@@ -17,7 +17,7 @@ public final class SimpleStringModel {
 
     @TransitivelyImmutableField(value = "The array values are not mutated after the assignment ", analyses = {})
     @NonTransitivelyImmutableField(value = "The analysis can not recognize transitive immutable arrays",
-            analyses = {L0FieldImmutabilityAnalysis.class})
+            analyses = { FieldImmutabilityAnalysis.class})
     @NonAssignableField("The field is final")
     private final char value[];
 

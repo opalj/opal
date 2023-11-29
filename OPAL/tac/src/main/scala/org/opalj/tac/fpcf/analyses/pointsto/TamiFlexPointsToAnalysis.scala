@@ -36,7 +36,6 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
@@ -473,9 +472,9 @@ abstract class TamiFlexPointsToFieldGetAnalysis(
         val fields = tamiFlexLogData.fields(callerContext.method, "Field.get*", line)
         for (field <- fields) {
             if (field.isStatic) {
-                handleGetStatic(field, pc)
+                handleGetStatic(declaredFields(field), pc)
             } else if (theObject.isDefined) {
-                handleGetField(Some(field), pc, theObject.get.asVar.definedBy)
+                handleGetField(Some(declaredFields(field)), pc, theObject.get.asVar.definedBy)
             }
         }
 
@@ -520,10 +519,10 @@ abstract class TamiFlexPointsToFieldSetAnalysis(
             val fields = tamiFlexLogData.fields(callerContext.method, "Field.set*", line)
             for (field <- fields) {
                 if (field.isStatic) {
-                    handlePutStatic(field, storeVal.get.asVar.definedBy)
+                    handlePutStatic(declaredFields(field), storeVal.get.asVar.definedBy)
                 } else if (theObject.isDefined) {
                     handlePutField(
-                        Some(field), theObject.get.asVar.definedBy, storeVal.get.asVar.definedBy
+                        Some(declaredFields(field)), theObject.get.asVar.definedBy, storeVal.get.asVar.definedBy
                     )
                 }
             }

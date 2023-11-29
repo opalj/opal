@@ -103,7 +103,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         ).asScala.flatMap(resolveAnalysisRunner(_))
     }
 
-    private[this] def allCallGraphAnalyses(project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
+    def allCallGraphAnalyses(project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
         // TODO make TACAI analysis configurable
         var analyses: List[FPCFAnalysisScheduler] =
             List(

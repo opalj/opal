@@ -1257,7 +1257,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
 
         describe("using IntegerSetValues") {
 
-            val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+            val aiProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
             val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
             describe("without constraint tracking between values") {

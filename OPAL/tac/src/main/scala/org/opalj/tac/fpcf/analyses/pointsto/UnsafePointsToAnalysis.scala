@@ -35,7 +35,6 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**

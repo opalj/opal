@@ -178,10 +178,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     PointsToSetLike.noFilter
                 )
 
-            case sfd: StaticFieldDescription =>
-                val fieldOption = sfd.fieldOption(p)
-                if (fieldOption.isDefined)
-                    handleGetStatic(fieldOption.get, pc, checkForCast = false)
+            case StaticFieldDescription(cf, name, fieldType) =>
+                handleGetStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), pc, checkForCast = false)
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
@@ -271,10 +269,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     filter
                 )
 
-            case sfd: StaticFieldDescription =>
-                val fieldOption = sfd.fieldOption(p)
-                if (fieldOption.isDefined)
-                    handlePutStatic(fieldOption.get, IntTrieSet(0))
+            case StaticFieldDescription(cf, name, fieldType) =>
+                handlePutStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), IntTrieSet(0))
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)

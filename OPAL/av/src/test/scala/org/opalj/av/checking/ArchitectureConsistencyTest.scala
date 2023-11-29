@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.av
+package org.opalj
+package av
 package checking
 
 import org.junit.runner.RunWith

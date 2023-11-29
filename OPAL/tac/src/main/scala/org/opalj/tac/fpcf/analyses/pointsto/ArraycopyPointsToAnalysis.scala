@@ -30,7 +30,6 @@ import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 import scala.collection.immutable.ArraySeq

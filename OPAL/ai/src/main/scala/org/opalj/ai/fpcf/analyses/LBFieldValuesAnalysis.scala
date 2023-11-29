@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -38,6 +37,11 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.ContextProviderKey
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.FieldValue
@@ -102,6 +106,9 @@ class LBFieldValuesAnalysis private[analyses] (
 ) extends FPCFAnalysis { analysis =>
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
+    final val contextProvider = project.get(ContextProviderKey)
+    implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    implicit final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     /**
      * Computes the set of the fields which are potentially refinable w.r.t. type information.
@@ -274,7 +281,9 @@ class LBFieldValuesAnalysis private[analyses] (
     ): Unit = {
         val relevantMethods =
             domain.fieldInformation.keys.foldLeft(Set.empty[Method]) { (ms, field) =>
-                ms ++ fieldAccessInformation.writeAccesses(field).map(_._1)
+                // IMPROVE: This requires that the key was computed in a previous FPCF phase as it internally uses an
+                // analysis.
+                ms ++ fieldAccessInformation.writeAccesses(field).map(wa => contextProvider.contextFromId(wa._1).method.definedMethod)
             }
         relevantMethods.foreach { method =>
             domain.setMethodContext(method)
@@ -319,12 +328,12 @@ class LBFieldValuesAnalysis private[analyses] (
                         //    precise information or methods called by the methods that
                         //    write the field.
                         val methodsWithFieldWrites =
-                            fieldAccessInformation.writeAccesses(f).map(_._1).toSet
+                            fieldAccessInformation.writeAccesses(f).map(wa => contextProvider.contextFromId(wa._1).method).toSet
                         val relevantDependees = domain.dependees.filter { eOptionP =>
                             eOptionP match {
                                 case EOptionP(readField: Field, _) =>
-                                    fieldAccessInformation.readAccesses(readField).exists { mPCs =>
-                                        methodsWithFieldWrites.contains(mPCs._1)
+                                    fieldAccessInformation.readAccesses(readField).exists { ra =>
+                                        methodsWithFieldWrites.contains(contextProvider.contextFromId(ra._1).method)
                                     }
                                 case EOptionP(calledMethod: Method, _) =>
                                     // Please note, that – if we get more precise type
@@ -340,7 +349,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                     //  // o.toString becomes resolvable!
                                     // }}}
                                     methodsWithFieldWrites.exists { m =>
-                                        val methodsCalledByM = domain.calledMethods.get(m)
+                                        val methodsCalledByM = domain.calledMethods.get(m.definedMethod)
                                         methodsCalledByM.nonEmpty &&
                                             methodsCalledByM.get.contains(calledMethod)
                                     }
@@ -430,7 +439,12 @@ object FieldValuesAnalysis {
 
 object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        FieldAccessInformationKey,
+        DeclaredMethodsKey,
+        DeclaredFieldsKey,
+        ContextProviderKey // TODO type mismatch (only in IDE) here?
+    )
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         // To ensure that subsequent analyses are able to pick-up the results of this

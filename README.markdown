@@ -51,12 +51,12 @@ OPAL also comes with a growing number of tools that are intended to help develop
 The following applies to the "Master/Develop" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 8 at least update 171, Scala 2.12.15 and SBT 1.6.2 installed and running and that SBT can use at least 4GB of RAM (-Xmx4G). Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have at least Java 16 (running OPAL, i.e., not compiling the test fixtures, should still work with Java 8), Scala 2.13.11, and SBT 1.6.2 installed and running and that SBT can use at least 4GB of RAM (-Xmx4G). Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
 * [Optional - but highly recommended] Edit the file `local.sbt` and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
--Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (`CPUBoundTasks === "Number of real CPUs (Cores)"`, `IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5"`). You can also set these properties when using sbt by typing:  
+-Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (`CPUBoundTasks === "Number of real CPUs (Cores)"`, `IOBoundTasks === "Number of (hyperthreaded) cores * 1.5"`). You can also set these properties when using sbt by typing:  
 `eval sys.props("org.opalj.threads.CPUBoundTasks") = "1"`.
 * Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails, it may be due to insufficient memory. In this case it is necessary to start SBT itself with more memory.*
 * Call `sbt it:test` to run the integration test suite. Executing this test suite may take very long (on a fast desktop with 32GB and 8 Cores it takes ~2h).

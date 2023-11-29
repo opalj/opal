@@ -12,6 +12,8 @@ import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
@@ -48,7 +50,9 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
             TypeBasedTamiFlexPointsToAnalysisScheduler,
             TypeBasedArraycopyPointsToAnalysisScheduler,
             TypeBasedUnsafePointsToAnalysisScheduler,
-            TypeBasedNewInstanceAnalysisScheduler
+            TypeBasedNewInstanceAnalysisScheduler,
+            EagerFieldAccessInformationAnalysis,
+            ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(TypeBasedLibraryPointsToAnalysisScheduler) else Nil)
     }
 
