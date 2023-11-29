@@ -6,17 +6,22 @@ package analyses
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DefinedField
+import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
+import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -54,16 +59,21 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             case Some(requirements) => requirements + domain
         }
 
-        var propertyStore: PropertyStore = null
+        val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+        val typeIterator = XTACallGraphKey.getTypeIterator(project)
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
         time {
-            propertyStore = analysesManager
+            analysesManager
                 .runAll(
-                    EagerFieldAccessInformationAnalysis
+                    XTACallGraphKey.allCallGraphAnalyses(project)
+                        ++ Set(
+                            EagerFieldAccessInformationAnalysis,
+                            ReflectionRelatedFieldAccessesAnalysisScheduler
+                        )
                 )
-                ._1
             propertyStore.waitOnPhaseCompletion()
         } { t =>
             analysisTime = t.toSeconds
@@ -78,18 +88,19 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .entities(FieldReadAccessInformation.key)
             .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
                 && ep.asFinal.p != NoFieldReadAccessInformation)
-            .map(_.e)
+            .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
             .filter(ep => fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
                 && ep.asFinal.p != NoFieldWriteAccessInformation)
-            .map(_.e)
+            .map(_.e.asInstanceOf[DefinedField].definedField)
             .toSet
 
         val readAndWrittenFields = readFields intersect writtenFields
         val purelyReadFields = readFields diff readAndWrittenFields
         val purelyWrittenFields = writtenFields diff readAndWrittenFields
+        val notAccessedFields = fields diff readFields diff writtenFields
 
         val totalIncompleteAccessSiteCount = propertyStore
             .entities(MethodFieldReadAccessInformation.key)
@@ -97,12 +108,17 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             .map(_.asFinal.p.numIncompleteAccessSites)
             .sum
 
+        def getFieldsList(fields: Set[Field]): String = {
+            if (fields.size > 50) "\n|     Too many fields to display!"
+            else fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
+        }
+
         s"""
            |
-           | Not Accessed Fields: ${fields.size - purelyReadFields.size - purelyWrittenFields.size - readAndWrittenFields.size}
-           | Purely Read Fields : ${purelyReadFields.size}
-           | Purely Written Fields: ${purelyWrittenFields.size}
-           | Read And Written Fields: ${readAndWrittenFields.size}
+           | Not Accessed Fields: ${notAccessedFields.size} ${getFieldsList(notAccessedFields)}
+           | Purely Read Fields : ${purelyReadFields.size} ${getFieldsList(purelyReadFields)}
+           | Purely Written Fields: ${purelyWrittenFields.size} ${getFieldsList(purelyWrittenFields)}
+           | Read And Written Fields: ${readAndWrittenFields.size} ${getFieldsList(readAndWrittenFields)}
            |
            | Access Sites with missing information: $totalIncompleteAccessSiteCount
            |

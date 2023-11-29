@@ -18,7 +18,6 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
-import org.opalj.tac.fpcf.analyses.cg.V
 
 /**
  * An [[APIBasedAnalysis]] that ensures that whenever `processNewCaller` gets called,

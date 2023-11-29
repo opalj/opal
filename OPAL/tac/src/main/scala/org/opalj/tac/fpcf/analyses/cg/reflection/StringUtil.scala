@@ -68,7 +68,7 @@ object StringUtil {
         strings
     }
 
-    private[reflection] def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
+    def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
         val expr = stmts(stringDefSite).asAssignment.expr
         expr match {
             case StringConst(_, v) => Some(v)

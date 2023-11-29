@@ -147,7 +147,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                     case Assignment(pc, _, New(_, tpe))         => Some((tpe, pc))
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
                     case Assignment(pc, _, c: Const)            => Some((c.tpe.asObjectType, pc))
-                    case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.declaringClass, pc))
+                    case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.descriptor.returnType.asReferenceType, pc))
                     case _ =>
                         hasUnknownAllocation = true
                         None
