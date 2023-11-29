@@ -11,7 +11,6 @@ import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
 import org.opalj.br.FieldType
-import org.opalj.tac.fpcf.analyses.cg.isTypeCompatible
 import org.opalj.value.IsReferenceValue
 
 import scala.collection.immutable.ArraySeq
