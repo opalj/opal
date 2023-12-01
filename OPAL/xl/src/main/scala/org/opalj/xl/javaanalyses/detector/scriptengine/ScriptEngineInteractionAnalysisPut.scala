@@ -91,12 +91,12 @@ abstract class ScriptEngineInteractionAnalysisPut(
 
             assert(newEngineInteraction ne engineInteraction)
 
-            oldEngineDependees.valuesIterator.foreach { data =>
-                if (data != null && data._1.hasUBP) {
-                    val engineAllocations = data._1.ub.asInstanceOf[PointsToSet]
-                    partialResults :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
-                }
-            }
+            // oldEngineDependees.valuesIterator.foreach { data =>
+            //     if (data != null && data._1.hasUBP) {
+            //         val engineAllocations = data._1.ub.asInstanceOf[PointsToSet]
+            //         partialResults :::= resultsForScriptEngineAllocations(newEngineInteraction, engineAllocations, 0)
+            //     }
+            // }
 
             typeIteratorState.updateDependency(eps)
             //throw  new Exception("TODO implement 2")
@@ -119,8 +119,6 @@ abstract class ScriptEngineInteractionAnalysisPut(
 
             val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
             newEngineInteraction = newEngineInteraction.updated(scriptEngineInteraction)
-
-            //partialResults :::= resultsForScriptEngine("engine", newEngineInteraction, receiverOption)
 
             oldEngineDependees.valuesIterator.foreach { data =>
                 if (data != null && data._1.hasUBP) {

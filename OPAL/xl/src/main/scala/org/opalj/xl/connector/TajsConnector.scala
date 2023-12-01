@@ -138,13 +138,13 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     println("***")
 
                     prepareAnalysis(possibleEmptyCode, puts)
-                    val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
+                    val (analysis, blockAndContext) = start(tajsAdapter = tajsAdapter)
                     state.connectorDependees += eps
                     createResult(javaScriptInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analysis, blockAndContext)
 
                 case UBP(_: PointsToSet @unchecked) =>
                     println("Resume:")
-                    val (analysis, blockAndContext) = resume(oldTAJSanalysis.get) //analyze(tajsAdapter = tajsAdapter)
+                    val (analysis, blockAndContext) = start(tajsAdapter = tajsAdapter)
                     state.connectorDependees += eps
                     createResult(oldScriptEngineInteraction, analysis, blockAndContext)
 
@@ -154,8 +154,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             }
         }
 
-        def analyze(tajsAdapter: TajsAdapter)(implicit state: TajsConnectorState): (Option[Analysis], Option[BlockAndContext[Context]]) = {
-            println("analyze")
+        def start(tajsAdapter: TajsAdapter)(implicit state: TajsConnectorState): (Option[Analysis], Option[BlockAndContext[Context]]) = {
+            println("start tajs")
             println(state.puts)
             LocalTAJSAdapter.setLocalTAJSAdapter(tajsAdapter)
 
@@ -175,11 +175,11 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             (Some(analysis), None)
         }
 
-        def resume(analysis: Analysis): (Option[Analysis], Option[BlockAndContext[Context]]) = {
+        /*  def resume(analysis: Analysis): (Option[Analysis], Option[BlockAndContext[Context]]) = {
             println("resume")
             run(analysis)
             (Some(analysis), None)
-        }
+        } */
 
         object tajsAdapter extends TajsAdapter {
 
@@ -412,12 +412,15 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
         }
 
         def prepareAnalysis(possibleEmptyCode: List[String], puts: Map[(String, Any, TheTACAI), (Any, Coordinator.V, Option[ObjectType])]): Unit = {
-
+            println("prepare analysis")
+            println("old:")
+            println(puts.mkString("\n"))
             state.code = fillEmptyCode(possibleEmptyCode)
             state.puts = puts.map(put => {
                 val variableName = put._1._1
                 val context = put._1._2.asInstanceOf[ContextType]
                 val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
+                println(s"num elements: ${pointsToSet.numElements}")
                 val tacai: TheTACAI = put._1._3
                 // val v = put._2._2
                 val optionType = put._2._3
@@ -425,6 +428,12 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 val jsValue = java2js(variableName, context, pointsToSet, tacai, optionType)
                 jsValue
             })
+            println(
+                s"""
+                   | new:
+                   | ${state.puts.mkString("\n")}
+                   |""".stripMargin
+            )
             state.files = utility.asFiles("JavaScript", ".js", state.code)
         }
 
@@ -435,7 +444,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
             case ubp @ UBP(interaction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
                 prepareAnalysis(possibleEmptyCode, puts)
-                val (analysis, blockAndContext) = analyze(tajsAdapter = tajsAdapter)
+                val (analysis, blockAndContext) = start(tajsAdapter = tajsAdapter)
                 state.connectorDependees += ubp
                 createResult(
                     interaction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]],
