@@ -114,6 +114,22 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
+                    ObjectType.Class, "", ObjectType.Class,
+                    "getField",
+                    MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.Field)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.Class, "", ObjectType.Class,
+                    "getDeclaredField",
+                    MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.Field)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
                     ObjectType.MethodHandles, "", ObjectType.MethodHandles,
                     "lookup",
                     MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
@@ -149,6 +165,38 @@ class ReflectionAllocationsAnalysis private[analyses] (
                     ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
                     "findSpecial",
                     MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findGetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findStaticGetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findSetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findStaticSetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
                 )
             )
         )
