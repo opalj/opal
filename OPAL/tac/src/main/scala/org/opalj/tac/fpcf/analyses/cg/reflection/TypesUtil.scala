@@ -33,15 +33,11 @@ object TypesUtil {
         onlyObjectTypes: Boolean
     ): Option[Set[ObjectType]] = {
         StringUtil.getPossibleStrings(className, stmts).map(_.flatMap { cls =>
-            try {
-                val tpe = ReferenceType(cls.replace('.', '/'))
-                if (tpe.isArrayType)
-                    if (onlyObjectTypes) None
-                    else Some(ObjectType.Object)
-                else Some(tpe.asObjectType)
-            } catch {
-                case _: Exception => None
-            }
+            val tpe = referenceTypeFromFQN(cls)
+            if (tpe.isDefined && tpe.get.isArrayType)
+                if (onlyObjectTypes) None
+                else Some(ObjectType.Object)
+            else tpe.asInstanceOf[Option[ObjectType]]
         }.filter(project.classFile(_).isDefined))
     }
 
@@ -64,11 +60,7 @@ object TypesUtil {
         ps:           PropertyStore
     ): Set[ReferenceType] = {
         StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls =>
-            try {
-                Some(ReferenceType(cls.replace('.', '/')))
-            } catch {
-                case _: Exception => None
-            }
+            referenceTypeFromFQN(cls)
         }.filter {
             case at: ArrayType =>
                 val et = at.elementType
@@ -89,18 +81,21 @@ object TypesUtil {
         onlyObjectTypes:  Boolean
     ): Option[ObjectType] = {
         val className = StringUtil.getString(classNameDefSite, stmts).flatMap { cls =>
-            try {
-                val tpe = ReferenceType(cls.replace('.', '/'))
-                if (tpe.isArrayType)
-                    if (onlyObjectTypes) None
-                    else Some(ObjectType.Object)
-                else Some(tpe.asObjectType)
-            } catch {
-                case _: Exception => None
-            }
+            val tpe = referenceTypeFromFQN(cls)
+            if (tpe.isDefined && tpe.get.isArrayType)
+                if (onlyObjectTypes) None
+                else Some(ObjectType.Object)
+            else tpe.asInstanceOf[Option[ObjectType]]
         }
         if (className.isEmpty) failure()
         className.filter(project.classFile(_).isDefined)
+    }
+
+    @inline private[this] def referenceTypeFromFQN(fqn: String): Option[ReferenceType] = {
+        if (fqn.matches("(^\\[+[BCDFIJSZ]$)|(^[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*$)|(^\\[+L[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*;$)"))
+            Some(ReferenceType(fqn.replace('.', '/')))
+        else
+            None
     }
 
     /**
