@@ -57,7 +57,7 @@ class MyCustomReporter extends Reporter {
     def extractCategory(testcase: String): Option[String] = {
         val parts = testcase.split('.')
         if (parts.length > 5) {
-            Some(s"${parts(2)}: ${parts(4)}")
+            Some(s"${parts(2)}${parts(4)}")
         } else {
             None
         }
@@ -67,21 +67,13 @@ class MyCustomReporter extends Reporter {
     var succeededClassnames = Set[String]()
 
     def printTestcaseSummary(): Unit = {
-        val categoriesOrder = Map(
-            "controlflow: unidirectional" -> 1,
-            "controlflow: bidirectional" -> 2,
-            "controlflow: cyclic" -> 3,
-            "stateaccess: unidirectional" -> 4,
-            "stateaccess: bidirectional" -> 5
-        )
+
         val allTestcases = failedClassnames ++ succeededClassnames
         val failedGrouped = failedClassnames.filter(extractCategory(_).isDefined).groupBy(cl => extractCategory(cl).get)
         val succeededGrouped = succeededClassnames.filter(extractCategory(_).isDefined).groupBy(cl => extractCategory(cl).get)
         val sucdfaild = allTestcases.flatMap(extractCategory).map(cat => (cat -> (
             succeededGrouped.getOrElse(cat, Set.empty[String]), failedGrouped.getOrElse(cat, Set.empty[String])
         ))).toSeq
-            .sortBy { case (category, _) => categoriesOrder.getOrElse(category, Int.MaxValue) }
-
         sucdfaild.foreach {
             case (category, (succeededTests, failedTests)) =>
                 val failedCount = failedTests.size
@@ -96,19 +88,12 @@ class MyCustomReporter extends Reporter {
                 println(s"succeeded:$succeededString")
         }
 
-        println("\\begin{tabular}{lccc}")
-      println("\\toprule")
-        println("\\textbf{Pattern} & \\textbf{Succeeded Testcases}\\\\")
-        println("\\midrule")
         sucdfaild.foreach {
             case (category, (succeededTests, failedTests)) =>
                 val failedCount = failedTests.size
                 val succeededCount = succeededTests.size
-                // Assuming extractCategory returns strings like "controlflow: unidirectional"
-                // we use this string as a label in the table. Adjust if necessary.
-                println(s"$category & \\tnum{$succeededCount / ${succeededCount + failedCount}} \\\\")
+                println(s"\\newcommand{\\$category}{\\tnum{$succeededCount / ${succeededCount + failedCount}}}")
         }
-        println("\\end{tabular}")
 
     }
 
