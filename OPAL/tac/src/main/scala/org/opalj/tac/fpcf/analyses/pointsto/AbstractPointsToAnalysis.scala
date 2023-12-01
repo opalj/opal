@@ -563,7 +563,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     NoMethodFieldReadAccessInformation,
                     MethodFieldReadAccessInformation.key,
                     (pc, target, newAccesses, tac, state) => handleIndirectFieldReadAccess(pc, target, newAccesses, tac)(state),
-                    newDependee => state.setReadAccessDependee(newDependee),
+                    (currentState, newDependee) => currentState.setReadAccessDependee(newDependee),
                     new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
                 )
             )
@@ -578,7 +578,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     NoMethodFieldWriteAccessInformation,
                     MethodFieldWriteAccessInformation.key,
                     (pc, target, newAccesses, tac, state) => handleIndirectFieldWriteAccess(pc, target, newAccesses, tac)(state),
-                    newDependee => state.setWriteAccessDependee(newDependee),
+                    (currentState, newDependee) => currentState.setWriteAccessDependee(newDependee),
                     new PointsToAnalysisState[ElementType, PointsToSet, ContextType](state.callContext, state.tacDependee)
                 )
             )
@@ -727,7 +727,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         noAccesses:                P,
         key:                       PropertyKey[P],
         handleIndirectFieldAccess: (PC, DeclaredField, P, TACode[TACMethodParameter, DUVar[ValueInformation]], State) => Unit,
-        setDependee:               EOptionP[Method, P] => Unit,
+        setDependee:               (State, EOptionP[Method, P]) => Unit,
         state:                     State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps.pk match {
@@ -748,7 +748,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     handleIndirectFieldAccess(pc, target, newAccesses, tac, state)
                 }
 
-                setDependee(eps.asInstanceOf[EPS[Method, P]])
+                setDependee(state, eps.asInstanceOf[EPS[Method, P]])
 
                 Results(createResults(state))
             case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
