@@ -6,9 +6,9 @@ import org.opalj.ba.LabeledCode
 import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
 import org.opalj.bi.Java15Version
-import org.opalj.br.{BooleanType, IntegerType, MethodDescriptor, ObjectType, PCAndInstruction, VoidType}
+import org.opalj.br.{IntegerType, MethodDescriptor, ObjectType, PCAndInstruction, VoidType}
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.{BIPUSH, DUP, GETFIELD, INVOKESPECIAL, INVOKESTATIC, LoadString, MethodInvocationInstruction, NEW, POP, SIPUSH}
+import org.opalj.br.instructions.{ALOAD, DUP, GETFIELD, GETSTATIC, INVOKESPECIAL, INVOKESTATIC, LDC, LoadFloat, LoadInt, MethodInvocationInstruction, NEW, POP, SIPUSH}
 import org.opalj.util.InMemoryClassLoader
 
 import java.io.{FileOutputStream, PrintWriter}
@@ -17,7 +17,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
-
 /**
  * instrument possible def sites to log instance. TODO:
  */
@@ -48,7 +47,7 @@ object PTSTracerInstrumentation {
         }
         // clear trace.xml file
       val fw = new PrintWriter(new FileOutputStream("trace.xml", false));
-      fw.write(" ")
+      fw.write("<trace>\n<methods>\n")
       //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         //val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
         val classloaderScriptEngineJars = new URLClassLoader(
@@ -78,16 +77,48 @@ object PTSTracerInstrumentation {
                             m.copy() // methods which are native and abstract ...
                           
                         case Some(code) =>
+
                             val lCode = LabeledCode(code)
                             var modified = false
                             var lastNew: Option[(Int, ObjectType)] = Option.empty
-
+                          if (!m.isStatic) {
+                            // log this parameter last (in case of constructor)
+                            // it won't change anyways
+                            modified = true
+                            var maxPC = 0
+                            code.programCounters.foreach(p => maxPC = maxPC.max(p))
+                            lCode.insert(
+                              maxPC, InsertionPosition.Before,
+                              Seq(
+                                ALOAD(0),
+                                SIPUSH(methodId),
+                                SIPUSH(-1),
+                                INVOKESTATIC(PTSLoggerType, isInterface = false, "logParameterInstance", MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, IntegerType), VoidType))
+                              )
+                            )
+                          }
+                          var index = 0
+                          val paramOffsetOnStack = if (m.isStatic) 0 else 1
+                            for (param <- m.descriptor.parameterTypes) {
+                               if (!param.isBaseType ) {
+                                modified = true
+                                lCode.insert(
+                                  0, InsertionPosition.After,
+                                  Seq(
+                                    ALOAD(paramOffsetOnStack + index),
+                                    SIPUSH(methodId),
+                                    SIPUSH(index),
+                                    INVOKESTATIC(PTSLoggerType, isInterface = false, "logParameterInstance", MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, IntegerType), VoidType))
+                                  )
+                                )
+                              }
+                              index += 1
+                            }
                             for {
                                 PCAndInstruction(pc, inst) <- code
                             } {
-                                var insertLog = false
+                                var insertDefsiteLog = false
                                 var pcToLog = pc
-                                var isAllocation = 0
                                 inst match {
                                     case NEW(objectType) => {
                                         lastNew = Option((pc, objectType))
@@ -95,22 +126,39 @@ object PTSTracerInstrumentation {
                                     case INVOKESPECIAL(objectType, isInterface, name, methodDescriptor) => {
                                         lastNew match {
                                             case Some(pcAndType) => {
-                                                insertLog = true
-                                                pcToLog = pcAndType._1
+                                              pcToLog = pcAndType._1
+                                              modified = true
+                                              lCode.insert(
+                                                pc, InsertionPosition.After,
+                                                Seq(
+                                                  DUP,
+                                                  SIPUSH(methodId),
+                                                  SIPUSH(pcToLog),
+                                                  INVOKESTATIC(PTSLoggerType, isInterface = false, "logAllocsiteInstance", MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, IntegerType), VoidType))
+                                                )
+                                              )
+
+
                                                 lastNew = Option.empty
-                                              isAllocation = 1
                                             }
                                             case None =>
                                         }
                                     }
                                     case GETFIELD(objectType, name, fieldType) => {
                                       if (!fieldType.isBaseType)
-                                        insertLog = true
+                                        insertDefsiteLog = true
                                     }
-                                    case LoadString(value) => {
-                                        insertLog = true
+                                    case GETSTATIC(cls, name, fieldType) => {
+                                      if (!fieldType.isBaseType)
+                                        insertDefsiteLog = true
                                     }
-
+                                    case load : LDC[_]  => {
+                                      load match {
+                                        case _ : LoadInt =>
+                                        case _ : LoadFloat =>
+                                        case _ => insertDefsiteLog = true
+                                      }
+                                    }
                                     case MethodInvocationInstruction(refType, isInterface, name, methodDescriptor) => {
                                         if (!methodDescriptor.returnType.isVoidType && !methodDescriptor.returnType.isBaseType) {
                                             // don't log if return value POP'd immediately
@@ -118,7 +166,7 @@ object PTSTracerInstrumentation {
                                             val nextInst = code.find(_.pc == nextInstPC)
                                             nextInst match {
                                                 case Some(PCAndInstruction(_, POP)) =>
-                                                case Some(_)                        => insertLog = true
+                                                case Some(_)                        => insertDefsiteLog = true
                                                 case None                           =>
                                             }
                                         }
@@ -127,7 +175,7 @@ object PTSTracerInstrumentation {
 
                                     }
                                 }
-                                if (insertLog) {
+                                if (insertDefsiteLog) {
                                     modified = true
                                     lCode.insert(
                                         pc, InsertionPosition.After,
@@ -135,8 +183,7 @@ object PTSTracerInstrumentation {
                                             DUP,
                                             SIPUSH(methodId),
                                             SIPUSH(pcToLog),
-                                            BIPUSH(isAllocation),
-                                            INVOKESTATIC(PTSLoggerType, isInterface = false, "logDefsiteInstance", MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, IntegerType, BooleanType), VoidType))
+                                            INVOKESTATIC(PTSLoggerType, isInterface = false, "logDefsiteInstance", MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, IntegerType), VoidType))
                                         )
                                     )
                                 }
@@ -163,6 +210,8 @@ object PTSTracerInstrumentation {
             Files.write(outputPath, newRawCF) //, StandardOpenOption.TRUNCATE_EXISTING)
             if (hasMain) testCases add (cf.thisType.toJava, newRawCF)
         }
+      fw.write("</methods>\n")
+      fw.write("<events>\n")
         fw.close()
       val ContainerClassType = ObjectType("org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass")
       val ContainerClassTypeFile = PTSTracerInstrumentation.readFile(outputClassPath + "/org/opalj/fpcf/fixtures/xl/js/testpts/SimpleContainerClass.class")
@@ -195,5 +244,12 @@ object PTSTracerInstrumentation {
     def readFile(path: String) = {
         Files.readAllBytes(Paths.get(path))
     }
+
+//  def isLoadRefType[T: TypeTag](load: LDC[T]): Boolean = {
+//    typeOf[T] match {
+//      case t if t =:= typeOf[ReferenceType] => true
+//      case _ => false
+//    }
+//  }
 
 }
