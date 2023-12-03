@@ -8,7 +8,6 @@ import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.ComputationSpecification
@@ -24,6 +23,7 @@ import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 /**
@@ -40,7 +40,8 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1PurityAnalysis,
-        EagerVirtualMethodPurityAnalysis
+        EagerVirtualMethodPurityAnalysis,
+        EagerFieldAccessInformationAnalysis
     )
 
     val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
