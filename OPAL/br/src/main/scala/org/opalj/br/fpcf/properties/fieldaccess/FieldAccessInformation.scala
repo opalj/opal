@@ -273,6 +273,7 @@ object FieldWriteAccessInformation
 
 object NoFieldReadAccessInformation
     extends FieldReadAccessInformation(LongLinkedTrieSet.empty, LongMap.empty, LongLinkedTrieSet.empty, LongMap.empty)
+
 object NoFieldWriteAccessInformation
     extends FieldWriteAccessInformation(
         LongLinkedTrieSet.empty,

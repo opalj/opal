@@ -313,6 +313,7 @@ object NoMethodFieldReadAccessInformation
         IntMap.empty,
         IntMap.empty
     )
+
 object NoMethodFieldWriteAccessInformation
     extends MethodFieldWriteAccessInformation(
         IntMap.empty,
