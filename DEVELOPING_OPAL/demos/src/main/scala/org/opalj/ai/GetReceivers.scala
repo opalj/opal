@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ai
+package org.opalj
+package ai
 
 import java.net.URL
 

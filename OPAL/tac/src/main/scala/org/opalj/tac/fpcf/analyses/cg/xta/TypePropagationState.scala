@@ -9,9 +9,7 @@ package xta
 import java.util.{HashSet => JHashSet}
 import java.util.{HashMap => JHashMap}
 import java.util.{Set => JSet}
-
 import scala.jdk.CollectionConverters._
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
@@ -23,13 +21,17 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.collection.immutable.IntMap
 
 /**
  * Manages the state of each method analyzed by [[TypePropagationAnalysis]].
  *
- * @param method The method under analysis.
+ * @param callContext The current call context of the method under analysis.
  * @param typeSetEntity The entity which holds the type set of the method.
  * @param _tacDependee Dependee for the three-address code of the method.
  * @param _ownInstantiatedTypesDependee Dependee for the type set of the method.
@@ -41,7 +43,9 @@ final class TypePropagationState[ContextType <: Context](
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
 
         private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
-        private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees]
+        private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
+        private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
+        private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false
@@ -97,6 +101,33 @@ final class TypePropagationState[ContextType <: Context](
 
     def updateCalleeDependee(calleeDependee: EOptionP[DeclaredMethod, Callees]): Unit = {
         _calleeDependee = calleeDependee
+    }
+
+    /////////////////////////////////////////////
+    //                                         //
+    //             field accesses              //
+    //                                         //
+    /////////////////////////////////////////////
+
+    var seenDirectReadAccesses: IntMap[Int] = IntMap.empty
+    var seenIndirectReadAccesses: IntMap[Int] = IntMap.empty
+    var seenDirectWriteAccesses: IntMap[Int] = IntMap.empty
+    var seenIndirectWriteAccesses: IntMap[Int] = IntMap.empty
+
+    def readAccessDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = {
+        if (_readAccessDependee.isRefinable) Some(_readAccessDependee) else None
+    }
+
+    def updateReadAccessDependee(readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit = {
+        _readAccessDependee = readAccessDependee
+    }
+
+    def writeAccessDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = {
+        if (_writeAccessDependee.isRefinable) Some(_writeAccessDependee) else None
+    }
+
+    def updateWriteAccessDependee(writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit = {
+        _writeAccessDependee = writeAccessDependee
     }
 
     /////////////////////////////////////////////
@@ -223,6 +254,10 @@ final class TypePropagationState[ContextType <: Context](
 
         if (calleeDependee.isDefined)
             dependees += calleeDependee.get
+        if (readAccessDependee.isDefined)
+            dependees += readAccessDependee.get
+        if (writeAccessDependee.isDefined)
+            dependees += writeAccessDependee.get
 
         // Note: The values are copied here. The "++" operator on List
         // forces immediate evaluation of the map values iterator.

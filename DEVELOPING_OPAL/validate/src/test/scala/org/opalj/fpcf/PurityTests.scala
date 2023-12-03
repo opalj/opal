@@ -22,6 +22,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
@@ -74,7 +75,8 @@ class PurityTests extends PropertiesTest {
                 LazyL1FieldAssignabilityAnalysis,
                 LazyFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis
+                LazyTypeImmutabilityAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
         )
 
@@ -101,7 +103,8 @@ class PurityTests extends PropertiesTest {
                     LazyInterProceduralEscapeAnalysis,
                     LazyReturnValueFreshnessAnalysis,
                     LazyFieldLocalityAnalysis,
-                    LazyInterProceduralEscapeAnalysis
+                    LazyInterProceduralEscapeAnalysis,
+                    EagerFieldAccessInformationAnalysis
                 )
             )
 

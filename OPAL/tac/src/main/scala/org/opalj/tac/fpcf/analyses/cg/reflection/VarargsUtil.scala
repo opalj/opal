@@ -35,7 +35,7 @@ object VarargsUtil {
      * Only handles the case of a simple array of class constants or primitive types' classes!
      * In case [[None]] is returned, the caller must mark the callsite as incomplete.
      */
-    private[reflection] def getTypesFromVararg(
+    def getTypesFromVararg(
         expr:  Expr[V],
         stmts: Array[Stmt[V]]
     ): Option[FieldTypes] = {

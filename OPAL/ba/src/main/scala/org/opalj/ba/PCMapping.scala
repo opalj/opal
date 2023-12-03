@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ba
+package org.opalj
+package ba
 
 import java.util.Arrays.copyOf
 import java.util.Arrays.fill

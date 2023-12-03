@@ -19,11 +19,11 @@ package object fieldaccess {
     type AccessReceivers = IntMap[IntMap[AccessReceiver]] // Access Context => PC => Receiver
     type AccessParameters = IntMap[IntMap[AccessParameter]] // Access Context => PC => Parameter
 
-    @inline def encodeFieldAccess(contextId: Int, pc: Int): FieldAccess = {
+    @inline private[fieldaccess] def encodeFieldAccess(contextId: Int, pc: Int): FieldAccess = {
         contextId.toLong | (pc.toLong << 32)
     }
 
-    @inline def decodeFieldAccess(fieldAccess: FieldAccess): (Int, Int) = {
+    @inline private[fieldaccess] def decodeFieldAccess(fieldAccess: FieldAccess): (Int, Int) = {
         val contextId = fieldAccess.toInt
         val pc = (fieldAccess >> 32).toInt
         (contextId, pc)

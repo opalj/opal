@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.javacompilation
+package org.opalj
+package javacompilation
 
 import sbt._
 import java.io.File

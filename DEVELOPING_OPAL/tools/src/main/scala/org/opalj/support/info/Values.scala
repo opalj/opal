@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.info
+package org.opalj
+package support
+package info
 
 import java.net.URL
 

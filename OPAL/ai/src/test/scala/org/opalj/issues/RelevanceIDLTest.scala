@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.issues
+package org.opalj
+package issues
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec

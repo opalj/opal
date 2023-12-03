@@ -8,7 +8,6 @@ package xta
 
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -24,7 +23,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
+import org.opalj.br.DefinedField
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -34,9 +33,13 @@ import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformation
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -59,26 +62,35 @@ final class TypePropagationAnalysis private[analyses] (
 
     private type State = TypePropagationState[ContextType]
 
+    private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+
     override def processMethod(
         callContext: ContextType,
         tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
 
         val definedMethod = callContext.method.asDefinedMethod
+        val method = definedMethod.definedMethod
 
         val typeSetEntity = selectTypeSetEntity(definedMethod)
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
+        val readAccessEOptP = propertyStore(method, MethodFieldReadAccessInformation.key)
+        val writeAccessEOptP = propertyStore(method, MethodFieldWriteAccessInformation.key)
 
         if (debug) _trace.traceInit(definedMethod)
 
         implicit val state: TypePropagationState[ContextType] = new TypePropagationState(
-            callContext, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP
+            callContext, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP, readAccessEOptP, writeAccessEOptP
         )
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
 
         if (calleesEOptP.hasUBP)
             processCallees(calleesEOptP.ub)
+        if (readAccessEOptP.hasUBP)
+            processReadAccesses(readAccessEOptP.ub)
+        if (writeAccessEOptP.hasUBP)
+            processWriteAccesses(writeAccessEOptP.ub)
         processTACStatements
         processArrayTypes(state.ownInstantiatedTypes)
 
@@ -86,45 +98,11 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     /**
-     * Processes the method upon initialization. Finds field/array accesses and wires up dependencies accordingly.
+     * Processes the method upon initialization. Finds array accesses for further processing in [[processArrayTypes]].
      */
-    private def processTACStatements(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
-        val bytecode = state.callContext.method.definedMethod.body.get
+    private def processTACStatements(implicit state: State): Unit = {
         val tac = state.tac
         tac.stmts.foreach {
-            case stmt @ Assignment(_, _, expr) if expr.isFieldRead =>
-                val fieldRead = expr.asFieldRead
-                if (fieldRead.declaredFieldType.isReferenceType) {
-                    // Internally, generic fields have type "Object" due to type erasure. In many cases
-                    // (but not all!), the Java compiler will place the "actual" return type within a checkcast
-                    // instruction right after the field read instruction.
-                    val nextInstruction = bytecode.instructions(bytecode.pcOfNextInstruction(stmt.pc))
-                    val mostPreciseFieldType =
-                        if (nextInstruction.isCheckcast)
-                            nextInstruction.asInstanceOf[CHECKCAST].referenceType
-                        else
-                            fieldRead.declaredFieldType.asReferenceType
-
-                    fieldRead.resolveField match {
-                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) =>
-                            registerEntityForBackwardPropagation(f, mostPreciseFieldType)
-                        case _ =>
-                            val ef = ExternalField(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
-                            registerEntityForBackwardPropagation(ef, mostPreciseFieldType)
-                    }
-                }
-
-            case fieldWrite: FieldWriteAccessStmt[_] =>
-                if (fieldWrite.declaredFieldType.isReferenceType) {
-                    fieldWrite.resolveField match {
-                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) =>
-                            registerEntityForForwardPropagation(f, UIDSet(f.fieldType.asReferenceType))
-                        case _ =>
-                            val ef = ExternalField(fieldWrite.declaringClass, fieldWrite.name, fieldWrite.declaredFieldType)
-                            registerEntityForForwardPropagation(ef, UIDSet(ef.declaredFieldType.asReferenceType))
-                    }
-                }
-
             case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID =>
                 state.methodReadsArrays = true
 
@@ -143,6 +121,20 @@ final class TypePropagationAnalysis private[analyses] (
                 _trace.traceCalleesUpdate(e)
             }
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(state)
+
+        case EUBP(e: Method, _: MethodFieldReadAccessInformation) =>
+            if (debug) {
+                assert(e == state.callContext.method.definedMethod)
+                _trace.traceReadAccessUpdate(e)
+            }
+            handleUpdateOfReadAccesses(eps.asInstanceOf[EPS[Method, MethodFieldReadAccessInformation]])(state)
+
+        case EUBP(e: Method, _: MethodFieldWriteAccessInformation) =>
+            if (debug) {
+                assert(e == state.callContext.method.definedMethod)
+                _trace.traceWriteAccessUpdate(e)
+            }
+            handleUpdateOfWriteAccesses(eps.asInstanceOf[EPS[Method, MethodFieldWriteAccessInformation]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
@@ -165,6 +157,24 @@ final class TypePropagationAnalysis private[analyses] (
         state.updateCalleeDependee(eps)
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
         processCallees(eps.ub)
+        returnResults(partialResults.iterator)
+    }
+
+    private def handleUpdateOfReadAccesses(
+        eps: EPS[Method, MethodFieldReadAccessInformation]
+    )(implicit state: State): ProperPropertyComputationResult = {
+        state.updateReadAccessDependee(eps)
+        implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
+        processReadAccesses(eps.ub)
+        returnResults(partialResults.iterator)
+    }
+
+    private def handleUpdateOfWriteAccesses(
+        eps: EPS[Method, MethodFieldWriteAccessInformation]
+    )(implicit state: State): ProperPropertyComputationResult = {
+        state.updateWriteAccessDependee(eps)
+        implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
+        processWriteAccesses(eps.ub)
         returnResults(partialResults.iterator)
     }
 
@@ -262,6 +272,76 @@ final class TypePropagationAnalysis private[analyses] (
             maybeRegisterMethodForForwardPropagation(callee, pc, bytecode)
 
             maybeRegisterMethodForBackwardPropagation(callee, pc, bytecode)
+        }
+    }
+
+    private def processReadAccesses(
+        readAccesses: MethodFieldReadAccessInformation
+    )(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
+        val bytecode = state.callContext.method.definedMethod.body.get
+        for {
+            pc <- readAccesses.getAccessSites(state.callContext)
+            numDirectAccess = readAccesses.numDirectAccesses(state.callContext, pc)
+            numIndirectAccess = readAccesses.numIndirectAccesses(state.callContext, pc)
+            declaredField <- readAccesses.getNewestAccessedFields(
+                state.callContext,
+                pc,
+                numDirectAccess - state.seenDirectReadAccesses.getOrElse(pc, 0),
+                numIndirectAccess - state.seenIndirectReadAccesses.getOrElse(pc, 0)
+            )
+        } {
+            if (declaredField.fieldType.isReferenceType) {
+                // Internally, generic fields have type "Object" due to type erasure. In many cases
+                // (but not all!), the Java compiler will place the "actual" return type within a checkcast
+                // instruction right after the field read instruction.
+                val nextInstruction = bytecode.instructions(bytecode.pcOfNextInstruction(pc))
+                val mostPreciseFieldType =
+                    if (nextInstruction.isCheckcast)
+                        nextInstruction.asInstanceOf[CHECKCAST].referenceType
+                    else
+                        declaredField.fieldType.asReferenceType
+
+                declaredField match {
+                    case DefinedField(f) if project.isProjectType(f.classFile.thisType) =>
+                        registerEntityForBackwardPropagation(declaredField.asDefinedField, mostPreciseFieldType)
+
+                    case _ =>
+                        registerEntityForBackwardPropagation(declaredField, mostPreciseFieldType)
+                }
+            }
+
+            state.seenDirectReadAccesses += pc -> numDirectAccess
+            state.seenIndirectReadAccesses += pc -> numIndirectAccess
+        }
+    }
+
+    private def processWriteAccesses(
+        writeAccesses: MethodFieldWriteAccessInformation
+    )(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
+        for {
+            pc <- writeAccesses.getAccessSites(state.callContext)
+            numDirectAccess = writeAccesses.numDirectAccesses(state.callContext, pc)
+            numIndirectAccess = writeAccesses.numIndirectAccesses(state.callContext, pc)
+            declaredField <- writeAccesses.getNewestAccessedFields(
+                state.callContext,
+                pc,
+                numDirectAccess - state.seenDirectWriteAccesses.getOrElse(pc, 0),
+                numIndirectAccess - state.seenIndirectWriteAccesses.getOrElse(pc, 0)
+            )
+        } {
+            val fieldType = declaredField.fieldType
+            if (fieldType.isReferenceType) {
+                declaredField match {
+                    case DefinedField(f) if project.isProjectType(f.classFile.thisType) =>
+                        registerEntityForForwardPropagation(declaredField.asDefinedField, UIDSet(fieldType.asReferenceType))
+
+                    case _ =>
+                        registerEntityForForwardPropagation(declaredField, UIDSet(fieldType.asReferenceType))
+                }
+            }
+
+            state.seenDirectWriteAccesses += pc -> numDirectAccess
+            state.seenIndirectWriteAccesses += pc -> numIndirectAccess
         }
     }
 
@@ -488,7 +568,7 @@ final class TypePropagationAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey, DeclaredFieldsKey)
 
     override type InitializationData = Null
 
@@ -502,7 +582,13 @@ final class TypePropagationAnalysisScheduler(
         analysis
     }
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, Callees, TACAI)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        InstantiatedTypes,
+        Callees,
+        TACAI,
+        MethodFieldReadAccessInformation,
+        MethodFieldWriteAccessInformation
+    )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 

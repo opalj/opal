@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.pointsto
+package org.opalj
+package tac
+package fpcf
+package analyses
+package pointsto
 
 import scala.collection.immutable.ArraySeq
 
@@ -25,7 +29,6 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.APIBasedAnalysis
 
 /**
  * Introduces additional allocation sites for reflection methods.
@@ -111,6 +114,22 @@ class ReflectionAllocationsAnalysis private[analyses] (
             new ReflectionMethodAllocationsAnalysis(
                 project,
                 declaredMethods(
+                    ObjectType.Class, "", ObjectType.Class,
+                    "getField",
+                    MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.Field)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.Class, "", ObjectType.Class,
+                    "getDeclaredField",
+                    MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.Field)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
                     ObjectType.MethodHandles, "", ObjectType.MethodHandles,
                     "lookup",
                     MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
@@ -146,6 +165,38 @@ class ReflectionAllocationsAnalysis private[analyses] (
                     ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
                     "findSpecial",
                     MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.MethodType, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findGetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findStaticGetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findSetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
+                )
+            ),
+            new ReflectionMethodAllocationsAnalysis(
+                project,
+                declaredMethods(
+                    ObjectType.MethodHandles$Lookup, "", ObjectType.MethodHandles$Lookup,
+                    "findStaticSetter",
+                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.String, ObjectType.Class), ObjectType.MethodHandle)
                 )
             )
         )

@@ -1,6 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj;
-package ll;
+package org.opalj
+package ll
 
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project

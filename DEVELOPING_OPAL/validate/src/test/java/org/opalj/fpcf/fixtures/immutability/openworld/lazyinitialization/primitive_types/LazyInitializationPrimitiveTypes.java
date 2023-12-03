@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.immutability.openworld.lazyinitialization.primit
 import org.opalj.fpcf.properties.immutability.field_assignability.*;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.tac.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.fieldassignability.L2FieldAssignabilityAnalysis;
 
 /**
@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.L2FieldAssignabilityAnalys
 class Simple {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
-    @MutableField(value = "The field is unsafely lazily initialized", analyses = {L0FieldImmutabilityAnalysis.class})
+    @MutableField(value = "The field is unsafely lazily initialized", analyses = { FieldImmutabilityAnalysis.class})
     @LazilyInitializedField(value = "Simple lazy initialization with primitive type", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})

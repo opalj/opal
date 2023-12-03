@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 /**
  * An ''immutable information'' associated with an entity. Each property belongs to exactly one

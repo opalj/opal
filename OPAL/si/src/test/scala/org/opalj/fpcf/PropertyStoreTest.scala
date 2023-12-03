@@ -1,14 +1,19 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.collection
 import scala.collection.immutable
 import scala.collection.mutable
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.fpcf.fixtures._
@@ -39,18 +44,18 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
 
     describe(s"PropertyStore") {
 
-        import Palindromes.NoAnalysisForPalindromeProperty
-        import Palindromes.NoPalindrome
-        import Palindromes.NoSuperPalindrome
-        import Palindromes.Palindrome
-        import Palindromes.PalindromeKey
-        import Palindromes.PalindromePropertyNotAnalyzed
-        import Palindromes.SuperPalindrome
-        import Palindromes.SuperPalindromeKey
-        import Palindromes.PalindromeFragmentsKey
-        import Palindromes.PalindromeFragments
-        import ReachableEntities.ReachedEntities
-        import ReachableEntities.ReachedEntitiesKey
+        import org.opalj.fpcf.fixtures.Palindromes.NoAnalysisForPalindromeProperty
+        import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+        import org.opalj.fpcf.fixtures.Palindromes.NoSuperPalindrome
+        import org.opalj.fpcf.fixtures.Palindromes.Palindrome
+        import org.opalj.fpcf.fixtures.Palindromes.PalindromeFragments
+        import org.opalj.fpcf.fixtures.Palindromes.PalindromeFragmentsKey
+        import org.opalj.fpcf.fixtures.Palindromes.PalindromeKey
+        import org.opalj.fpcf.fixtures.Palindromes.PalindromePropertyNotAnalyzed
+        import org.opalj.fpcf.fixtures.Palindromes.SuperPalindrome
+        import org.opalj.fpcf.fixtures.Palindromes.SuperPalindromeKey
+        import org.opalj.fpcf.fixtures.ReachableEntities.ReachedEntities
+        import org.opalj.fpcf.fixtures.ReachableEntities.ReachedEntitiesKey
 
         it("should be possible to query an empty property store") {
             val ps = createPropertyStore()

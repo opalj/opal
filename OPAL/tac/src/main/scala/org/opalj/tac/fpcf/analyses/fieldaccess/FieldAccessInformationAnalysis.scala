@@ -56,15 +56,22 @@ class FieldAccessInformationAnalysis(val project: SomeProject) extends FPCFAnaly
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
         val context = contextProvider.newContext(declaredMethods(method)).asInstanceOf[ContextType]
-        implicit val fieldAccesses: DirectFieldAccesses = new DirectFieldAccesses()
 
         val tacEP = propertyStore(method, TACAI.key)
-        implicit val state: State = new State(context, tacEP)
 
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            handleTac(context, tacEP.ub.tac.get)
+            analyzeWithTAC(context, tacEP)
+        } else {
+            InterimPartialResult(Set(tacEP), tac => analyzeWithTAC(context, tac.asInstanceOf[EOptionP[Method, TACAI]]))
         }
 
+    }
+
+    def analyzeWithTAC(context: ContextType, tacEP: EOptionP[Method, TACAI]): ProperPropertyComputationResult = {
+        implicit val state: State = new State(context, tacEP)
+        implicit val fieldAccesses: DirectFieldAccesses = new DirectFieldAccesses()
+
+        handleTac(context, tacEP.ub.tac.get)
         returnResult(context)
     }
 
