@@ -212,17 +212,14 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                             new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
                         rhsFieldValue.getObjectLabels.forEach(ol => {
                             val node = ol.getNode
-                            val (rhsPointsToSet, index, objectType) =
+                            val rhsPointsToSet =
                                 if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
                                     val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
                                     val pointsToSet = jnode.getPointsToSet.asInstanceOf[PointsToSet]
-                                    val javaName = ol.getJavaName
-                                    val index = jNode.getIndex
-                                    (pointsToSet, index, ObjectType(javaName.replace(".", "/")))
+                                    pointsToSet
                                 } else {
                                     val index = -100 - node.getIndex
-                                    val rhsPointsToSet = createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
-                                    (rhsPointsToSet, index, ObjectType.Object)
+                                    createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
                                 }
 
                             possibleFields.foreach(field => {
@@ -260,29 +257,22 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                                 classFile.get.fields.find(field => field.name == propertyName && field.isStatic).toList
                             else
                                 List.empty[Fields]
-                        } //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        //val context = jNode.getContext
-                        println(possibleFields)
+                        }
 
                         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
                             new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
                         rhsFieldValue.getObjectLabels.forEach(ol => {
                             val node = ol.getNode
-                            val (rhsPointsToSet, index, objectType) =
+                            val rhsPointsToSet =
                                 if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
                                     val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
-                                    val pointsToSet = jnode.getPointsToSet.asInstanceOf[PointsToSet]
-                                    val javaName = ol.getJavaName
-                                    val index = jnode.getIndex
-                                    (pointsToSet, index, ObjectType(javaName.replace(".", "/")))
+                                   jnode.getPointsToSet.asInstanceOf[PointsToSet]
                                 } else {
                                     val index = -100 - node.getIndex
-                                    val rhsPointsToSet = createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
-                                    (rhsPointsToSet, index, ObjectType.Object)
+                                    createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
                                 }
 
                             possibleFields.foreach(field => {
-
                                 pointsToAnalysisState.includeSharedPointsToSet(
                                     field,
                                     rhsPointsToSet,
