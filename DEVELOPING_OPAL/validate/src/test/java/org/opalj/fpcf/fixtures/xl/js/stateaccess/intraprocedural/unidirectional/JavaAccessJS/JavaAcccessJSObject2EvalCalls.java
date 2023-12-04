@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS;
 
-import org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava.JSAllocationWriteFieldFromJS;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -15,13 +14,13 @@ import javax.script.ScriptException;
  *
  */
 public class JavaAcccessJSObject2EvalCalls {
-    @PointsToSet(variableDefinition = 41,
+    @PointsToSet(variableDefinition = 40,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
-                            cf = JSAllocationWriteFieldFromJS.class,
+                            cf = JavaAcccessJSObject2EvalCalls.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 36,
+                            allocSiteLinenumber = 35,
                             allocatedType = "java.lang.Object")
 
             }
