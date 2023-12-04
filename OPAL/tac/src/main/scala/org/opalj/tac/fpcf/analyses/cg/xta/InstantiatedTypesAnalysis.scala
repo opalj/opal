@@ -72,9 +72,6 @@ class InstantiatedTypesAnalysis private[analyses] (
     private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        // only constructors may initialize a class
-        if (declaredMethod.name != "<init>")
-            return NoResult;
 
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
 
@@ -95,26 +92,35 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
 
         val declaredType = declaredMethod.declaringClassType.asObjectType
+        val loadConstantTypes = getLoadConstantTypes(declaredMethod)
+
+        val instantiatedTypes = PartialResult[TypeSetEntity, InstantiatedTypes](
+            declaredMethod,
+            InstantiatedTypes.key,
+            InstantiatedTypes.update(declaredMethod, loadConstantTypes)
+        )
 
         val cfOpt = project.classFile(declaredType)
 
-        // abstract classes can never be instantiated
-        cfOpt.foreach { cf =>
-            if (cf.isAbstract)
+        // only constructors may initialize a class; abstract classes can never be instantiated
+        if (declaredMethod.name != "<init>" || cfOpt.isDefined && cfOpt.get.isAbstract) {
+            if (loadConstantTypes.isEmpty)
                 return NoResult;
+            else
+                return Results(instantiatedTypes)
         }
 
-        processCallers(declaredMethod, declaredType, callersEOptP, callersUB, null)
+        processCallers(declaredMethod, declaredType, ArrayBuffer(instantiatedTypes), callersEOptP, callersUB, null)
     }
 
     private[this] def processCallers(
         declaredMethod: DeclaredMethod,
         declaredType:   ObjectType,
+        partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]],
         callersEOptP:   EOptionP[DeclaredMethod, Callers],
         callersUB:      Callers,
         seenCallers:    Callers
     ): PropertyComputationResult = {
-        val partialResults = ArrayBuffer.empty[PartialResult[TypeSetEntity, InstantiatedTypes]]
         callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
             (_, callerContext, _, isDirect) =>
                 processCaller(declaredMethod, declaredType, callerContext, isDirect, partialResults)
@@ -215,9 +221,8 @@ class InstantiatedTypesAnalysis private[analyses] (
         // there must either be a new of the `declaredType` or it is a super call.
         val newInstr = NEW(declaredType)
         val hasNew = callerMethod.body.get.exists(pcInst => pcInst.instruction == newInstr)
-        if (hasNew) {
+        if (hasNew)
             partialResults += partialResult(declaredType, caller)
-        }
     }
 
     private[this] def continuation(
@@ -226,7 +231,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         seenCallers:    Callers
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processCallers(declaredMethod, declaredType, eps, eps.ub, seenCallers)
+        processCallers(declaredMethod, declaredType, ArrayBuffer.empty, eps, eps.ub, seenCallers)
     }
 
     private def partialResult(

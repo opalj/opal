@@ -6,8 +6,24 @@ package analyses
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.value.ValueInformation
 import org.opalj.br.PCs
+import org.opalj.br.instructions.LoadConstantInstruction
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.instructions.LoadClass
+import org.opalj.br.instructions.LoadClass_W
+import org.opalj.br.instructions.LoadDynamic
+import org.opalj.br.instructions.LoadDynamic_W
+import org.opalj.br.instructions.LoadMethodHandle
+import org.opalj.br.instructions.LoadMethodHandle_W
+import org.opalj.br.instructions.LoadMethodType
+import org.opalj.br.instructions.LoadMethodType_W
+import org.opalj.br.instructions.LoadString
+import org.opalj.br.instructions.LoadString_W
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
@@ -65,5 +81,31 @@ package object cg {
         pcToIndex: Array[Int]
     ): V = {
         UVar(defSites._1, valueOriginsOfPCs(defSites._2, pcToIndex))
+    }
+
+    private[cg] def getLoadConstantTypes(method: DeclaredMethod): UIDSet[ReferenceType] = {
+        var constantTypes = UIDSet.empty[ReferenceType]
+        method.foreachDefinedMethod { m =>
+            for {
+                code <- m.body
+                inst <- code.instructions
+            } {
+                if ((inst ne null) && inst.isLoadConstantInstruction &&
+                    inst.asInstanceOf[LoadConstantInstruction[_]].computationalType == ComputationalTypeReference) {
+                    val loadedType = inst match {
+                        case _: LoadClass | _: LoadClass_W               => ObjectType.Class
+                        case _: LoadMethodHandle | _: LoadMethodHandle_W => ObjectType.MethodHandle
+                        case _: LoadMethodType | _: LoadMethodType_W     => ObjectType.MethodType
+                        case _: LoadString | _: LoadString_W             => ObjectType.String
+                        case _: LoadDynamic =>
+                            inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
+                        case _: LoadDynamic_W =>
+                            inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
+                    }
+                    constantTypes += loadedType
+                }
+            }
+        }
+        constantTypes
     }
 }
