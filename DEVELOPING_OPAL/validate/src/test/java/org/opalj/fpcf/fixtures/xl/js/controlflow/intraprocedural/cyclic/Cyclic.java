@@ -41,10 +41,10 @@ public class Cyclic {
         ScriptEngineManager sem = new ScriptEngineManager();
         ScriptEngine se = sem.getEngineByName("JavaScript");
         se.put("jThis", this);
-        se.eval("function f(n){return jThis.decrement(n);}");
+
         if(decremented.n > 0){
             se.put("arg", decremented);
-            se.eval("var res = f(arg)");
+            se.eval("var res = jThis.decrement(arg)");
             SimpleContainerClass result = (SimpleContainerClass) se.get("res");
             return result;
             //Invocable inv = (Invocable) se;
