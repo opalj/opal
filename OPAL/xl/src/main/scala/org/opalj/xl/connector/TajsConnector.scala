@@ -250,6 +250,56 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                         state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
                         state.connectorResults ++= createResults
                     })
+                } else if (v.isJSJavaTYPE) {
+                    v.getObjectLabels.forEach(ol => {
+                        val javaName = ol.getJavaName
+                        val objectType = ObjectType(javaName.replace(".", "/"))
+                        val classFile = project.classFile(objectType)
+                        val possibleFields = {
+                            if (classFile.isDefined)
+                                classFile.get.fields.find(field => field.name == propertyName && field.isStatic).toList
+                            else
+                                List.empty[Fields]
+                        } //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        //val context = jNode.getContext
+                        println(possibleFields)
+
+                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
+                        rhsFieldValue.getObjectLabels.forEach(ol => {
+                            val node = ol.getNode
+                            val (rhsPointsToSet, index, objectType) =
+                                if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
+                                    val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
+                                    val pointsToSet = jnode.getPointsToSet.asInstanceOf[PointsToSet]
+                                    val javaName = ol.getJavaName
+                                    val index = jnode.getIndex
+                                    (pointsToSet, index, ObjectType(javaName.replace(".", "/")))
+                                } else {
+                                    val index = -100 - node.getIndex
+                                    val rhsPointsToSet = createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
+                                    (rhsPointsToSet, index, ObjectType.Object)
+                                }
+
+                            possibleFields.foreach(field => {
+
+                                pointsToAnalysisState.includeSharedPointsToSet(
+                                    field,
+                                    rhsPointsToSet,
+                                    PointsToSetLike.noFilter
+                                )
+                            })
+
+                        })
+                      val setPropertyDependeesMap =
+                        if (pointsToAnalysisState.hasDependees("setProperty"))
+                          pointsToAnalysisState.dependeesOf("setProperty")
+                        else
+                          Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                      state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
+                      state.connectorResults ++= createResults
+                    })
                 }
             }
 
