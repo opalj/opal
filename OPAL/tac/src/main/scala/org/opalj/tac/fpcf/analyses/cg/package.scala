@@ -91,25 +91,27 @@ package object cg {
         method: DeclaredMethod
     )(implicit logContext: LogContext): UIDSet[ReferenceType] = {
         var constantTypes = UIDSet.empty[ReferenceType]
-        method.foreachDefinedMethod { m =>
-            for {
-                code <- m.body
-                inst <- code.instructions
-            } {
-                if ((inst ne null) && inst.isLoadConstantInstruction &&
-                    inst.asInstanceOf[LoadConstantInstruction[_]].computationalType == ComputationalTypeReference) {
-                    inst match {
-                        case _: LoadClass | _: LoadClass_W               => constantTypes += ObjectType.Class
-                        case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ObjectType.MethodHandle
-                        case _: LoadMethodType | _: LoadMethodType_W     => constantTypes += ObjectType.MethodType
-                        case _: LoadString | _: LoadString_W             => constantTypes += ObjectType.String
-                        case _: LoadDynamic =>
-                            constantTypes += inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
-                        case _: LoadDynamic_W =>
-                            constantTypes += inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
-                        case ACONST_NULL =>
-                        case _ =>
-                            logOnce(Warn("unknown load constant instruction"))
+        if (method.hasSingleDefinedMethod || method.hasMultipleDefinedMethods) {
+            method.foreachDefinedMethod { m =>
+                for {
+                    code <- m.body
+                    inst <- code.instructions
+                } {
+                    if ((inst ne null) && inst.isLoadConstantInstruction &&
+                        inst.asInstanceOf[LoadConstantInstruction[_]].computationalType == ComputationalTypeReference) {
+                        inst match {
+                            case _: LoadClass | _: LoadClass_W               => constantTypes += ObjectType.Class
+                            case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ObjectType.MethodHandle
+                            case _: LoadMethodType | _: LoadMethodType_W     => constantTypes += ObjectType.MethodType
+                            case _: LoadString | _: LoadString_W             => constantTypes += ObjectType.String
+                            case _: LoadDynamic =>
+                                constantTypes += inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
+                            case _: LoadDynamic_W =>
+                                constantTypes += inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
+                            case ACONST_NULL =>
+                            case _ =>
+                                logOnce(Warn("unknown load constant instruction"))
+                        }
                     }
                 }
             }
