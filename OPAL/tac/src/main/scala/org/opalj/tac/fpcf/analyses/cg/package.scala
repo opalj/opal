@@ -4,6 +4,9 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.UIDSet
@@ -14,6 +17,7 @@ import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.instructions.ACONST_NULL
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
 import org.opalj.br.instructions.LoadDynamic
@@ -83,7 +87,9 @@ package object cg {
         UVar(defSites._1, valueOriginsOfPCs(defSites._2, pcToIndex))
     }
 
-    private[cg] def getLoadConstantTypes(method: DeclaredMethod): UIDSet[ReferenceType] = {
+    private[cg] def getLoadConstantTypes(
+        method: DeclaredMethod
+    )(implicit logContext: LogContext): UIDSet[ReferenceType] = {
         var constantTypes = UIDSet.empty[ReferenceType]
         method.foreachDefinedMethod { m =>
             for {
@@ -92,17 +98,19 @@ package object cg {
             } {
                 if ((inst ne null) && inst.isLoadConstantInstruction &&
                     inst.asInstanceOf[LoadConstantInstruction[_]].computationalType == ComputationalTypeReference) {
-                    val loadedType = inst match {
-                        case _: LoadClass | _: LoadClass_W               => ObjectType.Class
-                        case _: LoadMethodHandle | _: LoadMethodHandle_W => ObjectType.MethodHandle
-                        case _: LoadMethodType | _: LoadMethodType_W     => ObjectType.MethodType
-                        case _: LoadString | _: LoadString_W             => ObjectType.String
+                    inst match {
+                        case _: LoadClass | _: LoadClass_W               => constantTypes += ObjectType.Class
+                        case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ObjectType.MethodHandle
+                        case _: LoadMethodType | _: LoadMethodType_W     => constantTypes += ObjectType.MethodType
+                        case _: LoadString | _: LoadString_W             => constantTypes += ObjectType.String
                         case _: LoadDynamic =>
-                            inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
+                            constantTypes += inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
                         case _: LoadDynamic_W =>
-                            inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
+                            constantTypes += inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
+                        case ACONST_NULL =>
+                        case _ =>
+                            logOnce(Warn("unknown load constant instruction"))
                     }
-                    constantTypes += loadedType
                 }
             }
         }
