@@ -30,7 +30,7 @@ import scala.util.matching.Regex
 object RunXLTests {
     def main(args: Array[String]): Unit = {
         //val test = new XLJavaScriptTests()
-        println(Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporter", "-s", "org.opalj.fpcf.xltest.XLJavaScriptTests")))
+        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporter", "-s", "org.opalj.fpcf.xltest.XLJavaScriptTests"))
     }
 }
 
@@ -93,6 +93,9 @@ class MyCustomReporter extends Reporter {
                 val failedCount = failedTests.size
                 val succeededCount = succeededTests.size
                 println(s"\\newcommand{\\$category}{\\tnum{$succeededCount / ${succeededCount + failedCount}}}")
+                for (failed <- failedTests) {
+                    println(s"%failed: $failed")
+                }
         }
 
     }
@@ -110,6 +113,7 @@ class XLJavaScriptTests extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/xl/js/")
+        //List("org/opalj/fpcf/fixtures/xl/js/stateaccess/intraprocedural/unidirectional/JSAccessJava/")
     }
 
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
@@ -181,7 +185,7 @@ class XLJavaScriptTests extends PropertiesTest {
             println("points to sets: ")
             println(pts)
         }
-        validateProperties(as, methodsWithAnnotations(as.project), Set("PointsToSetIncludes"))
+        validateProperties(as, methodsWithAnnotations(as.project), Set("PointsToSetIncludes", "TAJSEnvironment"))
         // tally.
         //succeededTestcases.foreach(println)
         //failedTestcases.foreach(println)
