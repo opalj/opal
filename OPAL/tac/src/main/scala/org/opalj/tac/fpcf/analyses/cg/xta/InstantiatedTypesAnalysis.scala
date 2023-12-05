@@ -48,6 +48,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredFieldsKey
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -291,9 +292,9 @@ class InstantiatedTypesAnalysisScheduler(
     def assignInitialTypeSets(p: SomeProject, ps: PropertyStore): Unit = {
         val packageIsClosed = p.get(ClosedPackagesKey)
         val declaredMethods = p.get(DeclaredMethodsKey)
+        val declaredFields = p.get(DeclaredFieldsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
-        val initialInstantiatedTypes =
-            UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
@@ -421,7 +422,7 @@ class InstantiatedTypesAnalysisScheduler(
                             }.result()
                         }
 
-                        val fieldSetEntity = selectSetEntity(f)
+                        val fieldSetEntity = selectSetEntity(declaredFields(f))
                         initialize(fieldSetEntity, initialAssignments)
                     }
                 case None =>
