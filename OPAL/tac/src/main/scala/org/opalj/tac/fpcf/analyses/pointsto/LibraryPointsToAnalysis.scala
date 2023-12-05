@@ -176,10 +176,11 @@ abstract class LibraryPointsToAnalysis( final val project: SomeProject)
                             }
                         }
 
-                        if (f.isStatic) initialize(f, initialAssignments)
+                        val declaredField = declaredFields(f)
+                        if (f.isStatic) initialize(declaredField, initialAssignments)
                         else {
                             createExternalAllocation(cf.thisType).forNewestNElements(1) { as =>
-                                initialize((as, f), initialAssignments)
+                                initialize((as, declaredField), initialAssignments)
                             }
                         }
                     }
