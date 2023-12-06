@@ -55,7 +55,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
-import org.opalj.br.{DeclaredMethod, Field, Fields, ObjectType, ReferenceType}
+import org.opalj.br.{DeclaredMethod, Field, Fields, Method, ObjectType, ReferenceType}
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.analyses.DeclaredMethods
@@ -370,20 +370,28 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             override def callFunction(v: Value, methodName: String, parameters: java.util.List[Value]): Value = {
                 var result = Value.makeAbsent()
 
-                if (v.isJavaObject) {
+                if (v.isJavaObject || v.isJSJavaTYPE) {
                     v.getObjectLabels.forEach(ol => {
                         // val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
                         val javaName = ol.getJavaName
                         val objectType = ObjectType(javaName.replace(".", "/"))
-                        val instanceMethods = project.instanceMethods(objectType)
-                        val possibleMethods = instanceMethods.filter(_.name == methodName)
+                        val classFile = project.classFile(objectType)
+
+                        var possibleMethods = Iterable.empty[Method]
+                        if (v.isJavaObject) {
+                            possibleMethods = project.instanceMethods(objectType)
+                                .filter(_.name == methodName).map(_.method)
+                        } else if (v.isJSJavaTYPE) {
+                            possibleMethods = project.allMethods.filter(_.classFile == classFile.orNull).
+                                filter(_.isStatic).filter(_.name == methodName)
+                        }
 
                         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
                             new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
                         possibleMethods.foreach(method => {
 
-                            val declaredMethod = declaredMethods(method.method)
+                            val declaredMethod = declaredMethods(method)
                             val context = typeIterator.newContext(declaredMethod)
 
                             //Call Graph
