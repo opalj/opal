@@ -3,9 +3,7 @@ package org.opalj
 package xl
 
 import java.io.File
-
 import scala.jdk.CollectionConverters.MapHasAsScala
-
 import dk.brics.tajs.analysis.Analysis
 import dk.brics.tajs.analysis.xl.translator.LocalTAJSAdapter
 import dk.brics.tajs.lattice.Value
@@ -16,7 +14,6 @@ import dk.brics.tajs.solver.BlockAndContext
 import dk.brics.tajs.analysis.xl.translator.TajsAdapter
 import dk.brics.tajs.flowgraph.jsnodes.JNode
 import dk.brics.tajs.lattice.Context
-
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
@@ -49,7 +46,6 @@ import org.opalj.xl.translator.translator.globalObject
 import org.opalj.xl.utility.Language
 import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.utility.Bottom
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEP
@@ -59,13 +55,10 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
-import org.opalj.br.ObjectType
+import org.opalj.br.{DeclaredMethod, Field, Fields, ObjectType, ReferenceType}
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Fields
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
@@ -266,7 +259,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                             val rhsPointsToSet =
                                 if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
                                     val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
-                                   jnode.getPointsToSet.asInstanceOf[PointsToSet]
+                                    jnode.getPointsToSet.asInstanceOf[PointsToSet]
                                 } else {
                                     val index = -100 - node.getIndex
                                     createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
@@ -281,14 +274,14 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                             })
 
                         })
-                      val setPropertyDependeesMap =
-                        if (pointsToAnalysisState.hasDependees("setProperty"))
-                          pointsToAnalysisState.dependeesOf("setProperty")
-                        else
-                          Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+                        val setPropertyDependeesMap =
+                            if (pointsToAnalysisState.hasDependees("setProperty"))
+                                pointsToAnalysisState.dependeesOf("setProperty")
+                            else
+                                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
-                      state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-                      state.connectorResults ++= createResults
+                        state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
+                        state.connectorResults ++= createResults
                     })
                 }
             }
@@ -322,6 +315,43 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                                     jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, tacai, t)._2)
                                 }
                             })
+                        }
+
+                        val readPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("readProperty"))
+                            pointsToAnalysisState.dependeesOf("readProperty")
+                        else
+                            Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                        state.connectorDependees = state.connectorDependees ++
+                            readPropertyDependeesMap.valuesIterator.map(_._1)
+                        state.connectorResults ++= createResults
+                    })
+                } else if (v.isJSJavaTYPE) {
+                    v.getObjectLabels.forEach(ol => {
+                        val javaName = ol.getJavaName
+                        val objectType = ObjectType(javaName.replace(".", "/"))
+                        val classFile = project.classFile(objectType)
+                        val possibleField: Option[Field] = {
+                            if (classFile.isDefined)
+                                classFile.get.fields.find(field => field.name == propertyName && field.isStatic)
+                            else
+                                Option.empty
+                        }
+
+                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] = {
+                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+
+                        }
+                        possibleField match {
+                            case Some(field) =>
+                                val propertyPointsToSet =
+                                    currentPointsTo("readProperty", field, PointsToSetLike.noFilter)
+                                val fieldType = field.fieldType
+                                val t = if (fieldType.isObjectType) {
+                                    Some(fieldType.asObjectType)
+                                } else None
+                                jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, null, t)._2)
+                            case _ =>
                         }
 
                         val readPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("readProperty"))
