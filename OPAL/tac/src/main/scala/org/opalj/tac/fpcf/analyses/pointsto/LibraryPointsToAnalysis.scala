@@ -33,7 +33,6 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.tac.cg.TypeIteratorKey
 
 /**
  * Provides initial points to sets for the parameters of entry point methods, fields and arrays as
@@ -239,11 +238,9 @@ trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => LibraryPointsToAnalysis
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        TypeIteratorKey,
-        ClosedPackagesKey, DeclaredMethodsKey, InitialEntryPointsKey, VirtualFormalParametersKey,
-        InitialInstantiatedTypesKey
-    )
+    override def requiredProjectInformation: ProjectInformationKeys =
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :++
+            Seq(DeclaredMethodsKey, ClosedPackagesKey, InitialEntryPointsKey, InitialInstantiatedTypesKey)
 
     override type InitializationData = LibraryPointsToAnalysis
 
