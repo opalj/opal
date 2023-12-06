@@ -38,13 +38,11 @@ import org.opalj.br.DeclaredField
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.PC
-import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -55,9 +53,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldWriteAccessInformatio
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldWriteAccessInformation
 import org.opalj.fpcf.PropertyKey
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.properties.TACAI
@@ -763,7 +759,7 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, DeclaredFieldsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeIteratorKey)
+        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
