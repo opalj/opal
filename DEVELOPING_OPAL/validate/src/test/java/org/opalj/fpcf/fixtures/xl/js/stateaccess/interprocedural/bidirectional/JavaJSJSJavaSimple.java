@@ -33,7 +33,7 @@ public class JavaJSJSJavaSimple {
         // Java -> JS state
         setJSField(se, o);
         // JS -> Java state
-        se.eval("instance.myfield = n2.field;");
+        se.eval("instance.myfield = n.field;");
         Object getField = instance.myfield;
         System.out.println(getField);
     }
